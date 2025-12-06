@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Briefing | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/briefing.html" class="nav-item active">
+                    <i data-lucide="newspaper"></i>
+                    <span>Daily Briefing</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header" style="padding: var(--spacing-xl); background: var(--bg-primary); border-bottom: 1px solid var(--border);">
+                <h1 style="font-family: var(--font-heading); font-size: 1.75rem;">Daily Briefing</h1>
+                <p style="color: var(--text-secondary);">Your personalized intelligence summary (Phase 4)</p>
+            </header>
+
+            <div style="padding: var(--spacing-xl); text-align: center;">
+                <div style="max-width: 500px; margin: auto; padding: var(--spacing-2xl);">
+                    <div style="width: 80px; height: 80px; margin: 0 auto var(--spacing-lg); background: var(--bg-tertiary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="newspaper" style="width: 40px; height: 40px; color: var(--text-muted);"></i>
+                    </div>
+                    <h2 style="margin-bottom: var(--spacing-sm);">Coming in Phase 4</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
+                        The Daily Briefing will provide automated intelligence summaries, topic monitoring, email triage, and scheduled content generation.
+                    </p>
+                    <a href="/chat.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius-md);">
+                        <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
+                        Try Multi-LLM Chat
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

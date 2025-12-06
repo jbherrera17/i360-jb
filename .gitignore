@@ -1,0 +1,103 @@
+# ============================================
+# Insight 360 - Git Ignore
+# ============================================
+
+# Environment variables (CRITICAL - contains API keys)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Uploads (if stored locally)
+uploads/
+*.upload
+
+# Cache
+.cache/
+.eslintcache
+.parcel-cache/
+
+# Debug
+debug/
+*.debug
+
+# Local development
+local/
+*.local.js
+*.local.json
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# Database files (if using SQLite locally)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+
+# Archive files (don't commit large zips)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Documentation builds
+docs/_build/
+
+# Secrets (various formats)
+secrets/
+*.secret
+*-secret.*
+credentials.json
+service-account.json

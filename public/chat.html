@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-LLM Chat | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item active">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/briefing.html" class="nav-item">
+                    <i data-lucide="newspaper"></i>
+                    <span>Daily Briefing</span>
+                </a>
+            </nav>
+            
+            <!-- Conversation History -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">
+                    <span>Conversations</span>
+                    <button onclick="startNewChat()" class="btn-icon" title="New Chat">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                <div id="conversationList" class="conversation-list">
+                    <!-- Populated by JS -->
+                    <div class="empty-conversations">
+                        <p>No conversations yet</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <div class="chat-header-left">
+                    <h1>Multi-LLM Chat</h1>
+                    <span id="modelIndicator" class="model-badge">Claude Sonnet 4.5</span>
+                </div>
+                <div class="chat-header-right">
+                    <!-- Model Selector -->
+                    <div class="model-selector">
+                        <label for="modelSelect">Model:</label>
+                        <select id="modelSelect" class="select-model">
+                            <optgroup label="Claude (Anthropic)" id="claudeModels">
+                                <!-- Populated by JS -->
+                            </optgroup>
+                            <optgroup label="GPT (OpenAI)" id="gptModels">
+                                <!-- Populated by JS -->
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- Options -->
+                    <div class="chat-options">
+                        <label class="toggle-option" title="Enable web search">
+                            <input type="checkbox" id="enableSearch">
+                            <i data-lucide="search"></i>
+                            <span>Search</span>
+                        </label>
+                        <label class="toggle-option" title="Enable voice">
+                            <input type="checkbox" id="enableVoice">
+                            <i data-lucide="mic"></i>
+                            <span>Voice</span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="chat-messages">
+                <div class="welcome-message">
+                    <div class="welcome-icon">
+                        <i data-lucide="sparkles"></i>
+                    </div>
+                    <h2>Welcome to Multi-LLM Chat</h2>
+                    <p>Choose a model and start chatting. Your conversations are automatically saved.</p>
+                    <div class="quick-actions">
+                        <button onclick="insertPrompt('Explain a complex topic simply:')" class="quick-action">
+                            <i data-lucide="lightbulb"></i>
+                            Explain simply
+                        </button>
+                        <button onclick="insertPrompt('Help me write code for')" class="quick-action">
+                            <i data-lucide="code"></i>
+                            Write code
+                        </button>
+                        <button onclick="insertPrompt('Analyze this document:')" class="quick-action">
+                            <i data-lucide="file-text"></i>
+                            Analyze doc
+                        </button>
+                        <button onclick="insertPrompt('Search for the latest news about')" class="quick-action">
+                            <i data-lucide="search"></i>
+                            Search web
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <!-- File Preview -->
+                <div id="filePreview" class="file-preview hidden">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <!-- Input Area -->
+                <div class="chat-input-wrapper">
+                    <div class="input-actions-left">
+                        <label for="fileInput" class="btn-icon" title="Attach files">
+                            <i data-lucide="paperclip"></i>
+                        </label>
+                        <input type="file" id="fileInput" multiple accept="image/*,.pdf,.docx,.txt,.md,.csv" class="hidden">
+                        
+                        <button id="voiceInputBtn" class="btn-icon hidden" title="Voice input">
+                            <i data-lucide="mic"></i>
+                        </button>
+                    </div>
+                    
+                    <textarea 
+                        id="chatInput" 
+                        placeholder="Type your message..." 
+                        rows="1"
+                        autofocus
+                    ></textarea>
+                    
+                    <div class="input-actions-right">
+                        <button id="sendBtn" class="btn-primary" title="Send message (Enter)">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-input-footer">
+                    <span id="statusText">Ready</span>
+                    <span id="tokenCount" class="hidden">0 tokens</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Voice Recording Modal -->
+    <div id="voiceModal" class="modal hidden">
+        <div class="modal-content voice-modal">
+            <div class="voice-recording">
+                <div class="voice-animation">
+                    <div class="voice-circle"></div>
+                    <div class="voice-circle"></div>
+                    <div class="voice-circle"></div>
+                </div>
+                <p id="voiceStatus">Listening...</p>
+                <div class="voice-actions">
+                    <button id="stopRecording" class="btn-danger">
+                        <i data-lucide="square"></i>
+                        Stop
+                    </button>
+                    <button id="cancelRecording" class="btn-secondary">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Playback Controls -->
+    <div id="voicePlayback" class="voice-playback hidden">
+        <button id="playResponseBtn" class="btn-icon" title="Play response">
+            <i data-lucide="volume-2"></i>
+        </button>
+        <select id="voiceSelect" class="select-voice">
+            <option value="nova">Nova (Friendly)</option>
+            <option value="alloy">Alloy (Neutral)</option>
+            <option value="echo">Echo (Warm)</option>
+            <option value="fable">Fable (British)</option>
+            <option value="onyx">Onyx (Deep)</option>
+            <option value="shimmer">Shimmer (Clear)</option>
+        </select>
+    </div>
+
+    <!-- Load Supabase client first -->
+    <script src="/js/supabase.js"></script>
+    <!-- Then load chat functionality -->
+    <script src="/js/chat.js"></script>
+</body>
+</html>

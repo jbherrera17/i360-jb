@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insight 360 | AI Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item active">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/briefing.html" class="nav-item">
+                    <i data-lucide="newspaper"></i>
+                    <span>Daily Briefing</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1>Dashboard</h1>
+                <p>Welcome to your AI Command Center</p>
+            </header>
+
+            <div class="dashboard-grid">
+                <!-- System Status -->
+                <div class="dashboard-card status-card">
+                    <div class="card-header">
+                        <h2>System Status</h2>
+                        <span id="overallStatus" class="status-badge status-loading">Checking...</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="serviceStatus" class="service-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Quick Actions</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="quick-action-grid">
+                            <a href="/chat.html" class="action-tile">
+                                <div class="action-icon">
+                                    <i data-lucide="message-square"></i>
+                                </div>
+                                <span>Start Chat</span>
+                            </a>
+                            <a href="/agents.html" class="action-tile">
+                                <div class="action-icon">
+                                    <i data-lucide="bot"></i>
+                                </div>
+                                <span>View Agents</span>
+                            </a>
+                            <a href="/briefing.html" class="action-tile">
+                                <div class="action-icon">
+                                    <i data-lucide="newspaper"></i>
+                                </div>
+                                <span>Daily Brief</span>
+                            </a>
+                            <a href="/chat.html?search=true" class="action-tile">
+                                <div class="action-icon">
+                                    <i data-lucide="search"></i>
+                                </div>
+                                <span>Web Search</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Models -->
+                <div class="dashboard-card models-card">
+                    <div class="card-header">
+                        <h2>Available Models</h2>
+                        <span id="modelCount" class="count-badge">0</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="modelList" class="model-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="dashboard-card activity-card">
+                    <div class="card-header">
+                        <h2>Getting Started</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="getting-started">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h3>Configure API Keys</h3>
+                                    <p>Add your Anthropic and OpenAI keys to the .env file</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h3>Start Chatting</h3>
+                                    <p>Open Multi-LLM Chat and select a model</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h3>Explore Features</h3>
+                                    <p>Try web search, voice, and document analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .page-header {
+            padding: var(--spacing-xl);
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .page-header h1 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .page-header p {
+            color: var(--text-secondary);
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+            padding: var(--spacing-xl);
+        }
+        
+        .dashboard-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .card-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .card-content {
+            padding: var(--spacing-lg);
+        }
+        
+        .status-badge {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-loading {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        .status-online {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .status-partial {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-offline {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .count-badge {
+            background: var(--primary);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .service-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+        
+        .service-name {
+            font-weight: 500;
+        }
+        
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.online {
+            background: var(--success);
+        }
+        
+        .status-dot.offline {
+            background: var(--error);
+        }
+        
+        .quick-action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md);
+        }
+        
+        .action-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+        
+        .action-tile:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+        
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-md);
+            color: white;
+        }
+        
+        .action-icon i {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .action-tile span {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .model-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+        
+        .model-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .model-provider {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .getting-started {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .step {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .step-content h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .step-content p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadStatus();
+        });
+        
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateServiceStatus(data.data.services);
+                    updateModelList(data.data);
+                }
+            } catch (error) {
+                console.error('Failed to load status:', error);
+                document.getElementById('overallStatus').textContent = 'Error';
+                document.getElementById('overallStatus').className = 'status-badge status-offline';
+            }
+        }
+        
+        function updateServiceStatus(services) {
+            const statusEl = document.getElementById('serviceStatus');
+            const overallEl = document.getElementById('overallStatus');
+            
+            const items = [
+                { name: 'Anthropic Claude', key: 'anthropic' },
+                { name: 'OpenAI GPT', key: 'openai' },
+                { name: 'Web Search', key: 'search' },
+                { name: 'Voice', key: 'voice' },
+                { name: 'Database', key: 'supabase' }
+            ];
+            
+            let onlineCount = 0;
+            let html = '';
+            
+            for (const item of items) {
+                const service = services[item.key];
+                const available = service?.available || false;
+                if (available) onlineCount++;
+                
+                html += `
+                    <div class="service-item">
+                        <span class="service-name">${item.name}</span>
+                        <span class="service-status">
+                            <span class="status-dot ${available ? 'online' : 'offline'}"></span>
+                            ${available ? 'Ready' : 'Not configured'}
+                        </span>
+                    </div>
+                `;
+            }
+            
+            statusEl.innerHTML = html;
+            
+            if (onlineCount === items.length) {
+                overallEl.textContent = 'All Systems Online';
+                overallEl.className = 'status-badge status-online';
+            } else if (onlineCount > 0) {
+                overallEl.textContent = 'Partial';
+                overallEl.className = 'status-badge status-partial';
+            } else {
+                overallEl.textContent = 'Offline';
+                overallEl.className = 'status-badge status-offline';
+            }
+        }
+        
+        async function updateModelList(data) {
+            const listEl = document.getElementById('modelList');
+            const countEl = document.getElementById('modelCount');
+            
+            try {
+                const response = await fetch('/api/chat/models');
+                const modelsData = await response.json();
+                
+                if (modelsData.success) {
+                    const models = modelsData.data.all || [];
+                    countEl.textContent = models.length;
+                    
+                    let html = '';
+                    for (const model of models.slice(0, 10)) {
+                        html += `
+                            <div class="model-item">
+                                <span class="model-name">${model.name}</span>
+                                <span class="model-provider">${model.provider}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (models.length > 10) {
+                        html += `<div class="model-item"><span class="model-name">+ ${models.length - 10} more...</span></div>`;
+                    }
+                    
+                    listEl.innerHTML = html;
+                }
+            } catch (error) {
+                countEl.textContent = '0';
+                listEl.innerHTML = '<p>No models available</p>';
+            }
+        }
+    </script>
+</body>
+</html>
