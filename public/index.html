@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Insight 360 | AI Command Center</title>
@@ -16,7 +17,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
                     <span class="logo-text">Insight 360</span>
                 </div>
             </div>
@@ -30,34 +31,55 @@
                     <i data-lucide="message-square"></i>
                     <span>Multi-LLM Chat</span>
                 </a>
-                <a href="/agents.html" class="nav-item">
+                <a href="/agents.html" class="nav-item" style="opacity: 0.5; pointer-events: none;">
                     <i data-lucide="bot"></i>
                     <span>Agent Library</span>
+                    <span class="nav-badge">Phase 3</span>
                 </a>
-                <a href="/briefing.html" class="nav-item">
+                <a href="/briefing.html" class="nav-item" style="opacity: 0.5; pointer-events: none;">
                     <i data-lucide="newspaper"></i>
                     <span>Daily Briefing</span>
+                    <span class="nav-badge">Phase 4</span>
                 </a>
             </nav>
+            
+            <div class="sidebar-footer">
+                <div class="version-info">
+                    <span class="version-label">Version</span>
+                    <span class="version-number">2.1.2</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
-            <header class="page-header">
-                <h1>Dashboard</h1>
-                <p>Welcome to your AI Command Center</p>
-            </header>
-
+<header class="page-header">
+    <div class="header-content">
+        <h1>Dashboard</h1>
+        <p class="header-subtitle">Welcome to your AI Command Center</p>
+    </div>
+    <div class="header-actions">
+        <div class="theme-toggle-wrapper">
+            <label class="theme-toggle" title="Toggle dark/light mode">
+                <input type="checkbox" id="themeToggle">
+                <span class="theme-toggle-slider">
+                    <span class="theme-toggle-icon moon">🌙</span>
+                    <span class="theme-toggle-icon sun">☀️</span>
+                </span>
+            </label>
+        </div>
+    </div>
+</header>
             <div class="dashboard-grid">
                 <!-- System Status -->
                 <div class="dashboard-card status-card">
                     <div class="card-header">
-                        <h2>System Status</h2>
+                        <h2><i data-lucide="activity" class="card-icon"></i> System Status</h2>
                         <span id="overallStatus" class="status-badge status-loading">Checking...</span>
                     </div>
                     <div class="card-content">
                         <div id="serviceStatus" class="service-list">
-                            <!-- Populated by JS -->
+                            <!-- Populated by dashboard.js -->
                         </div>
                     </div>
                 </div>
@@ -65,7 +87,7 @@
                 <!-- Quick Actions -->
                 <div class="dashboard-card">
                     <div class="card-header">
-                        <h2>Quick Actions</h2>
+                        <h2><i data-lucide="zap" class="card-icon"></i> Quick Actions</h2>
                     </div>
                     <div class="card-content">
                         <div class="quick-action-grid">
@@ -75,23 +97,23 @@
                                 </div>
                                 <span>Start Chat</span>
                             </a>
-                            <a href="/agents.html" class="action-tile">
+                            <a href="/chat.html?voice=true" class="action-tile">
                                 <div class="action-icon">
-                                    <i data-lucide="bot"></i>
+                                    <i data-lucide="mic"></i>
                                 </div>
-                                <span>View Agents</span>
-                            </a>
-                            <a href="/briefing.html" class="action-tile">
-                                <div class="action-icon">
-                                    <i data-lucide="newspaper"></i>
-                                </div>
-                                <span>Daily Brief</span>
+                                <span>Voice Chat</span>
                             </a>
                             <a href="/chat.html?search=true" class="action-tile">
                                 <div class="action-icon">
                                     <i data-lucide="search"></i>
                                 </div>
                                 <span>Web Search</span>
+                            </a>
+                            <a href="/chat.html?upload=true" class="action-tile">
+                                <div class="action-icon">
+                                    <i data-lucide="upload"></i>
+                                </div>
+                                <span>Analyze File</span>
                             </a>
                         </div>
                     </div>
@@ -100,43 +122,42 @@
                 <!-- Available Models -->
                 <div class="dashboard-card models-card">
                     <div class="card-header">
-                        <h2>Available Models</h2>
+                        <h2><i data-lucide="cpu" class="card-icon"></i> Available Models</h2>
                         <span id="modelCount" class="count-badge">0</span>
                     </div>
                     <div class="card-content">
                         <div id="modelList" class="model-list">
-                            <!-- Populated by JS -->
+                            <p class="no-models">Loading models...</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Recent Activity -->
-                <div class="dashboard-card activity-card">
+                <!-- Phase Progress -->
+                <div class="dashboard-card">
                     <div class="card-header">
-                        <h2>Getting Started</h2>
+                        <h2><i data-lucide="layers" class="card-icon"></i> Development Progress</h2>
                     </div>
                     <div class="card-content">
-                        <div class="getting-started">
-                            <div class="step">
-                                <div class="step-number">1</div>
-                                <div class="step-content">
-                                    <h3>Configure API Keys</h3>
-                                    <p>Add your Anthropic and OpenAI keys to the .env file</p>
-                                </div>
+                        <div class="phase-list">
+                            <div class="phase-item complete">
+                                <span class="phase-indicator">✓</span>
+                                <span class="phase-name">Phase 1: Foundation</span>
                             </div>
-                            <div class="step">
-                                <div class="step-number">2</div>
-                                <div class="step-content">
-                                    <h3>Start Chatting</h3>
-                                    <p>Open Multi-LLM Chat and select a model</p>
-                                </div>
+                            <div class="phase-item complete">
+                                <span class="phase-indicator">✓</span>
+                                <span class="phase-name">Phase 2: Core Chat</span>
                             </div>
-                            <div class="step">
-                                <div class="step-number">3</div>
-                                <div class="step-content">
-                                    <h3>Explore Features</h3>
-                                    <p>Try web search, voice, and document analysis</p>
-                                </div>
+                            <div class="phase-item current">
+                                <span class="phase-indicator">→</span>
+                                <span class="phase-name">Phase 3: Agent Framework</span>
+                            </div>
+                            <div class="phase-item upcoming">
+                                <span class="phase-indicator">○</span>
+                                <span class="phase-name">Phase 4: Daily Assistant</span>
+                            </div>
+                            <div class="phase-item upcoming">
+                                <span class="phase-indicator">○</span>
+                                <span class="phase-name">Phase 5: Polish & Scale</span>
                             </div>
                         </div>
                     </div>
@@ -145,338 +166,115 @@
         </main>
     </div>
 
+    <!-- Dashboard JavaScript -->
+    <script src="/js/dashboard.js"></script>
+    
+    <script>
+        // Initialize Lucide icons after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
     <style>
-        .page-header {
-            padding: var(--spacing-xl);
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border);
+        /* Additional inline styles for dashboard-specific elements */
+        .card-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
         }
         
-        .page-header h1 {
-            font-family: var(--font-heading);
-            font-size: 1.75rem;
-            margin-bottom: var(--spacing-xs);
+        .header-tagline {
+            color: var(--color-text-muted, #6b6b80);
+            font-size: 0.9rem;
         }
         
-        .page-header p {
-            color: var(--text-secondary);
+        .nav-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(107, 107, 128, 0.3);
+            border-radius: 4px;
+            color: var(--color-text-muted, #6b6b80);
+            margin-left: auto;
         }
         
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: var(--spacing-lg);
-            padding: var(--spacing-xl);
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem;
+            border-top: 1px solid var(--color-border, #2a2a40);
         }
         
-        .dashboard-card {
-            background: var(--bg-primary);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-        
-        .card-header {
+        .version-info {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--color-text-muted, #6b6b80);
         }
         
-        .card-header h2 {
-            font-size: 1rem;
-            font-weight: 600;
+        .version-number {
+            font-family: 'Orbitron', monospace;
+            color: var(--color-primary, #6366f1);
         }
         
-        .card-content {
-            padding: var(--spacing-lg);
-        }
-        
-        .status-badge {
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--radius-full);
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        
-        .status-loading {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-        }
-        
-        .status-online {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-        
-        .status-partial {
-            background: #fef3c7;
-            color: #d97706;
-        }
-        
-        .status-offline {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        
-        .count-badge {
-            background: var(--primary);
-            color: white;
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--radius-full);
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .service-list {
+        /* Phase List */
+        .phase-list {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-sm);
+            gap: 0.75rem;
         }
         
-        .service-item {
+        .phase-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: var(--spacing-sm);
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md);
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            background: rgba(37, 37, 64, 0.3);
         }
         
-        .service-name {
+        .phase-item.complete {
+            border-left: 3px solid #10b981;
+        }
+        
+        .phase-item.current {
+            border-left: 3px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .phase-item.upcoming {
+            border-left: 3px solid #6b6b80;
+            opacity: 0.7;
+        }
+        
+        .phase-indicator {
+            width: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .phase-item.complete .phase-indicator {
+            color: #10b981;
+        }
+        
+        .phase-item.current .phase-indicator {
+            color: #f59e0b;
+        }
+        
+        .phase-item.upcoming .phase-indicator {
+            color: #6b6b80;
+        }
+        
+        .phase-name {
+            color: var(--color-text-secondary, #a0a0b0);
+        }
+        
+        .phase-item.current .phase-name {
+            color: var(--color-text-primary, #ffffff);
             font-weight: 500;
-        }
-        
-        .service-status {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            font-size: 0.875rem;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-        
-        .status-dot.online {
-            background: var(--success);
-        }
-        
-        .status-dot.offline {
-            background: var(--error);
-        }
-        
-        .quick-action-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--spacing-md);
-        }
-        
-        .action-tile {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-lg);
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            color: var(--text-primary);
-            transition: var(--transition);
-        }
-        
-        .action-tile:hover {
-            background: var(--bg-tertiary);
-            transform: translateY(-2px);
-        }
-        
-        .action-icon {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: var(--radius-md);
-            color: white;
-        }
-        
-        .action-icon i {
-            width: 24px;
-            height: 24px;
-        }
-        
-        .action-tile span {
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
-        
-        .model-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .model-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-sm);
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md);
-        }
-        
-        .model-name {
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
-        
-        .model-provider {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        .getting-started {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-        
-        .step {
-            display: flex;
-            gap: var(--spacing-md);
-        }
-        
-        .step-number {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--primary);
-            color: white;
-            border-radius: 50%;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-        
-        .step-content h3 {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: var(--spacing-xs);
-        }
-        
-        .step-content p {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
         }
     </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
-            await loadStatus();
-        });
-        
-        async function loadStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const data = await response.json();
-                
-                if (data.success) {
-                    updateServiceStatus(data.data.services);
-                    updateModelList(data.data);
-                }
-            } catch (error) {
-                console.error('Failed to load status:', error);
-                document.getElementById('overallStatus').textContent = 'Error';
-                document.getElementById('overallStatus').className = 'status-badge status-offline';
-            }
-        }
-        
-        function updateServiceStatus(services) {
-            const statusEl = document.getElementById('serviceStatus');
-            const overallEl = document.getElementById('overallStatus');
-            
-            const items = [
-                { name: 'Anthropic Claude', key: 'anthropic' },
-                { name: 'OpenAI GPT', key: 'openai' },
-                { name: 'Web Search', key: 'search' },
-                { name: 'Voice', key: 'voice' },
-                { name: 'Database', key: 'supabase' }
-            ];
-            
-            let onlineCount = 0;
-            let html = '';
-            
-            for (const item of items) {
-                const service = services[item.key];
-                const available = service?.available || false;
-                if (available) onlineCount++;
-                
-                html += `
-                    <div class="service-item">
-                        <span class="service-name">${item.name}</span>
-                        <span class="service-status">
-                            <span class="status-dot ${available ? 'online' : 'offline'}"></span>
-                            ${available ? 'Ready' : 'Not configured'}
-                        </span>
-                    </div>
-                `;
-            }
-            
-            statusEl.innerHTML = html;
-            
-            if (onlineCount === items.length) {
-                overallEl.textContent = 'All Systems Online';
-                overallEl.className = 'status-badge status-online';
-            } else if (onlineCount > 0) {
-                overallEl.textContent = 'Partial';
-                overallEl.className = 'status-badge status-partial';
-            } else {
-                overallEl.textContent = 'Offline';
-                overallEl.className = 'status-badge status-offline';
-            }
-        }
-        
-        async function updateModelList(data) {
-            const listEl = document.getElementById('modelList');
-            const countEl = document.getElementById('modelCount');
-            
-            try {
-                const response = await fetch('/api/chat/models');
-                const modelsData = await response.json();
-                
-                if (modelsData.success) {
-                    const models = modelsData.data.all || [];
-                    countEl.textContent = models.length;
-                    
-                    let html = '';
-                    for (const model of models.slice(0, 10)) {
-                        html += `
-                            <div class="model-item">
-                                <span class="model-name">${model.name}</span>
-                                <span class="model-provider">${model.provider}</span>
-                            </div>
-                        `;
-                    }
-                    
-                    if (models.length > 10) {
-                        html += `<div class="model-item"><span class="model-name">+ ${models.length - 10} more...</span></div>`;
-                    }
-                    
-                    listEl.innerHTML = html;
-                }
-            } catch (error) {
-                countEl.textContent = '0';
-                listEl.innerHTML = '<p>No models available</p>';
-            }
-        }
-    </script>
 </body>
 </html>

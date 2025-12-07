@@ -1237,3 +1237,786 @@ body {
 .loading-indicator.model-gpt .loading-dots span {
     color: #10b981; /* Green for GPT */
 }
+/* ==========================================
+   DASHBOARD STYLES - Insight 360
+   Append to your existing styles.css
+   ========================================== */
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge.status-loading {
+    background: rgba(107, 107, 128, 0.2);
+    color: #6b6b80;
+}
+
+.status-badge.status-ok {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.status-badge.status-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-badge.status-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Service List */
+.service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.service-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(37, 37, 64, 0.5);
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.service-item:hover {
+    background: rgba(37, 37, 64, 0.8);
+}
+
+.service-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.service-indicator.active {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.service-indicator.inactive {
+    background: #6b6b80;
+}
+
+.service-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--color-text-primary, #ffffff);
+}
+
+.service-status {
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #6b6b80);
+}
+
+/* Status Dots (Alternative Format) */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6b6b80;
+    transition: all 0.3s;
+}
+
+.status-dot.active {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.inactive {
+    background: #ef4444;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary, #a0a0b0);
+}
+
+/* Model List */
+.model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.model-group {
+    background: rgba(37, 37, 64, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.model-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(37, 37, 64, 0.5);
+    border-bottom: 1px solid rgba(42, 42, 64, 0.5);
+}
+
+.model-group-header.anthropic,
+.model-group-header.claude {
+    border-left: 3px solid #d97706;
+}
+
+.model-group-header.openai,
+.model-group-header.gpt {
+    border-left: 3px solid #10b981;
+}
+
+.model-group-header.perplexity {
+    border-left: 3px solid #8b5cf6;
+}
+
+.model-group-header.google,
+.model-group-header.gemini {
+    border-left: 3px solid #3b82f6;
+}
+
+.provider-icon {
+    font-size: 1rem;
+}
+
+.provider-name {
+    flex: 1;
+    font-weight: 600;
+    color: var(--color-text-primary, #ffffff);
+}
+
+.provider-count {
+    background: rgba(99, 102, 241, 0.2);
+    color: #6366f1;
+    padding: 0.2rem 0.5rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.model-items {
+    padding: 0.5rem;
+}
+
+.model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.model-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.model-name {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary, #a0a0b0);
+}
+
+.model-tier {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.model-tier.tier-premium {
+    background: rgba(217, 119, 6, 0.2);
+    color: #d97706;
+}
+
+.model-tier.tier-flagship {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.model-tier.tier-standard {
+    background: rgba(99, 102, 241, 0.2);
+    color: #6366f1;
+}
+
+.model-tier.tier-fast {
+    background: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+}
+
+.model-tier.tier-reasoning {
+    background: rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+}
+
+.model-tier.tier-search {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+/* Count Badge */
+.count-badge {
+    background: rgba(99, 102, 241, 0.2);
+    color: #6366f1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Error/Empty States */
+.no-models,
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-text-muted, #6b6b80);
+    font-style: italic;
+}
+
+.error-message {
+    color: #ef4444;
+}
+
+/* Quick Actions */
+.quick-action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+.action-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    background: rgba(37, 37, 64, 0.5);
+    border: 1px solid rgba(42, 42, 64, 0.5);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--color-text-secondary, #a0a0b0);
+    transition: all 0.2s;
+}
+
+.action-tile:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: var(--color-text-primary, #ffffff);
+    transform: translateY(-2px);
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 12px;
+    color: #6366f1;
+}
+
+.action-tile span {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* Dashboard Card */
+.dashboard-card {
+    background: var(--color-bg-secondary, #1a1a2e);
+    border: 1px solid var(--color-border, #2a2a40);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.dashboard-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.dashboard-card .card-header h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #ffffff);
+    margin: 0;
+}
+
+.dashboard-card .card-content {
+    color: var(--color-text-secondary, #a0a0b0);
+}
+
+/* Models Card Specific */
+.models-card .model-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Scrollbar styling */
+.model-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.model-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.model-list::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 3px;
+}
+
+.model-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.5);
+}
+/* ==========================================
+   DASHBOARD - Scrollable Models Fix v2
+   Added: v2.1.2
+   ========================================== */
+
+.models-card {
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 500px !important;
+    overflow: hidden !important;
+}
+
+.models-card .card-content {
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    max-height: 400px !important;
+}
+
+.models-card .model-list {
+    max-height: 380px !important;
+    overflow-y: scroll !important;
+    padding-right: 8px !important;
+}
+
+/* Ensure model groups don't collapse */
+.models-card .model-group {
+    flex-shrink: 0;
+}
+
+.models-card .model-items {
+    display: block !important;
+}
+
+.models-card .model-item {
+    display: flex !important;
+}/* ==========================================
+   THEME TOGGLE - Dark/Light Mode
+   Insight 360 v2.1.3
+   ========================================== */
+
+/* ==========================================
+   CSS VARIABLES - DARK THEME (Default)
+   ========================================== */
+:root,
+[data-theme="dark"] {
+    --color-bg-primary: #0f0f1a;
+    --color-bg-secondary: #1a1a2e;
+    --color-bg-tertiary: #252540;
+    --color-bg-card: #1a1a2e;
+    --color-bg-hover: rgba(99, 102, 241, 0.1);
+    
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a0a0b0;
+    --color-text-muted: #6b6b80;
+    
+    --color-border: #2a2a40;
+    --color-border-hover: rgba(99, 102, 241, 0.3);
+    
+    --color-primary: #6366f1;
+    --color-primary-dark: #4f46e5;
+    --color-secondary: #8b5cf6;
+    
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    
+    --color-claude: #d97706;
+    --color-openai: #10b981;
+    --color-perplexity: #8b5cf6;
+    
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+    
+    --scrollbar-bg: transparent;
+    --scrollbar-thumb: rgba(99, 102, 241, 0.3);
+    --scrollbar-thumb-hover: rgba(99, 102, 241, 0.5);
+}
+
+/* ==========================================
+   CSS VARIABLES - LIGHT THEME
+   ========================================== */
+[data-theme="light"] {
+    --color-bg-primary: #f5f5f7;
+    --color-bg-secondary: #ffffff;
+    --color-bg-tertiary: #e8e8ed;
+    --color-bg-card: #ffffff;
+    --color-bg-hover: rgba(99, 102, 241, 0.08);
+    
+    --color-text-primary: #1a1a2e;
+    --color-text-secondary: #4a4a5a;
+    --color-text-muted: #8a8a9a;
+    
+    --color-border: #d1d1d6;
+    --color-border-hover: rgba(99, 102, 241, 0.4);
+    
+    --color-primary: #5856d6;
+    --color-primary-dark: #4745b5;
+    --color-secondary: #7c5ce0;
+    
+    --color-success: #34c759;
+    --color-warning: #ff9500;
+    --color-danger: #ff3b30;
+    
+    --color-claude: #c2410c;
+    --color-openai: #059669;
+    --color-perplexity: #7c3aed;
+    
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    
+    --scrollbar-bg: #e8e8ed;
+    --scrollbar-thumb: rgba(99, 102, 241, 0.4);
+    --scrollbar-thumb-hover: rgba(99, 102, 241, 0.6);
+}
+
+/* ==========================================
+   APPLY THEME VARIABLES TO ELEMENTS
+   ========================================== */
+
+body {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.sidebar {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
+}
+
+.main-content {
+    background: var(--color-bg-primary);
+}
+
+.dashboard-card {
+    background: var(--color-bg-card);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover {
+    border-color: var(--color-border-hover);
+}
+
+.dashboard-card .card-header h2 {
+    color: var(--color-text-primary);
+}
+
+.card-content {
+    color: var(--color-text-secondary);
+}
+
+/* Service Items */
+.service-item {
+    background: var(--color-bg-tertiary);
+}
+
+.service-name {
+    color: var(--color-text-primary);
+}
+
+.service-status {
+    color: var(--color-text-muted);
+}
+
+/* Model Groups */
+.model-group {
+    background: var(--color-bg-tertiary);
+}
+
+.model-group-header {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+}
+
+.provider-name {
+    color: var(--color-text-primary);
+}
+
+.model-name {
+    color: var(--color-text-secondary);
+}
+
+.model-item:hover {
+    background: var(--color-bg-hover);
+}
+
+/* Quick Actions */
+.action-tile {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.action-tile:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-border-hover);
+    color: var(--color-text-primary);
+}
+
+/* Phase List */
+.phase-item {
+    background: var(--color-bg-tertiary);
+}
+
+.phase-name {
+    color: var(--color-text-secondary);
+}
+
+.phase-item.current .phase-name {
+    color: var(--color-text-primary);
+}
+
+/* Sidebar Navigation */
+.nav-item {
+    color: var(--color-text-secondary);
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+/* Scrollbars */
+.model-list::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg);
+}
+
+.model-list::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+}
+
+.model-list::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* ==========================================
+   THEME TOGGLE SWITCH
+   ========================================== */
+
+.theme-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.theme-toggle-label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.theme-toggle {
+    position: relative;
+    width: 56px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.theme-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 28px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
+}
+
+.theme-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 2px;
+    bottom: 2px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    z-index: 2;
+}
+
+.theme-toggle input:checked + .theme-toggle-slider::before {
+    transform: translateX(28px);
+    background: var(--color-warning);
+}
+
+.theme-toggle-icon {
+    font-size: 14px;
+    z-index: 1;
+    transition: opacity 0.3s ease;
+}
+
+.theme-toggle-icon.moon {
+    opacity: 1;
+}
+
+.theme-toggle-icon.sun {
+    opacity: 0.5;
+}
+
+.theme-toggle input:checked + .theme-toggle-slider .moon {
+    opacity: 0.5;
+}
+
+.theme-toggle input:checked + .theme-toggle-slider .sun {
+    opacity: 1;
+}
+
+/* Header adjustments for toggle placement */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Light theme specific adjustments */
+[data-theme="light"] .logo-text {
+    color: var(--color-text-primary);
+}
+
+[data-theme="light"] .sidebar-footer {
+    border-color: var(--color-border);
+}
+
+[data-theme="light"] .status-badge.status-ok {
+    background: rgba(52, 199, 89, 0.15);
+    color: #059669;
+}
+
+[data-theme="light"] .status-badge.status-warning {
+    background: rgba(255, 149, 0, 0.15);
+    color: #d97706;
+}
+
+[data-theme="light"] .count-badge,
+[data-theme="light"] .provider-count {
+    background: rgba(88, 86, 214, 0.15);
+    color: #5856d6;
+}
+
+[data-theme="light"] .model-tier.tier-premium {
+    background: rgba(194, 65, 12, 0.15);
+    color: #c2410c;
+}
+
+[data-theme="light"] .model-tier.tier-flagship {
+    background: rgba(5, 150, 105, 0.15);
+    color: #059669;
+}
+
+[data-theme="light"] .model-tier.tier-standard {
+    background: rgba(88, 86, 214, 0.15);
+    color: #5856d6;
+}
+
+[data-theme="light"] .model-tier.tier-fast {
+    background: rgba(6, 182, 212, 0.15);
+    color: #0891b2;
+}
+
+[data-theme="light"] .model-tier.tier-reasoning {
+    background: rgba(124, 58, 237, 0.15);
+    color: #7c3aed;
+}
+
+[data-theme="light"] .service-indicator.active {
+    background: #34c759;
+    box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+}
+
+[data-theme="light"] .phase-item.complete {
+    border-left-color: #34c759;
+}
+
+[data-theme="light"] .phase-item.complete .phase-indicator {
+    color: #059669;
+}
+
+[data-theme="light"] .phase-item.current {
+    border-left-color: #ff9500;
+    background: rgba(255, 149, 0, 0.1);
+}
+
+[data-theme="light"] .phase-item.current .phase-indicator {
+    color: #d97706;
+}

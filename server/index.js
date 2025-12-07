@@ -1,79 +1,123 @@
 /**
- * Insight 360 - Express Server
- * Phase 2.1.1 - Claude + OpenAI (Perplexity removed)
+ * Insight 360 Server - v2.1.2
+ * Values-Based AI Ecosystem
+ * 
+ * Features:
+ * - Multi-LLM support (Anthropic Claude, OpenAI GPT)
+ * - Voice input/output (Speech-to-Text, Text-to-Speech)
+ * - Web search integration (Brave, Tavily, Serper)
+ * - File/image processing
+ * - Streaming responses
+ * - Conversation persistence (Supabase)
+ * - System health monitoring
  */
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
+
+// ============================================
+// INITIALIZE EXPRESS APP
+// ============================================
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for rate limiting behind reverse proxy
+app.set('trust proxy', 1);
+
 // ============================================
-// MIDDLEWARE
+// SECURITY MIDDLEWARE
 // ============================================
 
-// Security headers
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'", "https://api.anthropic.com", "https://api.openai.com", "https://*.supabase.co"],
-            mediaSrc: ["'self'", "blob:"]
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "blob:", "https:"],
+            mediaSrc: ["'self'", "blob:"],
+            connectSrc: [
+                "'self'", 
+                "https://api.anthropic.com", 
+                "https://api.openai.com",
+                "https://*.supabase.co",
+                "https://unpkg.com"
+            ]
         }
     }
 }));
 
-// CORS
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
+// ============================================
+// COMPRESSION & CORS
+// ============================================
+
+app.use(compression());
+
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
     credentials: true
 }));
 
-// Compression
-app.use(compression());
+// ============================================
+// BODY PARSING
+// ============================================
 
-// Body parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static files
+// ============================================
+// STATIC FILES
+// ============================================
+
 app.use(express.static(path.join(__dirname, '../public')));
+
+// ============================================
+// REQUEST LOGGING (Development)
+// ============================================
+
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        const timestamp = new Date().toISOString();
+        console.log(`${timestamp} ${req.method} ${req.path}`);
+        next();
+    });
+}
 
 // ============================================
 // SUPABASE CLIENT
 // ============================================
 
 let supabase = null;
-const supabaseConfigured = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
+let supabaseConfigured = false;
 
-if (supabaseConfigured) {
-    supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_KEY,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false
-            }
+function initializeSupabase() {
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+        try {
+            const { createClient } = require('@supabase/supabase-js');
+            supabase = createClient(
+                process.env.SUPABASE_URL,
+                process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY,
+                {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false
+                    }
+                }
+            );
+            supabaseConfigured = true;
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize Supabase:', error.message);
+            return false;
         }
-    );
+    }
+    return false;
 }
 
 // Attach Supabase to requests
@@ -83,289 +127,255 @@ app.use((req, res, next) => {
 });
 
 // ============================================
-// AUTH MIDDLEWARE
+// SERVICES INITIALIZATION
 // ============================================
 
-const { authenticate, rateLimit } = require('./middleware/auth');
-
-// Apply authentication to all routes
-app.use(authenticate);
-
-// Rate limiting for chat endpoints
-app.use('/api/chat', rateLimit({ 
-    windowMs: 60000, 
-    max: 30,
-    message: 'Too many chat requests. Please wait a moment.'
-}));
-
-// ============================================
-// SERVICE STATUS
-// ============================================
-
-const services = {
-    anthropic: !!process.env.ANTHROPIC_API_KEY,
-    openai: !!process.env.OPENAI_API_KEY,
-    search: !!(process.env.BRAVE_SEARCH_API_KEY || process.env.TAVILY_API_KEY || process.env.SERPER_API_KEY),
-    voice: !!process.env.OPENAI_API_KEY,
-    supabase: supabaseConfigured
+// Service status tracking
+const serviceStatus = {
+    anthropic: false,
+    openai: false,
+    search: false,
+    voice: false,
+    supabase: false
 };
 
+// Initialize services
+function initializeServices() {
+    console.log('\n🚀 Initializing Insight 360 Services...\n');
+
+    // Initialize Anthropic (Claude)
+    if (process.env.ANTHROPIC_API_KEY) {
+        try {
+            const anthropicService = require('./services/anthropic');
+            if (typeof anthropicService.initialize === 'function') {
+                anthropicService.initialize(process.env.ANTHROPIC_API_KEY);
+            }
+            serviceStatus.anthropic = true;
+            console.log('  ✅ Claude (Anthropic) - Ready');
+        } catch (error) {
+            console.log('  ❌ Claude (Anthropic) - Failed:', error.message);
+        }
+    } else {
+        console.log('  ⚪ Claude (Anthropic) - No API key');
+    }
+
+    // Initialize OpenAI (GPT)
+    if (process.env.OPENAI_API_KEY) {
+        try {
+            const openaiService = require('./services/openai');
+            if (typeof openaiService.initialize === 'function') {
+                openaiService.initialize(process.env.OPENAI_API_KEY);
+            }
+            serviceStatus.openai = true;
+            serviceStatus.voice = true; // Voice uses OpenAI
+            console.log('  ✅ GPT (OpenAI) - Ready');
+            console.log('  ✅ Voice (OpenAI Audio) - Ready');
+        } catch (error) {
+            console.log('  ❌ GPT (OpenAI) - Failed:', error.message);
+        }
+    } else {
+        console.log('  ⚪ GPT (OpenAI) - No API key');
+    }
+
+    // Initialize Web Search
+    const searchApiKey = process.env.BRAVE_SEARCH_API_KEY || 
+                         process.env.TAVILY_API_KEY || 
+                         process.env.SERPER_API_KEY;
+    if (searchApiKey) {
+        try {
+            const searchService = require('./services/search');
+            if (typeof searchService.initialize === 'function') {
+                searchService.initialize({
+                    braveApiKey: process.env.BRAVE_SEARCH_API_KEY,
+                    tavilyApiKey: process.env.TAVILY_API_KEY,
+                    serperApiKey: process.env.SERPER_API_KEY
+                });
+            }
+            serviceStatus.search = true;
+            const provider = process.env.BRAVE_SEARCH_API_KEY ? 'Brave' :
+                            process.env.TAVILY_API_KEY ? 'Tavily' : 'Serper';
+            console.log(`  ✅ Web Search (${provider}) - Ready`);
+        } catch (error) {
+            console.log('  ❌ Web Search - Failed:', error.message);
+        }
+    } else {
+        console.log('  ⚪ Web Search - No API key');
+    }
+
+    // Initialize Supabase
+    if (initializeSupabase()) {
+        serviceStatus.supabase = true;
+        console.log('  ✅ Supabase (Database) - Ready');
+    } else {
+        console.log('  ⚪ Supabase - Not configured');
+    }
+
+    console.log('\n----------------------------------------\n');
+}
+
 // ============================================
-// ROUTES
+// AUTHENTICATION MIDDLEWARE (Optional)
 // ============================================
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        version: '2.1.1',
-        timestamp: new Date().toISOString(),
-        services
-    });
-});
+// Try to load auth middleware if it exists
+try {
+    const { authenticate, rateLimit } = require('./middleware/auth');
+    
+    // Apply authentication to API routes
+    app.use('/api', authenticate);
+    
+    // Rate limiting for chat endpoints
+    app.use('/api/chat', rateLimit({
+        windowMs: 60000, // 1 minute
+        max: 30, // 30 requests per minute
+        message: 'Too many chat requests. Please wait a moment.'
+    }));
+    
+    console.log('🔐 Authentication middleware loaded\n');
+} catch (error) {
+    // Auth middleware not available, continue without it
+    console.log('ℹ️  Auth middleware not loaded (optional)\n');
+}
 
-// Chat routes
+// ============================================
+// API ROUTES
+// ============================================
+
+// Health check route
+const healthRoutes = require('./routes/health');
+app.use('/api/health', healthRoutes);
+
+// Chat routes (multi-LLM, streaming, voice, search)
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
 
-// Conversation CRUD routes
-app.get('/api/conversations', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true, data: [] });
-    }
-    
-    try {
-        const userId = req.userId || req.headers['x-user-id'];
-        if (!userId) {
-            return res.json({ success: true, data: [] });
-        }
-        
-        const { data, error } = await supabase
-            .from('conversations')
-            .select('id, title, model, created_at, updated_at')
-            .eq('user_id', userId)
-            .eq('is_archived', false)
-            .order('updated_at', { ascending: false })
-            .limit(50);
-        
-        if (error) throw error;
-        res.json({ success: true, data: data || [] });
-    } catch (error) {
-        console.error('Failed to fetch conversations:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+// Conversation routes (if separate file exists)
+try {
+    const conversationRoutes = require('./routes/conversations');
+    app.use('/api/conversations', conversationRoutes);
+} catch (error) {
+    // Conversations handled by chat routes
+}
 
-app.post('/api/conversations', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true, data: { id: crypto.randomUUID() } });
-    }
-    
-    try {
-        const userId = req.userId || req.headers['x-user-id'];
-        const { title, model } = req.body;
-        
-        const { data, error } = await supabase
-            .from('conversations')
-            .insert({
-                user_id: userId,
-                title: title || 'New Conversation',
-                model: model || 'claude-sonnet-4-5-20250514'
-            })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json({ success: true, data });
-    } catch (error) {
-        console.error('Failed to create conversation:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+// Agent routes (Phase 3 - placeholder)
+try {
+    const agentRoutes = require('./routes/agents');
+    app.use('/api/agents', agentRoutes);
+} catch (error) {
+    // Agents not yet implemented
+}
 
-app.patch('/api/conversations/:id', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true });
-    }
-    
-    try {
-        const userId = req.userId || req.headers['x-user-id'];
-        const { id } = req.params;
-        const updates = req.body;
-        
-        const { data, error } = await supabase
-            .from('conversations')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', id)
-            .eq('user_id', userId)
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json({ success: true, data });
-    } catch (error) {
-        console.error('Failed to update conversation:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-app.delete('/api/conversations/:id', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true });
-    }
-    
-    try {
-        const userId = req.userId || req.headers['x-user-id'];
-        const { id } = req.params;
-        
-        // Delete messages first
-        await supabase
-            .from('messages')
-            .delete()
-            .eq('conversation_id', id);
-        
-        // Delete conversation
-        const { error } = await supabase
-            .from('conversations')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
-        
-        if (error) throw error;
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Failed to delete conversation:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Message routes
-app.get('/api/conversations/:id/messages', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true, data: [] });
-    }
-    
-    try {
-        const { id } = req.params;
-        
-        const { data, error } = await supabase
-            .from('messages')
-            .select('*')
-            .eq('conversation_id', id)
-            .order('created_at', { ascending: true });
-        
-        if (error) throw error;
-        res.json({ success: true, data: data || [] });
-    } catch (error) {
-        console.error('Failed to fetch messages:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-app.post('/api/conversations/:id/messages', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true, data: { id: crypto.randomUUID() } });
-    }
-    
-    try {
-        const { id } = req.params;
-        const { role, content, model, tokens_used } = req.body;
-        
-        const { data, error } = await supabase
-            .from('messages')
-            .insert({
-                conversation_id: id,
-                role,
-                content,
-                model,
-                tokens_used: tokens_used || 0
-            })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        
-        // Update conversation timestamp
-        await supabase
-            .from('conversations')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', id);
-        
-        res.json({ success: true, data });
-    } catch (error) {
-        console.error('Failed to save message:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Agents routes (basic for Phase 3)
-app.get('/api/agents', async (req, res) => {
-    if (!supabase) {
-        return res.json({ success: true, data: [] });
-    }
-    
-    try {
-        const userId = req.userId || req.headers['x-user-id'];
-        
-        const { data, error } = await supabase
-            .from('agents')
-            .select('*')
-            .or(`user_id.eq.${userId},is_public.eq.true`)
-            .eq('is_active', true)
-            .order('name');
-        
-        if (error) throw error;
-        res.json({ success: true, data: data || [] });
-    } catch (error) {
-        console.error('Failed to fetch agents:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+// Briefing routes (Phase 4 - placeholder)
+try {
+    const briefingRoutes = require('./routes/briefing');
+    app.use('/api/briefing', briefingRoutes);
+} catch (error) {
+    // Briefings not yet implemented
+}
 
 // ============================================
-// CATCH-ALL FOR SPA
+// FRONTEND ROUTES
 // ============================================
 
-app.get('*', (req, res) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ success: false, error: 'Not found' });
-    }
+// Serve index.html for root
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Serve chat.html
+app.get('/chat', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/chat.html'));
+});
+
+// Serve other pages
+app.get('/agents', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/agents.html'));
+});
+
+app.get('/briefing', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/briefing.html'));
 });
 
 // ============================================
 // ERROR HANDLING
 // ============================================
 
+// 404 handler
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        res.status(404).json({ 
+            success: false, 
+            error: 'API endpoint not found' 
+        });
+    } else {
+        // Serve index.html for unknown routes (SPA support)
+        res.sendFile(path.join(__dirname, '../public/index.html'));
+    }
+});
+
+// Global error handler
 app.use((err, req, res, next) => {
-    console.error('Server error:', err);
-    res.status(500).json({
+    console.error('Server Error:', err);
+    
+    const statusCode = err.statusCode || 500;
+    const message = process.env.NODE_ENV === 'production' 
+        ? 'An unexpected error occurred' 
+        : err.message;
+    
+    res.status(statusCode).json({
         success: false,
-        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+        error: message,
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
     });
 });
 
 // ============================================
-// START SERVER
+// SERVER STARTUP
 // ============================================
 
-app.listen(PORT, () => {
-    console.log(`
-═══════════════════════════════════════════════════════════
-               INSIGHT 360 - Phase 2.1.1
-═══════════════════════════════════════════════════════════
+function startServer() {
+    // Display banner
+    console.log('\n========================================');
+    console.log('         INSIGHT 360 v2.1.2');
+    console.log('      Values-Based AI Ecosystem');
+    console.log('========================================\n');
+    
+    // Initialize all services
+    initializeServices();
+    
+    // Start listening
+    app.listen(PORT, () => {
+        console.log(`🌐 Server running at http://localhost:${PORT}`);
+        console.log(`📊 Dashboard: http://localhost:${PORT}/`);
+        console.log(`💬 Chat: http://localhost:${PORT}/chat.html`);
+        console.log('\n========================================\n');
+    });
+}
 
-  Server running at http://localhost:${PORT}
-
-  Services:
-    • Anthropic Claude: ${services.anthropic ? '✓ Ready' : '✗ Not configured'}
-    • OpenAI GPT:       ${services.openai ? '✓ Ready' : '✗ Not configured'}
-    • Web Search:       ${services.search ? '✓ Ready' : '✗ Not configured'}
-    • Voice:            ${services.voice ? '✓ Ready' : '✗ Not configured'}
-    • Supabase:         ${services.supabase ? '✓ Ready' : '✗ Not configured'}
-
-═══════════════════════════════════════════════════════════
-`);
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
 });
 
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('\n👋 SIGTERM received. Shutting down gracefully...');
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('\n👋 SIGINT received. Shutting down gracefully...');
+    process.exit(0);
+});
+
+// Start the server
+startServer();
+
+// Export for testing
 module.exports = app;
