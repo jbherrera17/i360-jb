@@ -1,7 +1,7 @@
 /**
  * Chat Interface - Insight 360
  * Frontend JavaScript for multi-LLM chat
- * Version: 2.1.1 (Clean - Claude + OpenAI only)
+ * Version: 2.1.2 - Added loading indicator
  */
 
 // State
@@ -207,6 +207,46 @@ function updateModelIndicator() {
 }
 
 /**
+ * Show loading indicator
+ * @param {string} modelId - The model being used
+ */
+function showLoadingIndicator(modelId) {
+    if (!messagesContainer) return;
+    
+    // Remove any existing indicator
+    hideLoadingIndicator();
+    
+    const modelName = getModelDisplayName(modelId);
+    
+    const indicator = document.createElement('div');
+    indicator.id = 'loading-indicator';
+    indicator.className = 'loading-indicator';
+    indicator.innerHTML = `
+        <div class="message-avatar">🤖</div>
+        <div class="loading-content">
+            <div class="loading-received">Message received.</div>
+            <div class="loading-generating">
+                <span class="loading-text">${modelName} is generating a response</span>
+                <span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(indicator);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+/**
+ * Hide loading indicator
+ */
+function hideLoadingIndicator() {
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+/**
  * Send a message
  */
 async function sendMessage() {
@@ -233,6 +273,9 @@ async function sendMessage() {
         if (welcomeMsg) welcomeMsg.style.display = 'none';
     }
 
+    // Show loading indicator
+    showLoadingIndicator(model);
+
     // Create or get conversation
     if (!currentConversationId && window.supabaseDB) {
         const conversation = await window.supabaseDB.createConversation(
@@ -257,6 +300,7 @@ async function sendMessage() {
         await streamResponse(messages, model, useSearch);
     } catch (error) {
         console.error('Send message error:', error);
+        hideLoadingIndicator();
         addMessage('assistant', 'Sorry, an error occurred. Please try again.', [], model);
     }
 }
@@ -293,6 +337,9 @@ async function streamResponse(messages, model, useSearch) {
     const messageEl = document.getElementById(messageId);
     const contentEl = messageEl ? messageEl.querySelector('.message-content') : null;
 
+    // Track if we've hidden the loading indicator
+    let indicatorHidden = false;
+
     try {
         const endpoint = useSearch ? '/api/chat/with-search' : '/api/chat/stream';
         const response = await fetch(endpoint, {
@@ -326,6 +373,12 @@ async function streamResponse(messages, model, useSearch) {
                     try {
                         const parsed = JSON.parse(data);
                         if (parsed.type === 'content' && parsed.text) {
+                            // Hide loading indicator on first content chunk
+                            if (!indicatorHidden) {
+                                hideLoadingIndicator();
+                                indicatorHidden = true;
+                            }
+                            
                             fullContent += parsed.text;
                             if (contentEl) {
                                 contentEl.innerHTML = formatMessage(fullContent);
@@ -348,11 +401,13 @@ async function streamResponse(messages, model, useSearch) {
 
     } catch (error) {
         console.error('Stream error:', error);
+        hideLoadingIndicator();
         if (contentEl) {
             contentEl.textContent = 'Error: ' + error.message;
         }
     } finally {
         isStreaming = false;
+        hideLoadingIndicator(); // Safety net
         if (sendBtn) sendBtn.disabled = false;
         if (messageEl) messageEl.classList.remove('streaming');
     }
@@ -442,9 +497,9 @@ function formatMessage(content) {
  */
 function getModelDisplayName(modelId) {
     const modelNames = {
-        'claude-opus-4-5-20250514': 'Claude Opus 4.5',
-        'claude-sonnet-4-5-20250514': 'Claude Sonnet 4.5',
-        'claude-haiku-4-5-20250514': 'Claude Haiku 4.5',
+        'claude-opus-4-5-20251101': 'Claude Opus 4.5',
+        'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+        'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
         'claude-opus-4-20250514': 'Claude Opus 4',
         'claude-sonnet-4-20250514': 'Claude Sonnet 4',
         'gpt-4.1': 'GPT-4.1',
@@ -769,10 +824,14 @@ async function regenerateResponse() {
     const model = modelSelect ? modelSelect.value : 'claude-sonnet-4-5-20250514';
     const useSearch = webSearchToggle ? webSearchToggle.checked : false;
     
+    // Show loading indicator for regeneration
+    showLoadingIndicator(model);
+    
     try {
         await streamResponse(currentMessages, model, useSearch);
     } catch (error) {
         console.error('Regenerate error:', error);
+        hideLoadingIndicator();
     }
 }
 
