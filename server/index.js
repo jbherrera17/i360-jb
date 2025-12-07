@@ -1,6 +1,6 @@
 /**
  * Insight 360 - Express Server
- * Phase 2.1 - With authentication and conversation persistence
+ * Phase 2.1.1 - Claude + OpenAI (Perplexity removed)
  */
 
 require('dotenv').config();
@@ -118,7 +118,7 @@ const services = {
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
-        version: '2.1.0',
+        version: '2.1.1',
         timestamp: new Date().toISOString(),
         services
     });
@@ -170,7 +170,7 @@ app.post('/api/conversations', async (req, res) => {
             .insert({
                 user_id: userId,
                 title: title || 'New Conversation',
-                model: model || 'claude-sonnet-4-5-20250929'
+                model: model || 'claude-sonnet-4-5-20250514'
             })
             .select()
             .single();
@@ -352,7 +352,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`
 ═══════════════════════════════════════════════════════════
-               INSIGHT 360 - Phase 2.1
+               INSIGHT 360 - Phase 2.1.1
 ═══════════════════════════════════════════════════════════
 
   Server running at http://localhost:${PORT}

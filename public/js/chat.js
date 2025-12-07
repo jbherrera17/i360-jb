@@ -1,855 +1,793 @@
 /**
- * Insight 360 - Chat Interface JavaScript
- * Phase 2.1 - With conversation persistence
+ * Chat Interface - Insight 360
+ * Frontend JavaScript for multi-LLM chat
+ * Version: 2.1.1 (Clean - Claude + OpenAI only)
  */
 
 // State
-let currentModel = 'claude-sonnet-4-5-20250929';
 let currentConversationId = null;
-let conversationHistory = [];
-let attachedFiles = [];
 let isStreaming = false;
 let mediaRecorder = null;
 let audioChunks = [];
 
-// DOM Elements
-const chatMessages = document.getElementById('chatMessages');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
-const modelSelect = document.getElementById('modelSelect');
-const modelIndicator = document.getElementById('modelIndicator');
-const enableSearch = document.getElementById('enableSearch');
-const enableVoice = document.getElementById('enableVoice');
-const fileInput = document.getElementById('fileInput');
-const filePreview = document.getElementById('filePreview');
-const voiceInputBtn = document.getElementById('voiceInputBtn');
-const voiceModal = document.getElementById('voiceModal');
-const voicePlayback = document.getElementById('voicePlayback');
-const statusText = document.getElementById('statusText');
-const claudeModels = document.getElementById('claudeModels');
-const gptModels = document.getElementById('gptModels');
+// DOM Elements - will be initialized after DOM loads
+let messageInput, sendBtn, messagesContainer, modelSelect, currentModelBadge;
+let newChatBtn, conversationList, webSearchToggle, streamToggle;
+let attachBtn, fileInput, attachmentArea, attachmentPreview, voiceBtn;
+
+// Attached files storage
+let attachedFiles = [];
 
 // Initialize
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadModels();
+document.addEventListener('DOMContentLoaded', () => {
+    initializeDOMElements();
+    initializeChat();
     setupEventListeners();
-    lucide.createIcons();
+    loadConversations();
+    populateModelSelect();
     
-    // Load conversations after supabase.js initializes
-    setTimeout(() => {
-        if (window.supabaseDB) {
-            window.supabaseDB.renderConversationList();
-        }
-    }, 500);
+    // Initialize Lucide icons
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 });
 
-// Load available models from server
-async function loadModels() {
+/**
+ * Initialize DOM element references
+ */
+function initializeDOMElements() {
+    messageInput = document.getElementById('chatInput');
+    sendBtn = document.getElementById('sendBtn');
+    messagesContainer = document.getElementById('chatMessages');
+    modelSelect = document.getElementById('modelSelect');
+    currentModelBadge = document.getElementById('modelIndicator');
+    newChatBtn = document.getElementById('newChatBtn');
+    conversationList = document.getElementById('conversationList');
+    webSearchToggle = document.getElementById('enableSearch');
+    streamToggle = document.getElementById('enableStream');
+    attachBtn = document.getElementById('attachBtn');
+    fileInput = document.getElementById('fileInput');
+    attachmentArea = document.getElementById('filePreview');
+    attachmentPreview = document.getElementById('filePreview');
+    voiceBtn = document.getElementById('voiceInputBtn');
+}
+
+/**
+ * Initialize chat interface
+ */
+function initializeChat() {
+    // Auto-resize textarea
+    if (messageInput) {
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+        });
+    }
+}
+
+/**
+ * Set up event listeners
+ */
+function setupEventListeners() {
+    // Send message
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendMessage);
+    }
+    
+    if (messageInput) {
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    // Model selection
+    if (modelSelect) {
+        modelSelect.addEventListener('change', updateModelIndicator);
+    }
+
+    // File attachment
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    // Voice input
+    if (voiceBtn) {
+        voiceBtn.addEventListener('click', toggleVoiceInput);
+    }
+    
+    // Show voice button if voice is enabled
+    const voiceToggle = document.getElementById('enableVoice');
+    if (voiceToggle && voiceBtn) {
+        voiceToggle.addEventListener('change', () => {
+            voiceBtn.classList.toggle('hidden', !voiceToggle.checked);
+        });
+    }
+}
+
+/**
+ * Populate model selector from API
+ */
+async function populateModelSelect() {
     try {
         const response = await fetch('/api/chat/models');
         const data = await response.json();
         
         if (data.success) {
-            populateModelSelect(data.data);
+            const claudeModels = document.getElementById('claudeModels');
+            const gptModels = document.getElementById('gptModels');
             
-            // Update voice button visibility
-            if (data.data.voiceEnabled) {
-                voiceInputBtn?.classList.remove('hidden');
-                voicePlayback?.classList.remove('hidden');
+            // Clear existing options
+            if (claudeModels) claudeModels.innerHTML = '';
+            if (gptModels) gptModels.innerHTML = '';
+            
+            // Add Claude models if available
+            if (data.models?.anthropic?.length > 0 && claudeModels) {
+                data.models.anthropic.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    if (model.id === data.default) option.selected = true;
+                    claudeModels.appendChild(option);
+                });
             }
             
-            // Enable search checkbox if available
-            if (!data.data.searchEnabled && enableSearch) {
-                enableSearch.disabled = true;
-                enableSearch.parentElement.title = 'Web search not configured';
+            // Add OpenAI models if available
+            if (data.models?.openai?.length > 0 && gptModels) {
+                data.models.openai.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    gptModels.appendChild(option);
+                });
             }
+            
+            // If no models are available, show an error
+            if (modelSelect) {
+                const hasModels = (claudeModels && claudeModels.children.length > 0) || 
+                                (gptModels && gptModels.children.length > 0);
+                
+                if (!hasModels) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models available. Check API keys.';
+                    option.disabled = true;
+                    option.selected = true;
+                    modelSelect.appendChild(option);
+                    if (sendBtn) sendBtn.disabled = true;
+                }
+            }
+            
+            updateModelIndicator();
         }
     } catch (error) {
         console.error('Failed to load models:', error);
-        addDefaultModels();
+        if (modelSelect) {
+            modelSelect.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading models';
+            option.disabled = true;
+            option.selected = true;
+            modelSelect.appendChild(option);
+            if (sendBtn) sendBtn.disabled = true;
+        }
     }
 }
 
-// Populate model select dropdown
-function populateModelSelect(data) {
-    if (!claudeModels || !gptModels) return;
-    
-    claudeModels.innerHTML = '';
-    gptModels.innerHTML = '';
-    
-    // Add Claude models
-    if (data.grouped?.anthropic) {
-        const tiers = ['opus', 'sonnet', 'haiku'];
-        for (const tier of tiers) {
-            const models = data.grouped.anthropic[tier] || [];
-            for (const model of models) {
-                const option = document.createElement('option');
-                option.value = model.id;
-                option.textContent = model.name;
-                if (model.default) {
-                    option.selected = true;
-                    currentModel = model.id;
-                }
-                claudeModels.appendChild(option);
-            }
-        }
-    }
-    
-    // Add GPT models
-    if (data.grouped?.openai) {
-        const tiers = ['flagship', 'efficient', 'reasoning', 'audio', 'fast', 'legacy'];
-        for (const tier of tiers) {
-            const models = data.grouped.openai[tier] || [];
-            for (const model of models) {
-                const option = document.createElement('option');
-                option.value = model.id;
-                option.textContent = model.name;
-                gptModels.appendChild(option);
-            }
-        }
-    }
-    
-    updateModelIndicator();
-}
-
-// Add default models if API fails
-function addDefaultModels() {
-    if (!claudeModels || !gptModels) return;
-    
-    const defaultClaude = [
-        { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5' },
-        { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5' },
-        { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5' }
-    ];
-    
-    const defaultGPT = [
-        { id: 'gpt-4.1', name: 'GPT-4.1' },
-        { id: 'gpt-4o', name: 'GPT-4o' },
-        { id: 'gpt-4o-mini', name: 'GPT-4o Mini' }
-    ];
-    
-    for (const model of defaultClaude) {
-        const option = document.createElement('option');
-        option.value = model.id;
-        option.textContent = model.name;
-        if (model.id === 'claude-sonnet-4-5-20250929') option.selected = true;
-        claudeModels.appendChild(option);
-    }
-    
-    for (const model of defaultGPT) {
-        const option = document.createElement('option');
-        option.value = model.id;
-        option.textContent = model.name;
-        gptModels.appendChild(option);
-    }
-}
-
-// Setup event listeners
-function setupEventListeners() {
-    // Send button
-    sendBtn?.addEventListener('click', sendMessage);
-    
-    // Enter to send (Shift+Enter for newline)
-    chatInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    
-    // Auto-resize textarea
-    chatInput?.addEventListener('input', () => {
-        chatInput.style.height = 'auto';
-        chatInput.style.height = Math.min(chatInput.scrollHeight, 200) + 'px';
-    });
-    
-    // Model change
-    modelSelect?.addEventListener('change', (e) => {
-        currentModel = e.target.value;
-        updateModelIndicator();
-        
-        // Update conversation model if we have one
-        if (currentConversationId && window.supabaseDB) {
-            window.supabaseDB.updateConversation(currentConversationId, { model: currentModel });
-        }
-    });
-    
-    // File input
-    fileInput?.addEventListener('change', handleFileSelect);
-    
-    // Voice toggle
-    enableVoice?.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            voiceInputBtn?.classList.remove('hidden');
-            voicePlayback?.classList.remove('hidden');
-        } else {
-            voiceInputBtn?.classList.add('hidden');
-            voicePlayback?.classList.add('hidden');
-        }
-    });
-    
-    // Voice input button
-    voiceInputBtn?.addEventListener('click', startVoiceRecording);
-    
-    // Stop recording
-    document.getElementById('stopRecording')?.addEventListener('click', stopVoiceRecording);
-    document.getElementById('cancelRecording')?.addEventListener('click', cancelVoiceRecording);
-    
-    // Play response
-    document.getElementById('playResponseBtn')?.addEventListener('click', playLastResponse);
-}
-
-// Update model indicator badge
+/**
+ * Update the model indicator badge
+ */
 function updateModelIndicator() {
-    if (!modelSelect || !modelIndicator) return;
+    if (!modelSelect) return;
     
     const selectedOption = modelSelect.options[modelSelect.selectedIndex];
-    if (selectedOption) {
-        modelIndicator.textContent = selectedOption.textContent;
+    if (!selectedOption || !selectedOption.value) {
+        if (currentModelBadge) {
+            currentModelBadge.textContent = 'No model selected';
+            currentModelBadge.className = 'model-badge';
+        }
+        return;
+    }
+    
+    const modelId = selectedOption.value;
+    
+    if (currentModelBadge) {
+        currentModelBadge.textContent = selectedOption.textContent;
+        currentModelBadge.className = 'model-badge';
         
-        modelIndicator.className = 'model-badge';
-        if (currentModel.includes('claude')) {
-            modelIndicator.classList.add('model-claude');
-        } else if (currentModel.includes('gpt') || currentModel.includes('o3') || currentModel.includes('o4')) {
-            modelIndicator.classList.add('model-gpt');
+        if (modelId.startsWith('claude')) {
+            currentModelBadge.classList.add('model-claude');
+        } else if (modelId.startsWith('gpt') || modelId.startsWith('o3') || modelId.startsWith('o4')) {
+            currentModelBadge.classList.add('model-gpt');
         }
     }
 }
 
-// Send message
+/**
+ * Send a message
+ */
 async function sendMessage() {
-    const message = chatInput?.value.trim();
-    if (!message && attachedFiles.length === 0) return;
+    if (!messageInput) return;
+    
+    const content = messageInput.value.trim();
+    if (!content && attachedFiles.length === 0) return;
     if (isStreaming) return;
-    
-    // Hide welcome message
-    const welcomeMsg = document.querySelector('.welcome-message');
-    if (welcomeMsg) welcomeMsg.remove();
-    
-    // Create conversation if needed
-    if (!currentConversationId && window.supabaseDB) {
-        const title = window.supabaseDB.generateTitle(message);
-        const conv = await window.supabaseDB.createConversation(title, currentModel);
-        currentConversationId = conv.id;
-        window.supabaseDB.renderConversationList();
-    }
-    
+
+    const model = modelSelect ? modelSelect.value : 'claude-sonnet-4-5-20250514';
+    const useSearch = webSearchToggle ? webSearchToggle.checked : false;
+
     // Add user message to UI
-    addMessageToUI('user', message, attachedFiles);
-    
+    addMessage('user', content, attachedFiles);
+
+    // Clear input
+    messageInput.value = '';
+    messageInput.style.height = 'auto';
+    clearAttachments();
+
+    // Hide welcome message
+    if (messagesContainer) {
+        const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+        if (welcomeMsg) welcomeMsg.style.display = 'none';
+    }
+
+    // Create or get conversation
+    if (!currentConversationId && window.supabaseDB) {
+        const conversation = await window.supabaseDB.createConversation(
+            content.substring(0, 50) + (content.length > 50 ? '...' : ''),
+            model
+        );
+        if (conversation) {
+            currentConversationId = conversation.id;
+            loadConversations();
+        }
+    }
+
     // Save user message to database
     if (currentConversationId && window.supabaseDB) {
-        await window.supabaseDB.saveMessage(currentConversationId, 'user', message);
+        await window.supabaseDB.saveMessage(currentConversationId, 'user', content, null);
     }
-    
-    // Clear input
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-    
-    // Prepare form data
-    const formData = new FormData();
-    formData.append('message', message);
-    formData.append('model', currentModel);
-    formData.append('enableSearch', enableSearch?.checked || false);
-    formData.append('history', JSON.stringify(conversationHistory));
-    
-    // Attach files
-    for (const file of attachedFiles) {
-        formData.append('files', file);
-    }
-    
-    // Clear attached files
-    clearFilePreview();
-    
-    // Add to history
-    conversationHistory.push({ role: 'user', content: message });
-    
-    // Create assistant message placeholder
-    const assistantDiv = createMessageElement('assistant', '', true);
-    chatMessages?.appendChild(assistantDiv);
-    scrollToBottom();
-    
-    // Stream response
-    isStreaming = true;
-    if (statusText) statusText.textContent = 'Generating...';
-    if (sendBtn) sendBtn.disabled = true;
-    
+
+    // Prepare messages for API
+    const messages = getConversationMessages();
+
     try {
-        const response = await fetch('/api/chat/stream', {
+        await streamResponse(messages, model, useSearch);
+    } catch (error) {
+        console.error('Send message error:', error);
+        addMessage('assistant', 'Sorry, an error occurred. Please try again.', [], model);
+    }
+}
+
+/**
+ * Get conversation messages from UI
+ */
+function getConversationMessages() {
+    const messages = [];
+    if (!messagesContainer) return messages;
+    
+    const messageElements = messagesContainer.querySelectorAll('.message');
+    
+    messageElements.forEach(el => {
+        const role = el.classList.contains('user-message') ? 'user' : 'assistant';
+        const content = el.querySelector('.message-content')?.textContent || '';
+        if (content) {
+            messages.push({ role, content });
+        }
+    });
+    
+    return messages;
+}
+
+/**
+ * Stream response from API
+ */
+async function streamResponse(messages, model, useSearch) {
+    isStreaming = true;
+    if (sendBtn) sendBtn.disabled = true;
+
+    // Add placeholder for assistant message
+    const messageId = addMessage('assistant', '', [], model, true);
+    const messageEl = document.getElementById(messageId);
+    const contentEl = messageEl ? messageEl.querySelector('.message-content') : null;
+
+    try {
+        const endpoint = useSearch ? '/api/chat/with-search' : '/api/chat/stream';
+        const response = await fetch(endpoint, {
             method: 'POST',
-            body: formData
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages,
+                model,
+                searchQuery: useSearch ? messages[messages.length - 1]?.content : undefined
+            })
         });
-        
+
+        if (!response.ok) throw new Error('Stream request failed');
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullContent = '';
-        let tokensUsed = 0;
-        
+
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            
+
             const chunk = decoder.decode(value);
             const lines = chunk.split('\n');
-            
+
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+
                     try {
-                        const data = JSON.parse(line.slice(6));
-                        
-                        if (data.type === 'text') {
-                            fullContent += data.content;
-                            updateAssistantMessage(assistantDiv, fullContent);
-                        } else if (data.type === 'search_start') {
-                            if (statusText) statusText.textContent = 'Searching...';
-                            showSearchIndicator(assistantDiv);
-                        } else if (data.type === 'search_query') {
-                            updateSearchIndicator(assistantDiv, data.query);
-                        } else if (data.type === 'search_complete') {
-                            hideSearchIndicator(assistantDiv);
-                            if (statusText) statusText.textContent = 'Generating...';
-                        } else if (data.type === 'done') {
-                            tokensUsed = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
-                            const tokenCountEl = document.getElementById('tokenCount');
-                            if (tokenCountEl) {
-                                tokenCountEl.textContent = `${tokensUsed} tokens`;
-                                tokenCountEl.classList.remove('hidden');
+                        const parsed = JSON.parse(data);
+                        if (parsed.type === 'content' && parsed.text) {
+                            fullContent += parsed.text;
+                            if (contentEl) {
+                                contentEl.innerHTML = formatMessage(fullContent);
                             }
-                        } else if (data.type === 'error') {
-                            showError(assistantDiv, data.error);
+                            if (messagesContainer) {
+                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            }
                         }
                     } catch (e) {
-                        // Ignore parse errors
+                        // Ignore parse errors for incomplete chunks
                     }
                 }
             }
         }
-        
-        // Add to history
-        if (fullContent) {
-            conversationHistory.push({ role: 'assistant', content: fullContent });
-            
-            // Save assistant message to database
-            if (currentConversationId && window.supabaseDB) {
-                await window.supabaseDB.saveMessage(
-                    currentConversationId, 
-                    'assistant', 
-                    fullContent, 
-                    currentModel,
-                    tokensUsed
-                );
-            }
+
+        // Save assistant message
+        if (currentConversationId && window.supabaseDB && fullContent) {
+            await window.supabaseDB.saveMessage(currentConversationId, 'assistant', fullContent, model);
         }
-        
-        // Finalize message
-        finalizeAssistantMessage(assistantDiv, fullContent);
-        
+
     } catch (error) {
         console.error('Stream error:', error);
-        showError(assistantDiv, error.message);
-    }
-    
-    isStreaming = false;
-    if (statusText) statusText.textContent = 'Ready';
-    if (sendBtn) sendBtn.disabled = false;
-    scrollToBottom();
-}
-
-// Add message to UI
-function addMessageToUI(role, content, files = []) {
-    const div = createMessageElement(role, content);
-    
-    // Add file previews if any
-    if (files.length > 0) {
-        const filesDiv = document.createElement('div');
-        filesDiv.className = 'message-files';
-        
-        for (const file of files) {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'message-file';
-            
-            if (file.type.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.alt = file.name;
-                fileItem.appendChild(img);
-            } else {
-                fileItem.innerHTML = `
-                    <i data-lucide="file-text"></i>
-                    <span>${file.name}</span>
-                `;
-            }
-            
-            filesDiv.appendChild(fileItem);
+        if (contentEl) {
+            contentEl.textContent = 'Error: ' + error.message;
         }
-        
-        div.querySelector('.message-content')?.appendChild(filesDiv);
+    } finally {
+        isStreaming = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (messageEl) messageEl.classList.remove('streaming');
     }
-    
-    chatMessages?.appendChild(div);
-    lucide.createIcons();
-    scrollToBottom();
 }
 
-// Create message element
-function createMessageElement(role, content, isStreaming = false) {
-    const div = document.createElement('div');
-    div.className = `message message-${role}`;
-    
-    const icon = role === 'user' ? 'user' : 'bot';
-    const label = role === 'user' ? 'You' : getModelName();
-    
-    div.innerHTML = `
-        <div class="message-avatar">
-            <i data-lucide="${icon}"></i>
-        </div>
+/**
+ * Add a message to the chat UI
+ */
+function addMessage(role, content, files = [], model = null, streaming = false) {
+    const messageId = 'msg-' + Date.now();
+    const messageEl = document.createElement('div');
+    messageEl.id = messageId;
+    messageEl.className = `message ${role}-message${streaming ? ' streaming' : ''}`;
+
+    const avatar = role === 'user' ? '👤' : '🤖';
+    const modelBadge = model ? `<span class="message-model">${getModelDisplayName(model)}</span>` : '';
+
+    messageEl.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
         <div class="message-body">
             <div class="message-header">
-                <span class="message-sender">${label}</span>
-                ${role === 'assistant' ? `<span class="message-model">${getModelName()}</span>` : ''}
+                <span class="message-role">${role === 'user' ? 'You' : 'Assistant'}</span>
+                ${modelBadge}
+                <span class="message-time">${formatTime(new Date())}</span>
             </div>
-            <div class="message-content ${isStreaming ? 'streaming' : ''}">
-                ${isStreaming ? '<span class="cursor"></span>' : formatContent(content)}
+            <div class="message-content">${formatMessage(content)}</div>
+            ${files.length > 0 ? renderAttachments(files) : ''}
+            <div class="message-actions">
+                <button class="action-btn" onclick="copyToClipboard('${messageId}')" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+                ${role === 'assistant' ? `
+                <button class="action-btn" onclick="regenerateResponse()" title="Regenerate">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
+                ` : ''}
             </div>
         </div>
     `;
-    
-    return div;
-}
 
-// Update assistant message during streaming
-function updateAssistantMessage(div, content) {
-    const contentDiv = div.querySelector('.message-content');
-    if (contentDiv) {
-        contentDiv.innerHTML = formatContent(content) + '<span class="cursor"></span>';
+    if (messagesContainer) {
+        messagesContainer.appendChild(messageEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-    scrollToBottom();
+
+    return messageId;
 }
 
-// Finalize assistant message
-function finalizeAssistantMessage(div, content) {
-    const contentDiv = div.querySelector('.message-content');
-    if (contentDiv) {
-        contentDiv.classList.remove('streaming');
-        contentDiv.innerHTML = formatContent(content);
-    }
-    
-    // Add action buttons
-    const actionsDiv = document.createElement('div');
-    actionsDiv.className = 'message-actions';
-    actionsDiv.innerHTML = `
-        <button class="btn-icon" onclick="copyToClipboard(\`${escapeForAttribute(content)}\`)" title="Copy">
-            <i data-lucide="copy"></i>
-        </button>
-        <button class="btn-icon" onclick="regenerateResponse()" title="Regenerate">
-            <i data-lucide="refresh-cw"></i>
-        </button>
-    `;
-    div.querySelector('.message-body')?.appendChild(actionsDiv);
-    
-    lucide.createIcons();
-}
-
-// Format content (basic markdown)
-function formatContent(content) {
+/**
+ * Format message content (basic markdown)
+ */
+function formatMessage(content) {
     if (!content) return '';
     
     // Escape HTML
-    let html = content
+    let formatted = content
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
     
     // Code blocks
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-        return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
-    });
+    formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
     
     // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
     
     // Bold
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
     // Italic
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     
     // Line breaks
-    html = html.replace(/\n/g, '<br>');
+    formatted = formatted.replace(/\n/g, '<br>');
     
-    return html;
+    return formatted;
 }
 
-// Escape content for use in attribute
-function escapeForAttribute(str) {
-    return str.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+/**
+ * Get display name for model
+ */
+function getModelDisplayName(modelId) {
+    const modelNames = {
+        'claude-opus-4-5-20250514': 'Claude Opus 4.5',
+        'claude-sonnet-4-5-20250514': 'Claude Sonnet 4.5',
+        'claude-haiku-4-5-20250514': 'Claude Haiku 4.5',
+        'claude-opus-4-20250514': 'Claude Opus 4',
+        'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+        'gpt-4.1': 'GPT-4.1',
+        'gpt-4.1-mini': 'GPT-4.1 Mini',
+        'gpt-4.1-nano': 'GPT-4.1 Nano',
+        'gpt-4o': 'GPT-4o',
+        'gpt-4o-mini': 'GPT-4o Mini',
+        'o3': 'o3',
+        'o4-mini': 'o4-mini',
+        'o3-mini': 'o3-mini'
+    };
+    return modelNames[modelId] || modelId;
 }
 
-// Show search indicator
-function showSearchIndicator(div) {
-    const indicator = document.createElement('div');
-    indicator.className = 'search-indicator';
-    indicator.innerHTML = `
-        <div class="search-spinner"></div>
-        <span>Searching the web...</span>
-    `;
-    div.querySelector('.message-content')?.prepend(indicator);
+/**
+ * Format time
+ */
+function formatTime(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// Update search indicator
-function updateSearchIndicator(div, query) {
-    const indicator = div.querySelector('.search-indicator span');
-    if (indicator) {
-        indicator.textContent = `Searching: "${query}"`;
-    }
-}
-
-// Hide search indicator
-function hideSearchIndicator(div) {
-    const indicator = div.querySelector('.search-indicator');
-    if (indicator) indicator.remove();
-}
-
-// Show error
-function showError(div, error) {
-    const contentDiv = div.querySelector('.message-content');
-    if (contentDiv) {
-        contentDiv.classList.remove('streaming');
-        contentDiv.innerHTML = `
-            <div class="error-message">
-                <i data-lucide="alert-circle"></i>
-                <span>Error: ${error}</span>
-                <button class="btn-secondary btn-sm" onclick="retryLastMessage()">Retry</button>
-            </div>
-        `;
-    }
-    lucide.createIcons();
-}
-
-// Get current model display name
-function getModelName() {
-    if (!modelSelect) return 'AI';
-    const option = modelSelect.options[modelSelect.selectedIndex];
-    return option ? option.textContent : 'AI';
-}
-
-// Handle file selection
-function handleFileSelect(e) {
-    const files = Array.from(e.target.files);
-    
-    for (const file of files) {
-        if (file.size > 20 * 1024 * 1024) {
-            alert(`File ${file.name} is too large. Maximum size is 20MB.`);
-            continue;
+/**
+ * Handle file selection
+ */
+function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+            return;
         }
-        
         attachedFiles.push(file);
-        addFileToPreview(file);
-    }
-    
-    e.target.value = '';
+    });
+    renderAttachmentPreview();
+    if (fileInput) fileInput.value = '';
 }
 
-// Add file to preview
-function addFileToPreview(file) {
-    if (!filePreview) return;
-    filePreview.classList.remove('hidden');
+/**
+ * Render attachment preview
+ */
+function renderAttachmentPreview() {
+    if (!attachmentArea || !attachmentPreview) return;
     
-    const item = document.createElement('div');
-    item.className = 'file-preview-item';
-    
-    if (file.type.startsWith('image/')) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        item.appendChild(img);
-    } else {
-        item.innerHTML = `
-            <i data-lucide="file-text"></i>
-            <span>${file.name}</span>
-        `;
+    if (attachedFiles.length === 0) {
+        attachmentArea.classList.add('hidden');
+        return;
     }
-    
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'file-remove-btn';
-    removeBtn.innerHTML = '<i data-lucide="x"></i>';
-    removeBtn.onclick = () => removeFile(file, item);
-    item.appendChild(removeBtn);
-    
-    filePreview.appendChild(item);
-    lucide.createIcons();
+
+    attachmentArea.classList.remove('hidden');
+    attachmentPreview.innerHTML = attachedFiles.map((file, index) => `
+        <div class="attachment-item">
+            <span class="attachment-name">${file.name}</span>
+            <button class="attachment-remove" onclick="removeAttachment(${index})">×</button>
+        </div>
+    `).join('');
 }
 
-// Remove file
-function removeFile(file, item) {
-    attachedFiles = attachedFiles.filter(f => f !== file);
-    item.remove();
-    
-    if (attachedFiles.length === 0 && filePreview) {
-        filePreview.classList.add('hidden');
-    }
+/**
+ * Remove attachment
+ */
+function removeAttachment(index) {
+    attachedFiles.splice(index, 1);
+    renderAttachmentPreview();
 }
 
-// Clear file preview
-function clearFilePreview() {
+/**
+ * Clear all attachments
+ */
+function clearAttachments() {
     attachedFiles = [];
-    if (filePreview) {
-        filePreview.innerHTML = '';
-        filePreview.classList.add('hidden');
+    if (attachmentArea) {
+        attachmentArea.classList.add('hidden');
+    }
+    if (attachmentPreview) {
+        attachmentPreview.innerHTML = '';
     }
 }
 
-// Voice recording
-async function startVoiceRecording() {
+/**
+ * Render attachments in message
+ */
+function renderAttachments(files) {
+    if (!files || files.length === 0) return '';
+    return `
+        <div class="message-attachments">
+            ${files.map(f => `<span class="attachment-badge">${f.name || f}</span>`).join('')}
+        </div>
+    `;
+}
+
+/**
+ * Toggle voice input
+ */
+async function toggleVoiceInput() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        if (voiceBtn) voiceBtn.classList.remove('recording');
+        return;
+    }
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
-        
+
         mediaRecorder.ondataavailable = (e) => {
             audioChunks.push(e.data);
         };
-        
+
         mediaRecorder.onstop = async () => {
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            await transcribeAudio(audioBlob);
             stream.getTracks().forEach(track => track.stop());
+            
+            // Send to speech-to-text API
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+
+            try {
+                const response = await fetch('/api/chat/voice/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success && data.text && messageInput) {
+                    messageInput.value = data.text;
+                    messageInput.dispatchEvent(new Event('input'));
+                }
+            } catch (error) {
+                console.error('Transcription error:', error);
+            }
         };
-        
+
         mediaRecorder.start();
-        voiceModal?.classList.remove('hidden');
-        const voiceStatus = document.getElementById('voiceStatus');
-        if (voiceStatus) voiceStatus.textContent = 'Listening...';
-        
+        if (voiceBtn) voiceBtn.classList.add('recording');
+
     } catch (error) {
-        console.error('Voice recording error:', error);
+        console.error('Voice input error:', error);
         alert('Could not access microphone. Please check permissions.');
     }
 }
 
-// Stop voice recording
-function stopVoiceRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        const voiceStatus = document.getElementById('voiceStatus');
-        if (voiceStatus) voiceStatus.textContent = 'Transcribing...';
-        mediaRecorder.stop();
+/**
+ * Load conversations from database
+ */
+async function loadConversations() {
+    if (!window.supabaseDB) return;
+    
+    const conversations = await window.supabaseDB.loadConversations();
+    renderConversationList(conversations);
+}
+
+/**
+ * Render conversation list
+ */
+function renderConversationList(conversations) {
+    if (!conversationList) return;
+    
+    if (!conversations || conversations.length === 0) {
+        conversationList.innerHTML = '<div class="empty-conversations"><p>No conversations yet</p></div>';
+        return;
+    }
+
+    conversationList.innerHTML = conversations.map(conv => `
+        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
+             onclick="switchConversation('${conv.id}')">
+            <div class="conversation-title">${conv.title || 'Untitled'}</div>
+            <div class="conversation-meta">
+                <span class="conversation-model">${getModelDisplayName(conv.model)}</span>
+                <span class="conversation-date">${formatDate(conv.updated_at)}</span>
+            </div>
+            <button class="conversation-delete" onclick="event.stopPropagation(); confirmDeleteConversation('${conv.id}')" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+/**
+ * Format date for display
+ */
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 86400000) { // Less than 24 hours
+        return formatTime(date);
+    } else if (diff < 604800000) { // Less than 7 days
+        return date.toLocaleDateString([], { weekday: 'short' });
+    } else {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 }
 
-// Cancel voice recording
-function cancelVoiceRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        audioChunks = [];
-    }
-    voiceModal?.classList.add('hidden');
-}
-
-// Transcribe audio
-async function transcribeAudio(audioBlob) {
-    try {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-        
-        const response = await fetch('/api/chat/voice/transcribe', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && chatInput) {
-            chatInput.value = data.data.text;
-            chatInput.focus();
-        } else {
-            alert('Transcription failed: ' + data.error);
-        }
-        
-    } catch (error) {
-        console.error('Transcription error:', error);
-        alert('Transcription failed. Please try again.');
-    }
-    
-    voiceModal?.classList.add('hidden');
-}
-
-// Play last response
-async function playLastResponse() {
-    const lastAssistant = conversationHistory.filter(m => m.role === 'assistant').pop();
-    if (!lastAssistant) return;
-    
-    const voiceSelect = document.getElementById('voiceSelect');
-    const voice = voiceSelect?.value || 'nova';
-    
-    try {
-        if (statusText) statusText.textContent = 'Generating speech...';
-        
-        const response = await fetch('/api/chat/voice/speak', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: lastAssistant.content,
-                voice
-            })
-        });
-        
-        if (response.ok) {
-            const audioBlob = await response.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            
-            audio.onended = () => {
-                URL.revokeObjectURL(audioUrl);
-                if (statusText) statusText.textContent = 'Ready';
-            };
-            
-            audio.play();
-            if (statusText) statusText.textContent = 'Playing...';
-        } else {
-            const error = await response.json();
-            alert('Speech generation failed: ' + error.error);
-            if (statusText) statusText.textContent = 'Ready';
-        }
-        
-    } catch (error) {
-        console.error('TTS error:', error);
-        alert('Speech generation failed.');
-        if (statusText) statusText.textContent = 'Ready';
-    }
-}
-
-// Copy to clipboard
-async function copyToClipboard(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        // Brief visual feedback could be added here
-    } catch (error) {
-        console.error('Copy failed:', error);
-    }
-}
-
-// Regenerate last response
-async function regenerateResponse() {
-    if (conversationHistory.length < 2) return;
-    
-    // Remove last assistant message
-    conversationHistory.pop();
-    
-    // Get last user message
-    const lastUserMsg = conversationHistory[conversationHistory.length - 1];
-    if (lastUserMsg.role !== 'user') return;
-    
-    // Remove UI messages
-    const messages = chatMessages?.querySelectorAll('.message');
-    if (messages && messages.length >= 2) {
-        messages[messages.length - 1].remove(); // Remove assistant
-    }
-    
-    // Resend
-    chatInput.value = lastUserMsg.content;
-    conversationHistory.pop(); // Remove from history (sendMessage will re-add it)
-    await sendMessage();
-}
-
-// Retry failed message
-function retryLastMessage() {
-    const lastUserMsg = conversationHistory.filter(m => m.role === 'user').pop();
-    if (!lastUserMsg) return;
-    
-    // Remove error message from UI
-    const messages = chatMessages?.querySelectorAll('.message');
-    if (messages) {
-        messages[messages.length - 1].remove();
-    }
-    
-    // Remove from history and resend
-    conversationHistory = conversationHistory.filter(m => m !== lastUserMsg);
-    chatInput.value = lastUserMsg.content;
-    sendMessage();
-}
-
-// Scroll to bottom
-function scrollToBottom() {
-    if (chatMessages) {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-}
-
-// Insert prompt template
-function insertPrompt(prompt) {
-    if (chatInput) {
-        chatInput.value = prompt + ' ';
-        chatInput.focus();
-    }
-}
-
-// Start new chat
+/**
+ * Start a new chat
+ */
 function startNewChat() {
     currentConversationId = null;
-    conversationHistory = [];
     
-    if (chatMessages) {
-        chatMessages.innerHTML = `
+    if (messagesContainer) {
+        messagesContainer.innerHTML = `
             <div class="welcome-message">
                 <div class="welcome-icon">
                     <i data-lucide="sparkles"></i>
                 </div>
-                <h2>New Conversation</h2>
-                <p>Choose a model and start chatting.</p>
+                <h2>Welcome to Multi-LLM Chat</h2>
+                <p>Choose a model and start chatting. Your conversations are automatically saved.</p>
+                <div class="quick-actions">
+                    <button onclick="insertPrompt('Explain a complex topic simply:')" class="quick-action">
+                        <i data-lucide="lightbulb"></i>
+                        Explain simply
+                    </button>
+                    <button onclick="insertPrompt('Help me write code for')" class="quick-action">
+                        <i data-lucide="code"></i>
+                        Write code
+                    </button>
+                    <button onclick="insertPrompt('Analyze this document:')" class="quick-action">
+                        <i data-lucide="file-text"></i>
+                        Analyze doc
+                    </button>
+                    <button onclick="insertPrompt('Search for the latest news about')" class="quick-action">
+                        <i data-lucide="search"></i>
+                        Search web
+                    </button>
+                </div>
             </div>
         `;
+        
+        // Re-initialize icons
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
     
-    lucide.createIcons();
-    chatInput?.focus();
-    
-    // Update conversation list
-    if (window.supabaseDB) {
-        window.supabaseDB.renderConversationList();
+    // Update active state in sidebar
+    document.querySelectorAll('.conversation-item').forEach(el => {
+        el.classList.remove('active');
+    });
+}
+
+/**
+ * Insert a quick prompt
+ */
+function insertPrompt(text) {
+    if (messageInput) {
+        messageInput.value = text + ' ';
+        messageInput.focus();
     }
 }
 
-// Switch to a conversation
+/**
+ * Switch to a conversation
+ */
 async function switchConversation(conversationId) {
-    if (conversationId === currentConversationId) return;
+    if (!window.supabaseDB) return;
     
     currentConversationId = conversationId;
-    conversationHistory = [];
     
-    // Clear chat area
-    if (chatMessages) {
-        chatMessages.innerHTML = '<div class="loading-indicator">Loading conversation...</div>';
-    }
+    // Update active state
+    document.querySelectorAll('.conversation-item').forEach(el => {
+        const isActive = el.getAttribute('onclick')?.includes(conversationId);
+        el.classList.toggle('active', isActive);
+    });
     
     // Load messages
-    if (window.supabaseDB) {
-        const messages = await window.supabaseDB.loadMessages(conversationId);
-        
-        if (chatMessages) chatMessages.innerHTML = '';
-        
-        for (const msg of messages) {
-            addMessageToUI(msg.role, msg.content);
-            conversationHistory.push({ role: msg.role, content: msg.content });
-        }
-        
-        // Update conversation list to show active
-        window.supabaseDB.renderConversationList();
-    }
+    const messages = await window.supabaseDB.loadMessages(conversationId);
     
-    scrollToBottom();
+    // Clear and render messages
+    if (messagesContainer) {
+        messagesContainer.innerHTML = '';
+        messages.forEach(msg => {
+            addMessage(msg.role, msg.content, [], msg.model);
+        });
+    }
 }
 
-// Confirm delete conversation
+/**
+ * Copy message to clipboard
+ */
+function copyToClipboard(messageId) {
+    const messageEl = document.getElementById(messageId);
+    if (!messageEl) return;
+    
+    const content = messageEl.querySelector('.message-content')?.textContent;
+    if (!content) return;
+    
+    navigator.clipboard.writeText(content).then(() => {
+        // Show brief feedback
+        const btn = messageEl.querySelector('.action-btn');
+        if (btn) {
+            btn.innerHTML = '✓';
+            setTimeout(() => {
+                btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>`;
+            }, 1500);
+        }
+    });
+}
+
+/**
+ * Regenerate last response
+ */
+async function regenerateResponse() {
+    if (!messagesContainer) return;
+    
+    // Find and remove last assistant message
+    const messages = messagesContainer.querySelectorAll('.message');
+    const lastAssistant = Array.from(messages).reverse().find(m => m.classList.contains('assistant-message'));
+    if (lastAssistant) {
+        lastAssistant.remove();
+    }
+    
+    // Resend with current messages
+    const currentMessages = getConversationMessages();
+    const model = modelSelect ? modelSelect.value : 'claude-sonnet-4-5-20250514';
+    const useSearch = webSearchToggle ? webSearchToggle.checked : false;
+    
+    try {
+        await streamResponse(currentMessages, model, useSearch);
+    } catch (error) {
+        console.error('Regenerate error:', error);
+    }
+}
+
+/**
+ * Confirm and delete conversation
+ */
 function confirmDeleteConversation(conversationId) {
     if (confirm('Delete this conversation? This cannot be undone.')) {
         deleteConversationById(conversationId);
     }
 }
 
-// Delete conversation
+/**
+ * Delete conversation
+ */
 async function deleteConversationById(conversationId) {
     if (window.supabaseDB) {
         await window.supabaseDB.deleteConversation(conversationId);
@@ -857,9 +795,9 @@ async function deleteConversationById(conversationId) {
         // If we deleted the current conversation, start new
         if (conversationId === currentConversationId) {
             startNewChat();
-        } else {
-            window.supabaseDB.renderConversationList();
         }
+        
+        loadConversations();
     }
 }
 
@@ -870,11 +808,4 @@ window.switchConversation = switchConversation;
 window.confirmDeleteConversation = confirmDeleteConversation;
 window.copyToClipboard = copyToClipboard;
 window.regenerateResponse = regenerateResponse;
-window.retryLastMessage = retryLastMessage;
-window.currentConversationId = null;
-
-// Update currentConversationId export
-Object.defineProperty(window, 'currentConversationId', {
-    get: () => currentConversationId,
-    set: (val) => { currentConversationId = val; }
-});
+window.removeAttachment = removeAttachment;

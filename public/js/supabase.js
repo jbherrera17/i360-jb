@@ -1,6 +1,7 @@
 /**
  * Insight 360 - Supabase Client
  * Handles database operations for conversation persistence
+ * Version: 2.1.1 - Fixed null checks
  */
 
 // Supabase configuration (loaded from meta tags or defaults)
@@ -43,7 +44,7 @@ async function initSupabase() {
         supabaseClient.auth.onAuthStateChange((event, session) => {
             currentUser = session?.user || null;
             if (event === 'SIGNED_IN') {
-                loadConversations();
+                renderConversationList();
             } else if (event === 'SIGNED_OUT') {
                 clearConversationList();
             }
@@ -120,18 +121,24 @@ async function loadConversations() {
             return data || [];
         } catch (error) {
             console.error('Failed to load conversations from Supabase:', error);
+            // Fall through to localStorage
         }
     }
     
     // Fallback to localStorage
-    const stored = localStorage.getItem(`insight360_conversations_${userId}`);
-    return stored ? JSON.parse(stored) : [];
+    try {
+        const stored = localStorage.getItem(`insight360_conversations_${userId}`);
+        return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+        console.error('Failed to parse conversations from localStorage:', error);
+        return [];
+    }
 }
 
 /**
  * Create a new conversation
  */
-async function createConversation(title = 'New Conversation', model = 'claude-sonnet-4-5-20250929') {
+async function createConversation(title = 'New Conversation', model = 'claude-sonnet-4-5-20250514') {
     const userId = getUserId();
     const conversation = {
         id: crypto.randomUUID(),
@@ -155,15 +162,20 @@ async function createConversation(title = 'New Conversation', model = 'claude-so
             return data;
         } catch (error) {
             console.error('Failed to create conversation in Supabase:', error);
+            // Fall through to localStorage
         }
     }
     
     // Fallback to localStorage
-    const conversations = await loadConversations();
-    conversations.unshift(conversation);
-    localStorage.setItem(`insight360_conversations_${userId}`, JSON.stringify(conversations));
-    
-    return conversation;
+    try {
+        const conversations = (await loadConversations()) || [];
+        conversations.unshift(conversation);
+        localStorage.setItem(`insight360_conversations_${userId}`, JSON.stringify(conversations));
+        return conversation;
+    } catch (error) {
+        console.error('Failed to save conversation to localStorage:', error);
+        return conversation;
+    }
 }
 
 /**
@@ -188,16 +200,21 @@ async function updateConversation(conversationId, updates) {
             return data;
         } catch (error) {
             console.error('Failed to update conversation in Supabase:', error);
+            // Fall through to localStorage
         }
     }
     
     // Fallback to localStorage
-    const conversations = await loadConversations();
-    const index = conversations.findIndex(c => c.id === conversationId);
-    if (index !== -1) {
-        conversations[index] = { ...conversations[index], ...updates };
-        localStorage.setItem(`insight360_conversations_${userId}`, JSON.stringify(conversations));
-        return conversations[index];
+    try {
+        const conversations = (await loadConversations()) || [];
+        const index = conversations.findIndex(c => c.id === conversationId);
+        if (index !== -1) {
+            conversations[index] = { ...conversations[index], ...updates };
+            localStorage.setItem(`insight360_conversations_${userId}`, JSON.stringify(conversations));
+            return conversations[index];
+        }
+    } catch (error) {
+        console.error('Failed to update conversation in localStorage:', error);
     }
     
     return null;
@@ -229,16 +246,21 @@ async function deleteConversation(conversationId) {
             return true;
         } catch (error) {
             console.error('Failed to delete conversation from Supabase:', error);
+            // Fall through to localStorage
         }
     }
     
     // Fallback to localStorage
-    const conversations = await loadConversations();
-    const filtered = conversations.filter(c => c.id !== conversationId);
-    localStorage.setItem(`insight360_conversations_${userId}`, JSON.stringify(filtered));
-    
-    // Also delete messages
-    localStorage.removeItem(`insight360_messages_${conversationId}`);
+    try {
+        const conversations = (await loadConversations()) || [];
+        const filtered = conversations.filter(c => c.id !== conversationId);
+        localStorage.setItem(`insight360_conversations_${userId}`, JSON.stringify(filtered));
+        
+        // Also delete messages
+        localStorage.removeItem(`insight360_messages_${conversationId}`);
+    } catch (error) {
+        console.error('Failed to delete conversation from localStorage:', error);
+    }
     
     return true;
 }
@@ -251,8 +273,6 @@ async function deleteConversation(conversationId) {
  * Load messages for a conversation
  */
 async function loadMessages(conversationId) {
-    const userId = getUserId();
-    
     // Try Supabase first
     if (supabaseClient && currentUser) {
         try {
@@ -266,12 +286,18 @@ async function loadMessages(conversationId) {
             return data || [];
         } catch (error) {
             console.error('Failed to load messages from Supabase:', error);
+            // Fall through to localStorage
         }
     }
     
     // Fallback to localStorage
-    const stored = localStorage.getItem(`insight360_messages_${conversationId}`);
-    return stored ? JSON.parse(stored) : [];
+    try {
+        const stored = localStorage.getItem(`insight360_messages_${conversationId}`);
+        return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+        console.error('Failed to parse messages from localStorage:', error);
+        return [];
+    }
 }
 
 /**
@@ -305,16 +331,21 @@ async function saveMessage(conversationId, role, content, model = null, tokensUs
             return data;
         } catch (error) {
             console.error('Failed to save message to Supabase:', error);
+            // Fall through to localStorage
         }
     }
     
     // Fallback to localStorage
-    const messages = await loadMessages(conversationId);
-    messages.push(message);
-    localStorage.setItem(`insight360_messages_${conversationId}`, JSON.stringify(messages));
-    
-    // Update conversation timestamp
-    await updateConversation(conversationId, {});
+    try {
+        const messages = (await loadMessages(conversationId)) || [];
+        messages.push(message);
+        localStorage.setItem(`insight360_messages_${conversationId}`, JSON.stringify(messages));
+        
+        // Update conversation timestamp
+        await updateConversation(conversationId, {});
+    } catch (error) {
+        console.error('Failed to save message to localStorage:', error);
+    }
     
     return message;
 }
@@ -330,7 +361,7 @@ async function renderConversationList() {
     const listElement = document.getElementById('conversationList');
     if (!listElement) return;
     
-    const conversations = await loadConversations();
+    const conversations = (await loadConversations()) || [];
     
     if (conversations.length === 0) {
         listElement.innerHTML = `
@@ -342,7 +373,7 @@ async function renderConversationList() {
     }
     
     listElement.innerHTML = conversations.map(conv => `
-        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
+        <div class="conversation-item ${conv.id === window.currentConversationId ? 'active' : ''}" 
              data-id="${conv.id}"
              onclick="switchConversation('${conv.id}')">
             <div class="conversation-title">${escapeHtml(conv.title)}</div>
@@ -390,6 +421,7 @@ function getModelShortName(model) {
  * Format relative time
  */
 function formatRelativeTime(dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -409,6 +441,7 @@ function formatRelativeTime(dateString) {
  * Escape HTML to prevent XSS
  */
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -422,6 +455,7 @@ function escapeHtml(text) {
  * Generate a title from the first user message
  */
 function generateTitle(message) {
+    if (!message) return 'New Conversation';
     // Take first 50 chars, trim to last word
     let title = message.substring(0, 50);
     if (message.length > 50) {
