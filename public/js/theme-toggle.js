@@ -1,8 +1,13 @@
 /**
- * Theme Toggle - Dark/Light Mode
- * Insight 360 v2.1.3
+ * Theme Toggle System v2.1.4
+ * Insight 360 - Dark/Light Mode
  * 
- * Handles theme switching and persists preference in localStorage
+ * Features:
+ * - Immediate theme application (prevents flash)
+ * - localStorage persistence
+ * - System preference detection
+ * - Cross-page synchronization
+ * - Multiple toggle support per page
  */
 
 (function() {
@@ -13,99 +18,179 @@
     const LIGHT_THEME = 'light';
 
     /**
-     * Get the current theme from localStorage or system preference
+     * Get the stored theme or system preference
      */
-    function getStoredTheme() {
+    function getPreferredTheme() {
+        // Check localStorage first
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
+        if (stored && (stored === DARK_THEME || stored === LIGHT_THEME)) {
             return stored;
         }
         
-        // Check system preference
+        // Fall back to system preference
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
             return LIGHT_THEME;
         }
         
-        return DARK_THEME; // Default to dark
+        // Default to dark
+        return DARK_THEME;
     }
 
     /**
-     * Apply theme to document
+     * Apply theme to document immediately
      */
     function applyTheme(theme) {
+        // Apply to HTML element for immediate effect
         document.documentElement.setAttribute('data-theme', theme);
-        
-        // Update toggle checkbox if it exists
-        const toggle = document.getElementById('themeToggle');
-        if (toggle) {
-            toggle.checked = (theme === LIGHT_THEME);
-        }
         
         // Store preference
         localStorage.setItem(STORAGE_KEY, theme);
         
-        console.log(`Theme set to: ${theme}`);
+        // Update all toggle checkboxes on the page
+        updateAllToggles(theme);
+        
+        // Dispatch event for any listeners
+        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
+        
+        console.log(`[Theme] Applied: ${theme}`);
     }
 
     /**
-     * Toggle between dark and light themes
+     * Update all theme toggle checkboxes
+     */
+    function updateAllToggles(theme) {
+        const toggles = document.querySelectorAll('.theme-toggle input[type="checkbox"], #themeToggle');
+        toggles.forEach(toggle => {
+            toggle.checked = (theme === LIGHT_THEME);
+        });
+    }
+
+    /**
+     * Toggle between themes
      */
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme') || DARK_THEME;
         const newTheme = currentTheme === DARK_THEME ? LIGHT_THEME : DARK_THEME;
         applyTheme(newTheme);
+        return newTheme;
     }
 
     /**
-     * Initialize theme on page load
+     * Initialize toggle event listeners
      */
-    function initTheme() {
-        // Apply stored theme immediately (before DOM ready to prevent flash)
-        const theme = getStoredTheme();
-        applyTheme(theme);
+    function initializeToggles() {
+        // Find all theme toggles
+        const toggles = document.querySelectorAll('.theme-toggle input[type="checkbox"], #themeToggle');
+        
+        toggles.forEach(toggle => {
+            // Remove existing listener to prevent duplicates
+            toggle.removeEventListener('change', handleToggleChange);
+            
+            // Add new listener
+            toggle.addEventListener('change', handleToggleChange);
+            
+            // Set initial state
+            const currentTheme = document.documentElement.getAttribute('data-theme') || DARK_THEME;
+            toggle.checked = (currentTheme === LIGHT_THEME);
+        });
     }
 
     /**
-     * Set up toggle event listener
+     * Handle toggle change event
      */
-    function setupToggle() {
-        const toggle = document.getElementById('themeToggle');
-        if (toggle) {
-            toggle.addEventListener('change', function() {
-                const newTheme = this.checked ? LIGHT_THEME : DARK_THEME;
-                applyTheme(newTheme);
-            });
-        }
+    function handleToggleChange(e) {
+        const newTheme = e.target.checked ? LIGHT_THEME : DARK_THEME;
+        applyTheme(newTheme);
     }
 
     /**
-     * Listen for system theme changes
+     * Listen for storage changes (cross-tab sync)
      */
-    function watchSystemTheme() {
+    function initializeStorageListener() {
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY && e.newValue) {
+                applyTheme(e.newValue);
+            }
+        });
+    }
+
+    /**
+     * Listen for system preference changes
+     */
+    function initializeSystemPreferenceListener() {
         if (window.matchMedia) {
-            window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+            mediaQuery.addEventListener('change', (e) => {
                 // Only auto-switch if user hasn't manually set a preference
-                if (!localStorage.getItem(STORAGE_KEY)) {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (!stored) {
                     applyTheme(e.matches ? LIGHT_THEME : DARK_THEME);
                 }
             });
         }
     }
 
-    // Initialize theme immediately
-    initTheme();
-
-    // Set up toggle and system watcher when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setupToggle();
-            watchSystemTheme();
-        });
-    } else {
-        setupToggle();
-        watchSystemTheme();
+    /**
+     * Create theme toggle HTML
+     * Call this to dynamically add a toggle to any element
+     */
+    function createToggleHTML() {
+        return `
+            <div class="theme-toggle-wrapper">
+                <label class="theme-toggle" title="Toggle dark/light mode">
+                    <input type="checkbox" class="theme-toggle-input">
+                    <span class="theme-toggle-slider">
+                        <span class="theme-toggle-icon moon">🌙</span>
+                        <span class="theme-toggle-icon sun">☀️</span>
+                    </span>
+                </label>
+            </div>
+        `;
     }
 
-    // Expose toggle function globally if needed
-    window.toggleTheme = toggleTheme;
+    /**
+     * Add toggle to an element by selector
+     */
+    function addToggleTo(selector, position = 'beforeend') {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.insertAdjacentHTML(position, createToggleHTML());
+            initializeToggles();
+            return true;
+        }
+        return false;
+    }
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+
+    // Apply theme IMMEDIATELY (before DOM ready) to prevent flash
+    applyTheme(getPreferredTheme());
+
+    // When DOM is ready, set up event listeners
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeToggles();
+            initializeStorageListener();
+            initializeSystemPreferenceListener();
+        });
+    } else {
+        // DOM already loaded
+        initializeToggles();
+        initializeStorageListener();
+        initializeSystemPreferenceListener();
+    }
+
+    // Expose API globally
+    window.InsightTheme = {
+        toggle: toggleTheme,
+        set: applyTheme,
+        get: () => document.documentElement.getAttribute('data-theme') || DARK_THEME,
+        createToggleHTML: createToggleHTML,
+        addToggleTo: addToggleTo,
+        DARK: DARK_THEME,
+        LIGHT: LIGHT_THEME
+    };
+
 })();
