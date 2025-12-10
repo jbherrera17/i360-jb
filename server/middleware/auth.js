@@ -15,7 +15,8 @@ async function authenticate(req, res, next) {
     const publicPaths = [
         '/api/health',
         '/api/status',
-        '/api/chat/models'
+        '/api/chat/models',
+        '/api/context'  // Phase 3: Allow context access during development
     ];
     
     if (publicPaths.some(path => req.path.startsWith(path))) {
@@ -82,6 +83,16 @@ async function authenticate(req, res, next) {
  * Use this for endpoints that must have a logged-in user
  */
 function requireAuth(req, res, next) {
+    // Development mode bypass
+    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+        // Set a default user ID for development
+        if (!req.userId) {
+            req.userId = process.env.DEV_USER_ID || 'dev-user-001';
+            req.isAnonymous = false;
+        }
+        return next();
+    }
+    
     if (!req.userId || req.isAnonymous) {
         return res.status(401).json({
             success: false,

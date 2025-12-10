@@ -10,6 +10,7 @@
  * - Streaming responses
  * - Conversation persistence (Supabase)
  * - System health monitoring
+ * - Context Assets management (Phase 3)
  */
 
 require('dotenv').config();
@@ -249,6 +250,15 @@ app.use('/api/health', healthRoutes);
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
 
+// Context Assets routes (Phase 3)
+try {
+    const contextRoutes = require('./routes/context');
+    app.use('/api/context', contextRoutes);
+    console.log('📦 Context Assets routes loaded');
+} catch (error) {
+    console.log('ℹ️  Context routes not yet available:', error.message);
+}
+
 // Conversation routes (if separate file exists)
 try {
     const conversationRoutes = require('./routes/conversations');
@@ -294,6 +304,11 @@ app.get('/agents', (req, res) => {
 
 app.get('/briefing', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/briefing.html'));
+});
+
+// Context management page (Phase 3)
+app.get('/context', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/context.html'));
 });
 
 // ============================================
@@ -348,6 +363,7 @@ function startServer() {
         console.log(`🌐 Server running at http://localhost:${PORT}`);
         console.log(`📊 Dashboard: http://localhost:${PORT}/`);
         console.log(`💬 Chat: http://localhost:${PORT}/chat.html`);
+        console.log(`📦 Context: http://localhost:${PORT}/context`);
         console.log('\n========================================\n');
     });
 }
