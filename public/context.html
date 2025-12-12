@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context Assets | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/context.html" class="nav-item active">
+                    <i data-lucide="database"></i>
+                    <span>Context Assets</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/briefing.html" class="nav-item">
+                    <i data-lucide="newspaper"></i>
+                    <span>Daily Briefing</span>
+                    <span class="nav-badge">Phase 4</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="version-info">
+                    <span class="version-label">Version</span>
+                    <span class="version-number">2.2.0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Context Assets</h1>
+                    <p class="header-subtitle">Manage your AI knowledge base</p>
+                </div>
+                <div class="header-actions">
+                    <button id="importBtn" class="btn-secondary" title="Import assets">
+                        <i data-lucide="upload"></i>
+                        <span>Import</span>
+                    </button>
+                    <button id="exportBtn" class="btn-secondary" title="Export assets">
+                        <i data-lucide="download"></i>
+                        <span>Export</span>
+                    </button>
+                    <button id="newAssetBtn" class="btn-primary">
+                        <i data-lucide="plus"></i>
+                        <span>New Asset</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Context Assets Content -->
+            <div class="context-layout">
+                <!-- Left Panel: Filters & List -->
+                <div class="context-list-panel">
+                    <!-- Search & Filters -->
+                    <div class="context-filters">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="searchInput" placeholder="Search assets...">
+                        </div>
+                        <div class="filter-row">
+                            <select id="typeFilter" class="filter-select">
+                                <option value="">All Types</option>
+                                <optgroup label="Core Assets">
+                                    <option value="company_description">🏢 Company Description</option>
+                                    <option value="why_we_win">🏆 Why We Win</option>
+                                    <option value="products">📦 Products</option>
+                                    <option value="pain_points">🎯 Pain Points</option>
+                                    <option value="voice_dna">🎤 VoiceDNA</option>
+                                    <option value="icp">👤 ICP</option>
+                                    <option value="core_values">💎 Core Values</option>
+                                    <option value="custom_processes">⚙️ Custom Processes</option>
+                                </optgroup>
+                                <optgroup label="Extended Assets">
+                                    <option value="competitors">⚔️ Competitors</option>
+                                    <option value="case_studies">📖 Case Studies</option>
+                                    <option value="faqs">❓ FAQs</option>
+                                    <option value="team_bios">👥 Team Bios</option>
+                                    <option value="industry_context">🌐 Industry Context</option>
+                                    <option value="terminology">📚 Terminology</option>
+                                    <option value="templates">📝 Templates</option>
+                                    <option value="pricing">💰 Pricing</option>
+                                    <option value="brand_guidelines">🎨 Brand Guidelines</option>
+                                    <option value="personas">🎭 Personas</option>
+                                </optgroup>
+                            </select>
+                            <select id="statusFilter" class="filter-select">
+                                <option value="current">Current Only</option>
+                                <option value="all">All Versions</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Asset List -->
+                    <div id="assetList" class="asset-list">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Loading assets...</p>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state hidden">
+                        <div class="empty-icon">
+                            <i data-lucide="database"></i>
+                        </div>
+                        <h3>No Context Assets Yet</h3>
+                        <p>Create your first context asset to help agents understand your business.</p>
+                        <button onclick="openNewAssetModal()" class="btn-primary">
+                            <i data-lucide="plus"></i>
+                            Create First Asset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Editor -->
+                <div class="context-editor-panel">
+                    <!-- Editor Header -->
+                    <div id="editorPlaceholder" class="editor-placeholder">
+                        <div class="placeholder-icon">
+                            <i data-lucide="file-edit"></i>
+                        </div>
+                        <h3>Select an Asset to Edit</h3>
+                        <p>Choose an asset from the list or create a new one.</p>
+                    </div>
+
+                    <div id="assetEditor" class="asset-editor hidden">
+                        <div class="editor-header">
+                            <div class="editor-title">
+                                <span id="editorAssetIcon" class="asset-icon">🎤</span>
+                                <input type="text" id="assetName" class="asset-name-input" placeholder="Asset Name">
+                                <span id="assetVersion" class="version-badge">v1</span>
+                            </div>
+                            <div class="editor-actions">
+                                <button id="historyBtn" class="btn-icon" title="Version history">
+                                    <i data-lucide="history"></i>
+                                </button>
+                                <button id="previewBtn" class="btn-icon" title="Preview">
+                                    <i data-lucide="eye"></i>
+                                </button>
+                                <button id="duplicateBtn" class="btn-icon" title="Duplicate">
+                                    <i data-lucide="copy"></i>
+                                </button>
+                                <button id="deleteBtn" class="btn-icon btn-danger-icon" title="Delete">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Asset Metadata -->
+                        <div class="editor-metadata">
+                            <div class="metadata-row">
+                                <label for="assetType">Type</label>
+                                <select id="assetType" class="metadata-select">
+                                    <optgroup label="Core Assets">
+                                        <option value="company_description">🏢 Company Description</option>
+                                        <option value="why_we_win">🏆 Why We Win</option>
+                                        <option value="products">📦 Products</option>
+                                        <option value="pain_points">🎯 Pain Points</option>
+                                        <option value="voice_dna">🎤 VoiceDNA</option>
+                                        <option value="icp">👤 ICP</option>
+                                        <option value="core_values">💎 Core Values</option>
+                                        <option value="custom_processes">⚙️ Custom Processes</option>
+                                    </optgroup>
+                                    <optgroup label="Extended Assets">
+                                        <option value="competitors">⚔️ Competitors</option>
+                                        <option value="case_studies">📖 Case Studies</option>
+                                        <option value="faqs">❓ FAQs</option>
+                                        <option value="team_bios">👥 Team Bios</option>
+                                        <option value="industry_context">🌐 Industry Context</option>
+                                        <option value="terminology">📚 Terminology</option>
+                                        <option value="templates">📝 Templates</option>
+                                        <option value="pricing">💰 Pricing</option>
+                                        <option value="brand_guidelines">🎨 Brand Guidelines</option>
+                                        <option value="personas">🎭 Personas</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="metadata-row">
+                                <label for="assetDescription">Description</label>
+                                <input type="text" id="assetDescription" placeholder="Brief description of this asset">
+                            </div>
+                            <div class="metadata-row">
+                                <label for="assetTags">Tags</label>
+                                <div class="tags-input-container">
+                                    <div id="tagsContainer" class="tags-container"></div>
+                                    <input type="text" id="tagInput" class="tag-input" placeholder="Add tag...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JSON Editor -->
+                        <div class="editor-content">
+                            <div class="editor-tabs">
+                                <button class="tab-btn active" data-tab="json">JSON</button>
+                                <button class="tab-btn" data-tab="text">Plain Text</button>
+                                <button class="tab-btn" data-tab="preview">Preview</button>
+                            </div>
+                            <div class="tab-content active" id="jsonTab">
+                                <div class="json-editor-wrapper">
+                                    <div class="line-numbers" id="lineNumbers"></div>
+                                    <textarea id="jsonEditor" class="json-editor" spellcheck="false" placeholder='{
+  "key": "value"
+}'></textarea>
+                                </div>
+                                <div id="jsonValidation" class="validation-status">
+                                    <i data-lucide="check-circle"></i>
+                                    <span>Valid JSON</span>
+                                </div>
+                            </div>
+                            <div class="tab-content" id="textTab">
+                                <textarea id="textEditor" class="text-editor" placeholder="Plain text content for search indexing..."></textarea>
+                            </div>
+                            <div class="tab-content" id="previewTab">
+                                <div id="previewContent" class="preview-content">
+                                    <p class="preview-placeholder">Content preview will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Editor Footer -->
+                        <div class="editor-footer">
+                            <div class="footer-info">
+                                <span id="tokenCount" class="token-count">~0 tokens</span>
+                                <span id="lastSaved" class="last-saved">Not saved</span>
+                            </div>
+                            <div class="footer-actions">
+                                <button id="cancelBtn" class="btn-secondary">Cancel</button>
+                                <button id="saveBtn" class="btn-primary">
+                                    <i data-lucide="save"></i>
+                                    Save Asset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- New Asset Modal -->
+    <div id="newAssetModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('newAssetModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Asset</h2>
+                <button class="btn-icon" onclick="closeModal('newAssetModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newAssetType">Asset Type</label>
+                    <select id="newAssetType" class="form-select">
+                        <optgroup label="Core Assets">
+                            <option value="company_description">🏢 Company Description</option>
+                            <option value="why_we_win">🏆 Why We Win</option>
+                            <option value="products">📦 Products</option>
+                            <option value="pain_points">🎯 Pain Points</option>
+                            <option value="voice_dna" selected>🎤 VoiceDNA</option>
+                            <option value="icp">👤 ICP</option>
+                            <option value="core_values">💎 Core Values</option>
+                            <option value="custom_processes">⚙️ Custom Processes</option>
+                        </optgroup>
+                        <optgroup label="Extended Assets">
+                            <option value="competitors">⚔️ Competitors</option>
+                            <option value="case_studies">📖 Case Studies</option>
+                            <option value="faqs">❓ FAQs</option>
+                            <option value="team_bios">👥 Team Bios</option>
+                            <option value="industry_context">🌐 Industry Context</option>
+                            <option value="terminology">📚 Terminology</option>
+                            <option value="templates">📝 Templates</option>
+                            <option value="pricing">💰 Pricing</option>
+                            <option value="brand_guidelines">🎨 Brand Guidelines</option>
+                            <option value="personas">🎭 Personas</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newAssetName">Asset Name</label>
+                    <input type="text" id="newAssetName" class="form-input" placeholder="e.g., Synergi AI VoiceDNA">
+                </div>
+                <div class="form-group">
+                    <label for="newAssetDescription">Description</label>
+                    <input type="text" id="newAssetDescription" class="form-input" placeholder="Brief description...">
+                </div>
+                <div class="form-group">
+                    <label>Start With</label>
+                    <div class="template-options">
+                        <label class="template-option">
+                            <input type="radio" name="template" value="blank" checked>
+                            <span class="template-card">
+                                <i data-lucide="file"></i>
+                                <span>Blank</span>
+                            </span>
+                        </label>
+                        <label class="template-option">
+                            <input type="radio" name="template" value="template">
+                            <span class="template-card">
+                                <i data-lucide="file-text"></i>
+                                <span>Template</span>
+                            </span>
+                        </label>
+                        <label class="template-option">
+                            <input type="radio" name="template" value="example">
+                            <span class="template-card">
+                                <i data-lucide="sparkles"></i>
+                                <span>Example</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('newAssetModal')">Cancel</button>
+                <button class="btn-primary" onclick="createNewAsset()">
+                    <i data-lucide="plus"></i>
+                    Create Asset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version History Modal -->
+    <div id="historyModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('historyModal')"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Version History</h2>
+                <button class="btn-icon" onclick="closeModal('historyModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="versionList" class="version-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('deleteModal')"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Delete Asset</h2>
+                <button class="btn-icon" onclick="closeModal('deleteModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteAssetName"></strong>?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+                <button class="btn-danger" onclick="confirmDelete()">
+                    <i data-lucide="trash-2"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('importModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Assets</h2>
+                <button class="btn-icon" onclick="closeModal('importModal')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="import-dropzone" id="importDropzone">
+                    <i data-lucide="upload-cloud"></i>
+                    <p>Drag & drop JSON file here</p>
+                    <span>or</span>
+                    <label class="btn-secondary">
+                        Browse Files
+                        <input type="file" id="importFile" accept=".json" hidden>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="/js/supabase.js"></script>
+    <script src="/js/context.js"></script>
+    
+    <style>
+        /* ============================================
+           CONTEXT ASSETS PAGE STYLES
+           ============================================ */
+        
+        /* Layout */
+        .context-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: var(--spacing-lg, 1.5rem);
+            height: calc(100vh - 80px);
+            padding: var(--spacing-lg, 1.5rem);
+        }
+
+        /* List Panel */
+        .context-list-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary, #1a1a2e);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-lg, 12px);
+            overflow: hidden;
+        }
+
+        .context-filters {
+            padding: var(--spacing-md, 1rem);
+            border-bottom: 1px solid var(--border, #2a2a40);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: var(--spacing-sm, 0.75rem);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-md, 8px);
+            color: var(--text-primary, #ffffff);
+            font-size: 0.9rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary, #6366f1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 0.5rem;
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-sm, 6px);
+            color: var(--text-primary, #ffffff);
+            font-size: 0.85rem;
+        }
+
+        /* Asset List */
+        .asset-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-sm, 0.75rem);
+        }
+
+        .asset-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm, 0.75rem);
+            padding: var(--spacing-md, 1rem);
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid transparent;
+            border-radius: var(--radius-md, 8px);
+            margin-bottom: var(--spacing-xs, 0.5rem);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .asset-item:hover {
+            border-color: var(--border, #2a2a40);
+        }
+
+        .asset-item.selected {
+            border-color: var(--primary, #6366f1);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .asset-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary, #1a1a2e);
+            border-radius: var(--radius-sm, 6px);
+        }
+
+        .asset-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .asset-name {
+            font-weight: 600;
+            color: var(--text-primary, #ffffff);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .asset-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm, 0.75rem);
+            font-size: 0.8rem;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .asset-version {
+            padding: 0.15rem 0.4rem;
+            background: var(--bg-secondary, #1a1a2e);
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+        }
+
+        /* Editor Panel */
+        .context-editor-panel {
+            background: var(--bg-secondary, #1a1a2e);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-lg, 12px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted, #6b6b80);
+            text-align: center;
+            padding: var(--spacing-xl, 2rem);
+        }
+
+        .placeholder-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary, #252540);
+            border-radius: var(--radius-lg, 12px);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+
+        .placeholder-icon i {
+            width: 40px;
+            height: 40px;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        /* Asset Editor */
+        .asset-editor {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
+            border-bottom: 1px solid var(--border, #2a2a40);
+        }
+
+        .editor-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        .asset-name-input {
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            color: var(--text-primary, #ffffff);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm, 6px);
+        }
+
+        .asset-name-input:focus {
+            outline: none;
+            background: var(--bg-tertiary, #252540);
+        }
+
+        .version-badge {
+            padding: 0.25rem 0.5rem;
+            background: var(--phase3, #f59e0b);
+            color: #000;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: var(--spacing-xs, 0.5rem);
+        }
+
+        /* Metadata */
+        .editor-metadata {
+            padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
+            border-bottom: 1px solid var(--border, #2a2a40);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        .metadata-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md, 1rem);
+        }
+
+        .metadata-row label {
+            width: 100px;
+            font-size: 0.85rem;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .metadata-row input,
+        .metadata-select {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-sm, 6px);
+            color: var(--text-primary, #ffffff);
+            font-size: 0.9rem;
+        }
+
+        /* Tags */
+        .tags-input-container {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-xs, 0.5rem);
+            padding: 0.35rem 0.5rem;
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-sm, 6px);
+            min-height: 38px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--primary, #6366f1);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .tag button {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .tag-input {
+            flex: 1;
+            min-width: 80px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary, #ffffff);
+            font-size: 0.85rem;
+        }
+
+        .tag-input:focus {
+            outline: none;
+        }
+
+        /* Editor Tabs */
+        .editor-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-tabs {
+            display: flex;
+            padding: 0 var(--spacing-lg, 1.5rem);
+            border-bottom: 1px solid var(--border, #2a2a40);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted, #6b6b80);
+            font-size: 0.9rem;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-secondary, #a0a0b0);
+        }
+
+        .tab-btn.active {
+            color: var(--primary, #6366f1);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary, #6366f1);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* JSON Editor */
+        .json-editor-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: var(--bg-code, #0d0d14);
+        }
+
+        .line-numbers {
+            padding: 1rem 0.5rem;
+            background: var(--bg-code, #0d0d14);
+            color: var(--text-muted, #6b6b80);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid var(--border, #2a2a40);
+            min-width: 40px;
+        }
+
+        .json-editor {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-code, #0d0d14);
+            color: var(--text-primary, #ffffff);
+            border: none;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            resize: none;
+        }
+
+        .json-editor:focus {
+            outline: none;
+        }
+
+        .validation-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs, 0.5rem);
+            padding: 0.5rem var(--spacing-lg, 1.5rem);
+            border-top: 1px solid var(--border, #2a2a40);
+            font-size: 0.85rem;
+        }
+
+        .validation-status.valid {
+            color: var(--success, #10b981);
+        }
+
+        .validation-status.invalid {
+            color: var(--danger, #ef4444);
+        }
+
+        .validation-status i {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Text Editor */
+        .text-editor {
+            flex: 1;
+            padding: 1rem var(--spacing-lg, 1.5rem);
+            background: var(--bg-tertiary, #252540);
+            color: var(--text-primary, #ffffff);
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            resize: none;
+        }
+
+        .text-editor:focus {
+            outline: none;
+        }
+
+        /* Preview */
+        .preview-content {
+            flex: 1;
+            padding: 1rem var(--spacing-lg, 1.5rem);
+            overflow-y: auto;
+            color: var(--text-secondary, #a0a0b0);
+        }
+
+        .preview-placeholder {
+            color: var(--text-muted, #6b6b80);
+            font-style: italic;
+        }
+
+        /* Editor Footer */
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
+            border-top: 1px solid var(--border, #2a2a40);
+        }
+
+        .footer-info {
+            display: flex;
+            gap: var(--spacing-lg, 1.5rem);
+            font-size: 0.85rem;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .token-count {
+            font-family: 'Fira Code', monospace;
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-2xl, 3rem);
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary, #252540);
+            border-radius: 50%;
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+
+        .empty-icon i {
+            width: 40px;
+            height: 40px;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .empty-state h3 {
+            margin-bottom: var(--spacing-xs, 0.5rem);
+        }
+
+        .empty-state p {
+            color: var(--text-muted, #6b6b80);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+
+        /* Loading State */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-2xl, 3rem);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border, #2a2a40);
+            border-top-color: var(--primary, #6366f1);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: var(--spacing-md, 1rem);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            background: var(--bg-secondary, #1a1a2e);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-lg, 12px);
+            overflow: hidden;
+        }
+
+        .modal-content.modal-small {
+            max-width: 400px;
+        }
+
+        .modal-content.modal-large {
+            max-width: 700px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-lg, 1.5rem);
+            border-bottom: 1px solid var(--border, #2a2a40);
+        }
+
+        .modal-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: var(--spacing-lg, 1.5rem);
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--spacing-sm, 0.75rem);
+            padding: var(--spacing-lg, 1.5rem);
+            border-top: 1px solid var(--border, #2a2a40);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-xs, 0.5rem);
+            font-weight: 500;
+            color: var(--text-secondary, #a0a0b0);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-md, 8px);
+            color: var(--text-primary, #ffffff);
+            font-size: 0.9rem;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary, #6366f1);
+        }
+
+        /* Template Options */
+        .template-options {
+            display: flex;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        .template-option {
+            flex: 1;
+        }
+
+        .template-option input {
+            display: none;
+        }
+
+        .template-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-xs, 0.5rem);
+            padding: var(--spacing-md, 1rem);
+            background: var(--bg-tertiary, #252540);
+            border: 2px solid var(--border, #2a2a40);
+            border-radius: var(--radius-md, 8px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-option input:checked + .template-card {
+            border-color: var(--primary, #6366f1);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .template-card i {
+            width: 24px;
+            height: 24px;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .template-card span {
+            font-size: 0.85rem;
+            color: var(--text-secondary, #a0a0b0);
+        }
+
+        /* Import Dropzone */
+        .import-dropzone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm, 0.75rem);
+            padding: var(--spacing-2xl, 3rem);
+            border: 2px dashed var(--border, #2a2a40);
+            border-radius: var(--radius-lg, 12px);
+            text-align: center;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        .import-dropzone.dragover {
+            border-color: var(--primary, #6366f1);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .import-dropzone i {
+            width: 48px;
+            height: 48px;
+        }
+
+        /* Version List */
+        .version-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        .version-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md, 1rem);
+            background: var(--bg-tertiary, #252540);
+            border-radius: var(--radius-md, 8px);
+        }
+
+        .version-item.current {
+            border: 1px solid var(--primary, #6366f1);
+        }
+
+        .version-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.95rem;
+        }
+
+        .version-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted, #6b6b80);
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm, 0.75rem);
+            padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
+            background: var(--bg-secondary, #1a1a2e);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-md, 8px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-left: 3px solid var(--success, #10b981);
+        }
+
+        .toast.error {
+            border-left: 3px solid var(--danger, #ef4444);
+        }
+
+        .toast.warning {
+            border-left: 3px solid var(--warning, #f59e0b);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Buttons */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs, 0.5rem);
+            padding: 0.6rem 1.25rem;
+            background: var(--primary, #6366f1);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md, 8px);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark, #4f46e5);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs, 0.5rem);
+            padding: 0.6rem 1.25rem;
+            background: var(--bg-tertiary, #252540);
+            color: var(--text-secondary, #a0a0b0);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-md, 8px);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary, #1a1a2e);
+            color: var(--text-primary, #ffffff);
+        }
+
+        .btn-danger {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs, 0.5rem);
+            padding: 0.6rem 1.25rem;
+            background: var(--danger, #ef4444);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md, 8px);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary, #252540);
+            border: 1px solid var(--border, #2a2a40);
+            border-radius: var(--radius-sm, 6px);
+            color: var(--text-secondary, #a0a0b0);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-secondary, #1a1a2e);
+            color: var(--text-primary, #ffffff);
+        }
+
+        .btn-icon i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-danger-icon:hover {
+            color: var(--danger, #ef4444);
+            border-color: var(--danger, #ef4444);
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted, #6b6b80);
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-lg, 1.5rem) var(--spacing-xl, 2rem);
+            background: var(--bg-primary, #0f0f1a);
+            border-bottom: 1px solid var(--border, #2a2a40);
+        }
+
+        .header-content h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            margin: 0;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted, #6b6b80);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+
+        /* Sidebar footer */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem;
+            border-top: 1px solid var(--border, #2a2a40);
+        }
+        
+        .version-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted, #6b6b80);
+        }
+        
+        .version-number {
+            font-family: 'Orbitron', monospace;
+            color: var(--primary, #6366f1);
+        }
+
+        .nav-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(107, 107, 128, 0.3);
+            border-radius: 4px;
+            color: var(--text-muted, #6b6b80);
+            margin-left: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .context-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            .context-list-panel {
+                max-height: 300px;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -1,635 +1,1105 @@
 /**
- * Context Assets Routes
- * API endpoints for managing context assets
- * 
- * Insight 360 - Phase 3
+ * Context Assets Routes - Insight 360
+ * Phase 3: Context Assets Management API
+ * Version: 2.2.0
  * 
  * Endpoints:
- *   GET    /api/context/types              - List all asset types
- *   GET    /api/context/types/:typeKey     - Get single asset type
- *   GET    /api/context/assets             - List user's assets
- *   GET    /api/context/assets/:id         - Get single asset
- *   POST   /api/context/assets             - Create new asset
- *   PUT    /api/context/assets/:id         - Update asset
- *   DELETE /api/context/assets/:id         - Delete/archive asset
- *   POST   /api/context/assets/:id/restore - Restore archived asset
- *   GET    /api/context/assets/:id/versions - Get version history
- *   POST   /api/context/assets/:id/rollback/:version - Rollback to version
- *   POST   /api/context/assets/bulk        - Bulk create assets
- *   GET    /api/context/export             - Export all assets
+ * GET    /api/context/assets       - List all assets (with filters)
+ * GET    /api/context/assets/:id   - Get single asset
+ * POST   /api/context/assets       - Create new asset
+ * PUT    /api/context/assets/:id   - Update asset
+ * DELETE /api/context/assets/:id   - Delete asset
+ * GET    /api/context/types        - List asset types
+ * GET    /api/context/assets/:id/versions - Get version history
+ * POST   /api/context/assets/:id/rollback - Rollback to version
+ * POST   /api/context/assets/import - Bulk import
+ * GET    /api/context/assets/export - Bulk export
+ * GET    /api/context/stats        - Usage statistics
+ * POST   /api/context/assets/:id/duplicate - Duplicate asset
+ * PATCH  /api/context/assets/:id/archive - Archive/unarchive asset
  */
 
 const express = require('express');
 const router = express.Router();
-const contextService = require('../services/contextService');
 
-// ============================================================
-// MIDDLEWARE - Authentication Check
-// ============================================================
-
-/**
- * Middleware to verify user is authenticated
- * Compatible with main auth middleware (uses req.userId)
- */
-const requireAuth = (req, res, next) => {
-    // Development mode bypass
-    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
-        if (!req.userId) {
-            req.userId = process.env.DEV_USER_ID || 'dev-user-001';
-        }
-        return next();
+// Asset type configurations with icons and schemas
+const ASSET_TYPES = {
+    // Core Assets
+    company_description: {
+        type_key: 'company_description',
+        display_name: 'Company Description',
+        description: 'Who we are, mission, history, vision',
+        icon: '🏢',
+        category: 'core',
+        sort_order: 1
+    },
+    why_we_win: {
+        type_key: 'why_we_win',
+        display_name: 'Why We Win',
+        description: 'Competitive differentiation, unique value',
+        icon: '🏆',
+        category: 'core',
+        sort_order: 2
+    },
+    products: {
+        type_key: 'products',
+        display_name: 'Products',
+        description: 'Offerings, features, benefits, pricing',
+        icon: '📦',
+        category: 'core',
+        sort_order: 3
+    },
+    pain_points: {
+        type_key: 'pain_points',
+        display_name: 'Pain Points We Solve',
+        description: 'Customer problems we address',
+        icon: '🎯',
+        category: 'core',
+        sort_order: 4
+    },
+    voice_dna: {
+        type_key: 'voice_dna',
+        display_name: 'VoiceDNA',
+        description: 'Brand voice, tone, style rules',
+        icon: '🎤',
+        category: 'core',
+        sort_order: 5
+    },
+    icp: {
+        type_key: 'icp',
+        display_name: 'ICP',
+        description: 'Ideal Customer Profile segments',
+        icon: '👤',
+        category: 'core',
+        sort_order: 6
+    },
+    core_values: {
+        type_key: 'core_values',
+        display_name: 'Core Values',
+        description: 'Guiding principles and beliefs',
+        icon: '💎',
+        category: 'core',
+        sort_order: 7
+    },
+    custom_processes: {
+        type_key: 'custom_processes',
+        display_name: 'Custom Processes',
+        description: 'Internal workflows, methodologies',
+        icon: '⚙️',
+        category: 'core',
+        sort_order: 8
+    },
+    // Extended Assets
+    competitors: {
+        type_key: 'competitors',
+        display_name: 'Competitors',
+        description: 'Competitive landscape analysis',
+        icon: '⚔️',
+        category: 'extended',
+        sort_order: 9
+    },
+    case_studies: {
+        type_key: 'case_studies',
+        display_name: 'Case Studies',
+        description: 'Success stories, testimonials',
+        icon: '📖',
+        category: 'extended',
+        sort_order: 10
+    },
+    faqs: {
+        type_key: 'faqs',
+        display_name: 'FAQs',
+        description: 'Common questions & objections',
+        icon: '❓',
+        category: 'extended',
+        sort_order: 11
+    },
+    team_bios: {
+        type_key: 'team_bios',
+        display_name: 'Team Bios',
+        description: 'Key people and expertise',
+        icon: '👥',
+        category: 'extended',
+        sort_order: 12
+    },
+    industry_context: {
+        type_key: 'industry_context',
+        display_name: 'Industry Context',
+        description: 'Market trends, regulations',
+        icon: '🌐',
+        category: 'extended',
+        sort_order: 13
+    },
+    terminology: {
+        type_key: 'terminology',
+        display_name: 'Terminology',
+        description: 'Domain-specific glossary',
+        icon: '📚',
+        category: 'extended',
+        sort_order: 14
+    },
+    templates: {
+        type_key: 'templates',
+        display_name: 'Templates',
+        description: 'Email, proposal, content templates',
+        icon: '📝',
+        category: 'extended',
+        sort_order: 15
+    },
+    pricing: {
+        type_key: 'pricing',
+        display_name: 'Pricing',
+        description: 'Pricing structure, packages',
+        icon: '💰',
+        category: 'extended',
+        sort_order: 16
+    },
+    brand_guidelines: {
+        type_key: 'brand_guidelines',
+        display_name: 'Brand Guidelines',
+        description: 'Visual identity, do\'s/don\'ts',
+        icon: '🎨',
+        category: 'extended',
+        sort_order: 17
+    },
+    personas: {
+        type_key: 'personas',
+        display_name: 'Personas',
+        description: 'Detailed buyer personas',
+        icon: '🎭',
+        category: 'extended',
+        sort_order: 18
     }
-    
-    // Check for userId (set by main auth middleware)
-    if (!req.userId) {
-        return res.status(401).json({
-            success: false,
-            error: 'Authentication required'
-        });
-    }
-    next();
 };
 
-// Apply auth to all routes
-router.use(requireAuth);
-
-// ============================================================
-// ASSET TYPES ENDPOINTS
-// ============================================================
+// Example templates for new assets
+const ASSET_TEMPLATES = {
+    voice_dna: {
+        brand_name: "",
+        personality_traits: [],
+        tone: "",
+        writing_style: {
+            sentence_length: "",
+            vocabulary_level: "",
+            perspective: ""
+        },
+        do: [],
+        dont: [],
+        signature_phrases: [],
+        avoid_phrases: []
+    },
+    icp: {
+        segments: [{
+            name: "",
+            priority: 1,
+            demographics: {
+                company_size: "",
+                revenue_range: "",
+                industries: [],
+                geography: ""
+            },
+            psychographics: {
+                values: [],
+                motivations: [],
+                fears: []
+            },
+            pain_points: [],
+            goals: [],
+            objections: [],
+            buying_triggers: []
+        }]
+    },
+    products: {
+        offerings: [{
+            name: "",
+            type: "",
+            tagline: "",
+            description: "",
+            components: [],
+            ideal_for: [],
+            differentiators: [],
+            pricing_model: ""
+        }]
+    },
+    company_description: {
+        name: "",
+        tagline: "",
+        mission: "",
+        vision: "",
+        history: "",
+        what_we_do: "",
+        how_we_do_it: "",
+        why_it_matters: ""
+    }
+};
 
 /**
- * GET /api/context/types
- * List all active context asset types
+ * Helper: Get Supabase client from request
  */
-router.get('/types', async (req, res) => {
+function getSupabase(req) {
+    if (!req.supabase) {
+        throw new Error('Database connection not available');
+    }
+    return req.supabase;
+}
+
+/**
+ * Helper: Estimate token count
+ */
+function estimateTokens(text) {
+    if (!text) return 0;
+    // Rough approximation: ~4 characters per token
+    return Math.ceil(text.length / 4);
+}
+
+/**
+ * Helper: Generate plain text from JSON for search
+ */
+function jsonToText(json) {
+    if (!json) return '';
+    if (typeof json === 'string') return json;
+    
+    const extractText = (obj, depth = 0) => {
+        if (depth > 10) return ''; // Prevent infinite recursion
+        
+        let text = '';
+        for (const [key, value] of Object.entries(obj)) {
+            if (typeof value === 'string') {
+                text += value + ' ';
+            } else if (Array.isArray(value)) {
+                text += value.map(v => typeof v === 'string' ? v : extractText(v, depth + 1)).join(' ') + ' ';
+            } else if (typeof value === 'object' && value !== null) {
+                text += extractText(value, depth + 1);
+            }
+        }
+        return text;
+    };
+    
+    return extractText(json).trim();
+}
+
+// ============================================
+// GET /api/context/types
+// List all available asset types
+// ============================================
+router.get('/types', (req, res) => {
     try {
-        const types = await contextService.getAssetTypes();
+        const types = Object.values(ASSET_TYPES).sort((a, b) => a.sort_order - b.sort_order);
         
         res.json({
             success: true,
-            data: types,
+            types,
             count: types.length
         });
     } catch (error) {
         console.error('Error fetching asset types:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch asset types',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * GET /api/context/types/:typeKey
- * Get a single asset type by key
- */
-router.get('/types/:typeKey', async (req, res) => {
+// ============================================
+// GET /api/context/templates/:type
+// Get template for asset type
+// ============================================
+router.get('/templates/:type', (req, res) => {
     try {
-        const { typeKey } = req.params;
-        const type = await contextService.getAssetTypeByKey(typeKey);
-        
-        if (!type) {
-            return res.status(404).json({
-                success: false,
-                error: 'Asset type not found'
-            });
-        }
+        const { type } = req.params;
+        const template = ASSET_TEMPLATES[type] || {};
         
         res.json({
             success: true,
-            data: type
+            type,
+            template
         });
     } catch (error) {
-        console.error('Error fetching asset type:', error);
+        console.error('Error fetching template:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch asset type',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-// ============================================================
-// CONTEXT ASSETS ENDPOINTS
-// ============================================================
-
-/**
- * GET /api/context/assets
- * List all context assets for the authenticated user
- * 
- * Query params:
- *   - type: Filter by asset type (e.g., 'voice_dna')
- *   - tags: Filter by tags (comma-separated)
- *   - search: Search in name, description, content
- *   - archived: Include archived assets (default: false)
- *   - limit: Max results (default: 100)
- *   - offset: Pagination offset (default: 0)
- *   - sortBy: Sort field (default: 'updated_at')
- *   - sortOrder: 'asc' or 'desc' (default: 'desc')
- */
+// ============================================
+// GET /api/context/assets
+// List all assets with optional filters
+// ============================================
 router.get('/assets', async (req, res) => {
     try {
-        const userId = req.userId;
-        
-        // Parse query parameters
-        const options = {
-            assetType: req.query.type || null,
-            tags: req.query.tags ? req.query.tags.split(',') : null,
-            search: req.query.search || null,
-            includeArchived: req.query.archived === 'true',
-            limit: parseInt(req.query.limit) || 100,
-            offset: parseInt(req.query.offset) || 0,
-            sortBy: req.query.sortBy || 'updated_at',
-            sortOrder: req.query.sortOrder || 'desc'
-        };
-        
-        const assets = await contextService.getAssets(userId, options);
-        
+        const supabase = getSupabase(req);
+        const { 
+            type, 
+            status = 'current', 
+            search, 
+            tags,
+            limit = 50,
+            offset = 0,
+            sort = 'updated_at',
+            order = 'desc'
+        } = req.query;
+
+        let query = supabase
+            .from('context_assets')
+            .select('*', { count: 'exact' });
+
+        // Apply filters
+        if (type) {
+            query = query.eq('asset_type', type);
+        }
+
+        if (status === 'current') {
+            query = query.eq('is_current', true);
+        } else if (status === 'archived') {
+            query = query.eq('is_current', false);
+        }
+        // 'all' status returns everything
+
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,content_text.ilike.%${search}%`);
+        }
+
+        if (tags) {
+            const tagArray = Array.isArray(tags) ? tags : tags.split(',');
+            query = query.overlaps('tags', tagArray);
+        }
+
+        // Sorting
+        const ascending = order === 'asc';
+        query = query.order(sort, { ascending });
+
+        // Pagination
+        query = query.range(offset, offset + limit - 1);
+
+        const { data, error, count } = await query;
+
+        if (error) throw error;
+
+        // Enhance with type info
+        const enhanced = (data || []).map(asset => ({
+            ...asset,
+            type_info: ASSET_TYPES[asset.asset_type] || {
+                icon: '📄',
+                display_name: asset.asset_type
+            }
+        }));
+
         res.json({
             success: true,
-            data: assets,
-            count: assets.length,
-            pagination: {
-                limit: options.limit,
-                offset: options.offset,
-                hasMore: assets.length === options.limit
-            }
+            assets: enhanced,
+            count,
+            limit: parseInt(limit),
+            offset: parseInt(offset)
         });
+
     } catch (error) {
         console.error('Error fetching assets:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch assets',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * GET /api/context/assets/:id
- * Get a single context asset by ID
- */
+// ============================================
+// GET /api/context/assets/:id
+// Get single asset by ID
+// ============================================
 router.get('/assets/:id', async (req, res) => {
     try {
+        const supabase = getSupabase(req);
         const { id } = req.params;
-        const userId = req.userId;
-        
-        const asset = await contextService.getAssetById(id, userId);
-        
-        if (!asset) {
+
+        const { data, error } = await supabase
+            .from('context_assets')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        if (!data) {
             return res.status(404).json({
                 success: false,
                 error: 'Asset not found'
             });
         }
-        
+
+        // Add type info and token estimate
+        const enhanced = {
+            ...data,
+            type_info: ASSET_TYPES[data.asset_type] || { icon: '📄', display_name: data.asset_type },
+            estimated_tokens: estimateTokens(data.content_text || JSON.stringify(data.content_json))
+        };
+
         res.json({
             success: true,
-            data: asset
+            asset: enhanced
         });
+
     } catch (error) {
         console.error('Error fetching asset:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch asset',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * POST /api/context/assets
- * Create a new context asset
- * 
- * Body:
- *   - asset_type: (required) Asset type key
- *   - name: (required) Display name
- *   - description: (optional) Brief description
- *   - content_json: (required) JSON content
- *   - content_text: (optional) Plain text version
- *   - tags: (optional) Array of tags
- *   - visibility: (optional) 'private', 'shared', 'public'
- */
+// ============================================
+// POST /api/context/assets
+// Create new asset
+// ============================================
 router.post('/assets', async (req, res) => {
     try {
-        const userId = req.userId;
-        const { asset_type, name, description, content_json, content_text, tags, visibility } = req.body;
-        
-        // Validate required fields
-        if (!asset_type) {
-            return res.status(400).json({
-                success: false,
-                error: 'asset_type is required'
-            });
-        }
-        
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                error: 'name is required'
-            });
-        }
-        
-        // Get asset type for schema validation
-        const assetType = await contextService.getAssetTypeByKey(asset_type);
-        if (!assetType) {
-            return res.status(400).json({
-                success: false,
-                error: `Invalid asset type: ${asset_type}`
-            });
-        }
-        
-        // Validate content against schema if provided
-        if (assetType.json_schema && content_json) {
-            const validation = contextService.validateContent(content_json, assetType.json_schema);
-            if (!validation.valid) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Content validation failed',
-                    details: validation.errors
-                });
-            }
-        }
-        
-        const asset = await contextService.createAsset(userId, {
+        const supabase = getSupabase(req);
+        const {
             asset_type,
             name,
             description,
-            content_json: content_json || {},
+            content_json = {},
             content_text,
-            tags: tags || [],
-            visibility: visibility || 'private'
-        });
-        
+            tags = [],
+            user_id
+        } = req.body;
+
+        // Validation
+        if (!asset_type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Asset type is required'
+            });
+        }
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                error: 'Asset name is required'
+            });
+        }
+
+        // Generate plain text for search if not provided
+        const searchableText = content_text || jsonToText(content_json);
+
+        const assetData = {
+            asset_type,
+            name,
+            description: description || '',
+            content_json,
+            content_text: searchableText,
+            tags,
+            version: 1,
+            is_current: true,
+            usage_count: 0,
+            visibility: 'private',
+            user_id: user_id || null,
+            created_by: user_id || null
+        };
+
+        const { data, error } = await supabase
+            .from('context_assets')
+            .insert(assetData)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Create initial version record
+        await supabase
+            .from('context_asset_versions')
+            .insert({
+                asset_id: data.id,
+                version: 1,
+                content_json,
+                content_text: searchableText,
+                change_summary: 'Initial creation',
+                created_by: user_id || null
+            });
+
         res.status(201).json({
             success: true,
-            data: asset,
-            message: 'Asset created successfully'
+            asset: {
+                ...data,
+                type_info: ASSET_TYPES[data.asset_type] || { icon: '📄', display_name: data.asset_type }
+            }
         });
+
     } catch (error) {
         console.error('Error creating asset:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create asset',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * PUT /api/context/assets/:id
- * Update an existing context asset
- * Triggers automatic versioning if content changes
- * 
- * Body: Any of the following fields
- *   - name
- *   - description
- *   - content_json
- *   - content_text
- *   - tags
- *   - visibility
- */
+// ============================================
+// PUT /api/context/assets/:id
+// Update existing asset
+// ============================================
 router.put('/assets/:id', async (req, res) => {
     try {
+        const supabase = getSupabase(req);
         const { id } = req.params;
-        const userId = req.userId;
-        const updates = req.body;
-        
-        // Validate at least one field to update
-        const allowedFields = ['name', 'description', 'content_json', 'content_text', 'tags', 'visibility'];
-        const hasValidField = allowedFields.some(field => updates[field] !== undefined);
-        
-        if (!hasValidField) {
-            return res.status(400).json({
+        const {
+            name,
+            description,
+            asset_type,
+            content_json,
+            content_text,
+            tags,
+            change_summary,
+            user_id
+        } = req.body;
+
+        // Fetch current asset
+        const { data: current, error: fetchError } = await supabase
+            .from('context_assets')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !current) {
+            return res.status(404).json({
                 success: false,
-                error: 'No valid fields to update',
-                allowedFields
+                error: 'Asset not found'
             });
         }
-        
-        const asset = await contextService.updateAsset(id, userId, updates);
-        
+
+        // Prepare update data
+        const updateData = {
+            updated_at: new Date().toISOString()
+        };
+
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (asset_type !== undefined) updateData.asset_type = asset_type;
+        if (tags !== undefined) updateData.tags = tags;
+
+        // If content changed, increment version
+        if (content_json !== undefined) {
+            updateData.content_json = content_json;
+            updateData.content_text = content_text || jsonToText(content_json);
+            updateData.version = current.version + 1;
+
+            // Save version history
+            await supabase
+                .from('context_asset_versions')
+                .insert({
+                    asset_id: id,
+                    version: updateData.version,
+                    content_json: content_json,
+                    content_text: updateData.content_text,
+                    change_summary: change_summary || 'Content updated',
+                    created_by: user_id || null
+                });
+        }
+
+        // Update asset
+        const { data, error } = await supabase
+            .from('context_assets')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
         res.json({
             success: true,
-            data: asset,
-            message: 'Asset updated successfully',
-            version: asset.version
+            asset: {
+                ...data,
+                type_info: ASSET_TYPES[data.asset_type] || { icon: '📄', display_name: data.asset_type }
+            }
         });
+
     } catch (error) {
         console.error('Error updating asset:', error);
-        
-        if (error.message.includes('not found')) {
-            return res.status(404).json({
-                success: false,
-                error: 'Asset not found or access denied'
-            });
-        }
-        
         res.status(500).json({
             success: false,
-            error: 'Failed to update asset',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * DELETE /api/context/assets/:id
- * Delete or archive a context asset
- * 
- * Query params:
- *   - hard: If 'true', permanently delete (default: soft delete/archive)
- */
+// ============================================
+// DELETE /api/context/assets/:id
+// Delete asset (soft delete by default)
+// ============================================
 router.delete('/assets/:id', async (req, res) => {
     try {
+        const supabase = getSupabase(req);
         const { id } = req.params;
-        const userId = req.userId;
-        const hardDelete = req.query.hard === 'true';
-        
-        await contextService.deleteAsset(id, userId, hardDelete);
-        
+        const { hard = false } = req.query;
+
+        if (hard === 'true') {
+            // Hard delete - remove from database
+            const { error } = await supabase
+                .from('context_assets')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        } else {
+            // Soft delete - mark as archived
+            const { error } = await supabase
+                .from('context_assets')
+                .update({ is_current: false, updated_at: new Date().toISOString() })
+                .eq('id', id);
+
+            if (error) throw error;
+        }
+
         res.json({
             success: true,
-            message: hardDelete ? 'Asset permanently deleted' : 'Asset archived successfully'
+            message: hard === 'true' ? 'Asset permanently deleted' : 'Asset archived'
         });
+
     } catch (error) {
         console.error('Error deleting asset:', error);
-        
-        if (error.message.includes('not found')) {
-            return res.status(404).json({
-                success: false,
-                error: 'Asset not found or access denied'
-            });
-        }
-        
         res.status(500).json({
             success: false,
-            error: 'Failed to delete asset',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * POST /api/context/assets/:id/restore
- * Restore an archived asset
- */
-router.post('/assets/:id/restore', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.userId;
-        
-        const asset = await contextService.restoreAsset(id, userId);
-        
-        res.json({
-            success: true,
-            data: asset,
-            message: 'Asset restored successfully'
-        });
-    } catch (error) {
-        console.error('Error restoring asset:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to restore asset',
-            details: error.message
-        });
-    }
-});
-
-// ============================================================
-// VERSION HISTORY ENDPOINTS
-// ============================================================
-
-/**
- * GET /api/context/assets/:id/versions
- * Get version history for an asset
- */
+// ============================================
+// GET /api/context/assets/:id/versions
+// Get version history for asset
+// ============================================
 router.get('/assets/:id/versions', async (req, res) => {
     try {
+        const supabase = getSupabase(req);
         const { id } = req.params;
-        const userId = req.userId;
-        
-        const versions = await contextService.getAssetVersions(id, userId);
-        
+
+        const { data, error } = await supabase
+            .from('context_asset_versions')
+            .select('*')
+            .eq('asset_id', id)
+            .order('version', { ascending: false });
+
+        if (error) throw error;
+
         res.json({
             success: true,
-            data: versions,
-            count: versions.length
+            versions: data || [],
+            count: (data || []).length
         });
+
     } catch (error) {
         console.error('Error fetching versions:', error);
-        
-        if (error.message.includes('not found')) {
-            return res.status(404).json({
-                success: false,
-                error: 'Asset not found or access denied'
-            });
-        }
-        
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch version history',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * POST /api/context/assets/:id/rollback/:version
- * Rollback to a previous version
- */
-router.post('/assets/:id/rollback/:version', async (req, res) => {
+// ============================================
+// POST /api/context/assets/:id/rollback
+// Rollback asset to specific version
+// ============================================
+router.post('/assets/:id/rollback', async (req, res) => {
     try {
-        const { id, version } = req.params;
-        const userId = req.userId;
-        
-        const targetVersion = parseInt(version);
-        if (isNaN(targetVersion) || targetVersion < 1) {
+        const supabase = getSupabase(req);
+        const { id } = req.params;
+        const { version, user_id } = req.body;
+
+        if (!version) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid version number'
+                error: 'Version number is required'
             });
         }
-        
-        const asset = await contextService.rollbackToVersion(id, userId, targetVersion);
-        
+
+        // Get the version to rollback to
+        const { data: versionData, error: versionError } = await supabase
+            .from('context_asset_versions')
+            .select('*')
+            .eq('asset_id', id)
+            .eq('version', version)
+            .single();
+
+        if (versionError || !versionData) {
+            return res.status(404).json({
+                success: false,
+                error: 'Version not found'
+            });
+        }
+
+        // Get current asset
+        const { data: current, error: currentError } = await supabase
+            .from('context_assets')
+            .select('version')
+            .eq('id', id)
+            .single();
+
+        if (currentError) throw currentError;
+
+        const newVersion = current.version + 1;
+
+        // Update asset with rolled back content
+        const { data, error } = await supabase
+            .from('context_assets')
+            .update({
+                content_json: versionData.content_json,
+                content_text: versionData.content_text,
+                version: newVersion,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Create version record for rollback
+        await supabase
+            .from('context_asset_versions')
+            .insert({
+                asset_id: id,
+                version: newVersion,
+                content_json: versionData.content_json,
+                content_text: versionData.content_text,
+                change_summary: `Rolled back to version ${version}`,
+                created_by: user_id || null
+            });
+
         res.json({
             success: true,
-            data: asset,
-            message: `Rolled back to version ${targetVersion}`,
-            newVersion: asset.version
+            asset: data,
+            message: `Rolled back to version ${version}`
         });
+
     } catch (error) {
-        console.error('Error rolling back version:', error);
-        
-        if (error.message.includes('not found')) {
+        console.error('Error rolling back:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// POST /api/context/assets/:id/duplicate
+// Duplicate an asset
+// ============================================
+router.post('/assets/:id/duplicate', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { id } = req.params;
+        const { name, user_id } = req.body;
+
+        // Fetch original asset
+        const { data: original, error: fetchError } = await supabase
+            .from('context_assets')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !original) {
             return res.status(404).json({
                 success: false,
-                error: error.message
+                error: 'Asset not found'
             });
         }
-        
-        res.status(500).json({
-            success: false,
-            error: 'Failed to rollback version',
-            details: error.message
-        });
-    }
-});
 
-// ============================================================
-// BULK OPERATIONS
-// ============================================================
+        // Create duplicate
+        const duplicateData = {
+            asset_type: original.asset_type,
+            name: name || `${original.name} (Copy)`,
+            description: original.description,
+            content_json: original.content_json,
+            content_text: original.content_text,
+            tags: original.tags,
+            version: 1,
+            is_current: true,
+            usage_count: 0,
+            visibility: 'private',
+            user_id: user_id || original.user_id,
+            created_by: user_id || null
+        };
 
-/**
- * POST /api/context/assets/bulk
- * Create multiple assets at once
- * 
- * Body:
- *   - assets: Array of asset objects
- */
-router.post('/assets/bulk', async (req, res) => {
-    try {
-        const userId = req.userId;
-        const { assets } = req.body;
-        
-        if (!assets || !Array.isArray(assets) || assets.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'assets array is required'
+        const { data, error } = await supabase
+            .from('context_assets')
+            .insert(duplicateData)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Create initial version
+        await supabase
+            .from('context_asset_versions')
+            .insert({
+                asset_id: data.id,
+                version: 1,
+                content_json: data.content_json,
+                content_text: data.content_text,
+                change_summary: `Duplicated from "${original.name}"`,
+                created_by: user_id || null
             });
-        }
-        
-        if (assets.length > 100) {
-            return res.status(400).json({
-                success: false,
-                error: 'Maximum 100 assets per bulk operation'
-            });
-        }
-        
-        // Validate each asset has required fields
-        for (let i = 0; i < assets.length; i++) {
-            if (!assets[i].asset_type || !assets[i].name) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Asset at index ${i} missing required fields (asset_type, name)`
-                });
-            }
-        }
-        
-        const created = await contextService.bulkCreateAssets(userId, assets);
-        
+
         res.status(201).json({
             success: true,
-            data: created,
-            count: created.length,
-            message: `${created.length} assets created successfully`
+            asset: {
+                ...data,
+                type_info: ASSET_TYPES[data.asset_type] || { icon: '📄', display_name: data.asset_type }
+            }
         });
+
     } catch (error) {
-        console.error('Error bulk creating assets:', error);
+        console.error('Error duplicating asset:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to bulk create assets',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-/**
- * GET /api/context/export
- * Export all user's context assets
- */
-router.get('/export', async (req, res) => {
+// ============================================
+// PATCH /api/context/assets/:id/archive
+// Archive or restore an asset
+// ============================================
+router.patch('/assets/:id/archive', async (req, res) => {
     try {
-        const userId = req.userId;
-        
-        const exportData = await contextService.exportAssets(userId);
-        
-        // Set headers for file download
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', `attachment; filename=context-assets-${Date.now()}.json`);
-        
+        const supabase = getSupabase(req);
+        const { id } = req.params;
+        const { archived = true } = req.body;
+
+        const { data, error } = await supabase
+            .from('context_assets')
+            .update({ 
+                is_current: !archived,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({
+            success: true,
+            asset: data,
+            message: archived ? 'Asset archived' : 'Asset restored'
+        });
+
+    } catch (error) {
+        console.error('Error archiving asset:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// POST /api/context/assets/import
+// Bulk import assets from JSON
+// ============================================
+router.post('/assets/import', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { assets, user_id } = req.body;
+
+        if (!Array.isArray(assets) || assets.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Assets array is required'
+            });
+        }
+
+        const results = {
+            success: [],
+            failed: []
+        };
+
+        for (const asset of assets) {
+            try {
+                const assetData = {
+                    asset_type: asset.asset_type,
+                    name: asset.name,
+                    description: asset.description || '',
+                    content_json: asset.content_json || {},
+                    content_text: asset.content_text || jsonToText(asset.content_json || {}),
+                    tags: asset.tags || [],
+                    version: 1,
+                    is_current: true,
+                    usage_count: 0,
+                    visibility: 'private',
+                    user_id: user_id || null,
+                    created_by: user_id || null
+                };
+
+                const { data, error } = await supabase
+                    .from('context_assets')
+                    .insert(assetData)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                results.success.push({ name: asset.name, id: data.id });
+            } catch (err) {
+                results.failed.push({ name: asset.name, error: err.message });
+            }
+        }
+
+        res.json({
+            success: true,
+            imported: results.success.length,
+            failed: results.failed.length,
+            results
+        });
+
+    } catch (error) {
+        console.error('Error importing assets:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// GET /api/context/assets/export
+// Export assets as JSON
+// ============================================
+router.get('/assets/export', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { type, ids } = req.query;
+
+        let query = supabase
+            .from('context_assets')
+            .select('*')
+            .eq('is_current', true);
+
+        if (type) {
+            query = query.eq('asset_type', type);
+        }
+
+        if (ids) {
+            const idArray = ids.split(',');
+            query = query.in('id', idArray);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        // Format for export
+        const exportData = {
+            exported_at: new Date().toISOString(),
+            version: '2.2.0',
+            count: data.length,
+            assets: data.map(asset => ({
+                asset_type: asset.asset_type,
+                name: asset.name,
+                description: asset.description,
+                content_json: asset.content_json,
+                tags: asset.tags
+            }))
+        };
+
         res.json(exportData);
+
     } catch (error) {
         console.error('Error exporting assets:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to export assets',
-            details: error.message
+            error: error.message
         });
     }
 });
 
-// ============================================================
-// UTILITY ENDPOINTS
-// ============================================================
-
-/**
- * GET /api/context/stats
- * Get statistics about user's context assets
- */
+// ============================================
+// GET /api/context/stats
+// Get usage statistics
+// ============================================
 router.get('/stats', async (req, res) => {
     try {
-        const userId = req.userId;
-        
-        // Get all assets to calculate stats
-        const assets = await contextService.getAssets(userId, { limit: 1000 });
-        
-        // Calculate stats
+        const supabase = getSupabase(req);
+
+        // Get counts by type
+        const { data: assets, error } = await supabase
+            .from('context_assets')
+            .select('asset_type, is_current, usage_count');
+
+        if (error) throw error;
+
         const stats = {
-            total_assets: assets.length,
-            by_type: {},
-            total_versions: 0,
-            most_used: null,
-            recently_updated: null
+            total: assets.length,
+            current: assets.filter(a => a.is_current).length,
+            archived: assets.filter(a => !a.is_current).length,
+            total_usage: assets.reduce((sum, a) => sum + (a.usage_count || 0), 0),
+            by_type: {}
         };
-        
-        // Group by type
+
+        // Count by type
         for (const asset of assets) {
-            const type = asset.asset_type;
-            if (!stats.by_type[type]) {
-                stats.by_type[type] = {
+            if (!stats.by_type[asset.asset_type]) {
+                stats.by_type[asset.asset_type] = {
                     count: 0,
-                    icon: asset.context_asset_types?.icon || '📄'
+                    usage: 0,
+                    info: ASSET_TYPES[asset.asset_type] || { icon: '📄', display_name: asset.asset_type }
                 };
             }
-            stats.by_type[type].count++;
-            stats.total_versions += asset.version;
+            stats.by_type[asset.asset_type].count++;
+            stats.by_type[asset.asset_type].usage += asset.usage_count || 0;
         }
-        
-        // Find most used
-        const sorted = [...assets].sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
-        if (sorted.length > 0 && sorted[0].usage_count > 0) {
-            stats.most_used = {
-                id: sorted[0].id,
-                name: sorted[0].name,
-                usage_count: sorted[0].usage_count
-            };
-        }
-        
-        // Find recently updated
-        if (assets.length > 0) {
-            const recent = [...assets].sort((a, b) => 
-                new Date(b.updated_at) - new Date(a.updated_at)
-            )[0];
-            stats.recently_updated = {
-                id: recent.id,
-                name: recent.name,
-                updated_at: recent.updated_at
-            };
-        }
-        
+
         res.json({
             success: true,
-            data: stats
+            stats
         });
+
     } catch (error) {
         console.error('Error fetching stats:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch stats',
-            details: error.message
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// POST /api/context/assets/:id/usage
+// Increment usage count (called by agent service)
+// ============================================
+router.post('/assets/:id/usage', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { id } = req.params;
+
+        const { error } = await supabase.rpc('increment_asset_usage', { asset_id: id });
+
+        // If RPC doesn't exist, do it manually
+        if (error && error.code === 'PGRST202') {
+            const { data, error: updateError } = await supabase
+                .from('context_assets')
+                .update({ 
+                    usage_count: supabase.raw('usage_count + 1'),
+                    last_used_at: new Date().toISOString()
+                })
+                .eq('id', id);
+
+            if (updateError) throw updateError;
+        } else if (error) {
+            throw error;
+        }
+
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Error updating usage:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });

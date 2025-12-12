@@ -31,13 +31,18 @@
                     <i data-lucide="message-square"></i>
                     <span>Multi-LLM Chat</span>
                 </a>
+                <a href="/context.html" class="nav-item">
+                    <i data-lucide="database"></i>
+                    <span>Context Assets</span>
+                </a>
                 <a href="/agents.html" class="nav-item active">
                     <i data-lucide="bot"></i>
                     <span>Agent Library</span>
                 </a>
-                <a href="/briefing.html" class="nav-item">
+                <a href="/briefing.html" class="nav-item" style="opacity: 0.5; pointer-events: none;">
                     <i data-lucide="newspaper"></i>
                     <span>Daily Briefing</span>
+                    <span class="nav-badge">Phase 4</span>
                 </a>
             </nav>
         </aside>
@@ -54,14 +59,20 @@
                     <div style="width: 80px; height: 80px; margin: 0 auto var(--spacing-lg); background: var(--bg-tertiary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
                         <i data-lucide="bot" style="width: 40px; height: 40px; color: var(--text-muted);"></i>
                     </div>
-                    <h2 style="margin-bottom: var(--spacing-sm);">Coming in Phase 3</h2>
+                    <h2 style="margin-bottom: var(--spacing-sm);">Agent Library</h2>
                     <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
-                        The Agent Library will allow you to create, manage, and execute AI agents including MindStudio workflow integration.
+                        The Agent Library will allow you to create, manage, and execute AI agents with context injection from your assets. Start by setting up your Context Assets first.
                     </p>
-                    <a href="/chat.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius-md);">
-                        <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
-                        Try Multi-LLM Chat
-                    </a>
+                    <div style="display: flex; gap: var(--spacing-sm); justify-content: center; flex-wrap: wrap;">
+                        <a href="/context.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius-md);">
+                            <i data-lucide="database" style="width: 18px; height: 18px;"></i>
+                            Manage Context Assets
+                        </a>
+                        <a href="/chat.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
+                            Try Multi-LLM Chat
+                        </a>
+                    </div>
                 </div>
             </div>
         </main>
