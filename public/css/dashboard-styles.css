@@ -1,0 +1,189 @@
+/* Dashboard Styles - Add to styles.css or include inline */
+
+/* Service List */
+.service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.service-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: var(--color-bg-tertiary, rgba(37, 37, 64, 0.5));
+}
+
+.service-item.active {
+    border-left: 3px solid #10b981;
+}
+
+.service-item.inactive {
+    border-left: 3px solid #6b6b80;
+    opacity: 0.7;
+}
+
+.service-icon {
+    font-size: 1.2rem;
+}
+
+.service-name {
+    flex: 1;
+    color: var(--color-text-secondary, #a0a0b0);
+}
+
+.service-status {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.service-item.active .service-status {
+    color: #10b981;
+}
+
+.service-item.inactive .service-status {
+    color: #6b6b80;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-loading {
+    background: rgba(107, 107, 128, 0.2);
+    color: #6b6b80;
+}
+
+.status-operational {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.status-partial {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Model List */
+.model-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.model-provider {
+    margin-bottom: 1rem;
+}
+
+.provider-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-border, #2a2a40);
+    margin-bottom: 0.5rem;
+}
+
+.provider-icon {
+    font-size: 1.1rem;
+}
+
+.provider-name {
+    font-weight: 600;
+    color: var(--color-text-primary, #ffffff);
+}
+
+.provider-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #6b6b80);
+}
+
+.model-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: var(--color-bg-tertiary, rgba(37, 37, 64, 0.3));
+}
+
+.model-name {
+    color: var(--color-text-secondary, #a0a0b0);
+    font-size: 0.9rem;
+}
+
+.model-tier {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.tier-premium {
+    background: rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+}
+
+.tier-default {
+    background: rgba(99, 102, 241, 0.2);
+    color: #6366f1;
+}
+
+.tier-standard {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.tier-efficient {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.tier-fast {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.tier-reasoning {
+    background: rgba(236, 72, 153, 0.2);
+    color: #ec4899;
+}
+
+.count-badge {
+    background: var(--color-primary, #6366f1);
+    color: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Messages */
+.no-models,
+.error-message {
+    text-align: center;
+    padding: 1rem;
+    color: var(--color-text-muted, #6b6b80);
+}
+
+.error-message {
+    color: #ef4444;
+}
