@@ -11,6 +11,7 @@
  * - Conversation persistence (Supabase)
  * - System health monitoring
  * - Context Assets management (Phase 3)
+ * - Agent Framework (Phase 3)
  */
 
 require('dotenv').config();
@@ -19,6 +20,8 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
+const agentsRoutes = require('./routes/agents');
+const injectionRoutes = require('./routes/injection');
 
 // ============================================
 // INITIALIZE EXPRESS APP
@@ -41,7 +44,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
-            scriptSrcAttr: ["'unsafe-inline'"],  // <-- ADD THIS LINE
+            scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "blob:", "https:"],
             mediaSrc: ["'self'", "blob:"],
             connectSrc: [
@@ -208,10 +211,15 @@ function initializeServices() {
     if (initializeSupabase()) {
         serviceStatus.supabase = true;
         console.log('  ✅ Supabase (Database) - Ready');
+        
+        // Register Supabase-dependent routes HERE (after Supabase is initialized)
+        app.use('/api/agents', agentsRoutes(supabase));
+        app.use('/api/injection', injectionRoutes(supabase));
+        console.log('  ✅ Agent routes registered');
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }
-
+    
     console.log('\n----------------------------------------\n');
 }
 
@@ -268,14 +276,6 @@ try {
     // Conversations handled by chat routes
 }
 
-// Agent routes (Phase 3 - placeholder)
-try {
-    const agentRoutes = require('./routes/agents');
-    app.use('/api/agents', agentRoutes);
-} catch (error) {
-    // Agents not yet implemented
-}
-
 // Briefing routes (Phase 4 - placeholder)
 try {
     const briefingRoutes = require('./routes/briefing');
@@ -313,37 +313,39 @@ app.get('/context', (req, res) => {
 });
 
 // ============================================
-// ERROR HANDLING
+// ERROR HANDLERS (registered after services init)
 // ============================================
 
-// 404 handler
-app.use((req, res, next) => {
-    if (req.path.startsWith('/api/')) {
-        res.status(404).json({ 
-            success: false, 
-            error: 'API endpoint not found' 
-        });
-    } else {
-        // Serve index.html for unknown routes (SPA support)
-        res.sendFile(path.join(__dirname, '../public/index.html'));
-    }
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-    console.error('Server Error:', err);
-    
-    const statusCode = err.statusCode || 500;
-    const message = process.env.NODE_ENV === 'production' 
-        ? 'An unexpected error occurred' 
-        : err.message;
-    
-    res.status(statusCode).json({
-        success: false,
-        error: message,
-        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+function registerErrorHandlers() {
+    // 404 handler
+    app.use((req, res, next) => {
+        if (req.path.startsWith('/api/')) {
+            res.status(404).json({ 
+                success: false, 
+                error: 'API endpoint not found' 
+            });
+        } else {
+            // Serve index.html for unknown routes (SPA support)
+            res.sendFile(path.join(__dirname, '../public/index.html'));
+        }
     });
-});
+
+    // Global error handler
+    app.use((err, req, res, next) => {
+        console.error('Server Error:', err);
+        
+        const statusCode = err.statusCode || 500;
+        const message = process.env.NODE_ENV === 'production' 
+            ? 'An unexpected error occurred' 
+            : err.message;
+        
+        res.status(statusCode).json({
+            success: false,
+            error: message,
+            ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+        });
+    });
+}
 
 // ============================================
 // SERVER STARTUP
@@ -356,8 +358,11 @@ function startServer() {
     console.log('      Values-Based AI Ecosystem');
     console.log('========================================\n');
     
-    // Initialize all services
+    // Initialize all services (including Supabase-dependent routes)
     initializeServices();
+    
+    // Register error handlers AFTER all routes are set up
+    registerErrorHandlers();
     
     // Start listening
     app.listen(PORT, () => {
@@ -365,6 +370,7 @@ function startServer() {
         console.log(`📊 Dashboard: http://localhost:${PORT}/`);
         console.log(`💬 Chat: http://localhost:${PORT}/chat.html`);
         console.log(`📦 Context: http://localhost:${PORT}/context`);
+        console.log(`🤖 Agents API: http://localhost:${PORT}/api/agents`);
         console.log('\n========================================\n');
     });
 }

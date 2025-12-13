@@ -3,85 +3,2036 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Library | Insight 360</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/theme-toggle.js"></script>
+    <title>Agent Registry | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            /* Light Mode (default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f7;
+            --bg-tertiary: #e8e8ed;
+            --bg-hover: #f0f0f5;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-muted: #aeaeb2;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+            
+            /* Brand Colors */
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            
+            /* Platform Colors */
+            --mindstudio: #6366f1;
+            --pickaxe: #f59e0b;
+            --native: #10b981;
+            --api: #8b5cf6;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            
+            /* Layout */
+            --nav-height: 60px;
+            --sidebar-width: 260px;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252540;
+            --bg-hover: #2a2a45;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b80;
+            --border: #2a2a40;
+            --border-light: #353550;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+        }
+
+        .nav-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            margin-top: var(--nav-height);
+            height: calc(100vh - var(--nav-height));
+        }
+
+        /* Sidebar / Filters */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            padding-left: 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 0.875rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Agent List */
+        .agent-list {
+            width: 380px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .list-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .list-count {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+        }
+
+        .agent-items {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .agent-item {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            gap: 0.875rem;
+        }
+
+        .agent-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .agent-item.selected {
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--primary);
+        }
+
+        .agent-icon {
+            font-size: 1.75rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .agent-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .agent-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .platform-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .platform-badge.mindstudio {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--mindstudio);
+        }
+
+        .platform-badge.pickaxe {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--pickaxe);
+        }
+
+        .platform-badge.native {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--native);
+        }
+
+        .platform-badge.api {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--api);
+        }
+
+        .status-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.draft {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .status-badge.archived {
+            background: rgba(110, 110, 115, 0.15);
+            color: var(--text-muted);
+        }
+
+        .agent-usage {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .detail-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .detail-title-icon {
+            font-size: 2rem;
+        }
+
+        .detail-title h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+        }
+
+        .detail-title p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .detail-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .detail-section {
+            margin-bottom: 2rem;
+        }
+
+        .detail-section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .info-item {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Context Mappings */
+        .context-mappings {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .mapping-header {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-tertiary);
+        }
+
+        .mapping-header h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .mapping-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .mapping-item {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .mapping-item:last-child {
+            border-bottom: none;
+        }
+
+        .mapping-priority {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            width: 24px;
+            text-align: center;
+        }
+
+        .mapping-icon {
+            font-size: 1.25rem;
+        }
+
+        .mapping-info {
+            flex: 1;
+        }
+
+        .mapping-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .mapping-type {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .mapping-mode {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .mapping-mode.always {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .mapping-mode.on_demand {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+        }
+
+        .mapping-mode.conditional {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .mapping-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .mapping-actions button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+
+        .mapping-actions button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(90vh - 140px);
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Platform-specific fields */
+        .platform-fields {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .platform-fields-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Tags Input */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            min-height: 44px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .tag-remove {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            opacity: 0.7;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-input {
+            border: none;
+            background: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            padding: 0.875rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.warning { border-left: 3px solid var(--warning); }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .agent-list {
+                width: 320px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .agent-list {
+                width: 100%;
+            }
+            
+            .detail-panel {
+                display: none;
+            }
+            
+            .detail-panel.mobile-active {
+                display: flex;
+                position: fixed;
+                inset: 0;
+                margin-top: var(--nav-height);
+                z-index: 500;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-logo">INSIGHT 360</div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">
+                <i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i>
+                Dashboard
+            </a>
+            <a href="chat.html" class="nav-link">
+                <i data-lucide="message-square" style="width:18px;height:18px;"></i>
+                Chat
+            </a>
+            <a href="context.html" class="nav-link">
+                <i data-lucide="database" style="width:18px;height:18px;"></i>
+                Context
+            </a>
+            <a href="agents.html" class="nav-link active">
+                <i data-lucide="bot" style="width:18px;height:18px;"></i>
+                Agents
+            </a>
+        </div>
+        <div class="nav-actions">
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <i data-lucide="moon" style="width:20px;height:20px;"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image">
-                    <span class="logo-text">Insight 360</span>
+            <!-- Stats -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Overview</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Total Agents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statActive">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statMindStudio">0</div>
+                        <div class="stat-label">MindStudio</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statPickAxe">0</div>
+                        <div class="stat-label">PickAxe</div>
+                    </div>
                 </div>
             </div>
-            
-            <nav class="sidebar-nav">
-                <a href="/" class="nav-item">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/chat.html" class="nav-item">
-                    <i data-lucide="message-square"></i>
-                    <span>Multi-LLM Chat</span>
-                </a>
-                <a href="/context.html" class="nav-item">
-                    <i data-lucide="database"></i>
-                    <span>Context Assets</span>
-                </a>
-                <a href="/agents.html" class="nav-item active">
-                    <i data-lucide="bot"></i>
-                    <span>Agent Library</span>
-                </a>
-                <a href="/briefing.html" class="nav-item" style="opacity: 0.5; pointer-events: none;">
-                    <i data-lucide="newspaper"></i>
-                    <span>Daily Briefing</span>
-                    <span class="nav-badge">Phase 4</span>
-                </a>
-            </nav>
+
+            <!-- Search -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Search</div>
+                <div class="search-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search agents...">
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Filters</div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Platform</label>
+                    <select class="filter-select" id="filterPlatform">
+                        <option value="">All Platforms</option>
+                        <option value="mindstudio">MindStudio</option>
+                        <option value="pickaxe">PickAxe</option>
+                        <option value="native">Native</option>
+                        <option value="api">API</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Department</label>
+                    <select class="filter-select" id="filterDepartment">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Category</label>
+                    <select class="filter-select" id="filterCategory">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select class="filter-select" id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="draft">Draft</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="page-header" style="padding: var(--spacing-xl); background: var(--bg-primary); border-bottom: 1px solid var(--border);">
-                <h1 style="font-family: var(--font-heading); font-size: 1.75rem;">Agent Library</h1>
-                <p style="color: var(--text-secondary);">Manage and deploy AI agents (Phase 3)</p>
-            </header>
-
-            <div style="padding: var(--spacing-xl); text-align: center;">
-                <div style="max-width: 500px; margin: auto; padding: var(--spacing-2xl);">
-                    <div style="width: 80px; height: 80px; margin: 0 auto var(--spacing-lg); background: var(--bg-tertiary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                        <i data-lucide="bot" style="width: 40px; height: 40px; color: var(--text-muted);"></i>
+        <!-- Content -->
+        <div class="content">
+            <!-- Agent List -->
+            <div class="agent-list">
+                <div class="list-header">
+                    <div>
+                        <span class="list-title">Agents</span>
+                        <span class="list-count" id="listCount">(0)</span>
                     </div>
-                    <h2 style="margin-bottom: var(--spacing-sm);">Agent Library</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
-                        The Agent Library will allow you to create, manage, and execute AI agents with context injection from your assets. Start by setting up your Context Assets first.
-                    </p>
-                    <div style="display: flex; gap: var(--spacing-sm); justify-content: center; flex-wrap: wrap;">
-                        <a href="/context.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius-md);">
-                            <i data-lucide="database" style="width: 18px; height: 18px;"></i>
-                            Manage Context Assets
-                        </a>
-                        <a href="/chat.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-md); border: 1px solid var(--border);">
-                            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
-                            Try Multi-LLM Chat
-                        </a>
+                    <button class="btn btn-primary" id="btnNewAgent">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                        New Agent
+                    </button>
+                </div>
+                <div class="agent-items" id="agentList">
+                    <!-- Agent items will be rendered here -->
+                    <div class="loading">
+                        <div class="spinner"></div>
                     </div>
                 </div>
             </div>
-        </main>
+
+            <!-- Detail Panel -->
+            <div class="detail-panel" id="detailPanel">
+                <div class="empty-state" id="emptyState">
+                    <i data-lucide="bot"></i>
+                    <h3>Select an Agent</h3>
+                    <p>Choose an agent from the list to view details and manage context mappings.</p>
+                    <button class="btn btn-primary" id="btnNewAgentEmpty">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                        Create New Agent
+                    </button>
+                </div>
+
+                <div id="agentDetail" style="display: none;">
+                    <div class="detail-header">
+                        <div class="detail-title">
+                            <span class="detail-title-icon" id="detailIcon">🤖</span>
+                            <div>
+                                <h2 id="detailName">Agent Name</h2>
+                                <p id="detailPlatform">Platform</p>
+                            </div>
+                        </div>
+                        <div class="detail-actions">
+                            <button class="btn btn-secondary" id="btnLaunch">
+                                <i data-lucide="play" style="width:16px;height:16px;"></i>
+                                Launch
+                            </button>
+                            <button class="btn btn-secondary" id="btnEdit">
+                                <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                                Edit
+                            </button>
+                            <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
+                                <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="detail-content">
+                        <!-- Info Section -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">
+                                <i data-lucide="info" style="width:16px;height:16px;"></i>
+                                Information
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Department</div>
+                                    <div class="info-value" id="detailDepartment">—</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Category</div>
+                                    <div class="info-value" id="detailCategory">—</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Status</div>
+                                    <div class="info-value" id="detailStatus">—</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Usage Count</div>
+                                    <div class="info-value" id="detailUsage">0</div>
+                                </div>
+                            </div>
+                            <div class="info-grid" style="margin-top: 1rem;">
+                                <div class="info-item" style="grid-column: 1 / -1;">
+                                    <div class="info-label">Description</div>
+                                    <div class="info-value" id="detailDescription">—</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Context Mappings Section -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">
+                                <i data-lucide="link" style="width:16px;height:16px;"></i>
+                                Context Mappings
+                            </div>
+                            <div class="context-mappings">
+                                <div class="mapping-header">
+                                    <h4>Assigned Context Assets</h4>
+                                    <button class="btn btn-secondary" id="btnAddContext">
+                                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                        Add
+                                    </button>
+                                </div>
+                                <div class="mapping-list" id="mappingList">
+                                    <div class="empty-state" style="padding: 2rem;">
+                                        <p>No context assets mapped to this agent.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Create/Edit Agent Modal -->
+    <div class="modal-overlay" id="agentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">New Agent</h2>
+                <button class="modal-close" id="modalClose">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="agentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Name *</label>
+                            <input type="text" class="form-input" id="formName" required placeholder="e.g., Content Writer Pro">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Icon</label>
+                            <input type="text" class="form-input" id="formIcon" placeholder="🤖" maxlength="2">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input form-textarea" id="formDescription" placeholder="What does this agent do?"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Platform *</label>
+                            <select class="form-input form-select" id="formPlatform" required>
+                                <option value="mindstudio">MindStudio</option>
+                                <option value="pickaxe">PickAxe</option>
+                                <option value="native">Native</option>
+                                <option value="api">API</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-input form-select" id="formStatus">
+                                <option value="draft">Draft</option>
+                                <option value="active">Active</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Platform-specific fields -->
+                    <div class="platform-fields" id="platformFieldsEmbed">
+                        <div class="platform-fields-title">
+                            <i data-lucide="code" style="width:14px;height:14px;"></i>
+                            Embed Configuration
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">External ID</label>
+                            <input type="text" class="form-input" id="formExternalId" placeholder="Workflow or agent ID from platform">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Embed URL</label>
+                            <input type="text" class="form-input" id="formEmbedUrl" placeholder="https://app.mindstudio.ai/embed/...">
+                            <div class="form-hint">The iframe embed URL from MindStudio or PickAxe</div>
+                        </div>
+                    </div>
+
+                    <div class="platform-fields" id="platformFieldsNative" style="display: none;">
+                        <div class="platform-fields-title">
+                            <i data-lucide="terminal" style="width:14px;height:14px;"></i>
+                            Native Configuration
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">System Prompt</label>
+                            <textarea class="form-input form-textarea" id="formSystemPrompt" placeholder="You are a helpful assistant that..." style="min-height: 150px; font-family: 'Fira Code', monospace; font-size: 0.85rem;"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Model</label>
+                                <select class="form-input form-select" id="formModel">
+                                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                                    <option value="gpt-4o">GPT-4o</option>
+                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Temperature</label>
+                                <input type="number" class="form-input" id="formTemperature" min="0" max="2" step="0.1" value="0.7">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select class="form-input form-select" id="formDepartment">
+                                <option value="">Select department...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <select class="form-input form-select" id="formCategory">
+                                <option value="">Select category...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tags</label>
+                        <div class="tags-container" id="tagsContainer">
+                            <input type="text" class="tag-input" id="tagInput" placeholder="Type and press Enter...">
+                        </div>
+                        <div class="form-hint">Press Enter to add tags</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btnSave">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i>
+                    Save Agent
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Context Modal -->
+    <div class="modal-overlay" id="contextModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Add Context Asset</h2>
+                <button class="modal-close" id="contextModalClose">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Select Context Asset</label>
+                    <select class="form-input form-select" id="contextAssetSelect">
+                        <option value="">Choose an asset...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Injection Mode</label>
+                        <select class="form-input form-select" id="contextInjectionMode">
+                            <option value="always">Always</option>
+                            <option value="on_demand">On Demand</option>
+                            <option value="conditional">Conditional</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <input type="number" class="form-input" id="contextPriority" value="0" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnContextCancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnContextAdd">
+                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                    Add Mapping
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // State
+        let agents = [];
+        let selectedAgent = null;
+        let editingAgent = null;
+        let departments = [];
+        let categories = [];
+        let contextAssets = [];
+        let tags = [];
+
+        // DOM Elements
+        const agentList = document.getElementById('agentList');
+        const agentDetail = document.getElementById('agentDetail');
+        const emptyState = document.getElementById('emptyState');
+        const agentModal = document.getElementById('agentModal');
+        const contextModal = document.getElementById('contextModal');
+
+        // =========================================================================
+        // API Functions
+        // =========================================================================
+
+        async function fetchAgents() {
+            try {
+                const params = new URLSearchParams();
+                const platform = document.getElementById('filterPlatform').value;
+                const department = document.getElementById('filterDepartment').value;
+                const category = document.getElementById('filterCategory').value;
+                const status = document.getElementById('filterStatus').value;
+                const search = document.getElementById('searchInput').value;
+
+                if (platform) params.append('source_type', platform);
+                if (department) params.append('department', department);
+                if (category) params.append('category', category);
+                if (status) params.append('status', status);
+                if (search) params.append('search', search);
+
+                const response = await fetch(`/api/agents?${params}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    agents = data.data;
+                    renderAgentList();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('Error fetching agents:', error);
+                showToast('Failed to load agents', 'error');
+            }
+        }
+
+        async function fetchDepartments() {
+            try {
+                const response = await fetch('/api/agents/departments');
+                const data = await response.json();
+                if (data.success) {
+                    departments = data.data;
+                    populateDepartmentSelects();
+                }
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+            }
+        }
+
+        async function fetchCategories() {
+            try {
+                const response = await fetch('/api/agents/categories');
+                const data = await response.json();
+                if (data.success) {
+                    categories = data.data;
+                    populateCategorySelects();
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/agents/stats');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('statTotal').textContent = data.data.total_agents;
+                    document.getElementById('statActive').textContent = data.data.active_agents;
+                    document.getElementById('statMindStudio').textContent = data.data.by_platform?.mindstudio || 0;
+                    document.getElementById('statPickAxe').textContent = data.data.by_platform?.pickaxe || 0;
+                }
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        async function fetchContextAssets() {
+            try {
+                const response = await fetch('/api/context/assets');
+                const data = await response.json();
+                if (data.success) {
+                    contextAssets = data.data;
+                    populateContextAssetSelect();
+                }
+            } catch (error) {
+                console.error('Error fetching context assets:', error);
+            }
+        }
+
+        async function saveAgent(agentData) {
+            try {
+                const method = editingAgent ? 'PUT' : 'POST';
+                const url = editingAgent ? `/api/agents/${editingAgent.id}` : '/api/agents';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(agentData)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(editingAgent ? 'Agent updated' : 'Agent created', 'success');
+                    closeModal();
+                    fetchAgents();
+                    fetchStats();
+                } else {
+                    showToast(data.error || 'Failed to save agent', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving agent:', error);
+                showToast('Failed to save agent', 'error');
+            }
+        }
+
+        async function deleteAgent(id) {
+            if (!confirm('Are you sure you want to archive this agent?')) return;
+
+            try {
+                const response = await fetch(`/api/agents/${id}`, { method: 'DELETE' });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Agent archived', 'success');
+                    selectedAgent = null;
+                    showEmptyState();
+                    fetchAgents();
+                    fetchStats();
+                }
+            } catch (error) {
+                console.error('Error deleting agent:', error);
+                showToast('Failed to delete agent', 'error');
+            }
+        }
+
+        async function addContextMapping(agentId, assetId, mode, priority) {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/context`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        asset_id: assetId,
+                        injection_mode: mode,
+                        priority: parseInt(priority)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Context mapping added', 'success');
+                    closeContextModal();
+                    loadAgentDetail(agentId);
+                } else {
+                    showToast(data.error || 'Failed to add mapping', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding context mapping:', error);
+                showToast('Failed to add mapping', 'error');
+            }
+        }
+
+        async function removeContextMapping(agentId, mappingId) {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/context/${mappingId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Context mapping removed', 'success');
+                    loadAgentDetail(agentId);
+                }
+            } catch (error) {
+                console.error('Error removing context mapping:', error);
+                showToast('Failed to remove mapping', 'error');
+            }
+        }
+
+        // =========================================================================
+        // Render Functions
+        // =========================================================================
+
+        function renderAgentList() {
+            document.getElementById('listCount').textContent = `(${agents.length})`;
+
+            if (agents.length === 0) {
+                agentList.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="inbox"></i>
+                        <h3>No agents found</h3>
+                        <p>Create your first agent to get started.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            agentList.innerHTML = agents.map(agent => `
+                <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}" 
+                     data-id="${agent.id}">
+                    <div class="agent-icon">${agent.icon || '🤖'}</div>
+                    <div class="agent-info">
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-meta">
+                            <span class="platform-badge ${agent.source_type}">${agent.source_type}</span>
+                            <span class="status-badge ${agent.status}">${agent.status}</span>
+                        </div>
+                    </div>
+                    <div class="agent-usage">
+                        <i data-lucide="activity" style="width:12px;height:12px;"></i>
+                        ${agent.usage_count || 0}
+                    </div>
+                </div>
+            `).join('');
+
             lucide.createIcons();
+
+            // Add click handlers
+            agentList.querySelectorAll('.agent-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.id;
+                    selectAgent(id);
+                });
+            });
+        }
+
+        function selectAgent(id) {
+            const agent = agents.find(a => a.id === id);
+            if (!agent) return;
+
+            selectedAgent = agent;
+
+            // Update list selection
+            agentList.querySelectorAll('.agent-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.id === id);
+            });
+
+            loadAgentDetail(id);
+        }
+
+        async function loadAgentDetail(id) {
+            try {
+                const response = await fetch(`/api/agents/${id}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderAgentDetail(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading agent detail:', error);
+            }
+        }
+
+        function renderAgentDetail(agent) {
+            selectedAgent = agent;
+            emptyState.style.display = 'none';
+            agentDetail.style.display = 'flex';
+
+            document.getElementById('detailIcon').textContent = agent.icon || '🤖';
+            document.getElementById('detailName').textContent = agent.name;
+            document.getElementById('detailPlatform').innerHTML = `
+                <span class="platform-badge ${agent.source_type}">${agent.source_type}</span>
+            `;
+
+            const dept = departments.find(d => d.key === agent.department);
+            const cat = categories.find(c => c.key === agent.category);
+
+            document.getElementById('detailDepartment').textContent = dept?.name || agent.department || '—';
+            document.getElementById('detailCategory').textContent = cat?.name || agent.category || '—';
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${agent.status}">${agent.status}</span>`;
+            document.getElementById('detailUsage').textContent = agent.usage_count || 0;
+            document.getElementById('detailDescription').textContent = agent.description || '—';
+
+            // Render context mappings
+            renderContextMappings(agent.agent_context_mappings || []);
+
+            lucide.createIcons();
+        }
+
+        function renderContextMappings(mappings) {
+            const mappingList = document.getElementById('mappingList');
+
+            if (!mappings || mappings.length === 0) {
+                mappingList.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem;">
+                        <p>No context assets mapped to this agent.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by priority descending
+            const sorted = [...mappings].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+            mappingList.innerHTML = sorted.map((mapping, index) => {
+                const asset = mapping.context_assets;
+                return `
+                    <div class="mapping-item" data-id="${mapping.id}">
+                        <div class="mapping-priority">#${index + 1}</div>
+                        <div class="mapping-icon">${asset?.icon || '📄'}</div>
+                        <div class="mapping-info">
+                            <div class="mapping-name">${asset?.name || 'Unknown Asset'}</div>
+                            <div class="mapping-type">${asset?.asset_type || ''}</div>
+                        </div>
+                        <span class="mapping-mode ${mapping.injection_mode}">${mapping.injection_mode}</span>
+                        <div class="mapping-actions">
+                            <button onclick="removeContextMapping('${selectedAgent.id}', '${mapping.id}')" title="Remove">
+                                <i data-lucide="x" style="width:14px;height:14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function showEmptyState() {
+            emptyState.style.display = 'flex';
+            agentDetail.style.display = 'none';
+        }
+
+        function updateStats() {
+            // Local stats update from agents array
+            document.getElementById('statTotal').textContent = agents.length;
+            document.getElementById('statActive').textContent = agents.filter(a => a.status === 'active').length;
+            document.getElementById('statMindStudio').textContent = agents.filter(a => a.source_type === 'mindstudio').length;
+            document.getElementById('statPickAxe').textContent = agents.filter(a => a.source_type === 'pickaxe').length;
+        }
+
+        // =========================================================================
+        // Modal Functions
+        // =========================================================================
+
+        function openModal(agent = null) {
+            editingAgent = agent;
+            document.getElementById('modalTitle').textContent = agent ? 'Edit Agent' : 'New Agent';
+
+            if (agent) {
+                document.getElementById('formName').value = agent.name || '';
+                document.getElementById('formIcon').value = agent.icon || '🤖';
+                document.getElementById('formDescription').value = agent.description || '';
+                document.getElementById('formPlatform').value = agent.source_type || 'native';
+                document.getElementById('formStatus').value = agent.status || 'draft';
+                document.getElementById('formExternalId').value = agent.external_id || '';
+                document.getElementById('formEmbedUrl').value = agent.embed_config?.embed_url || '';
+                document.getElementById('formSystemPrompt').value = agent.system_prompt || '';
+                document.getElementById('formModel').value = agent.model || 'claude-sonnet-4-20250514';
+                document.getElementById('formTemperature').value = agent.temperature || 0.7;
+                document.getElementById('formDepartment').value = agent.department || '';
+                document.getElementById('formCategory').value = agent.category || '';
+                tags = agent.tags || [];
+            } else {
+                document.getElementById('agentForm').reset();
+                document.getElementById('formIcon').value = '🤖';
+                tags = [];
+            }
+
+            renderTags();
+            updatePlatformFields();
+            agentModal.classList.add('active');
+        }
+
+        function closeModal() {
+            agentModal.classList.remove('active');
+            editingAgent = null;
+        }
+
+        function openContextModal() {
+            if (!selectedAgent) return;
+            contextModal.classList.add('active');
+        }
+
+        function closeContextModal() {
+            contextModal.classList.remove('active');
+            document.getElementById('contextAssetSelect').value = '';
+            document.getElementById('contextInjectionMode').value = 'always';
+            document.getElementById('contextPriority').value = '0';
+        }
+
+        function updatePlatformFields() {
+            const platform = document.getElementById('formPlatform').value;
+            const embedFields = document.getElementById('platformFieldsEmbed');
+            const nativeFields = document.getElementById('platformFieldsNative');
+
+            if (platform === 'native') {
+                embedFields.style.display = 'none';
+                nativeFields.style.display = 'block';
+            } else {
+                embedFields.style.display = 'block';
+                nativeFields.style.display = 'none';
+            }
+        }
+
+        // =========================================================================
+        // Tags
+        // =========================================================================
+
+        function renderTags() {
+            const container = document.getElementById('tagsContainer');
+            const input = document.getElementById('tagInput');
+            
+            container.innerHTML = '';
+            tags.forEach((tag, index) => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'tag';
+                tagEl.innerHTML = `
+                    ${tag}
+                    <button class="tag-remove" data-index="${index}">
+                        <i data-lucide="x" style="width:12px;height:12px;"></i>
+                    </button>
+                `;
+                container.appendChild(tagEl);
+            });
+            container.appendChild(input);
+            lucide.createIcons();
+
+            // Re-attach remove handlers
+            container.querySelectorAll('.tag-remove').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    tags.splice(index, 1);
+                    renderTags();
+                });
+            });
+        }
+
+        // =========================================================================
+        // Populate Selects
+        // =========================================================================
+
+        function populateDepartmentSelects() {
+            const selects = [
+                document.getElementById('filterDepartment'),
+                document.getElementById('formDepartment')
+            ];
+
+            selects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">All Departments</option>';
+                if (select.id === 'formDepartment') {
+                    select.innerHTML = '<option value="">Select department...</option>';
+                }
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.key;
+                    option.textContent = `${dept.icon} ${dept.name}`;
+                    select.appendChild(option);
+                });
+                select.value = currentValue;
+            });
+        }
+
+        function populateCategorySelects() {
+            const selects = [
+                document.getElementById('filterCategory'),
+                document.getElementById('formCategory')
+            ];
+
+            selects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">All Categories</option>';
+                if (select.id === 'formCategory') {
+                    select.innerHTML = '<option value="">Select category...</option>';
+                }
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.key;
+                    option.textContent = `${cat.icon} ${cat.name}`;
+                    select.appendChild(option);
+                });
+                select.value = currentValue;
+            });
+        }
+
+        function populateContextAssetSelect() {
+            const select = document.getElementById('contextAssetSelect');
+            select.innerHTML = '<option value="">Choose an asset...</option>';
+            
+            contextAssets.forEach(asset => {
+                const option = document.createElement('option');
+                option.value = asset.id;
+                option.textContent = `${asset.icon || '📄'} ${asset.name}`;
+                select.appendChild(option);
+            });
+        }
+
+        // =========================================================================
+        // Toast
+        // =========================================================================
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" style="width:18px;height:18px;"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // =========================================================================
+        // Theme Toggle
+        // =========================================================================
+
+        function initTheme() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon(saved);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateThemeIcon(next);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.querySelector('#themeToggle i');
+            icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+
+        // =========================================================================
+        // Event Listeners
+        // =========================================================================
+
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        document.getElementById('btnNewAgent').addEventListener('click', () => openModal());
+        document.getElementById('btnNewAgentEmpty').addEventListener('click', () => openModal());
+        document.getElementById('modalClose').addEventListener('click', closeModal);
+        document.getElementById('btnCancel').addEventListener('click', closeModal);
+
+        document.getElementById('btnEdit').addEventListener('click', () => {
+            if (selectedAgent) openModal(selectedAgent);
         });
+
+        document.getElementById('btnDelete').addEventListener('click', () => {
+            if (selectedAgent) deleteAgent(selectedAgent.id);
+        });
+
+        document.getElementById('btnLaunch').addEventListener('click', () => {
+            if (selectedAgent) {
+                // TODO: Open agent launcher
+                showToast('Agent launcher coming in Step 3.10', 'warning');
+            }
+        });
+
+        document.getElementById('btnAddContext').addEventListener('click', openContextModal);
+        document.getElementById('contextModalClose').addEventListener('click', closeContextModal);
+        document.getElementById('btnContextCancel').addEventListener('click', closeContextModal);
+
+        document.getElementById('btnContextAdd').addEventListener('click', () => {
+            const assetId = document.getElementById('contextAssetSelect').value;
+            const mode = document.getElementById('contextInjectionMode').value;
+            const priority = document.getElementById('contextPriority').value;
+
+            if (!assetId) {
+                showToast('Please select a context asset', 'error');
+                return;
+            }
+
+            addContextMapping(selectedAgent.id, assetId, mode, priority);
+        });
+
+        document.getElementById('formPlatform').addEventListener('change', updatePlatformFields);
+
+        document.getElementById('btnSave').addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const platform = document.getElementById('formPlatform').value;
+            
+            const agentData = {
+                name: document.getElementById('formName').value,
+                icon: document.getElementById('formIcon').value || '🤖',
+                description: document.getElementById('formDescription').value,
+                source_type: platform,
+                status: document.getElementById('formStatus').value,
+                department: document.getElementById('formDepartment').value || null,
+                category: document.getElementById('formCategory').value || null,
+                tags
+            };
+
+            if (platform === 'native') {
+                agentData.system_prompt = document.getElementById('formSystemPrompt').value;
+                agentData.model = document.getElementById('formModel').value;
+                agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
+            } else {
+                agentData.external_id = document.getElementById('formExternalId').value;
+                agentData.embed_config = {
+                    platform,
+                    embed_type: 'iframe',
+                    embed_url: document.getElementById('formEmbedUrl').value,
+                    theme: document.documentElement.getAttribute('data-theme') || 'dark'
+                };
+            }
+
+            if (!agentData.name) {
+                showToast('Name is required', 'error');
+                return;
+            }
+
+            saveAgent(agentData);
+        });
+
+        // Tag input
+        document.getElementById('tagInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = e.target.value.trim().toLowerCase();
+                if (value && !tags.includes(value)) {
+                    tags.push(value);
+                    renderTags();
+                }
+                e.target.value = '';
+            }
+        });
+
+        // Filters
+        ['filterPlatform', 'filterDepartment', 'filterCategory', 'filterStatus'].forEach(id => {
+            document.getElementById(id).addEventListener('change', fetchAgents);
+        });
+
+        // Search with debounce
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(fetchAgents, 300);
+        });
+
+        // =========================================================================
+        // Initialize
+        // =========================================================================
+
+        async function init() {
+            initTheme();
+            await Promise.all([
+                fetchDepartments(),
+                fetchCategories(),
+                fetchContextAssets()
+            ]);
+            await fetchAgents();
+            fetchStats();
+        }
+
+        init();
     </script>
 </body>
 </html>
