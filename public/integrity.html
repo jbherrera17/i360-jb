@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrity Dashboard | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/integrity-styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/context.html" class="nav-item">
+                    <i data-lucide="database"></i>
+                    <span>Context Assets</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/integrity.html" class="nav-item active">
+                    <i data-lucide="shield-check"></i>
+                    <span>Integrity</span>
+                </a>
+                <a href="/briefing.html" class="nav-item" style="opacity: 0.5; pointer-events: none;">
+                    <i data-lucide="newspaper"></i>
+                    <span>Daily Briefing</span>
+                    <span class="nav-badge">Phase 4</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="version-info">
+                    <span class="version-label">Version</span>
+                    <span class="version-number">2.2.1</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Integrity Dashboard</h1>
+                    <p class="header-subtitle">Making the Invisible Visible</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="refreshData()">
+                        <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+                        Refresh
+                    </button>
+                    <div class="theme-toggle-wrapper">
+                        <label class="theme-toggle" title="Toggle dark/light mode">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="theme-toggle-slider">
+                                <span class="theme-toggle-icon moon">&#127769;</span>
+                                <span class="theme-toggle-icon sun">&#9728;</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <div id="dashboardContent" class="integrity-layout">
+                <!-- Content loaded dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Integrity Dashboard JavaScript
+
+        // Sample data - replace with actual API calls
+        const sampleData = {
+            integrityYield: {
+                score: 0,
+                interpretation: 'setup',
+                trend: { change: 0, direction: 'stable' },
+                period: 'Not configured'
+            },
+            components: {
+                trustVelocity: { score: 0, weight: 0.30 },
+                interventionEffectiveness: { score: 0, weight: 0.25 },
+                alignmentAudit: { score: 0, weight: 0.25 },
+                counterfactualValue: { score: 0, weight: 0.20 }
+            },
+            leadingIndicators: [],
+            laggingIndicators: [],
+            assets: {
+                bright_lines: { populated: false, lastUpdated: null },
+                values_map: { populated: false, lastUpdated: null },
+                intervention_metrics: { populated: false, lastUpdated: null },
+                trust_velocity_metrics: { populated: false, lastUpdated: null },
+                close_call_log: { populated: false, lastUpdated: null },
+                industry_baseline: { populated: false, lastUpdated: null },
+                integrity_yield: { populated: false, lastUpdated: null }
+            },
+            actionItems: []
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            await loadDashboard();
+        });
+
+        async function loadDashboard() {
+            const container = document.getElementById('dashboardContent');
+
+            try {
+                // Check for existing integrity assets
+                const assetsResponse = await fetch('/api/context/assets?type=integrity_yield');
+                const hasData = assetsResponse.ok && (await assetsResponse.json()).data?.length > 0;
+
+                if (!hasData) {
+                    renderEmptyState(container);
+                } else {
+                    const data = await fetchIntegrityData();
+                    renderDashboard(container, data);
+                }
+            } catch (error) {
+                console.log('Loading with sample data:', error.message);
+                renderEmptyState(container);
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        async function fetchIntegrityData() {
+            // In production, fetch from API
+            // For now, return sample data
+            return sampleData;
+        }
+
+        function renderEmptyState(container) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🛡️</div>
+                    <h2>Set Up Your Integrity Dashboard</h2>
+                    <p>Start by configuring your foundation assets: Bright Lines and Values Map. These form the basis for measuring your organization's integrity posture.</p>
+                    <div class="empty-state-actions">
+                        <button class="btn-primary" onclick="startSetup()">
+                            <i data-lucide="play" style="width: 18px; height: 18px;"></i>
+                            Start Setup Wizard
+                        </button>
+                        <button class="btn-secondary" onclick="window.location.href='/context.html'">
+                            <i data-lucide="database" style="width: 18px; height: 18px;"></i>
+                            Configure Assets Manually
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Asset Status Grid -->
+                <div class="assets-section">
+                    <div class="assets-header">
+                        <h3><i data-lucide="layers" style="width: 18px; height: 18px;"></i> Integrity Assets</h3>
+                    </div>
+                    <div class="assets-grid">
+                        ${renderAssetStatusCards(sampleData.assets)}
+                    </div>
+                </div>
+
+                <!-- Quick Start Guide -->
+                <div class="actions-section">
+                    <div class="actions-header">
+                        <h3><i data-lucide="rocket" style="width: 18px; height: 18px;"></i> Quick Start Guide</h3>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-priority high"></div>
+                        <div class="action-content">
+                            <h4 class="action-title">1. Define Your Bright Lines</h4>
+                            <p class="action-description">Document your non-negotiable ethical boundaries - the lines you won't cross regardless of business pressure.</p>
+                        </div>
+                        <button class="action-cta" onclick="createAsset('bright_lines')">Configure</button>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-priority high"></div>
+                        <div class="action-content">
+                            <h4 class="action-title">2. Map Your Values</h4>
+                            <p class="action-description">Document how your stated values manifest under normal conditions vs. under pressure (stress values).</p>
+                        </div>
+                        <button class="action-cta" onclick="createAsset('values_map')">Configure</button>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-priority medium"></div>
+                        <div class="action-content">
+                            <h4 class="action-title">3. Start Your Close Call Log</h4>
+                            <p class="action-description">Begin documenting near-misses - the crises that didn't happen because someone intervened.</p>
+                        </div>
+                        <button class="action-cta" onclick="createAsset('close_call_log')">Start Log</button>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-priority low"></div>
+                        <div class="action-content">
+                            <h4 class="action-title">4. Research Industry Baseline</h4>
+                            <p class="action-description">Document industry incidents to quantify what you've avoided through your integrity practices.</p>
+                        </div>
+                        <button class="action-cta" onclick="createAsset('industry_baseline')">Research</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDashboard(container, data) {
+            const circumference = 2 * Math.PI * 70;
+            const offset = circumference - (data.integrityYield.score / 100) * circumference;
+
+            container.innerHTML = `
+                <!-- Integrity Yield Card -->
+                <div class="yield-card">
+                    <div class="yield-score-container">
+                        <svg class="yield-score-ring ${data.integrityYield.interpretation}" viewBox="0 0 160 160">
+                            <circle class="bg-ring" cx="80" cy="80" r="70"/>
+                            <circle class="score-ring" cx="80" cy="80" r="70"
+                                stroke-dasharray="${circumference}"
+                                stroke-dashoffset="${offset}"/>
+                        </svg>
+                        <div class="yield-score-value">
+                            <div class="yield-score-number">${data.integrityYield.score}</div>
+                            <div class="yield-score-label">of 100</div>
+                        </div>
+                    </div>
+                    <div class="yield-info">
+                        <h2 class="yield-title">Integrity Yield</h2>
+                        <p class="yield-subtitle">${data.integrityYield.period}</p>
+                        <div class="yield-interpretation ${data.integrityYield.interpretation}">
+                            ${getInterpretationIcon(data.integrityYield.interpretation)}
+                            ${getInterpretationLabel(data.integrityYield.interpretation)}
+                        </div>
+                    </div>
+                    <div class="yield-trend">
+                        <div class="trend-value ${data.integrityYield.trend.direction}">
+                            ${getTrendIcon(data.integrityYield.trend.direction)}
+                            ${data.integrityYield.trend.change > 0 ? '+' : ''}${data.integrityYield.trend.change}%
+                        </div>
+                        <div class="trend-label">vs. prior period</div>
+                    </div>
+                </div>
+
+                <!-- Component Scores -->
+                <div class="components-grid">
+                    <div class="component-card">
+                        <div class="component-header">
+                            <div class="component-icon trust">📈</div>
+                            <span class="component-weight">${(data.components.trustVelocity.weight * 100)}%</span>
+                        </div>
+                        <h4 class="component-title">Trust Velocity</h4>
+                        <p class="component-description">Compounding vs. eroding relationships</p>
+                        <div class="component-score">
+                            <span class="component-score-value">${data.components.trustVelocity.score}</span>
+                            <span class="component-score-max">/ 100</span>
+                        </div>
+                        <div class="component-bar">
+                            <div class="component-bar-fill trust" style="width: ${data.components.trustVelocity.score}%"></div>
+                        </div>
+                    </div>
+                    <div class="component-card">
+                        <div class="component-header">
+                            <div class="component-icon intervention">⚡</div>
+                            <span class="component-weight">${(data.components.interventionEffectiveness.weight * 100)}%</span>
+                        </div>
+                        <h4 class="component-title">Intervention Effectiveness</h4>
+                        <p class="component-description">Human oversight in automated systems</p>
+                        <div class="component-score">
+                            <span class="component-score-value">${data.components.interventionEffectiveness.score}</span>
+                            <span class="component-score-max">/ 100</span>
+                        </div>
+                        <div class="component-bar">
+                            <div class="component-bar-fill intervention" style="width: ${data.components.interventionEffectiveness.score}%"></div>
+                        </div>
+                    </div>
+                    <div class="component-card">
+                        <div class="component-header">
+                            <div class="component-icon alignment">🎯</div>
+                            <span class="component-weight">${(data.components.alignmentAudit.weight * 100)}%</span>
+                        </div>
+                        <h4 class="component-title">Alignment Audit</h4>
+                        <p class="component-description">Stated vs. stress values gap</p>
+                        <div class="component-score">
+                            <span class="component-score-value">${data.components.alignmentAudit.score}</span>
+                            <span class="component-score-max">/ 100</span>
+                        </div>
+                        <div class="component-bar">
+                            <div class="component-bar-fill alignment" style="width: ${data.components.alignmentAudit.score}%"></div>
+                        </div>
+                    </div>
+                    <div class="component-card">
+                        <div class="component-header">
+                            <div class="component-icon counterfactual">💰</div>
+                            <span class="component-weight">${(data.components.counterfactualValue.weight * 100)}%</span>
+                        </div>
+                        <h4 class="component-title">Counterfactual Value</h4>
+                        <p class="component-description">ROI on integrity investments</p>
+                        <div class="component-score">
+                            <span class="component-score-value">${data.components.counterfactualValue.score}</span>
+                            <span class="component-score-max">/ 100</span>
+                        </div>
+                        <div class="component-bar">
+                            <div class="component-bar-fill counterfactual" style="width: ${data.components.counterfactualValue.score}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leading & Lagging Indicators -->
+                <div class="indicators-section">
+                    <div class="indicators-card">
+                        <div class="indicators-header">
+                            <h3><i data-lucide="trending-up" style="width: 18px; height: 18px;"></i> Leading Indicators</h3>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Early warning system</span>
+                        </div>
+                        <div class="indicator-list">
+                            ${renderIndicators(data.leadingIndicators, 'leading')}
+                        </div>
+                    </div>
+                    <div class="indicators-card">
+                        <div class="indicators-header">
+                            <h3><i data-lucide="trending-down" style="width: 18px; height: 18px;"></i> Lagging Indicators</h3>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Reference context</span>
+                        </div>
+                        <div class="indicator-list">
+                            ${renderIndicators(data.laggingIndicators, 'lagging')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Status -->
+                <div class="assets-section">
+                    <div class="assets-header">
+                        <h3><i data-lucide="layers" style="width: 18px; height: 18px;"></i> Integrity Assets</h3>
+                        <button class="btn-secondary" onclick="window.location.href='/context.html'" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                            Manage Assets
+                        </button>
+                    </div>
+                    <div class="assets-grid">
+                        ${renderAssetStatusCards(data.assets)}
+                    </div>
+                </div>
+
+                <!-- Action Items -->
+                ${data.actionItems.length > 0 ? `
+                <div class="actions-section">
+                    <div class="actions-header">
+                        <h3><i data-lucide="check-square" style="width: 18px; height: 18px;"></i> Recommended Actions</h3>
+                    </div>
+                    ${data.actionItems.map(item => `
+                        <div class="action-item">
+                            <div class="action-priority ${item.priority}"></div>
+                            <div class="action-content">
+                                <h4 class="action-title">${item.title}</h4>
+                                <p class="action-description">${item.description}</p>
+                            </div>
+                            ${item.cta ? `<button class="action-cta" onclick="${item.action}">${item.cta}</button>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function renderAssetStatusCards(assets) {
+            const assetTypes = {
+                bright_lines: { icon: '🚫', name: 'Bright Lines', layer: 'Foundation' },
+                values_map: { icon: '🗺️', name: 'Values Map', layer: 'Foundation' },
+                intervention_metrics: { icon: '⚡', name: 'Intervention Metrics', layer: 'Measurement' },
+                trust_velocity_metrics: { icon: '📈', name: 'Trust Velocity', layer: 'Measurement' },
+                close_call_log: { icon: '🛡️', name: 'Close Call Log', layer: 'Measurement' },
+                industry_baseline: { icon: '📊', name: 'Industry Baseline', layer: 'Comparison' },
+                integrity_yield: { icon: '🎯', name: 'Integrity Yield', layer: 'Composite' }
+            };
+
+            return Object.entries(assets).map(([key, value]) => {
+                const type = assetTypes[key];
+                return `
+                    <div class="asset-status-card ${value.populated ? 'populated' : 'empty'}"
+                         onclick="openAsset('${key}')">
+                        <div class="asset-status-icon">${type.icon}</div>
+                        <div class="asset-status-info">
+                            <h4>${type.name}</h4>
+                            <div class="asset-status-meta">
+                                ${value.populated
+                                    ? `Updated ${formatDate(value.lastUpdated)}`
+                                    : `${type.layer} Layer`}
+                            </div>
+                        </div>
+                        <span class="asset-status-badge ${value.populated ? 'configured' : 'setup'}">
+                            ${value.populated ? 'Configured' : 'Set Up'}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderIndicators(indicators, type) {
+            if (!indicators || indicators.length === 0) {
+                return `
+                    <div class="indicator-item">
+                        <div class="indicator-content">
+                            <span class="indicator-name" style="color: var(--text-muted);">
+                                No ${type} indicators configured yet
+                            </span>
+                            <span class="indicator-note">
+                                Configure integrity assets to enable monitoring
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return indicators.map(ind => `
+                <div class="indicator-item">
+                    <div class="indicator-status ${ind.status}"></div>
+                    <div class="indicator-content">
+                        <span class="indicator-name">${ind.name}</span>
+                        ${ind.note ? `<span class="indicator-note">${ind.note}</span>` : ''}
+                    </div>
+                    ${ind.value ? `<span class="indicator-value">${ind.value}</span>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function getInterpretationIcon(interpretation) {
+            const icons = {
+                strong: '✓',
+                adequate: '→',
+                gaps: '⚠',
+                critical: '✕',
+                setup: '○'
+            };
+            return icons[interpretation] || '○';
+        }
+
+        function getInterpretationLabel(interpretation) {
+            const labels = {
+                strong: 'Strong Integrity Posture',
+                adequate: 'Adequate with Opportunities',
+                gaps: 'Significant Gaps',
+                critical: 'Critical Attention Needed',
+                setup: 'Not Yet Configured'
+            };
+            return labels[interpretation] || 'Unknown';
+        }
+
+        function getTrendIcon(direction) {
+            const icons = {
+                improving: '↑',
+                stable: '→',
+                declining: '↓'
+            };
+            return icons[direction] || '→';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Never';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+            return date.toLocaleDateString();
+        }
+
+        function startSetup() {
+            // Launch setup wizard - could open a modal or navigate to setup page
+            window.location.href = '/context.html?setup=integrity';
+        }
+
+        function createAsset(assetType) {
+            window.location.href = `/context.html?create=${assetType}`;
+        }
+
+        function openAsset(assetType) {
+            window.location.href = `/context.html?type=${assetType}`;
+        }
+
+        async function refreshData() {
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Refreshing...';
+
+            await loadDashboard();
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh';
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    </script>
+</body>
+</html>
