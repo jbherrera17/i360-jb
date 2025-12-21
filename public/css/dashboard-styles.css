@@ -1,4 +1,5 @@
-/* Dashboard Styles - Add to styles.css or include inline */
+/* Dashboard Styles - Insight 360 */
+/* Uses CSS variables from styles.css for theme support */
 
 /* Service List */
 .service-list {
@@ -13,15 +14,15 @@
     gap: 0.75rem;
     padding: 0.75rem;
     border-radius: 8px;
-    background: var(--color-bg-tertiary, rgba(37, 37, 64, 0.5));
+    background: var(--bg-tertiary);
 }
 
 .service-item.active {
-    border-left: 3px solid #10b981;
+    border-left: 3px solid var(--success);
 }
 
 .service-item.inactive {
-    border-left: 3px solid #6b6b80;
+    border-left: 3px solid var(--text-muted);
     opacity: 0.7;
 }
 
@@ -31,7 +32,7 @@
 
 .service-name {
     flex: 1;
-    color: var(--color-text-secondary, #a0a0b0);
+    color: var(--text-secondary);
 }
 
 .service-status {
@@ -40,11 +41,11 @@
 }
 
 .service-item.active .service-status {
-    color: #10b981;
+    color: var(--success);
 }
 
 .service-item.inactive .service-status {
-    color: #6b6b80;
+    color: var(--text-muted);
 }
 
 /* Status Badges */
@@ -90,7 +91,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--color-border, #2a2a40);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 0.5rem;
 }
 
@@ -100,13 +101,13 @@
 
 .provider-name {
     font-weight: 600;
-    color: var(--color-text-primary, #ffffff);
+    color: var(--text-primary);
 }
 
 .provider-count {
     margin-left: auto;
     font-size: 0.8rem;
-    color: var(--color-text-muted, #6b6b80);
+    color: var(--text-muted);
 }
 
 .model-items {
@@ -121,11 +122,11 @@
     align-items: center;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    background: var(--color-bg-tertiary, rgba(37, 37, 64, 0.3));
+    background: var(--bg-tertiary);
 }
 
 .model-name {
-    color: var(--color-text-secondary, #a0a0b0);
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
@@ -168,7 +169,7 @@
 }
 
 .count-badge {
-    background: var(--color-primary, #6366f1);
+    background: var(--primary);
     color: white;
     padding: 0.15rem 0.5rem;
     border-radius: 50px;
@@ -181,9 +182,9 @@
 .error-message {
     text-align: center;
     padding: 1rem;
-    color: var(--color-text-muted, #6b6b80);
+    color: var(--text-muted);
 }
 
 .error-message {
-    color: #ef4444;
+    color: var(--danger);
 }

@@ -8,6 +8,8 @@ let currentModel = 'claude-sonnet-4-5-20250929';
 let conversationHistory = [];
 let isStreaming = false;
 let attachedFiles = [];
+let currentConversationId = null;
+let conversations = [];
 
 // DOM Elements
 const chatInput = document.getElementById('chatInput');
@@ -31,13 +33,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Load available models
     await loadModels();
-    
+
+    // Load saved conversations
+    await loadConversations();
+
     // Set up event listeners
     setupEventListeners();
-    
+
     // Check URL params for initial state
     checkUrlParams();
-    
+
     // Auto-resize textarea
     setupTextareaResize();
 });
@@ -160,34 +165,42 @@ function updateModelIndicator() {
 async function sendMessage() {
     const message = chatInput?.value.trim();
     if (!message || isStreaming) return;
-    
+
     // Hide welcome message
     const welcomeMessage = chatMessages?.querySelector('.welcome-message');
     if (welcomeMessage) {
         welcomeMessage.remove();
     }
-    
+
+    // Create conversation if this is the first message
+    if (!currentConversationId) {
+        await createConversation();
+    }
+
     // Add user message to UI
     addMessage('user', message);
-    
+
     // Clear input
     if (chatInput) {
         chatInput.value = '';
         chatInput.style.height = 'auto';
     }
-    
+
     // Add to history
     conversationHistory.push({ role: 'user', content: message });
-    
+
+    // Save user message to database
+    saveMessage('user', message);
+
     // Update status
     setStatus('Thinking...');
     isStreaming = true;
-    
+
     try {
-        // Create assistant message placeholder
-        const assistantDiv = addMessage('assistant', '');
+        // Create assistant message placeholder with loading spinner
+        const assistantDiv = addMessage('assistant', '', true);
         const contentDiv = assistantDiv.querySelector('.message-content');
-        
+
         // Stream response
         const response = await fetch('/api/chat/stream', {
             method: 'POST',
@@ -195,35 +208,35 @@ async function sendMessage() {
             body: JSON.stringify({
                 messages: conversationHistory,
                 model: currentModel,
-                systemPrompt: enableSearch?.checked ? 
-                    'You have access to web search. When the user asks for current information, use search results in your response.' : 
+                systemPrompt: enableSearch?.checked ?
+                    'You have access to web search. When the user asks for current information, use search results in your response.' :
                     undefined
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
-        
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullResponse = '';
-        
+
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            
+
             const chunk = decoder.decode(value);
             const lines = chunk.split('\n');
-            
+
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
                     const data = line.slice(6);
                     if (data === '[DONE]') continue;
-                    
+
                     try {
                         const parsed = JSON.parse(data);
-                        
+
                         if (parsed.type === 'content' && parsed.text) {
                             fullResponse += parsed.text;
                             if (contentDiv) {
@@ -238,20 +251,23 @@ async function sendMessage() {
                 }
             }
         }
-        
+
         // Add to history
         conversationHistory.push({ role: 'assistant', content: fullResponse });
-        
+
+        // Save assistant message to database
+        saveMessage('assistant', fullResponse, currentModel);
+
         setStatus('Ready');
-        
+
     } catch (error) {
         console.error('Chat error:', error);
         setStatus('Error: ' + error.message);
-        
+
         // Show error in chat
         const lastMessage = chatMessages?.lastElementChild;
         if (lastMessage?.classList.contains('assistant')) {
-            lastMessage.querySelector('.message-content').innerHTML = 
+            lastMessage.querySelector('.message-content').innerHTML =
                 `<span style="color: var(--danger);">Error: ${error.message}</span>`;
         }
     } finally {
@@ -261,30 +277,49 @@ async function sendMessage() {
 
 /**
  * Add message to chat UI
+ * @param {string} role - 'user' or 'assistant'
+ * @param {string} content - Message content
+ * @param {boolean} isLoading - Show loading spinner (for assistant)
  */
-function addMessage(role, content) {
+function addMessage(role, content, isLoading = false) {
     if (!chatMessages) return null;
-    
+
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
-    
+
     const avatar = role === 'user' ? '👤' : '🤖';
     const label = role === 'user' ? 'You' : 'Assistant';
-    
+
+    // Loading spinner HTML for assistant messages
+    const loadingSpinner = `
+        <div class="message-loading">
+            <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner">
+            <span class="loading-text">Thinking...</span>
+        </div>
+    `;
+
+    const messageContent = isLoading ? loadingSpinner : formatMessage(content);
+
     messageDiv.innerHTML = `
         <div class="message-avatar">${avatar}</div>
         <div class="message-body">
             <div class="message-header">
                 <span class="message-author">${label}</span>
                 <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                <button class="message-copy" onclick="copyMessage(this)" title="Copy message">
+                    <i data-lucide="copy"></i>
+                </button>
             </div>
-            <div class="message-content">${formatMessage(content)}</div>
+            <div class="message-content">${messageContent}</div>
         </div>
     `;
-    
+
+    // Initialize icons for the copy button
+    lucide.createIcons();
+
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageDiv;
 }
 
@@ -378,11 +413,259 @@ function removeFile(filename) {
 }
 
 /**
- * Start new chat
+ * Load conversations from API
  */
-function startNewChat() {
-    conversationHistory = [];
-    
+async function loadConversations() {
+    try {
+        const response = await fetch('/api/conversations?limit=20');
+        const data = await response.json();
+
+        if (data.success) {
+            conversations = data.conversations;
+            renderConversationList();
+        }
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+    }
+}
+
+/**
+ * Render conversation list in sidebar
+ */
+function renderConversationList() {
+    const conversationList = document.getElementById('conversationList');
+    if (!conversationList) return;
+
+    if (conversations.length === 0) {
+        conversationList.innerHTML = `
+            <div class="empty-conversations">
+                <p>No conversations yet</p>
+            </div>
+        `;
+        return;
+    }
+
+    conversationList.innerHTML = conversations.map(conv => `
+        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}"
+             onclick="loadConversation('${conv.id}')"
+             data-id="${conv.id}">
+            <div class="conversation-title">${escapeHtml(conv.title)}</div>
+            <div class="conversation-meta">
+                <span class="conversation-date">${formatDate(conv.updated_at)}</span>
+                <div class="conversation-actions">
+                    <button class="conversation-action" onclick="renameConversation('${conv.id}', event)" title="Rename">
+                        <i data-lucide="pencil"></i>
+                    </button>
+                    <button class="conversation-action conversation-delete" onclick="event.stopPropagation(); deleteConversation('${conv.id}')" title="Delete">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    lucide.createIcons();
+}
+
+/**
+ * Load a specific conversation
+ */
+async function loadConversation(conversationId) {
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`);
+        const data = await response.json();
+
+        if (data.success && data.conversation) {
+            currentConversationId = conversationId;
+            conversationHistory = data.conversation.messages.map(m => ({
+                role: m.role,
+                content: m.content
+            }));
+
+            // Update model if conversation has one
+            if (data.conversation.model && modelSelect) {
+                currentModel = data.conversation.model;
+                modelSelect.value = currentModel;
+                updateModelIndicator();
+            }
+
+            // Render messages
+            renderMessages(data.conversation.messages);
+
+            // Update conversation list to show active
+            renderConversationList();
+
+            setStatus('Conversation loaded');
+        }
+    } catch (error) {
+        console.error('Error loading conversation:', error);
+        setStatus('Error loading conversation');
+    }
+}
+
+/**
+ * Render messages in chat area
+ */
+function renderMessages(messages) {
+    if (!chatMessages) return;
+
+    if (messages.length === 0) {
+        showWelcomeMessage();
+        return;
+    }
+
+    chatMessages.innerHTML = '';
+    messages.forEach(msg => {
+        addMessage(msg.role, msg.content, false);
+    });
+}
+
+/**
+ * Create a new conversation
+ */
+async function createConversation() {
+    try {
+        const response = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: currentModel,
+                title: 'New Conversation'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentConversationId = data.conversation.id;
+            conversations.unshift(data.conversation);
+            renderConversationList();
+            return data.conversation;
+        }
+    } catch (error) {
+        console.error('Error creating conversation:', error);
+    }
+    return null;
+}
+
+/**
+ * Save a message to the current conversation
+ */
+async function saveMessage(role, content, model = null) {
+    if (!currentConversationId) return;
+
+    try {
+        await fetch(`/api/conversations/${currentConversationId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                role,
+                content,
+                model
+            })
+        });
+
+        // Refresh conversation list to update title/timestamp
+        await loadConversations();
+    } catch (error) {
+        console.error('Error saving message:', error);
+    }
+}
+
+/**
+ * Delete a conversation
+ */
+async function deleteConversation(conversationId) {
+    if (!confirm('Delete this conversation?')) return;
+
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            conversations = conversations.filter(c => c.id !== conversationId);
+
+            if (currentConversationId === conversationId) {
+                currentConversationId = null;
+                conversationHistory = [];
+                showWelcomeMessage();
+            }
+
+            renderConversationList();
+            setStatus('Conversation deleted');
+        }
+    } catch (error) {
+        console.error('Error deleting conversation:', error);
+    }
+}
+
+/**
+ * Copy message content to clipboard
+ */
+async function copyMessage(button) {
+    const messageDiv = button.closest('.message');
+    const contentDiv = messageDiv.querySelector('.message-content');
+
+    if (!contentDiv) return;
+
+    // Get text content (strips HTML)
+    const text = contentDiv.innerText;
+
+    try {
+        await navigator.clipboard.writeText(text);
+
+        // Visual feedback - change icon temporarily
+        const icon = button.querySelector('i');
+        icon.setAttribute('data-lucide', 'check');
+        lucide.createIcons();
+        button.classList.add('copied');
+
+        setTimeout(() => {
+            icon.setAttribute('data-lucide', 'copy');
+            lucide.createIcons();
+            button.classList.remove('copied');
+        }, 2000);
+    } catch (error) {
+        console.error('Failed to copy:', error);
+        setStatus('Failed to copy to clipboard');
+    }
+}
+
+/**
+ * Rename a conversation
+ */
+async function renameConversation(conversationId, event) {
+    if (event) event.stopPropagation();
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) return;
+
+    const newTitle = prompt('Enter new conversation title:', conversation.title);
+    if (!newTitle || newTitle.trim() === '' || newTitle === conversation.title) return;
+
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle.trim() })
+        });
+
+        if (response.ok) {
+            conversation.title = newTitle.trim();
+            renderConversationList();
+            setStatus('Conversation renamed');
+        }
+    } catch (error) {
+        console.error('Error renaming conversation:', error);
+        setStatus('Error renaming conversation');
+    }
+}
+
+/**
+ * Show welcome message
+ */
+function showWelcomeMessage() {
     if (chatMessages) {
         chatMessages.innerHTML = `
             <div class="welcome-message">
@@ -413,6 +696,44 @@ function startNewChat() {
         `;
         lucide.createIcons();
     }
+}
+
+/**
+ * Start new chat
+ */
+function startNewChat() {
+    currentConversationId = null;
+    conversationHistory = [];
+    renderConversationList();
+    showWelcomeMessage();
+}
+
+/**
+ * Helper: Escape HTML
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Helper: Format date
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString();
 }
 
 /**
@@ -532,6 +853,87 @@ messageStyles.textContent = `
     
     .file-item button:hover {
         color: var(--danger);
+    }
+
+    /* Copy message button */
+    .message-copy {
+        opacity: 0;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.25rem;
+        margin-left: auto;
+        border-radius: var(--radius-sm);
+        transition: opacity 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .message-copy:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+    }
+
+    .message-copy.copied {
+        color: var(--success);
+    }
+
+    .message:hover .message-copy {
+        opacity: 1;
+    }
+
+    .message-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .message-copy i {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Conversation actions */
+    .conversation-actions {
+        display: flex;
+        gap: 0.25rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .conversation-item:hover .conversation-actions {
+        opacity: 1;
+    }
+
+    .conversation-action {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: var(--radius-sm);
+        transition: color 0.2s, background 0.2s;
+    }
+
+    .conversation-action:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+    }
+
+    .conversation-action.conversation-delete:hover {
+        color: var(--danger);
+    }
+
+    .conversation-action i {
+        width: 14px;
+        height: 14px;
+    }
+
+    .conversation-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-sm);
     }
 `;
 document.head.appendChild(messageStyles);

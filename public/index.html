@@ -197,35 +197,35 @@
         }
         
         .header-tagline {
-            color: var(--color-text-muted, #6b6b80);
+            color: var(--text-muted);
             font-size: 0.9rem;
         }
-        
+
         .nav-badge {
             font-size: 0.65rem;
             padding: 0.15rem 0.4rem;
             background: rgba(107, 107, 128, 0.3);
             border-radius: 4px;
-            color: var(--color-text-muted, #6b6b80);
+            color: var(--text-muted);
             margin-left: auto;
         }
-        
+
         .sidebar-footer {
             margin-top: auto;
             padding: 1rem;
-            border-top: 1px solid var(--color-border, #2a2a40);
+            border-top: 1px solid var(--border);
         }
-        
+
         .version-info {
             display: flex;
             justify-content: space-between;
             font-size: 0.8rem;
-            color: var(--color-text-muted, #6b6b80);
+            color: var(--text-muted);
         }
-        
+
         .version-number {
             font-family: 'Orbitron', monospace;
-            color: var(--color-primary, #6366f1);
+            color: var(--primary);
         }
         
         /* Phase List */
@@ -234,54 +234,54 @@
             flex-direction: column;
             gap: 0.75rem;
         }
-        
+
         .phase-item {
             display: flex;
             align-items: center;
             gap: 0.75rem;
             padding: 0.75rem;
             border-radius: 8px;
-            background: rgba(37, 37, 64, 0.3);
+            background: var(--bg-tertiary);
         }
-        
+
         .phase-item.complete {
-            border-left: 3px solid #10b981;
+            border-left: 3px solid var(--success);
         }
-        
+
         .phase-item.current {
-            border-left: 3px solid #f59e0b;
+            border-left: 3px solid var(--warning);
             background: rgba(245, 158, 11, 0.1);
         }
-        
+
         .phase-item.upcoming {
-            border-left: 3px solid #6b6b80;
+            border-left: 3px solid var(--text-muted);
             opacity: 0.7;
         }
-        
+
         .phase-indicator {
             width: 20px;
             text-align: center;
             font-weight: bold;
         }
-        
+
         .phase-item.complete .phase-indicator {
-            color: #10b981;
+            color: var(--success);
         }
-        
+
         .phase-item.current .phase-indicator {
-            color: #f59e0b;
+            color: var(--warning);
         }
-        
+
         .phase-item.upcoming .phase-indicator {
-            color: #6b6b80;
+            color: var(--text-muted);
         }
-        
+
         .phase-name {
-            color: var(--color-text-secondary, #a0a0b0);
+            color: var(--text-secondary);
         }
-        
+
         .phase-item.current .phase-name {
-            color: var(--color-text-primary, #ffffff);
+            color: var(--text-primary);
             font-weight: 500;
         }
     </style>

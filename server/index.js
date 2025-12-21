@@ -22,6 +22,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const agentsRoutes = require('./routes/agents');
 const injectionRoutes = require('./routes/injection');
+const conversationsRoutes = require('./routes/conversations');
 
 // ============================================
 // INITIALIZE EXPRESS APP
@@ -215,7 +216,9 @@ function initializeServices() {
         // Register Supabase-dependent routes HERE (after Supabase is initialized)
         app.use('/api/agents', agentsRoutes(supabase));
         app.use('/api/injection', injectionRoutes(supabase));
+        app.use('/api/conversations', conversationsRoutes);
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Conversations routes registered');
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }

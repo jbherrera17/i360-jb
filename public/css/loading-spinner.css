@@ -1,0 +1,176 @@
+/* Loading Spinner - Synergi Swirls Animation */
+/* Works in both dark and light modes */
+
+.loading-spinner-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.loading-spinner.small {
+    width: 32px;
+    height: 32px;
+}
+
+.loading-spinner.large {
+    width: 64px;
+    height: 64px;
+}
+
+/* Subtle pulse effect */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.85;
+        transform: scale(0.97);
+    }
+}
+
+/* Loading text */
+.loading-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    animation: fade-dots 1.5s ease-in-out infinite;
+}
+
+@keyframes fade-dots {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Chat-specific loading indicator */
+.chat-loading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    border-radius: var(--radius-lg, 12px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+}
+
+.chat-loading .loading-spinner {
+    flex-shrink: 0;
+}
+
+.chat-loading-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.chat-loading-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.chat-loading-subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Typing indicator dots (alternative style) */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.5rem;
+}
+
+.typing-indicator .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.typing-indicator .dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-indicator .dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator .dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing-bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+
+/* Inline spinner for buttons */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading .loading-spinner {
+    width: 18px;
+    height: 18px;
+}
+
+/* Full-page loading overlay */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    z-index: 9999;
+    gap: 1rem;
+}
+
+.loading-overlay .loading-spinner {
+    width: 80px;
+    height: 80px;
+}
+
+.loading-overlay .loading-text {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+/* Message loading state (chat interface) */
+.message-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.message-loading .loading-spinner {
+    width: 36px;
+    height: 36px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.message-loading .loading-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
