@@ -260,9 +260,9 @@ router.post('/with-search', async (req, res) => {
         
         // Augment system prompt with search results
         let augmentedSystemPrompt = systemPrompt || '';
-        if (searchResults && searchResults.results) {
+        if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
             augmentedSystemPrompt += `\n\nWeb Search Results for "${searchQuery}":\n`;
-            searchResults.results.forEach((result, i) => {
+            searchResults.forEach((result, i) => {
                 augmentedSystemPrompt += `\n[${i + 1}] ${result.title}\n${result.snippet}\nSource: ${result.url}\n`;
             });
         }
@@ -298,7 +298,7 @@ router.post('/with-search', async (req, res) => {
             response: response.content,
             model: response.model,
             provider,
-            searchResults: searchResults?.results || null,
+            searchResults: searchResults || null,
             usage: response.usage
         });
         

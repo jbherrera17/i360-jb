@@ -119,6 +119,7 @@ function setupEventListeners() {
             }
         });
     }
+
 }
 
 /**
@@ -193,7 +194,8 @@ async function sendMessage() {
     saveMessage('user', message);
 
     // Update status
-    setStatus('Thinking...');
+    const useSearchStatus = enableSearch?.checked;
+    setStatus(useSearchStatus ? 'Searching the web...' : 'Thinking...');
     isStreaming = true;
 
     try {
@@ -201,52 +203,84 @@ async function sendMessage() {
         const assistantDiv = addMessage('assistant', '', true);
         const contentDiv = assistantDiv.querySelector('.message-content');
 
-        // Stream response
-        const response = await fetch('/api/chat/stream', {
+        // Determine if we should use search
+        const useSearch = enableSearch?.checked;
+        const endpoint = useSearch ? '/api/chat/with-search' : '/api/chat/stream';
+
+        // Build request body
+        const requestBody = {
+            messages: conversationHistory,
+            model: currentModel
+        };
+
+        if (useSearch) {
+            // For search endpoint, use the user's message as the search query
+            requestBody.searchQuery = message;
+            requestBody.systemPrompt = 'Use the web search results provided to answer the user\'s question with current, accurate information. Always cite sources when using search results.';
+        }
+
+        // Stream response (or use non-streaming for search)
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                messages: conversationHistory,
-                model: currentModel,
-                systemPrompt: enableSearch?.checked ?
-                    'You have access to web search. When the user asks for current information, use search results in your response.' :
-                    undefined
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
         let fullResponse = '';
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        if (useSearch) {
+            // Non-streaming JSON response for search endpoint
+            const data = await response.json();
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            if (!data.success) {
+                throw new Error(data.error || 'Search failed');
+            }
 
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
-                    if (data === '[DONE]') continue;
+            fullResponse = data.response;
 
-                    try {
-                        const parsed = JSON.parse(data);
+            // Show search results indicator if available
+            if (data.searchResults && data.searchResults.length > 0) {
+                setStatus(`Found ${data.searchResults.length} search results`);
+            }
 
-                        if (parsed.type === 'content' && parsed.text) {
-                            fullResponse += parsed.text;
-                            if (contentDiv) {
-                                contentDiv.innerHTML = formatMessage(fullResponse);
+            if (contentDiv) {
+                contentDiv.innerHTML = formatMessage(fullResponse);
+            }
+        } else {
+            // Streaming SSE response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+
+                        try {
+                            const parsed = JSON.parse(data);
+
+                            if (parsed.type === 'content' && parsed.text) {
+                                fullResponse += parsed.text;
+                                if (contentDiv) {
+                                    contentDiv.innerHTML = formatMessage(fullResponse);
+                                }
+                            } else if (parsed.type === 'error') {
+                                throw new Error(parsed.error);
                             }
-                        } else if (parsed.type === 'error') {
-                            throw new Error(parsed.error);
+                        } catch (e) {
+                            // Skip invalid JSON
                         }
-                    } catch (e) {
-                        // Skip invalid JSON
                     }
                 }
             }
