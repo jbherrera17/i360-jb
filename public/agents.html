@@ -427,6 +427,21 @@
             color: var(--api);
         }
 
+        .platform-badge.anthropic {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .platform-badge.openai {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.inactive {
+            background: rgba(110, 110, 115, 0.15);
+            color: var(--text-muted);
+        }
+
         .status-badge {
             padding: 0.15rem 0.5rem;
             border-radius: 4px;
@@ -951,11 +966,11 @@
             .agent-list {
                 width: 100%;
             }
-            
+
             .detail-panel {
                 display: none;
             }
-            
+
             .detail-panel.mobile-active {
                 display: flex;
                 position: fixed;
@@ -963,6 +978,490 @@
                 margin-top: var(--nav-height);
                 z-index: 500;
             }
+        }
+
+        /* =========================================================================
+           LAUNCHER PANEL STYLES
+           ========================================================================= */
+
+        /* Launcher Overlay */
+        .launcher-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .launcher-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Launcher Panel (Slide-in from right) */
+        .launcher-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 55%;
+            max-width: 700px;
+            min-width: 400px;
+            height: 100vh;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .launcher-overlay.active .launcher-panel {
+            transform: translateX(0);
+        }
+
+        /* Launcher Header */
+        .launcher-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .launcher-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .launcher-icon {
+            font-size: 2rem;
+        }
+
+        .launcher-title h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .launcher-model {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .launcher-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+
+        .launcher-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Context Preview */
+        .context-preview {
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .context-preview-toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+
+        .context-preview-toggle:hover {
+            background: var(--bg-hover);
+        }
+
+        .context-token-count {
+            margin-left: auto;
+            padding: 0.15rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+        }
+
+        .toggle-icon {
+            transition: transform 0.2s;
+        }
+
+        .context-preview.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .context-preview-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .context-preview.expanded .context-preview-content {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .context-asset-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .context-asset-item .asset-icon {
+            font-size: 1.25rem;
+        }
+
+        .context-asset-item .asset-info {
+            flex: 1;
+        }
+
+        .context-asset-item .asset-name {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .context-asset-item .asset-type {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .context-asset-item .asset-tokens {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Messages Area */
+        .launcher-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* Welcome Screen */
+        .launcher-welcome {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .welcome-agent-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .launcher-welcome p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .conversation-starters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .starter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .starter-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        /* Launcher Message Styles */
+        .launcher-message {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+        }
+
+        .launcher-message.user {
+            background: var(--bg-tertiary);
+        }
+
+        .launcher-message.assistant {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .launcher-message-avatar {
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .launcher-message-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .launcher-message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .launcher-message-author {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .launcher-message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .launcher-message-copy {
+            margin-left: auto;
+            opacity: 0;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .launcher-message:hover .launcher-message-copy {
+            opacity: 1;
+        }
+
+        .launcher-message-copy:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .launcher-message-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .launcher-message-content code {
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        .launcher-message-content pre {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .launcher-message-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .launcher-message-content a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .launcher-message-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading State */
+        .launcher-message-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .launcher-message-loading .loading-spinner {
+            width: 36px;
+            height: 36px;
+        }
+
+        .launcher-message-loading .loading-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Input Area */
+        .launcher-input {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .launcher-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            align-items: flex-end;
+        }
+
+        .launcher-input-wrapper:focus-within {
+            border-color: var(--primary);
+        }
+
+        .launcher-input-wrapper textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: none;
+            padding: 0.5rem;
+            max-height: 120px;
+            line-height: 1.5;
+        }
+
+        .launcher-input-wrapper textarea:focus {
+            outline: none;
+        }
+
+        .launcher-input-wrapper textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .launcher-input-wrapper .btn {
+            flex-shrink: 0;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .launcher-input-footer {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Responsive Launcher */
+        @media (max-width: 768px) {
+            .launcher-panel {
+                width: 100%;
+                max-width: none;
+                min-width: 0;
+            }
+        }
+
+        /* =========================================================================
+           EXECUTION HISTORY STYLES
+           ========================================================================= */
+
+        .execution-history {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .execution-item {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .execution-item:last-child {
+            border-bottom: none;
+        }
+
+        .execution-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .execution-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .execution-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .execution-status {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .execution-status.success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .execution-status.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .execution-preview {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .execution-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
@@ -1188,6 +1687,19 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Execution History Section -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">
+                                <i data-lucide="history" style="width:16px;height:16px;"></i>
+                                Recent Executions
+                            </div>
+                            <div class="execution-history" id="executionHistory">
+                                <div class="empty-state" style="padding: 1.5rem;">
+                                    <p>No executions yet. Launch the agent to start a conversation.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1358,6 +1870,63 @@
         </div>
     </div>
 
+    <!-- Agent Launcher Panel (Slide-in Drawer) -->
+    <div class="launcher-overlay" id="launcherOverlay">
+        <div class="launcher-panel" id="launcherPanel">
+            <!-- Header -->
+            <div class="launcher-header">
+                <div class="launcher-title">
+                    <span class="launcher-icon" id="launcherIcon"></span>
+                    <div>
+                        <h2 id="launcherName">Agent Name</h2>
+                        <span class="launcher-model" id="launcherModel">claude-sonnet-4</span>
+                    </div>
+                </div>
+                <button class="launcher-close" id="launcherClose">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+
+            <!-- Context Preview (Collapsible) -->
+            <div class="context-preview expanded" id="contextPreview">
+                <button class="context-preview-toggle" id="contextPreviewToggle">
+                    <i data-lucide="database" style="width:16px;height:16px;"></i>
+                    <span>Context Preview</span>
+                    <span class="context-token-count" id="contextTokenCount">0 tokens</span>
+                    <i data-lucide="chevron-down" style="width:16px;height:16px;" class="toggle-icon"></i>
+                </button>
+                <div class="context-preview-content" id="contextPreviewContent">
+                    <p style="padding: 1rem 1.5rem; color: var(--text-muted);">Loading context...</p>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="launcher-messages" id="launcherMessages">
+                <!-- Welcome / Conversation Starters -->
+                <div class="launcher-welcome" id="launcherWelcome">
+                    <div class="welcome-agent-icon" id="welcomeAgentIcon"></div>
+                    <p id="welcomeDescription">Agent description</p>
+                    <div class="conversation-starters" id="conversationStarters">
+                        <!-- Dynamic buttons -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="launcher-input">
+                <div class="launcher-input-wrapper">
+                    <textarea id="launcherInputField" placeholder="Type your message..." rows="1"></textarea>
+                    <button class="btn btn-primary" id="launcherSend">
+                        <i data-lucide="send" style="width:18px;height:18px;"></i>
+                    </button>
+                </div>
+                <div class="launcher-input-footer">
+                    <span id="launcherStatus">Ready</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -1373,6 +1942,12 @@
         let categories = [];
         let contextAssets = [];
         let tags = [];
+
+        // Launcher State
+        let launcherAgent = null;
+        let launcherHistory = [];
+        let isLauncherStreaming = false;
+        let contextPreviewData = null;
 
         // DOM Elements
         const agentList = document.getElementById('agentList');
@@ -1579,15 +2154,19 @@
                 return;
             }
 
-            agentList.innerHTML = agents.map(agent => `
-                <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}" 
+            agentList.innerHTML = agents.map(agent => {
+                const provider = agent.llm_provider || agent.source_type || 'native';
+                const status = agent.is_active !== false ? 'active' : 'inactive';
+                const iconHtml = renderAgentIcon(agent.icon);
+                return `
+                <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}"
                      data-id="${agent.id}">
-                    <div class="agent-icon">${agent.icon || '🤖'}</div>
+                    <div class="agent-icon">${iconHtml}</div>
                     <div class="agent-info">
                         <div class="agent-name">${agent.name}</div>
                         <div class="agent-meta">
-                            <span class="platform-badge ${agent.source_type}">${agent.source_type}</span>
-                            <span class="status-badge ${agent.status}">${agent.status}</span>
+                            <span class="platform-badge ${provider}">${provider}</span>
+                            <span class="status-badge ${status}">${status}</span>
                         </div>
                     </div>
                     <div class="agent-usage">
@@ -1595,7 +2174,8 @@
                         ${agent.usage_count || 0}
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             lucide.createIcons();
 
@@ -1640,10 +2220,13 @@
             emptyState.style.display = 'none';
             agentDetail.style.display = 'flex';
 
-            document.getElementById('detailIcon').textContent = agent.icon || '🤖';
+            const provider = agent.llm_provider || agent.source_type || 'native';
+            const status = agent.is_active !== false ? 'active' : 'inactive';
+
+            document.getElementById('detailIcon').innerHTML = renderAgentIcon(agent.icon);
             document.getElementById('detailName').textContent = agent.name;
             document.getElementById('detailPlatform').innerHTML = `
-                <span class="platform-badge ${agent.source_type}">${agent.source_type}</span>
+                <span class="platform-badge ${provider}">${provider}</span>
             `;
 
             const dept = departments.find(d => d.key === agent.department);
@@ -1651,12 +2234,15 @@
 
             document.getElementById('detailDepartment').textContent = dept?.name || agent.department || '—';
             document.getElementById('detailCategory').textContent = cat?.name || agent.category || '—';
-            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${agent.status}">${agent.status}</span>`;
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${status}</span>`;
             document.getElementById('detailUsage').textContent = agent.usage_count || 0;
             document.getElementById('detailDescription').textContent = agent.description || '—';
 
             // Render context mappings
             renderContextMappings(agent.agent_context_mappings || []);
+
+            // Load execution history
+            loadExecutionHistory(agent.id);
 
             lucide.createIcons();
         }
@@ -1910,8 +2496,432 @@
 
         function updateThemeIcon(theme) {
             const icon = document.querySelector('#themeToggle i');
-            icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+            if (icon) {
+                icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+                lucide.createIcons();
+            }
+        }
+
+        // =========================================================================
+        // AGENT LAUNCHER FUNCTIONS
+        // =========================================================================
+
+        async function openLauncher(agent) {
+            if (!agent) return;
+
+            launcherAgent = agent;
+            launcherHistory = [];
+
+            // Set header info
+            document.getElementById('launcherIcon').innerHTML = renderAgentIcon(agent.icon);
+            document.getElementById('launcherName').textContent = agent.name;
+            document.getElementById('launcherModel').textContent = agent.llm_model || agent.model || 'Default Model';
+
+            // Set welcome screen
+            document.getElementById('welcomeAgentIcon').innerHTML = renderAgentIcon(agent.icon);
+            document.getElementById('welcomeDescription').textContent =
+                agent.description || 'Start a conversation with this agent.';
+
+            // Render conversation starters
+            renderConversationStarters(agent.conversation_starters || []);
+
+            // Load context preview
+            await loadContextPreview(agent.id);
+
+            // Show welcome, hide messages
+            document.getElementById('launcherWelcome').style.display = 'block';
+            clearLauncherMessages();
+
+            // Reset context preview to expanded
+            document.getElementById('contextPreview').classList.add('expanded');
+
+            // Show panel
+            document.getElementById('launcherOverlay').classList.add('active');
+            document.getElementById('launcherInputField').focus();
+
+            // Reset status
+            setLauncherStatus('Ready');
+        }
+
+        function closeLauncher() {
+            document.getElementById('launcherOverlay').classList.remove('active');
+            launcherAgent = null;
+            launcherHistory = [];
+            contextPreviewData = null;
+            isLauncherStreaming = false;
+        }
+
+        function renderConversationStarters(starters) {
+            const container = document.getElementById('conversationStarters');
+
+            if (!starters || starters.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = starters.map(starter => {
+                const escaped = escapeHtml(starter);
+                return `<button class="starter-btn" data-starter="${escaped}">${starter}</button>`;
+            }).join('');
+
+            // Add click handlers
+            container.querySelectorAll('.starter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    sendLauncherMessage(btn.dataset.starter);
+                });
+            });
+        }
+
+        // =========================================================================
+        // CONTEXT PREVIEW FUNCTIONS
+        // =========================================================================
+
+        async function loadContextPreview(agentId) {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/context/preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_message: '' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    contextPreviewData = data.data;
+                    renderContextPreview(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading context preview:', error);
+                document.getElementById('contextPreviewContent').innerHTML =
+                    '<p style="padding: 1rem 1.5rem; color: var(--text-muted);">Failed to load context preview.</p>';
+            }
+        }
+
+        function renderContextPreview(data) {
+            const content = document.getElementById('contextPreviewContent');
+            const tokenCount = document.getElementById('contextTokenCount');
+
+            if (!data.assets || data.assets.length === 0) {
+                content.innerHTML = '<p style="padding: 1rem 1.5rem; color: var(--text-muted);">No context assets mapped.</p>';
+                tokenCount.textContent = '0 tokens';
+                return;
+            }
+
+            tokenCount.textContent = `~${data.totalTokens || 0} tokens`;
+
+            content.innerHTML = data.assets.map(asset => `
+                <div class="context-asset-item">
+                    <span class="asset-icon">${asset.icon || '📄'}</span>
+                    <div class="asset-info">
+                        <div class="asset-name">${escapeHtml(asset.name)}</div>
+                        <div class="asset-type">${asset.type || ''}</div>
+                    </div>
+                    <span class="asset-tokens">~${asset.tokens || 0} tokens</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleContextPreview() {
+            document.getElementById('contextPreview').classList.toggle('expanded');
             lucide.createIcons();
+        }
+
+        // =========================================================================
+        // LAUNCHER MESSAGE FUNCTIONS
+        // =========================================================================
+
+        async function sendLauncherMessage(message = null) {
+            const input = document.getElementById('launcherInputField');
+            const text = message || input.value.trim();
+
+            if (!text || isLauncherStreaming || !launcherAgent) return;
+
+            // Hide welcome screen
+            document.getElementById('launcherWelcome').style.display = 'none';
+
+            // Collapse context preview after first message
+            document.getElementById('contextPreview').classList.remove('expanded');
+
+            // Add user message
+            addLauncherMessage('user', text);
+
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Add to history
+            launcherHistory.push({ role: 'user', content: text });
+
+            // Update status
+            setLauncherStatus('Thinking...');
+            isLauncherStreaming = true;
+
+            try {
+                // Create assistant message placeholder with loading
+                const assistantDiv = addLauncherMessage('assistant', '', true);
+                const contentDiv = assistantDiv.querySelector('.launcher-message-content');
+
+                // Stream response
+                const response = await fetch(`/api/agents/${launcherAgent.id}/execute/stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        conversation_history: launcherHistory.slice(0, -1) // Exclude current message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+
+                                if (parsed.type === 'token' && parsed.content) {
+                                    fullResponse += parsed.content;
+                                    contentDiv.innerHTML = formatLauncherMessage(fullResponse);
+                                    scrollLauncherToBottom();
+                                } else if (parsed.type === 'complete') {
+                                    // Execution complete with metadata
+                                    console.log('Execution complete:', parsed);
+                                } else if (parsed.type === 'error') {
+                                    throw new Error(parsed.error);
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON
+                            }
+                        }
+                    }
+                }
+
+                // Add to history
+                launcherHistory.push({ role: 'assistant', content: fullResponse });
+
+                setLauncherStatus('Ready');
+
+            } catch (error) {
+                console.error('Launcher error:', error);
+                setLauncherStatus('Error: ' + error.message);
+
+                const lastMessage = document.getElementById('launcherMessages').lastElementChild;
+                if (lastMessage?.classList.contains('assistant')) {
+                    lastMessage.querySelector('.launcher-message-content').innerHTML =
+                        `<span style="color: var(--danger);">Error: ${escapeHtml(error.message)}</span>`;
+                }
+            } finally {
+                isLauncherStreaming = false;
+            }
+        }
+
+        function addLauncherMessage(role, content, isLoading = false) {
+            const container = document.getElementById('launcherMessages');
+            const div = document.createElement('div');
+            div.className = `launcher-message ${role}`;
+
+            const avatar = role === 'user' ? '👤' : renderAgentIcon(launcherAgent?.icon);
+            const author = role === 'user' ? 'You' : launcherAgent?.name || 'Agent';
+
+            const loadingHTML = `
+                <div class="launcher-message-loading">
+                    <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner">
+                    <span class="loading-text">Thinking...</span>
+                </div>
+            `;
+
+            const contentHTML = isLoading ? loadingHTML : formatLauncherMessage(content);
+
+            div.innerHTML = `
+                <div class="launcher-message-avatar">${avatar}</div>
+                <div class="launcher-message-body">
+                    <div class="launcher-message-header">
+                        <span class="launcher-message-author">${escapeHtml(author)}</span>
+                        <span class="launcher-message-time">${new Date().toLocaleTimeString()}</span>
+                        <button class="launcher-message-copy" title="Copy">
+                            <i data-lucide="copy" style="width:14px;height:14px;"></i>
+                        </button>
+                    </div>
+                    <div class="launcher-message-content">${contentHTML}</div>
+                </div>
+            `;
+
+            // Add copy handler
+            div.querySelector('.launcher-message-copy').addEventListener('click', function() {
+                copyLauncherMessage(this);
+            });
+
+            container.appendChild(div);
+            lucide.createIcons();
+            scrollLauncherToBottom();
+
+            return div;
+        }
+
+        function clearLauncherMessages() {
+            const container = document.getElementById('launcherMessages');
+            container.querySelectorAll('.launcher-message').forEach(m => m.remove());
+        }
+
+        function scrollLauncherToBottom() {
+            const container = document.getElementById('launcherMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatLauncherMessage(content) {
+            if (!content) return '';
+
+            // Escape HTML first
+            let formatted = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Code blocks
+            formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g,
+                '<pre><code class="language-$1">$2</code></pre>');
+
+            // Inline code
+            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Bold
+            formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Italic
+            formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+            // Links
+            formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+            // Line breaks
+            formatted = formatted.replace(/\n/g, '<br>');
+
+            return formatted;
+        }
+
+        async function copyLauncherMessage(button) {
+            const messageDiv = button.closest('.launcher-message');
+            const contentDiv = messageDiv.querySelector('.launcher-message-content');
+            const text = contentDiv.innerText;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                const icon = button.querySelector('i');
+                icon.setAttribute('data-lucide', 'check');
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    icon.setAttribute('data-lucide', 'copy');
+                    lucide.createIcons();
+                }, 2000);
+            } catch (error) {
+                console.error('Copy failed:', error);
+                showToast('Failed to copy', 'error');
+            }
+        }
+
+        function setLauncherStatus(text) {
+            document.getElementById('launcherStatus').textContent = text;
+        }
+
+        function setupLauncherInput() {
+            const input = document.getElementById('launcherInputField');
+
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendLauncherMessage();
+                }
+            });
+        }
+
+        // =========================================================================
+        // EXECUTION HISTORY FUNCTIONS
+        // =========================================================================
+
+        async function loadExecutionHistory(agentId) {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/executions?limit=10`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderExecutionHistory(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading execution history:', error);
+            }
+        }
+
+        function renderExecutionHistory(executions) {
+            const container = document.getElementById('executionHistory');
+
+            if (!executions || executions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 1.5rem;">
+                        <p>No executions yet. Launch the agent to start a conversation.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = executions.map(exec => `
+                <div class="execution-item" data-id="${exec.id}">
+                    <div class="execution-header">
+                        <span class="execution-date">${formatDate(exec.created_at)}</span>
+                        <span class="execution-status ${exec.status}">${exec.status}</span>
+                    </div>
+                    <div class="execution-preview">${escapeHtml(exec.user_message?.substring(0, 80) || '')}${exec.user_message?.length > 80 ? '...' : ''}</div>
+                    <div class="execution-meta">
+                        <span>${exec.total_tokens || 0} tokens</span>
+                        <span>${exec.duration_ms || 0}ms</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderAgentIcon(icon) {
+            if (!icon) return '🤖';
+            // Check if it's an emoji (starts with emoji or is very short with special chars)
+            // Lucide icon names are lowercase with hyphens like "shield-check", "radar"
+            const isLucideIcon = /^[a-z][a-z0-9-]*$/.test(icon);
+            if (isLucideIcon) {
+                return `<i data-lucide="${icon}" style="width:24px;height:24px;"></i>`;
+            }
+            return icon;
         }
 
         // =========================================================================
@@ -1934,8 +2944,7 @@
 
         document.getElementById('btnLaunch').addEventListener('click', () => {
             if (selectedAgent) {
-                // TODO: Open agent launcher
-                showToast('Agent launcher coming in Step 3.10', 'warning');
+                openLauncher(selectedAgent);
             }
         });
 
@@ -2020,6 +3029,26 @@
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(fetchAgents, 300);
         });
+
+        // Launcher event handlers
+        document.getElementById('launcherClose').addEventListener('click', closeLauncher);
+        document.getElementById('launcherOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'launcherOverlay') {
+                closeLauncher();
+            }
+        });
+        document.getElementById('launcherSend').addEventListener('click', () => sendLauncherMessage());
+        document.getElementById('contextPreviewToggle').addEventListener('click', toggleContextPreview);
+
+        // Escape key to close launcher
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('launcherOverlay').classList.contains('active')) {
+                closeLauncher();
+            }
+        });
+
+        // Initialize launcher input
+        setupLauncherInput();
 
         // =========================================================================
         // Initialize

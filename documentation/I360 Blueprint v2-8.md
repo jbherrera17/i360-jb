@@ -1,8 +1,8 @@
-# Insight 360 Blueprint v2.7
+# Insight 360 Blueprint v2.8
 
-**Version:** 2.7
-**Date:** December 21, 2025
-**Status:** Phase 3 at 90% | Chat Persistence Complete
+**Version:** 2.8
+**Date:** December 22, 2025
+**Status:** Phase 3 Complete | Agent Launcher Live
 
 ---
 
@@ -14,15 +14,22 @@ Insight 360 is a **Values-Based AI Ecosystem** — a personal AI command center 
 
 ---
 
-## What's New in v2.7
+## What's New in v2.8
 
-- ✅ **Conversation Persistence** — Save, load, and manage chat conversations (Supabase)
-- ✅ **Copy Message** — Click to copy any message to clipboard with visual feedback
-- ✅ **Rename Conversation** — Edit conversation titles from sidebar
-- ✅ **Delete Conversation** — Remove conversations with confirmation
-- ✅ **Loading Spinner** — Animated Synergi Swirls during AI response generation
-- ✅ **Dashboard Light Mode Fix** — CSS variable corrections for theme consistency
-- ✅ **Conversation API** — Full CRUD endpoints for conversations and messages
+- ✅ **Agent Launcher UI** — Slide-in panel to execute agents with streaming responses
+- ✅ **Context Preview** — See injected context assets and token counts before execution
+- ✅ **Conversation Starters** — Quick-start buttons for common agent tasks
+- ✅ **Execution History** — View recent agent runs with status, tokens, and duration
+- ✅ **Multi-Turn Conversations** — Continue conversations within launcher session
+- ✅ **Copy Message** — Copy agent responses to clipboard with visual feedback
+- ✅ **Agent Library Fixes** — Proper icon rendering for Lucide icons, provider badges
+- ✅ **User Documentation** — Agent Library user guide added
+
+### Previous (v2.7)
+
+- Conversation Persistence, Copy Message, Rename/Delete Conversations
+- Loading Spinner (Synergi Swirls), Dashboard Light Mode Fix
+- Conversation API (Full CRUD)
 
 ---
 
@@ -65,16 +72,16 @@ Insight 360 is a **Values-Based AI Ecosystem** — a personal AI command center 
 |-------|-------|--------|
 | Phase 1 | Foundation & Setup | ✅ Complete |
 | Phase 2 | Core Chat & Features | ✅ Complete (v2.1.4) |
-| Phase 3 | Agent Framework & Context | ⏳ 90% Complete |
+| Phase 3 | Agent Framework & Context | ✅ Complete (v2.8) |
 | Phase 4 | Daily Briefing & Workflows | 📋 Planned |
 | Phase 5 | Polish, Scale & Production | 📋 Planned |
 
 ---
 
-## Phase 3 Progress: 90% Complete
+## Phase 3 Progress: 100% Complete
 
 ```
-██████████████████░░ 90%
+████████████████████ 100%
 ```
 
 | Step | Task | Status |
@@ -89,7 +96,7 @@ Insight 360 is a **Values-Based AI Ecosystem** — a personal AI command center 
 | 3.8 | Agent-Context Mapping | ✅ Complete |
 | 3.9 | Context Injection Service | ✅ Complete |
 | 3.10 | Agent Execution Engine | ✅ Complete |
-| **3.11** | **Agent Launcher UI** | ⏳ **Pending** |
+| 3.11 | Agent Launcher UI | ✅ Complete |
 
 ---
 
@@ -322,15 +329,7 @@ insight-360/
 ### Recommended Sequence
 
 ```
-Phase 3 Completion (Agent Launcher UI)
-    │
-    ├── 3.11a: Agent Library page (browse, filter, search)
-    ├── 3.11b: Agent execution modal with streaming
-    ├── 3.11c: Context preview panel
-    └── 3.11d: Execution history view
-          │
-          ▼
-Integrity Sprint
+Integrity Sprint (Recommended Next)
     │
     ├── I.1: Run database seeds
     ├── I.2: Integrity asset API endpoints
@@ -348,6 +347,7 @@ Phase 4: Daily Briefing
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.8 | Dec 22, 2025 | Agent Launcher UI, context preview, execution history, Phase 3 complete |
 | v2.7 | Dec 21, 2025 | Conversation persistence, copy message, rename/delete, loading spinner |
 | v2.6 | Dec 20, 2025 | Integrity module staged, blueprint updated with strategic options |
 | v2.5 | Dec 13, 2025 | Agent Launcher API complete (Steps 3.7-3.10) |
@@ -358,4 +358,4 @@ Phase 4: Daily Briefing
 
 *"Technology should augment human brilliance—not replace it."*
 
-**Synergi AI** | Insight 360 Blueprint v2.7 | December 21, 2025
+**Synergi AI** | Insight 360 Blueprint v2.8 | December 22, 2025
