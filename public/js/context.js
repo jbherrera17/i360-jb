@@ -839,15 +839,19 @@ function updateSaveButtonState() {
     const saveBtn = document.getElementById('saveBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const deleteBtn = document.getElementById('deleteBtn');
+    const editorContent = document.getElementById('editorContent');
+
+    // Check if editor is visible (i.e., we're in editing/creating mode)
+    const isEditorVisible = editorContent && editorContent.style.display !== 'none';
 
     if (saveBtn) {
         saveBtn.disabled = !state.isDirty;
         saveBtn.classList.toggle('has-changes', state.isDirty);
     }
 
-    // Show cancel button when there are unsaved changes
+    // Show cancel button when editor is visible (either editing or creating new asset)
     if (cancelBtn) {
-        cancelBtn.style.display = state.isDirty ? 'flex' : 'none';
+        cancelBtn.style.display = isEditorVisible ? 'flex' : 'none';
     }
 
     // Show delete button only when editing an existing asset
@@ -899,13 +903,12 @@ function cancelChanges() {
     if (state.selectedAsset) {
         // Reload the selected asset to discard changes
         loadAssetIntoEditor(state.selectedAsset);
+        state.isDirty = false;
+        updateSaveButtonState();
     } else {
-        // Reset to new asset state
-        showCreateModal();
+        // No asset selected - go back to empty state
+        showEmptyState();
     }
-
-    state.isDirty = false;
-    updateSaveButtonState();
 }
 
 // ============================================

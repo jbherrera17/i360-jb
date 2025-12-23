@@ -16,7 +16,7 @@
             display: grid;
             grid-template-columns: 320px 1fr 380px;
             gap: 0;
-            height: calc(100vh - 60px);
+            height: 100%;
             overflow: hidden;
         }
 
@@ -57,12 +57,9 @@
             display: flex;
             gap: 0.5rem;
             margin-bottom: 0.5rem;
-            position: relative;
-            z-index: 10;
         }
 
-        .filter-row select,
-        .filter-row input {
+        .filter-row select {
             flex: 1;
             padding: 0.5rem;
             background: var(--bg-primary);
@@ -70,12 +67,33 @@
             border-radius: 6px;
             color: var(--text-primary);
             font-size: 0.85rem;
-            position: relative;
+            cursor: pointer;
         }
 
-        .filter-row select:focus,
-        .filter-row input:focus {
-            z-index: 20;
+        .filter-row select:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-row select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-row {
+            margin-bottom: 0.5rem;
+        }
+
+        .search-row input {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .search-row input:focus {
             outline: none;
             border-color: var(--primary);
         }
@@ -86,13 +104,42 @@
         }
 
         .action-buttons button {
-            flex: 1;
             padding: 0.5rem;
             font-size: 0.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-buttons .btn-primary,
+        .action-buttons .btn-ai {
+            flex: 1;
+        }
+
+        .action-buttons .btn-icon-only {
+            flex: 0 0 auto;
+            padding: 0.5rem 0.6rem;
+        }
+
+        .action-buttons .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .action-buttons .btn-ai:hover {
+            background: linear-gradient(135deg, #6d28d9 0%, #4338ca 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
+        }
+
+        .action-buttons .btn-secondary:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-color: var(--primary);
         }
 
         .asset-list {
@@ -556,16 +603,20 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
         .btn-primary:hover {
             background: var(--primary-dark, #4f46e5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .btn-primary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-secondary {
@@ -693,12 +744,14 @@
             justify-content: center;
             opacity: 0;
             visibility: hidden;
+            pointer-events: none;
             transition: all 0.2s;
         }
 
         .modal-overlay.active {
             opacity: 1;
             visibility: visible;
+            pointer-events: auto;
         }
 
         .modal {
@@ -882,21 +935,21 @@
                             <select id="typeFilter">
                                 <option value="">All Types</option>
                             </select>
-                            <input type="text" id="searchInput" placeholder="Search...">
                         </div>
-                        
+
+                        <div class="search-row">
+                            <input type="text" id="searchInput" placeholder="Search assets...">
+                        </div>
+
                         <div class="action-buttons">
-                            <button id="newAssetBtn" class="btn-primary">
-                                <i data-lucide="plus"></i> New
-                            </button>
-                            <button id="generateBtn" class="btn-ai">
+                            <button id="generateBtn" class="btn-ai" title="Generate with AI">
                                 <i data-lucide="sparkles"></i> Generate
                             </button>
-                            <button id="importBtn" class="btn-secondary" title="Import assets from JSON">
-                                <i data-lucide="upload"></i> Import
+                            <button id="importBtn" class="btn-secondary btn-icon-only" title="Import assets from JSON">
+                                <i data-lucide="upload"></i>
                             </button>
                             <input type="file" id="importInput" accept=".json" class="hidden">
-                            <button id="exportBtn" class="btn-secondary">
+                            <button id="exportBtn" class="btn-secondary btn-icon-only" title="Export all assets">
                                 <i data-lucide="download"></i>
                             </button>
                         </div>
