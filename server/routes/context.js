@@ -883,4 +883,270 @@ router.put('/assets/:id/usage', async (req, res) => {
     }
 });
 
+// ============================================
+// POST /api/context/generate
+// Generate asset content using AI
+// ============================================
+router.post('/generate', async (req, res) => {
+    try {
+        const { asset_type, company_name, description, additional_context } = req.body;
+
+        // Validate required fields
+        if (!asset_type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Asset type is required'
+            });
+        }
+
+        if (!description) {
+            return res.status(400).json({
+                success: false,
+                error: 'Description is required'
+            });
+        }
+
+        // Get asset type info
+        const assetTypeInfo = ASSET_TYPES[asset_type];
+        if (!assetTypeInfo) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid asset type'
+            });
+        }
+
+        // Build the prompt based on asset type
+        const prompts = {
+            company_description: `Create a comprehensive company description for "${company_name || 'the company'}". Include:
+- Mission and vision
+- What the company does
+- Target market
+- Key differentiators
+- Company culture and values
+
+User's context: ${description}`,
+
+            why_we_win: `Create a compelling "Why We Win" document for "${company_name || 'the company'}". Include:
+- Unique value propositions
+- Competitive advantages
+- Key differentiators
+- Success factors
+- What makes customers choose this company
+
+User's context: ${description}`,
+
+            products: `Create a detailed products/services overview for "${company_name || 'the company'}". Include:
+- Product/service names and descriptions
+- Key features and benefits
+- Target use cases
+- Pricing tiers (if applicable)
+- Integration capabilities
+
+User's context: ${description}`,
+
+            pain_points: `Identify and document the pain points that "${company_name || 'the company'}" solves. Include:
+- Customer challenges before using the solution
+- Industry-specific pain points
+- How each pain point impacts the customer
+- How the company's solution addresses each pain point
+
+User's context: ${description}`,
+
+            voice_dna: `Create a VoiceDNA guide for "${company_name || 'the company'}". Include:
+- Tone of voice characteristics
+- Writing style guidelines
+- Words and phrases to use
+- Words and phrases to avoid
+- Example sentences in the brand voice
+- Personality traits
+
+User's context: ${description}`,
+
+            icp: `Create an Ideal Customer Profile (ICP) for "${company_name || 'the company'}". Include:
+- Demographics (company size, industry, location)
+- Firmographics
+- Psychographics (values, goals, challenges)
+- Buying behavior
+- Decision-making process
+- Key stakeholders
+
+User's context: ${description}`,
+
+            core_values: `Define the core values for "${company_name || 'the company'}". Include:
+- 4-6 core values with names
+- Description of what each value means
+- How each value is demonstrated in practice
+- Why each value matters to the company
+
+User's context: ${description}`,
+
+            custom_processes: `Document custom processes for "${company_name || 'the company'}". Include:
+- Process name and purpose
+- Step-by-step workflow
+- Key stakeholders involved
+- Tools and resources needed
+- Success metrics
+
+User's context: ${description}`,
+
+            competitors: `Create a competitor analysis for "${company_name || 'the company'}". Include:
+- Key competitors
+- Their strengths and weaknesses
+- Market positioning
+- Pricing comparison
+- How to differentiate against each
+
+User's context: ${description}`,
+
+            case_studies: `Create a case study template/example for "${company_name || 'the company'}". Include:
+- Customer background
+- Challenge/problem faced
+- Solution implemented
+- Results and metrics
+- Customer quote/testimonial
+
+User's context: ${description}`,
+
+            faqs: `Create frequently asked questions for "${company_name || 'the company'}". Include:
+- 10-15 common questions
+- Clear, helpful answers
+- Categories (product, pricing, support, etc.)
+
+User's context: ${description}`,
+
+            team_bios: `Create team bio templates for "${company_name || 'the company'}". Include:
+- Professional background
+- Role and responsibilities
+- Expertise areas
+- Personal interests
+- Contact information format
+
+User's context: ${description}`,
+
+            industry_context: `Provide industry context for "${company_name || 'the company'}". Include:
+- Industry overview
+- Market trends
+- Key challenges in the industry
+- Regulatory considerations
+- Future outlook
+
+User's context: ${description}`,
+
+            terminology: `Create a terminology guide for "${company_name || 'the company'}". Include:
+- Industry-specific terms
+- Company-specific terms
+- Acronyms and abbreviations
+- Clear definitions
+- Usage examples
+
+User's context: ${description}`,
+
+            templates: `Create content templates for "${company_name || 'the company'}". Include:
+- Email templates
+- Social media templates
+- Document templates
+- Communication guidelines
+
+User's context: ${description}`,
+
+            pricing: `Document pricing information for "${company_name || 'the company'}". Include:
+- Pricing tiers
+- What's included in each tier
+- Add-ons and extras
+- Discounts and promotions
+- Pricing strategy notes
+
+User's context: ${description}`,
+
+            brand_guidelines: `Create brand guidelines for "${company_name || 'the company'}". Include:
+- Logo usage
+- Color palette
+- Typography
+- Imagery style
+- Voice and tone
+- Do's and don'ts
+
+User's context: ${description}`,
+
+            personas: `Create customer personas for "${company_name || 'the company'}". Include:
+- Persona name and demographics
+- Goals and motivations
+- Pain points and challenges
+- Buying behavior
+- Preferred communication channels
+- How the product/service helps them
+
+User's context: ${description}`
+        };
+
+        const userPrompt = prompts[asset_type] || `Create content for a ${assetTypeInfo.display_name} asset for "${company_name || 'the company'}".
+
+User's context: ${description}`;
+
+        const systemPrompt = `You are an expert business strategist and content creator. Generate professional, comprehensive content for business context assets.
+
+Your output should be:
+- Well-structured with clear sections
+- Professional yet approachable tone
+- Specific and actionable, not generic
+- Ready to use as a business document
+
+Format your response in clean markdown with headers, bullet points, and sections as appropriate.${additional_context ? `\n\nAdditional context to consider:\n${additional_context}` : ''}`;
+
+        // Check for Anthropic API key
+        if (!process.env.ANTHROPIC_API_KEY) {
+            return res.status(500).json({
+                success: false,
+                error: 'Anthropic API key not configured'
+            });
+        }
+
+        // Call Anthropic API
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4096,
+                system: systemPrompt,
+                messages: [
+                    { role: 'user', content: userPrompt }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Anthropic API error:', errorData);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to generate content: ' + (errorData.error?.message || 'API error')
+            });
+        }
+
+        const data = await response.json();
+        const generatedContent = data.content?.[0]?.text || '';
+
+        res.json({
+            success: true,
+            content: generatedContent,
+            usage: {
+                input_tokens: data.usage?.input_tokens || 0,
+                output_tokens: data.usage?.output_tokens || 0
+            }
+        });
+
+    } catch (error) {
+        console.error('Error generating content:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

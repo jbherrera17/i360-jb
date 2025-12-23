@@ -17,7 +17,11 @@ const state = {
         search: '',
         status: 'current'
     },
-    isDirty: false
+    isDirty: false,
+    generateAbortController: null,
+    isGenerating: false,
+    importAbortController: null,
+    isImporting: false
 };
 
 // ============================================
@@ -62,9 +66,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load data
     await loadAssetTypes();
     await loadAssets();
-    
+
     // Set up event listeners
     setupEventListeners();
+
+    // Show empty state on initial load (no asset selected)
+    showEmptyState();
     
     // Make plain text editor read-only
     const plainTextEditor = document.getElementById('plainTextEditor');
@@ -208,28 +215,19 @@ function renderAssetList() {
     }
     
     container.innerHTML = state.assets.map(asset => {
-        const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) || 
+        const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
                         { icon: '📄', display_name: asset.asset_type };
-        
+        const updatedDate = asset.updated_at ? formatRelativeDate(asset.updated_at) : '';
+
         return `
-            <div class="asset-item ${state.selectedAsset?.id === asset.id ? 'selected' : ''}" 
+            <div class="asset-item ${state.selectedAsset?.id === asset.id ? 'selected' : ''}"
                  onclick="selectAsset('${asset.id}')">
                 <div class="asset-icon">${typeInfo.icon}</div>
                 <div class="asset-info">
                     <div class="asset-name">${escapeHtml(asset.name)}</div>
                     <div class="asset-meta">
-                        ${typeInfo.display_name} • v${asset.version || 1}
+                        ${typeInfo.display_name} • v${asset.version || 1}${updatedDate ? ` • ${updatedDate}` : ''}
                     </div>
-                </div>
-                <div class="asset-actions">
-                    <button onclick="event.stopPropagation(); editAsset('${asset.id}')" 
-                            class="btn-icon" title="Edit">
-                        <i data-lucide="edit-2"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); deleteAsset('${asset.id}')" 
-                            class="btn-icon btn-danger" title="Delete">
-                        <i data-lucide="trash-2"></i>
-                    </button>
                 </div>
             </div>
         `;
@@ -252,13 +250,19 @@ function updateStats() {
 async function selectAsset(id) {
     const asset = state.assets.find(a => a.id === id);
     if (!asset) return;
-    
-    state.selectedAsset = asset;
-    renderAssetList();
+
     loadAssetIntoEditor(asset);
+    renderAssetList();
 }
 
 function loadAssetIntoEditor(asset) {
+    if (!asset) return;
+
+    // Hide empty state, show editor
+    hideEmptyState();
+
+    state.selectedAsset = asset;
+
     // Update form fields
     const nameInput = document.getElementById('assetName');
     const descInput = document.getElementById('assetDescription');
@@ -291,11 +295,30 @@ function loadAssetIntoEditor(asset) {
     // Update editor header
     const editorTitle = document.getElementById('editorTitle');
     if (editorTitle) {
-        const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) || 
+        const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
                         { icon: '📄', display_name: 'Asset' };
         editorTitle.textContent = `${typeInfo.icon} ${asset.name}`;
     }
-    
+
+    // Update editor metadata
+    const editorMeta = document.getElementById('editorMeta');
+    const editorVersion = document.getElementById('editorVersion');
+    const editorCreated = document.getElementById('editorCreated');
+    const editorModified = document.getElementById('editorModified');
+
+    if (editorMeta) {
+        editorMeta.style.display = 'flex';
+    }
+    if (editorVersion) {
+        editorVersion.textContent = `Version ${asset.version || 1}`;
+    }
+    if (editorCreated) {
+        editorCreated.textContent = `Created: ${formatFullDate(asset.created_at)}`;
+    }
+    if (editorModified) {
+        editorModified.textContent = `Modified: ${formatFullDate(asset.updated_at)}`;
+    }
+
     state.isDirty = false;
     updateSaveButtonState();
 }
@@ -312,7 +335,10 @@ function editAsset(id) {
 
 function showCreateModal() {
     state.selectedAsset = null;
-    
+
+    // Hide empty state, show editor
+    hideEmptyState();
+
     // Clear form
     const nameInput = document.getElementById('assetName');
     const descInput = document.getElementById('assetDescription');
@@ -333,18 +359,25 @@ function showCreateModal() {
     if (editorTitle) {
         editorTitle.textContent = '➕ New Asset';
     }
-    
+
+    // Hide editor metadata for new assets
+    const editorMeta = document.getElementById('editorMeta');
+    if (editorMeta) {
+        editorMeta.style.display = 'none';
+    }
+
     // Clear preview
     const preview = document.getElementById('previewContent');
     if (preview) {
         preview.innerHTML = '<p class="preview-placeholder">Enter JSON content to see preview</p>';
     }
-    
+
     state.isDirty = false;
     updateSaveButtonState();
 }
 
 async function saveAsset() {
+    console.log('saveAsset called, isDirty:', state.isDirty);
     const nameInput = document.getElementById('assetName');
     const descInput = document.getElementById('assetDescription');
     const typeSelect = document.getElementById('assetType');
@@ -697,15 +730,14 @@ function setupEventListeners() {
     // Filter changes
     const typeFilter = document.getElementById('typeFilter');
     const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    
+
     if (typeFilter) {
         typeFilter.addEventListener('change', (e) => {
             state.filters.type = e.target.value;
             loadAssets();
         });
     }
-    
+
     if (searchInput) {
         let searchTimeout;
         searchInput.addEventListener('input', (e) => {
@@ -714,13 +746,6 @@ function setupEventListeners() {
                 state.filters.search = e.target.value;
                 loadAssets();
             }, 300);
-        });
-    }
-    
-    if (statusFilter) {
-        statusFilter.addEventListener('change', (e) => {
-            state.filters.status = e.target.value;
-            loadAssets();
         });
     }
     
@@ -734,7 +759,23 @@ function setupEventListeners() {
         });
         jsonEditor.addEventListener('paste', handleJsonPaste);
     }
-    
+
+    // Form field change listeners to enable Save button
+    const formFields = ['assetName', 'assetDescription', 'assetType', 'assetTags'];
+    formFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', () => {
+                state.isDirty = true;
+                updateSaveButtonState();
+            });
+            field.addEventListener('change', () => {
+                state.isDirty = true;
+                updateSaveButtonState();
+            });
+        }
+    });
+
     // Tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -745,7 +786,23 @@ function setupEventListeners() {
     if (saveBtn) {
         saveBtn.addEventListener('click', saveAsset);
     }
-    
+
+    // Cancel button
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', cancelChanges);
+    }
+
+    // Delete button
+    const deleteBtn = document.getElementById('deleteBtn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            if (state.selectedAsset) {
+                deleteAsset(state.selectedAsset.id);
+            }
+        });
+    }
+
     // New asset button
     const newAssetBtn = document.getElementById('newAssetBtn');
     if (newAssetBtn) {
@@ -773,14 +830,82 @@ function setupEventListeners() {
             saveAsset();
         }
     });
+
+    // Setup generate modal listeners
+    setupGenerateModalListeners();
 }
 
 function updateSaveButtonState() {
     const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+
     if (saveBtn) {
         saveBtn.disabled = !state.isDirty;
         saveBtn.classList.toggle('has-changes', state.isDirty);
     }
+
+    // Show cancel button when there are unsaved changes
+    if (cancelBtn) {
+        cancelBtn.style.display = state.isDirty ? 'flex' : 'none';
+    }
+
+    // Show delete button only when editing an existing asset
+    if (deleteBtn) {
+        deleteBtn.style.display = state.selectedAsset ? 'flex' : 'none';
+    }
+}
+
+/**
+ * Show the empty state in the editor panel
+ */
+function showEmptyState() {
+    const emptyState = document.getElementById('editorEmptyState');
+    const editorContent = document.getElementById('editorContent');
+    const editorHeader = document.querySelector('.editor-header');
+
+    if (emptyState) emptyState.style.display = 'flex';
+    if (editorContent) editorContent.style.display = 'none';
+    if (editorHeader) editorHeader.style.display = 'none';
+
+    state.selectedAsset = null;
+    state.isDirty = false;
+    renderAssetList(); // Update selection in list
+}
+
+/**
+ * Hide the empty state and show editor content
+ */
+function hideEmptyState() {
+    const emptyState = document.getElementById('editorEmptyState');
+    const editorContent = document.getElementById('editorContent');
+    const editorHeader = document.querySelector('.editor-header');
+
+    if (emptyState) emptyState.style.display = 'none';
+    if (editorContent) editorContent.style.display = 'block';
+    if (editorHeader) editorHeader.style.display = 'flex';
+}
+
+/**
+ * Cancel current changes and reset the editor
+ */
+function cancelChanges() {
+    if (state.isDirty) {
+        if (!confirm('Discard unsaved changes?')) {
+            return;
+        }
+    }
+
+    if (state.selectedAsset) {
+        // Reload the selected asset to discard changes
+        loadAssetIntoEditor(state.selectedAsset);
+    } else {
+        // Reset to new asset state
+        showCreateModal();
+    }
+
+    state.isDirty = false;
+    updateSaveButtonState();
 }
 
 // ============================================
@@ -790,18 +915,42 @@ function updateSaveButtonState() {
 async function handleImport(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
+    const importBtn = document.getElementById('importBtn');
+
     try {
         const text = await file.text();
         const data = JSON.parse(text);
-        
+
         // Check if it's a single asset or bulk import
         if (data.assets && Array.isArray(data.assets)) {
-            // Bulk import
-            const result = await apiCall('/api/context/import', {
+            // Bulk import - show importing state with cancel option
+            state.importAbortController = new AbortController();
+            state.isImporting = true;
+
+            // Update button to show cancel option
+            if (importBtn) {
+                importBtn.innerHTML = '<i data-lucide="x"></i> Cancel';
+                importBtn.classList.add('btn-danger');
+                importBtn.onclick = cancelImport;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            showNotification(`Importing ${data.assets.length} assets...`, 'info');
+
+            const response = await fetch('/api/context/import', {
                 method: 'POST',
-                body: JSON.stringify({ assets: data.assets })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assets: data.assets }),
+                signal: state.importAbortController.signal
             });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `HTTP ${response.status}`);
+            }
+
             showNotification(`Imported ${result.data?.created || 0} assets`, 'success');
             await loadAssets();
         } else if (data.asset_type || data.content_json) {
@@ -828,11 +977,40 @@ async function handleImport(e) {
             showNotification('JSON loaded into editor', 'info');
         }
     } catch (error) {
-        showNotification('Failed to import: ' + error.message, 'error');
+        if (error.name === 'AbortError') {
+            showNotification('Import cancelled', 'info');
+        } else {
+            showNotification('Failed to import: ' + error.message, 'error');
+        }
+    } finally {
+        // Reset state
+        state.importAbortController = null;
+        state.isImporting = false;
+
+        // Reset button - restore original click handler
+        if (importBtn) {
+            importBtn.innerHTML = '<i data-lucide="upload"></i> Import';
+            importBtn.classList.remove('btn-danger');
+            // Restore the original click handler to trigger file input
+            importBtn.onclick = () => {
+                const input = document.getElementById('importInput');
+                if (input) input.click();
+            };
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
     }
-    
+
     // Reset input
     e.target.value = '';
+}
+
+/**
+ * Cancel the current import process
+ */
+function cancelImport() {
+    if (state.importAbortController && state.isImporting) {
+        state.importAbortController.abort();
+    }
 }
 
 async function handleExport() {
@@ -882,4 +1060,329 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Format a date as relative time (e.g., "2 hours ago", "Yesterday")
+ */
+function formatRelativeDate(dateString) {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    // Format as date for older items
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Format a date as full date string
+ */
+function formatFullDate(dateString) {
+    if (!dateString) return 'N/A';
+
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// ============================================
+// AI ASSET GENERATION
+// ============================================
+
+/**
+ * Open the generate modal
+ */
+function openGenerateModal() {
+    console.log('Opening generate modal...');
+    const modal = document.getElementById('generateModal');
+    if (modal) {
+        modal.classList.add('active');
+        // Populate asset type dropdown
+        populateGenerateTypeSelect();
+        // Refresh icons in modal
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        console.log('Generate modal opened, asset types:', state.assetTypes.length);
+    } else {
+        console.error('Generate modal not found!');
+    }
+}
+
+/**
+ * Close the generate modal
+ */
+function closeGenerateModal() {
+    const modal = document.getElementById('generateModal');
+    if (modal) {
+        modal.classList.remove('active');
+        // Reset form
+        resetGenerateForm();
+    }
+}
+
+/**
+ * Populate the asset type select in generate modal
+ */
+function populateGenerateTypeSelect() {
+    const select = document.getElementById('generateAssetType');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select Type...</option>';
+
+    // Core types
+    const coreTypes = state.assetTypes.filter(t => t.category === 'core');
+    if (coreTypes.length > 0) {
+        select.innerHTML += '<optgroup label="Core Types">';
+        coreTypes.forEach(type => {
+            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
+        });
+        select.innerHTML += '</optgroup>';
+    }
+
+    // Extended types
+    const extendedTypes = state.assetTypes.filter(t => t.category === 'extended');
+    if (extendedTypes.length > 0) {
+        select.innerHTML += '<optgroup label="Extended Types">';
+        extendedTypes.forEach(type => {
+            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
+        });
+        select.innerHTML += '</optgroup>';
+    }
+}
+
+/**
+ * Reset the generate form
+ */
+function resetGenerateForm() {
+    const typeSelect = document.getElementById('generateAssetType');
+    if (typeSelect) typeSelect.value = '';
+
+    const companyInput = document.getElementById('generateCompanyName');
+    if (companyInput) companyInput.value = '';
+
+    const promptInput = document.getElementById('generatePrompt');
+    if (promptInput) promptInput.value = '';
+
+    const status = document.getElementById('generateStatus');
+    if (status) {
+        status.style.display = 'none';
+    }
+}
+
+/**
+ * Generate content using AI
+ */
+async function generateWithAI() {
+    const assetType = document.getElementById('generateAssetType')?.value;
+    const companyName = document.getElementById('generateCompanyName')?.value.trim();
+    const description = document.getElementById('generatePrompt')?.value.trim();
+    const statusEl = document.getElementById('generateStatus');
+    const generateBtn = document.getElementById('generateSubmitBtn');
+    const cancelBtn = document.getElementById('generateCancelBtn');
+
+    // Validation
+    if (!assetType) {
+        showNotification('Please select an asset type', 'error');
+        return;
+    }
+
+    if (!description) {
+        showNotification('Please provide a description', 'error');
+        return;
+    }
+
+    // Create AbortController for cancellation
+    state.generateAbortController = new AbortController();
+    state.isGenerating = true;
+
+    // Show generating state
+    if (statusEl) {
+        statusEl.style.display = 'flex';
+    }
+    if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Generating...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    // Update cancel button to show it will abort
+    if (cancelBtn) {
+        cancelBtn.innerHTML = '<i data-lucide="x"></i> Cancel Generation';
+        cancelBtn.classList.add('btn-danger');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    try {
+        const response = await fetch('/api/context/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                asset_type: assetType,
+                company_name: companyName,
+                description: description
+            }),
+            signal: state.generateAbortController.signal
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        if (data.success && data.content) {
+            // Get the type info for the name
+            const typeInfo = state.assetTypes.find(t => t.type_key === assetType) ||
+                           { display_name: assetType };
+
+            // Create content JSON from the generated markdown
+            const contentJson = {
+                generated: true,
+                generated_at: new Date().toISOString(),
+                source_description: description,
+                content: data.content
+            };
+
+            // Load into editor
+            loadAssetIntoEditor({
+                name: `${companyName || 'New'} ${typeInfo.display_name}`,
+                asset_type: assetType,
+                description: `AI-generated ${typeInfo.display_name.toLowerCase()} based on: ${description.substring(0, 100)}...`,
+                content_json: contentJson,
+                tags: ['ai-generated'],
+                version: 1
+            });
+
+            // Close modal
+            closeGenerateModal();
+
+            // Show success
+            showNotification(`Generated ${typeInfo.display_name} content! Review and save when ready.`, 'success');
+
+            // Mark as dirty so user knows to save
+            state.selectedAsset = null;
+            state.isDirty = true;
+            updateSaveButtonState();
+
+            // Log usage
+            console.log('AI Generation usage:', data.usage);
+
+        } else {
+            throw new Error(data.error || 'Failed to generate content');
+        }
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            showNotification('Generation cancelled', 'info');
+        } else {
+            console.error('Generate error:', error);
+            showNotification('Failed to generate: ' + error.message, 'error');
+        }
+    } finally {
+        // Reset state
+        state.generateAbortController = null;
+        state.isGenerating = false;
+
+        // Reset button states
+        if (statusEl) {
+            statusEl.style.display = 'none';
+        }
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i data-lucide="sparkles"></i> Generate';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        if (cancelBtn) {
+            cancelBtn.innerHTML = 'Cancel';
+            cancelBtn.classList.remove('btn-danger');
+        }
+    }
+}
+
+/**
+ * Cancel the current AI generation
+ */
+function cancelGeneration() {
+    if (state.generateAbortController && state.isGenerating) {
+        state.generateAbortController.abort();
+    } else {
+        // Not generating, just close the modal
+        closeGenerateModal();
+    }
+}
+
+/**
+ * Setup generate modal event listeners
+ * Called from main setupEventListeners function
+ */
+function setupGenerateModalListeners() {
+    console.log('Setting up generate modal event listeners...');
+
+    // Open modal button (in main toolbar)
+    const openBtn = document.getElementById('generateBtn');
+    if (openBtn) {
+        console.log('Generate button found, attaching click listener');
+        openBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Generate button clicked!');
+            openGenerateModal();
+        });
+    } else {
+        console.error('Generate button not found!');
+    }
+
+    // Submit generate button (in modal)
+    const submitBtn = document.getElementById('generateSubmitBtn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', generateWithAI);
+    }
+
+    // Cancel button (in modal) - handles both closing and aborting generation
+    const modalCancelBtn = document.getElementById('generateCancelBtn');
+    if (modalCancelBtn) {
+        modalCancelBtn.addEventListener('click', cancelGeneration);
+    }
+
+    // Close button (X in header)
+    const closeBtn = document.getElementById('generateModalClose');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeGenerateModal);
+    }
+
+    // Close modal when clicking overlay
+    const modal = document.getElementById('generateModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeGenerateModal();
+            }
+        });
+    }
+
+    // Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('generateModal');
+            if (modal && modal.classList.contains('active')) {
+                closeGenerateModal();
+            }
+        }
+    });
 }

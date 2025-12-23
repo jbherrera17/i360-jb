@@ -57,6 +57,8 @@
             display: flex;
             gap: 0.5rem;
             margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 10;
         }
 
         .filter-row select,
@@ -68,6 +70,14 @@
             border-radius: 6px;
             color: var(--text-primary);
             font-size: 0.85rem;
+            position: relative;
+        }
+
+        .filter-row select:focus,
+        .filter-row input:focus {
+            z-index: 20;
+            outline: none;
+            border-color: var(--primary);
         }
 
         .action-buttons {
@@ -102,6 +112,7 @@
             margin-bottom: 0.5rem;
             cursor: pointer;
             transition: all 0.2s;
+            user-select: none;
         }
 
         .asset-item:hover {
@@ -114,10 +125,15 @@
             background: rgba(99, 102, 241, 0.15);
         }
 
+        .asset-item * {
+            pointer-events: none;
+        }
+
         .asset-icon {
             font-size: 1.5rem;
             width: 40px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .asset-info {
@@ -128,25 +144,13 @@
         .asset-name {
             font-weight: 600;
             color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .asset-meta {
             font-size: 0.75rem;
             color: var(--text-muted);
-        }
-
-        .asset-actions {
-            display: flex;
-            gap: 0.25rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .asset-item:hover .asset-actions {
-            opacity: 1;
         }
 
         .empty-state {
@@ -182,10 +186,58 @@
             background: var(--bg-secondary);
         }
 
+        .editor-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
         .editor-header h2 {
             font-family: 'Orbitron', sans-serif;
             font-size: 1rem;
             margin: 0;
+        }
+
+        .editor-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .editor-meta .meta-separator {
+            opacity: 0.5;
+        }
+
+        .editor-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .editor-empty-state .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .editor-empty-state h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .editor-empty-state p {
+            margin: 0 0 1.5rem 0;
+            max-width: 300px;
+            line-height: 1.5;
         }
 
         .editor-actions {
@@ -483,6 +535,15 @@
             }
         }
 
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
         /* Button styles */
         .btn-primary {
             background: var(--primary);
@@ -521,9 +582,47 @@
             transition: all 0.2s;
         }
 
+        .btn-ai {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-ai:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .btn-secondary:hover {
             background: var(--bg-primary);
             color: var(--text-primary);
+        }
+
+        .btn-secondary.btn-danger {
+            background: var(--danger, #ef4444);
+            color: white;
+            border-color: var(--danger, #ef4444);
+        }
+
+        .btn-secondary.btn-danger:hover {
+            background: #dc2626;
+            border-color: #dc2626;
         }
 
         .btn-icon {
@@ -543,9 +642,15 @@
             color: var(--text-primary);
         }
 
+        .btn-icon.btn-danger {
+            background: var(--danger, #ef4444);
+            color: white;
+            padding: 0.25rem 0.5rem;
+        }
+
         .btn-icon.btn-danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
+            background: #dc2626;
+            color: white;
         }
 
         .btn-icon svg {
@@ -575,6 +680,149 @@
             .asset-list-panel {
                 max-height: 40vh;
             }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .modal-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .modal-body .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body .form-group input,
+        .modal-body .form-group select,
+        .modal-body .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .modal-body .form-group input:focus,
+        .modal-body .form-group select:focus,
+        .modal-body .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-body .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Generate Status */
+        .generate-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .generate-spinner .loading-spinner {
+            width: 32px;
+            height: 32px;
+        }
+
+        .generate-status span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -637,19 +885,14 @@
                             <input type="text" id="searchInput" placeholder="Search...">
                         </div>
                         
-                        <div class="filter-row">
-                            <select id="statusFilter">
-                                <option value="current">Current</option>
-                                <option value="archived">Archived</option>
-                                <option value="all">All</option>
-                            </select>
-                        </div>
-                        
                         <div class="action-buttons">
                             <button id="newAssetBtn" class="btn-primary">
                                 <i data-lucide="plus"></i> New
                             </button>
-                            <button id="importBtn" class="btn-secondary">
+                            <button id="generateBtn" class="btn-ai">
+                                <i data-lucide="sparkles"></i> Generate
+                            </button>
+                            <button id="importBtn" class="btn-secondary" title="Import assets from JSON">
                                 <i data-lucide="upload"></i> Import
                             </button>
                             <input type="file" id="importInput" accept=".json" class="hidden">
@@ -667,14 +910,41 @@
                 <!-- Center Panel - Editor -->
                 <div class="editor-panel">
                     <div class="editor-header">
-                        <h2 id="editorTitle">➕ New Asset</h2>
+                        <div class="editor-header-left">
+                            <h2 id="editorTitle">➕ New Asset</h2>
+                            <div id="editorMeta" class="editor-meta" style="display: none;">
+                                <span id="editorVersion"></span>
+                                <span class="meta-separator">•</span>
+                                <span id="editorCreated"></span>
+                                <span class="meta-separator">•</span>
+                                <span id="editorModified"></span>
+                            </div>
+                        </div>
                         <div class="editor-actions">
+                            <button id="deleteBtn" class="btn-secondary btn-danger" style="display: none;">
+                                <i data-lucide="trash-2"></i> Delete
+                            </button>
+                            <button id="cancelBtn" class="btn-secondary" style="display: none;">
+                                <i data-lucide="x"></i> Cancel
+                            </button>
                             <button id="saveBtn" class="btn-primary" disabled>
                                 <i data-lucide="save"></i> Save
                             </button>
                         </div>
                     </div>
-                    
+
+                    <!-- Empty State (shown when no asset selected) -->
+                    <div id="editorEmptyState" class="editor-empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>Select an Asset</h3>
+                        <p>Choose an asset from the list to view and edit, or create a new context asset.</p>
+                        <button class="btn-primary" onclick="showCreateModal()">
+                            <i data-lucide="plus"></i> Create New Asset
+                        </button>
+                    </div>
+
+                    <!-- Editor Content (hidden when empty state shown) -->
+                    <div id="editorContent">
                     <div class="editor-form">
                         <div class="form-group">
                             <label>Name</label>
@@ -715,6 +985,7 @@
                         <span id="validationStatus"><span class="valid">✓ Valid JSON</span></span>
                         <span id="tokenCount">~0 tokens</span>
                     </div>
+                    </div><!-- End editorContent -->
                 </div>
 
                 <!-- Right Panel - Preview -->
@@ -728,6 +999,51 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- AI Generate Modal -->
+    <div class="modal-overlay" id="generateModal">
+        <div class="modal generate-modal">
+            <div class="modal-header">
+                <h2><i data-lucide="sparkles"></i> Generate Context Asset</h2>
+                <button class="modal-close" id="generateModalClose">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Select an asset type and describe what you want. AI will generate the content for you.</p>
+
+                <div class="form-group">
+                    <label>Asset Type</label>
+                    <select id="generateAssetType">
+                        <option value="">Select type...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Company/Context Name</label>
+                    <input type="text" id="generateCompanyName" placeholder="e.g., Synergi AI, Acme Corp">
+                </div>
+
+                <div class="form-group">
+                    <label>Description / Instructions</label>
+                    <textarea id="generatePrompt" rows="4" placeholder="Describe your company, product, or what this asset should contain..."></textarea>
+                </div>
+
+                <div class="generate-status" id="generateStatus" style="display: none;">
+                    <div class="generate-spinner">
+                        <img src="/assets/loading-spinner.svg" alt="Generating..." class="loading-spinner">
+                    </div>
+                    <span>Generating content...</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="generateCancelBtn">Cancel</button>
+                <button class="btn-ai" id="generateSubmitBtn">
+                    <i data-lucide="sparkles"></i> Generate
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Load Supabase client first -->
