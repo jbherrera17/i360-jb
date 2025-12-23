@@ -1388,4 +1388,318 @@ function setupGenerateModalListeners() {
             }
         }
     });
+
+    // Tab switching
+    const tabs = document.querySelectorAll('.modal-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchModalTab(tab.dataset.tab));
+    });
+
+    // Import tab - populate type select
+    populateImportTypeSelect();
+
+    // Import submit button
+    const importSubmitBtn = document.getElementById('importSubmitBtn');
+    if (importSubmitBtn) {
+        importSubmitBtn.addEventListener('click', importContentWithAI);
+    }
+
+    // File upload handling
+    setupFileUpload();
+}
+
+/**
+ * Switch between Generate and Import tabs
+ */
+function switchModalTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    document.getElementById('generateTabContent').style.display = tabName === 'generate' ? 'block' : 'none';
+    document.getElementById('importTabContent').style.display = tabName === 'import' ? 'block' : 'none';
+
+    // Update tab content active class
+    document.getElementById('generateTabContent').classList.toggle('active', tabName === 'generate');
+    document.getElementById('importTabContent').classList.toggle('active', tabName === 'import');
+
+    // Update footer buttons
+    document.getElementById('generateSubmitBtn').style.display = tabName === 'generate' ? 'flex' : 'none';
+    document.getElementById('importSubmitBtn').style.display = tabName === 'import' ? 'flex' : 'none';
+
+    // Refresh icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Populate the import type select dropdown
+ */
+function populateImportTypeSelect() {
+    const select = document.getElementById('importAssetType');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Auto-detect best type...</option>';
+
+    // Core types
+    const coreTypes = state.assetTypes.filter(t => t.category === 'core');
+    if (coreTypes.length > 0) {
+        select.innerHTML += '<optgroup label="Core Types">';
+        coreTypes.forEach(type => {
+            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
+        });
+        select.innerHTML += '</optgroup>';
+    }
+
+    // Extended types
+    const extendedTypes = state.assetTypes.filter(t => t.category === 'extended');
+    if (extendedTypes.length > 0) {
+        select.innerHTML += '<optgroup label="Extended Types">';
+        extendedTypes.forEach(type => {
+            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
+        });
+        select.innerHTML += '</optgroup>';
+    }
+}
+
+/**
+ * Setup file upload drag and drop
+ */
+function setupFileUpload() {
+    const uploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('importFileInput');
+    const clearBtn = document.getElementById('clearFileBtn');
+
+    if (!uploadArea || !fileInput) return;
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // File selected
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    // Clear file
+    if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearSelectedFile();
+        });
+    }
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+}
+
+/**
+ * Handle file selection
+ */
+async function handleFileSelect(file) {
+    const allowedTypes = ['.txt', '.md', '.json', '.csv'];
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+
+    if (!allowedTypes.includes(fileExt)) {
+        showNotification('Please upload a .txt, .md, .json, or .csv file', 'error');
+        return;
+    }
+
+    // Show file name
+    const uploadContent = document.querySelector('.file-upload-content');
+    const fileSelected = document.querySelector('.file-selected');
+    const fileNameSpan = document.getElementById('selectedFileName');
+
+    if (uploadContent) uploadContent.style.display = 'none';
+    if (fileSelected) fileSelected.style.display = 'flex';
+    if (fileNameSpan) fileNameSpan.textContent = file.name;
+
+    // Read file content
+    try {
+        const content = await file.text();
+        document.getElementById('importContent').value = content;
+
+        // Update source field with filename
+        const sourceInput = document.getElementById('importSource');
+        if (sourceInput && !sourceInput.value) {
+            sourceInput.value = file.name.replace(/\.[^/.]+$/, '');
+        }
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    } catch (error) {
+        console.error('Error reading file:', error);
+        showNotification('Error reading file', 'error');
+        clearSelectedFile();
+    }
+}
+
+/**
+ * Clear selected file
+ */
+function clearSelectedFile() {
+    const uploadContent = document.querySelector('.file-upload-content');
+    const fileSelected = document.querySelector('.file-selected');
+    const fileInput = document.getElementById('importFileInput');
+
+    if (uploadContent) uploadContent.style.display = 'flex';
+    if (fileSelected) fileSelected.style.display = 'none';
+    if (fileInput) fileInput.value = '';
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Import content using AI to convert to structured asset
+ */
+async function importContentWithAI() {
+    const assetType = document.getElementById('importAssetType')?.value;
+    const source = document.getElementById('importSource')?.value.trim();
+    const content = document.getElementById('importContent')?.value.trim();
+    const statusEl = document.getElementById('generateStatus');
+    const statusText = document.getElementById('generateStatusText');
+    const importBtn = document.getElementById('importSubmitBtn');
+    const cancelBtn = document.getElementById('generateCancelBtn');
+
+    // Validation
+    if (!content) {
+        showNotification('Please paste or upload content to convert', 'error');
+        return;
+    }
+
+    if (content.length < 50) {
+        showNotification('Content is too short. Please provide more detail.', 'error');
+        return;
+    }
+
+    // Create AbortController for cancellation
+    state.generateAbortController = new AbortController();
+    state.isGenerating = true;
+
+    // Show processing state
+    if (statusEl) {
+        statusEl.style.display = 'flex';
+    }
+    if (statusText) {
+        statusText.textContent = 'Analyzing and structuring content...';
+    }
+    if (importBtn) {
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Converting...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    if (cancelBtn) {
+        cancelBtn.innerHTML = '<i data-lucide="x"></i> Cancel';
+        cancelBtn.classList.add('btn-danger');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    try {
+        const response = await fetch('/api/context/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: content,
+                preferred_type: assetType || null,
+                source: source || null
+            }),
+            signal: state.generateAbortController.signal
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        if (data.success && data.asset) {
+            const asset = data.asset;
+
+            // Get the type info for display
+            const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
+                           { display_name: asset.asset_type, icon: '📄' };
+
+            // Load into editor
+            loadAssetIntoEditor({
+                name: asset.name,
+                asset_type: asset.asset_type,
+                description: asset.description,
+                content_json: asset.content_json,
+                tags: asset.tags || ['imported'],
+                version: 1
+            });
+
+            // Close modal
+            closeGenerateModal();
+
+            // Show success with confidence info
+            const confidence = data.metadata?.confidence || 0;
+            const confidenceText = confidence >= 0.9 ? 'high' : confidence >= 0.7 ? 'good' : 'moderate';
+            showNotification(
+                `Created ${typeInfo.icon} ${typeInfo.display_name} with ${confidenceText} confidence. Review and save when ready.`,
+                'success'
+            );
+
+            // Mark as dirty so user knows to save
+            state.selectedAsset = null;
+            state.isDirty = true;
+            updateSaveButtonState();
+
+            // Log any fields needing review
+            if (data.metadata?.needs_review?.length > 0) {
+                console.log('Fields needing review:', data.metadata.needs_review);
+            }
+
+        } else {
+            throw new Error(data.error || 'Failed to parse content');
+        }
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            showNotification('Conversion cancelled', 'info');
+        } else {
+            console.error('Import error:', error);
+            showNotification('Failed to convert: ' + error.message, 'error');
+        }
+    } finally {
+        // Reset state
+        state.generateAbortController = null;
+        state.isGenerating = false;
+
+        // Reset button states
+        if (statusEl) {
+            statusEl.style.display = 'none';
+        }
+        if (importBtn) {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '<i data-lucide="sparkles"></i> Convert to Asset';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        if (cancelBtn) {
+            cancelBtn.innerHTML = 'Cancel';
+            cancelBtn.classList.remove('btn-danger');
+        }
+    }
 }

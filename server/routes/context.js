@@ -1149,4 +1149,247 @@ Format your response in clean markdown with headers, bullet points, and sections
     }
 });
 
+// ============================================
+// POST /api/context/parse
+// Parse raw content into structured asset using AI
+// ============================================
+router.post('/parse', async (req, res) => {
+    try {
+        const { content, preferred_type, source } = req.body;
+
+        // Validate required fields
+        if (!content) {
+            return res.status(400).json({
+                success: false,
+                error: 'Content is required'
+            });
+        }
+
+        if (content.length < 50) {
+            return res.status(400).json({
+                success: false,
+                error: 'Content is too short to analyze'
+            });
+        }
+
+        // Check for Anthropic API key
+        if (!process.env.ANTHROPIC_API_KEY) {
+            return res.status(500).json({
+                success: false,
+                error: 'Anthropic API key not configured'
+            });
+        }
+
+        // Build the system prompt with all asset type schemas
+        const systemPrompt = `You are an AI system architect for Insight 360, a values-based AI ecosystem.
+
+Your task is to convert the provided content into a structured Context Asset in JSON format.
+
+## AVAILABLE ASSET TYPES (18 Total)
+
+### Core Types (8)
+1. company_description - Who we are, mission, history, and vision
+2. why_we_win - Competitive differentiation and unique value proposition
+3. products - Offerings, features, benefits, and pricing
+4. pain_points - Customer problems we address
+5. voice_dna - Brand voice, tone, style rules, and writing guidelines
+6. icp - Target customer segments and profiles (Ideal Customer Profile)
+7. core_values - Guiding principles and organizational beliefs
+8. custom_processes - Internal workflows, methodologies, and procedures
+
+### Extended Types (10)
+9. competitors - Competitive landscape and analysis
+10. case_studies - Success stories and customer testimonials
+11. faqs - Common questions and objection handling
+12. team_bios - Key people, expertise, and backgrounds
+13. industry_context - Market trends, regulations, and landscape
+14. terminology - Domain-specific glossary and definitions
+15. templates - Email, proposal, and content templates
+16. pricing - Pricing structure, packages, and terms
+17. brand_guidelines - Visual identity, colors, and usage rules
+18. personas - Detailed buyer personas for targeting
+
+## TYPE-SPECIFIC CONTENT SCHEMAS
+
+### company_description
+{ "company_name": "string", "tagline": "string", "mission": "string", "vision": "string", "history": "string", "founding_year": "integer", "headquarters": "string", "team_size": "string", "key_milestones": ["string"] }
+
+### why_we_win
+{ "value_proposition": "string", "differentiators": ["string"], "competitive_advantages": ["string"], "proof_points": ["string"], "key_stats": {} }
+
+### products
+{ "offerings": [{ "name": "string", "type": "string", "tagline": "string", "description": "string", "features": ["string"], "benefits": ["string"], "ideal_for": ["string"], "pricing_model": "string" }] }
+
+### pain_points
+{ "pain_points": [{ "problem": "string", "impact": "string", "our_solution": "string", "outcome": "string" }] }
+
+### voice_dna
+{ "brand_name": "string", "personality_traits": ["string"], "tone": "string", "writing_style": { "sentence_length": "string", "vocabulary_level": "string", "perspective": "string" }, "do": ["string"], "dont": ["string"], "signature_phrases": ["string"], "avoid_phrases": ["string"] }
+
+### icp
+{ "segments": [{ "name": "string", "priority": "integer", "demographics": { "company_size": "string", "revenue_range": "string", "industries": ["string"], "geography": "string" }, "psychographics": { "values": ["string"], "motivations": ["string"], "fears": ["string"] }, "pain_points": ["string"], "goals": ["string"], "objections": ["string"], "buying_triggers": ["string"] }] }
+
+### core_values
+{ "values": [{ "name": "string", "description": "string", "behaviors": ["string"], "anti_behaviors": ["string"] }] }
+
+### custom_processes
+{ "processes": [{ "name": "string", "purpose": "string", "steps": ["string"], "owner": "string", "frequency": "string", "tools_used": ["string"] }] }
+
+### competitors
+{ "competitors": [{ "name": "string", "website": "string", "strengths": ["string"], "weaknesses": ["string"], "positioning": "string", "our_advantage": "string" }] }
+
+### case_studies
+{ "case_studies": [{ "id": "string", "client_name": "string", "industry": "string", "challenge": "string", "solution": "string", "results": ["string"], "testimonial": "string", "metrics": {} }] }
+
+### faqs
+{ "categories": [{ "category": "string", "questions": [{ "question": "string", "answer": "string", "related_to": ["string"] }] }] }
+
+### team_bios
+{ "team_members": [{ "name": "string", "title": "string", "role": "string", "bio": "string", "expertise": ["string"], "linkedin": "string", "email": "string" }] }
+
+### industry_context
+{ "industry_name": "string", "market_size": "string", "growth_rate": "string", "key_trends": ["string"], "regulations": ["string"], "challenges": ["string"], "opportunities": ["string"] }
+
+### terminology
+{ "terms": [{ "term": "string", "definition": "string", "usage_example": "string", "related_terms": ["string"] }] }
+
+### templates
+{ "templates": [{ "name": "string", "type": "string", "purpose": "string", "content": "string", "variables": ["string"], "usage_notes": "string" }] }
+
+### pricing
+{ "pricing_model": "string", "currency": "string", "packages": [{ "name": "string", "price": "string", "billing_cycle": "string", "features": ["string"], "ideal_for": "string" }], "discounts": [{}], "terms": "string" }
+
+### brand_guidelines
+{ "logo_usage": "string", "colors": { "primary": "string", "secondary": "string", "accent": "string", "background": "string" }, "typography": { "heading_font": "string", "body_font": "string" }, "imagery_style": "string", "dos": ["string"], "donts": ["string"] }
+
+### personas
+{ "personas": [{ "name": "string", "role": "string", "demographics": {}, "goals": ["string"], "challenges": ["string"], "motivations": ["string"], "preferred_channels": ["string"], "messaging_approach": "string", "content_preferences": ["string"] }] }
+
+## OUTPUT FORMAT
+
+Return ONLY valid JSON with this exact structure (no markdown, no commentary):
+
+{
+  "asset_type": "<one of the 18 types above>",
+  "name": "<descriptive name for this asset>",
+  "description": "<1-2 sentence summary>",
+  "tags": ["<relevant>", "<keywords>"],
+  "content_json": {
+    // Type-specific structured data matching the schema above
+  },
+  "metadata": {
+    "source": "<where this content came from>",
+    "confidence": <0.0-1.0>,
+    "needs_review": ["<any fields that need human verification>"]
+  }
+}
+
+## RULES
+
+1. Output ONLY valid JSON - no markdown code blocks, no commentary
+2. Select the BEST matching asset_type from the 18 available types${preferred_type ? ` (preferred: ${preferred_type})` : ''}
+3. Follow the exact schema for that asset type's content_json
+4. If data is unclear, use "", [], or null - do NOT invent or assume
+5. Set confidence (0-1) based on how complete/certain the data is
+6. List any fields needing human review in metadata.needs_review`;
+
+        const userPrompt = `Convert this content into a structured Context Asset:
+
+${source ? `Source: ${source}\n\n` : ''}Content:
+${content.substring(0, 15000)}`;
+
+        // Call Anthropic API
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4096,
+                system: systemPrompt,
+                messages: [
+                    { role: 'user', content: userPrompt }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Anthropic API error:', errorData);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to parse content: ' + (errorData.error?.message || 'API error')
+            });
+        }
+
+        const data = await response.json();
+        const generatedText = data.content?.[0]?.text || '';
+
+        // Try to parse the JSON response
+        let parsedAsset;
+        try {
+            // Remove any potential markdown code blocks
+            let jsonText = generatedText.trim();
+            if (jsonText.startsWith('```')) {
+                jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+            }
+            parsedAsset = JSON.parse(jsonText);
+        } catch (parseError) {
+            console.error('Failed to parse AI response as JSON:', parseError);
+            console.error('Raw response:', generatedText.substring(0, 500));
+            return res.status(500).json({
+                success: false,
+                error: 'AI returned invalid JSON. Please try again.'
+            });
+        }
+
+        // Validate the parsed asset has required fields
+        if (!parsedAsset.asset_type || !parsedAsset.name || !parsedAsset.content_json) {
+            return res.status(500).json({
+                success: false,
+                error: 'AI response missing required fields'
+            });
+        }
+
+        // Validate asset_type is valid
+        if (!ASSET_TYPES[parsedAsset.asset_type]) {
+            console.error('Invalid asset type returned:', parsedAsset.asset_type);
+            // Try to use preferred type or default to custom_processes
+            parsedAsset.asset_type = preferred_type && ASSET_TYPES[preferred_type]
+                ? preferred_type
+                : 'custom_processes';
+        }
+
+        res.json({
+            success: true,
+            asset: {
+                asset_type: parsedAsset.asset_type,
+                name: parsedAsset.name,
+                description: parsedAsset.description || '',
+                tags: parsedAsset.tags || ['imported'],
+                content_json: parsedAsset.content_json
+            },
+            metadata: parsedAsset.metadata || {
+                source: source || 'User import',
+                confidence: 0.8,
+                needs_review: []
+            },
+            usage: {
+                input_tokens: data.usage?.input_tokens || 0,
+                output_tokens: data.usage?.output_tokens || 0
+            }
+        });
+
+    } catch (error) {
+        console.error('Error parsing content:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

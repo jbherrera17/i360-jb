@@ -877,6 +877,104 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
+
+        /* Modal Tabs */
+        .modal-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            padding: 0 1rem;
+            background: var(--bg-tertiary);
+        }
+
+        .modal-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .modal-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .modal-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .modal-tab i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* File Upload Area */
+        .file-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-primary);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .file-upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-upload-content span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .file-upload-content small {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .file-selected {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .file-selected span {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -1056,44 +1154,115 @@
 
     <!-- AI Generate Modal -->
     <div class="modal-overlay" id="generateModal">
-        <div class="modal generate-modal">
+        <div class="modal generate-modal" style="max-width: 600px;">
             <div class="modal-header">
-                <h2><i data-lucide="sparkles"></i> Generate Context Asset</h2>
+                <h2><i data-lucide="sparkles"></i> Create Context Asset</h2>
                 <button class="modal-close" id="generateModalClose">
                     <i data-lucide="x"></i>
                 </button>
             </div>
+
+            <!-- Tab Navigation -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="generate">
+                    <i data-lucide="wand-2"></i> Generate New
+                </button>
+                <button class="modal-tab" data-tab="import">
+                    <i data-lucide="file-text"></i> Import Content
+                </button>
+            </div>
+
             <div class="modal-body">
-                <p class="modal-description">Select an asset type and describe what you want. AI will generate the content for you.</p>
+                <!-- Generate Tab -->
+                <div class="tab-content active" id="generateTabContent">
+                    <p class="modal-description">Select an asset type and describe what you want. AI will generate the content for you.</p>
 
-                <div class="form-group">
-                    <label>Asset Type</label>
-                    <select id="generateAssetType">
-                        <option value="">Select type...</option>
-                    </select>
+                    <div class="form-group">
+                        <label>Asset Type</label>
+                        <select id="generateAssetType">
+                            <option value="">Select type...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Company/Context Name</label>
+                        <input type="text" id="generateCompanyName" placeholder="e.g., Synergi AI, Acme Corp">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description / Instructions</label>
+                        <textarea id="generatePrompt" rows="4" placeholder="Describe your company, product, or what this asset should contain..."></textarea>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Company/Context Name</label>
-                    <input type="text" id="generateCompanyName" placeholder="e.g., Synergi AI, Acme Corp">
-                </div>
+                <!-- Import Tab -->
+                <div class="tab-content" id="importTabContent" style="display: none;">
+                    <p class="modal-description">Paste any business content (SOPs, processes, product info, etc.) and AI will convert it into a structured context asset.</p>
 
-                <div class="form-group">
-                    <label>Description / Instructions</label>
-                    <textarea id="generatePrompt" rows="4" placeholder="Describe your company, product, or what this asset should contain..."></textarea>
+                    <div class="form-group">
+                        <label>Content Type (Optional)</label>
+                        <select id="importAssetType">
+                            <option value="">Auto-detect best type...</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                            Leave empty to let AI determine the best asset type
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Content Source (Optional)</label>
+                        <input type="text" id="importSource" placeholder="e.g., Sales Playbook, Onboarding Doc, Website Copy">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Paste Your Content</label>
+                        <textarea id="importContent" rows="8" placeholder="Paste your content here...
+
+Examples:
+- An SOP or process document
+- Product/service descriptions
+- Company information
+- Team bios
+- FAQ content
+- Any business document you want to structure"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <span>Or upload a file</span>
+                        </label>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <input type="file" id="importFileInput" accept=".txt,.md,.json,.csv" style="display: none;">
+                            <div class="file-upload-content">
+                                <i data-lucide="upload-cloud" style="width: 32px; height: 32px; color: var(--text-muted);"></i>
+                                <span>Click or drag to upload</span>
+                                <small>.txt, .md, .json, .csv</small>
+                            </div>
+                            <div class="file-selected" style="display: none;">
+                                <i data-lucide="file-check" style="color: var(--success);"></i>
+                                <span id="selectedFileName"></span>
+                                <button type="button" id="clearFileBtn" class="btn-icon-only" style="padding: 0.25rem;">
+                                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="generate-status" id="generateStatus" style="display: none;">
                     <div class="generate-spinner">
-                        <img src="/assets/loading-spinner.svg" alt="Generating..." class="loading-spinner">
+                        <img src="/assets/loading-spinner.svg" alt="Processing..." class="loading-spinner">
                     </div>
-                    <span>Generating content...</span>
+                    <span id="generateStatusText">Processing content...</span>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" id="generateCancelBtn">Cancel</button>
                 <button class="btn-ai" id="generateSubmitBtn">
                     <i data-lucide="sparkles"></i> Generate
+                </button>
+                <button class="btn-ai" id="importSubmitBtn" style="display: none;">
+                    <i data-lucide="sparkles"></i> Convert to Asset
                 </button>
             </div>
         </div>
