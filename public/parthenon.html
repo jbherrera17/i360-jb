@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parthenon | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Parthenon Specific Styles */
+        .parthenon-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Stats Overview */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.departments { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .stat-icon.roles { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .stat-icon.okrs { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .stat-icon.processes { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .stat-info h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .stat-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        /* Tabs */
+        .parthenon-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .parthenon-tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .parthenon-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .parthenon-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .parthenon-tab .count {
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        .parthenon-tab.active .count {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Department Card */
+        .dept-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dept-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+        }
+
+        .dept-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .dept-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .dept-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .dept-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .dept-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .dept-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Role Card */
+        .role-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-card:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .role-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .role-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .role-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .role-dept {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .role-level {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-level.executive { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .role-level.director { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .role-level.manager { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .role-level.individual { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        /* OKR Card */
+        .okr-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .okr-card:hover {
+            border-color: var(--primary);
+        }
+
+        .okr-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .okr-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .okr-scope {
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .okr-scope.company { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .okr-scope.department { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .okr-scope.team { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .okr-scope.individual { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .okr-period {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .okr-progress {
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.complete {
+            background: var(--success);
+        }
+
+        .okr-progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Process Card */
+        .process-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .process-card:hover {
+            border-color: var(--primary);
+        }
+
+        .process-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .process-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .process-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .process-type {
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .process-type.standard { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .process-type.policy { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .process-type.procedure { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .process-type.workflow { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .process-type.checklist { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+
+        .process-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .process-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark, #4f46e5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .modal-body .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body .form-group input,
+        .modal-body .form-group select,
+        .modal-body .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .modal-body .form-group input:focus,
+        .modal-body .form-group select:focus,
+        .modal-body .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/context.html" class="nav-item">
+                    <i data-lucide="database"></i>
+                    <span>Context Assets</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/parthenon.html" class="nav-item active">
+                    <i data-lucide="landmark"></i>
+                    <span>Parthenon</span>
+                </a>
+                <a href="/actions.html" class="nav-item">
+                    <i data-lucide="zap"></i>
+                    <span>Actions</span>
+                </a>
+                <a href="/integrity.html" class="nav-item">
+                    <i data-lucide="shield-check"></i>
+                    <span>Integrity</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="parthenon-layout">
+                <!-- Stats Overview -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon departments">
+                            <i data-lucide="building-2"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="deptCount">0</h3>
+                            <p>Departments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon roles">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="roleCount">0</h3>
+                            <p>Roles</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon okrs">
+                            <i data-lucide="target"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="okrCount">0</h3>
+                            <p>Active OKRs</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon processes">
+                            <i data-lucide="workflow"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="processCount">0</h3>
+                            <p>Processes</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="parthenon-tabs">
+                    <button class="parthenon-tab active" data-tab="departments">
+                        <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                        Departments
+                        <span id="deptTabCount" class="count">0</span>
+                    </button>
+                    <button class="parthenon-tab" data-tab="roles">
+                        <i data-lucide="users" style="width:16px;height:16px;"></i>
+                        Roles
+                        <span id="roleTabCount" class="count">0</span>
+                    </button>
+                    <button class="parthenon-tab" data-tab="okrs">
+                        <i data-lucide="target" style="width:16px;height:16px;"></i>
+                        OKRs
+                        <span id="okrTabCount" class="count">0</span>
+                    </button>
+                    <button class="parthenon-tab" data-tab="processes">
+                        <i data-lucide="workflow" style="width:16px;height:16px;"></i>
+                        Processes
+                        <span id="processTabCount" class="count">0</span>
+                    </button>
+                </div>
+
+                <!-- Departments Tab -->
+                <div class="tab-content active" id="departmentsTab">
+                    <div class="section-header">
+                        <h2><i data-lucide="building-2" style="width:20px;height:20px;"></i> Departments</h2>
+                        <button class="btn-primary" onclick="showDeptModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Department
+                        </button>
+                    </div>
+                    <div id="departmentsList" class="cards-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Roles Tab -->
+                <div class="tab-content" id="rolesTab">
+                    <div class="section-header">
+                        <h2><i data-lucide="users" style="width:20px;height:20px;"></i> Roles</h2>
+                        <button class="btn-primary" onclick="showRoleModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Role
+                        </button>
+                    </div>
+                    <div id="rolesList" class="cards-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- OKRs Tab -->
+                <div class="tab-content" id="okrsTab">
+                    <div class="section-header">
+                        <h2><i data-lucide="target" style="width:20px;height:20px;"></i> Objectives & Key Results</h2>
+                        <button class="btn-primary" onclick="showOKRModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add OKR
+                        </button>
+                    </div>
+                    <div id="okrsList" class="cards-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Processes Tab -->
+                <div class="tab-content" id="processesTab">
+                    <div class="section-header">
+                        <h2><i data-lucide="workflow" style="width:20px;height:20px;"></i> Processes</h2>
+                        <button class="btn-primary" onclick="showProcessModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Process
+                        </button>
+                    </div>
+                    <div id="processesList" class="cards-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Department Modal -->
+    <div class="modal-overlay" id="deptModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i data-lucide="building-2"></i> <span id="deptModalTitle">Add Department</span></h2>
+                <button class="modal-close" onclick="closeDeptModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Department Name</label>
+                    <input type="text" id="deptName" placeholder="e.g., Marketing, Sales, Operations">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="deptDescription" rows="3" placeholder="Brief description of the department's purpose..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Icon (Lucide icon name)</label>
+                    <input type="text" id="deptIcon" placeholder="e.g., megaphone, trending-up, settings" value="building-2">
+                </div>
+                <div class="form-group">
+                    <label>Color</label>
+                    <input type="color" id="deptColor" value="#6366f1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeDeptModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveDepartment()">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Modal -->
+    <div class="modal-overlay" id="roleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i data-lucide="user"></i> <span id="roleModalTitle">Add Role</span></h2>
+                <button class="modal-close" onclick="closeRoleModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Role Title</label>
+                    <input type="text" id="roleTitle" placeholder="e.g., Marketing Manager, Sales Rep">
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <select id="roleDepartment">
+                        <option value="">Select department...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Level</label>
+                    <select id="roleLevel">
+                        <option value="individual">Individual Contributor</option>
+                        <option value="manager">Manager</option>
+                        <option value="director">Director</option>
+                        <option value="executive">Executive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="roleDescription" rows="3" placeholder="Brief description of the role..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeRoleModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveRole()">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase client -->
+    <script src="/js/supabase.js"></script>
+
+    <script>
+        // State
+        let departments = [];
+        let roles = [];
+        let okrs = [];
+        let processes = [];
+        let editingId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadOverview();
+            await loadDepartments();
+            await loadRoles();
+            await loadOKRs();
+            await loadProcesses();
+            setupTabs();
+        });
+
+        // Tab switching
+        function setupTabs() {
+            document.querySelectorAll('.parthenon-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+
+                    // Update tab buttons
+                    document.querySelectorAll('.parthenon-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Update tab content
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(tabName + 'Tab').classList.add('active');
+                });
+            });
+        }
+
+        // Load overview stats
+        async function loadOverview() {
+            try {
+                const res = await fetch('/api/parthenon/overview');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('deptCount').textContent = data.data.departments;
+                    document.getElementById('roleCount').textContent = data.data.roles;
+                    document.getElementById('okrCount').textContent = data.data.active_okrs;
+                    document.getElementById('processCount').textContent = data.data.active_processes;
+
+                    document.getElementById('deptTabCount').textContent = data.data.departments;
+                    document.getElementById('roleTabCount').textContent = data.data.roles;
+                    document.getElementById('okrTabCount').textContent = data.data.active_okrs;
+                    document.getElementById('processTabCount').textContent = data.data.active_processes;
+                }
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            try {
+                const res = await fetch('/api/parthenon/departments');
+                const data = await res.json();
+                if (data.success) {
+                    departments = data.data;
+                    renderDepartments();
+                    populateDeptSelect();
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        function renderDepartments() {
+            const container = document.getElementById('departmentsList');
+
+            if (departments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">🏛️</div>
+                        <h3>No Departments Yet</h3>
+                        <p>Create your organizational structure by adding departments.</p>
+                        <button class="btn-primary" onclick="seedDefaults()">
+                            <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Seed Default Departments
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = departments.map(dept => `
+                <div class="dept-card" onclick="editDepartment('${dept.id}')">
+                    <div class="dept-header">
+                        <div class="dept-icon" style="background: ${dept.color}20; color: ${dept.color};">
+                            <i data-lucide="${dept.icon || 'building-2'}"></i>
+                        </div>
+                        <span class="dept-name">${dept.name}</span>
+                    </div>
+                    <p class="dept-description">${dept.description || 'No description'}</p>
+                    <div class="dept-meta">
+                        <span><i data-lucide="users" style="width:12px;height:12px;"></i> ${roles.filter(r => r.department_id === dept.id).length} roles</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Load roles
+        async function loadRoles() {
+            try {
+                const res = await fetch('/api/parthenon/roles');
+                const data = await res.json();
+                if (data.success) {
+                    roles = data.data;
+                    renderRoles();
+                }
+            } catch (error) {
+                console.error('Error loading roles:', error);
+            }
+        }
+
+        function renderRoles() {
+            const container = document.getElementById('rolesList');
+
+            if (roles.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">👥</div>
+                        <h3>No Roles Yet</h3>
+                        <p>Define roles within your departments to specify responsibilities and authority.</p>
+                        <button class="btn-primary" onclick="showRoleModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add First Role
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = roles.map(role => `
+                <div class="role-card" onclick="editRole('${role.id}')">
+                    <div class="role-avatar">
+                        <i data-lucide="user" style="width:20px;height:20px;"></i>
+                    </div>
+                    <div class="role-info">
+                        <div class="role-title">${role.title}</div>
+                        <div class="role-dept">${role.departments?.name || 'No department'}</div>
+                        <span class="role-level ${role.level}">${role.level}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Load OKRs
+        async function loadOKRs() {
+            try {
+                const res = await fetch('/api/parthenon/okrs');
+                const data = await res.json();
+                if (data.success) {
+                    okrs = data.data;
+                    renderOKRs();
+                }
+            } catch (error) {
+                console.error('Error loading OKRs:', error);
+            }
+        }
+
+        function renderOKRs() {
+            const container = document.getElementById('okrsList');
+
+            if (okrs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">🎯</div>
+                        <h3>No OKRs Yet</h3>
+                        <p>Set objectives and key results to align your organization.</p>
+                        <button class="btn-primary" onclick="showOKRModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Create First OKR
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = okrs.map(okr => `
+                <div class="okr-card">
+                    <div class="okr-header">
+                        <span class="okr-title">${okr.title}</span>
+                        <span class="okr-scope ${okr.scope}">${okr.scope}</span>
+                    </div>
+                    <div class="okr-period">${okr.period}</div>
+                    <div class="okr-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill ${okr.progress >= 100 ? 'complete' : ''}" style="width: ${okr.progress}%"></div>
+                        </div>
+                        <div class="okr-progress-text">
+                            <span>${okr.progress}% complete</span>
+                            <span>${(okr.key_results || []).length} key results</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Load processes
+        async function loadProcesses() {
+            try {
+                const res = await fetch('/api/parthenon/processes');
+                const data = await res.json();
+                if (data.success) {
+                    processes = data.data;
+                    renderProcesses();
+                }
+            } catch (error) {
+                console.error('Error loading processes:', error);
+            }
+        }
+
+        function renderProcesses() {
+            const container = document.getElementById('processesList');
+
+            if (processes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">⚙️</div>
+                        <h3>No Processes Yet</h3>
+                        <p>Document your business processes, standards, and procedures.</p>
+                        <button class="btn-primary" onclick="showProcessModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add First Process
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = processes.map(proc => `
+                <div class="process-card">
+                    <div class="process-header">
+                        <div class="process-icon">
+                            <i data-lucide="${proc.icon || 'workflow'}" style="width:18px;height:18px;"></i>
+                        </div>
+                        <span class="process-name">${proc.name}</span>
+                        <span class="process-type ${proc.type}">${proc.type}</span>
+                    </div>
+                    <p class="process-description">${proc.description || 'No description'}</p>
+                    <div class="process-meta">
+                        <span><i data-lucide="list" style="width:12px;height:12px;"></i> ${(proc.steps || []).length} steps</span>
+                        <span>v${proc.version || '1.0'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Populate department select
+        function populateDeptSelect() {
+            const select = document.getElementById('roleDepartment');
+            select.innerHTML = '<option value="">Select department...</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+
+        // Modal functions
+        function showDeptModal() {
+            editingId = null;
+            document.getElementById('deptModalTitle').textContent = 'Add Department';
+            document.getElementById('deptName').value = '';
+            document.getElementById('deptDescription').value = '';
+            document.getElementById('deptIcon').value = 'building-2';
+            document.getElementById('deptColor').value = '#6366f1';
+            document.getElementById('deptModal').classList.add('active');
+        }
+
+        function closeDeptModal() {
+            document.getElementById('deptModal').classList.remove('active');
+        }
+
+        function editDepartment(id) {
+            const dept = departments.find(d => d.id === id);
+            if (!dept) return;
+
+            editingId = id;
+            document.getElementById('deptModalTitle').textContent = 'Edit Department';
+            document.getElementById('deptName').value = dept.name;
+            document.getElementById('deptDescription').value = dept.description || '';
+            document.getElementById('deptIcon').value = dept.icon || 'building-2';
+            document.getElementById('deptColor').value = dept.color || '#6366f1';
+            document.getElementById('deptModal').classList.add('active');
+        }
+
+        async function saveDepartment() {
+            const data = {
+                name: document.getElementById('deptName').value,
+                description: document.getElementById('deptDescription').value,
+                icon: document.getElementById('deptIcon').value,
+                color: document.getElementById('deptColor').value
+            };
+
+            try {
+                const url = editingId ? `/api/parthenon/departments/${editingId}` : '/api/parthenon/departments';
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeDeptModal();
+                    await loadDepartments();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving department:', error);
+                alert('Error saving department');
+            }
+        }
+
+        function showRoleModal() {
+            editingId = null;
+            document.getElementById('roleModalTitle').textContent = 'Add Role';
+            document.getElementById('roleTitle').value = '';
+            document.getElementById('roleDepartment').value = '';
+            document.getElementById('roleLevel').value = 'individual';
+            document.getElementById('roleDescription').value = '';
+            document.getElementById('roleModal').classList.add('active');
+        }
+
+        function closeRoleModal() {
+            document.getElementById('roleModal').classList.remove('active');
+        }
+
+        async function saveRole() {
+            const data = {
+                title: document.getElementById('roleTitle').value,
+                department_id: document.getElementById('roleDepartment').value,
+                level: document.getElementById('roleLevel').value,
+                description: document.getElementById('roleDescription').value
+            };
+
+            try {
+                const url = editingId ? `/api/parthenon/roles/${editingId}` : '/api/parthenon/roles';
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeRoleModal();
+                    await loadRoles();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving role:', error);
+                alert('Error saving role');
+            }
+        }
+
+        function showOKRModal() {
+            alert('OKR creation modal coming soon!');
+        }
+
+        function showProcessModal() {
+            alert('Process creation modal coming soon!');
+        }
+
+        // Seed defaults
+        async function seedDefaults() {
+            try {
+                const res = await fetch('/api/parthenon/seed-defaults', { method: 'POST' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadDepartments();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error seeding defaults:', error);
+                alert('Error seeding defaults');
+            }
+        }
+    </script>
+</body>
+</html>

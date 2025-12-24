@@ -23,6 +23,8 @@ const compression = require('compression');
 const agentsRoutes = require('./routes/agents');
 const injectionRoutes = require('./routes/injection');
 const conversationsRoutes = require('./routes/conversations');
+const parthenonRoutes = require('./routes/parthenon');
+const actionsRoutes = require('./routes/actions');
 
 // ============================================
 // INITIALIZE EXPRESS APP
@@ -217,8 +219,12 @@ function initializeServices() {
         app.use('/api/agents', agentsRoutes(supabase));
         app.use('/api/injection', injectionRoutes(supabase));
         app.use('/api/conversations', conversationsRoutes);
+        app.use('/api/parthenon', parthenonRoutes(supabase));
+        app.use('/api/actions', actionsRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Conversations routes registered');
+        console.log('  ✅ Parthenon routes registered');
+        console.log('  ✅ Actions routes registered');
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }
@@ -315,6 +321,16 @@ app.get('/context', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/context.html'));
 });
 
+// Parthenon (organizational structure) page (Phase 3.5)
+app.get('/parthenon', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/parthenon.html'));
+});
+
+// Actions page (Phase 4)
+app.get('/actions', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/actions.html'));
+});
+
 // ============================================
 // ERROR HANDLERS (registered after services init)
 // ============================================
@@ -357,8 +373,9 @@ function registerErrorHandlers() {
 function startServer() {
     // Display banner
     console.log('\n========================================');
-    console.log('         INSIGHT 360 v2.1.2');
+    console.log('         INSIGHT 360 v2.11');
     console.log('      Values-Based AI Ecosystem');
+    console.log('   Parthenon + Actions Framework');
     console.log('========================================\n');
     
     // Initialize all services (including Supabase-dependent routes)
@@ -373,6 +390,8 @@ function startServer() {
         console.log(`📊 Dashboard: http://localhost:${PORT}/`);
         console.log(`💬 Chat: http://localhost:${PORT}/chat.html`);
         console.log(`📦 Context: http://localhost:${PORT}/context`);
+        console.log(`🏛️  Parthenon: http://localhost:${PORT}/parthenon`);
+        console.log(`⚡ Actions: http://localhost:${PORT}/actions`);
         console.log(`🤖 Agents API: http://localhost:${PORT}/api/agents`);
         console.log('\n========================================\n');
     });

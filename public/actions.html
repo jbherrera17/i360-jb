@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actions | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Actions Specific Styles */
+        .actions-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            margin: 0.25rem 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        /* Suite Tabs */
+        .suite-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .suite-tab {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .suite-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .suite-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .suite-tab.active.align { background: #8b5cf6; }
+        .suite-tab.active.strategy { background: #3b82f6; }
+        .suite-tab.active.execute { background: #10b981; }
+
+        .suite-tab .count {
+            background: rgba(255,255,255,0.2);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        /* Section */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        /* Actions Grid */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Action Card */
+        .action-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .action-card:hover::before {
+            opacity: 1;
+        }
+
+        .action-card.align::before { background: #8b5cf6; }
+        .action-card.strategy::before { background: #3b82f6; }
+        .action-card.execute::before { background: #10b981; }
+
+        .action-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .action-icon.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .action-icon.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .action-icon.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .action-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .action-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .action-suite {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .action-suite.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .action-suite.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .action-suite.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .action-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .action-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .action-assets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .asset-pill {
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 50px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        /* Template Card */
+        .template-card {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .template-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+        }
+
+        .template-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .template-description {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Stats */
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon.actions { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+        .stat-icon.executions { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .stat-icon.success { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .stat-info h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .stat-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark, #4f46e5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Templates Grid */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .template-option {
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .template-option:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .template-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .template-option-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .template-option-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .template-option-suite {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .suite-tabs {
+                flex-direction: column;
+            }
+            .stats-row {
+                flex-direction: column;
+            }
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/assets/logo.svg" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
+                    <span class="logo-text">Insight 360</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/chat.html" class="nav-item">
+                    <i data-lucide="message-square"></i>
+                    <span>Multi-LLM Chat</span>
+                </a>
+                <a href="/context.html" class="nav-item">
+                    <i data-lucide="database"></i>
+                    <span>Context Assets</span>
+                </a>
+                <a href="/agents.html" class="nav-item">
+                    <i data-lucide="bot"></i>
+                    <span>Agent Library</span>
+                </a>
+                <a href="/parthenon.html" class="nav-item">
+                    <i data-lucide="landmark"></i>
+                    <span>Parthenon</span>
+                </a>
+                <a href="/actions.html" class="nav-item active">
+                    <i data-lucide="zap"></i>
+                    <span>Actions</span>
+                </a>
+                <a href="/integrity.html" class="nav-item">
+                    <i data-lucide="shield-check"></i>
+                    <span>Integrity</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="actions-layout">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div>
+                        <h1>
+                            <i data-lucide="zap" style="width:28px;height:28px;"></i>
+                            Actions
+                        </h1>
+                        <p>Composable web app experiences powered by Context + Parthenon + AI</p>
+                    </div>
+                    <button class="btn-primary" onclick="showCreateModal()">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i> New Action
+                    </button>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon actions">
+                            <i data-lucide="zap"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalActions">0</h3>
+                            <p>Total Actions</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon executions">
+                            <i data-lucide="play-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalExecutions">0</h3>
+                            <p>Executions</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="successRate">0%</h3>
+                            <p>Success Rate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suite Tabs -->
+                <div class="suite-tabs">
+                    <button class="suite-tab active" data-suite="all">
+                        <i data-lucide="layers" style="width:16px;height:16px;"></i>
+                        All Actions
+                        <span id="allCount" class="count">0</span>
+                    </button>
+                    <button class="suite-tab align" data-suite="align">
+                        <i data-lucide="compass" style="width:16px;height:16px;"></i>
+                        Align 120
+                        <span id="alignCount" class="count">0</span>
+                    </button>
+                    <button class="suite-tab strategy" data-suite="strategy">
+                        <i data-lucide="map" style="width:16px;height:16px;"></i>
+                        Strategy 120
+                        <span id="strategyCount" class="count">0</span>
+                    </button>
+                    <button class="suite-tab execute" data-suite="execute">
+                        <i data-lucide="rocket" style="width:16px;height:16px;"></i>
+                        Execute 120
+                        <span id="executeCount" class="count">0</span>
+                    </button>
+                </div>
+
+                <!-- Templates Section -->
+                <div class="section-header">
+                    <h2><i data-lucide="layout-template" style="width:20px;height:20px;"></i> Action Templates</h2>
+                </div>
+                <div id="templatesList" class="actions-grid">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Actions Section -->
+                <div class="section-header">
+                    <h2><i data-lucide="zap" style="width:20px;height:20px;"></i> My Actions</h2>
+                </div>
+                <div id="actionsList" class="actions-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Action Modal -->
+    <div class="modal-overlay" id="createModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i data-lucide="zap"></i> Create Action</h2>
+                <button class="modal-close" onclick="closeCreateModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Choose a template to get started:</p>
+                <div id="templateOptions" class="templates-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button class="btn-primary" id="createFromTemplateBtn" onclick="createFromTemplate()" disabled>
+                    <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Action
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase client -->
+    <script src="/js/supabase.js"></script>
+
+    <script>
+        // State
+        let actions = [];
+        let templates = [];
+        let selectedTemplate = null;
+        let currentSuite = 'all';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadStats();
+            await loadTemplates();
+            await loadActions();
+            setupSuiteTabs();
+        });
+
+        // Suite tab switching
+        function setupSuiteTabs() {
+            document.querySelectorAll('.suite-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentSuite = tab.dataset.suite;
+
+                    // Update tab buttons
+                    document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Filter actions
+                    renderActions();
+                    renderTemplates();
+                });
+            });
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/actions/stats/overview');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('totalActions').textContent = data.data.total_actions;
+                    document.getElementById('totalExecutions').textContent = data.data.total_executions;
+                    document.getElementById('successRate').textContent = data.data.success_rate + '%';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load templates
+        async function loadTemplates() {
+            try {
+                const res = await fetch('/api/actions/templates/list');
+                const data = await res.json();
+                if (data.success) {
+                    templates = data.data;
+                    renderTemplates();
+                    updateCounts();
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        function renderTemplates() {
+            const container = document.getElementById('templatesList');
+            const filtered = currentSuite === 'all' ? templates : templates.filter(t => t.suite === currentSuite);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); padding: 1rem;">No templates for this suite.</p>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(template => `
+                <div class="action-card ${template.suite}" onclick="createFromTemplateSlug('${template.slug}')">
+                    <div class="action-header">
+                        <div class="action-icon ${template.suite}">
+                            <i data-lucide="${template.icon || 'layout-template'}"></i>
+                        </div>
+                        <div class="action-info">
+                            <div class="action-name">${template.name}</div>
+                            <span class="action-suite ${template.suite}">${template.suite}</span>
+                        </div>
+                    </div>
+                    <p class="action-description">${template.description || ''}</p>
+                    <div class="action-assets">
+                        ${(template.context_assets || []).slice(0, 4).map(a => `<span class="asset-pill">${a}</span>`).join('')}
+                        ${(template.context_assets || []).length > 4 ? `<span class="asset-pill">+${template.context_assets.length - 4}</span>` : ''}
+                    </div>
+                    <div class="action-meta">
+                        <span><i data-lucide="sparkles" style="width:12px;height:12px;"></i> Template</span>
+                        <span>${template.category || 'General'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Load user actions
+        async function loadActions() {
+            try {
+                const res = await fetch('/api/actions');
+                const data = await res.json();
+                if (data.success) {
+                    actions = data.data;
+                    renderActions();
+                    updateCounts();
+                }
+            } catch (error) {
+                console.error('Error loading actions:', error);
+            }
+        }
+
+        function renderActions() {
+            const container = document.getElementById('actionsList');
+            const filtered = currentSuite === 'all' ? actions : actions.filter(a => a.suite === currentSuite);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">⚡</div>
+                        <h3>No Actions Yet</h3>
+                        <p>Create your first action from a template above, or build a custom one.</p>
+                        <button class="btn-primary" onclick="showCreateModal()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Action
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = filtered.map(action => `
+                <div class="action-card ${action.suite}" onclick="openAction('${action.slug}')">
+                    <div class="action-header">
+                        <div class="action-icon ${action.suite}">
+                            <i data-lucide="${action.icon || 'zap'}"></i>
+                        </div>
+                        <div class="action-info">
+                            <div class="action-name">${action.name}</div>
+                            <span class="action-suite ${action.suite}">${action.suite}</span>
+                        </div>
+                    </div>
+                    <p class="action-description">${action.description || ''}</p>
+                    <div class="action-assets">
+                        ${(action.context_assets || []).slice(0, 4).map(a => `<span class="asset-pill">${a}</span>`).join('')}
+                        ${(action.context_assets || []).length > 4 ? `<span class="asset-pill">+${action.context_assets.length - 4}</span>` : ''}
+                    </div>
+                    <div class="action-meta">
+                        <span><i data-lucide="play-circle" style="width:12px;height:12px;"></i> ${action.usage_count || 0} runs</span>
+                        <span>${action.status}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Update suite counts
+        function updateCounts() {
+            const allCount = actions.length + templates.length;
+            const alignCount = actions.filter(a => a.suite === 'align').length + templates.filter(t => t.suite === 'align').length;
+            const strategyCount = actions.filter(a => a.suite === 'strategy').length + templates.filter(t => t.suite === 'strategy').length;
+            const executeCount = actions.filter(a => a.suite === 'execute').length + templates.filter(t => t.suite === 'execute').length;
+
+            document.getElementById('allCount').textContent = allCount;
+            document.getElementById('alignCount').textContent = alignCount;
+            document.getElementById('strategyCount').textContent = strategyCount;
+            document.getElementById('executeCount').textContent = executeCount;
+        }
+
+        // Modal functions
+        function showCreateModal() {
+            selectedTemplate = null;
+            document.getElementById('createFromTemplateBtn').disabled = true;
+
+            // Populate template options
+            const container = document.getElementById('templateOptions');
+            container.innerHTML = templates.map(t => `
+                <div class="template-option" data-slug="${t.slug}" onclick="selectTemplate('${t.slug}')">
+                    <div class="template-option-icon">
+                        <i data-lucide="${t.icon || 'layout-template'}" style="width:32px;height:32px;"></i>
+                    </div>
+                    <div class="template-option-name">${t.name}</div>
+                    <div class="template-option-suite">${t.suite}</div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+
+        function selectTemplate(slug) {
+            selectedTemplate = slug;
+            document.querySelectorAll('.template-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.slug === slug);
+            });
+            document.getElementById('createFromTemplateBtn').disabled = false;
+        }
+
+        async function createFromTemplate() {
+            if (!selectedTemplate) return;
+
+            try {
+                const res = await fetch(`/api/actions/from-template/${selectedTemplate}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeCreateModal();
+                    await loadActions();
+                    await loadStats();
+                    // Could open the new action here
+                    alert(`Action "${result.data.name}" created!`);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error creating action:', error);
+                alert('Error creating action');
+            }
+        }
+
+        async function createFromTemplateSlug(slug) {
+            try {
+                const res = await fetch(`/api/actions/from-template/${slug}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    await loadActions();
+                    await loadStats();
+                    alert(`Action "${result.data.name}" created!`);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error creating action:', error);
+                alert('Error creating action');
+            }
+        }
+
+        function openAction(slug) {
+            // In the future, this would open the action's dedicated UI
+            alert(`Opening action: ${slug}\n\nAction execution UI coming soon!`);
+        }
+    </script>
+</body>
+</html>

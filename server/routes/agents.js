@@ -30,15 +30,16 @@ module.exports = function(supabase) {
      */
     router.get('/', async (req, res) => {
         try {
-            const { 
-                category, 
-                provider, 
-                active, 
+            const {
+                category,
+                suite,
+                provider,
+                active,
                 search,
                 sort = 'name',
                 order = 'asc',
                 limit = 50,
-                offset = 0 
+                offset = 0
             } = req.query;
 
             let query = supabase
@@ -48,6 +49,9 @@ module.exports = function(supabase) {
             // Apply filters
             if (category && category !== 'all') {
                 query = query.eq('category', category);
+            }
+            if (suite && suite !== 'all') {
+                query = query.eq('suite', suite);
             }
             if (provider && provider !== 'all') {
                 query = query.eq('llm_provider', provider);
@@ -86,6 +90,108 @@ module.exports = function(supabase) {
             res.status(500).json({ 
                 success: false, 
                 error: error.message 
+            });
+        }
+    });
+
+    /**
+     * GET /api/agents/suites
+     * Get available suites with counts
+     */
+    router.get('/suites', async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('agents')
+                .select('suite');
+
+            if (error) throw error;
+
+            const counts = {
+                align: 0,
+                strategy: 0,
+                execute: 0,
+                unassigned: 0
+            };
+
+            (data || []).forEach(agent => {
+                if (agent.suite && counts.hasOwnProperty(agent.suite)) {
+                    counts[agent.suite]++;
+                } else {
+                    counts.unassigned++;
+                }
+            });
+
+            res.json({
+                success: true,
+                data: {
+                    suites: [
+                        { id: 'align', name: 'Align 120', description: 'Foundation & Alignment', count: counts.align },
+                        { id: 'strategy', name: 'Strategy 120', description: 'Planning & Research', count: counts.strategy },
+                        { id: 'execute', name: 'Execute 120', description: 'Action & Delivery', count: counts.execute }
+                    ],
+                    unassigned: counts.unassigned,
+                    total: data?.length || 0
+                }
+            });
+
+        } catch (error) {
+            console.error('Error getting suites:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/agents/seed-suites
+     * Assign suite values to existing agents based on their purpose
+     */
+    router.post('/seed-suites', async (req, res) => {
+        try {
+            const suiteAssignments = [
+                // Align 120 Suite (Foundation/Alignment)
+                { id: 'a0000000-0000-0000-0000-000000000101', suite: 'align' },  // Integrity Auditor
+                { id: 'a0000000-0000-0000-0000-000000000102', suite: 'align' },  // Risk Sentinel
+                { id: 'a0000000-0000-0000-0000-000000000103', suite: 'align' },  // Counterfactual Analyst
+
+                // Strategy 120 Suite (Planning)
+                { id: 'a1000001-0001-0001-0001-000000000003', suite: 'strategy' },  // Strategy Advisor
+                { id: 'a1000001-0001-0001-0001-000000000006', suite: 'strategy' },  // Research Analyst
+                { id: 'a1000001-0001-0001-0001-000000000004', suite: 'strategy' },  // Daily Briefer
+
+                // Execute 120 Suite (Action/Delivery)
+                { id: 'a1000001-0001-0001-0001-000000000001', suite: 'execute' },  // Content Writer
+                { id: 'a1000001-0001-0001-0001-000000000002', suite: 'execute' },  // Sales Assistant
+                { id: 'a1000001-0001-0001-0001-000000000005', suite: 'execute' }   // Email Composer
+            ];
+
+            const results = [];
+            for (const assignment of suiteAssignments) {
+                const { data, error } = await supabase
+                    .from('agents')
+                    .update({ suite: assignment.suite })
+                    .eq('id', assignment.id)
+                    .select('id, name, suite');
+
+                if (error) {
+                    results.push({ id: assignment.id, error: error.message });
+                } else if (data && data.length > 0) {
+                    results.push({ id: assignment.id, name: data[0].name, suite: data[0].suite, success: true });
+                }
+            }
+
+            res.json({
+                success: true,
+                message: 'Suite assignments updated',
+                data: results
+            });
+
+        } catch (error) {
+            console.error('Error seeding suites:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });
@@ -851,9 +957,9 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Error getting execution:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });
