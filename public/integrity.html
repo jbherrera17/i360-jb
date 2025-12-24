@@ -156,9 +156,116 @@
         }
 
         async function fetchIntegrityData() {
-            // In production, fetch from API
-            // For now, return sample data
-            return sampleData;
+            try {
+                // Fetch all integrity assets in parallel
+                const assetTypes = [
+                    'integrity_yield',
+                    'bright_lines',
+                    'values_map',
+                    'intervention_metrics',
+                    'trust_velocity_metrics',
+                    'close_call_log',
+                    'industry_baseline'
+                ];
+
+                const responses = await Promise.all(
+                    assetTypes.map(type =>
+                        fetch(`/api/context/assets?type=${type}`)
+                            .then(r => r.ok ? r.json() : { data: [] })
+                            .catch(() => ({ data: [] }))
+                    )
+                );
+
+                // Map responses to asset types
+                const assetData = {};
+                assetTypes.forEach((type, index) => {
+                    const data = responses[index]?.data || [];
+                    assetData[type] = data.length > 0 ? data[0] : null;
+                });
+
+                // Build dashboard data from fetched assets
+                const integrityYield = assetData.integrity_yield?.content_json || null;
+                const valuesMap = assetData.values_map?.content_json || null;
+                const interventionMetrics = assetData.intervention_metrics?.content_json || null;
+                const trustVelocity = assetData.trust_velocity_metrics?.content_json || null;
+                const closeCallLog = assetData.close_call_log?.content_json || null;
+
+                return {
+                    integrityYield: integrityYield ? {
+                        score: integrityYield.composite_score || 0,
+                        interpretation: integrityYield.interpretation || 'setup',
+                        trend: integrityYield.trend || { change: 0, direction: 'stable' },
+                        period: integrityYield.period || 'Not configured'
+                    } : sampleData.integrityYield,
+
+                    components: integrityYield?.components ? {
+                        trustVelocity: {
+                            score: integrityYield.components.trust_velocity?.score || 0,
+                            weight: integrityYield.components.trust_velocity?.weight || 0.30
+                        },
+                        interventionEffectiveness: {
+                            score: integrityYield.components.intervention_effectiveness?.score || 0,
+                            weight: integrityYield.components.intervention_effectiveness?.weight || 0.25
+                        },
+                        alignmentAudit: {
+                            score: integrityYield.components.alignment_audit?.score || 0,
+                            weight: integrityYield.components.alignment_audit?.weight || 0.25
+                        },
+                        counterfactualValue: {
+                            score: integrityYield.components.counterfactual_value?.score || 0,
+                            weight: integrityYield.components.counterfactual_value?.weight || 0.20
+                        }
+                    } : sampleData.components,
+
+                    leadingIndicators: integrityYield?.leading_indicators?.map(ind => ({
+                        name: ind.indicator,
+                        status: ind.status,
+                        note: ind.note
+                    })) || [],
+
+                    laggingIndicators: [],
+
+                    assets: {
+                        bright_lines: {
+                            populated: !!assetData.bright_lines,
+                            lastUpdated: assetData.bright_lines?.updated_at
+                        },
+                        values_map: {
+                            populated: !!assetData.values_map,
+                            lastUpdated: assetData.values_map?.updated_at
+                        },
+                        intervention_metrics: {
+                            populated: !!assetData.intervention_metrics,
+                            lastUpdated: assetData.intervention_metrics?.updated_at
+                        },
+                        trust_velocity_metrics: {
+                            populated: !!assetData.trust_velocity_metrics,
+                            lastUpdated: assetData.trust_velocity_metrics?.updated_at
+                        },
+                        close_call_log: {
+                            populated: !!assetData.close_call_log,
+                            lastUpdated: assetData.close_call_log?.updated_at
+                        },
+                        industry_baseline: {
+                            populated: !!assetData.industry_baseline,
+                            lastUpdated: assetData.industry_baseline?.updated_at
+                        },
+                        integrity_yield: {
+                            populated: !!assetData.integrity_yield,
+                            lastUpdated: assetData.integrity_yield?.updated_at
+                        }
+                    },
+
+                    actionItems: integrityYield?.action_items?.map((item, i) => ({
+                        title: `Action ${i + 1}`,
+                        description: item,
+                        priority: i === 0 ? 'high' : 'medium'
+                    })) || []
+                };
+            } catch (error) {
+                console.error('Error fetching integrity data:', error);
+                return sampleData;
+            }
         }
 
         function renderEmptyState(container) {
