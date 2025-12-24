@@ -12,12 +12,52 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Context Admin Specific Styles */
+
+        /* Override main-content to use fixed height for proper flex */
+        .main-content {
+            height: 100vh;
+            min-height: unset;
+        }
+
         .context-layout {
             display: grid;
-            grid-template-columns: 320px 1fr 380px;
+            grid-template-columns: 320px 1fr 6px var(--preview-width, 380px);
             gap: 0;
             height: 100%;
             overflow: hidden;
+        }
+
+        /* Resize Handle */
+        .resize-handle {
+            width: 6px;
+            background: var(--border);
+            cursor: col-resize;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .resize-handle:hover,
+        .resize-handle.dragging {
+            background: var(--primary);
+        }
+
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 40px;
+            background: var(--text-muted);
+            border-radius: 1px;
+            opacity: 0.5;
+        }
+
+        .resize-handle:hover::after,
+        .resize-handle.dragging::after {
+            background: white;
+            opacity: 0.8;
         }
 
         /* Left Panel - Asset List */
@@ -231,6 +271,7 @@
             justify-content: space-between;
             align-items: center;
             background: var(--bg-secondary);
+            flex-shrink: 0;
         }
 
         .editor-header-left {
@@ -298,6 +339,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
+            flex-shrink: 0;
         }
 
         .form-group {
@@ -341,6 +383,7 @@
             display: flex;
             border-bottom: 1px solid var(--border);
             background: var(--bg-secondary);
+            flex-shrink: 0;
         }
 
         .tab-btn {
@@ -365,21 +408,36 @@
             border-bottom-color: var(--primary);
         }
 
-        .tab-content {
+        /* Editor tab content (for JSON/Plain Text tabs) */
+        #editorContent .tab-content {
             display: none;
             flex: 1;
-            overflow: hidden;
+            min-height: 0;
+            position: relative;
         }
 
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
+        #editorContent .tab-content.active {
+            display: block;
+        }
+
+        /* Modal tab content */
+        .modal-body .tab-content {
+            display: none;
+        }
+
+        .modal-body .tab-content.active {
+            display: block;
         }
 
         /* JSON Editor */
         #jsonEditor {
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
+            height: 100%;
             padding: 1rem;
             font-family: 'Fira Code', monospace;
             font-size: 0.85rem;
@@ -398,10 +456,24 @@
             border-left: 3px solid var(--danger);
         }
 
+        /* Editor Content Container */
+        #editorContent {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
         /* Plain Text Editor */
         #plainTextEditor {
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
+            height: 100%;
             padding: 1rem;
             font-family: 'Source Sans 3', sans-serif;
             font-size: 0.9rem;
@@ -421,6 +493,7 @@
             font-size: 0.75rem;
             color: var(--text-muted);
             background: var(--bg-secondary);
+            flex-shrink: 0;
         }
 
         .editor-footer .valid {
@@ -736,7 +809,12 @@
         /* Modal Styles */
         .modal-overlay {
             position: fixed;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.6);
             z-index: 1000;
             display: flex;
@@ -754,15 +832,24 @@
             pointer-events: auto;
         }
 
-        .modal {
+        .modal-overlay .modal {
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            display: flex;
+            flex-direction: column;
             background: var(--bg-secondary);
             border-radius: 12px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             max-height: 90vh;
             overflow: hidden;
             transform: scale(0.95);
             transition: transform 0.2s;
+            opacity: 1;
+            visibility: visible;
         }
 
         .modal-overlay.active .modal {
@@ -918,14 +1005,6 @@
             height: 16px;
         }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         /* File Upload Area */
         .file-upload-area {
             border: 2px dashed var(--border);
@@ -952,6 +1031,7 @@
             flex-direction: column;
             align-items: center;
             gap: 0.5rem;
+            pointer-events: none;
         }
 
         .file-upload-content span {
@@ -1139,6 +1219,9 @@
                     </div><!-- End editorContent -->
                 </div>
 
+                <!-- Resize Handle -->
+                <div class="resize-handle" id="resizeHandle"></div>
+
                 <!-- Right Panel - Preview -->
                 <div class="preview-panel">
                     <div class="panel-header">
@@ -1272,5 +1355,56 @@ Examples:
     <script src="/js/supabase.js"></script>
     <!-- Context Admin JS -->
     <script src="/js/context.js"></script>
+
+    <!-- Resize Handle Script -->
+    <script>
+    (function() {
+        const resizeHandle = document.getElementById('resizeHandle');
+        const contextLayout = document.querySelector('.context-layout');
+        const previewPanel = document.querySelector('.preview-panel');
+
+        if (!resizeHandle || !contextLayout || !previewPanel) return;
+
+        let isResizing = false;
+        let startX, startWidth;
+
+        // Load saved width from localStorage
+        const savedWidth = localStorage.getItem('previewPanelWidth');
+        if (savedWidth) {
+            contextLayout.style.setProperty('--preview-width', savedWidth + 'px');
+        }
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = previewPanel.offsetWidth;
+            resizeHandle.classList.add('dragging');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const diff = startX - e.clientX;
+            const newWidth = Math.max(250, Math.min(800, startWidth + diff));
+            contextLayout.style.setProperty('--preview-width', newWidth + 'px');
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isResizing) return;
+
+            isResizing = false;
+            resizeHandle.classList.remove('dragging');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+
+            // Save width to localStorage
+            const currentWidth = previewPanel.offsetWidth;
+            localStorage.setItem('previewPanelWidth', currentWidth);
+        });
+    })();
+    </script>
 </body>
 </html>

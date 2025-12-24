@@ -104,10 +104,10 @@ function generateContentText(contentJson) {
 function getUserId(req) {
     // Try to get from authenticated user
     if (req.user?.id) return req.user.id;
-    
-    // Development fallback - use a consistent dev user ID
+
+    // Development fallback - use a consistent dev user UUID
     // In production, this should throw an error or return null
-    return process.env.NODE_ENV === 'production' ? null : 'dev-user-id';
+    return process.env.NODE_ENV === 'production' ? null : '00000000-0000-0000-0000-000000000001';
 }
 
 // ============================================

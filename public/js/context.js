@@ -886,7 +886,7 @@ function hideEmptyState() {
     const editorHeader = document.querySelector('.editor-header');
 
     if (emptyState) emptyState.style.display = 'none';
-    if (editorContent) editorContent.style.display = 'block';
+    if (editorContent) editorContent.style.display = 'flex';
     if (editorHeader) editorHeader.style.display = 'flex';
 }
 
@@ -958,6 +958,7 @@ async function handleImport(e) {
             await loadAssets();
         } else if (data.asset_type || data.content_json) {
             // Single asset - load into editor
+            hideEmptyState();
             loadAssetIntoEditor({
                 name: data.name || 'Imported Asset',
                 asset_type: data.asset_type || 'custom',
@@ -972,12 +973,42 @@ async function handleImport(e) {
             showNotification('Asset loaded into editor - click Save to create', 'info');
         } else {
             // Raw JSON - load as content
+            hideEmptyState();
+
+            // Clear form fields but keep JSON
+            const nameInput = document.getElementById('assetName');
+            const descInput = document.getElementById('assetDescription');
+            const typeSelect = document.getElementById('assetType');
+            const tagsInput = document.getElementById('assetTags');
+
+            if (nameInput) nameInput.value = '';
+            if (descInput) descInput.value = '';
+            if (typeSelect) typeSelect.value = '';
+            if (tagsInput) tagsInput.value = '';
+
+            // Update editor header
+            const editorTitle = document.getElementById('editorTitle');
+            if (editorTitle) {
+                editorTitle.textContent = '➕ New Asset';
+            }
+
+            // Hide editor metadata
+            const editorMeta = document.getElementById('editorMeta');
+            if (editorMeta) {
+                editorMeta.style.display = 'none';
+            }
+
+            // Load JSON into editor
             const jsonEditor = document.getElementById('jsonEditor');
             if (jsonEditor) {
                 jsonEditor.value = JSON.stringify(data, null, 2);
                 handleJsonChange();
             }
-            showNotification('JSON loaded into editor', 'info');
+
+            state.selectedAsset = null;
+            state.isDirty = true;
+            updateSaveButtonState();
+            showNotification('JSON loaded into editor - add name/type and save', 'info');
         }
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -992,7 +1023,7 @@ async function handleImport(e) {
 
         // Reset button - restore original click handler
         if (importBtn) {
-            importBtn.innerHTML = '<i data-lucide="upload"></i> Import';
+            importBtn.innerHTML = '<i data-lucide="upload"></i>';
             importBtn.classList.remove('btn-danger');
             // Restore the original click handler to trigger file input
             importBtn.onclick = () => {
