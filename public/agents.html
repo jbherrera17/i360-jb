@@ -95,6 +95,9 @@
         }
 
         .nav-logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
             font-family: 'Orbitron', sans-serif;
             font-size: 1.25rem;
             font-weight: 700;
@@ -102,6 +105,11 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        .nav-logo .logo-image {
+            height: 36px;
+            width: auto;
         }
 
         .nav-links {
@@ -482,27 +490,46 @@
         }
 
         .detail-header {
-            padding: 1.25rem 1.5rem;
+            padding: 1.5rem;
             border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .detail-header-top {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 1rem;
         }
 
         .detail-title {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
         }
 
         .detail-title-icon {
-            font-size: 2rem;
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
         }
 
-        .detail-title h2 {
-            font-size: 1.25rem;
+        .detail-title-info h2 {
+            font-size: 1.5rem;
             font-weight: 600;
-            margin-bottom: 0.125rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-title-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .detail-title p {
@@ -513,6 +540,28 @@
         .detail-actions {
             display: flex;
             gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .btn-run {
+            background: var(--gradient-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+
+        .btn-run:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .detail-description {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
 
         .detail-content {
@@ -521,8 +570,45 @@
             padding: 1.5rem;
         }
 
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .detail-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .detail-card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-tertiary);
+        }
+
+        .detail-card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .detail-card-content {
+            padding: 1rem 1.25rem;
+        }
+
         .detail-section {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .detail-section-title {
@@ -540,25 +626,29 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
         }
 
         .info-item {
             background: var(--bg-secondary);
             border-radius: 10px;
             padding: 1rem;
+            text-align: center;
         }
 
         .info-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         .info-value {
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-primary);
+            font-size: 0.95rem;
         }
 
         /* Context Mappings */
@@ -683,18 +773,31 @@
             width: 64px;
             height: 64px;
             margin-bottom: 1rem;
-            opacity: 0.5;
+            opacity: 0.3;
+            color: var(--primary);
         }
 
         .empty-state h3 {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
+            font-size: 1.25rem;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
+            font-weight: 600;
         }
 
         .empty-state p {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             margin-bottom: 1.5rem;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        .empty-state-small {
+            padding: 1.5rem;
+        }
+
+        .empty-state-small p {
+            margin-bottom: 0;
+            font-size: 0.85rem;
         }
 
         /* Modal */
@@ -825,6 +928,35 @@
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-top: 0.25rem;
+        }
+
+        .form-hint-box {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .form-hint-box strong {
+            color: var(--text-primary);
+        }
+
+        .priority-examples {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+        }
+
+        .priority-examples span {
+            display: flex;
+            gap: 0.5rem;
         }
 
         /* Platform-specific fields */
@@ -1468,7 +1600,9 @@
 <body>
     <!-- Navigation -->
     <nav class="nav">
-        <div class="nav-logo">INSIGHT 360</div>
+        <a href="index.html" class="nav-logo">
+            <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" style="height: 36px;" onerror="this.parentElement.innerHTML='INSIGHT 360'">
+        </a>
         <div class="nav-links">
             <a href="index.html" class="nav-link">
                 <i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i>
@@ -1619,58 +1753,52 @@
 
                 <div id="agentDetail" style="display: none;">
                     <div class="detail-header">
-                        <div class="detail-title">
-                            <span class="detail-title-icon" id="detailIcon">🤖</span>
-                            <div>
-                                <h2 id="detailName">Agent Name</h2>
-                                <p id="detailPlatform">Platform</p>
+                        <div class="detail-header-top">
+                            <div class="detail-title">
+                                <div class="detail-title-icon" id="detailIcon">🤖</div>
+                                <div class="detail-title-info">
+                                    <h2 id="detailName">Agent Name</h2>
+                                    <div class="detail-title-meta">
+                                        <span id="detailPlatform"></span>
+                                        <span id="detailStatus"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="detail-actions">
+                                <button class="btn btn-primary btn-run" id="btnLaunch">
+                                    <i data-lucide="play" style="width:18px;height:18px;"></i>
+                                    Run Agent
+                                </button>
+                                <button class="btn btn-secondary" id="btnEdit">
+                                    <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                                    Edit
+                                </button>
+                                <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
+                                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="detail-actions">
-                            <button class="btn btn-primary" id="btnLaunch">
-                                <i data-lucide="play" style="width:16px;height:16px;"></i>
-                                Run Agent
-                            </button>
-                            <button class="btn btn-secondary" id="btnEdit">
-                                <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
-                                Edit
-                            </button>
-                            <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
-                                <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                            </button>
-                        </div>
+                        <div class="detail-description" id="detailDescription">—</div>
                     </div>
 
                     <div class="detail-content">
-                        <!-- Info Section -->
-                        <div class="detail-section">
-                            <div class="detail-section-title">
-                                <i data-lucide="info" style="width:16px;height:16px;"></i>
-                                Information
+                        <!-- Quick Stats -->
+                        <div class="info-grid" style="margin-bottom: 1.5rem;">
+                            <div class="info-item">
+                                <div class="info-label">Department</div>
+                                <div class="info-value" id="detailDepartment">—</div>
                             </div>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">Department</div>
-                                    <div class="info-value" id="detailDepartment">—</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Category</div>
-                                    <div class="info-value" id="detailCategory">—</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Status</div>
-                                    <div class="info-value" id="detailStatus">—</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Usage Count</div>
-                                    <div class="info-value" id="detailUsage">0</div>
-                                </div>
+                            <div class="info-item">
+                                <div class="info-label">Category</div>
+                                <div class="info-value" id="detailCategory">—</div>
                             </div>
-                            <div class="info-grid" style="margin-top: 1rem;">
-                                <div class="info-item" style="grid-column: 1 / -1;">
-                                    <div class="info-label">Description</div>
-                                    <div class="info-value" id="detailDescription">—</div>
-                                </div>
+                            <div class="info-item">
+                                <div class="info-label">Total Runs</div>
+                                <div class="info-value" id="detailUsage">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Status</div>
+                                <div class="info-value" id="detailStatusText">Active</div>
                             </div>
                         </div>
 
@@ -1839,7 +1967,7 @@
 
     <!-- Add Context Modal -->
     <div class="modal-overlay" id="contextModal">
-        <div class="modal" style="max-width: 500px;">
+        <div class="modal" style="max-width: 550px;">
             <div class="modal-header">
                 <h2>Add Context Asset</h2>
                 <button class="modal-close" id="contextModalClose">
@@ -1847,24 +1975,50 @@
                 </button>
             </div>
             <div class="modal-body">
+                <!-- Asset Type Filter -->
+                <div class="form-group">
+                    <label class="form-label">Asset Type</label>
+                    <select class="form-input form-select" id="contextTypeFilter">
+                        <option value="">All Types</option>
+                    </select>
+                    <p class="form-hint">Filter assets by type to find what you need faster.</p>
+                </div>
+
+                <!-- Asset Selection -->
                 <div class="form-group">
                     <label class="form-label">Select Context Asset</label>
                     <select class="form-input form-select" id="contextAssetSelect">
                         <option value="">Choose an asset...</option>
                     </select>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Injection Mode</label>
-                        <select class="form-input form-select" id="contextInjectionMode">
-                            <option value="always">Always</option>
-                            <option value="on_demand">On Demand</option>
-                            <option value="conditional">Conditional</option>
-                        </select>
+
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 1.25rem 0;">
+
+                <!-- Injection Mode -->
+                <div class="form-group">
+                    <label class="form-label">Injection Mode</label>
+                    <select class="form-input form-select" id="contextInjectionMode">
+                        <option value="always">Always</option>
+                        <option value="on_demand">On Demand</option>
+                        <option value="conditional">Conditional</option>
+                    </select>
+                    <div class="form-hint-box" id="injectionModeHint">
+                        <strong>Always:</strong> This asset is included in every conversation with this agent. Use for core context like company values, voice guidelines, or brand identity.
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Priority</label>
-                        <input type="number" class="form-input" id="contextPriority" value="0" min="0" max="100">
+                </div>
+
+                <!-- Priority -->
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <input type="number" class="form-input" id="contextPriority" value="50" min="0" max="100">
+                    <div class="form-hint-box">
+                        <strong>Priority (0-100):</strong> Higher values are injected first into the prompt. Use higher priority for critical context (values, guardrails) and lower for supplementary info.
+                        <div class="priority-examples">
+                            <span><strong>90-100:</strong> Core values, bright lines</span>
+                            <span><strong>70-89:</strong> Voice DNA, ICP</span>
+                            <span><strong>50-69:</strong> Products, processes</span>
+                            <span><strong>0-49:</strong> Reference materials</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2044,6 +2198,7 @@
                 const data = await response.json();
                 if (data.success) {
                     contextAssets = data.data;
+                    populateContextTypeFilter();
                     populateContextAssetSelect();
                 }
             } catch (error) {
@@ -2230,6 +2385,7 @@
 
             const provider = agent.llm_provider || agent.source_type || 'native';
             const status = agent.is_active !== false ? 'active' : 'inactive';
+            const statusLabel = status === 'active' ? 'Active' : 'Inactive';
 
             document.getElementById('detailIcon').innerHTML = renderAgentIcon(agent.icon);
             document.getElementById('detailName').textContent = agent.name;
@@ -2242,12 +2398,13 @@
 
             document.getElementById('detailDepartment').textContent = dept?.name || agent.department || '—';
             document.getElementById('detailCategory').textContent = cat?.name || agent.category || '—';
-            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${status}</span>`;
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>`;
+            document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>`;
             document.getElementById('detailUsage').textContent = agent.usage_count || 0;
-            document.getElementById('detailDescription').textContent = agent.description || '—';
+            document.getElementById('detailDescription').textContent = agent.description || 'No description provided.';
 
             // Render context mappings
-            renderContextMappings(agent.agent_context_mappings || []);
+            renderContextMappings(agent.context_mappings || []);
 
             // Load execution history
             loadExecutionHistory(agent.id);
@@ -2346,14 +2503,23 @@
 
         function openContextModal() {
             if (!selectedAgent) return;
+            // Reset form fields
+            document.getElementById('contextTypeFilter').value = '';
+            document.getElementById('contextInjectionMode').value = 'always';
+            document.getElementById('contextPriority').value = '50';
+            // Populate dropdowns
+            populateContextTypeFilter();
+            populateContextAssetSelect('');
+            updateInjectionModeHint();
             contextModal.classList.add('active');
         }
 
         function closeContextModal() {
             contextModal.classList.remove('active');
+            document.getElementById('contextTypeFilter').value = '';
             document.getElementById('contextAssetSelect').value = '';
             document.getElementById('contextInjectionMode').value = 'always';
-            document.getElementById('contextPriority').value = '0';
+            document.getElementById('contextPriority').value = '50';
         }
 
         function updatePlatformFields() {
@@ -2452,16 +2618,71 @@
             });
         }
 
-        function populateContextAssetSelect() {
+        function populateContextAssetSelect(filterType = '') {
             const select = document.getElementById('contextAssetSelect');
             select.innerHTML = '<option value="">Choose an asset...</option>';
-            
-            contextAssets.forEach(asset => {
+
+            // Filter out templates and apply type filter
+            const filteredAssets = contextAssets.filter(asset => {
+                // Exclude templates (assets with is_template flag or "template" in type)
+                const isTemplate = asset.is_template ||
+                    (asset.asset_type && asset.asset_type.toLowerCase().includes('template'));
+                if (isTemplate) return false;
+
+                // Apply type filter if specified
+                if (filterType && asset.asset_type !== filterType) return false;
+
+                return true;
+            });
+
+            filteredAssets.forEach(asset => {
                 const option = document.createElement('option');
                 option.value = asset.id;
                 option.textContent = `${asset.icon || '📄'} ${asset.name}`;
+                option.dataset.type = asset.asset_type || '';
                 select.appendChild(option);
             });
+
+            // Update count hint
+            const countText = filteredAssets.length === 1 ? '1 asset available' : `${filteredAssets.length} assets available`;
+            select.title = countText;
+        }
+
+        function populateContextTypeFilter() {
+            const typeFilter = document.getElementById('contextTypeFilter');
+            typeFilter.innerHTML = '<option value="">All Types</option>';
+
+            // Get unique types from assets (excluding templates)
+            const types = [...new Set(
+                contextAssets
+                    .filter(asset => !asset.is_template &&
+                        !(asset.asset_type && asset.asset_type.toLowerCase().includes('template')))
+                    .map(asset => asset.asset_type)
+                    .filter(type => type)
+            )].sort();
+
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                // Format type name nicely
+                option.textContent = type.split('_').map(w =>
+                    w.charAt(0).toUpperCase() + w.slice(1)
+                ).join(' ');
+                typeFilter.appendChild(option);
+            });
+        }
+
+        function updateInjectionModeHint() {
+            const mode = document.getElementById('contextInjectionMode').value;
+            const hint = document.getElementById('injectionModeHint');
+
+            const hints = {
+                'always': '<strong>Always:</strong> This asset is included in every conversation with this agent. Use for core context like company values, voice guidelines, or brand identity.',
+                'on_demand': '<strong>On Demand:</strong> This asset is only included when explicitly requested or when relevant keywords are detected. Use for reference materials or optional context.',
+                'conditional': '<strong>Conditional:</strong> This asset is included based on rules you define (e.g., certain topics, user segments, or time-based triggers). Requires additional configuration.'
+            };
+
+            hint.innerHTML = hints[mode] || hints['always'];
         }
 
         // =========================================================================
@@ -2960,6 +3181,14 @@
         document.getElementById('btnAddContext').addEventListener('click', openContextModal);
         document.getElementById('contextModalClose').addEventListener('click', closeContextModal);
         document.getElementById('btnContextCancel').addEventListener('click', closeContextModal);
+
+        // Type filter change - update asset list
+        document.getElementById('contextTypeFilter').addEventListener('change', (e) => {
+            populateContextAssetSelect(e.target.value);
+        });
+
+        // Injection mode change - update hint
+        document.getElementById('contextInjectionMode').addEventListener('change', updateInjectionModeHint);
 
         document.getElementById('btnContextAdd').addEventListener('click', () => {
             const assetId = document.getElementById('contextAssetSelect').value;

@@ -758,7 +758,7 @@
 
         <!-- Embed View (for MindStudio/Pickaxe) -->
         <div class="embed-container" id="embedView" style="display: none;">
-            <iframe id="embedFrame" allow="microphone; camera" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+            <iframe id="embedFrame" allow="microphone; camera; clipboard-write"></iframe>
         </div>
 
         <!-- Chat View (for Native agents) -->
@@ -914,7 +914,7 @@
             hideLoading();
             document.getElementById('chatView').style.display = 'flex';
 
-            // Setup welcome screen
+            // Setup welcome screen (hidden since we auto-start)
             document.getElementById('welcomeIcon').innerHTML = renderIcon(agent.icon);
             document.getElementById('welcomeTitle').textContent = agent.name;
             document.getElementById('welcomeDescription').textContent =
@@ -928,6 +928,120 @@
 
             // Setup input handlers
             setupInputHandlers();
+
+            // Auto-start conversation with a greeting
+            autoStartConversation(agent);
+        }
+
+        async function autoStartConversation(agent) {
+            // Hide welcome screen immediately
+            document.getElementById('welcomeScreen').style.display = 'none';
+
+            // Collapse context preview
+            document.getElementById('contextPreview').classList.remove('expanded');
+
+            // Show greeting message from the agent first
+            addMessage('assistant', 'Greetings! I am beginning to process your request. One moment please.');
+
+            // Use the first conversation starter, or a default greeting prompt
+            const initialPrompt = (agent.conversation_starters && agent.conversation_starters.length > 0)
+                ? agent.conversation_starters[0]
+                : 'Hello! Please introduce yourself and let me know how you can help me today.';
+
+            // Small delay to ensure DOM is fully ready, then send the prompt
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Now execute the prompt
+            await executePrompt(initialPrompt);
+        }
+
+        async function executePrompt(message) {
+            if (!message || isStreaming || !currentAgent) {
+                console.error('Cannot execute prompt:', { message, isStreaming, currentAgent: !!currentAgent });
+                return;
+            }
+
+            // Add user message to UI
+            addMessage('user', message);
+
+            // Add to history
+            conversationHistory.push({ role: 'user', content: message });
+
+            // Update status
+            setStatus('Thinking...');
+            isStreaming = true;
+
+            try {
+                // Create assistant message placeholder
+                const assistantDiv = addMessage('assistant', '', true);
+                const contentDiv = assistantDiv.querySelector('.message-content');
+
+                // Stream response
+                const response = await fetch(`/api/agents/${currentAgent.id}/execute/stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_history: conversationHistory.slice(0, -1)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Stream response error:', response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+
+                                if (parsed.type === 'token' && parsed.content) {
+                                    fullResponse += parsed.content;
+                                    contentDiv.innerHTML = formatMessage(fullResponse);
+                                    scrollToBottom();
+                                } else if (parsed.type === 'error') {
+                                    throw new Error(parsed.error);
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON
+                            }
+                        }
+                    }
+                }
+
+                // Add to history
+                conversationHistory.push({ role: 'assistant', content: fullResponse });
+                setStatus('Ready');
+
+            } catch (error) {
+                console.error('Execute prompt error:', error);
+                setStatus('Error: ' + error.message);
+
+                const container = document.getElementById('messagesContainer');
+                const lastMessage = container.querySelector('.message.assistant:last-child');
+                if (lastMessage) {
+                    lastMessage.querySelector('.message-content').innerHTML =
+                        `<span style="color: var(--danger);">Error: ${escapeHtml(error.message)}</span>`;
+                }
+            } finally {
+                isStreaming = false;
+            }
         }
 
         function renderConversationStarters(starters) {
@@ -945,7 +1059,11 @@
 
         async function loadContextPreview(agentId) {
             try {
-                const response = await fetch(`/api/agents/${agentId}/context/preview`);
+                const response = await fetch(`/api/agents/${agentId}/context/preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_message: '' })
+                });
                 const data = await response.json();
 
                 if (data.success && data.data) {
@@ -1026,89 +1144,12 @@
             // Collapse context preview
             document.getElementById('contextPreview').classList.remove('expanded');
 
-            // Add user message
-            addMessage('user', message);
-
             // Clear input
             input.value = '';
             input.style.height = 'auto';
 
-            // Add to history
-            conversationHistory.push({ role: 'user', content: message });
-
-            // Update status
-            setStatus('Thinking...');
-            isStreaming = true;
-
-            try {
-                // Create assistant message placeholder
-                const assistantDiv = addMessage('assistant', '', true);
-                const contentDiv = assistantDiv.querySelector('.message-content');
-
-                // Stream response
-                const response = await fetch(`/api/agents/${currentAgent.id}/execute/stream`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: message,
-                        conversation_history: conversationHistory.slice(0, -1)
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullResponse = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.slice(6);
-                            if (data === '[DONE]') continue;
-
-                            try {
-                                const parsed = JSON.parse(data);
-
-                                if (parsed.type === 'token' && parsed.content) {
-                                    fullResponse += parsed.content;
-                                    contentDiv.innerHTML = formatMessage(fullResponse);
-                                    scrollToBottom();
-                                } else if (parsed.type === 'error') {
-                                    throw new Error(parsed.error);
-                                }
-                            } catch (e) {
-                                // Skip invalid JSON
-                            }
-                        }
-                    }
-                }
-
-                // Add to history
-                conversationHistory.push({ role: 'assistant', content: fullResponse });
-                setStatus('Ready');
-
-            } catch (error) {
-                console.error('Message error:', error);
-                setStatus('Error: ' + error.message);
-
-                const container = document.getElementById('messagesContainer');
-                const lastMessage = container.querySelector('.message.assistant:last-child');
-                if (lastMessage) {
-                    lastMessage.querySelector('.message-content').innerHTML =
-                        `<span style="color: var(--danger);">Error: ${escapeHtml(error.message)}</span>`;
-                }
-            } finally {
-                isStreaming = false;
-            }
+            // Execute the prompt using the shared function
+            await executePrompt(message);
         }
 
         function addMessage(role, content, isLoading = false) {

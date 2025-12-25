@@ -26,6 +26,69 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// Valid Claude model mappings for legacy model names
+const CLAUDE_MODEL_ALIASES = {
+    // Legacy Claude 3.x models
+    'claude-3-5-sonnet-20241022': 'claude-sonnet-4-20250514',
+    'claude-3-5-sonnet': 'claude-sonnet-4-20250514',
+    'claude-3-opus': 'claude-opus-4-20250514',
+    'claude-3-sonnet': 'claude-sonnet-4-20250514',
+    'claude-3-haiku': 'claude-haiku-4-5-20251001',
+    // Short aliases (matching anthropic.js)
+    'claude-opus-4.5': 'claude-opus-4-5-20251101',
+    'claude-sonnet-4.5': 'claude-sonnet-4-5-20250929',
+    'claude-haiku-4.5': 'claude-haiku-4-5-20251001',
+    'claude-opus-4.1': 'claude-opus-4-1-20250805',
+    'claude-sonnet-4': 'claude-sonnet-4-20250514',
+    'claude-opus-4': 'claude-opus-4-20250514',
+    'claude-haiku-4': 'claude-haiku-4-5-20251001',
+    // Default convenience aliases
+    'claude-opus': 'claude-opus-4-5-20251101',
+    'claude-sonnet': 'claude-sonnet-4-5-20250929',
+    'claude-haiku': 'claude-haiku-4-5-20251001'
+};
+
+const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
+
+// All valid current Claude models
+const VALID_CLAUDE_MODELS = [
+    'claude-opus-4-5-20251101',
+    'claude-sonnet-4-5-20250929',
+    'claude-haiku-4-5-20251001',
+    'claude-opus-4-1-20250805',
+    'claude-opus-4-20250514',
+    'claude-sonnet-4-20250514'
+];
+
+/**
+ * Resolve model name to a valid API model ID
+ * @param {string} modelInput - Model name from agent config
+ * @returns {string} - Valid model ID for API call
+ */
+function resolveModel(modelInput) {
+    if (!modelInput) return DEFAULT_CLAUDE_MODEL;
+
+    // Check if it's already a valid current model
+    if (VALID_CLAUDE_MODELS.includes(modelInput)) {
+        return modelInput;
+    }
+
+    // Check aliases for legacy model names
+    if (CLAUDE_MODEL_ALIASES[modelInput]) {
+        console.log(`Model alias resolved: ${modelInput} -> ${CLAUDE_MODEL_ALIASES[modelInput]}`);
+        return CLAUDE_MODEL_ALIASES[modelInput];
+    }
+
+    // If model starts with claude but not recognized, use default
+    if (modelInput.startsWith('claude')) {
+        console.warn(`Unknown Claude model: ${modelInput}, using default: ${DEFAULT_CLAUDE_MODEL}`);
+        return DEFAULT_CLAUDE_MODEL;
+    }
+
+    // For non-Claude models, return as-is (OpenAI, etc.)
+    return modelInput;
+}
+
 /**
  * Get agent configuration by ID
  * @param {string} agentId - Agent UUID
@@ -97,9 +160,12 @@ function buildMessages(userMessage, conversationHistory = []) {
  */
 async function executeWithAnthropic(agent, systemPrompt, messages) {
     const startTime = Date.now();
-    
+
+    // Resolve model name to valid API model ID
+    const resolvedModel = resolveModel(agent.llm_model);
+
     const response = await anthropic.messages.create({
-        model: agent.llm_model,
+        model: resolvedModel,
         max_tokens: agent.max_tokens || 4096,
         temperature: agent.temperature || 0.7,
         system: systemPrompt,
@@ -173,9 +239,12 @@ async function streamWithAnthropic(agent, systemPrompt, messages, onToken) {
     const startTime = Date.now();
     let fullContent = '';
     let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-    
+
+    // Resolve model name to valid API model ID
+    const resolvedModel = resolveModel(agent.llm_model);
+
     const stream = await anthropic.messages.stream({
-        model: agent.llm_model,
+        model: resolvedModel,
         max_tokens: agent.max_tokens || 4096,
         temperature: agent.temperature || 0.7,
         system: systemPrompt,
@@ -312,21 +381,21 @@ async function executeAgent(agentId, options = {}) {
         userId = null,
         includeOnDemand = []
     } = options;
-    
+
     try {
         // Get agent configuration
         const agent = await getAgent(agentId);
-        
+
         if (!agent.is_active) {
             throw new Error('Agent is not active');
         }
-        
+
         // Assemble context
         const contextResult = await assembleContext(agentId, {
             userQuery: userMessage,
             includeOnDemand,
             returnDetails: true
-        });
+        }, supabase);
         
         // Build system prompt with context
         const systemPrompt = buildSystemPrompt(agent, contextResult.context);
@@ -394,21 +463,21 @@ async function streamAgent(agentId, options = {}) {
         onComplete,
         onError
     } = options;
-    
+
     try {
         // Get agent configuration
         const agent = await getAgent(agentId);
-        
+
         if (!agent.is_active) {
             throw new Error('Agent is not active');
         }
-        
+
         // Assemble context
         const contextResult = await assembleContext(agentId, {
             userQuery: userMessage,
             includeOnDemand,
             returnDetails: true
-        });
+        }, supabase);
         
         // Build system prompt with context
         const systemPrompt = buildSystemPrompt(agent, contextResult.context);

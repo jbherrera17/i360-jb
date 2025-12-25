@@ -9,6 +9,7 @@
  */
 
 const express = require('express');
+const { v4: uuidv4 } = require('uuid');
 const { assembleContext, estimateTokens } = require('../services/contextInjection');
 const { executeAgent, streamAgent } = require('../services/agentService');
 
@@ -226,6 +227,73 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/agents/departments
+     * List departments for agent assignment
+     */
+    router.get('/departments', async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('departments')
+                .select('id, name, description, icon')
+                .eq('is_active', true)
+                .order('sort_order');
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data: data || []
+            });
+
+        } catch (error) {
+            console.error('Error listing departments:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/agents/stats
+     * Get agent statistics overview
+     */
+    router.get('/stats', async (req, res) => {
+        try {
+            // Get total counts
+            const { data: agents, error: agentsError } = await supabase
+                .from('agents')
+                .select('id, is_active, type');
+
+            if (agentsError) throw agentsError;
+
+            const stats = {
+                total_agents: agents?.length || 0,
+                active_agents: agents?.filter(a => a.is_active !== false).length || 0,
+                by_platform: {}
+            };
+
+            // Count by platform (using 'type' column)
+            agents?.forEach(agent => {
+                const platform = agent.type || 'custom';
+                stats.by_platform[platform] = (stats.by_platform[platform] || 0) + 1;
+            });
+
+            res.json({
+                success: true,
+                data: stats
+            });
+
+        } catch (error) {
+            console.error('Error getting agent stats:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * GET /api/agents/:id
      * Get single agent with context mappings
      */
@@ -293,7 +361,7 @@ module.exports = function(supabase) {
                 icon = '🤖',
                 category = 'custom',
                 llm_provider = 'anthropic',
-                llm_model = 'claude-3-5-sonnet-20241022',
+                llm_model = 'claude-sonnet-4-5-20250929',
                 temperature = 0.7,
                 max_tokens = 4096,
                 system_prompt,
@@ -784,7 +852,7 @@ module.exports = function(supabase) {
             const contextResult = await assembleContext(id, {
                 userQuery: user_message,
                 returnDetails: true
-            });
+            }, supabase);
 
             res.json({
                 success: true,
