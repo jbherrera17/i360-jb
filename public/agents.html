@@ -1627,9 +1627,9 @@
                             </div>
                         </div>
                         <div class="detail-actions">
-                            <button class="btn btn-secondary" id="btnLaunch">
+                            <button class="btn btn-primary" id="btnLaunch">
                                 <i data-lucide="play" style="width:16px;height:16px;"></i>
-                                Launch
+                                Run Agent
                             </button>
                             <button class="btn btn-secondary" id="btnEdit">
                                 <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
@@ -2952,7 +2952,8 @@
 
         document.getElementById('btnLaunch').addEventListener('click', () => {
             if (selectedAgent) {
-                openLauncher(selectedAgent);
+                // Open agent runner page in new tab
+                window.open(`/agent-runner.html?id=${selectedAgent.id}`, '_blank');
             }
         });
 

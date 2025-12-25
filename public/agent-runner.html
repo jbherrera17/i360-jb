@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/theme-toggle.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Runner | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            /* Color Palette */
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+
+            /* Platform Colors */
+            --mindstudio: #6366f1;
+            --pickaxe: #f59e0b;
+            --native: #10b981;
+
+            /* Typography */
+            --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-base: 200ms ease;
+        }
+
+        /* Dark Theme (Default) */
+        :root,
+        [data-theme="dark"] {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252540;
+            --bg-hover: rgba(99, 102, 241, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b80;
+            --border: #2a2a40;
+            --border-light: #3a3a55;
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        /* Light Theme */
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --bg-hover: rgba(99, 102, 241, 0.08);
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a5a;
+            --text-muted: #6b6b80;
+            --border: #dee2e6;
+            --border-light: #e9ecef;
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-back:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--primary);
+        }
+
+        .agent-header-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .agent-icon {
+            font-size: 2rem;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+        }
+
+        .agent-title h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+        }
+
+        .agent-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .platform-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .platform-badge.mindstudio {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--mindstudio);
+        }
+
+        .platform-badge.pickaxe {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--pickaxe);
+        }
+
+        .platform-badge.native {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--native);
+        }
+
+        .model-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Loading State */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 1rem;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .error-state i {
+            width: 64px;
+            height: 64px;
+            color: var(--danger);
+        }
+
+        .error-state h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .error-state p {
+            color: var(--text-muted);
+            max-width: 400px;
+        }
+
+        /* =========================================
+           EMBED VIEW (MindStudio / Pickaxe)
+           ========================================= */
+
+        .embed-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .embed-container iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: var(--bg-secondary);
+        }
+
+        .embed-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+        }
+
+        /* =========================================
+           CHAT VIEW (Native Agents)
+           ========================================= */
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Context Preview */
+        .context-preview {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .context-toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: background var(--transition-fast);
+        }
+
+        .context-toggle:hover {
+            background: var(--bg-hover);
+        }
+
+        .context-toggle .token-count {
+            margin-left: auto;
+            padding: 0.15rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .toggle-icon {
+            transition: transform var(--transition-base);
+        }
+
+        .context-preview.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .context-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-base);
+        }
+
+        .context-preview.expanded .context-content {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .context-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .context-item .asset-icon {
+            font-size: 1.25rem;
+        }
+
+        .context-item .asset-info {
+            flex: 1;
+        }
+
+        .context-item .asset-name {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .context-item .asset-type {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .context-item .asset-tokens {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Messages Area */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-screen h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-screen p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .conversation-starters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .starter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: inherit;
+        }
+
+        .starter-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        /* Message Bubbles */
+        .message {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+        }
+
+        .message.user {
+            background: var(--bg-tertiary);
+        }
+
+        .message.assistant {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .message-avatar {
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .message-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .message-author {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .message-copy {
+            margin-left: auto;
+            opacity: 0;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+            transition: opacity var(--transition-fast);
+        }
+
+        .message:hover .message-copy {
+            opacity: 1;
+        }
+
+        .message-copy:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .message-content code {
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.4rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .message-content pre {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .message-content a {
+            color: var(--primary);
+        }
+
+        .message-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading Message */
+        .message-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: bounce 1.4s ease-in-out infinite both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 0.5rem;
+            align-items: flex-end;
+            transition: border-color var(--transition-fast);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+        }
+
+        .input-wrapper textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: none;
+            padding: 0.5rem;
+            max-height: 120px;
+            line-height: 1.5;
+        }
+
+        .input-wrapper textarea:focus {
+            outline: none;
+        }
+
+        .input-wrapper textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-send {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.75rem;
+            background: var(--primary);
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+
+        .btn-send:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-status {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            padding: 0.875rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
+            .agent-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5rem;
+            }
+
+            .agent-title h1 {
+                font-size: 1rem;
+            }
+
+            .messages-container {
+                padding: 1rem;
+            }
+
+            .input-container {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <button class="btn-back" onclick="window.location.href='/agents.html'">
+            <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+            Back
+        </button>
+
+        <div class="agent-header-info">
+            <div class="agent-icon" id="agentIcon"></div>
+            <div class="agent-title">
+                <h1 id="agentName">Loading...</h1>
+                <div class="agent-meta">
+                    <span class="platform-badge native" id="platformBadge">native</span>
+                    <span class="model-info" id="modelInfo"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <i data-lucide="moon" style="width:20px;height:20px;"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Loading State (shown initially) -->
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <p>Loading agent...</p>
+        </div>
+
+        <!-- Error State (hidden initially) -->
+        <div class="error-state" id="errorState" style="display: none;">
+            <i data-lucide="alert-circle"></i>
+            <h2>Agent Not Found</h2>
+            <p id="errorMessage">The requested agent could not be found or loaded.</p>
+            <button class="btn-back" onclick="window.location.href='/agents.html'">
+                Return to Agent Library
+            </button>
+        </div>
+
+        <!-- Embed View (for MindStudio/Pickaxe) -->
+        <div class="embed-container" id="embedView" style="display: none;">
+            <iframe id="embedFrame" allow="microphone; camera" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+        </div>
+
+        <!-- Chat View (for Native agents) -->
+        <div class="chat-container" id="chatView" style="display: none;">
+            <!-- Context Preview -->
+            <div class="context-preview" id="contextPreview">
+                <button class="context-toggle" id="contextToggle">
+                    <i data-lucide="database" style="width:16px;height:16px;"></i>
+                    <span>Context Assets</span>
+                    <span class="token-count" id="tokenCount">0 tokens</span>
+                    <i data-lucide="chevron-down" style="width:16px;height:16px;" class="toggle-icon"></i>
+                </button>
+                <div class="context-content" id="contextContent">
+                    <p style="padding: 1rem 1.5rem; color: var(--text-muted);">No context assets mapped.</p>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages-container" id="messagesContainer">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-icon" id="welcomeIcon"></div>
+                    <h2 id="welcomeTitle">Chat with Agent</h2>
+                    <p id="welcomeDescription">Start a conversation to see what this agent can do.</p>
+                    <div class="conversation-starters" id="conversationStarters"></div>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea
+                        id="messageInput"
+                        placeholder="Type your message..."
+                        rows="1"
+                    ></textarea>
+                    <button class="btn-send" id="sendBtn">
+                        <i data-lucide="send" style="width:18px;height:18px;"></i>
+                    </button>
+                </div>
+                <div class="input-status" id="inputStatus">Ready</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // =====================================================================
+        // STATE
+        // =====================================================================
+        let currentAgent = null;
+        let conversationHistory = [];
+        let isStreaming = false;
+        let contextData = null;
+
+        // =====================================================================
+        // INITIALIZATION
+        // =====================================================================
+
+        async function init() {
+            initTheme();
+
+            // Get agent ID from URL
+            const params = new URLSearchParams(window.location.search);
+            const agentId = params.get('id');
+
+            if (!agentId) {
+                showError('No agent ID provided. Please select an agent from the library.');
+                return;
+            }
+
+            try {
+                await loadAgent(agentId);
+            } catch (error) {
+                console.error('Failed to load agent:', error);
+                showError(error.message || 'Failed to load agent.');
+            }
+        }
+
+        async function loadAgent(agentId) {
+            const response = await fetch(`/api/agents/${agentId}`);
+            const data = await response.json();
+
+            if (!data.success || !data.data) {
+                throw new Error('Agent not found');
+            }
+
+            currentAgent = data.data;
+            updateHeader(currentAgent);
+
+            // Determine view based on agent type
+            const agentType = currentAgent.source_type || 'native';
+
+            if (agentType === 'mindstudio' || agentType === 'pickaxe') {
+                showEmbedView(currentAgent);
+            } else {
+                await showChatView(currentAgent);
+            }
+        }
+
+        function updateHeader(agent) {
+            document.getElementById('agentIcon').innerHTML = renderIcon(agent.icon);
+            document.getElementById('agentName').textContent = agent.name;
+            document.title = `${agent.name} | Insight 360`;
+
+            const type = agent.source_type || 'native';
+            const badge = document.getElementById('platformBadge');
+            badge.textContent = type;
+            badge.className = `platform-badge ${type}`;
+
+            const model = agent.llm_model || agent.model || '';
+            document.getElementById('modelInfo').textContent = model;
+        }
+
+        // =====================================================================
+        // EMBED VIEW (MindStudio / Pickaxe)
+        // =====================================================================
+
+        function showEmbedView(agent) {
+            hideLoading();
+            document.getElementById('embedView').style.display = 'flex';
+
+            const embedUrl = agent.embed_config?.embed_url;
+
+            if (!embedUrl) {
+                showError('This agent does not have an embed URL configured. Please edit the agent and add the embed URL.');
+                return;
+            }
+
+            const iframe = document.getElementById('embedFrame');
+            iframe.src = embedUrl;
+
+            // Handle iframe load
+            iframe.onload = () => {
+                console.log('Embed loaded successfully');
+            };
+
+            iframe.onerror = () => {
+                showError('Failed to load the embedded agent. The URL may be invalid or the service is unavailable.');
+            };
+        }
+
+        // =====================================================================
+        // CHAT VIEW (Native Agents)
+        // =====================================================================
+
+        async function showChatView(agent) {
+            hideLoading();
+            document.getElementById('chatView').style.display = 'flex';
+
+            // Setup welcome screen
+            document.getElementById('welcomeIcon').innerHTML = renderIcon(agent.icon);
+            document.getElementById('welcomeTitle').textContent = agent.name;
+            document.getElementById('welcomeDescription').textContent =
+                agent.description || 'Start a conversation with this agent.';
+
+            // Render conversation starters
+            renderConversationStarters(agent.conversation_starters || []);
+
+            // Load context preview
+            await loadContextPreview(agent.id);
+
+            // Setup input handlers
+            setupInputHandlers();
+        }
+
+        function renderConversationStarters(starters) {
+            const container = document.getElementById('conversationStarters');
+
+            if (!starters || starters.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = starters.map(starter => `
+                <button class="starter-btn" onclick="sendMessage('${escapeHtml(starter)}')">${escapeHtml(starter)}</button>
+            `).join('');
+        }
+
+        async function loadContextPreview(agentId) {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/context/preview`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    contextData = data.data;
+                    renderContextPreview(data.data);
+                }
+            } catch (error) {
+                console.error('Failed to load context preview:', error);
+            }
+        }
+
+        function renderContextPreview(data) {
+            const content = document.getElementById('contextContent');
+            const tokenCount = document.getElementById('tokenCount');
+
+            if (!data.assets || data.assets.length === 0) {
+                content.innerHTML = '<p style="padding: 1rem 1.5rem; color: var(--text-muted);">No context assets mapped.</p>';
+                tokenCount.textContent = '0 tokens';
+                return;
+            }
+
+            tokenCount.textContent = `~${data.totalTokens || 0} tokens`;
+
+            content.innerHTML = data.assets.map(asset => `
+                <div class="context-item">
+                    <span class="asset-icon">${asset.icon || '📄'}</span>
+                    <div class="asset-info">
+                        <div class="asset-name">${escapeHtml(asset.name)}</div>
+                        <div class="asset-type">${asset.type || ''}</div>
+                    </div>
+                    <span class="asset-tokens">~${asset.tokens || 0}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleContextPreview() {
+            document.getElementById('contextPreview').classList.toggle('expanded');
+        }
+
+        // =====================================================================
+        // MESSAGING
+        // =====================================================================
+
+        function setupInputHandlers() {
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+
+            // Auto-resize textarea
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            // Enter to send
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Send button
+            sendBtn.addEventListener('click', () => sendMessage());
+
+            // Focus input
+            input.focus();
+        }
+
+        async function sendMessage(text = null) {
+            const input = document.getElementById('messageInput');
+            const message = text || input.value.trim();
+
+            if (!message || isStreaming || !currentAgent) return;
+
+            // Hide welcome screen
+            document.getElementById('welcomeScreen').style.display = 'none';
+
+            // Collapse context preview
+            document.getElementById('contextPreview').classList.remove('expanded');
+
+            // Add user message
+            addMessage('user', message);
+
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Add to history
+            conversationHistory.push({ role: 'user', content: message });
+
+            // Update status
+            setStatus('Thinking...');
+            isStreaming = true;
+
+            try {
+                // Create assistant message placeholder
+                const assistantDiv = addMessage('assistant', '', true);
+                const contentDiv = assistantDiv.querySelector('.message-content');
+
+                // Stream response
+                const response = await fetch(`/api/agents/${currentAgent.id}/execute/stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_history: conversationHistory.slice(0, -1)
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+
+                                if (parsed.type === 'token' && parsed.content) {
+                                    fullResponse += parsed.content;
+                                    contentDiv.innerHTML = formatMessage(fullResponse);
+                                    scrollToBottom();
+                                } else if (parsed.type === 'error') {
+                                    throw new Error(parsed.error);
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON
+                            }
+                        }
+                    }
+                }
+
+                // Add to history
+                conversationHistory.push({ role: 'assistant', content: fullResponse });
+                setStatus('Ready');
+
+            } catch (error) {
+                console.error('Message error:', error);
+                setStatus('Error: ' + error.message);
+
+                const container = document.getElementById('messagesContainer');
+                const lastMessage = container.querySelector('.message.assistant:last-child');
+                if (lastMessage) {
+                    lastMessage.querySelector('.message-content').innerHTML =
+                        `<span style="color: var(--danger);">Error: ${escapeHtml(error.message)}</span>`;
+                }
+            } finally {
+                isStreaming = false;
+            }
+        }
+
+        function addMessage(role, content, isLoading = false) {
+            const container = document.getElementById('messagesContainer');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+
+            const avatar = role === 'user' ? '👤' : renderIcon(currentAgent?.icon);
+            const author = role === 'user' ? 'You' : currentAgent?.name || 'Agent';
+
+            const loadingHTML = `
+                <div class="message-loading">
+                    <div class="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Thinking...</span>
+                </div>
+            `;
+
+            const contentHTML = isLoading ? loadingHTML : formatMessage(content);
+
+            div.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-body">
+                    <div class="message-header">
+                        <span class="message-author">${escapeHtml(author)}</span>
+                        <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                        <button class="message-copy" title="Copy" onclick="copyMessage(this)">
+                            <i data-lucide="copy" style="width:14px;height:14px;"></i>
+                        </button>
+                    </div>
+                    <div class="message-content">${contentHTML}</div>
+                </div>
+            `;
+
+            container.appendChild(div);
+            lucide.createIcons();
+            scrollToBottom();
+
+            return div;
+        }
+
+        function formatMessage(content) {
+            if (!content) return '';
+
+            // Escape HTML
+            let formatted = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Code blocks
+            formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g,
+                '<pre><code class="language-$1">$2</code></pre>');
+
+            // Inline code
+            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Bold
+            formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Italic
+            formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+            // Links
+            formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+            // Line breaks
+            formatted = formatted.replace(/\n/g, '<br>');
+
+            return formatted;
+        }
+
+        async function copyMessage(button) {
+            const messageDiv = button.closest('.message');
+            const contentDiv = messageDiv.querySelector('.message-content');
+            const text = contentDiv.innerText;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                const icon = button.querySelector('i');
+                icon.setAttribute('data-lucide', 'check');
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    icon.setAttribute('data-lucide', 'copy');
+                    lucide.createIcons();
+                }, 2000);
+            } catch (error) {
+                showToast('Failed to copy', 'error');
+            }
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function setStatus(text) {
+            document.getElementById('inputStatus').textContent = text;
+        }
+
+        // =====================================================================
+        // UI HELPERS
+        // =====================================================================
+
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+        }
+
+        function showError(message) {
+            hideLoading();
+            document.getElementById('embedView').style.display = 'none';
+            document.getElementById('chatView').style.display = 'none';
+            document.getElementById('errorState').style.display = 'flex';
+            document.getElementById('errorMessage').textContent = message;
+            lucide.createIcons();
+        }
+
+        function renderIcon(icon) {
+            if (!icon) return '🤖';
+            const isLucideIcon = /^[a-z][a-z0-9-]*$/.test(icon);
+            if (isLucideIcon) {
+                return `<i data-lucide="${icon}" style="width:24px;height:24px;"></i>`;
+            }
+            return icon;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // =====================================================================
+        // THEME
+        // =====================================================================
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.querySelector('#themeToggle i');
+            if (icon) {
+                icon.setAttribute('data-lucide', theme === 'dark' ? 'moon' : 'sun');
+                lucide.createIcons();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        document.getElementById('contextToggle').addEventListener('click', toggleContextPreview);
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
