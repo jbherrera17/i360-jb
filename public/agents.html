@@ -112,6 +112,10 @@
             width: auto;
         }
 
+        .nav-logo .logo-text {
+            margin-left: 0.5rem;
+        }
+
         .nav-links {
             display: flex;
             gap: 0.5rem;
@@ -287,11 +291,13 @@
 
         /* Agent List */
         .agent-list {
-            width: 380px;
+            width: 260px;
+            min-width: 220px;
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             background: var(--bg-primary);
+            position: relative;
         }
 
         .list-header {
@@ -480,9 +486,28 @@
             gap: 0.25rem;
         }
 
+        /* Resize Handle */
+        .resize-handle {
+            position: absolute;
+            right: -3px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        .resize-handle:hover,
+        .resize-handle.active {
+            background: var(--primary);
+        }
+
         /* Detail Panel */
         .detail-panel {
             flex: 1;
+            min-width: 400px;
             display: flex;
             flex-direction: column;
             background: var(--bg-primary);
@@ -1088,9 +1113,13 @@
             .sidebar {
                 display: none;
             }
-            
+
             .agent-list {
-                width: 320px;
+                width: 240px;
+            }
+
+            .resize-handle {
+                display: none;
             }
         }
 
@@ -1101,6 +1130,7 @@
 
             .detail-panel {
                 display: none;
+                min-width: unset;
             }
 
             .detail-panel.mobile-active {
@@ -1601,7 +1631,8 @@
     <!-- Navigation -->
     <nav class="nav">
         <a href="index.html" class="nav-logo">
-            <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" style="height: 36px;" onerror="this.parentElement.innerHTML='INSIGHT 360'">
+            <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" style="height: 36px;" onerror="this.style.display='none'">
+            <span class="logo-text">Insight 360</span>
         </a>
         <div class="nav-links">
             <a href="index.html" class="nav-link">
@@ -1679,22 +1710,23 @@
             <!-- Filters -->
             <div class="sidebar-section">
                 <div class="sidebar-title">Filters</div>
-                
+
                 <div class="filter-group">
-                    <label class="filter-label">Platform</label>
-                    <select class="filter-select" id="filterPlatform">
-                        <option value="">All Platforms</option>
-                        <option value="mindstudio">MindStudio</option>
-                        <option value="pickaxe">PickAxe</option>
-                        <option value="native">Native</option>
-                        <option value="api">API</option>
+                    <label class="filter-label">Suite</label>
+                    <select class="filter-select" id="filterSuite">
+                        <option value="">All Suites</option>
+                        <option value="align">Align 120</option>
+                        <option value="strategy">Strategy 120</option>
+                        <option value="execute">Execute 120</option>
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Department</label>
-                    <select class="filter-select" id="filterDepartment">
-                        <option value="">All Departments</option>
+                    <label class="filter-label">Status</label>
+                    <select class="filter-select" id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
 
@@ -1706,12 +1738,12 @@
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Status</label>
-                    <select class="filter-select" id="filterStatus">
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="draft">Draft</option>
-                        <option value="archived">Archived</option>
+                    <label class="filter-label">Platform</label>
+                    <select class="filter-select" id="filterPlatform">
+                        <option value="">All Platforms</option>
+                        <option value="custom">Custom (Native)</option>
+                        <option value="mindstudio">MindStudio</option>
+                        <option value="llm">LLM Direct</option>
                     </select>
                 </div>
             </div>
@@ -1720,7 +1752,7 @@
         <!-- Content -->
         <div class="content">
             <!-- Agent List -->
-            <div class="agent-list">
+            <div class="agent-list" id="agentListPanel">
                 <div class="list-header">
                     <div>
                         <span class="list-title">Agents</span>
@@ -1737,6 +1769,8 @@
                         <div class="spinner"></div>
                     </div>
                 </div>
+                <!-- Resize Handle -->
+                <div class="resize-handle" id="resizeHandle"></div>
             </div>
 
             <!-- Detail Panel -->
@@ -1785,8 +1819,8 @@
                         <!-- Quick Stats -->
                         <div class="info-grid" style="margin-bottom: 1.5rem;">
                             <div class="info-item">
-                                <div class="info-label">Department</div>
-                                <div class="info-value" id="detailDepartment">—</div>
+                                <div class="info-label">Suite</div>
+                                <div class="info-value" id="detailSuite">—</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">Category</div>
@@ -1864,6 +1898,24 @@
                         </div>
                     </div>
 
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Suite *</label>
+                            <select class="form-input form-select" id="formSuite" required>
+                                <option value="">Select suite...</option>
+                                <option value="execute">Execute 120</option>
+                                <option value="align">Align 120</option>
+                                <option value="strategy">Strategy 120</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <select class="form-input form-select" id="formCategory" required>
+                                <option value="">Select category...</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label">Description</label>
                         <textarea class="form-input form-textarea" id="formDescription" placeholder="What does this agent do?"></textarea>
@@ -1873,10 +1925,9 @@
                         <div class="form-group">
                             <label class="form-label">Platform *</label>
                             <select class="form-input form-select" id="formPlatform" required>
+                                <option value="custom">Custom (Native)</option>
                                 <option value="mindstudio">MindStudio</option>
-                                <option value="pickaxe">PickAxe</option>
-                                <option value="native">Native</option>
-                                <option value="api">API</option>
+                                <option value="llm">LLM Direct</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1944,29 +1995,6 @@
                                 <input type="number" class="form-input" id="formTemperature" min="0" max="2" step="0.1" value="0.7">
                             </div>
                         </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Department</label>
-                            <select class="form-input form-select" id="formDepartment">
-                                <option value="">Select department...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Category</label>
-                            <select class="form-input form-select" id="formCategory">
-                                <option value="">Select category...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Tags</label>
-                        <div class="tags-container" id="tagsContainer">
-                            <input type="text" class="tag-input" id="tagInput" placeholder="Type and press Enter...">
-                        </div>
-                        <div class="form-hint">Press Enter to add tags</div>
                     </div>
                 </form>
             </div>
@@ -2115,10 +2143,8 @@
         let agents = [];
         let selectedAgent = null;
         let editingAgent = null;
-        let departments = [];
         let categories = [];
         let contextAssets = [];
-        let tags = [];
 
         // Launcher State
         let launcherAgent = null;
@@ -2140,16 +2166,16 @@
         async function fetchAgents() {
             try {
                 const params = new URLSearchParams();
-                const platform = document.getElementById('filterPlatform').value;
-                const department = document.getElementById('filterDepartment').value;
-                const category = document.getElementById('filterCategory').value;
+                const suite = document.getElementById('filterSuite').value;
                 const status = document.getElementById('filterStatus').value;
+                const category = document.getElementById('filterCategory').value;
+                const platform = document.getElementById('filterPlatform').value;
                 const search = document.getElementById('searchInput').value;
 
-                if (platform) params.append('source_type', platform);
-                if (department) params.append('department', department);
+                if (suite) params.append('suite', suite);
+                if (status) params.append('active', status === 'active' ? 'true' : 'false');
                 if (category) params.append('category', category);
-                if (status) params.append('status', status);
+                if (platform) params.append('platform_type', platform);
                 if (search) params.append('search', search);
 
                 const response = await fetch(`/api/agents?${params}`);
@@ -2163,19 +2189,6 @@
             } catch (error) {
                 console.error('Error fetching agents:', error);
                 showToast('Failed to load agents', 'error');
-            }
-        }
-
-        async function fetchDepartments() {
-            try {
-                const response = await fetch('/api/agents/departments');
-                const data = await response.json();
-                if (data.success) {
-                    departments = data.data;
-                    populateDepartmentSelects();
-                }
-            } catch (error) {
-                console.error('Error fetching departments:', error);
             }
         }
 
@@ -2408,11 +2421,11 @@
                 <span class="platform-badge ${provider}">${provider}</span>
             `;
 
-            const dept = departments.find(d => d.key === agent.department);
             const cat = categories.find(c => c.key === agent.category);
+            const suiteLabels = { align: 'Align 120', strategy: 'Strategy 120', execute: 'Execute 120' };
 
-            document.getElementById('detailDepartment').textContent = dept?.name || agent.department || '—';
-            document.getElementById('detailCategory').textContent = cat?.name || agent.category || '—';
+            document.getElementById('detailSuite').textContent = suiteLabels[agent.suite] || agent.suite || '—';
+            document.getElementById('detailCategory').textContent = cat?.display_name || cat?.name || agent.category || '—';
             document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>`;
             document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>`;
             document.getElementById('detailUsage').textContent = agent.usage_count || 0;
@@ -2490,23 +2503,20 @@
                 document.getElementById('formName').value = agent.name || '';
                 document.getElementById('formIcon').value = agent.icon || '🤖';
                 document.getElementById('formDescription').value = agent.description || '';
-                document.getElementById('formPlatform').value = agent.source_type || 'native';
-                document.getElementById('formStatus').value = agent.status || 'draft';
+                document.getElementById('formPlatform').value = agent.type || 'custom';
+                document.getElementById('formStatus').value = agent.is_active ? 'active' : 'draft';
                 document.getElementById('formExternalId').value = agent.external_id || '';
                 document.getElementById('formEmbedUrl').value = agent.embed_config?.embed_url || '';
                 document.getElementById('formSystemPrompt').value = agent.system_prompt || '';
                 document.getElementById('formModel').value = resolveModelName(agent.llm_model || agent.model);
                 document.getElementById('formTemperature').value = agent.temperature || 0.7;
-                document.getElementById('formDepartment').value = agent.department || '';
+                document.getElementById('formSuite').value = agent.suite || 'execute';
                 document.getElementById('formCategory').value = agent.category || '';
-                tags = agent.tags || [];
             } else {
                 document.getElementById('agentForm').reset();
                 document.getElementById('formIcon').value = '🤖';
-                tags = [];
             }
 
-            renderTags();
             updatePlatformFields();
             agentModal.classList.add('active');
         }
@@ -2542,7 +2552,8 @@
             const embedFields = document.getElementById('platformFieldsEmbed');
             const nativeFields = document.getElementById('platformFieldsNative');
 
-            if (platform === 'native') {
+            // 'custom' and 'llm' are native types, 'mindstudio' is embed type
+            if (platform === 'custom' || platform === 'llm') {
                 embedFields.style.display = 'none';
                 nativeFields.style.display = 'block';
             } else {
@@ -2554,62 +2565,8 @@
         // =========================================================================
         // Tags
         // =========================================================================
-
-        function renderTags() {
-            const container = document.getElementById('tagsContainer');
-            const input = document.getElementById('tagInput');
-            
-            container.innerHTML = '';
-            tags.forEach((tag, index) => {
-                const tagEl = document.createElement('span');
-                tagEl.className = 'tag';
-                tagEl.innerHTML = `
-                    ${tag}
-                    <button class="tag-remove" data-index="${index}">
-                        <i data-lucide="x" style="width:12px;height:12px;"></i>
-                    </button>
-                `;
-                container.appendChild(tagEl);
-            });
-            container.appendChild(input);
-            lucide.createIcons();
-
-            // Re-attach remove handlers
-            container.querySelectorAll('.tag-remove').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const index = parseInt(btn.dataset.index);
-                    tags.splice(index, 1);
-                    renderTags();
-                });
-            });
-        }
-
-        // =========================================================================
         // Populate Selects
         // =========================================================================
-
-        function populateDepartmentSelects() {
-            const selects = [
-                document.getElementById('filterDepartment'),
-                document.getElementById('formDepartment')
-            ];
-
-            selects.forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = '<option value="">All Departments</option>';
-                if (select.id === 'formDepartment') {
-                    select.innerHTML = '<option value="">Select department...</option>';
-                }
-                departments.forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept.key;
-                    option.textContent = `${dept.icon} ${dept.name}`;
-                    select.appendChild(option);
-                });
-                select.value = currentValue;
-            });
-        }
 
         function populateCategorySelects() {
             const selects = [
@@ -2626,7 +2583,7 @@
                 categories.forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat.key;
-                    option.textContent = `${cat.icon} ${cat.name}`;
+                    option.textContent = `${iconToEmoji(cat.icon)} ${cat.display_name || cat.name}`;
                     select.appendChild(option);
                 });
                 select.value = currentValue;
@@ -2725,7 +2682,7 @@
         // =========================================================================
 
         function initTheme() {
-            const saved = localStorage.getItem('theme') || 'dark';
+            const saved = localStorage.getItem('insight360-theme') || 'dark';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon(saved);
         }
@@ -2734,7 +2691,7 @@
             const current = document.documentElement.getAttribute('data-theme');
             const next = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
+            localStorage.setItem('insight360-theme', next);
             updateThemeIcon(next);
         }
 
@@ -3157,6 +3114,58 @@
             return div.innerHTML;
         }
 
+        // Convert Lucide icon names to emoji for use in <select> options
+        const ICON_TO_EMOJI = {
+            // Departments
+            'crown': '👑',
+            'banknote': '💵',
+            'settings': '⚙️',
+            'trending-up': '📈',
+            'megaphone': '📢',
+            'package': '📦',
+            'headphones': '🎧',
+            'users': '👥',
+            'building-2': '🏢',
+            'building': '🏢',
+            // Categories
+            'compass': '🧭',
+            'target': '🎯',
+            'zap': '⚡',
+            'lightbulb': '💡',
+            'shield': '🛡️',
+            'brain': '🧠',
+            'chart-bar': '📊',
+            'file-text': '📄',
+            'message-circle': '💬',
+            'star': '⭐',
+            'heart': '❤️',
+            'user': '👤',
+            'code': '💻',
+            'database': '🗄️',
+            'globe': '🌐',
+            'calendar': '📅',
+            'clock': '🕐',
+            'mail': '📧',
+            'phone': '📞',
+            'link': '🔗',
+            'search': '🔍',
+            'check': '✅',
+            'x': '❌',
+            'alert-triangle': '⚠️',
+            'info': 'ℹ️',
+            'bot': '🤖',
+            'sparkles': '✨'
+        };
+
+        function iconToEmoji(iconName) {
+            if (!iconName) return '📁';
+            // If it's already an emoji (starts with emoji unicode range), return as-is
+            if (/^[\u{1F300}-\u{1F9FF}]|^[\u{2600}-\u{26FF}]|^[\u{2700}-\u{27BF}]/u.test(iconName)) {
+                return iconName;
+            }
+            return ICON_TO_EMOJI[iconName] || '📁';
+        }
+
         // Model name mapping for display
         const MODEL_DISPLAY_NAMES = {
             'claude-opus-4-5-20251101': 'Claude Opus 4.5',
@@ -3273,21 +3282,22 @@
                 name: document.getElementById('formName').value,
                 icon: document.getElementById('formIcon').value || '🤖',
                 description: document.getElementById('formDescription').value,
-                source_type: platform,
-                status: document.getElementById('formStatus').value,
-                department: document.getElementById('formDepartment').value || null,
+                type: platform,
+                is_active: document.getElementById('formStatus').value === 'active',
                 category: document.getElementById('formCategory').value || null,
-                tags
+                suite: document.getElementById('formSuite')?.value || 'execute'
             };
 
-            if (platform === 'native') {
+            // 'custom' and 'llm' are native types with LLM configuration
+            if (platform === 'custom' || platform === 'llm') {
                 agentData.system_prompt = document.getElementById('formSystemPrompt').value;
                 agentData.llm_model = document.getElementById('formModel').value;
                 agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
+                agentData.llm_provider = agentData.llm_model?.startsWith('gpt') ? 'openai' : 'anthropic';
             } else {
-                agentData.external_id = document.getElementById('formExternalId').value;
-                agentData.embed_config = {
-                    platform,
+                // MindStudio embedded agents - store config in the config column
+                agentData.mindstudio_workflow_id = document.getElementById('formExternalId').value;
+                agentData.config = {
                     embed_type: 'iframe',
                     embed_url: document.getElementById('formEmbedUrl').value,
                     theme: document.documentElement.getAttribute('data-theme') || 'dark'
@@ -3299,24 +3309,21 @@
                 return;
             }
 
+            if (!agentData.suite) {
+                showToast('Suite is required', 'error');
+                return;
+            }
+
+            if (!agentData.category) {
+                showToast('Category is required', 'error');
+                return;
+            }
+
             saveAgent(agentData);
         });
 
-        // Tag input
-        document.getElementById('tagInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const value = e.target.value.trim().toLowerCase();
-                if (value && !tags.includes(value)) {
-                    tags.push(value);
-                    renderTags();
-                }
-                e.target.value = '';
-            }
-        });
-
         // Filters
-        ['filterPlatform', 'filterDepartment', 'filterCategory', 'filterStatus'].forEach(id => {
+        ['filterSuite', 'filterStatus', 'filterCategory', 'filterPlatform'].forEach(id => {
             document.getElementById(id).addEventListener('change', fetchAgents);
         });
 
@@ -3348,13 +3355,63 @@
         setupLauncherInput();
 
         // =========================================================================
+        // Panel Resize
+        // =========================================================================
+
+        function initPanelResize() {
+            const panel = document.getElementById('agentListPanel');
+            const handle = document.getElementById('resizeHandle');
+
+            if (!panel || !handle) return;
+
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = panel.offsetWidth;
+                handle.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const delta = e.clientX - startX;
+                const newWidth = Math.max(280, Math.min(600, startWidth + delta));
+                panel.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    handle.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    // Save panel width to localStorage
+                    localStorage.setItem('agentListPanelWidth', panel.style.width);
+                }
+            });
+
+            // Restore saved width
+            const savedWidth = localStorage.getItem('agentListPanelWidth');
+            if (savedWidth) {
+                panel.style.width = savedWidth;
+            }
+        }
+
+        // =========================================================================
         // Initialize
         // =========================================================================
 
         async function init() {
             initTheme();
+            initPanelResize();
             await Promise.all([
-                fetchDepartments(),
                 fetchCategories(),
                 fetchContextAssets()
             ]);

@@ -37,6 +37,8 @@ module.exports = function(supabase) {
                 provider,
                 active,
                 search,
+                platform_type,
+                // department, status - columns don't exist in agents table
                 sort = 'name',
                 order = 'asc',
                 limit = 50,
@@ -57,6 +59,12 @@ module.exports = function(supabase) {
             if (provider && provider !== 'all') {
                 query = query.eq('llm_provider', provider);
             }
+            if (platform_type && platform_type !== 'all') {
+                query = query.eq('type', platform_type);
+            }
+            // Note: 'department' and 'status' columns don't exist in agents table
+            // Department filter would need to be added via schema migration
+            // Status is represented by is_active boolean
             if (active !== undefined) {
                 query = query.eq('is_active', active === 'true');
             }
@@ -65,7 +73,7 @@ module.exports = function(supabase) {
             }
 
             // Apply sorting
-            const sortColumn = ['name', 'created_at', 'usage_count', 'last_used_at'].includes(sort) 
+            const sortColumn = ['name', 'created_at', 'usage_count'].includes(sort)
                 ? sort : 'name';
             query = query.order(sortColumn, { ascending: order === 'asc' });
 
