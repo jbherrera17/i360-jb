@@ -1918,10 +1918,25 @@
                             <div class="form-group">
                                 <label class="form-label">Model</label>
                                 <select class="form-input form-select" id="formModel">
-                                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-                                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
-                                    <option value="gpt-4o">GPT-4o</option>
-                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                    <optgroup label="Claude (Anthropic)">
+                                        <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Default)</option>
+                                        <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
+                                        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                                        <option value="claude-opus-4-1-20250805">Claude Opus 4.1</option>
+                                        <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                                        <option value="claude-opus-4-20250514">Claude Opus 4</option>
+                                    </optgroup>
+                                    <optgroup label="GPT (OpenAI)">
+                                        <option value="gpt-4.1">GPT-4.1</option>
+                                        <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                                        <option value="gpt-4o">GPT-4o</option>
+                                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                    </optgroup>
+                                    <optgroup label="Reasoning (OpenAI)">
+                                        <option value="o3">o3</option>
+                                        <option value="o4-mini">o4-mini</option>
+                                        <option value="o3-mini">o3-mini</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -2480,7 +2495,7 @@
                 document.getElementById('formExternalId').value = agent.external_id || '';
                 document.getElementById('formEmbedUrl').value = agent.embed_config?.embed_url || '';
                 document.getElementById('formSystemPrompt').value = agent.system_prompt || '';
-                document.getElementById('formModel').value = agent.model || 'claude-sonnet-4-20250514';
+                document.getElementById('formModel').value = resolveModelName(agent.llm_model || agent.model);
                 document.getElementById('formTemperature').value = agent.temperature || 0.7;
                 document.getElementById('formDepartment').value = agent.department || '';
                 document.getElementById('formCategory').value = agent.category || '';
@@ -2744,7 +2759,7 @@
             // Set header info
             document.getElementById('launcherIcon').innerHTML = renderAgentIcon(agent.icon);
             document.getElementById('launcherName').textContent = agent.name;
-            document.getElementById('launcherModel').textContent = agent.llm_model || agent.model || 'Default Model';
+            document.getElementById('launcherModel').textContent = getModelDisplayName(agent.llm_model || agent.model);
 
             // Set welcome screen
             document.getElementById('welcomeAgentIcon').innerHTML = renderAgentIcon(agent.icon);
@@ -3142,6 +3157,50 @@
             return div.innerHTML;
         }
 
+        // Model name mapping for display
+        const MODEL_DISPLAY_NAMES = {
+            'claude-opus-4-5-20251101': 'Claude Opus 4.5',
+            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+            'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+            'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+            'claude-opus-4-20250514': 'Claude Opus 4',
+            'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+            // Legacy models (resolved to current)
+            'claude-3-5-sonnet-20241022': 'Claude Sonnet 4 (migrated)',
+            'claude-3-5-sonnet': 'Claude Sonnet 4 (migrated)',
+            'claude-3-opus': 'Claude Opus 4 (migrated)',
+            'claude-3-sonnet': 'Claude Sonnet 4 (migrated)',
+            'claude-3-haiku': 'Claude Haiku 4.5 (migrated)',
+            // OpenAI
+            'gpt-4.1': 'GPT-4.1',
+            'gpt-4.1-mini': 'GPT-4.1 Mini',
+            'gpt-4.1-nano': 'GPT-4.1 Nano',
+            'gpt-4o': 'GPT-4o',
+            'gpt-4o-mini': 'GPT-4o Mini',
+            'o3': 'o3',
+            'o4-mini': 'o4-mini',
+            'o3-mini': 'o3-mini'
+        };
+
+        // Resolve legacy model names to current valid models
+        const MODEL_ALIASES = {
+            'claude-3-5-sonnet-20241022': 'claude-sonnet-4-20250514',
+            'claude-3-5-sonnet': 'claude-sonnet-4-20250514',
+            'claude-3-opus': 'claude-opus-4-20250514',
+            'claude-3-sonnet': 'claude-sonnet-4-20250514',
+            'claude-3-haiku': 'claude-haiku-4-5-20251001'
+        };
+
+        function resolveModelName(modelId) {
+            if (!modelId) return 'claude-sonnet-4-5-20250929';
+            return MODEL_ALIASES[modelId] || modelId;
+        }
+
+        function getModelDisplayName(modelId) {
+            if (!modelId) return 'Default Model';
+            return MODEL_DISPLAY_NAMES[modelId] || modelId;
+        }
+
         function renderAgentIcon(icon) {
             if (!icon) return '🤖';
             // Check if it's an emoji (starts with emoji or is very short with special chars)
@@ -3223,7 +3282,7 @@
 
             if (platform === 'native') {
                 agentData.system_prompt = document.getElementById('formSystemPrompt').value;
-                agentData.model = document.getElementById('formModel').value;
+                agentData.llm_model = document.getElementById('formModel').value;
                 agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
             } else {
                 agentData.external_id = document.getElementById('formExternalId').value;

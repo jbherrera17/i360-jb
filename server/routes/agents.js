@@ -913,11 +913,22 @@ module.exports = function(supabase) {
     /**
      * POST /api/agents/:id/execute/stream
      * Execute agent with streaming response (SSE)
+     *
+     * Body params:
+     *   - message: User message (required)
+     *   - conversation_history: Previous messages array
+     *   - model_override: Optional model ID to override agent's default
+     *   - session_id: Browser session ID for tracking
      */
     router.post('/:id/execute/stream', async (req, res) => {
         try {
             const { id } = req.params;
-            const { message, conversation_history = [] } = req.body;
+            const {
+                message,
+                conversation_history = [],
+                model_override = null,
+                session_id = null
+            } = req.body;
 
             if (!message) {
                 return res.status(400).json({
@@ -938,6 +949,8 @@ module.exports = function(supabase) {
                 userMessage: message,
                 conversationHistory: conversation_history,
                 userId,
+                modelOverride: model_override,
+                sessionId: session_id,
                 onToken: (token) => {
                     res.write(`data: ${JSON.stringify({ type: 'token', content: token })}\n\n`);
                 },

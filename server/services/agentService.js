@@ -347,6 +347,11 @@ async function logExecution(agentId, userId, input, result) {
         response: result.content,
         llm_provider: result.provider,
         llm_model: result.model,
+        // Model tracking fields
+        agent_model: input.agentModel || result.model,
+        runtime_model: input.runtimeModel || result.model,
+        model_overridden: input.modelOverridden || false,
+        session_id: input.sessionId || null,
         temperature: input.temperature,
         prompt_tokens: result.usage?.prompt_tokens,
         completion_tokens: result.usage?.completion_tokens,
@@ -356,7 +361,7 @@ async function logExecution(agentId, userId, input, result) {
         error_message: result.error?.message,
         completed_at: new Date().toISOString()
     };
-    
+
     try {
         await supabase
             .from('agent_executions')
@@ -364,7 +369,7 @@ async function logExecution(agentId, userId, input, result) {
     } catch (error) {
         console.error('Failed to log execution:', error);
     }
-    
+
     return executionData.id;
 }
 
@@ -459,6 +464,8 @@ async function streamAgent(agentId, options = {}) {
         conversationHistory = [],
         userId = null,
         includeOnDemand = [],
+        modelOverride = null,
+        sessionId = null,
         onToken,
         onComplete,
         onError
@@ -472,60 +479,102 @@ async function streamAgent(agentId, options = {}) {
             throw new Error('Agent is not active');
         }
 
+        // Determine which model to use (override or agent default)
+        const agentDefaultModel = agent.llm_model;
+        const effectiveModel = modelOverride || agentDefaultModel;
+        const isOverridden = modelOverride !== null && modelOverride !== agentDefaultModel;
+
+        // Determine provider from model
+        let effectiveProvider = agent.llm_provider;
+        if (modelOverride) {
+            // Detect provider from model name
+            if (modelOverride.startsWith('claude') || modelOverride.startsWith('anthropic')) {
+                effectiveProvider = 'anthropic';
+            } else if (modelOverride.startsWith('gpt') || modelOverride.startsWith('o3') || modelOverride.startsWith('o4')) {
+                effectiveProvider = 'openai';
+            }
+        }
+
+        // Log model selection
+        if (isOverridden) {
+            console.log(`Model override: ${agentDefaultModel} -> ${effectiveModel} (provider: ${effectiveProvider})`);
+        }
+
         // Assemble context
         const contextResult = await assembleContext(agentId, {
             userQuery: userMessage,
             includeOnDemand,
             returnDetails: true
         }, supabase);
-        
+
         // Build system prompt with context
         const systemPrompt = buildSystemPrompt(agent, contextResult.context);
-        
+
         // Build messages
         const messages = buildMessages(userMessage, conversationHistory);
-        
+
+        // Create effective agent config with overridden model
+        const effectiveAgent = {
+            ...agent,
+            llm_model: effectiveModel,
+            llm_provider: effectiveProvider
+        };
+
         // Stream based on provider
         let result;
-        
-        switch (agent.llm_provider) {
+
+        switch (effectiveProvider) {
             case 'anthropic':
-                result = await streamWithAnthropic(agent, systemPrompt, messages, onToken);
+                result = await streamWithAnthropic(effectiveAgent, systemPrompt, messages, onToken);
                 break;
             case 'openai':
-                result = await streamWithOpenAI(agent, systemPrompt, messages, onToken);
+                result = await streamWithOpenAI(effectiveAgent, systemPrompt, messages, onToken);
                 break;
             default:
-                throw new Error(`Unsupported provider: ${agent.llm_provider}`);
+                throw new Error(`Unsupported provider: ${effectiveProvider}`);
         }
-        
-        // Log execution
+
+        // Add model metadata to result
+        result.agent_model = agentDefaultModel;
+        result.runtime_model = effectiveModel;
+        result.model_overridden = isOverridden;
+        result.session_id = sessionId;
+
+        // Log execution with model metadata
         const executionId = await logExecution(agentId, userId, {
             userMessage,
             conversationHistory,
             contextDetails: contextResult.assets,
-            temperature: agent.temperature
+            temperature: agent.temperature,
+            agentModel: agentDefaultModel,
+            runtimeModel: effectiveModel,
+            modelOverridden: isOverridden,
+            sessionId: sessionId
         }, result);
-        
+
         // Call completion callback
         if (onComplete) {
             onComplete({
                 execution_id: executionId,
                 context_used: contextResult.assets,
                 usage: result.usage,
-                duration_ms: result.duration_ms
+                duration_ms: result.duration_ms,
+                agent_model: agentDefaultModel,
+                runtime_model: effectiveModel,
+                model_overridden: isOverridden
             });
         }
-        
+
     } catch (error) {
         console.error('Error streaming agent:', error);
-        
+
         // Log failed execution
         await logExecution(agentId, userId, {
             userMessage,
-            conversationHistory
+            conversationHistory,
+            sessionId: sessionId
         }, { error });
-        
+
         if (onError) {
             onError(error);
         }

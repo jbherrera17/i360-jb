@@ -180,6 +180,145 @@
             font-family: var(--font-mono);
         }
 
+        /* Model Selector Dropdown */
+        .model-selector {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .model-selector-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .model-selector-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        .model-selector-btn.overridden {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .model-selector-btn .chevron {
+            width: 12px;
+            height: 12px;
+            transition: transform var(--transition-fast);
+        }
+
+        .model-selector.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .model-selector-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            min-width: 240px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .model-selector.open .model-selector-menu {
+            display: block;
+            animation: fadeInDown 0.15s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .model-group-label {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .model-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .model-option:last-child {
+            border-bottom: none;
+        }
+
+        .model-option:hover {
+            background: var(--bg-hover);
+        }
+
+        .model-option.selected {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .model-option.default {
+            border-left: 3px solid var(--success);
+        }
+
+        .model-option-name {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
+        .model-option-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .model-option-badge.default {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .model-option-badge.override {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .model-option .check-icon {
+            width: 14px;
+            height: 14px;
+            color: var(--primary);
+            opacity: 0;
+        }
+
+        .model-option.selected .check-icon {
+            opacity: 1;
+        }
+
         .header-actions {
             display: flex;
             align-items: center;
@@ -726,7 +865,62 @@
                 <h1 id="agentName">Loading...</h1>
                 <div class="agent-meta">
                     <span class="platform-badge native" id="platformBadge">native</span>
-                    <span class="model-info" id="modelInfo"></span>
+                    <!-- Model Selector Dropdown -->
+                    <div class="model-selector" id="modelSelector">
+                        <button class="model-selector-btn" id="modelSelectorBtn" title="Click to change model">
+                            <span id="modelDisplayName">Default Model</span>
+                            <i data-lucide="chevron-down" class="chevron"></i>
+                        </button>
+                        <div class="model-selector-menu" id="modelSelectorMenu">
+                            <!-- Agent Default -->
+                            <div class="model-group-label">Agent Default</div>
+                            <div class="model-option default selected" data-model="default" id="defaultModelOption">
+                                <span class="model-option-name" id="defaultModelName">Loading...</span>
+                                <span class="model-option-badge default">Default</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <!-- Anthropic Models -->
+                            <div class="model-group-label">Anthropic Claude</div>
+                            <div class="model-option" data-model="claude-opus-4-5-20251101">
+                                <span class="model-option-name">Claude Opus 4.5</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="claude-sonnet-4-5-20250929">
+                                <span class="model-option-name">Claude Sonnet 4.5</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="claude-haiku-4-5-20251001">
+                                <span class="model-option-name">Claude Haiku 4.5</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="claude-opus-4-20250514">
+                                <span class="model-option-name">Claude Opus 4</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="claude-sonnet-4-20250514">
+                                <span class="model-option-name">Claude Sonnet 4</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <!-- OpenAI Models -->
+                            <div class="model-group-label">OpenAI GPT</div>
+                            <div class="model-option" data-model="gpt-4.1">
+                                <span class="model-option-name">GPT-4.1</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="gpt-4.1-mini">
+                                <span class="model-option-name">GPT-4.1 Mini</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="gpt-4o">
+                                <span class="model-option-name">GPT-4o</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                            <div class="model-option" data-model="gpt-4o-mini">
+                                <span class="model-option-name">GPT-4o Mini</span>
+                                <i data-lucide="check" class="check-icon"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -818,6 +1012,9 @@
         let conversationHistory = [];
         let isStreaming = false;
         let contextData = null;
+        let selectedModelOverride = null; // null means use agent default
+        let agentDefaultModel = null; // Store the agent's configured model
+        let sessionId = null; // Browser session ID for tracking
 
         // =====================================================================
         // INITIALIZATION
@@ -874,8 +1071,16 @@
             badge.textContent = type;
             badge.className = `platform-badge ${type}`;
 
-            const model = agent.llm_model || agent.model || '';
-            document.getElementById('modelInfo').textContent = model;
+            // Store and display the agent's default model
+            agentDefaultModel = agent.llm_model || agent.model || 'claude-sonnet-4-5-20250929';
+            document.getElementById('defaultModelName').textContent = getModelDisplayName(agentDefaultModel);
+            document.getElementById('modelDisplayName').textContent = getModelDisplayName(agentDefaultModel);
+
+            // Initialize model selector
+            initModelSelector();
+
+            // Re-render lucide icons in the selector
+            lucide.createIcons();
         }
 
         // =====================================================================
@@ -976,14 +1181,23 @@
                 const assistantDiv = addMessage('assistant', '', true);
                 const contentDiv = assistantDiv.querySelector('.message-content');
 
+                // Build request body with model override if set
+                const requestBody = {
+                    message: message,
+                    conversation_history: conversationHistory.slice(0, -1),
+                    session_id: sessionId
+                };
+
+                // Add model override if user selected a different model
+                if (selectedModelOverride) {
+                    requestBody.model_override = selectedModelOverride;
+                }
+
                 // Stream response
                 const response = await fetch(`/api/agents/${currentAgent.id}/execute/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: message,
-                        conversation_history: conversationHistory.slice(0, -1)
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
@@ -1288,6 +1502,35 @@
             return div.innerHTML;
         }
 
+        // Model name mapping for display
+        const MODEL_DISPLAY_NAMES = {
+            'claude-opus-4-5-20251101': 'Claude Opus 4.5',
+            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+            'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+            'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+            'claude-opus-4-20250514': 'Claude Opus 4',
+            'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+            // Legacy models (resolved to current)
+            'claude-3-5-sonnet-20241022': 'Claude Sonnet 4',
+            'claude-3-5-sonnet': 'Claude Sonnet 4',
+            'claude-3-opus': 'Claude Opus 4',
+            'claude-3-sonnet': 'Claude Sonnet 4',
+            'claude-3-haiku': 'Claude Haiku 4.5',
+            // OpenAI
+            'gpt-4.1': 'GPT-4.1',
+            'gpt-4.1-mini': 'GPT-4.1 Mini',
+            'gpt-4o': 'GPT-4o',
+            'gpt-4o-mini': 'GPT-4o Mini',
+            'o3': 'o3',
+            'o4-mini': 'o4-mini',
+            'o3-mini': 'o3-mini'
+        };
+
+        function getModelDisplayName(modelId) {
+            if (!modelId) return 'Default Model';
+            return MODEL_DISPLAY_NAMES[modelId] || modelId;
+        }
+
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -1299,6 +1542,102 @@
                 toast.remove();
             }, 3000);
         }
+
+        // =====================================================================
+        // MODEL SELECTOR
+        // =====================================================================
+
+        function initModelSelector() {
+            const selector = document.getElementById('modelSelector');
+            const btn = document.getElementById('modelSelectorBtn');
+            const menu = document.getElementById('modelSelectorMenu');
+
+            // Toggle dropdown
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selector.classList.toggle('open');
+            });
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!selector.contains(e.target)) {
+                    selector.classList.remove('open');
+                }
+            });
+
+            // Handle model selection
+            menu.querySelectorAll('.model-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    selectModel(option.dataset.model);
+                    selector.classList.remove('open');
+                });
+            });
+        }
+
+        function selectModel(modelId) {
+            const menu = document.getElementById('modelSelectorMenu');
+            const btn = document.getElementById('modelSelectorBtn');
+            const displaySpan = document.getElementById('modelDisplayName');
+
+            // Clear previous selection
+            menu.querySelectorAll('.model-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Set new selection
+            const selectedOption = menu.querySelector(`[data-model="${modelId}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+
+            if (modelId === 'default') {
+                // Use agent default
+                selectedModelOverride = null;
+                displaySpan.textContent = getModelDisplayName(agentDefaultModel);
+                btn.classList.remove('overridden');
+                btn.title = 'Using agent default model. Click to change.';
+            } else {
+                // Override model
+                selectedModelOverride = modelId;
+                displaySpan.textContent = getModelDisplayName(modelId) + ' (override)';
+                btn.classList.add('overridden');
+                btn.title = `Overriding to ${getModelDisplayName(modelId)}. Click to change.`;
+            }
+
+            // Re-render icons
+            lucide.createIcons();
+
+            // Show toast notification
+            const modelName = modelId === 'default'
+                ? getModelDisplayName(agentDefaultModel) + ' (default)'
+                : getModelDisplayName(modelId);
+            showToast(`Model set to ${modelName}`);
+        }
+
+        function getActiveModel() {
+            // Returns the model that will be used for the next request
+            return selectedModelOverride || agentDefaultModel;
+        }
+
+        function isModelOverridden() {
+            return selectedModelOverride !== null;
+        }
+
+        // =====================================================================
+        // SESSION TRACKING
+        // =====================================================================
+
+        function getOrCreateSessionId() {
+            let id = localStorage.getItem('i360_session_id');
+            if (!id) {
+                id = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('i360_session_id', id);
+            }
+            return id;
+        }
+
+        // Initialize session ID
+        sessionId = getOrCreateSessionId();
 
         // =====================================================================
         // THEME
