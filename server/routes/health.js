@@ -15,22 +15,28 @@ router.get('/', async (req, res) => {
     const services = {
         anthropic: false,
         openai: false,
+        mindstudio: false,
         voice: false,
         search: false,
         supabase: false
     };
-    
+
     // Check Anthropic
     if (process.env.ANTHROPIC_API_KEY) {
         services.anthropic = true;
     }
-    
+
     // Check OpenAI
     if (process.env.OPENAI_API_KEY) {
         services.openai = true;
         services.voice = true; // Voice uses OpenAI
     }
-    
+
+    // Check MindStudio
+    if (process.env.MINDSTUDIO_API_KEY) {
+        services.mindstudio = true;
+    }
+
     // Check Search (Brave, Tavily, or Serper)
     if (process.env.BRAVE_SEARCH_API_KEY || process.env.BRAVE_API_KEY || process.env.TAVILY_API_KEY || process.env.SERPER_API_KEY) {
         services.search = true;

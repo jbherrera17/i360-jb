@@ -9,9 +9,10 @@
  */
 
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { assembleContext, estimateTokens } = require('../services/contextInjection');
 const { executeAgent, streamAgent } = require('../services/agentService');
+const { generateSignedEmbedUrl } = require('../services/mindstudioService');
 
 /**
  * Agent Routes Factory
@@ -367,21 +368,41 @@ module.exports = function(supabase) {
                 name,
                 description,
                 icon = '🤖',
+                type = 'custom',
                 category = 'custom',
+                suite = 'execute',
                 llm_provider = 'anthropic',
                 llm_model = 'claude-sonnet-4-5-20250929',
                 temperature = 0.7,
                 max_tokens = 4096,
                 system_prompt,
+                mindstudio_workflow_id,
+                config,
+                is_active = true,
                 conversation_starters = [],
                 guardrails = {}
             } = req.body;
 
-            // Validate required fields
-            if (!name || !system_prompt) {
+            // Validate required fields based on type
+            if (!name) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Name and system_prompt are required'
+                    error: 'Name is required'
+                });
+            }
+
+            // Native agents require system_prompt, MindStudio agents require app ID
+            if ((type === 'custom' || type === 'llm') && !system_prompt) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'System prompt is required for native agents'
+                });
+            }
+
+            if (type === 'mindstudio' && !mindstudio_workflow_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'MindStudio App ID is required'
                 });
             }
 
@@ -394,24 +415,38 @@ module.exports = function(supabase) {
                 name,
                 description,
                 icon,
+                type,
                 category,
-                llm_provider,
-                llm_model,
-                temperature: parseFloat(temperature),
-                max_tokens: parseInt(max_tokens),
-                system_prompt,
-                conversation_starters,
-                guardrails: {
+                suite,
+                is_active,
+                created_by: userId
+            };
+
+            // Add type-specific fields
+            if (type === 'mindstudio') {
+                agentData.mindstudio_workflow_id = mindstudio_workflow_id;
+                agentData.config = config || {};
+                // MindStudio agents use placeholders to satisfy NOT NULL constraints
+                agentData.llm_provider = 'mindstudio';
+                agentData.llm_model = 'mindstudio-workflow';
+                agentData.system_prompt = '[MindStudio workflow - no local system prompt]';
+            } else {
+                // Native agents use LLM settings
+                agentData.llm_provider = llm_provider;
+                agentData.llm_model = llm_model;
+                agentData.temperature = parseFloat(temperature);
+                agentData.max_tokens = parseInt(max_tokens);
+                agentData.system_prompt = system_prompt;
+                agentData.conversation_starters = conversation_starters;
+                agentData.guardrails = {
                     max_context_tokens: 8000,
                     require_context: false,
                     allowed_topics: [],
                     blocked_topics: [],
                     output_format: null,
                     ...guardrails
-                },
-                is_active: true,
-                created_by: userId
-            };
+                };
+            }
 
             const { data, error } = await supabase
                 .from('agents')
@@ -977,6 +1012,67 @@ module.exports = function(supabase) {
             console.error('Error streaming agent:', error);
             res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
             res.end();
+        }
+    });
+
+    /**
+     * POST /api/agents/:id/embed-url
+     * Generate a signed embed URL for MindStudio agents
+     * Required for authenticated iframe embedding
+     */
+    router.post('/:id/embed-url', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { user_id } = req.body;
+
+            // Get the agent to find the MindStudio app ID
+            const { data: agent, error: agentError } = await supabase
+                .from('agents')
+                .select('id, name, type, mindstudio_workflow_id, config')
+                .eq('id', id)
+                .single();
+
+            if (agentError) throw agentError;
+            if (!agent) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Agent not found'
+                });
+            }
+
+            if (agent.type !== 'mindstudio') {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Agent is not a MindStudio agent'
+                });
+            }
+
+            const mindstudioAppId = agent.mindstudio_workflow_id || agent.config?.mindstudio_app_id;
+            if (!mindstudioAppId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Agent missing MindStudio app ID'
+                });
+            }
+
+            // Generate a unique user ID if not provided
+            const userId = user_id || req.user?.id || `anon-${uuidv4().slice(0, 8)}`;
+
+            const result = await generateSignedEmbedUrl(mindstudioAppId, userId);
+
+            res.json({
+                success: true,
+                embed_url: result.url,
+                agent_id: id,
+                mindstudio_app_id: mindstudioAppId
+            });
+
+        } catch (error) {
+            console.error('Error generating embed URL:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
         }
     });
 

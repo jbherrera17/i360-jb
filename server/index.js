@@ -51,11 +51,17 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "blob:", "https:"],
             mediaSrc: ["'self'", "blob:"],
             connectSrc: [
-                "'self'", 
-                "https://api.anthropic.com", 
+                "'self'",
+                "https://api.anthropic.com",
                 "https://api.openai.com",
                 "https://*.supabase.co",
-                "https://unpkg.com"
+                "https://unpkg.com",
+                "https://api.mindstudio.ai"
+            ],
+            frameSrc: [
+                "'self'",
+                "https://app.mindstudio.ai",
+                "https://*.mindstudio.ai"
             ]
         }
     }

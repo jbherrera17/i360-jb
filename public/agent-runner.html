@@ -1051,12 +1051,23 @@
             currentAgent = data.data;
             updateHeader(currentAgent);
 
-            // Determine view based on agent type
-            const agentType = currentAgent.source_type || 'native';
+            // Determine view based on agent type and execution mode
+            const agentType = currentAgent.type || currentAgent.source_type || 'custom';
+            const executionMode = currentAgent.config?.execution_mode || 'api';
 
-            if (agentType === 'mindstudio' || agentType === 'pickaxe') {
+            // MindStudio agents can run via API (chat view) or embed (iframe)
+            if (agentType === 'mindstudio') {
+                // Embed mode: either has static embed_url OR has mindstudio_workflow_id for signed URL generation
+                if (executionMode === 'embed' && (currentAgent.config?.embed_url || currentAgent.mindstudio_workflow_id)) {
+                    await showEmbedView(currentAgent);
+                } else {
+                    // API mode - use chat view with backend execution
+                    await showChatView(currentAgent);
+                }
+            } else if (agentType === 'pickaxe') {
                 showEmbedView(currentAgent);
             } else {
+                // Native agents (custom, llm) use chat view
                 await showChatView(currentAgent);
             }
         }
@@ -1087,14 +1098,35 @@
         // EMBED VIEW (MindStudio / Pickaxe)
         // =====================================================================
 
-        function showEmbedView(agent) {
+        async function showEmbedView(agent) {
             hideLoading();
             document.getElementById('embedView').style.display = 'flex';
 
-            const embedUrl = agent.embed_config?.embed_url;
+            let embedUrl = agent.config?.embed_url || agent.embed_config?.embed_url;
+
+            // For MindStudio agents, generate a signed embed URL from the backend
+            if (agent.type === 'mindstudio' && agent.mindstudio_workflow_id) {
+                try {
+                    const response = await fetch(`/api/agents/${agent.id}/embed-url`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    const result = await response.json();
+                    if (result.success && result.embed_url) {
+                        embedUrl = result.embed_url;
+                        console.log('Generated signed MindStudio embed URL');
+                    } else {
+                        console.error('Failed to generate signed URL:', result.error);
+                        // Fall back to static embed URL if available
+                    }
+                } catch (err) {
+                    console.error('Error fetching signed embed URL:', err);
+                }
+            }
 
             if (!embedUrl) {
-                showError('This agent does not have an embed URL configured. Please edit the agent and add the embed URL.');
+                showError('This agent does not have an embed URL configured. Please edit the agent and add the embed URL, or ensure MindStudio App ID is set.');
                 return;
             }
 

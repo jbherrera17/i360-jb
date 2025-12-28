@@ -11,6 +11,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 const { randomUUID: uuidv4 } = require('crypto');
 const { assembleContext, estimateTokens } = require('./contextInjection');
+const mindstudioService = require('./mindstudioService');
 
 // Initialize clients
 const supabase = createClient(
@@ -402,24 +403,36 @@ async function executeAgent(agentId, options = {}) {
             returnDetails: true
         }, supabase);
         
-        // Build system prompt with context
-        const systemPrompt = buildSystemPrompt(agent, contextResult.context);
-        
-        // Build messages
-        const messages = buildMessages(userMessage, conversationHistory);
-        
-        // Execute based on provider
+        // Execute based on agent type
         let result;
-        
-        switch (agent.llm_provider) {
-            case 'anthropic':
-                result = await executeWithAnthropic(agent, systemPrompt, messages);
-                break;
-            case 'openai':
-                result = await executeWithOpenAI(agent, systemPrompt, messages);
-                break;
-            default:
-                throw new Error(`Unsupported provider: ${agent.llm_provider}`);
+
+        // Check if this is a MindStudio agent (external execution)
+        if (agent.type === 'mindstudio') {
+            // MindStudio agents use external API
+            result = await mindstudioService.executeAgent(
+                agent,
+                userMessage,
+                contextResult.context,
+                conversationHistory
+            );
+        } else {
+            // Native LLM execution (custom or llm type)
+            // Build system prompt with context
+            const systemPrompt = buildSystemPrompt(agent, contextResult.context);
+
+            // Build messages
+            const messages = buildMessages(userMessage, conversationHistory);
+
+            switch (agent.llm_provider) {
+                case 'anthropic':
+                    result = await executeWithAnthropic(agent, systemPrompt, messages);
+                    break;
+                case 'openai':
+                    result = await executeWithOpenAI(agent, systemPrompt, messages);
+                    break;
+                default:
+                    throw new Error(`Unsupported provider: ${agent.llm_provider}`);
+            }
         }
         
         // Log execution
@@ -507,31 +520,57 @@ async function streamAgent(agentId, options = {}) {
             returnDetails: true
         }, supabase);
 
-        // Build system prompt with context
-        const systemPrompt = buildSystemPrompt(agent, contextResult.context);
-
-        // Build messages
-        const messages = buildMessages(userMessage, conversationHistory);
-
-        // Create effective agent config with overridden model
-        const effectiveAgent = {
-            ...agent,
-            llm_model: effectiveModel,
-            llm_provider: effectiveProvider
-        };
-
-        // Stream based on provider
+        // Stream based on agent type
         let result;
 
-        switch (effectiveProvider) {
-            case 'anthropic':
-                result = await streamWithAnthropic(effectiveAgent, systemPrompt, messages, onToken);
-                break;
-            case 'openai':
-                result = await streamWithOpenAI(effectiveAgent, systemPrompt, messages, onToken);
-                break;
-            default:
-                throw new Error(`Unsupported provider: ${effectiveProvider}`);
+        // Check if this is a MindStudio agent (external execution)
+        if (agent.type === 'mindstudio') {
+            // MindStudio doesn't support streaming - execute and emit full response
+            const startTime = Date.now();
+            const msResult = await mindstudioService.executeAgent(
+                agent,
+                userMessage,
+                contextResult.context,
+                conversationHistory
+            );
+
+            // Emit the full response as a single token
+            if (onToken && msResult.content) {
+                onToken(msResult.content);
+            }
+
+            result = {
+                content: msResult.content,
+                model: 'mindstudio-workflow',
+                provider: 'mindstudio',
+                usage: { billing_cost: msResult.billingCost },
+                duration_ms: Date.now() - startTime
+            };
+        } else {
+            // Native LLM execution (custom or llm type)
+            // Build system prompt with context
+            const systemPrompt = buildSystemPrompt(agent, contextResult.context);
+
+            // Build messages
+            const messages = buildMessages(userMessage, conversationHistory);
+
+            // Create effective agent config with overridden model
+            const effectiveAgent = {
+                ...agent,
+                llm_model: effectiveModel,
+                llm_provider: effectiveProvider
+            };
+
+            switch (effectiveProvider) {
+                case 'anthropic':
+                    result = await streamWithAnthropic(effectiveAgent, systemPrompt, messages, onToken);
+                    break;
+                case 'openai':
+                    result = await streamWithOpenAI(effectiveAgent, systemPrompt, messages, onToken);
+                    break;
+                default:
+                    throw new Error(`Unsupported provider: ${effectiveProvider}`);
+            }
         }
 
         // Add model metadata to result

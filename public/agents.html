@@ -195,6 +195,9 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .filter-group {
@@ -512,6 +515,55 @@
             flex-direction: column;
             background: var(--bg-primary);
             overflow: hidden;
+            position: relative;
+        }
+
+        /* Right Sidebar */
+        .detail-sidebar {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            min-width: 200px;
+            max-width: 500px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+            z-index: 5;
+        }
+
+        .detail-sidebar-content {
+            padding: 1.5rem;
+        }
+
+        .detail-sidebar .info-grid {
+            gap: 0.75rem;
+        }
+
+        .detail-sidebar .info-item {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 0.875rem;
+            text-align: center;
+        }
+
+        /* Right Sidebar Resize Handle */
+        .sidebar-resize-handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+            transition: background 0.15s ease;
+        }
+
+        .sidebar-resize-handle:hover,
+        .sidebar-resize-handle.active {
+            background: var(--primary);
         }
 
         .detail-header {
@@ -1815,58 +1867,65 @@
                         <div class="detail-description" id="detailDescription">—</div>
                     </div>
 
-                    <div class="detail-content">
-                        <!-- Quick Stats -->
-                        <div class="info-grid" style="margin-bottom: 1.5rem;">
-                            <div class="info-item">
-                                <div class="info-label">Suite</div>
-                                <div class="info-value" id="detailSuite">—</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Category</div>
-                                <div class="info-value" id="detailCategory">—</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Total Runs</div>
-                                <div class="info-value" id="detailUsage">0</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Status</div>
-                                <div class="info-value" id="detailStatusText">Active</div>
-                            </div>
-                        </div>
-
-                        <!-- Context Mappings Section -->
-                        <div class="detail-section">
-                            <div class="detail-section-title">
-                                <i data-lucide="link" style="width:16px;height:16px;"></i>
-                                Context Mappings
-                            </div>
-                            <div class="context-mappings">
-                                <div class="mapping-header">
-                                    <h4>Assigned Context Assets</h4>
-                                    <button class="btn btn-secondary" id="btnAddContext">
-                                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
-                                        Add
-                                    </button>
-                                </div>
-                                <div class="mapping-list" id="mappingList">
-                                    <div class="empty-state" style="padding: 2rem;">
-                                        <p>No context assets mapped to this agent.</p>
+                    <!-- Right Sidebar -->
+                    <div class="detail-sidebar" id="detailSidebar">
+                        <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
+                        <div class="detail-sidebar-content">
+                            <!-- Overview Section -->
+                            <div class="sidebar-section">
+                                <div class="sidebar-title">Overview</div>
+                                <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                                    <div class="info-item">
+                                        <div class="info-label">Suite</div>
+                                        <div class="info-value" id="detailSuite">—</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Category</div>
+                                        <div class="info-value" id="detailCategory">—</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Total Runs</div>
+                                        <div class="info-value" id="detailUsage">0</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Status</div>
+                                        <div class="info-value" id="detailStatusText">Active</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Execution History Section -->
-                        <div class="detail-section">
-                            <div class="detail-section-title">
-                                <i data-lucide="history" style="width:16px;height:16px;"></i>
-                                Recent Executions
+                            <!-- Context Mappings Section -->
+                            <div class="sidebar-section">
+                                <div class="sidebar-title">
+                                    <i data-lucide="link" style="width:14px;height:14px;"></i>
+                                    Context Mappings
+                                </div>
+                                <div class="context-mappings">
+                                    <div class="mapping-header">
+                                        <h4>Assigned Context Assets</h4>
+                                        <button class="btn btn-secondary" id="btnAddContext">
+                                            <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div class="mapping-list" id="mappingList">
+                                        <div class="empty-state" style="padding: 2rem;">
+                                            <p>No context assets mapped to this agent.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="execution-history" id="executionHistory">
-                                <div class="empty-state" style="padding: 1.5rem;">
-                                    <p>No executions yet. Launch the agent to start a conversation.</p>
+
+                            <!-- Execution History Section -->
+                            <div class="sidebar-section">
+                                <div class="sidebar-title">
+                                    <i data-lucide="history" style="width:14px;height:14px;"></i>
+                                    Recent Executions
+                                </div>
+                                <div class="execution-history" id="executionHistory">
+                                    <div class="empty-state" style="padding: 1.5rem;">
+                                        <p>No executions yet. Launch the agent to start a conversation.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1939,20 +1998,34 @@
                         </div>
                     </div>
 
-                    <!-- Platform-specific fields -->
+                    <!-- Platform-specific fields (MindStudio) -->
                     <div class="platform-fields" id="platformFieldsEmbed">
                         <div class="platform-fields-title">
-                            <i data-lucide="code" style="width:14px;height:14px;"></i>
-                            Embed Configuration
+                            <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+                            MindStudio Configuration
                         </div>
                         <div class="form-group">
-                            <label class="form-label">External ID</label>
-                            <input type="text" class="form-input" id="formExternalId" placeholder="Workflow or agent ID from platform">
+                            <label class="form-label">App ID *</label>
+                            <input type="text" class="form-input" id="formExternalId" placeholder="e.g., 46f2e54b-f2fv-4055-bbf4-h55555a7c3b6">
+                            <div class="form-hint">The MindStudio App ID from your app settings</div>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">Workflow Name</label>
+                            <input type="text" class="form-input" id="formWorkflowName" placeholder="Optional: specific workflow to run">
+                            <div class="form-hint">Leave empty to use the default entry workflow</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Execution Mode</label>
+                            <select class="form-input form-select" id="formExecutionMode">
+                                <option value="api">API (Backend)</option>
+                                <option value="embed">Embed (Iframe)</option>
+                            </select>
+                            <div class="form-hint">API mode streams through backend; Embed mode opens MindStudio UI</div>
+                        </div>
+                        <div class="form-group" id="embedUrlGroup" style="display: none;">
                             <label class="form-label">Embed URL</label>
                             <input type="text" class="form-input" id="formEmbedUrl" placeholder="https://app.mindstudio.ai/embed/...">
-                            <div class="form-hint">The iframe embed URL from MindStudio or PickAxe</div>
+                            <div class="form-hint">The iframe embed URL from MindStudio</div>
                         </div>
                     </div>
 
@@ -2505,19 +2578,27 @@
                 document.getElementById('formDescription').value = agent.description || '';
                 document.getElementById('formPlatform').value = agent.type || 'custom';
                 document.getElementById('formStatus').value = agent.is_active ? 'active' : 'draft';
-                document.getElementById('formExternalId').value = agent.external_id || '';
-                document.getElementById('formEmbedUrl').value = agent.embed_config?.embed_url || '';
+                document.getElementById('formSuite').value = agent.suite || 'execute';
+                document.getElementById('formCategory').value = agent.category || '';
+
+                // MindStudio fields
+                document.getElementById('formExternalId').value = agent.mindstudio_workflow_id || agent.config?.mindstudio_app_id || '';
+                document.getElementById('formWorkflowName').value = agent.config?.mindstudio_workflow || '';
+                document.getElementById('formExecutionMode').value = agent.config?.execution_mode || 'api';
+                document.getElementById('formEmbedUrl').value = agent.config?.embed_url || '';
+
+                // Native LLM fields
                 document.getElementById('formSystemPrompt').value = agent.system_prompt || '';
                 document.getElementById('formModel').value = resolveModelName(agent.llm_model || agent.model);
                 document.getElementById('formTemperature').value = agent.temperature || 0.7;
-                document.getElementById('formSuite').value = agent.suite || 'execute';
-                document.getElementById('formCategory').value = agent.category || '';
             } else {
                 document.getElementById('agentForm').reset();
                 document.getElementById('formIcon').value = '🤖';
+                document.getElementById('formExecutionMode').value = 'api';
             }
 
             updatePlatformFields();
+            updateExecutionModeFields();
             agentModal.classList.add('active');
         }
 
@@ -2559,6 +2640,17 @@
             } else {
                 embedFields.style.display = 'block';
                 nativeFields.style.display = 'none';
+            }
+        }
+
+        function updateExecutionModeFields() {
+            const mode = document.getElementById('formExecutionMode').value;
+            const embedUrlGroup = document.getElementById('embedUrlGroup');
+
+            if (mode === 'embed') {
+                embedUrlGroup.style.display = 'block';
+            } else {
+                embedUrlGroup.style.display = 'none';
             }
         }
 
@@ -3272,6 +3364,7 @@
         });
 
         document.getElementById('formPlatform').addEventListener('change', updatePlatformFields);
+        document.getElementById('formExecutionMode').addEventListener('change', updateExecutionModeFields);
 
         document.getElementById('btnSave').addEventListener('click', (e) => {
             e.preventDefault();
@@ -3295,13 +3388,22 @@
                 agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
                 agentData.llm_provider = agentData.llm_model?.startsWith('gpt') ? 'openai' : 'anthropic';
             } else {
-                // MindStudio embedded agents - store config in the config column
+                // MindStudio agents - store config for API or embed execution
+                const executionMode = document.getElementById('formExecutionMode').value;
                 agentData.mindstudio_workflow_id = document.getElementById('formExternalId').value;
                 agentData.config = {
-                    embed_type: 'iframe',
-                    embed_url: document.getElementById('formEmbedUrl').value,
+                    execution_mode: executionMode,
+                    mindstudio_app_id: document.getElementById('formExternalId').value,
+                    mindstudio_workflow: document.getElementById('formWorkflowName').value || null,
+                    embed_url: document.getElementById('formEmbedUrl').value || null,
                     theme: document.documentElement.getAttribute('data-theme') || 'dark'
                 };
+
+                // Validate App ID for MindStudio
+                if (!agentData.mindstudio_workflow_id) {
+                    showToast('MindStudio App ID is required', 'error');
+                    return;
+                }
             }
 
             if (!agentData.name) {
@@ -3359,48 +3461,100 @@
         // =========================================================================
 
         function initPanelResize() {
+            // Agent List Panel Resize (left panel)
             const panel = document.getElementById('agentListPanel');
             const handle = document.getElementById('resizeHandle');
 
-            if (!panel || !handle) return;
+            if (panel && handle) {
+                let isResizing = false;
+                let startX = 0;
+                let startWidth = 0;
 
-            let isResizing = false;
-            let startX = 0;
-            let startWidth = 0;
+                handle.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startWidth = panel.offsetWidth;
+                    handle.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    e.preventDefault();
+                });
 
-            handle.addEventListener('mousedown', (e) => {
-                isResizing = true;
-                startX = e.clientX;
-                startWidth = panel.offsetWidth;
-                handle.classList.add('active');
-                document.body.style.cursor = 'col-resize';
-                document.body.style.userSelect = 'none';
-                e.preventDefault();
-            });
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizing) return;
 
-            document.addEventListener('mousemove', (e) => {
-                if (!isResizing) return;
+                    const delta = e.clientX - startX;
+                    const newWidth = Math.max(220, Math.min(500, startWidth + delta));
+                    panel.style.width = newWidth + 'px';
+                });
 
-                const delta = e.clientX - startX;
-                const newWidth = Math.max(280, Math.min(600, startWidth + delta));
-                panel.style.width = newWidth + 'px';
-            });
+                document.addEventListener('mouseup', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        handle.classList.remove('active');
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                        localStorage.setItem('agentListPanelWidth', panel.style.width);
+                    }
+                });
 
-            document.addEventListener('mouseup', () => {
-                if (isResizing) {
-                    isResizing = false;
-                    handle.classList.remove('active');
-                    document.body.style.cursor = '';
-                    document.body.style.userSelect = '';
-                    // Save panel width to localStorage
-                    localStorage.setItem('agentListPanelWidth', panel.style.width);
+                // Restore saved width
+                const savedWidth = localStorage.getItem('agentListPanelWidth');
+                if (savedWidth) {
+                    panel.style.width = savedWidth;
                 }
-            });
+            }
 
-            // Restore saved width
-            const savedWidth = localStorage.getItem('agentListPanelWidth');
-            if (savedWidth) {
-                panel.style.width = savedWidth;
+            // Right Sidebar Resize
+            const sidebar = document.getElementById('detailSidebar');
+            const sidebarHandle = document.getElementById('sidebarResizeHandle');
+
+            if (sidebar && sidebarHandle) {
+                let isResizingSidebar = false;
+                let sidebarStartX = 0;
+                let sidebarStartWidth = 0;
+
+                // Clear any invalid saved width
+                const savedWidth = localStorage.getItem('detailSidebarWidth');
+                if (savedWidth) {
+                    const parsed = parseInt(savedWidth);
+                    if (parsed >= 200 && parsed <= 500) {
+                        sidebar.style.width = parsed + 'px';
+                    } else {
+                        localStorage.removeItem('detailSidebarWidth');
+                    }
+                }
+
+                sidebarHandle.addEventListener('mousedown', (e) => {
+                    isResizingSidebar = true;
+                    sidebarStartX = e.clientX;
+                    sidebarStartWidth = sidebar.offsetWidth;
+                    sidebarHandle.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizingSidebar) return;
+
+                    // Resize handle is on LEFT of sidebar
+                    // Drag left = sidebar wider, drag right = sidebar narrower
+                    const mouseDelta = sidebarStartX - e.clientX;
+                    const newWidth = sidebarStartWidth + mouseDelta;
+                    const clampedWidth = Math.max(200, Math.min(500, newWidth));
+                    sidebar.style.width = clampedWidth + 'px';
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isResizingSidebar) {
+                        isResizingSidebar = false;
+                        sidebarHandle.classList.remove('active');
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                        localStorage.setItem('detailSidebarWidth', sidebar.offsetWidth);
+                    }
+                });
             }
         }
 
