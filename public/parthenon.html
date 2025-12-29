@@ -483,6 +483,7 @@
             visibility: hidden;
             pointer-events: none;
             transition: all 0.2s;
+            padding: 2rem;
         }
 
         .modal-overlay.active {
@@ -493,13 +494,14 @@
 
         .modal {
             background: var(--bg-secondary);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            max-height: calc(100vh - 4rem);
             overflow: hidden;
             transform: scale(0.95);
             transition: transform 0.2s;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         .modal-overlay.active .modal {
