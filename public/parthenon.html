@@ -492,7 +492,7 @@
             pointer-events: auto;
         }
 
-        .modal {
+        .modal-overlay .modal-content {
             background: var(--bg-secondary);
             border-radius: 16px;
             width: 100%;
@@ -502,9 +502,10 @@
             transform: scale(0.95);
             transition: transform 0.2s;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
         }
 
-        .modal-overlay.active .modal {
+        .modal-overlay.active .modal-content {
             transform: scale(1);
         }
 
@@ -772,7 +773,7 @@
 
     <!-- Department Modal -->
     <div class="modal-overlay" id="deptModal">
-        <div class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2><i data-lucide="building-2"></i> <span id="deptModalTitle">Add Department</span></h2>
                 <button class="modal-close" onclick="closeDeptModal()">
@@ -803,12 +804,12 @@
                     <i data-lucide="save" style="width:16px;height:16px;"></i> Save
                 </button>
             </div>
-        </div>
+        </div><!-- end modal-content -->
     </div>
 
     <!-- Role Modal -->
     <div class="modal-overlay" id="roleModal">
-        <div class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2><i data-lucide="user"></i> <span id="roleModalTitle">Add Role</span></h2>
                 <button class="modal-close" onclick="closeRoleModal()">
@@ -846,7 +847,7 @@
                     <i data-lucide="save" style="width:16px;height:16px;"></i> Save
                 </button>
             </div>
-        </div>
+        </div><!-- end modal-content -->
     </div>
 
     <!-- Supabase client -->

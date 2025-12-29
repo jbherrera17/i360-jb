@@ -491,7 +491,7 @@
             pointer-events: auto;
         }
 
-        .modal {
+        .modal-overlay .modal-content {
             background: var(--bg-secondary);
             border-radius: 16px;
             width: 100%;
@@ -501,9 +501,10 @@
             transform: scale(0.95);
             transition: transform 0.2s;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
         }
 
-        .modal-overlay.active .modal {
+        .modal-overlay.active .modal-content {
             transform: scale(1);
         }
 
@@ -829,7 +830,7 @@
 
     <!-- Skill Detail Modal -->
     <div class="modal-overlay" id="detailModal">
-        <div class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle"><i data-lucide="wand-2"></i> Skill Details</h2>
                 <button class="modal-close" onclick="closeDetailModal()">
@@ -850,12 +851,12 @@
                     <i data-lucide="play" style="width:16px;height:16px;"></i> Test Skill
                 </button>
             </div>
-        </div>
+        </div><!-- end modal-content -->
     </div>
 
     <!-- Import Modal -->
     <div class="modal-overlay" id="importModal">
-        <div class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2><i data-lucide="upload"></i> Import Skill</h2>
                 <button class="modal-close" onclick="closeImportModal()">
@@ -887,7 +888,7 @@ Your skill instructions here..."></textarea>
                     <i data-lucide="upload" style="width:16px;height:16px;"></i> Import Skill
                 </button>
             </div>
-        </div>
+        </div><!-- end modal-content -->
     </div>
 
     <script>
