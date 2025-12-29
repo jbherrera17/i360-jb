@@ -25,6 +25,7 @@ const injectionRoutes = require('./routes/injection');
 const conversationsRoutes = require('./routes/conversations');
 const parthenonRoutes = require('./routes/parthenon');
 const actionsRoutes = require('./routes/actions');
+const skillsRoutes = require('./routes/skills');
 
 // ============================================
 // INITIALIZE EXPRESS APP
@@ -227,10 +228,12 @@ function initializeServices() {
         app.use('/api/conversations', conversationsRoutes);
         app.use('/api/parthenon', parthenonRoutes(supabase));
         app.use('/api/actions', actionsRoutes(supabase));
+        app.use('/api/skills', skillsRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
         console.log('  ✅ Actions routes registered');
+        console.log('  ✅ Skills routes registered');
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }
@@ -335,6 +338,11 @@ app.get('/parthenon', (req, res) => {
 // Actions page (Phase 4)
 app.get('/actions', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/actions.html'));
+});
+
+// Skills page (Phase 5)
+app.get('/skills', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/skills.html'));
 });
 
 // ============================================

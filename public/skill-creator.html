@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Creator | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Skill Creator Styles */
+        .creator-layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Progress */
+        .creator-sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .creator-header {
+            margin-bottom: 2rem;
+        }
+
+        .creator-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .creator-header p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* Steps */
+        .steps-list {
+            flex: 1;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .step-item.active {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .step-item.completed {
+            opacity: 0.8;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-item.active .step-number {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .step-item.completed .step-number {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .step-content h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0 0 0.15rem 0;
+            color: var(--text-primary);
+        }
+
+        .step-content p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Main Content */
+        .creator-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .creator-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .step-panel {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        .step-panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .step-panel > p {
+            color: var(--text-secondary);
+            margin: 0 0 2rem 0;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group .hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+
+        textarea.code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Icon Picker */
+        .icon-picker {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .icon-option {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-option:hover {
+            border-color: var(--primary);
+        }
+
+        .icon-option.selected {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        /* Color Picker */
+        .color-picker {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--text-primary);
+        }
+
+        /* Suite Selector */
+        .suite-selector {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .suite-option {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suite-option:hover {
+            border-color: var(--text-muted);
+        }
+
+        .suite-option.selected {
+            border-width: 2px;
+        }
+
+        .suite-option.selected.align { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
+        .suite-option.selected.strategy { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .suite-option.selected.execute { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+        .suite-option .suite-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.5rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .suite-option.align .suite-icon { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .suite-option.strategy .suite-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .suite-option.execute .suite-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .suite-option h3 {
+            font-size: 1rem;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .suite-option p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Context Type Selector */
+        .context-types-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .context-type-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .context-type-row:hover {
+            border-color: var(--primary);
+        }
+
+        .context-type-row.selected {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .context-type-row.required {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .context-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+        }
+
+        .context-type-row.selected .context-checkbox,
+        .context-type-row.required .context-checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .context-type-row.required .context-checkbox {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .context-info {
+            flex: 1;
+        }
+
+        .context-info h4 {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .context-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .context-toggle {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .context-type-row.required .context-toggle {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* List Input */
+        .list-input {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .list-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .list-item {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .list-item input {
+            flex: 1;
+        }
+
+        .list-item button {
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .list-item button:hover {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+        }
+
+        .add-list-item {
+            padding: 0.5rem 1rem;
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .add-list-item:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Examples Editor */
+        .examples-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .example-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .example-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .example-header h4 {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .example-header button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .example-header button:hover {
+            color: #ef4444;
+        }
+
+        .example-field {
+            margin-bottom: 0.75rem;
+        }
+
+        .example-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .example-field label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        /* Preview Panel */
+        .preview-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .preview-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-body {
+            padding: 1rem;
+        }
+
+        .preview-section {
+            margin-bottom: 1rem;
+        }
+
+        .preview-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .preview-section h4 {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .preview-markdown {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Footer */
+        .creator-footer {
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark, #4f46e5);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Back link */
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .creator-layout {
+                flex-direction: column;
+            }
+            .creator-sidebar {
+                width: 100%;
+                padding: 1rem;
+            }
+            .steps-list {
+                display: flex;
+                overflow-x: auto;
+                gap: 0.5rem;
+            }
+            .step-item {
+                flex-shrink: 0;
+            }
+            .suite-selector {
+                flex-direction: column;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="creator-layout">
+        <!-- Progress Sidebar -->
+        <aside class="creator-sidebar">
+            <a href="/skills.html" class="back-link">
+                <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                Back to Skills
+            </a>
+            <div class="creator-header">
+                <h1>
+                    <i data-lucide="wand-2" style="width:24px;height:24px;"></i>
+                    Skill Creator
+                </h1>
+                <p>Build a reusable AI skill</p>
+            </div>
+
+            <div class="steps-list">
+                <div class="step-item active" data-step="1" onclick="goToStep(1)">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Identity</h3>
+                        <p>Name & appearance</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="2" onclick="goToStep(2)">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Classification</h3>
+                        <p>Suite & category</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="3" onclick="goToStep(3)">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Context</h3>
+                        <p>Required assets</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="4" onclick="goToStep(4)">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Instructions</h3>
+                        <p>Skill behavior</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="5" onclick="goToStep(5)">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3>Output</h3>
+                        <p>Format & structure</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="6" onclick="goToStep(6)">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h3>Examples</h3>
+                        <p>Few-shot learning</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="7" onclick="goToStep(7)">
+                    <div class="step-number">7</div>
+                    <div class="step-content">
+                        <h3>Review</h3>
+                        <p>Preview & save</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="creator-main">
+            <div class="creator-content">
+                <!-- Step 1: Identity -->
+                <div class="step-panel active" data-step="1">
+                    <h2>Skill Identity</h2>
+                    <p>Give your skill a name and visual identity</p>
+
+                    <div class="form-group">
+                        <label>Display Name *</label>
+                        <input type="text" id="displayName" placeholder="e.g., Article Generator" oninput="updateSlug()">
+                        <p class="hint">Human-readable name shown in the UI</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Slug</label>
+                        <input type="text" id="skillName" placeholder="article-generator" readonly style="background:var(--bg-secondary);">
+                        <p class="hint">Auto-generated from display name</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" placeholder="Describe what this skill does..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Icon</label>
+                            <div class="icon-picker" id="iconPicker">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Color</label>
+                            <div class="color-picker" id="colorPicker">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Classification -->
+                <div class="step-panel" data-step="2">
+                    <h2>Classification</h2>
+                    <p>Categorize your skill for organization</p>
+
+                    <div class="form-group">
+                        <label>Suite</label>
+                        <div class="suite-selector" id="suiteSelector">
+                            <div class="suite-option align" data-suite="align" onclick="selectSuite('align')">
+                                <div class="suite-icon">
+                                    <i data-lucide="compass"></i>
+                                </div>
+                                <h3>Align</h3>
+                                <p>Values & identity</p>
+                            </div>
+                            <div class="suite-option strategy" data-suite="strategy" onclick="selectSuite('strategy')">
+                                <div class="suite-icon">
+                                    <i data-lucide="map"></i>
+                                </div>
+                                <h3>Strategy</h3>
+                                <p>Planning & research</p>
+                            </div>
+                            <div class="suite-option execute selected" data-suite="execute" onclick="selectSuite('execute')">
+                                <div class="suite-icon">
+                                    <i data-lucide="rocket"></i>
+                                </div>
+                                <h3>Execute</h3>
+                                <p>Content & output</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="category">
+                            <option value="content">Content - Writing & creation</option>
+                            <option value="research">Research - Information gathering</option>
+                            <option value="analysis">Analysis - Data & insights</option>
+                            <option value="workflow">Workflow - Multi-step automation</option>
+                            <option value="custom">Custom - User-defined</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tags</label>
+                        <div class="list-input" id="tagsInput">
+                            <div class="list-items" id="tagsList">
+                                <!-- Populated by JS -->
+                            </div>
+                            <button class="add-list-item" onclick="addTag()">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Tag
+                            </button>
+                        </div>
+                        <p class="hint">Add tags for filtering and discovery</p>
+                    </div>
+                </div>
+
+                <!-- Step 3: Context -->
+                <div class="step-panel" data-step="3">
+                    <h2>Context Requirements</h2>
+                    <p>Define what context assets this skill needs to function</p>
+
+                    <div class="form-group">
+                        <label>Context Types</label>
+                        <p class="hint" style="margin-bottom:0.75rem;">Click to select, double-click to mark as required</p>
+                        <div class="context-types-list" id="contextTypesList">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Context Token Budget</label>
+                            <input type="number" id="contextTokenBudget" value="8000" min="1000" max="100000">
+                            <p class="hint">Maximum tokens for injected context</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Instructions -->
+                <div class="step-panel" data-step="4">
+                    <h2>Skill Instructions</h2>
+                    <p>Write the core instructions that define this skill's behavior</p>
+
+                    <div class="form-group">
+                        <label>Instructions (Markdown)</label>
+                        <textarea id="instructions" class="code" style="min-height:400px;" placeholder="# Skill Instructions
+
+You are an expert at...
+
+## Your Role
+- ...
+
+## Guidelines
+1. ...
+2. ...
+
+## Important Notes
+- ..."></textarea>
+                        <p class="hint">Use Markdown formatting. Be specific about the skill's purpose and behavior.</p>
+                    </div>
+                </div>
+
+                <!-- Step 5: Output Format -->
+                <div class="step-panel" data-step="5">
+                    <h2>Output Format</h2>
+                    <p>Define the expected output structure</p>
+
+                    <div class="form-group">
+                        <label>Output Format Description</label>
+                        <textarea id="outputFormat" class="code" placeholder="The output should include:
+
+1. **Title**: A compelling headline
+2. **Summary**: 2-3 sentence overview
+3. **Body**: Main content in markdown
+4. **Tags**: Relevant keywords"></textarea>
+                        <p class="hint">Describe the structure of the expected output</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Trigger Phrases</label>
+                        <div class="list-input" id="triggersInput">
+                            <div class="list-items" id="triggersList">
+                                <!-- Populated by JS -->
+                            </div>
+                            <button class="add-list-item" onclick="addTrigger()">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Trigger Phrase
+                            </button>
+                        </div>
+                        <p class="hint">Phrases that should suggest using this skill</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Conversation Starters</label>
+                        <div class="list-input" id="startersInput">
+                            <div class="list-items" id="startersList">
+                                <!-- Populated by JS -->
+                            </div>
+                            <button class="add-list-item" onclick="addStarter()">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Starter
+                            </button>
+                        </div>
+                        <p class="hint">Example prompts shown to users</p>
+                    </div>
+                </div>
+
+                <!-- Step 6: Examples -->
+                <div class="step-panel" data-step="6">
+                    <h2>Examples</h2>
+                    <p>Add input/output examples for few-shot learning</p>
+
+                    <div class="form-group">
+                        <div class="examples-list" id="examplesList">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button class="add-list-item" style="margin-top:1rem;" onclick="addExample()">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Example
+                        </button>
+                        <p class="hint" style="margin-top:0.5rem;">Examples help the AI understand the expected input/output pattern</p>
+                    </div>
+                </div>
+
+                <!-- Step 7: Review -->
+                <div class="step-panel" data-step="7">
+                    <h2>Review & Save</h2>
+                    <p>Preview your skill before saving</p>
+
+                    <div class="preview-card" id="previewCard">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="form-group" style="margin-top:1.5rem;">
+                        <label>SKILL.md Preview</label>
+                        <div class="preview-markdown" id="markdownPreview">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <footer class="creator-footer">
+                <button class="btn-secondary" id="prevBtn" onclick="prevStep()" style="visibility:hidden;">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Previous
+                </button>
+                <div>
+                    <button class="btn-secondary" onclick="saveDraft()" style="margin-right:0.5rem;">
+                        Save Draft
+                    </button>
+                    <button class="btn-primary" id="nextBtn" onclick="nextStep()">
+                        Next <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // State
+        let currentStep = 1;
+        let editMode = false;
+        let editId = null;
+
+        const skill = {
+            name: '',
+            display_name: '',
+            description: '',
+            icon: 'wand-2',
+            color: '#8b5cf6',
+            suite: 'execute',
+            category: 'content',
+            tags: [],
+            required_context_types: [],
+            optional_context_types: [],
+            context_token_budget: 8000,
+            instructions: '',
+            output_format: '',
+            trigger_phrases: [],
+            conversation_starters: [],
+            examples: []
+        };
+
+        const icons = [
+            'wand-2', 'sparkles', 'pencil', 'file-text', 'book-open',
+            'search', 'bar-chart-2', 'pie-chart', 'trending-up', 'target',
+            'lightbulb', 'brain', 'message-square', 'mail', 'globe',
+            'code', 'terminal', 'database', 'git-branch', 'zap'
+        ];
+
+        const colors = [
+            '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4',
+            '#10b981', '#22c55e', '#84cc16', '#eab308', '#f59e0b',
+            '#f97316', '#ef4444', '#ec4899', '#d946ef', '#a855f7'
+        ];
+
+        const contextTypes = [
+            { key: 'voice_dna', name: 'Voice DNA', description: 'Tone, style, and language patterns' },
+            { key: 'icp', name: 'ICP', description: 'Ideal Customer Profile' },
+            { key: 'positioning', name: 'Positioning', description: 'Brand positioning and differentiation' },
+            { key: 'products', name: 'Products', description: 'Product information and features' },
+            { key: 'services', name: 'Services', description: 'Service offerings and details' },
+            { key: 'competitors', name: 'Competitors', description: 'Competitor analysis' },
+            { key: 'values', name: 'Values', description: 'Core values and principles' },
+            { key: 'mission', name: 'Mission', description: 'Mission statement' },
+            { key: 'vision', name: 'Vision', description: 'Vision statement' },
+            { key: 'guidelines', name: 'Guidelines', description: 'Brand or content guidelines' },
+            { key: 'templates', name: 'Templates', description: 'Template documents' },
+            { key: 'research', name: 'Research', description: 'Research and data' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            initIconPicker();
+            initColorPicker();
+            initContextTypes();
+
+            // Check for edit mode
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('edit')) {
+                editMode = true;
+                editId = params.get('edit');
+                await loadSkillForEdit(editId);
+            }
+
+            updateUI();
+        });
+
+        // Load skill for editing
+        async function loadSkillForEdit(id) {
+            try {
+                const res = await fetch(`/api/skills/${id}`);
+                const data = await res.json();
+                if (data.success) {
+                    Object.assign(skill, data.data);
+                    populateForm();
+                }
+            } catch (error) {
+                console.error('Error loading skill:', error);
+            }
+        }
+
+        function populateForm() {
+            document.getElementById('displayName').value = skill.display_name || '';
+            document.getElementById('skillName').value = skill.name || '';
+            document.getElementById('description').value = skill.description || '';
+            document.getElementById('category').value = skill.category || 'content';
+            document.getElementById('contextTokenBudget').value = skill.context_token_budget || 8000;
+            document.getElementById('instructions').value = skill.instructions || '';
+            document.getElementById('outputFormat').value = skill.output_format || '';
+
+            // Update icon selection
+            document.querySelectorAll('.icon-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.icon === skill.icon);
+            });
+
+            // Update color selection
+            document.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.color === skill.color);
+            });
+
+            // Update suite selection
+            selectSuite(skill.suite || 'execute');
+
+            // Update context types
+            updateContextTypesUI();
+
+            // Update lists
+            renderTags();
+            renderTriggers();
+            renderStarters();
+            renderExamples();
+        }
+
+        // Icon picker
+        function initIconPicker() {
+            const container = document.getElementById('iconPicker');
+            container.innerHTML = icons.map(icon => `
+                <div class="icon-option ${icon === skill.icon ? 'selected' : ''}"
+                     data-icon="${icon}"
+                     onclick="selectIcon('${icon}')">
+                    <i data-lucide="${icon}" style="width:24px;height:24px;"></i>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function selectIcon(icon) {
+            skill.icon = icon;
+            document.querySelectorAll('.icon-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.icon === icon);
+            });
+        }
+
+        // Color picker
+        function initColorPicker() {
+            const container = document.getElementById('colorPicker');
+            container.innerHTML = colors.map(color => `
+                <div class="color-option ${color === skill.color ? 'selected' : ''}"
+                     data-color="${color}"
+                     style="background:${color};"
+                     onclick="selectColor('${color}')">
+                </div>
+            `).join('');
+        }
+
+        function selectColor(color) {
+            skill.color = color;
+            document.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.color === color);
+            });
+        }
+
+        // Suite selector
+        function selectSuite(suite) {
+            skill.suite = suite;
+            document.querySelectorAll('.suite-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.suite === suite);
+            });
+        }
+
+        // Context types
+        function initContextTypes() {
+            updateContextTypesUI();
+        }
+
+        function updateContextTypesUI() {
+            const container = document.getElementById('contextTypesList');
+            container.innerHTML = contextTypes.map(type => {
+                const isRequired = skill.required_context_types.includes(type.key);
+                const isOptional = skill.optional_context_types.includes(type.key);
+                const isSelected = isRequired || isOptional;
+
+                return `
+                    <div class="context-type-row ${isSelected ? 'selected' : ''} ${isRequired ? 'required' : ''}"
+                         data-type="${type.key}"
+                         onclick="toggleContextType('${type.key}')"
+                         ondblclick="toggleRequired('${type.key}')">
+                        <div class="context-checkbox">
+                            ${isSelected ? '<i data-lucide="check" style="width:12px;height:12px;color:white;"></i>' : ''}
+                        </div>
+                        <div class="context-info">
+                            <h4>${type.name}</h4>
+                            <p>${type.description}</p>
+                        </div>
+                        ${isSelected ? `
+                            <span class="context-toggle" onclick="event.stopPropagation();toggleRequired('${type.key}')">
+                                ${isRequired ? 'Required' : 'Optional'}
+                            </span>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function toggleContextType(type) {
+            const isRequired = skill.required_context_types.includes(type);
+            const isOptional = skill.optional_context_types.includes(type);
+
+            if (isRequired || isOptional) {
+                // Remove
+                skill.required_context_types = skill.required_context_types.filter(t => t !== type);
+                skill.optional_context_types = skill.optional_context_types.filter(t => t !== type);
+            } else {
+                // Add as optional
+                skill.optional_context_types.push(type);
+            }
+
+            updateContextTypesUI();
+        }
+
+        function toggleRequired(type) {
+            const isRequired = skill.required_context_types.includes(type);
+            const isOptional = skill.optional_context_types.includes(type);
+
+            if (isRequired) {
+                // Move to optional
+                skill.required_context_types = skill.required_context_types.filter(t => t !== type);
+                skill.optional_context_types.push(type);
+            } else if (isOptional) {
+                // Move to required
+                skill.optional_context_types = skill.optional_context_types.filter(t => t !== type);
+                skill.required_context_types.push(type);
+            } else {
+                // Add as required
+                skill.required_context_types.push(type);
+            }
+
+            updateContextTypesUI();
+        }
+
+        // Tags
+        function renderTags() {
+            const container = document.getElementById('tagsList');
+            container.innerHTML = skill.tags.map((tag, i) => `
+                <div class="list-item">
+                    <input type="text" value="${tag}" onchange="updateTag(${i}, this.value)">
+                    <button onclick="removeTag(${i})"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addTag() {
+            skill.tags.push('');
+            renderTags();
+        }
+
+        function updateTag(index, value) {
+            skill.tags[index] = value;
+        }
+
+        function removeTag(index) {
+            skill.tags.splice(index, 1);
+            renderTags();
+        }
+
+        // Triggers
+        function renderTriggers() {
+            const container = document.getElementById('triggersList');
+            container.innerHTML = skill.trigger_phrases.map((phrase, i) => `
+                <div class="list-item">
+                    <input type="text" value="${phrase}" onchange="updateTrigger(${i}, this.value)">
+                    <button onclick="removeTrigger(${i})"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addTrigger() {
+            skill.trigger_phrases.push('');
+            renderTriggers();
+        }
+
+        function updateTrigger(index, value) {
+            skill.trigger_phrases[index] = value;
+        }
+
+        function removeTrigger(index) {
+            skill.trigger_phrases.splice(index, 1);
+            renderTriggers();
+        }
+
+        // Starters
+        function renderStarters() {
+            const container = document.getElementById('startersList');
+            container.innerHTML = skill.conversation_starters.map((starter, i) => `
+                <div class="list-item">
+                    <input type="text" value="${starter}" onchange="updateStarter(${i}, this.value)">
+                    <button onclick="removeStarter(${i})"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addStarter() {
+            skill.conversation_starters.push('');
+            renderStarters();
+        }
+
+        function updateStarter(index, value) {
+            skill.conversation_starters[index] = value;
+        }
+
+        function removeStarter(index) {
+            skill.conversation_starters.splice(index, 1);
+            renderStarters();
+        }
+
+        // Examples
+        function renderExamples() {
+            const container = document.getElementById('examplesList');
+            if (skill.examples.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1rem;">No examples yet. Add examples to improve skill accuracy.</p>';
+                return;
+            }
+
+            container.innerHTML = skill.examples.map((ex, i) => `
+                <div class="example-card">
+                    <div class="example-header">
+                        <h4>Example ${i + 1}</h4>
+                        <button onclick="removeExample(${i})"><i data-lucide="trash-2" style="width:16px;height:16px;"></i></button>
+                    </div>
+                    <div class="example-field">
+                        <label>Input</label>
+                        <textarea style="min-height:60px;" onchange="updateExample(${i}, 'input', this.value)">${ex.input || ''}</textarea>
+                    </div>
+                    <div class="example-field">
+                        <label>Output</label>
+                        <textarea style="min-height:100px;" onchange="updateExample(${i}, 'output', this.value)">${ex.output || ''}</textarea>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addExample() {
+            skill.examples.push({ input: '', output: '' });
+            renderExamples();
+        }
+
+        function updateExample(index, field, value) {
+            skill.examples[index][field] = value;
+        }
+
+        function removeExample(index) {
+            skill.examples.splice(index, 1);
+            renderExamples();
+        }
+
+        // Slug generation
+        function updateSlug() {
+            const displayName = document.getElementById('displayName').value;
+            const slug = displayName
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim();
+            document.getElementById('skillName').value = slug;
+            skill.display_name = displayName;
+            skill.name = slug;
+        }
+
+        // Navigation
+        function goToStep(step) {
+            if (step < 1 || step > 7) return;
+
+            // Save current step data
+            saveStepData();
+
+            currentStep = step;
+            updateUI();
+        }
+
+        function nextStep() {
+            if (currentStep === 7) {
+                saveSkill();
+                return;
+            }
+
+            saveStepData();
+            currentStep++;
+            updateUI();
+        }
+
+        function prevStep() {
+            if (currentStep === 1) return;
+            saveStepData();
+            currentStep--;
+            updateUI();
+        }
+
+        function saveStepData() {
+            switch (currentStep) {
+                case 1:
+                    skill.display_name = document.getElementById('displayName').value;
+                    skill.name = document.getElementById('skillName').value;
+                    skill.description = document.getElementById('description').value;
+                    break;
+                case 2:
+                    skill.category = document.getElementById('category').value;
+                    skill.tags = skill.tags.filter(t => t.trim());
+                    break;
+                case 3:
+                    skill.context_token_budget = parseInt(document.getElementById('contextTokenBudget').value) || 8000;
+                    break;
+                case 4:
+                    skill.instructions = document.getElementById('instructions').value;
+                    break;
+                case 5:
+                    skill.output_format = document.getElementById('outputFormat').value;
+                    skill.trigger_phrases = skill.trigger_phrases.filter(t => t.trim());
+                    skill.conversation_starters = skill.conversation_starters.filter(t => t.trim());
+                    break;
+                case 6:
+                    skill.examples = skill.examples.filter(e => e.input.trim() || e.output.trim());
+                    break;
+            }
+        }
+
+        function updateUI() {
+            // Update step indicators
+            document.querySelectorAll('.step-item').forEach((item, i) => {
+                const step = i + 1;
+                item.classList.remove('active', 'completed');
+                if (step === currentStep) {
+                    item.classList.add('active');
+                } else if (step < currentStep) {
+                    item.classList.add('completed');
+                }
+            });
+
+            // Update panels
+            document.querySelectorAll('.step-panel').forEach(panel => {
+                panel.classList.toggle('active', parseInt(panel.dataset.step) === currentStep);
+            });
+
+            // Update buttons
+            document.getElementById('prevBtn').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+
+            if (currentStep === 7) {
+                document.getElementById('nextBtn').innerHTML = `
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> ${editMode ? 'Update Skill' : 'Create Skill'}
+                `;
+                document.getElementById('nextBtn').classList.add('btn-success');
+                updatePreview();
+            } else {
+                document.getElementById('nextBtn').innerHTML = `
+                    Next <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                `;
+                document.getElementById('nextBtn').classList.remove('btn-success');
+            }
+
+            lucide.createIcons();
+        }
+
+        function updatePreview() {
+            const previewCard = document.getElementById('previewCard');
+            previewCard.innerHTML = `
+                <div class="preview-header">
+                    <div class="preview-icon" style="background:${skill.color}20;color:${skill.color};">
+                        <i data-lucide="${skill.icon}" style="width:24px;height:24px;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin:0;">${skill.display_name || 'Untitled Skill'}</h3>
+                        <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
+                            <span class="skill-suite ${skill.suite}" style="padding:0.15rem 0.5rem;border-radius:50px;font-size:0.7rem;font-weight:600;text-transform:uppercase;">${skill.suite}</span>
+                            <span style="color:var(--text-muted);font-size:0.8rem;">${skill.category}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="preview-body">
+                    <div class="preview-section">
+                        <h4>Description</h4>
+                        <p style="color:var(--text-secondary);margin:0;">${skill.description || 'No description'}</p>
+                    </div>
+                    <div class="preview-section">
+                        <h4>Context Requirements</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
+                            ${skill.required_context_types.map(t => `<span style="padding:0.2rem 0.5rem;background:rgba(239,68,68,0.1);color:#ef4444;border-radius:50px;font-size:0.7rem;">${t} (required)</span>`).join('')}
+                            ${skill.optional_context_types.map(t => `<span style="padding:0.2rem 0.5rem;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:50px;font-size:0.7rem;">${t}</span>`).join('')}
+                            ${skill.required_context_types.length === 0 && skill.optional_context_types.length === 0 ? '<span style="color:var(--text-muted);">None specified</span>' : ''}
+                        </div>
+                    </div>
+                    ${skill.conversation_starters.length > 0 ? `
+                        <div class="preview-section">
+                            <h4>Conversation Starters</h4>
+                            <ul style="margin:0;padding-left:1.25rem;color:var(--text-secondary);">
+                                ${skill.conversation_starters.map(s => `<li>${s}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    <div class="preview-section">
+                        <h4>Statistics</h4>
+                        <div style="display:flex;gap:1.5rem;color:var(--text-muted);font-size:0.85rem;">
+                            <span>${skill.examples.length} examples</span>
+                            <span>${skill.trigger_phrases.length} triggers</span>
+                            <span>${skill.context_token_budget} token budget</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+
+            // Generate SKILL.md preview
+            const markdown = generateSkillMarkdown();
+            document.getElementById('markdownPreview').textContent = markdown;
+        }
+
+        function generateSkillMarkdown() {
+            return `---
+name: ${skill.name}
+description: "${(skill.description || '').replace(/"/g, '\\"')}"
+version: ${skill.version || '1.0.0'}
+category: ${skill.category}
+suite: ${skill.suite}
+required_context: [${skill.required_context_types.map(t => `"${t}"`).join(', ')}]
+optional_context: [${skill.optional_context_types.map(t => `"${t}"`).join(', ')}]
+context_token_budget: ${skill.context_token_budget}
+---
+
+# ${skill.display_name}
+
+${skill.description || ''}
+
+## Instructions
+
+${skill.instructions || '(No instructions provided)'}
+${skill.output_format ? `
+## Output Format
+
+${skill.output_format}` : ''}
+${skill.trigger_phrases.length > 0 ? `
+## Trigger Phrases
+
+${skill.trigger_phrases.map(t => `- "${t}"`).join('\n')}` : ''}
+${skill.conversation_starters.length > 0 ? `
+## Conversation Starters
+
+${skill.conversation_starters.map(s => `- ${s}`).join('\n')}` : ''}
+${skill.examples.length > 0 ? `
+## Examples
+
+${skill.examples.map((ex, i) => `### Example ${i + 1}
+
+**Input:** ${ex.input}
+
+**Output:**
+${ex.output}`).join('\n\n')}` : ''}`;
+        }
+
+        // Save
+        async function saveSkill() {
+            saveStepData();
+
+            // Validation
+            if (!skill.name || !skill.display_name) {
+                alert('Please provide a name for the skill');
+                goToStep(1);
+                return;
+            }
+
+            if (!skill.instructions) {
+                alert('Please provide instructions for the skill');
+                goToStep(4);
+                return;
+            }
+
+            const payload = {
+                ...skill,
+                status: 'active'
+            };
+
+            try {
+                let res;
+                if (editMode) {
+                    res = await fetch(`/api/skills/${editId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    res = await fetch('/api/skills', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(`Skill "${skill.display_name}" ${editMode ? 'updated' : 'created'} successfully!`);
+                    window.location.href = '/skills.html';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving skill:', error);
+                alert('Error saving skill');
+            }
+        }
+
+        async function saveDraft() {
+            saveStepData();
+
+            const payload = {
+                ...skill,
+                status: 'draft'
+            };
+
+            try {
+                let res;
+                if (editMode) {
+                    res = await fetch(`/api/skills/${editId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    res = await fetch('/api/skills', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(`Draft saved!`);
+                    if (!editMode) {
+                        editMode = true;
+                        editId = data.data.id;
+                        window.history.replaceState({}, '', `/skill-creator.html?edit=${editId}`);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving draft:', error);
+                alert('Error saving draft');
+            }
+        }
+    </script>
+</body>
+</html>
