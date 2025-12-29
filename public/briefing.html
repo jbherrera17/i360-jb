@@ -6,10 +6,693 @@
     <title>Daily Briefing | Insight 360</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Briefing Layout */
+        .briefing-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Tabs */
+        .briefing-tabs {
+            display: flex;
+            gap: 0;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+        }
+
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Today's Briefing View */
+        .briefing-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .briefing-date {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .briefing-date h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            margin: 0;
+        }
+
+        .briefing-date .date-nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .date-nav button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.35rem 0.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .date-nav button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .briefing-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .status-dot.pending { background: var(--warning); }
+        .status-dot.generating { background: var(--info); animation: pulse 1s infinite; }
+        .status-dot.failed { background: var(--error); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Section Cards */
+        .sections-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .section-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section-title h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .section-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .section-toggle {
+            transition: transform 0.2s;
+        }
+
+        .section-card.collapsed .section-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            padding: 1.25rem;
+            border-top: 1px solid var(--border);
+            line-height: 1.7;
+        }
+
+        .section-card.collapsed .section-content {
+            display: none;
+        }
+
+        .section-content p {
+            margin: 0 0 1rem 0;
+        }
+
+        .section-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            max-width: 400px;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* Generate Button */
+        .btn-generate {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-generate:hover {
+            background: var(--primary-dark, #4f46e5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-generate .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* History View */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: var(--primary);
+            background: var(--bg-tertiary);
+        }
+
+        .history-date {
+            font-weight: 600;
+        }
+
+        .history-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .history-status {
+            padding: 0.2rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .history-status.completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .history-status.partial { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .history-status.failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        /* Configuration View */
+        .config-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .config-row:last-child {
+            border-bottom: none;
+        }
+
+        .config-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .config-label span {
+            font-weight: 500;
+        }
+
+        .config-label small {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-tertiary);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Time Input */
+        .time-input {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        /* Section List */
+        .sections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .section-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .section-item .drag-handle {
+            color: var(--text-muted);
+            cursor: grab;
+        }
+
+        .section-item-info {
+            flex: 1;
+        }
+
+        .section-item-name {
+            font-weight: 500;
+        }
+
+        .section-item-agent {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .section-item-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .section-item-actions button {
+            background: none;
+            border: none;
+            padding: 0.35rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .section-item-actions button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Add Section Button */
+        .btn-add-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: none;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .btn-add-section:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Toast Notifications */
+        #toastContainer {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--success);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-overlay .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: calc(100vh - 4rem);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .briefing-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .briefing-tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -17,11 +700,11 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image">
+                    <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
                     <span class="logo-text">Insight 360</span>
                 </div>
             </div>
-            
+
             <nav class="sidebar-nav">
                 <a href="/" class="nav-item">
                     <i data-lucide="layout-dashboard"></i>
@@ -51,6 +734,10 @@
                     <i data-lucide="wand-2"></i>
                     <span>Skills</span>
                 </a>
+                <a href="/briefing.html" class="nav-item active">
+                    <i data-lucide="newspaper"></i>
+                    <span>Briefing</span>
+                </a>
                 <a href="/integrity.html" class="nav-item">
                     <i data-lucide="shield-check"></i>
                     <span>Integrity</span>
@@ -60,33 +747,647 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <header class="page-header" style="padding: var(--spacing-xl); background: var(--bg-primary); border-bottom: 1px solid var(--border);">
-                <h1 style="font-family: var(--font-heading); font-size: 1.75rem;">Daily Briefing</h1>
-                <p style="color: var(--text-secondary);">Your personalized intelligence summary (Phase 4)</p>
-            </header>
+            <div class="briefing-layout">
+                <!-- Tabs -->
+                <div class="briefing-tabs">
+                    <button class="tab-btn active" data-tab="today">
+                        <i data-lucide="calendar-check" style="width:16px;height:16px;"></i>
+                        Today's Briefing
+                    </button>
+                    <button class="tab-btn" data-tab="history">
+                        <i data-lucide="history" style="width:16px;height:16px;"></i>
+                        History
+                    </button>
+                    <button class="tab-btn" data-tab="config">
+                        <i data-lucide="settings" style="width:16px;height:16px;"></i>
+                        Configuration
+                    </button>
+                </div>
 
-            <div style="padding: var(--spacing-xl); text-align: center;">
-                <div style="max-width: 500px; margin: auto; padding: var(--spacing-2xl);">
-                    <div style="width: 80px; height: 80px; margin: 0 auto var(--spacing-lg); background: var(--bg-tertiary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                        <i data-lucide="newspaper" style="width: 40px; height: 40px; color: var(--text-muted);"></i>
+                <!-- Today's Briefing Tab -->
+                <div class="tab-content active" id="todayTab">
+                    <div class="briefing-header">
+                        <div class="briefing-date">
+                            <h2 id="briefingTitle">Today's Briefing</h2>
+                            <div class="date-nav">
+                                <button onclick="navigateDate(-1)" title="Previous day">
+                                    <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+                                </button>
+                                <button onclick="navigateDate(1)" title="Next day">
+                                    <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="briefing-actions">
+                            <div class="briefing-status" id="briefingStatus" style="display:none;">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Ready</span>
+                            </div>
+                            <button class="btn-generate" id="generateBtn" onclick="generateBriefing()">
+                                <i data-lucide="sparkles" style="width:18px;height:18px;"></i>
+                                Generate Briefing
+                            </button>
+                        </div>
                     </div>
-                    <h2 style="margin-bottom: var(--spacing-sm);">Coming in Phase 4</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
-                        The Daily Briefing will provide automated intelligence summaries, topic monitoring, email triage, and scheduled content generation.
-                    </p>
-                    <a href="/chat.html" style="display: inline-flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius-md);">
-                        <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
-                        Try Multi-LLM Chat
-                    </a>
+
+                    <!-- Progress Bar (hidden by default) -->
+                    <div class="progress-container" id="progressContainer" style="display:none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Preparing...</div>
+                    </div>
+
+                    <!-- Briefing Content -->
+                    <div id="briefingContent">
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i data-lucide="newspaper" style="width:40px;height:40px;color:var(--text-muted);"></i>
+                            </div>
+                            <h3>No Briefing Yet</h3>
+                            <p>Generate your first briefing to get a personalized intelligence summary powered by your configured agents.</p>
+                            <button class="btn-generate" onclick="generateBriefing()">
+                                <i data-lucide="sparkles" style="width:18px;height:18px;"></i>
+                                Generate Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-content" id="historyTab">
+                    <h2 style="margin-bottom:1rem;">Briefing History</h2>
+                    <div id="historyList" class="history-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div id="historyPagination" style="margin-top:1rem;text-align:center;">
+                        <!-- Pagination -->
+                    </div>
+                </div>
+
+                <!-- Configuration Tab -->
+                <div class="tab-content" id="configTab">
+                    <!-- Schedule Configuration -->
+                    <div class="config-section">
+                        <h3><i data-lucide="clock" style="width:18px;height:18px;"></i> Schedule</h3>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <span>Enable Daily Briefing</span>
+                                <small>Automatically generate briefing at scheduled time</small>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="scheduleEnabled" onchange="updateSchedule()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <span>Schedule Time</span>
+                                <small>Time of day to generate briefing</small>
+                            </div>
+                            <input type="time" id="scheduleTime" class="time-input" value="06:00" onchange="updateSchedule()">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <span>Timezone</span>
+                                <small>Your local timezone</small>
+                            </div>
+                            <select id="timezone" class="time-input" onchange="updateSchedule()">
+                                <option value="America/New_York">Eastern Time</option>
+                                <option value="America/Chicago">Central Time</option>
+                                <option value="America/Denver">Mountain Time</option>
+                                <option value="America/Los_Angeles">Pacific Time</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Sections Configuration -->
+                    <div class="config-section">
+                        <h3><i data-lucide="layers" style="width:18px;height:18px;"></i> Briefing Sections</h3>
+                        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">
+                            Configure the sections that make up your daily briefing. Each section is generated by an agent.
+                        </p>
+                        <div id="sectionsList" class="sections-list">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button class="btn-add-section" onclick="showAddSectionModal()">
+                            <i data-lucide="plus" style="width:18px;height:18px;"></i>
+                            Add Section
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Add/Edit Section Modal -->
+    <div class="modal-overlay" id="sectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="sectionModalTitle">Add Section</h2>
+                <button class="modal-close" onclick="closeSectionModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Section Name</label>
+                    <input type="text" id="sectionName" placeholder="e.g., Market Intelligence">
+                </div>
+                <div class="form-group">
+                    <label>Agent</label>
+                    <select id="sectionAgent">
+                        <option value="">Select an agent...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prompt Template (Optional)</label>
+                    <textarea id="sectionPrompt" placeholder="Custom prompt for this section..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Icon (Lucide icon name)</label>
+                    <input type="text" id="sectionIcon" placeholder="e.g., trending-up" value="file-text">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeSectionModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveSection()">Save Section</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // State
+        let config = null;
+        let sections = [];
+        let agents = [];
+        let currentBriefing = null;
+        let editingSectionId = null;
+        let historyPage = 1;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            setupTabs();
+            await loadConfig();
+            await loadAgents();
+            await loadTodaysBriefing();
         });
+
+        // Tab switching
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(`${tab}Tab`).classList.add('active');
+
+                    if (tab === 'history') loadHistory();
+                });
+            });
+        }
+
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/briefing/config');
+                const data = await res.json();
+                if (data.success) {
+                    config = data.data;
+                    sections = config.sections || [];
+                    renderConfig();
+                    renderSections();
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        // Load agents
+        async function loadAgents() {
+            try {
+                const res = await fetch('/api/briefing/agents');
+                const data = await res.json();
+                if (data.success) {
+                    agents = data.data;
+                    populateAgentDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+        // Render config
+        function renderConfig() {
+            if (!config) return;
+            document.getElementById('scheduleEnabled').checked = config.is_enabled;
+            document.getElementById('scheduleTime').value = config.schedule_time?.substring(0, 5) || '06:00';
+            document.getElementById('timezone').value = config.timezone || 'America/New_York';
+        }
+
+        // Update schedule
+        async function updateSchedule() {
+            try {
+                const res = await fetch('/api/briefing/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        is_enabled: document.getElementById('scheduleEnabled').checked,
+                        schedule_time: document.getElementById('scheduleTime').value + ':00',
+                        timezone: document.getElementById('timezone').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    config = data.data;
+                }
+            } catch (error) {
+                console.error('Error updating schedule:', error);
+                showToast('Failed to update schedule', 'error');
+            }
+        }
+
+        // Render sections
+        function renderSections() {
+            const container = document.getElementById('sectionsList');
+            if (sections.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+                        No sections configured. Add sections to build your briefing.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sections.map(section => `
+                <div class="section-item" data-id="${section.id}">
+                    <i data-lucide="grip-vertical" class="drag-handle" style="width:16px;height:16px;"></i>
+                    <div class="section-icon" style="width:32px;height:32px;">
+                        <i data-lucide="${section.icon || 'file-text'}" style="width:16px;height:16px;"></i>
+                    </div>
+                    <div class="section-item-info">
+                        <div class="section-item-name">${section.name}</div>
+                        <div class="section-item-agent">${section.agent?.display_name || section.agent?.name || 'No agent'}</div>
+                    </div>
+                    <div class="section-item-actions">
+                        <button onclick="editSection('${section.id}')" title="Edit">
+                            <i data-lucide="edit" style="width:14px;height:14px;"></i>
+                        </button>
+                        <button onclick="deleteSection('${section.id}')" title="Delete">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Populate agent dropdown
+        function populateAgentDropdown() {
+            const select = document.getElementById('sectionAgent');
+            select.innerHTML = '<option value="">Select an agent...</option>' +
+                agents.map(a => `<option value="${a.id}">${a.display_name || a.name}</option>`).join('');
+        }
+
+        // Section modal
+        function showAddSectionModal() {
+            editingSectionId = null;
+            document.getElementById('sectionModalTitle').textContent = 'Add Section';
+            document.getElementById('sectionName').value = '';
+            document.getElementById('sectionAgent').value = '';
+            document.getElementById('sectionPrompt').value = '';
+            document.getElementById('sectionIcon').value = 'file-text';
+            document.getElementById('sectionModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function editSection(id) {
+            const section = sections.find(s => s.id === id);
+            if (!section) return;
+
+            editingSectionId = id;
+            document.getElementById('sectionModalTitle').textContent = 'Edit Section';
+            document.getElementById('sectionName').value = section.name;
+            document.getElementById('sectionAgent').value = section.agent_id || '';
+            document.getElementById('sectionPrompt').value = section.prompt_template || '';
+            document.getElementById('sectionIcon').value = section.icon || 'file-text';
+            document.getElementById('sectionModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeSectionModal() {
+            document.getElementById('sectionModal').classList.remove('active');
+            editingSectionId = null;
+        }
+
+        async function saveSection() {
+            const name = document.getElementById('sectionName').value.trim();
+            if (!name) {
+                showToast('Section name is required', 'error');
+                return;
+            }
+
+            const sectionData = {
+                name,
+                agent_id: document.getElementById('sectionAgent').value || null,
+                prompt_template: document.getElementById('sectionPrompt').value.trim() || null,
+                icon: document.getElementById('sectionIcon').value.trim() || 'file-text'
+            };
+
+            try {
+                let res;
+                if (editingSectionId) {
+                    res = await fetch(`/api/briefing/sections/${editingSectionId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sectionData)
+                    });
+                } else {
+                    res = await fetch('/api/briefing/sections', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sectionData)
+                    });
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    closeSectionModal();
+                    await loadConfig();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving section:', error);
+                showToast('Failed to save section', 'error');
+            }
+        }
+
+        async function deleteSection(id) {
+            if (!confirm('Delete this section?')) return;
+
+            try {
+                const res = await fetch(`/api/briefing/sections/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Section deleted');
+                    await loadConfig();
+                }
+            } catch (error) {
+                showToast('Failed to delete section', 'error');
+            }
+        }
+
+        // Load today's briefing
+        async function loadTodaysBriefing() {
+            try {
+                const res = await fetch('/api/briefing/today');
+                const data = await res.json();
+                if (data.success && data.data) {
+                    currentBriefing = data.data;
+                    renderBriefing(currentBriefing);
+                }
+            } catch (error) {
+                console.error('Error loading briefing:', error);
+            }
+        }
+
+        // Render briefing content
+        function renderBriefing(briefing) {
+            if (!briefing || !briefing.content || !briefing.content.sections) {
+                return;
+            }
+
+            const container = document.getElementById('briefingContent');
+            const sections = briefing.content.sections;
+
+            // Update status
+            const statusEl = document.getElementById('briefingStatus');
+            statusEl.style.display = 'flex';
+            statusEl.querySelector('.status-dot').className = `status-dot ${briefing.status}`;
+            statusEl.querySelector('.status-text').textContent =
+                briefing.status === 'completed' ? 'Complete' :
+                briefing.status === 'partial' ? 'Partial' :
+                briefing.status === 'generating' ? 'Generating...' : 'Failed';
+
+            if (sections.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Content</h3>
+                        <p>This briefing has no content yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="sections-container">
+                    ${sections.map((section, i) => `
+                        <div class="section-card" id="section-${i}">
+                            <div class="section-header" onclick="toggleSection(${i})">
+                                <div class="section-title">
+                                    <div class="section-icon">
+                                        <i data-lucide="${section.icon || 'file-text'}" style="width:18px;height:18px;"></i>
+                                    </div>
+                                    <h3>${section.name}</h3>
+                                </div>
+                                <div class="section-meta">
+                                    ${section.tokens_used ? `<span>${section.tokens_used} tokens</span>` : ''}
+                                    <i data-lucide="chevron-down" class="section-toggle" style="width:18px;height:18px;"></i>
+                                </div>
+                            </div>
+                            <div class="section-content">
+                                ${formatContent(section.content)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function toggleSection(index) {
+            const card = document.getElementById(`section-${index}`);
+            card.classList.toggle('collapsed');
+        }
+
+        function formatContent(content) {
+            if (!content) return '<p><em>No content</em></p>';
+            // Basic markdown-like formatting
+            return content
+                .split('\n\n')
+                .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+                .join('');
+        }
+
+        // Generate briefing
+        async function generateBriefing() {
+            const btn = document.getElementById('generateBtn');
+            const progress = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="spinner" style="width:18px;height:18px;"></i> Generating...';
+            lucide.createIcons();
+            progress.style.display = 'block';
+
+            try {
+                const eventSource = new EventSource('/api/briefing/generate/stream');
+                let sectionsTotal = 0;
+                let sectionsCompleted = 0;
+
+                eventSource.onmessage = (event) => {
+                    if (event.data === '[DONE]') {
+                        eventSource.close();
+                        btn.disabled = false;
+                        btn.innerHTML = '<i data-lucide="sparkles" style="width:18px;height:18px;"></i> Generate Briefing';
+                        lucide.createIcons();
+                        progress.style.display = 'none';
+                        loadTodaysBriefing();
+                        showToast('Briefing generated successfully!');
+                        return;
+                    }
+
+                    const data = JSON.parse(event.data);
+
+                    if (data.type === 'section_start') {
+                        sectionsTotal = data.total;
+                        progressText.textContent = `Generating ${data.name}... (${data.index + 1}/${data.total})`;
+                    } else if (data.type === 'section_complete') {
+                        sectionsCompleted++;
+                        const pct = Math.round((sectionsCompleted / sectionsTotal) * 100);
+                        progressFill.style.width = `${pct}%`;
+                    } else if (data.type === 'complete') {
+                        progressFill.style.width = '100%';
+                        progressText.textContent = 'Complete!';
+                    } else if (data.type === 'error') {
+                        showToast(data.error, 'error');
+                    }
+                };
+
+                eventSource.onerror = () => {
+                    eventSource.close();
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="sparkles" style="width:18px;height:18px;"></i> Generate Briefing';
+                    lucide.createIcons();
+                    progress.style.display = 'none';
+                };
+            } catch (error) {
+                console.error('Error generating briefing:', error);
+                showToast('Failed to generate briefing', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="sparkles" style="width:18px;height:18px;"></i> Generate Briefing';
+                lucide.createIcons();
+                progress.style.display = 'none';
+            }
+        }
+
+        // History
+        async function loadHistory() {
+            try {
+                const res = await fetch(`/api/briefing/history?page=${historyPage}&limit=10`);
+                const data = await res.json();
+                if (data.success) {
+                    renderHistory(data.data, data.pagination);
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        function renderHistory(briefings, pagination) {
+            const container = document.getElementById('historyList');
+
+            if (briefings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No History</h3>
+                        <p>You haven't generated any briefings yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = briefings.map(b => `
+                <div class="history-item" onclick="viewBriefing('${b.id}')">
+                    <div class="history-date">${formatDate(b.date)}</div>
+                    <div class="history-meta">
+                        <span>${b.sections_generated || 0} sections</span>
+                        <span>${b.total_tokens_used || 0} tokens</span>
+                        <span class="history-status ${b.status}">${b.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function viewBriefing(id) {
+            try {
+                const res = await fetch(`/api/briefing/${id}`);
+                const data = await res.json();
+                if (data.success && data.data) {
+                    currentBriefing = data.data;
+                    document.getElementById('briefingTitle').textContent = formatDate(data.data.date);
+                    renderBriefing(data.data);
+
+                    // Switch to today tab
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.querySelector('[data-tab="today"]').classList.add('active');
+                    document.getElementById('todayTab').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error loading briefing:', error);
+            }
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (date.getTime() === today.getTime()) {
+                return "Today's Briefing";
+            }
+
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (date.getTime() === yesterday.getTime()) {
+                return "Yesterday's Briefing";
+            }
+
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Date navigation
+        function navigateDate(delta) {
+            // For now, just reload today's briefing or switch to history
+            if (delta < 0) {
+                document.querySelector('[data-tab="history"]').click();
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
     </script>
 </body>
 </html>

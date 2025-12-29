@@ -26,6 +26,8 @@ const conversationsRoutes = require('./routes/conversations');
 const parthenonRoutes = require('./routes/parthenon');
 const actionsRoutes = require('./routes/actions');
 const skillsRoutes = require('./routes/skills');
+const briefingRoutes = require('./routes/briefing');
+const schedulerService = require('./services/schedulerService');
 
 // ============================================
 // INITIALIZE EXPRESS APP
@@ -229,11 +231,18 @@ function initializeServices() {
         app.use('/api/parthenon', parthenonRoutes(supabase));
         app.use('/api/actions', actionsRoutes(supabase));
         app.use('/api/skills', skillsRoutes(supabase));
+        app.use('/api/briefing', briefingRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
         console.log('  ✅ Actions routes registered');
         console.log('  ✅ Skills routes registered');
+        console.log('  ✅ Briefing routes registered');
+
+        // Initialize briefing scheduler
+        schedulerService.initializeScheduler()
+            .then(() => console.log('  ✅ Briefing scheduler initialized'))
+            .catch(err => console.error('  ⚠️ Briefing scheduler failed:', err.message));
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }
@@ -343,6 +352,11 @@ app.get('/actions', (req, res) => {
 // Skills page (Phase 5)
 app.get('/skills', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/skills.html'));
+});
+
+// Briefing page (Phase 6)
+app.get('/briefing', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/briefing.html'));
 });
 
 // ============================================

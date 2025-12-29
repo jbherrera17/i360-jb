@@ -1,0 +1,473 @@
+/**
+ * INSIGHT 360 - Briefing API Routes
+ * Version: 1.0.0
+ *
+ * Endpoints:
+ *   - Briefing CRUD (4 endpoints)
+ *   - Configuration (3 endpoints)
+ *   - Sections (5 endpoints)
+ *   - Generation (2 endpoints)
+ */
+
+const express = require('express');
+const briefingService = require('../services/briefingService');
+const schedulerService = require('../services/schedulerService');
+
+/**
+ * Briefing Routes Factory
+ * @param {object} supabase - Supabase client instance
+ * @returns {Router} Express router
+ */
+module.exports = function(supabase) {
+    const router = express.Router();
+
+    // Default user ID for development (in production, use auth middleware)
+    const getUser = (req) => {
+        return req.headers['x-user-id'] || process.env.DEFAULT_USER_ID || 'default-user';
+    };
+
+    // ============================================================================
+    // BRIEFING RETRIEVAL ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/briefing/latest
+     * Get the most recent briefing for the user
+     */
+    router.get('/latest', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const briefing = await briefingService.getLatestBriefing(userId);
+
+            res.json({
+                success: true,
+                data: briefing
+            });
+        } catch (error) {
+            console.error('Error fetching latest briefing:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/briefing/today
+     * Get today's briefing (or null if not generated yet)
+     */
+    router.get('/today', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const briefing = await briefingService.getTodaysBriefing(userId);
+
+            res.json({
+                success: true,
+                data: briefing
+            });
+        } catch (error) {
+            console.error('Error fetching today\'s briefing:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/briefing/history
+     * Get briefing history with pagination
+     */
+    router.get('/history', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { page = 1, limit = 10 } = req.query;
+
+            const result = await briefingService.getBriefingHistory(userId, {
+                page: parseInt(page),
+                limit: parseInt(limit)
+            });
+
+            res.json({
+                success: true,
+                data: result.briefings,
+                pagination: result.pagination
+            });
+        } catch (error) {
+            console.error('Error fetching briefing history:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/briefing/:id
+     * Get a specific briefing by ID
+     */
+    router.get('/:id', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { id } = req.params;
+
+            const briefing = await briefingService.getBriefingById(userId, id);
+
+            if (!briefing) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Briefing not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: briefing
+            });
+        } catch (error) {
+            console.error('Error fetching briefing:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // CONFIGURATION ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/briefing/config
+     * Get user's briefing configuration with sections
+     */
+    router.get('/config', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const config = await briefingService.getConfigWithSections(userId);
+
+            // Add scheduler status
+            const scheduleInfo = schedulerService.getUserScheduleInfo(userId);
+
+            res.json({
+                success: true,
+                data: {
+                    ...config,
+                    scheduler: scheduleInfo
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching config:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/briefing/config
+     * Update briefing configuration (schedule settings)
+     */
+    router.put('/config', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { is_enabled, schedule_time, timezone } = req.body;
+
+            const config = await briefingService.updateConfig(userId, {
+                is_enabled,
+                schedule_time,
+                timezone
+            });
+
+            // Update scheduler
+            if (is_enabled === true) {
+                schedulerService.scheduleUserBriefing(
+                    userId,
+                    config.schedule_time,
+                    config.timezone
+                );
+            } else if (is_enabled === false) {
+                schedulerService.cancelSchedule(userId);
+            }
+
+            res.json({
+                success: true,
+                data: config,
+                message: is_enabled ?
+                    `Briefing scheduled for ${config.schedule_time} ${config.timezone}` :
+                    'Briefing schedule disabled'
+            });
+        } catch (error) {
+            console.error('Error updating config:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/briefing/scheduler/status
+     * Get scheduler status (for health checks)
+     */
+    router.get('/scheduler/status', async (req, res) => {
+        try {
+            const status = schedulerService.getSchedulerStatus();
+
+            res.json({
+                success: true,
+                data: status
+            });
+        } catch (error) {
+            console.error('Error fetching scheduler status:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // SECTION ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/briefing/sections
+     * Get all sections for user's briefing
+     */
+    router.get('/sections', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const config = await briefingService.getConfigWithSections(userId);
+
+            res.json({
+                success: true,
+                data: config.sections
+            });
+        } catch (error) {
+            console.error('Error fetching sections:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/briefing/sections
+     * Add a new section
+     */
+    router.post('/sections', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const {
+                name,
+                slug,
+                description,
+                icon,
+                agent_id,
+                prompt_template,
+                context_assets,
+                max_tokens,
+                is_enabled
+            } = req.body;
+
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Section name is required'
+                });
+            }
+
+            const section = await briefingService.addSection(userId, {
+                name,
+                slug,
+                description,
+                icon,
+                agent_id,
+                prompt_template,
+                context_assets,
+                max_tokens,
+                is_enabled
+            });
+
+            res.status(201).json({
+                success: true,
+                data: section,
+                message: `Section "${name}" added successfully`
+            });
+        } catch (error) {
+            console.error('Error adding section:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/briefing/sections/:id
+     * Update a section
+     */
+    router.put('/sections/:id', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { id } = req.params;
+
+            const section = await briefingService.updateSection(userId, id, req.body);
+
+            res.json({
+                success: true,
+                data: section,
+                message: 'Section updated successfully'
+            });
+        } catch (error) {
+            console.error('Error updating section:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/briefing/sections/:id
+     * Delete a section
+     */
+    router.delete('/sections/:id', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { id } = req.params;
+
+            await briefingService.deleteSection(userId, id);
+
+            res.json({
+                success: true,
+                message: 'Section deleted successfully'
+            });
+        } catch (error) {
+            console.error('Error deleting section:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/briefing/sections/reorder
+     * Reorder sections
+     */
+    router.post('/sections/reorder', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { section_ids } = req.body;
+
+            if (!Array.isArray(section_ids)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'section_ids must be an array'
+                });
+            }
+
+            await briefingService.reorderSections(userId, section_ids);
+
+            res.json({
+                success: true,
+                message: 'Sections reordered successfully'
+            });
+        } catch (error) {
+            console.error('Error reordering sections:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // GENERATION ENDPOINTS
+    // ============================================================================
+
+    /**
+     * POST /api/briefing/generate
+     * Manually trigger briefing generation (non-streaming)
+     */
+    router.post('/generate', async (req, res) => {
+        try {
+            const userId = getUser(req);
+
+            const briefing = await briefingService.generateBriefing(userId);
+
+            res.json({
+                success: true,
+                data: briefing,
+                message: 'Briefing generated successfully'
+            });
+        } catch (error) {
+            console.error('Error generating briefing:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/briefing/generate/stream
+     * Generate briefing with SSE streaming for progress updates
+     */
+    router.get('/generate/stream', async (req, res) => {
+        const userId = getUser(req);
+
+        // Set SSE headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+
+        // Send initial event
+        res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting briefing generation...' })}\n\n`);
+
+        try {
+            const briefing = await briefingService.generateBriefing(userId, {
+                onSectionStart: ({ section, name, index, total }) => {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'section_start',
+                        section,
+                        name,
+                        index,
+                        total,
+                        message: `Generating ${name}...`
+                    })}\n\n`);
+                },
+                onSectionComplete: ({ section, index, total }) => {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'section_complete',
+                        section: section.slug,
+                        name: section.name,
+                        status: section.status,
+                        content: section.content,
+                        tokens_used: section.tokens_used,
+                        index,
+                        total
+                    })}\n\n`);
+                }
+            });
+
+            // Send completion event
+            res.write(`data: ${JSON.stringify({
+                type: 'complete',
+                briefing_id: briefing.id,
+                status: briefing.status,
+                sections_generated: briefing.sections_generated,
+                total_tokens: briefing.total_tokens_used,
+                message: 'Briefing generation complete'
+            })}\n\n`);
+
+            res.write('data: [DONE]\n\n');
+            res.end();
+
+        } catch (error) {
+            console.error('Error in streaming briefing generation:', error);
+            res.write(`data: ${JSON.stringify({
+                type: 'error',
+                error: error.message
+            })}\n\n`);
+            res.write('data: [DONE]\n\n');
+            res.end();
+        }
+    });
+
+    // ============================================================================
+    // AGENT SUGGESTIONS (Helper endpoint)
+    // ============================================================================
+
+    /**
+     * GET /api/briefing/agents
+     * Get agents that can be used for briefing sections
+     */
+    router.get('/agents', async (req, res) => {
+        try {
+            const { data: agents, error } = await supabase
+                .from('agents')
+                .select('id, name, display_name, description, icon, suite, type')
+                .eq('is_active', true)
+                .order('display_name');
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data: agents || []
+            });
+        } catch (error) {
+            console.error('Error fetching agents:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    return router;
+};
