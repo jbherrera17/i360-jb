@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Governance | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Governance Page Styles */
+        .governance-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Page Header */
+        .governance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .governance-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+
+        .governance-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .governance-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Score Cards Grid */
+        .score-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 1000px) {
+            .score-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .score-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .score-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .score-card.alignment::before { background: #3b82f6; }
+        .score-card.execution::before { background: #10b981; }
+        .score-card.learning::before { background: #8b5cf6; }
+        .score-card.overall::before { background: linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6); }
+
+        .score-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .score-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-card.alignment .score-card-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .score-card.execution .score-card-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .score-card.learning .score-card-icon { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .score-card.overall .score-card-icon { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+
+        .score-card-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .score-card-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .score-card.alignment .score-card-value { color: #3b82f6; }
+        .score-card.execution .score-card-value { color: #10b981; }
+        .score-card.learning .score-card-value { color: #8b5cf6; }
+        .score-card.overall .score-card-value { color: var(--text-primary); }
+
+        .score-card-suffix {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .score-card-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .score-card-trend.up { color: #10b981; }
+        .score-card-trend.down { color: #ef4444; }
+        .score-card-trend.flat { color: var(--text-muted); }
+
+        /* Two Column Layout */
+        .governance-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .governance-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panel Styling */
+        .governance-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .panel-body {
+            padding: 1.25rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Observations List */
+        .observations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .observation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .observation-item.high { border-left-color: #ef4444; }
+        .observation-item.medium { border-left-color: #f59e0b; }
+        .observation-item.low { border-left-color: #10b981; }
+
+        .observation-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .observation-item.drift .observation-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .observation-item.overload .observation-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .observation-item.gap .observation-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .observation-item.conflict .observation-icon { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+        .observation-content {
+            flex: 1;
+        }
+
+        .observation-type {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .observation-item.high .observation-type { color: #ef4444; }
+        .observation-item.medium .observation-type { color: #f59e0b; }
+        .observation-item.low .observation-type { color: #10b981; }
+
+        .observation-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Recommendations List */
+        .recommendations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .recommendation-item.completed {
+            opacity: 0.6;
+        }
+
+        .recommendation-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .recommendation-checkbox:hover {
+            border-color: var(--primary);
+        }
+
+        .recommendation-item.completed .recommendation-checkbox {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .recommendation-content {
+            flex: 1;
+        }
+
+        .recommendation-action {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .recommendation-item.completed .recommendation-action {
+            text-decoration: line-through;
+        }
+
+        .recommendation-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.35rem;
+        }
+
+        .recommendation-priority {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .recommendation-priority.high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .recommendation-priority.medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .recommendation-priority.low { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .recommendation-category {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Health Check History */
+        .health-check-history {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .health-check-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .health-check-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .health-check-item.selected {
+            border: 1px solid var(--primary);
+        }
+
+        .health-check-date {
+            font-size: 0.85rem;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+        .health-check-type {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .health-check-scores {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .health-check-score {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+        }
+
+        .health-check-score.alignment { color: #3b82f6; }
+        .health-check-score.execution { color: #10b981; }
+        .health-check-score.learning { color: #8b5cf6; }
+
+        /* Trend Chart Container */
+        .trend-chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            padding: 1rem;
+        }
+
+        .trend-bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .trend-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 150px;
+        }
+
+        .trend-bar {
+            width: 8px;
+            border-radius: 2px 2px 0 0;
+            transition: height 0.3s;
+        }
+
+        .trend-bar.alignment { background: #3b82f6; }
+        .trend-bar.execution { background: #10b981; }
+        .trend-bar.learning { background: #8b5cf6; }
+
+        .trend-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transform: rotate(-45deg);
+            white-space: nowrap;
+        }
+
+        /* Schedule Config */
+        .schedule-config {
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .schedule-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .schedule-row:last-child {
+            border-bottom: none;
+        }
+
+        .schedule-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .schedule-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .schedule-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .schedule-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-tertiary);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .schedule-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .schedule-toggle input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        .schedule-toggle input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Loading */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-primary);
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation will be injected -->
+        <nav id="main-nav"></nav>
+
+        <main class="governance-layout">
+            <!-- Header -->
+            <div class="governance-header">
+                <div>
+                    <h1 class="governance-title">
+                        <i data-lucide="shield-check" style="width:28px;height:28px;"></i>
+                        Strategy Governance
+                    </h1>
+                    <p class="governance-subtitle">Monitor strategy health, track observations, and manage recommendations</p>
+                </div>
+                <div class="governance-actions">
+                    <button class="btn btn-secondary" onclick="loadData()">
+                        <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="generateHealthCheck()">
+                        <i data-lucide="activity" style="width:16px;height:16px;"></i>
+                        Generate Health Check
+                    </button>
+                </div>
+            </div>
+
+            <!-- Score Cards -->
+            <div class="score-cards-grid">
+                <div class="score-card alignment">
+                    <div class="score-card-header">
+                        <div class="score-card-icon">
+                            <i data-lucide="link" style="width:18px;height:18px;"></i>
+                        </div>
+                        <span class="score-card-title">Alignment Score</span>
+                    </div>
+                    <div class="score-card-value" id="alignmentScore">--<span class="score-card-suffix">%</span></div>
+                    <div class="score-card-trend flat" id="alignmentTrend">
+                        <i data-lucide="minus" style="width:14px;height:14px;"></i>
+                        <span>No change</span>
+                    </div>
+                </div>
+
+                <div class="score-card execution">
+                    <div class="score-card-header">
+                        <div class="score-card-icon">
+                            <i data-lucide="rocket" style="width:18px;height:18px;"></i>
+                        </div>
+                        <span class="score-card-title">Execution Score</span>
+                    </div>
+                    <div class="score-card-value" id="executionScore">--<span class="score-card-suffix">%</span></div>
+                    <div class="score-card-trend flat" id="executionTrend">
+                        <i data-lucide="minus" style="width:14px;height:14px;"></i>
+                        <span>No change</span>
+                    </div>
+                </div>
+
+                <div class="score-card learning">
+                    <div class="score-card-header">
+                        <div class="score-card-icon">
+                            <i data-lucide="graduation-cap" style="width:18px;height:18px;"></i>
+                        </div>
+                        <span class="score-card-title">Learning Score</span>
+                    </div>
+                    <div class="score-card-value" id="learningScore">--<span class="score-card-suffix">%</span></div>
+                    <div class="score-card-trend flat" id="learningTrend">
+                        <i data-lucide="minus" style="width:14px;height:14px;"></i>
+                        <span>No change</span>
+                    </div>
+                </div>
+
+                <div class="score-card overall">
+                    <div class="score-card-header">
+                        <div class="score-card-icon">
+                            <i data-lucide="gauge" style="width:18px;height:18px;"></i>
+                        </div>
+                        <span class="score-card-title">Overall Health</span>
+                    </div>
+                    <div class="score-card-value" id="overallScore">--<span class="score-card-suffix">%</span></div>
+                    <div class="score-card-trend flat" id="overallTrend">
+                        <i data-lucide="minus" style="width:14px;height:14px;"></i>
+                        <span>No change</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="governance-columns">
+                <!-- Observations Panel -->
+                <div class="governance-panel">
+                    <div class="panel-header">
+                        <h3>
+                            <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+                            Observations
+                        </h3>
+                        <span id="observationCount" style="font-size:0.85rem;color:var(--text-muted);">0 issues</span>
+                    </div>
+                    <div class="panel-body" id="observationsContainer">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+
+                <!-- Recommendations Panel -->
+                <div class="governance-panel">
+                    <div class="panel-header">
+                        <h3>
+                            <i data-lucide="lightbulb" style="width:18px;height:18px;"></i>
+                            Recommendations
+                        </h3>
+                        <span id="recommendationCount" style="font-size:0.85rem;color:var(--text-muted);">0 actions</span>
+                    </div>
+                    <div class="panel-body" id="recommendationsContainer">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Check History & Trend -->
+            <div class="governance-columns">
+                <!-- Trend Chart -->
+                <div class="governance-panel">
+                    <div class="panel-header">
+                        <h3>
+                            <i data-lucide="trending-up" style="width:18px;height:18px;"></i>
+                            Score Trend
+                        </h3>
+                    </div>
+                    <div class="panel-body" id="trendContainer">
+                        <div class="trend-chart-container" id="trendChart">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+                                <div style="width:12px;height:12px;background:#3b82f6;border-radius:2px;"></div>
+                                <span>Alignment</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+                                <div style="width:12px;height:12px;background:#10b981;border-radius:2px;"></div>
+                                <span>Execution</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+                                <div style="width:12px;height:12px;background:#8b5cf6;border-radius:2px;"></div>
+                                <span>Learning</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health Check History -->
+                <div class="governance-panel">
+                    <div class="panel-header">
+                        <h3>
+                            <i data-lucide="history" style="width:18px;height:18px;"></i>
+                            Health Check History
+                        </h3>
+                    </div>
+                    <div class="panel-body" id="historyContainer">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Configuration -->
+            <div class="governance-panel">
+                <div class="panel-header">
+                    <h3>
+                        <i data-lucide="calendar" style="width:18px;height:18px;"></i>
+                        Automated Health Checks
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <div class="schedule-config">
+                        <div class="schedule-row">
+                            <div class="schedule-label">
+                                <i data-lucide="repeat" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                                <span>Weekly Health Checks (Monday)</span>
+                            </div>
+                            <label class="schedule-toggle">
+                                <input type="checkbox" id="weeklyEnabled" onchange="updateSchedule()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="schedule-row">
+                            <div class="schedule-label">
+                                <i data-lucide="calendar-days" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                                <span>Monthly Health Checks (1st of month)</span>
+                            </div>
+                            <label class="schedule-toggle">
+                                <input type="checkbox" id="monthlyEnabled" onchange="updateSchedule()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/navigation.js"></script>
+    <script>
+        // State
+        let currentFoundation = null;
+        let latestHealthCheck = null;
+        let healthCheckHistory = [];
+        let scheduleConfig = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadData();
+        });
+
+        // Load all data
+        async function loadData() {
+            try {
+                // Load current foundation
+                const foundationRes = await fetch('/api/s2e/foundations/current');
+                const foundationData = await foundationRes.json();
+                currentFoundation = foundationData.success ? foundationData.data : null;
+
+                if (!currentFoundation) {
+                    showNoFoundationState();
+                    return;
+                }
+
+                // Load data in parallel
+                const [latestRes, trendRes, scheduleRes] = await Promise.all([
+                    fetch(`/api/s2e/health-checks/latest?foundation_id=${currentFoundation.id}`),
+                    fetch(`/api/s2e/health-checks/trend?foundation_id=${currentFoundation.id}&limit=12`),
+                    fetch('/api/s2e/health-checks/schedule')
+                ]);
+
+                const latestData = await latestRes.json();
+                const trendData = await trendRes.json();
+                const scheduleData = await scheduleRes.json();
+
+                latestHealthCheck = latestData.success ? latestData.data : null;
+                healthCheckHistory = trendData.success ? trendData.data : [];
+                scheduleConfig = scheduleData.success ? scheduleData.data : null;
+
+                // Render all
+                renderScoreCards();
+                renderObservations();
+                renderRecommendations();
+                renderTrendChart();
+                renderHistory();
+                renderScheduleConfig();
+
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Show state when no foundation exists
+        function showNoFoundationState() {
+            const containers = ['observationsContainer', 'recommendationsContainer', 'historyContainer'];
+            containers.forEach(id => {
+                document.getElementById(id).innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <h3>No Strategic Foundation</h3>
+                        <p>Set up your strategic foundation in Strategy Builder first.</p>
+                        <a href="/strategy" class="btn btn-primary" style="margin-top:1rem;">
+                            Go to Strategy Builder
+                        </a>
+                    </div>
+                `;
+            });
+
+            document.getElementById('trendChart').innerHTML = `
+                <div class="empty-state">
+                    <p>No data available</p>
+                </div>
+            `;
+        }
+
+        // Render score cards
+        function renderScoreCards() {
+            if (!latestHealthCheck) {
+                ['alignment', 'execution', 'learning', 'overall'].forEach(type => {
+                    document.getElementById(`${type}Score`).innerHTML = `--<span class="score-card-suffix">%</span>`;
+                });
+                return;
+            }
+
+            const { alignment_score, execution_score, learning_score } = latestHealthCheck;
+            const overall_score = Math.round((alignment_score + execution_score + learning_score) / 3);
+
+            document.getElementById('alignmentScore').innerHTML = `${alignment_score}<span class="score-card-suffix">%</span>`;
+            document.getElementById('executionScore').innerHTML = `${execution_score}<span class="score-card-suffix">%</span>`;
+            document.getElementById('learningScore').innerHTML = `${learning_score}<span class="score-card-suffix">%</span>`;
+            document.getElementById('overallScore').innerHTML = `${overall_score}<span class="score-card-suffix">%</span>`;
+
+            // Calculate trends if we have history
+            if (healthCheckHistory.length >= 2) {
+                const prev = healthCheckHistory[healthCheckHistory.length - 2];
+                renderTrend('alignment', alignment_score, prev.alignment_score);
+                renderTrend('execution', execution_score, prev.execution_score);
+                renderTrend('learning', learning_score, prev.learning_score);
+                renderTrend('overall', overall_score, prev.overall_score);
+            }
+        }
+
+        function renderTrend(type, current, previous) {
+            const diff = current - previous;
+            const trendEl = document.getElementById(`${type}Trend`);
+
+            if (diff > 0) {
+                trendEl.className = 'score-card-trend up';
+                trendEl.innerHTML = `
+                    <i data-lucide="trending-up" style="width:14px;height:14px;"></i>
+                    <span>+${diff} from last</span>
+                `;
+            } else if (diff < 0) {
+                trendEl.className = 'score-card-trend down';
+                trendEl.innerHTML = `
+                    <i data-lucide="trending-down" style="width:14px;height:14px;"></i>
+                    <span>${diff} from last</span>
+                `;
+            } else {
+                trendEl.className = 'score-card-trend flat';
+                trendEl.innerHTML = `
+                    <i data-lucide="minus" style="width:14px;height:14px;"></i>
+                    <span>No change</span>
+                `;
+            }
+        }
+
+        // Render observations
+        function renderObservations() {
+            const container = document.getElementById('observationsContainer');
+            const observations = latestHealthCheck?.observations || [];
+
+            document.getElementById('observationCount').textContent = `${observations.length} issue${observations.length !== 1 ? 's' : ''}`;
+
+            if (observations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✅</div>
+                        <h3>No Issues Detected</h3>
+                        <p>Your strategy appears healthy</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const iconMap = {
+                drift: 'alert-triangle',
+                overload: 'layers',
+                gap: 'circle-slash',
+                conflict: 'git-merge'
+            };
+
+            container.innerHTML = `
+                <div class="observations-list">
+                    ${observations.map(obs => `
+                        <div class="observation-item ${obs.type} ${obs.severity}">
+                            <div class="observation-icon">
+                                <i data-lucide="${iconMap[obs.type] || 'info'}" style="width:16px;height:16px;"></i>
+                            </div>
+                            <div class="observation-content">
+                                <div class="observation-type">${obs.type} - ${obs.severity}</div>
+                                <div class="observation-description">${obs.description}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Render recommendations
+        function renderRecommendations() {
+            const container = document.getElementById('recommendationsContainer');
+            const recommendations = latestHealthCheck?.recommendations || [];
+
+            const pendingCount = recommendations.filter(r => !r.completed).length;
+            document.getElementById('recommendationCount').textContent = `${pendingCount} action${pendingCount !== 1 ? 's' : ''} pending`;
+
+            if (recommendations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💡</div>
+                        <h3>No Recommendations</h3>
+                        <p>Generate a health check to get recommendations</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="recommendations-list">
+                    ${recommendations.map((rec, index) => `
+                        <div class="recommendation-item ${rec.completed ? 'completed' : ''}">
+                            <div class="recommendation-checkbox" onclick="toggleRecommendation(${index})">
+                                ${rec.completed ? '<i data-lucide="check" style="width:12px;height:12px;"></i>' : ''}
+                            </div>
+                            <div class="recommendation-content">
+                                <div class="recommendation-action">${rec.action}</div>
+                                <div class="recommendation-meta">
+                                    <span class="recommendation-priority ${rec.priority}">${rec.priority}</span>
+                                    ${rec.category ? `<span class="recommendation-category">${rec.category}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Toggle recommendation completion
+        async function toggleRecommendation(index) {
+            if (!latestHealthCheck) return;
+
+            const rec = latestHealthCheck.recommendations[index];
+            if (rec.completed) return; // Can't uncomplete
+
+            try {
+                const res = await fetch(`/api/s2e/health-checks/${latestHealthCheck.id}/recommendations/${index}/complete`, {
+                    method: 'POST'
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    latestHealthCheck = result.data;
+                    renderRecommendations();
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error completing recommendation:', error);
+            }
+        }
+
+        // Render trend chart
+        function renderTrendChart() {
+            const container = document.getElementById('trendChart');
+
+            if (healthCheckHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No health check data yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const maxScore = 100;
+
+            container.innerHTML = healthCheckHistory.map(check => {
+                const date = new Date(check.check_date);
+                const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                return `
+                    <div class="trend-bar-group">
+                        <div class="trend-bars">
+                            <div class="trend-bar alignment" style="height: ${(check.alignment_score / maxScore) * 150}px;" title="Alignment: ${check.alignment_score}%"></div>
+                            <div class="trend-bar execution" style="height: ${(check.execution_score / maxScore) * 150}px;" title="Execution: ${check.execution_score}%"></div>
+                            <div class="trend-bar learning" style="height: ${(check.learning_score / maxScore) * 150}px;" title="Learning: ${check.learning_score}%"></div>
+                        </div>
+                        <div class="trend-label">${label}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render health check history
+        function renderHistory() {
+            const container = document.getElementById('historyContainer');
+
+            if (healthCheckHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>No Health Checks</h3>
+                        <p>Generate your first health check to start tracking</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show most recent first
+            const sortedHistory = [...healthCheckHistory].reverse();
+
+            container.innerHTML = `
+                <div class="health-check-history">
+                    ${sortedHistory.map(check => {
+                        const date = new Date(check.check_date);
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+
+                        return `
+                            <div class="health-check-item ${check.id === latestHealthCheck?.id ? 'selected' : ''}">
+                                <div class="health-check-date">${formattedDate}</div>
+                                <div class="health-check-type">${check.check_type}</div>
+                                <div class="health-check-scores">
+                                    <span class="health-check-score alignment">${check.alignment_score}%</span>
+                                    <span class="health-check-score execution">${check.execution_score}%</span>
+                                    <span class="health-check-score learning">${check.learning_score}%</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Render schedule config
+        function renderScheduleConfig() {
+            if (!scheduleConfig) return;
+
+            document.getElementById('weeklyEnabled').checked = scheduleConfig.weekly_enabled || false;
+            document.getElementById('monthlyEnabled').checked = scheduleConfig.monthly_enabled || false;
+        }
+
+        // Update schedule
+        async function updateSchedule() {
+            const weeklyEnabled = document.getElementById('weeklyEnabled').checked;
+            const monthlyEnabled = document.getElementById('monthlyEnabled').checked;
+
+            try {
+                const res = await fetch('/api/s2e/health-checks/schedule', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        weekly_enabled: weeklyEnabled,
+                        monthly_enabled: monthlyEnabled
+                    })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    scheduleConfig = result.data;
+                }
+            } catch (error) {
+                console.error('Error updating schedule:', error);
+            }
+        }
+
+        // Generate health check
+        async function generateHealthCheck() {
+            if (!currentFoundation) {
+                alert('No strategic foundation found. Please set up your foundation first.');
+                return;
+            }
+
+            try {
+                const btn = document.querySelector('.btn-primary');
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader" style="width:16px;height:16px;" class="spinning"></i> Generating...';
+
+                const res = await fetch('/api/s2e/health-checks/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        foundation_id: currentFoundation.id,
+                        check_type: 'adhoc'
+                    })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    await loadData();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error generating health check:', error);
+                alert('Error generating health check');
+            } finally {
+                const btn = document.querySelector('.btn-primary');
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="activity" style="width:16px;height:16px;"></i> Generate Health Check';
+                lucide.createIcons();
+            }
+        }
+    </script>
+
+    <style>
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</body>
+</html>

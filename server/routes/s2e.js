@@ -1,6 +1,6 @@
 /**
  * INSIGHT 360 - Strategy-to-Execution (S2E) API Routes
- * Version: 1.0.0
+ * Version: 2.1.0
  * Part of Strategize 120 Module
  *
  * Endpoints:
@@ -10,9 +10,14 @@
  *   - OKR Strategic Links
  *   - Key Result Indicators
  *   - Strategy Health Checks
+ *   - Strategy Map & Alignment Reports
+ *   - Cause-Effect Relationships
+ *   - Health Check Generation & Scheduling
+ *   - Briefing Integration (S2E summary for daily briefings)
  */
 
 const express = require('express');
+const s2eService = require('../services/s2eService');
 
 /**
  * S2E Routes Factory
@@ -55,59 +60,9 @@ module.exports = function(supabase) {
      */
     router.get('/foundations/current', async (req, res) => {
         try {
-            const { data: foundation, error: foundationError } = await supabase
-                .from('strategic_foundations')
-                .select('*')
-                .eq('is_current', true)
-                .single();
-
-            if (foundationError && foundationError.code !== 'PGRST116') {
-                throw foundationError;
-            }
-
-            if (!foundation) {
-                return res.json({ success: true, data: null });
-            }
-
-            // Get related themes
-            const { data: themes } = await supabase
-                .from('strategic_themes')
-                .select('*')
-                .eq('foundation_id', foundation.id)
-                .eq('is_active', true)
-                .order('sort_order');
-
-            // Get perspectives with objectives
-            const { data: perspectives } = await supabase
-                .from('bsc_perspectives')
-                .select('*')
-                .eq('foundation_id', foundation.id)
-                .order('sort_order');
-
-            // Get objectives for each perspective
-            const perspectivesWithObjectives = await Promise.all(
-                (perspectives || []).map(async (perspective) => {
-                    const { data: objectives } = await supabase
-                        .from('bsc_objectives')
-                        .select('*, strategic_themes(name, color)')
-                        .eq('perspective_id', perspective.id)
-                        .order('sort_order');
-
-                    return {
-                        ...perspective,
-                        objectives: objectives || []
-                    };
-                })
-            );
-
-            res.json({
-                success: true,
-                data: {
-                    ...foundation,
-                    themes: themes || [],
-                    perspectives: perspectivesWithObjectives
-                }
-            });
+            const userId = getUserId(req);
+            const data = await s2eService.getCurrentFoundationWithHierarchy(userId);
+            res.json({ success: true, data });
         } catch (error) {
             console.error('Error getting current foundation:', error);
             res.status(500).json({ success: false, error: error.message });
@@ -155,12 +110,18 @@ module.exports = function(supabase) {
                 status
             } = req.body;
 
+            // Validate
+            const validation = s2eService.validateFoundation({ vision, mission, planning_period });
+            if (!validation.valid) {
+                return res.status(400).json({
+                    success: false,
+                    error: validation.errors.join(', ')
+                });
+            }
+
             // If this is being set as current, unset any existing current
             if (req.body.is_current) {
-                await supabase
-                    .from('strategic_foundations')
-                    .update({ is_current: false })
-                    .eq('is_current', true);
+                await s2eService.setCurrentFoundation(userId, null);
             }
 
             const { data, error } = await supabase
@@ -196,13 +157,11 @@ module.exports = function(supabase) {
     router.put('/foundations/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const userId = getUserId(req);
 
-            // If setting as current, unset others first
+            // If setting as current, use service to atomically update
             if (req.body.is_current) {
-                await supabase
-                    .from('strategic_foundations')
-                    .update({ is_current: false })
-                    .neq('id', id);
+                await s2eService.setCurrentFoundation(userId, id);
             }
 
             const { data, error } = await supabase
@@ -284,10 +243,12 @@ module.exports = function(supabase) {
             const userId = getUserId(req);
             const { foundation_id, name, description, icon, color, rationale, sort_order } = req.body;
 
-            if (!foundation_id || !name) {
+            // Validate
+            const validation = s2eService.validateTheme({ foundation_id, name });
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'foundation_id and name are required'
+                    error: validation.errors.join(', ')
                 });
             }
 
@@ -411,10 +372,12 @@ module.exports = function(supabase) {
                 sort_order
             } = req.body;
 
-            if (!foundation_id || !name || !perspective_type) {
+            // Validate
+            const validation = s2eService.validatePerspective({ foundation_id, name, perspective_type });
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'foundation_id, name, and perspective_type are required'
+                    error: validation.errors.join(', ')
                 });
             }
 
@@ -505,54 +468,7 @@ module.exports = function(supabase) {
                 });
             }
 
-            const defaultPerspectives = [
-                {
-                    name: 'Financial',
-                    perspective_type: 'financial',
-                    guiding_question: 'How must we perform financially to sustain the mission?',
-                    icon: 'banknote',
-                    color: '#10b981',
-                    sort_order: 1
-                },
-                {
-                    name: 'Customer & Stakeholder',
-                    perspective_type: 'customer',
-                    guiding_question: 'Who must trust us, and why?',
-                    icon: 'users',
-                    color: '#3b82f6',
-                    sort_order: 2
-                },
-                {
-                    name: 'Internal Processes',
-                    perspective_type: 'internal_process',
-                    guiding_question: 'What must we excel at operationally?',
-                    icon: 'settings',
-                    color: '#f59e0b',
-                    sort_order: 3
-                },
-                {
-                    name: 'Learning & Growth',
-                    perspective_type: 'learning_growth',
-                    guiding_question: 'What capabilities must we build next?',
-                    icon: 'graduation-cap',
-                    color: '#8b5cf6',
-                    sort_order: 4
-                }
-            ];
-
-            const perspectivesToInsert = defaultPerspectives.map(p => ({
-                ...p,
-                user_id: userId,
-                foundation_id
-            }));
-
-            const { data, error } = await supabase
-                .from('bsc_perspectives')
-                .insert(perspectivesToInsert)
-                .select();
-
-            if (error) throw error;
-
+            const data = await s2eService.initializeDefaultPerspectives(userId, foundation_id);
             res.json({ success: true, data });
         } catch (error) {
             console.error('Error initializing perspectives:', error);
@@ -617,11 +533,15 @@ module.exports = function(supabase) {
                 .select('*, okrs(*)')
                 .eq('bsc_objective_id', id);
 
+            // Get causal chain
+            const causalChain = await s2eService.getObjectiveCausalChain(id);
+
             res.json({
                 success: true,
                 data: {
                     ...objective,
-                    linked_okrs: links || []
+                    linked_okrs: links || [],
+                    causal_chain: causalChain
                 }
             });
         } catch (error) {
@@ -644,13 +564,17 @@ module.exports = function(supabase) {
                 theme_id,
                 owner_role_id,
                 status,
-                sort_order
+                sort_order,
+                causes,
+                effects
             } = req.body;
 
-            if (!perspective_id || !name) {
+            // Validate
+            const validation = s2eService.validateObjective({ perspective_id, name });
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'perspective_id and name are required'
+                    error: validation.errors.join(', ')
                 });
             }
 
@@ -664,7 +588,9 @@ module.exports = function(supabase) {
                     theme_id,
                     owner_role_id,
                     status: status || 'draft',
-                    sort_order: sort_order || 0
+                    sort_order: sort_order || 0,
+                    causes: causes || [],
+                    effects: effects || []
                 })
                 .select()
                 .single();
@@ -698,6 +624,40 @@ module.exports = function(supabase) {
             res.json({ success: true, data });
         } catch (error) {
             console.error('Error updating objective:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/s2e/objectives/:id/causes
+     * Update cause relationships for an objective
+     */
+    router.put('/objectives/:id/causes', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { cause_ids } = req.body;
+
+            const data = await s2eService.updateObjectiveCauses(id, cause_ids);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error updating objective causes:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/s2e/objectives/:id/effects
+     * Update effect relationships for an objective
+     */
+    router.put('/objectives/:id/effects', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { effect_ids } = req.body;
+
+            const data = await s2eService.updateObjectiveEffects(id, effect_ids);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error updating objective effects:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
@@ -738,7 +698,7 @@ module.exports = function(supabase) {
 
             let query = supabase
                 .from('okr_strategic_links')
-                .select('*, okrs(title, progress, status), bsc_objectives(name)')
+                .select('*, okrs(title, progress, status), bsc_objectives(name, bsc_perspectives(name, perspective_type))')
                 .order('created_at', { ascending: false });
 
             if (okr_id) {
@@ -775,19 +735,18 @@ module.exports = function(supabase) {
                 alignment_score
             } = req.body;
 
-            if (!okr_id || !bsc_objective_id) {
+            // Validate
+            const validation = s2eService.validateOKRLink({ okr_id, bsc_objective_id, link_type, alignment_score });
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'okr_id and bsc_objective_id are required'
+                    error: validation.errors.join(', ')
                 });
             }
 
-            // If setting as primary, unset other primary links for this OKR
+            // If setting as primary, use service to atomically update
             if (is_primary) {
-                await supabase
-                    .from('okr_strategic_links')
-                    .update({ is_primary: false })
-                    .eq('okr_id', okr_id);
+                await s2eService.setPrimaryOKRLink(userId, okr_id, null);
             }
 
             const { data, error } = await supabase
@@ -806,9 +765,53 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // If this was set as primary, update the link ID
+            if (is_primary && data) {
+                await s2eService.setPrimaryOKRLink(userId, okr_id, data.id);
+            }
+
             res.json({ success: true, data });
         } catch (error) {
             console.error('Error creating OKR link:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/s2e/okr-links/:id
+     * Update OKR strategic link
+     */
+    router.put('/okr-links/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const userId = getUserId(req);
+
+            // If setting as primary, handle atomically
+            if (req.body.is_primary) {
+                // Get the OKR ID for this link
+                const { data: link } = await supabase
+                    .from('okr_strategic_links')
+                    .select('okr_id')
+                    .eq('id', id)
+                    .single();
+
+                if (link) {
+                    await s2eService.setPrimaryOKRLink(userId, link.okr_id, id);
+                }
+            }
+
+            const { data, error } = await supabase
+                .from('okr_strategic_links')
+                .update(req.body)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error updating OKR link:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
@@ -887,10 +890,12 @@ module.exports = function(supabase) {
                 data_source
             } = req.body;
 
-            if (!okr_id || key_result_index === undefined || !indicator_type) {
+            // Validate
+            const validation = s2eService.validateIndicator({ okr_id, key_result_index, indicator_type });
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'okr_id, key_result_index, and indicator_type are required'
+                    error: validation.errors.join(', ')
                 });
             }
 
@@ -981,8 +986,74 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/s2e/health-checks/latest
+     * Get most recent health check with full context
+     */
+    router.get('/health-checks/latest', async (req, res) => {
+        try {
+            const { foundation_id } = req.query;
+
+            let query = supabase
+                .from('strategy_health_checks')
+                .select('*, strategic_foundations(vision, mission, planning_period)')
+                .order('check_date', { ascending: false })
+                .limit(1);
+
+            if (foundation_id) {
+                query = query.eq('foundation_id', foundation_id);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            res.json({ success: true, data: data?.[0] || null });
+        } catch (error) {
+            console.error('Error getting latest health check:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/s2e/health-checks/trend
+     * Get historical health check scores for trending
+     */
+    router.get('/health-checks/trend', async (req, res) => {
+        try {
+            const { foundation_id, limit: queryLimit = 12 } = req.query;
+
+            let query = supabase
+                .from('strategy_health_checks')
+                .select('id, check_date, check_type, alignment_score, execution_score, learning_score, status')
+                .order('check_date', { ascending: true })
+                .limit(parseInt(queryLimit));
+
+            if (foundation_id) {
+                query = query.eq('foundation_id', foundation_id);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            // Calculate trend data
+            const trendData = (data || []).map(check => ({
+                ...check,
+                overall_score: Math.round(
+                    ((check.alignment_score || 0) + (check.execution_score || 0) + (check.learning_score || 0)) / 3
+                )
+            }));
+
+            res.json({ success: true, data: trendData });
+        } catch (error) {
+            console.error('Error getting health check trend:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
      * POST /api/s2e/health-checks
-     * Create strategy health check
+     * Create strategy health check (manual)
      */
     router.post('/health-checks', async (req, res) => {
         try {
@@ -1000,10 +1071,12 @@ module.exports = function(supabase) {
                 status
             } = req.body;
 
-            if (!foundation_id || !check_type) {
+            // Validate
+            const validation = s2eService.validateHealthCheck({ foundation_id, check_type, alignment_score, execution_score, learning_score });
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'foundation_id and check_type are required'
+                    error: validation.errors.join(', ')
                 });
             }
 
@@ -1030,6 +1103,30 @@ module.exports = function(supabase) {
             res.json({ success: true, data });
         } catch (error) {
             console.error('Error creating health check:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/s2e/health-checks/generate
+     * Generate automated health check with calculated scores
+     */
+    router.post('/health-checks/generate', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const { foundation_id, check_type = 'adhoc' } = req.body;
+
+            if (!foundation_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'foundation_id is required'
+                });
+            }
+
+            const data = await s2eService.generateHealthCheck(userId, foundation_id, check_type);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error generating health check:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
@@ -1064,6 +1161,55 @@ module.exports = function(supabase) {
     });
 
     /**
+     * POST /api/s2e/health-checks/:id/recommendations/:index/complete
+     * Mark a recommendation as completed
+     */
+    router.post('/health-checks/:id/recommendations/:index/complete', async (req, res) => {
+        try {
+            const { id, index } = req.params;
+
+            // Get current health check
+            const { data: healthCheck, error: fetchError } = await supabase
+                .from('strategy_health_checks')
+                .select('recommendations')
+                .eq('id', id)
+                .single();
+
+            if (fetchError) throw fetchError;
+
+            const recommendations = healthCheck.recommendations || [];
+            const recIndex = parseInt(index);
+
+            if (recIndex >= 0 && recIndex < recommendations.length) {
+                recommendations[recIndex] = {
+                    ...recommendations[recIndex],
+                    completed: true,
+                    completed_at: new Date().toISOString()
+                };
+
+                const { data, error } = await supabase
+                    .from('strategy_health_checks')
+                    .update({ recommendations })
+                    .eq('id', id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                res.json({ success: true, data });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    error: 'Invalid recommendation index'
+                });
+            }
+        } catch (error) {
+            console.error('Error completing recommendation:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
      * DELETE /api/s2e/health-checks/:id
      * Delete strategy health check
      */
@@ -1086,6 +1232,40 @@ module.exports = function(supabase) {
     });
 
     // ============================================================================
+    // HEALTH CHECK SCHEDULING ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/s2e/health-checks/schedule
+     * Get health check schedule configuration
+     */
+    router.get('/health-checks/schedule', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const data = await s2eService.getHealthCheckSchedule(userId);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error getting health check schedule:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/s2e/health-checks/schedule
+     * Update health check schedule configuration
+     */
+    router.put('/health-checks/schedule', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const data = await s2eService.updateHealthCheckSchedule(userId, req.body);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error updating health check schedule:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
     // STRATEGY MAP / OVERVIEW ENDPOINTS
     // ============================================================================
 
@@ -1095,83 +1275,9 @@ module.exports = function(supabase) {
      */
     router.get('/strategy-map', async (req, res) => {
         try {
-            // Get current foundation
-            const { data: foundation } = await supabase
-                .from('strategic_foundations')
-                .select('*')
-                .eq('is_current', true)
-                .single();
-
-            if (!foundation) {
-                return res.json({ success: true, data: null });
-            }
-
-            // Get themes
-            const { data: themes } = await supabase
-                .from('strategic_themes')
-                .select('*')
-                .eq('foundation_id', foundation.id)
-                .eq('is_active', true)
-                .order('sort_order');
-
-            // Get perspectives with objectives
-            const { data: perspectives } = await supabase
-                .from('bsc_perspectives')
-                .select('*')
-                .eq('foundation_id', foundation.id)
-                .order('sort_order');
-
-            const perspectivesWithData = await Promise.all(
-                (perspectives || []).map(async (perspective) => {
-                    const { data: objectives } = await supabase
-                        .from('bsc_objectives')
-                        .select('*')
-                        .eq('perspective_id', perspective.id)
-                        .order('sort_order');
-
-                    // Get linked OKRs for each objective
-                    const objectivesWithOKRs = await Promise.all(
-                        (objectives || []).map(async (obj) => {
-                            const { data: links } = await supabase
-                                .from('okr_strategic_links')
-                                .select('*, okrs(id, title, progress, status, period)')
-                                .eq('bsc_objective_id', obj.id);
-
-                            const linkedOKRs = (links || []).map(l => ({
-                                ...l.okrs,
-                                link_type: l.link_type,
-                                is_primary: l.is_primary
-                            }));
-
-                            // Calculate average progress
-                            const avgProgress = linkedOKRs.length > 0
-                                ? Math.round(linkedOKRs.reduce((sum, o) => sum + (o.progress || 0), 0) / linkedOKRs.length)
-                                : null;
-
-                            return {
-                                ...obj,
-                                linked_okrs: linkedOKRs,
-                                okr_count: linkedOKRs.length,
-                                avg_progress: avgProgress
-                            };
-                        })
-                    );
-
-                    return {
-                        ...perspective,
-                        objectives: objectivesWithOKRs
-                    };
-                })
-            );
-
-            res.json({
-                success: true,
-                data: {
-                    foundation,
-                    themes: themes || [],
-                    perspectives: perspectivesWithData
-                }
-            });
+            const userId = getUserId(req);
+            const data = await s2eService.buildStrategyMap(userId);
+            res.json({ success: true, data });
         } catch (error) {
             console.error('Error getting strategy map:', error);
             res.status(500).json({ success: false, error: error.message });
@@ -1184,73 +1290,96 @@ module.exports = function(supabase) {
      */
     router.get('/alignment-report', async (req, res) => {
         try {
-            // Get all OKRs
-            const { data: okrs } = await supabase
-                .from('okrs')
-                .select('*, departments(name)')
-                .order('created_at', { ascending: false });
+            const userId = getUserId(req);
+            const data = await s2eService.generateAlignmentReport(userId);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error getting alignment report:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
 
-            // Get all strategic links
-            const { data: links } = await supabase
-                .from('okr_strategic_links')
-                .select('*, bsc_objectives(name, bsc_perspectives(perspective_type))');
+    /**
+     * GET /api/s2e/health-scores/:foundationId
+     * Get calculated health scores for a foundation
+     */
+    router.get('/health-scores/:foundationId', async (req, res) => {
+        try {
+            const { foundationId } = req.params;
+            const data = await s2eService.calculateHealthScores(foundationId);
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error calculating health scores:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
 
-            // Get all indicators
-            const { data: indicators } = await supabase
-                .from('key_result_indicators')
-                .select('*');
-
-            // Build alignment report
-            const report = (okrs || []).map(okr => {
-                const okrLinks = (links || []).filter(l => l.okr_id === okr.id);
-                const okrIndicators = (indicators || []).filter(i => i.okr_id === okr.id);
-
-                const leadingCount = okrIndicators.filter(i => i.indicator_type === 'leading').length;
-                const laggingCount = okrIndicators.filter(i => i.indicator_type === 'lagging').length;
-
-                return {
-                    okr_id: okr.id,
-                    title: okr.title,
-                    scope: okr.scope,
-                    period: okr.period,
-                    progress: okr.progress,
-                    status: okr.status,
-                    department: okr.departments?.name,
-                    is_strategically_linked: okrLinks.length > 0,
-                    linked_objectives: okrLinks.map(l => ({
-                        name: l.bsc_objectives?.name,
-                        perspective: l.bsc_objectives?.bsc_perspectives?.perspective_type,
-                        link_type: l.link_type,
-                        is_primary: l.is_primary
-                    })),
-                    indicator_balance: {
-                        leading: leadingCount,
-                        lagging: laggingCount,
-                        total: leadingCount + laggingCount
-                    }
-                };
-            });
-
-            // Calculate summary stats
-            const linkedCount = report.filter(r => r.is_strategically_linked).length;
-            const unlinkedCount = report.filter(r => !r.is_strategically_linked).length;
-
+    /**
+     * GET /api/s2e/health-analysis/:foundationId
+     * Get health analysis observations for a foundation
+     */
+    router.get('/health-analysis/:foundationId', async (req, res) => {
+        try {
+            const { foundationId } = req.params;
+            const observations = await s2eService.analyzeStrategyHealth(foundationId);
+            const recommendations = s2eService.generateRecommendations(observations);
             res.json({
                 success: true,
                 data: {
-                    summary: {
-                        total_okrs: report.length,
-                        linked: linkedCount,
-                        unlinked: unlinkedCount,
-                        alignment_rate: report.length > 0
-                            ? Math.round((linkedCount / report.length) * 100)
-                            : 0
-                    },
-                    okrs: report
+                    observations,
+                    recommendations
                 }
             });
         } catch (error) {
-            console.error('Error getting alignment report:', error);
+            console.error('Error analyzing strategy health:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // BRIEFING INTEGRATION ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/s2e/briefing-summary
+     * Generate a strategy summary for the daily briefing
+     */
+    router.get('/briefing-summary', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'User not authenticated' });
+            }
+
+            const summary = await s2eService.generateBriefingSummary(userId);
+            res.json({
+                success: true,
+                data: summary
+            });
+        } catch (error) {
+            console.error('Error generating briefing summary:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/s2e/briefing-metrics
+     * Get condensed S2E metrics for briefing context
+     */
+    router.get('/briefing-metrics', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'User not authenticated' });
+            }
+
+            const metrics = await s2eService.getBriefingMetrics(userId);
+            res.json({
+                success: true,
+                data: metrics
+            });
+        } catch (error) {
+            console.error('Error getting briefing metrics:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });

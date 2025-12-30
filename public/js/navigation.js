@@ -16,6 +16,7 @@ const navItems = [
     { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
     { href: '/company-dashboard.html', icon: 'building', label: 'Company' },
     { href: '/strategy.html', icon: 'compass', label: 'Strategy (S2E)' },
+    { href: '/strategy-governance.html', icon: 'shield-check', label: 'Governance' },
     { href: '/chat.html', icon: 'message-square', label: 'Multi-LLM Chat' },
     { href: '/context.html', icon: 'database', label: 'Context Assets' },
     { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
@@ -23,7 +24,7 @@ const navItems = [
     { href: '/actions.html', icon: 'zap', label: 'Actions' },
     { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
     { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
-    { href: '/integrity.html', icon: 'shield-check', label: 'Integrity' }
+    { href: '/integrity.html', icon: 'activity', label: 'Integrity' }
 ];
 
 /**

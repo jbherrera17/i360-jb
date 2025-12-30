@@ -1,14 +1,18 @@
 /**
  * INSIGHT 360 - Scheduler Service
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Handles cron scheduling for daily briefing generation.
+ * Handles cron scheduling for:
+ * - Daily briefing generation
+ * - S2E health check generation (weekly/monthly)
+ *
  * Uses node-cron for job scheduling with timezone support.
  */
 
 const cron = require('node-cron');
 const { createClient } = require('@supabase/supabase-js');
 const briefingService = require('./briefingService');
+const s2eService = require('./s2eService');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -18,6 +22,9 @@ const supabase = createClient(
 
 // Store active jobs: Map<userId, cronJob>
 const activeJobs = new Map();
+
+// Store S2E health check jobs: Map<`${userId}-${type}`, cronJob>
+const activeS2EJobs = new Map();
 
 // Scheduler status
 let isInitialized = false;
@@ -289,6 +296,213 @@ function shutdownScheduler() {
     console.log('[Scheduler] Shutdown complete');
 }
 
+// ============================================================================
+// S2E HEALTH CHECK SCHEDULING
+// ============================================================================
+
+/**
+ * Generate a health check for a user (called by cron job)
+ * @param {string} userId - User ID
+ * @param {string} checkType - 'weekly' or 'monthly'
+ */
+async function generateHealthCheckForUser(userId, checkType) {
+    console.log(`[Scheduler] Starting scheduled ${checkType} health check for user ${userId}`);
+    const startTime = Date.now();
+
+    try {
+        // Get current foundation for user
+        const foundation = await s2eService.getCurrentFoundationWithHierarchy(userId);
+
+        if (!foundation) {
+            console.log(`[Scheduler] User ${userId} has no current foundation, skipping health check`);
+            return null;
+        }
+
+        // Generate the health check
+        const healthCheck = await s2eService.generateHealthCheck(userId, foundation.id, checkType);
+
+        const duration = Date.now() - startTime;
+        console.log(`[Scheduler] Completed ${checkType} health check for user ${userId} in ${duration}ms`);
+
+        // Update schedule config
+        const updateField = checkType === 'weekly' ? 'last_weekly_run' : 'last_monthly_run';
+        await supabase
+            .from('s2e_schedule_config')
+            .update({ [updateField]: new Date().toISOString() })
+            .eq('user_id', userId);
+
+        return healthCheck;
+    } catch (error) {
+        console.error(`[Scheduler] Error generating ${checkType} health check for user ${userId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Schedule S2E health checks for a user
+ * @param {string} userId - User ID
+ * @param {Object} config - Schedule configuration
+ * @param {string} timezone - Timezone string
+ */
+function scheduleS2EHealthChecks(userId, config, timezone = 'America/New_York') {
+    // Cancel existing S2E jobs for this user
+    cancelS2ESchedule(userId);
+
+    // Schedule weekly check if enabled (default: Monday at 9 AM)
+    if (config.weekly_enabled) {
+        const weeklyDay = config.weekly_day || 1; // 0 = Sunday, 1 = Monday, etc.
+        const weeklyCron = `0 9 * * ${weeklyDay}`; // 9:00 AM on specified day
+
+        if (cron.validate(weeklyCron)) {
+            console.log(`[Scheduler] Scheduling weekly S2E health check for user ${userId} (cron: ${weeklyCron})`);
+
+            const weeklyJob = cron.schedule(weeklyCron, async () => {
+                try {
+                    await generateHealthCheckForUser(userId, 'weekly');
+                } catch (error) {
+                    // Error already logged
+                }
+            }, {
+                timezone,
+                scheduled: true
+            });
+
+            activeS2EJobs.set(`${userId}-weekly`, weeklyJob);
+        }
+    }
+
+    // Schedule monthly check if enabled (default: 1st of month at 9 AM)
+    if (config.monthly_enabled) {
+        const monthlyDay = config.monthly_day || 1;
+        const monthlyCron = `0 9 ${monthlyDay} * *`; // 9:00 AM on specified day of month
+
+        if (cron.validate(monthlyCron)) {
+            console.log(`[Scheduler] Scheduling monthly S2E health check for user ${userId} (cron: ${monthlyCron})`);
+
+            const monthlyJob = cron.schedule(monthlyCron, async () => {
+                try {
+                    await generateHealthCheckForUser(userId, 'monthly');
+                } catch (error) {
+                    // Error already logged
+                }
+            }, {
+                timezone,
+                scheduled: true
+            });
+
+            activeS2EJobs.set(`${userId}-monthly`, monthlyJob);
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Cancel S2E health check schedules for a user
+ * @param {string} userId - User ID
+ */
+function cancelS2ESchedule(userId) {
+    let cancelled = 0;
+
+    // Cancel weekly job
+    const weeklyKey = `${userId}-weekly`;
+    if (activeS2EJobs.has(weeklyKey)) {
+        activeS2EJobs.get(weeklyKey).stop();
+        activeS2EJobs.delete(weeklyKey);
+        cancelled++;
+    }
+
+    // Cancel monthly job
+    const monthlyKey = `${userId}-monthly`;
+    if (activeS2EJobs.has(monthlyKey)) {
+        activeS2EJobs.get(monthlyKey).stop();
+        activeS2EJobs.delete(monthlyKey);
+        cancelled++;
+    }
+
+    if (cancelled > 0) {
+        console.log(`[Scheduler] Cancelled ${cancelled} S2E job(s) for user ${userId}`);
+    }
+
+    return cancelled > 0;
+}
+
+/**
+ * Initialize S2E health check scheduler
+ * Loads all enabled S2E schedule configs
+ */
+async function initializeS2EScheduler() {
+    console.log('[Scheduler] Initializing S2E health check scheduler...');
+
+    try {
+        // Load all S2E schedule configs where at least one is enabled
+        const { data: configs, error } = await supabase
+            .from('s2e_schedule_config')
+            .select('*')
+            .or('weekly_enabled.eq.true,monthly_enabled.eq.true');
+
+        if (error) {
+            // Table might not exist yet - not a fatal error
+            if (error.code === '42P01') {
+                console.log('[Scheduler] S2E schedule config table not found, skipping');
+                return;
+            }
+            throw error;
+        }
+
+        if (!configs || configs.length === 0) {
+            console.log('[Scheduler] No enabled S2E health check configs found');
+            return;
+        }
+
+        console.log(`[Scheduler] Found ${configs.length} enabled S2E health check config(s)`);
+
+        // Schedule each user's health checks
+        let scheduled = 0;
+        for (const config of configs) {
+            const success = scheduleS2EHealthChecks(
+                config.user_id,
+                config,
+                config.timezone || 'America/New_York'
+            );
+            if (success) scheduled++;
+        }
+
+        console.log(`[Scheduler] Successfully scheduled S2E health checks for ${scheduled} user(s)`);
+    } catch (error) {
+        console.error('[Scheduler] Failed to initialize S2E scheduler:', error);
+        // Don't throw - S2E scheduling is not critical
+    }
+}
+
+/**
+ * Get S2E scheduler status
+ * @returns {Object} - S2E scheduler status
+ */
+function getS2ESchedulerStatus() {
+    const jobs = [];
+    for (const [key, job] of activeS2EJobs) {
+        const [userId, type] = key.split('-');
+        jobs.push({ userId, type, running: true });
+    }
+
+    return {
+        activeJobs: activeS2EJobs.size,
+        jobs
+    };
+}
+
+/**
+ * Manually trigger a health check for a user
+ * @param {string} userId - User ID
+ * @param {string} checkType - 'weekly', 'monthly', or 'adhoc'
+ * @returns {Object} - Generated health check
+ */
+async function triggerManualHealthCheck(userId, checkType = 'adhoc') {
+    console.log(`[Scheduler] Manual ${checkType} health check triggered for user ${userId}`);
+    return generateHealthCheckForUser(userId, checkType);
+}
+
 module.exports = {
     // Core scheduling
     initializeScheduler,
@@ -307,5 +521,13 @@ module.exports = {
 
     // Utilities
     timeToCron,
-    updateNextRunTime
+    updateNextRunTime,
+
+    // S2E Health Check Scheduling
+    initializeS2EScheduler,
+    scheduleS2EHealthChecks,
+    cancelS2ESchedule,
+    generateHealthCheckForUser,
+    triggerManualHealthCheck,
+    getS2ESchedulerStatus
 };

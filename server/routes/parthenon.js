@@ -556,10 +556,34 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
-            // Build hierarchy if requested
+            // Fetch strategic links for all OKRs
             let result = data || [];
+            if (result.length > 0) {
+                const okrIds = result.map(o => o.id);
+                const { data: links, error: linksError } = await supabase
+                    .from('okr_strategic_links')
+                    .select('id, okr_id, objective_id, link_type, is_primary')
+                    .in('okr_id', okrIds);
+
+                if (!linksError && links) {
+                    // Group links by okr_id
+                    const linksByOkr = {};
+                    links.forEach(link => {
+                        if (!linksByOkr[link.okr_id]) linksByOkr[link.okr_id] = [];
+                        linksByOkr[link.okr_id].push(link);
+                    });
+
+                    // Attach strategic_links to each OKR
+                    result = result.map(okr => ({
+                        ...okr,
+                        strategic_links: linksByOkr[okr.id] || []
+                    }));
+                }
+            }
+
+            // Build hierarchy if requested
             if (include_children === 'true') {
-                result = buildOKRHierarchy(data, null);
+                result = buildOKRHierarchy(result, null);
             }
 
             res.json({
@@ -578,7 +602,7 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/parthenon/okrs/:id
-     * Get single OKR with children
+     * Get single OKR with children and strategic links
      */
     router.get('/okrs/:id', async (req, res) => {
         try {
@@ -619,12 +643,52 @@ module.exports = function(supabase) {
                 .select('id, title, scope, progress, status')
                 .eq('parent_okr_id', id);
 
+            // Get strategic links (S2E integration)
+            const { data: strategicLinks } = await supabase
+                .from('okr_strategic_links')
+                .select(`
+                    id,
+                    link_type,
+                    is_primary,
+                    alignment_score,
+                    contribution_description,
+                    bsc_objectives (
+                        id,
+                        name,
+                        description,
+                        bsc_perspectives (
+                            id,
+                            name,
+                            perspective_type,
+                            color
+                        )
+                    )
+                `)
+                .eq('okr_id', id);
+
+            // Transform strategic links for cleaner response
+            const formattedLinks = (strategicLinks || []).map(link => ({
+                id: link.id,
+                objective_id: link.bsc_objectives?.id,
+                objective_name: link.bsc_objectives?.name,
+                objective_description: link.bsc_objectives?.description,
+                perspective_id: link.bsc_objectives?.bsc_perspectives?.id,
+                perspective_name: link.bsc_objectives?.bsc_perspectives?.name,
+                perspective_type: link.bsc_objectives?.bsc_perspectives?.perspective_type,
+                perspective_color: link.bsc_objectives?.bsc_perspectives?.color,
+                link_type: link.link_type,
+                is_primary: link.is_primary,
+                alignment_score: link.alignment_score,
+                contribution_description: link.contribution_description
+            }));
+
             res.json({
                 success: true,
                 data: {
                     ...okr,
                     parent_okr: parentOKR,
-                    child_okrs: children || []
+                    child_okrs: children || [],
+                    strategic_links: formattedLinks
                 }
             });
 
@@ -1096,6 +1160,371 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Error seeding defaults:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    // ============================================================================
+    // OKR STRATEGIC LINKS ENDPOINTS (S2E Integration)
+    // ============================================================================
+
+    /**
+     * GET /api/parthenon/okrs/:id/strategic-links
+     * Get strategic links for an OKR
+     */
+    router.get('/okrs/:id/strategic-links', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data: links, error } = await supabase
+                .from('okr_strategic_links')
+                .select(`
+                    id,
+                    link_type,
+                    is_primary,
+                    alignment_score,
+                    contribution_description,
+                    created_at,
+                    bsc_objectives (
+                        id,
+                        name,
+                        description,
+                        bsc_perspectives (
+                            id,
+                            name,
+                            perspective_type,
+                            color
+                        )
+                    )
+                `)
+                .eq('okr_id', id)
+                .order('is_primary', { ascending: false });
+
+            if (error) throw error;
+
+            // Transform for cleaner response
+            const formattedLinks = (links || []).map(link => ({
+                id: link.id,
+                objective_id: link.bsc_objectives?.id,
+                objective_name: link.bsc_objectives?.name,
+                objective_description: link.bsc_objectives?.description,
+                perspective_id: link.bsc_objectives?.bsc_perspectives?.id,
+                perspective_name: link.bsc_objectives?.bsc_perspectives?.name,
+                perspective_type: link.bsc_objectives?.bsc_perspectives?.perspective_type,
+                perspective_color: link.bsc_objectives?.bsc_perspectives?.color,
+                link_type: link.link_type,
+                is_primary: link.is_primary,
+                alignment_score: link.alignment_score,
+                contribution_description: link.contribution_description,
+                created_at: link.created_at
+            }));
+
+            res.json({
+                success: true,
+                data: formattedLinks
+            });
+
+        } catch (error) {
+            console.error('Error getting OKR strategic links:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/parthenon/okrs/:id/strategic-links
+     * Create strategic link for an OKR
+     */
+    router.post('/okrs/:id/strategic-links', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const userId = getUserId(req);
+            const {
+                bsc_objective_id,
+                link_type = 'supports',
+                contribution_description,
+                is_primary = false,
+                alignment_score = 100
+            } = req.body;
+
+            if (!bsc_objective_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'bsc_objective_id is required'
+                });
+            }
+
+            // If setting as primary, unset other primary links for this OKR
+            if (is_primary) {
+                await supabase
+                    .from('okr_strategic_links')
+                    .update({ is_primary: false })
+                    .eq('okr_id', id);
+            }
+
+            const { data, error } = await supabase
+                .from('okr_strategic_links')
+                .insert({
+                    user_id: userId,
+                    okr_id: id,
+                    bsc_objective_id,
+                    link_type,
+                    contribution_description,
+                    is_primary,
+                    alignment_score
+                })
+                .select(`
+                    id,
+                    link_type,
+                    is_primary,
+                    alignment_score,
+                    contribution_description,
+                    bsc_objectives (
+                        id,
+                        name,
+                        bsc_perspectives (
+                            id,
+                            name,
+                            perspective_type,
+                            color
+                        )
+                    )
+                `)
+                .single();
+
+            if (error) throw error;
+
+            // Format response
+            const formattedLink = {
+                id: data.id,
+                objective_id: data.bsc_objectives?.id,
+                objective_name: data.bsc_objectives?.name,
+                perspective_id: data.bsc_objectives?.bsc_perspectives?.id,
+                perspective_name: data.bsc_objectives?.bsc_perspectives?.name,
+                perspective_type: data.bsc_objectives?.bsc_perspectives?.perspective_type,
+                perspective_color: data.bsc_objectives?.bsc_perspectives?.color,
+                link_type: data.link_type,
+                is_primary: data.is_primary,
+                alignment_score: data.alignment_score,
+                contribution_description: data.contribution_description
+            };
+
+            res.status(201).json({
+                success: true,
+                data: formattedLink
+            });
+
+        } catch (error) {
+            console.error('Error creating OKR strategic link:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * PUT /api/parthenon/okrs/:okrId/strategic-links/:linkId
+     * Update a strategic link
+     */
+    router.put('/okrs/:okrId/strategic-links/:linkId', async (req, res) => {
+        try {
+            const { okrId, linkId } = req.params;
+            const { link_type, contribution_description, is_primary, alignment_score } = req.body;
+
+            // If setting as primary, unset other primary links for this OKR
+            if (is_primary) {
+                await supabase
+                    .from('okr_strategic_links')
+                    .update({ is_primary: false })
+                    .eq('okr_id', okrId)
+                    .neq('id', linkId);
+            }
+
+            const updateData = {};
+            if (link_type !== undefined) updateData.link_type = link_type;
+            if (contribution_description !== undefined) updateData.contribution_description = contribution_description;
+            if (is_primary !== undefined) updateData.is_primary = is_primary;
+            if (alignment_score !== undefined) updateData.alignment_score = alignment_score;
+
+            const { data, error } = await supabase
+                .from('okr_strategic_links')
+                .update(updateData)
+                .eq('id', linkId)
+                .eq('okr_id', okrId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data
+            });
+
+        } catch (error) {
+            console.error('Error updating OKR strategic link:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * DELETE /api/parthenon/okrs/:okrId/strategic-links/:linkId
+     * Delete a strategic link
+     */
+    router.delete('/okrs/:okrId/strategic-links/:linkId', async (req, res) => {
+        try {
+            const { okrId, linkId } = req.params;
+
+            const { error } = await supabase
+                .from('okr_strategic_links')
+                .delete()
+                .eq('id', linkId)
+                .eq('okr_id', okrId);
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                message: 'Strategic link removed'
+            });
+
+        } catch (error) {
+            console.error('Error deleting OKR strategic link:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/parthenon/alignment-summary
+     * Get strategic alignment summary for all OKRs
+     */
+    router.get('/alignment-summary', async (req, res) => {
+        try {
+            // Get all OKRs
+            const { data: okrs, error: okrError } = await supabase
+                .from('okrs')
+                .select('id, title, status')
+                .in('status', ['active', 'draft']);
+
+            if (okrError) throw okrError;
+
+            // Get all strategic links
+            const { data: links, error: linkError } = await supabase
+                .from('okr_strategic_links')
+                .select('okr_id, bsc_objectives(bsc_perspectives(perspective_type))');
+
+            if (linkError) throw linkError;
+
+            // Calculate stats
+            const totalOKRs = okrs?.length || 0;
+            const linkedOKRIds = new Set((links || []).map(l => l.okr_id));
+            const linkedCount = linkedOKRIds.size;
+            const unlinkedCount = totalOKRs - linkedCount;
+
+            // Count by perspective
+            const byPerspective = {
+                financial: 0,
+                customer: 0,
+                internal_process: 0,
+                learning_growth: 0
+            };
+
+            (links || []).forEach(link => {
+                const perspType = link.bsc_objectives?.bsc_perspectives?.perspective_type;
+                if (perspType && byPerspective.hasOwnProperty(perspType)) {
+                    byPerspective[perspType]++;
+                }
+            });
+
+            // Get unlinked OKRs
+            const unlinkedOKRs = (okrs || []).filter(okr => !linkedOKRIds.has(okr.id));
+
+            res.json({
+                success: true,
+                data: {
+                    total_okrs: totalOKRs,
+                    linked: linkedCount,
+                    unlinked: unlinkedCount,
+                    alignment_rate: totalOKRs > 0 ? Math.round((linkedCount / totalOKRs) * 100) : 0,
+                    by_perspective: byPerspective,
+                    unlinked_okrs: unlinkedOKRs.slice(0, 10) // Limit to first 10
+                }
+            });
+
+        } catch (error) {
+            console.error('Error getting alignment summary:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/parthenon/objectives-for-linking
+     * Get all BSC objectives available for linking (used in UI dropdown)
+     */
+    router.get('/objectives-for-linking', async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('bsc_objectives')
+                .select(`
+                    id,
+                    name,
+                    description,
+                    status,
+                    bsc_perspectives (
+                        id,
+                        name,
+                        perspective_type,
+                        color
+                    )
+                `)
+                .eq('status', 'active')
+                .order('name');
+
+            if (error) throw error;
+
+            // Group by perspective for easier UI consumption
+            const grouped = {};
+            (data || []).forEach(obj => {
+                const perspType = obj.bsc_perspectives?.perspective_type || 'other';
+                if (!grouped[perspType]) {
+                    grouped[perspType] = {
+                        perspective_name: obj.bsc_perspectives?.name || 'Other',
+                        perspective_color: obj.bsc_perspectives?.color || '#666',
+                        objectives: []
+                    };
+                }
+                grouped[perspType].objectives.push({
+                    id: obj.id,
+                    name: obj.name,
+                    description: obj.description
+                });
+            });
+
+            res.json({
+                success: true,
+                data: {
+                    all: data || [],
+                    grouped
+                }
+            });
+
+        } catch (error) {
+            console.error('Error getting objectives for linking:', error);
             res.status(500).json({
                 success: false,
                 error: error.message
