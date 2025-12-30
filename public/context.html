@@ -20,53 +20,59 @@
         }
 
         .context-layout {
-            display: grid;
-            grid-template-columns: 320px 1fr 6px var(--preview-width, 380px);
-            gap: 0;
+            display: flex;
             height: 100%;
             overflow: hidden;
         }
 
-        /* Resize Handle */
+        /* Resize Handle - positioned at right edge of panels */
         .resize-handle {
+            position: absolute;
+            right: -3px;
+            top: 0;
+            bottom: 0;
             width: 6px;
-            background: var(--border);
             cursor: col-resize;
-            position: relative;
+            background: transparent;
+            z-index: 10;
             transition: background 0.2s;
         }
 
         .resize-handle:hover,
-        .resize-handle.dragging {
+        .resize-handle.active {
             background: var(--primary);
         }
 
-        .resize-handle::after {
-            content: '';
+        /* Preview panel resize handle - on left side */
+        .preview-resize-handle {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 2px;
-            height: 40px;
-            background: var(--text-muted);
-            border-radius: 1px;
-            opacity: 0.5;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+            transition: background 0.2s;
         }
 
-        .resize-handle:hover::after,
-        .resize-handle.dragging::after {
-            background: white;
-            opacity: 0.8;
+        .preview-resize-handle:hover,
+        .preview-resize-handle.active {
+            background: var(--primary);
         }
 
         /* Left Panel - Asset List */
         .asset-list-panel {
+            width: 320px;
+            min-width: 220px;
+            max-width: 500px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
         }
 
         .panel-header {
@@ -258,6 +264,8 @@
 
         /* Center Panel - Editor */
         .editor-panel {
+            flex: 1;
+            min-width: 400px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -506,11 +514,16 @@
 
         /* Right Panel - Preview */
         .preview-panel {
+            width: 380px;
+            min-width: 250px;
+            max-width: 800px;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
         }
 
         .preview-content {
@@ -608,6 +621,77 @@
             color: var(--danger);
             text-align: center;
             padding: 2rem;
+        }
+
+        /* Markdown rendering in preview */
+        .preview-text {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .preview-text p {
+            margin: 0 0 0.75rem 0;
+        }
+
+        .preview-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .preview-text h3,
+        .preview-text h4,
+        .preview-text h5 {
+            color: var(--text-primary);
+            margin: 1rem 0 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .preview-text h3 {
+            font-size: 1.1rem;
+        }
+
+        .preview-text h4 {
+            font-size: 1rem;
+        }
+
+        .preview-text h5 {
+            font-size: 0.9rem;
+        }
+
+        .preview-text strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .preview-text em {
+            font-style: italic;
+        }
+
+        .preview-text code {
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--primary);
+        }
+
+        .preview-text a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .preview-text a:hover {
+            text-decoration: underline;
+        }
+
+        .preview-text hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1rem 0;
+        }
+
+        .preview-list li .preview-text p {
+            display: inline;
         }
 
         /* Notifications */
@@ -1060,49 +1144,7 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
-                    <span class="logo-text">Insight 360</span>
-                </div>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="/" class="nav-item">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/chat.html" class="nav-item">
-                    <i data-lucide="message-square"></i>
-                    <span>Multi-LLM Chat</span>
-                </a>
-                <a href="/context.html" class="nav-item active">
-                    <i data-lucide="database"></i>
-                    <span>Context Assets</span>
-                </a>
-                <a href="/agents.html" class="nav-item">
-                    <i data-lucide="bot"></i>
-                    <span>Agent Library</span>
-                </a>
-                <a href="/parthenon.html" class="nav-item">
-                    <i data-lucide="landmark"></i>
-                    <span>Parthenon</span>
-                </a>
-                <a href="/actions.html" class="nav-item">
-                    <i data-lucide="zap"></i>
-                    <span>Actions</span>
-                </a>
-                <a href="/skills.html" class="nav-item">
-                    <i data-lucide="wand-2"></i>
-                    <span>Skills</span>
-                </a>
-                <a href="/integrity.html" class="nav-item">
-                    <i data-lucide="shield-check"></i>
-                    <span>Integrity</span>
-                </a>
-            </nav>
-        </aside>
+        <aside class="sidebar"></aside>
 
         <!-- Main Content -->
         <main class="main-content" style="padding: 0; overflow: hidden;">
@@ -1143,6 +1185,8 @@
                     <div id="assetList" class="asset-list">
                         <!-- Populated by JS -->
                     </div>
+                    <!-- Resize Handle for Asset List Panel -->
+                    <div class="resize-handle" id="assetListResizeHandle"></div>
                 </div>
 
                 <!-- Center Panel - Editor -->
@@ -1226,11 +1270,10 @@
                     </div><!-- End editorContent -->
                 </div>
 
-                <!-- Resize Handle -->
-                <div class="resize-handle" id="resizeHandle"></div>
-
                 <!-- Right Panel - Preview -->
                 <div class="preview-panel">
+                    <!-- Resize Handle for Preview Panel -->
+                    <div class="preview-resize-handle" id="previewResizeHandle"></div>
                     <div class="panel-header">
                         <h2><i data-lucide="eye"></i> Preview</h2>
                     </div>
@@ -1363,55 +1406,107 @@ Examples:
     <!-- Context Admin JS -->
     <script src="/js/context.js"></script>
 
-    <!-- Resize Handle Script -->
+    <!-- Panel Resize Script -->
     <script>
     (function() {
-        const resizeHandle = document.getElementById('resizeHandle');
-        const contextLayout = document.querySelector('.context-layout');
-        const previewPanel = document.querySelector('.preview-panel');
+        // Asset List Panel Resize (left panel)
+        const assetListPanel = document.querySelector('.asset-list-panel');
+        const assetListHandle = document.getElementById('assetListResizeHandle');
 
-        if (!resizeHandle || !contextLayout || !previewPanel) return;
+        if (assetListPanel && assetListHandle) {
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
 
-        let isResizing = false;
-        let startX, startWidth;
+            // Restore saved width
+            const savedWidth = localStorage.getItem('contextAssetListPanelWidth');
+            if (savedWidth) {
+                const parsed = parseInt(savedWidth);
+                if (parsed >= 220 && parsed <= 500) {
+                    assetListPanel.style.width = parsed + 'px';
+                }
+            }
 
-        // Load saved width from localStorage
-        const savedWidth = localStorage.getItem('previewPanelWidth');
-        if (savedWidth) {
-            contextLayout.style.setProperty('--preview-width', savedWidth + 'px');
+            assetListHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = assetListPanel.offsetWidth;
+                assetListHandle.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const delta = e.clientX - startX;
+                const newWidth = Math.max(220, Math.min(500, startWidth + delta));
+                assetListPanel.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    assetListHandle.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    localStorage.setItem('contextAssetListPanelWidth', assetListPanel.offsetWidth);
+                }
+            });
         }
 
-        resizeHandle.addEventListener('mousedown', (e) => {
-            isResizing = true;
-            startX = e.clientX;
-            startWidth = previewPanel.offsetWidth;
-            resizeHandle.classList.add('dragging');
-            document.body.style.cursor = 'col-resize';
-            document.body.style.userSelect = 'none';
-            e.preventDefault();
-        });
+        // Preview Panel Resize (right panel)
+        const previewPanel = document.querySelector('.preview-panel');
+        const previewHandle = document.getElementById('previewResizeHandle');
 
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
+        if (previewPanel && previewHandle) {
+            let isResizingPreview = false;
+            let previewStartX = 0;
+            let previewStartWidth = 0;
 
-            const diff = startX - e.clientX;
-            const newWidth = Math.max(250, Math.min(800, startWidth + diff));
-            contextLayout.style.setProperty('--preview-width', newWidth + 'px');
-        });
+            // Restore saved width
+            const savedPreviewWidth = localStorage.getItem('contextPreviewPanelWidth');
+            if (savedPreviewWidth) {
+                const parsed = parseInt(savedPreviewWidth);
+                if (parsed >= 250 && parsed <= 800) {
+                    previewPanel.style.width = parsed + 'px';
+                }
+            }
 
-        document.addEventListener('mouseup', () => {
-            if (!isResizing) return;
+            previewHandle.addEventListener('mousedown', (e) => {
+                isResizingPreview = true;
+                previewStartX = e.clientX;
+                previewStartWidth = previewPanel.offsetWidth;
+                previewHandle.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
 
-            isResizing = false;
-            resizeHandle.classList.remove('dragging');
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizingPreview) return;
 
-            // Save width to localStorage
-            const currentWidth = previewPanel.offsetWidth;
-            localStorage.setItem('previewPanelWidth', currentWidth);
-        });
+                // Resize handle is on LEFT of preview panel
+                // Drag left = preview wider, drag right = preview narrower
+                const mouseDelta = previewStartX - e.clientX;
+                const newWidth = previewStartWidth + mouseDelta;
+                const clampedWidth = Math.max(250, Math.min(800, newWidth));
+                previewPanel.style.width = clampedWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizingPreview) {
+                    isResizingPreview = false;
+                    previewHandle.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    localStorage.setItem('contextPreviewPanelWidth', previewPanel.offsetWidth);
+                }
+            });
+        }
     })();
     </script>
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

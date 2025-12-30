@@ -51,6 +51,65 @@ function getProvider(modelId) {
 }
 
 /**
+ * Extract text and multimodal content from a message
+ * Handles both string content and array content (multimodal)
+ */
+function extractMessageContent(message) {
+    const content = message.content;
+
+    // Simple string content
+    if (typeof content === 'string') {
+        return { text: content, images: [], documents: [] };
+    }
+
+    // Array content (multimodal)
+    if (Array.isArray(content)) {
+        const result = { text: '', images: [], documents: [] };
+
+        for (const block of content) {
+            if (block.type === 'text') {
+                result.text += (result.text ? '\n' : '') + block.text;
+            } else if (block.type === 'image' && block.source) {
+                result.images.push({
+                    mediaType: block.source.media_type,
+                    data: block.source.data
+                });
+            } else if (block.type === 'document' && block.source) {
+                result.documents.push({
+                    mediaType: block.source.media_type,
+                    data: block.source.data
+                });
+            }
+        }
+
+        return result;
+    }
+
+    return { text: String(content), images: [], documents: [] };
+}
+
+/**
+ * Normalize history messages - convert multimodal to text for history
+ * (keeps things simpler for conversation continuity)
+ */
+function normalizeHistoryMessages(messages) {
+    return messages.map(msg => {
+        if (typeof msg.content === 'string') {
+            return msg;
+        }
+        // For array content, extract just the text
+        if (Array.isArray(msg.content)) {
+            const text = msg.content
+                .filter(block => block.type === 'text')
+                .map(block => block.text)
+                .join('\n');
+            return { ...msg, content: text || '[Multimodal content]' };
+        }
+        return msg;
+    });
+}
+
+/**
  * GET /api/chat/models
  * Returns available models grouped by provider
  */
@@ -78,45 +137,52 @@ router.get('/models', (req, res) => {
 
 /**
  * POST /api/chat/message
- * Send a message and get a response (non-streaming)
+ * Send a message and get a response (non-streaming, supports multimodal)
  */
 router.post('/message', async (req, res) => {
     try {
         const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt } = req.body;
-        
+
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Messages array is required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Messages array is required'
             });
         }
-        
+
         const provider = getProvider(model);
-        
+
         // Get the last user message and previous messages as history
         const lastMessage = messages[messages.length - 1];
         const history = messages.slice(0, -1);
-        
+
+        // Extract content from the last message (handles multimodal)
+        const { text, images, documents } = extractMessageContent(lastMessage);
+        const allMedia = [...images, ...documents];
+        const normalizedHistory = normalizeHistoryMessages(history);
+
         let response;
-        
+
         if (provider === 'anthropic') {
             response = await anthropic.chat({
-                message: lastMessage.content,
+                message: text,
                 model,
                 systemPrompt,
-                history
+                history: normalizedHistory,
+                images: allMedia
             });
         } else if (provider === 'openai') {
             response = await openai.chat({
-                message: lastMessage.content,
+                message: text,
                 model,
                 systemPrompt,
-                history
+                history: normalizedHistory,
+                images: allMedia
             });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
-        
+
         res.json({
             success: true,
             response: response.content,
@@ -124,67 +190,79 @@ router.post('/message', async (req, res) => {
             provider,
             usage: response.usage
         });
-        
+
     } catch (error) {
         console.error('Chat error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
 
 /**
  * POST /api/chat/stream
- * Send a message and stream the response
+ * Send a message and stream the response (supports multimodal content)
  */
 router.post('/stream', async (req, res) => {
     try {
         const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt } = req.body;
-        
+
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Messages array is required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Messages array is required'
             });
         }
-        
+
         const provider = getProvider(model);
-        
+
         // Get the last user message and previous messages as history
         const lastMessage = messages[messages.length - 1];
         const history = messages.slice(0, -1);
-        
+
+        // Extract content from the last message (handles multimodal)
+        const { text, images, documents } = extractMessageContent(lastMessage);
+
+        // Combine images and documents for vision-capable models
+        const allMedia = [...images, ...documents];
+
+        // Normalize history (convert multimodal to text-only for simplicity)
+        const normalizedHistory = normalizeHistoryMessages(history);
+
         // Set up SSE headers
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('X-Accel-Buffering', 'no');
-        
+
         let stream;
-        
+
         if (provider === 'anthropic') {
             stream = anthropic.streamChat({
-                message: lastMessage.content,
+                message: text,
                 model,
                 systemPrompt,
-                history
+                history: normalizedHistory,
+                images: allMedia
             });
         } else if (provider === 'openai') {
             // Check if OpenAI has streamChat
             if (openai.streamChat) {
                 stream = openai.streamChat({
-                    message: lastMessage.content,
+                    message: text,
                     model,
                     systemPrompt,
-                    history
+                    history: normalizedHistory,
+                    images: allMedia
                 });
             } else if (openai.stream) {
                 stream = openai.stream({
-                    message: lastMessage.content,
+                    message: text,
                     model,
                     systemPrompt,
-                    history
+                    history: normalizedHistory,
+                    images: allMedia
                 });
             } else {
                 throw new Error('OpenAI streaming not available');
@@ -192,7 +270,7 @@ router.post('/stream', async (req, res) => {
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
-        
+
         // Stream the response
         for await (const chunk of stream) {
             if (chunk.type === 'text') {
@@ -229,26 +307,26 @@ router.post('/stream', async (req, res) => {
 
 /**
  * POST /api/chat/with-search
- * Chat with web search integration
+ * Chat with web search integration (supports multimodal content)
  */
 router.post('/with-search', async (req, res) => {
     try {
-        const { 
-            messages, 
-            model = 'claude-sonnet-4-5-20250929', 
+        const {
+            messages,
+            model = 'claude-sonnet-4-5-20250929',
             systemPrompt,
-            searchQuery 
+            searchQuery
         } = req.body;
-        
+
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Messages array is required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Messages array is required'
             });
         }
-        
+
         let searchResults = null;
-        
+
         // Perform search if query provided
         if (searchQuery) {
             try {
@@ -258,7 +336,7 @@ router.post('/with-search', async (req, res) => {
                 console.warn('Search failed:', searchError.message);
             }
         }
-        
+
         // Augment system prompt with search results
         let augmentedSystemPrompt = systemPrompt || '';
         if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
@@ -267,28 +345,35 @@ router.post('/with-search', async (req, res) => {
                 augmentedSystemPrompt += `\n[${i + 1}] ${result.title}\n${result.snippet}\nSource: ${result.url}\n`;
             });
         }
-        
+
         const provider = getProvider(model);
-        
+
         // Get the last user message and previous messages as history
         const lastMessage = messages[messages.length - 1];
         const history = messages.slice(0, -1);
-        
+
+        // Extract content from the last message (handles multimodal)
+        const { text, images, documents } = extractMessageContent(lastMessage);
+        const allMedia = [...images, ...documents];
+        const normalizedHistory = normalizeHistoryMessages(history);
+
         let response;
-        
+
         if (provider === 'anthropic') {
             response = await anthropic.chat({
-                message: lastMessage.content,
+                message: text,
                 model,
                 systemPrompt: augmentedSystemPrompt,
-                history
+                history: normalizedHistory,
+                images: allMedia
             });
         } else if (provider === 'openai') {
             response = await openai.chat({
-                message: lastMessage.content,
+                message: text,
                 model,
                 systemPrompt: augmentedSystemPrompt,
-                history
+                history: normalizedHistory,
+                images: allMedia
             });
         } else {
             throw new Error(`Unknown provider: ${provider}`);

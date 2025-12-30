@@ -11,72 +11,188 @@
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Chat page specific layout with right panel */
+        .app-container:has(.chat-history-panel) {
+            display: flex;
+        }
+
+        .chat-main-content {
+            flex: 1;
+            min-width: 400px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-history-panel {
+            width: var(--right-panel-width, 400px);
+            flex-shrink: 0;
+        }
+
+        /* Resize handle on right edge of center panel */
+        .panel-resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--border);
+            cursor: col-resize;
+            z-index: 10;
+            transition: background 0.15s ease;
+        }
+
+        .panel-resize-handle:hover,
+        .panel-resize-handle.dragging {
+            background: var(--primary);
+        }
+
+        /* Right panel for conversation history */
+        .chat-history-panel {
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .chat-history-header h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chat-history-panel .conversation-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .chat-history-panel .conversation-item {
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            margin-bottom: 0.25rem;
+            transition: background 0.15s ease;
+        }
+
+        .chat-history-panel .conversation-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .chat-history-panel .conversation-item.active {
+            background: var(--primary-soft);
+            border-left: 3px solid var(--primary);
+        }
+
+        .chat-history-panel .conversation-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-history-panel .conversation-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-history-panel .conversation-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .chat-history-panel .conversation-actions {
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .chat-history-panel .conversation-item:hover .conversation-actions {
+            opacity: 1;
+        }
+
+        .chat-history-panel .conversation-action {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-history-panel .conversation-action:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .chat-history-panel .conversation-action.conversation-delete:hover {
+            color: var(--danger);
+        }
+
+        .chat-history-panel .conversation-action i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .chat-history-panel .empty-conversations {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .chat-history-panel .empty-conversations p {
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* Responsive: hide right panel on smaller screens */
+        @media (max-width: 1024px) {
+            .chat-history-panel {
+                display: none;
+            }
+
+            .panel-resize-handle {
+                display: none;
+            }
+        }
+
+        /* Prevent text selection while dragging */
+        body.resizing {
+            user-select: none;
+            cursor: col-resize;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image">
-                    <span class="logo-text">Insight 360</span>
-                </div>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="/" class="nav-item">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/chat.html" class="nav-item active">
-                    <i data-lucide="message-square"></i>
-                    <span>Multi-LLM Chat</span>
-                </a>
-                <a href="/context.html" class="nav-item">
-                    <i data-lucide="database"></i>
-                    <span>Context Assets</span>
-                </a>
-                <a href="/agents.html" class="nav-item">
-                    <i data-lucide="bot"></i>
-                    <span>Agent Library</span>
-                </a>
-                <a href="/parthenon.html" class="nav-item">
-                    <i data-lucide="landmark"></i>
-                    <span>Parthenon</span>
-                </a>
-                <a href="/actions.html" class="nav-item">
-                    <i data-lucide="zap"></i>
-                    <span>Actions</span>
-                </a>
-                <a href="/skills.html" class="nav-item">
-                    <i data-lucide="wand-2"></i>
-                    <span>Skills</span>
-                </a>
-                <a href="/integrity.html" class="nav-item">
-                    <i data-lucide="shield-check"></i>
-                    <span>Integrity</span>
-                </a>
-            </nav>
-
-            <!-- Conversation History -->
-            <div class="sidebar-section">
-                <div class="sidebar-section-header">
-                    <span>Conversations</span>
-                    <button onclick="startNewChat()" class="btn-icon" title="New Chat">
-                        <i data-lucide="plus"></i>
-                    </button>
-                </div>
-                <div id="conversationList" class="conversation-list">
-                    <!-- Populated by JS -->
-                    <div class="empty-conversations">
-                        <p>No conversations yet</p>
-                    </div>
-                </div>
-            </div>
+            <!-- Navigation injected by navigation.js -->
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content chat-main-content">
             <!-- Chat Header -->
             <header class="chat-header">
                 <div class="chat-header-left">
@@ -117,10 +233,10 @@
             <div id="chatMessages" class="chat-messages">
                 <div class="welcome-message">
                     <div class="welcome-icon">
-                        <i data-lucide="sparkles"></i>
+                        <img src="/assets/Higgins02.svg" alt="Higgins" class="welcome-higgins">
                     </div>
-                    <h2>Welcome to Multi-LLM Chat</h2>
-                    <p>Choose a model and start chatting. Your conversations are automatically saved.</p>
+                    <h2>Welcome! I'm Higgins, your guide to the world's leading AI system for SMBs</h2>
+                    <p>Engage with the smartest language models, switch between AI engines, and discover answers from different perspectives. Let Higgins help you find the best solution, every time.</p>
                     <div class="quick-actions">
                         <button onclick="insertPrompt('Explain a complex topic simply:')" class="quick-action">
                             <i data-lucide="lightbulb"></i>
@@ -181,7 +297,26 @@
                     <span id="tokenCount" class="hidden">0 tokens</span>
                 </div>
             </div>
+
+            <!-- Resize handle on right edge of center panel -->
+            <div class="panel-resize-handle" id="panelResizeHandle"></div>
         </main>
+
+        <!-- Right Panel: Conversation History -->
+        <aside class="chat-history-panel">
+            <div class="chat-history-header">
+                <h3>Conversations</h3>
+                <button onclick="startNewChat()" class="btn-icon" title="New Chat">
+                    <i data-lucide="plus"></i>
+                </button>
+            </div>
+            <div id="conversationList" class="conversation-list">
+                <!-- Populated by JS -->
+                <div class="empty-conversations">
+                    <p>No conversations yet</p>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <!-- Voice Recording Modal -->
@@ -224,7 +359,77 @@
 
     <!-- Load Supabase client first -->
     <script src="/js/supabase.js"></script>
+    <!-- Loading messages for rotating text -->
+    <script src="/js/loading-messages.js"></script>
     <!-- Then load chat functionality -->
     <script src="/js/chat.js"></script>
+    <script src="/js/navigation.js"></script>
+
+    <!-- Panel resize functionality -->
+    <script>
+        (function() {
+            const MIN_PANEL_WIDTH = 250;
+            const MAX_PANEL_WIDTH = 600;
+            const DEFAULT_PANEL_WIDTH = 400;
+            const STORAGE_KEY = 'chat-right-panel-width';
+
+            const appContainer = document.querySelector('.app-container');
+            const resizeHandle = document.getElementById('panelResizeHandle');
+            const rightPanel = document.querySelector('.chat-history-panel');
+
+            if (!appContainer || !resizeHandle || !rightPanel) return;
+
+            // Load saved width or use default
+            let panelWidth = parseInt(localStorage.getItem(STORAGE_KEY)) || DEFAULT_PANEL_WIDTH;
+            appContainer.style.setProperty('--right-panel-width', panelWidth + 'px');
+
+            let isDragging = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startWidth = panelWidth;
+
+                resizeHandle.classList.add('dragging');
+                document.body.classList.add('resizing');
+
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                // Dragging right decreases right panel, dragging left increases it
+                const deltaX = startX - e.clientX;
+                let newWidth = startWidth + deltaX;
+
+                // Clamp to min/max
+                newWidth = Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, newWidth));
+
+                panelWidth = newWidth;
+                appContainer.style.setProperty('--right-panel-width', newWidth + 'px');
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+
+                isDragging = false;
+                resizeHandle.classList.remove('dragging');
+                document.body.classList.remove('resizing');
+
+                // Save width to localStorage
+                localStorage.setItem(STORAGE_KEY, panelWidth);
+            });
+
+            // Double-click to reset to default
+            resizeHandle.addEventListener('dblclick', () => {
+                panelWidth = DEFAULT_PANEL_WIDTH;
+                appContainer.style.setProperty('--right-panel-width', DEFAULT_PANEL_WIDTH + 'px');
+                localStorage.setItem(STORAGE_KEY, DEFAULT_PANEL_WIDTH);
+            });
+        })();
+    </script>
 </body>
 </html>

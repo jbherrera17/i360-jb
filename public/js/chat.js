@@ -10,6 +10,7 @@ let isStreaming = false;
 let attachedFiles = [];
 let currentConversationId = null;
 let conversations = [];
+let loadingMessageController = null; // Controller for rotating loading messages
 
 // DOM Elements
 const chatInput = document.getElementById('chatInput');
@@ -178,17 +179,35 @@ async function sendMessage() {
         await createConversation();
     }
 
-    // Add user message to UI
-    addMessage('user', message);
+    // Process attached files before sending
+    let processedFiles = [];
+    if (attachedFiles.length > 0) {
+        setStatus('Processing files...');
+        processedFiles = await processAttachedFiles(attachedFiles);
+    }
 
-    // Clear input
+    // Add user message to UI (with file indicator if applicable)
+    const displayMessage = processedFiles.length > 0
+        ? `${message}\n\n📎 ${processedFiles.map(f => f.name).join(', ')}`
+        : message;
+    addMessage('user', displayMessage);
+
+    // Clear input and files
     if (chatInput) {
         chatInput.value = '';
         chatInput.style.height = 'auto';
     }
+    clearAttachedFiles();
+
+    // Build message content with files for API
+    let messageContent = message;
+    if (processedFiles.length > 0) {
+        // Build content array for multimodal messages
+        messageContent = buildMultimodalContent(message, processedFiles);
+    }
 
     // Add to history
-    conversationHistory.push({ role: 'user', content: message });
+    conversationHistory.push({ role: 'user', content: messageContent });
 
     // Save user message to database
     saveMessage('user', message);
@@ -236,6 +255,9 @@ async function sendMessage() {
             // Non-streaming JSON response for search endpoint
             const data = await response.json();
 
+            // Stop loading messages
+            stopLoadingMessages();
+
             if (!data.success) {
                 throw new Error(data.error || 'Search failed');
             }
@@ -271,11 +293,16 @@ async function sendMessage() {
                             const parsed = JSON.parse(data);
 
                             if (parsed.type === 'content' && parsed.text) {
+                                // Stop loading messages on first content
+                                if (fullResponse === '') {
+                                    stopLoadingMessages();
+                                }
                                 fullResponse += parsed.text;
                                 if (contentDiv) {
                                     contentDiv.innerHTML = formatMessage(fullResponse);
                                 }
                             } else if (parsed.type === 'error') {
+                                stopLoadingMessages();
                                 throw new Error(parsed.error);
                             }
                         } catch (e) {
@@ -298,6 +325,9 @@ async function sendMessage() {
         console.error('Chat error:', error);
         setStatus('Error: ' + error.message);
 
+        // Stop loading messages on error
+        stopLoadingMessages();
+
         // Show error in chat
         const lastMessage = chatMessages?.lastElementChild;
         if (lastMessage?.classList.contains('assistant')) {
@@ -306,6 +336,8 @@ async function sendMessage() {
         }
     } finally {
         isStreaming = false;
+        // Ensure loading messages are stopped
+        stopLoadingMessages();
     }
 }
 
@@ -321,14 +353,14 @@ function addMessage(role, content, isLoading = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
 
-    const avatar = role === 'user' ? '👤' : '🤖';
-    const label = role === 'user' ? 'You' : 'Assistant';
+    const avatar = role === 'user' ? '👤' : '<img src="/assets/25-08-20 - Higgins Mona Lisa Smile-T.png" alt="Higgins" class="higgins-avatar">';
+    const label = role === 'user' ? 'You' : 'Higgins';
 
     // Loading spinner HTML for assistant messages
     const loadingSpinner = `
         <div class="message-loading">
             <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner">
-            <span class="loading-text">Thinking...</span>
+            <span class="loading-text"></span>
         </div>
     `;
 
@@ -354,7 +386,33 @@ function addMessage(role, content, isLoading = false) {
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
+    // Start rotating loading messages if this is a loading state
+    if (isLoading && typeof LoadingMessages !== 'undefined') {
+        const loadingTextEl = messageDiv.querySelector('.loading-text');
+        if (loadingTextEl) {
+            // Stop any previous controller
+            if (loadingMessageController) {
+                loadingMessageController.stop();
+            }
+            // Start rotating messages with chat preset
+            loadingMessageController = LoadingMessages.start(loadingTextEl, {
+                preset: 'chat',
+                interval: 2500
+            });
+        }
+    }
+
     return messageDiv;
+}
+
+/**
+ * Stop loading messages rotation
+ */
+function stopLoadingMessages() {
+    if (loadingMessageController) {
+        loadingMessageController.stop();
+        loadingMessageController = null;
+    }
 }
 
 /**
@@ -430,9 +488,9 @@ function handleFileSelect(e) {
 function removeFile(filename) {
     attachedFiles = attachedFiles.filter(f => f.name !== filename);
     if (fileInput) fileInput.value = '';
-    
+
     if (!filePreview) return;
-    
+
     if (attachedFiles.length === 0) {
         filePreview.classList.add('hidden');
         filePreview.innerHTML = '';
@@ -444,6 +502,146 @@ function removeFile(filename) {
             </div>
         `).join('');
     }
+}
+
+/**
+ * Clear all attached files
+ */
+function clearAttachedFiles() {
+    attachedFiles = [];
+    if (fileInput) fileInput.value = '';
+    if (filePreview) {
+        filePreview.classList.add('hidden');
+        filePreview.innerHTML = '';
+    }
+}
+
+/**
+ * Process attached files for API submission
+ * Converts files to base64 and extracts metadata
+ * @param {File[]} files - Array of File objects
+ * @returns {Promise<Array>} Processed file data
+ */
+async function processAttachedFiles(files) {
+    const processed = [];
+
+    for (const file of files) {
+        try {
+            const base64 = await fileToBase64(file);
+            const fileType = getFileType(file);
+
+            processed.push({
+                name: file.name,
+                type: file.type,
+                fileType: fileType,
+                size: file.size,
+                data: base64
+            });
+        } catch (error) {
+            console.error(`Failed to process file ${file.name}:`, error);
+        }
+    }
+
+    return processed;
+}
+
+/**
+ * Convert file to base64 string
+ * @param {File} file - File object
+ * @returns {Promise<string>} Base64 encoded string
+ */
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // Remove data URL prefix (e.g., "data:image/png;base64,")
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * Determine file type category
+ * @param {File} file - File object
+ * @returns {string} File type category
+ */
+function getFileType(file) {
+    const type = file.type.toLowerCase();
+    const name = file.name.toLowerCase();
+
+    if (type.startsWith('image/')) return 'image';
+    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (type.includes('text/') || name.endsWith('.txt') || name.endsWith('.md')) return 'text';
+    if (name.endsWith('.csv')) return 'csv';
+    if (type.includes('word') || name.endsWith('.docx') || name.endsWith('.doc')) return 'document';
+
+    return 'file';
+}
+
+/**
+ * Build multimodal content array for Claude API
+ * @param {string} text - User's text message
+ * @param {Array} files - Processed file data
+ * @returns {Array} Content array for API
+ */
+function buildMultimodalContent(text, files) {
+    const content = [];
+
+    // Add files first
+    for (const file of files) {
+        if (file.fileType === 'image') {
+            // Images go as image blocks
+            content.push({
+                type: 'image',
+                source: {
+                    type: 'base64',
+                    media_type: file.type,
+                    data: file.data
+                }
+            });
+        } else if (file.fileType === 'pdf') {
+            // PDFs go as document blocks (Claude supports this)
+            content.push({
+                type: 'document',
+                source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: file.data
+                }
+            });
+        } else if (file.fileType === 'text' || file.fileType === 'csv') {
+            // Text files: decode base64 and include as text
+            try {
+                const textContent = atob(file.data);
+                content.push({
+                    type: 'text',
+                    text: `[File: ${file.name}]\n\n${textContent}`
+                });
+            } catch (e) {
+                content.push({
+                    type: 'text',
+                    text: `[File: ${file.name}] (Could not decode content)`
+                });
+            }
+        } else {
+            // Other files: note them but can't process directly
+            content.push({
+                type: 'text',
+                text: `[Attached file: ${file.name} (${file.type || 'unknown type'})]`
+            });
+        }
+    }
+
+    // Add user's text message
+    content.push({
+        type: 'text',
+        text: text
+    });
+
+    return content;
 }
 
 /**
@@ -811,6 +1009,13 @@ messageStyles.textContent = `
         justify-content: center;
         font-size: 1.25rem;
         flex-shrink: 0;
+    }
+
+    .higgins-avatar {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: var(--radius-md);
     }
     
     .message-body {

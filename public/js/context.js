@@ -664,9 +664,10 @@ function generatePreviewHtml(json) {
 function renderField(label, value, type, modifier = '') {
     let html = `<div class="preview-field ${modifier}">`;
     html += `<label>${escapeHtml(label)}</label>`;
-    
+
     if (type === 'text') {
-        html += `<p>${escapeHtml(String(value))}</p>`;
+        // Render markdown for text fields
+        html += `<div class="preview-text">${renderMarkdown(String(value))}</div>`;
     } else if (type === 'pills' && Array.isArray(value)) {
         html += '<div class="pill-container">';
         value.forEach(item => {
@@ -677,15 +678,59 @@ function renderField(label, value, type, modifier = '') {
         html += '<ul class="preview-list">';
         value.forEach(item => {
             if (typeof item === 'string') {
-                html += `<li class="${modifier}">${escapeHtml(item)}</li>`;
+                // Render markdown in list items too
+                html += `<li class="${modifier}">${renderMarkdown(item)}</li>`;
             } else if (typeof item === 'object') {
                 html += `<li>${escapeHtml(JSON.stringify(item))}</li>`;
             }
         });
         html += '</ul>';
     }
-    
+
     html += '</div>';
+    return html;
+}
+
+/**
+ * Simple markdown renderer for preview panel
+ * Supports: bold, italic, code, links, headers, line breaks
+ */
+function renderMarkdown(text) {
+    if (!text) return '';
+
+    let html = escapeHtml(text);
+
+    // Headers (must be at start of line)
+    html = html.replace(/^### (.+)$/gm, '<h5>$1</h5>');
+    html = html.replace(/^## (.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^# (.+)$/gm, '<h3>$1</h3>');
+
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+    // Italic: *text* or _text_
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/(?<![a-zA-Z])_([^_]+)_(?![a-zA-Z])/g, '<em>$1</em>');
+
+    // Inline code: `code`
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Links: [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+    // Horizontal rule: --- or ***
+    html = html.replace(/^(---|\*\*\*)$/gm, '<hr>');
+
+    // Line breaks: double newline becomes paragraph, single newline becomes <br>
+    html = html.replace(/\n\n+/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+
+    // Wrap in paragraph if not already wrapped
+    if (!html.startsWith('<h') && !html.startsWith('<p>')) {
+        html = '<p>' + html + '</p>';
+    }
+
     return html;
 }
 

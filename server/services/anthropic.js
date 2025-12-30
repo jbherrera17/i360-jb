@@ -130,11 +130,12 @@ function resolveModel(modelInput) {
 }
 
 /**
- * Build messages array with vision support
+ * Build messages array with vision and document support
+ * Supports images (png, jpg, gif, webp) and PDFs
  */
 function buildMessages(message, history = [], images = []) {
     const messages = [];
-    
+
     // Add conversation history
     for (const msg of history) {
         messages.push({
@@ -142,35 +143,50 @@ function buildMessages(message, history = [], images = []) {
             content: msg.content
         });
     }
-    
+
     // Build current message content
     const content = [];
-    
-    // Add images if provided
+
+    // Add images/documents if provided
     if (images && images.length > 0) {
-        for (const img of images) {
-            content.push({
-                type: 'image',
-                source: {
-                    type: 'base64',
-                    media_type: img.mediaType || 'image/jpeg',
-                    data: img.data
-                }
-            });
+        for (const item of images) {
+            const mediaType = item.mediaType || 'image/jpeg';
+
+            // Check if it's a PDF document
+            if (mediaType === 'application/pdf') {
+                content.push({
+                    type: 'document',
+                    source: {
+                        type: 'base64',
+                        media_type: 'application/pdf',
+                        data: item.data
+                    }
+                });
+            } else {
+                // It's an image
+                content.push({
+                    type: 'image',
+                    source: {
+                        type: 'base64',
+                        media_type: mediaType,
+                        data: item.data
+                    }
+                });
+            }
         }
     }
-    
+
     // Add text content
     content.push({
         type: 'text',
         text: message
     });
-    
+
     messages.push({
         role: 'user',
         content: images && images.length > 0 ? content : message
     });
-    
+
     return messages;
 }
 

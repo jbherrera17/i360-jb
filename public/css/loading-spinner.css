@@ -41,12 +41,26 @@
 .loading-text {
     color: var(--text-secondary);
     font-size: 0.9rem;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Static loading text animation (when not rotating) */
+.loading-text:not(.rotating-text) {
     animation: fade-dots 1.5s ease-in-out infinite;
 }
 
 @keyframes fade-dots {
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
+}
+
+/* Rotating text animation */
+.loading-text.rotating-text {
+    opacity: 1;
+}
+
+.loading-text.rotating-text.fade-out {
+    opacity: 0;
 }
 
 /* Chat-specific loading indicator */

@@ -16,81 +16,7 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
-                    <span class="logo-text">Insight 360</span>
-                </div>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="/" class="nav-item active">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/company-dashboard.html" class="nav-item">
-                    <i data-lucide="building"></i>
-                    <span>Company</span>
-                </a>
-                <a href="/chat.html" class="nav-item">
-                    <i data-lucide="message-square"></i>
-                    <span>Multi-LLM Chat</span>
-                </a>
-                <a href="/context.html" class="nav-item">
-                    <i data-lucide="database"></i>
-                    <span>Context Assets</span>
-                </a>
-
-                <!-- Quick Launch Dropdown -->
-                <div class="nav-dropdown" id="quickLaunchDropdown">
-                    <button class="nav-item nav-dropdown-trigger" id="quickLaunchTrigger">
-                        <i data-lucide="rocket"></i>
-                        <span>Quick Launch</span>
-                        <i data-lucide="chevron-down" class="dropdown-chevron"></i>
-                    </button>
-                    <div class="nav-dropdown-menu" id="quickLaunchMenu">
-                        <div class="dropdown-header">Recent Agents</div>
-                        <div id="quickLaunchAgents" class="dropdown-items">
-                            <p class="dropdown-loading">Loading...</p>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <a href="/agents.html" class="dropdown-item dropdown-item-link">
-                            <i data-lucide="grid" style="width:14px;height:14px;"></i>
-                            View All Agents
-                        </a>
-                    </div>
-                </div>
-
-                <a href="/agents.html" class="nav-item">
-                    <i data-lucide="bot"></i>
-                    <span>Agent Library</span>
-                </a>
-                <a href="/parthenon.html" class="nav-item">
-                    <i data-lucide="landmark"></i>
-                    <span>Parthenon</span>
-                </a>
-                <a href="/actions.html" class="nav-item">
-                    <i data-lucide="zap"></i>
-                    <span>Actions</span>
-                </a>
-                <a href="/skills.html" class="nav-item">
-                    <i data-lucide="wand-2"></i>
-                    <span>Skills</span>
-                </a>
-                <a href="/integrity.html" class="nav-item">
-                    <i data-lucide="shield-check"></i>
-                    <span>Integrity</span>
-                </a>
-            </nav>
-            
-            <div class="sidebar-footer">
-                <div class="version-info">
-                    <span class="version-label">Version</span>
-                    <span class="version-number">2.19</span>
-                </div>
-            </div>
-        </aside>
+        <aside class="sidebar"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -719,5 +645,6 @@
             loadRecentAgents();
         });
     </script>
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

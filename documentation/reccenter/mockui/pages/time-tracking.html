@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Tracking - RecCenter Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .session-action-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .session-action-btn.complete {
+      background: #22c55e;
+      color: white;
+    }
+    .session-action-btn.complete:hover {
+      background: #16a34a;
+    }
+    .session-action-btn.cancel {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+    .session-action-btn.cancel:hover {
+      background: #fecaca;
+    }
+    .coach-view-card {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .coach-view-card .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .coach-view-card .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.8;
+    }
+    .time-entry-form {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .time-entry-form .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">🏊</div>
+          <div>
+            <div class="sidebar-logo-text">RecCenter</div>
+            <div class="sidebar-logo-subtitle">Wint's Recreation</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="../index.html" class="nav-item">
+            <span class="nav-item-icon">📊</span>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Operations</div>
+          <a href="schedule.html" class="nav-item">
+            <span class="nav-item-icon">📅</span>
+            Master Schedule
+          </a>
+          <a href="booking.html" class="nav-item">
+            <span class="nav-item-icon">➕</span>
+            Booking
+          </a>
+          <a href="clients.html" class="nav-item">
+            <span class="nav-item-icon">👥</span>
+            Clients
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Time & Payroll</div>
+          <a href="time-tracking.html" class="nav-item active">
+            <span class="nav-item-icon">⏱️</span>
+            Time Tracking
+            <span class="nav-item-badge warning">8</span>
+          </a>
+          <a href="payroll.html" class="nav-item" data-role="owner,staff">
+            <span class="nav-item-icon">💰</span>
+            Payroll
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Billing</div>
+          <a href="rc-billing.html" class="nav-item" data-role="owner,staff">
+            <span class="nav-item-icon">🏛️</span>
+            RC Billing
+            <span class="nav-item-badge">3</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Reports</div>
+          <a href="analytics.html" class="nav-item" data-role="owner">
+            <span class="nav-item-icon">📈</span>
+            Analytics
+          </a>
+          <a href="staff.html" class="nav-item" data-role="owner,staff">
+            <span class="nav-item-icon">👨‍🏫</span>
+            Staff
+          </a>
+        </div>
+      </nav>
+
+      <div class="role-switcher">
+        <div class="role-switcher-label">Viewing as</div>
+        <select id="role-switcher" class="role-switcher-select">
+          <option value="owner">Owner (Wint)</option>
+          <option value="staff">Office Staff</option>
+          <option value="coach" selected>Coach</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-header">
+        <div>
+          <h1 class="page-title">Time Tracking</h1>
+          <p class="page-subtitle">UC-2.1: Log session completion and track time</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="openModal('add-time-modal')">
+            <span>➕</span> Log Additional Time
+          </button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Coach Summary Card -->
+        <div class="coach-view-card">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="avatar swim" style="width: 56px; height: 56px; font-size: 1.25rem;">SC</div>
+            <div>
+              <div style="font-size: 1.25rem; font-weight: 600;">Sarah Chen</div>
+              <div style="opacity: 0.7; font-size: 0.875rem;">Swimming Coach</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+            <div>
+              <div class="stat-value">6</div>
+              <div class="stat-label">Today's Sessions</div>
+            </div>
+            <div>
+              <div class="stat-value">2</div>
+              <div class="stat-label">Completed</div>
+            </div>
+            <div>
+              <div class="stat-value">1</div>
+              <div class="stat-label">In Progress</div>
+            </div>
+            <div>
+              <div class="stat-value">3</div>
+              <div class="stat-label">Upcoming</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Sessions to Log -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Today's Sessions - December 28, 2024</h3>
+            <div class="tabs" style="border: none; margin: 0;">
+              <div class="tab active">Today</div>
+              <div class="tab">This Week</div>
+              <div class="tab">Pending</div>
+            </div>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <!-- Session List -->
+            <div style="padding: 1rem;">
+              <!-- Completed Session 1 -->
+              <div class="session-item swim" data-session-id="s1" style="margin-bottom: 0.75rem;">
+                <div class="session-time">
+                  <div class="session-time-value">9:00</div>
+                  <div class="session-time-duration">60 min</div>
+                </div>
+                <div class="session-details">
+                  <div class="session-client">Jake Thompson</div>
+                  <div class="session-meta">Lane 1 • Swimming • Recurring</div>
+                </div>
+                <div class="session-actions">
+                  <span class="status-badge completed">Logged ✓</span>
+                </div>
+              </div>
+
+              <!-- Completed Session 2 (RC) -->
+              <div class="session-item swim" data-session-id="s2" style="margin-bottom: 0.75rem;">
+                <div class="session-time">
+                  <div class="session-time-value">10:00</div>
+                  <div class="session-time-duration">60 min</div>
+                </div>
+                <div class="session-details">
+                  <div class="session-client">
+                    Aiden Park
+                    <span class="client-type-badge rc">RC</span>
+                  </div>
+                  <div class="session-meta">Lane 1 • Swimming • Recurring</div>
+                </div>
+                <div class="session-actions">
+                  <span class="status-badge completed">Logged ✓</span>
+                </div>
+              </div>
+
+              <!-- Needs Logging -->
+              <div class="session-item swim" data-session-id="s3" style="margin-bottom: 0.75rem; background: #fef3c7;">
+                <div class="session-time">
+                  <div class="session-time-value">11:00</div>
+                  <div class="session-time-duration">60 min</div>
+                </div>
+                <div class="session-details">
+                  <div class="session-client">New Client - Trial</div>
+                  <div class="session-meta">Lane 2 • Swimming • One-time</div>
+                </div>
+                <div class="session-actions">
+                  <button class="session-action-btn complete" onclick="markSessionComplete('s3')">
+                    ✓ Complete
+                  </button>
+                  <button class="session-action-btn cancel" onclick="markSessionCancelled('s3')">
+                    ✕ Cancel
+                  </button>
+                </div>
+              </div>
+
+              <!-- Upcoming -->
+              <div class="session-item swim" data-session-id="s4" style="margin-bottom: 0.75rem;">
+                <div class="session-time">
+                  <div class="session-time-value">2:00</div>
+                  <div class="session-time-duration">60 min</div>
+                </div>
+                <div class="session-details">
+                  <div class="session-client">Thompson Family (Group)</div>
+                  <div class="session-meta">Lane 1-2 • Swimming • Recurring</div>
+                </div>
+                <div class="session-actions">
+                  <span class="status-badge scheduled">Upcoming</span>
+                </div>
+              </div>
+
+              <div class="session-item swim" data-session-id="s5" style="margin-bottom: 0.75rem;">
+                <div class="session-time">
+                  <div class="session-time-value">3:00</div>
+                  <div class="session-time-duration">60 min</div>
+                </div>
+                <div class="session-details">
+                  <div class="session-client">Lily Thompson</div>
+                  <div class="session-meta">Lane 1 • Swimming • Recurring</div>
+                </div>
+                <div class="session-actions">
+                  <span class="status-badge scheduled">Upcoming</span>
+                </div>
+              </div>
+
+              <div class="session-item swim" data-session-id="s6" style="margin-bottom: 0;">
+                <div class="session-time">
+                  <div class="session-time-value">4:30</div>
+                  <div class="session-time-duration">60 min</div>
+                </div>
+                <div class="session-details">
+                  <div class="session-client">
+                    Michael Santos
+                    <span class="client-type-badge rc">RC</span>
+                  </div>
+                  <div class="session-meta">Lane 3 • Swimming • Recurring</div>
+                </div>
+                <div class="session-actions">
+                  <span class="status-badge scheduled">Upcoming</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Time Entries (Owner/Admin View) -->
+        <div class="card" style="margin-top: 1.5rem;" data-role="owner,staff">
+          <div class="card-header">
+            <h3 class="card-title">Additional Time Entries - Pending Review</h3>
+            <span class="nav-item-badge warning" style="font-size: 0.8rem;">3 pending</span>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Coach</th>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Hours</th>
+                    <th>Notes</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar default" style="width: 32px; height: 32px; font-size: 0.75rem;">MJ</div>
+                        Marcus Johnson
+                      </div>
+                    </td>
+                    <td>Dec 27</td>
+                    <td>Training</td>
+                    <td>2.0</td>
+                    <td>CPR certification renewal course</td>
+                    <td><span class="status-badge pending">Pending</span></td>
+                    <td>
+                      <button class="btn btn-success btn-sm">Approve</button>
+                      <button class="btn btn-secondary btn-sm">Reject</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar default" style="width: 32px; height: 32px; font-size: 0.75rem;">DW</div>
+                        David Williams
+                      </div>
+                    </td>
+                    <td>Dec 26</td>
+                    <td>Prep</td>
+                    <td>1.5</td>
+                    <td>Equipment setup for basketball camp</td>
+                    <td><span class="status-badge pending">Pending</span></td>
+                    <td>
+                      <button class="btn btn-success btn-sm">Approve</button>
+                      <button class="btn btn-secondary btn-sm">Reject</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar default" style="width: 32px; height: 32px; font-size: 0.75rem;">ER</div>
+                        Emily Rodriguez
+                      </div>
+                    </td>
+                    <td>Dec 26</td>
+                    <td>Admin</td>
+                    <td>1.0</td>
+                    <td>Client progress reports</td>
+                    <td><span class="status-badge pending">Pending</span></td>
+                    <td>
+                      <button class="btn btn-success btn-sm">Approve</button>
+                      <button class="btn btn-secondary btn-sm">Reject</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pay Period Summary -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">Current Pay Period: Dec 16-28, 2024</h3>
+          </div>
+          <div class="card-body">
+            <div class="stats-grid" style="margin-bottom: 0;">
+              <div class="stat-card" style="box-shadow: none; border: 1px solid #e2e8f0;">
+                <div class="stat-card-value">24.5</div>
+                <div class="stat-card-label">Session Hours</div>
+              </div>
+              <div class="stat-card" style="box-shadow: none; border: 1px solid #e2e8f0;">
+                <div class="stat-card-value">2.0</div>
+                <div class="stat-card-label">Additional Hours</div>
+              </div>
+              <div class="stat-card" style="box-shadow: none; border: 1px solid #e2e8f0;">
+                <div class="stat-card-value">26.5</div>
+                <div class="stat-card-label">Total Hours</div>
+              </div>
+              <div class="stat-card" style="box-shadow: none; border: 1px solid #e2e8f0;">
+                <div class="stat-card-value" style="color: #22c55e;">$1,325</div>
+                <div class="stat-card-label">Estimated Pay</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Time Modal -->
+  <div id="add-time-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Log Additional Time</h3>
+        <button class="modal-close" onclick="closeModal('add-time-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" value="2024-12-28">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Time In</label>
+            <input type="time" class="form-input" value="08:00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time Out</label>
+            <input type="time" class="form-input" value="10:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select">
+            <option>Training</option>
+            <option>Prep</option>
+            <option>Meetings</option>
+            <option>Admin</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" rows="3" placeholder="Describe what you worked on..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('add-time-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="closeModal('add-time-modal'); showToast('Time entry submitted for approval', 'success');">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Session Modal -->
+  <div id="cancel-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Cancel Session</h3>
+        <button class="modal-close" onclick="closeModal('cancel-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cancel-session-id">
+        <div class="form-group">
+          <label class="form-label">Cancellation Reason</label>
+          <select id="cancel-reason" class="form-select">
+            <option value="no-show">No-Show</option>
+            <option value="illness">Client Illness</option>
+            <option value="schedule">Schedule Conflict</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <textarea class="form-input" rows="2" placeholder="Additional details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox"> Reschedule this session
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('cancel-modal')">Back</button>
+        <button class="btn btn-danger" onclick="confirmCancellation()">Confirm Cancellation</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/app.js"></script>
+</body>
+</html>

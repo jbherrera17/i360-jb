@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - RecCenter Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .chart-container {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .chart-title {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .chart-body {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+      padding-bottom: 2rem;
+      position: relative;
+    }
+    .bar-chart-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+      flex: 1;
+      height: 100%;
+    }
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .bar {
+      width: 100%;
+      max-width: 40px;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s;
+    }
+    .bar.swim { background: linear-gradient(180deg, #06b6d4, #0891b2); }
+    .bar.fitness { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+    .bar.basketball { background: linear-gradient(180deg, #f97316, #ea580c); }
+    .bar.revenue { background: linear-gradient(180deg, #22c55e, #16a34a); }
+    .bar.rc { background: linear-gradient(180deg, #a855f7, #9333ea); }
+    .bar-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-align: center;
+    }
+    .metric-card-large {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .metric-value-large {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .metric-label-large {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+    .metric-change {
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .metric-change.positive { color: #22c55e; }
+    .metric-change.negative { color: #ef4444; }
+    .donut-chart {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #06b6d4 0deg 195deg,
+        #8b5cf6 195deg 265deg,
+        #f97316 265deg 310deg,
+        #64748b 310deg 360deg
+      );
+      position: relative;
+      margin: 0 auto;
+    }
+    .donut-chart::before {
+      content: '';
+      position: absolute;
+      top: 25%;
+      left: 25%;
+      width: 50%;
+      height: 50%;
+      background: white;
+      border-radius: 50%;
+    }
+    .donut-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .donut-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">🏊</div>
+          <div>
+            <div class="sidebar-logo-text">RecCenter</div>
+            <div class="sidebar-logo-subtitle">Wint's Recreation</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="../index.html" class="nav-item">
+            <span class="nav-item-icon">📊</span>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Operations</div>
+          <a href="schedule.html" class="nav-item">
+            <span class="nav-item-icon">📅</span>
+            Master Schedule
+          </a>
+          <a href="booking.html" class="nav-item">
+            <span class="nav-item-icon">➕</span>
+            Booking
+          </a>
+          <a href="clients.html" class="nav-item">
+            <span class="nav-item-icon">👥</span>
+            Clients
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Time & Payroll</div>
+          <a href="time-tracking.html" class="nav-item">
+            <span class="nav-item-icon">⏱️</span>
+            Time Tracking
+          </a>
+          <a href="payroll.html" class="nav-item">
+            <span class="nav-item-icon">💰</span>
+            Payroll
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Billing</div>
+          <a href="rc-billing.html" class="nav-item">
+            <span class="nav-item-icon">🏛️</span>
+            RC Billing
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Reports</div>
+          <a href="analytics.html" class="nav-item active">
+            <span class="nav-item-icon">📈</span>
+            Analytics
+          </a>
+          <a href="staff.html" class="nav-item">
+            <span class="nav-item-icon">👨‍🏫</span>
+            Staff
+          </a>
+        </div>
+      </nav>
+
+      <div class="role-switcher">
+        <div class="role-switcher-label">Viewing as</div>
+        <select id="role-switcher" class="role-switcher-select">
+          <option value="owner" selected>Owner (Wint)</option>
+          <option value="staff">Office Staff</option>
+          <option value="coach">Coach</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-header">
+        <div>
+          <h1 class="page-title">Analytics & Reports</h1>
+          <p class="page-subtitle">UC-5.1-5.4: Profit center dashboard and performance analytics</p>
+        </div>
+        <div class="header-actions">
+          <select class="form-select" style="width: auto;">
+            <option>December 2024</option>
+            <option>November 2024</option>
+            <option>Q4 2024</option>
+            <option>Year to Date</option>
+          </select>
+          <button class="btn btn-secondary">
+            <span>📥</span> Export
+          </button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Key Metrics Row -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem;">
+          <div class="metric-card-large">
+            <div class="metric-value-large">$22,900</div>
+            <div class="metric-label-large">Total Revenue</div>
+            <div class="metric-change positive">↑ 12% vs last month</div>
+          </div>
+          <div class="metric-card-large">
+            <div class="metric-value-large">$8,700</div>
+            <div class="metric-label-large">Total Costs</div>
+            <div class="metric-change negative">↑ 5% vs last month</div>
+          </div>
+          <div class="metric-card-large">
+            <div class="metric-value-large" style="color: #22c55e;">$14,200</div>
+            <div class="metric-label-large">Gross Margin</div>
+            <div class="metric-change positive">↑ 18% vs last month</div>
+          </div>
+          <div class="metric-card-large">
+            <div class="metric-value-large">62%</div>
+            <div class="metric-label-large">Margin Rate</div>
+            <div class="metric-change positive">↑ 3% vs last month</div>
+          </div>
+          <div class="metric-card-large">
+            <div class="metric-value-large">$52</div>
+            <div class="metric-label-large">Revenue/Coach Hour</div>
+            <div class="metric-change positive">↑ 8% vs last month</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+          <!-- Revenue by Service -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Revenue by Service Type</h3>
+              <div class="legend">
+                <div class="legend-item"><span class="legend-color swim"></span> Swimming</div>
+                <div class="legend-item"><span class="legend-color fitness"></span> Fitness</div>
+                <div class="legend-item"><span class="legend-color basketball"></span> Basketball</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="bar-chart-container" style="height: 200px; align-items: flex-end;">
+                <div class="bar-group">
+                  <div class="bar swim" style="height: 85%;"></div>
+                  <div class="bar-label">Week 1</div>
+                </div>
+                <div class="bar-group">
+                  <div class="bar swim" style="height: 92%;"></div>
+                  <div class="bar-label">Week 2</div>
+                </div>
+                <div class="bar-group">
+                  <div class="bar swim" style="height: 78%;"></div>
+                  <div class="bar-label">Week 3</div>
+                </div>
+                <div class="bar-group">
+                  <div class="bar swim" style="height: 95%;"></div>
+                  <div class="bar-label">Week 4</div>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-around; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                <div style="text-align: center;">
+                  <div style="font-size: 1.25rem; font-weight: 600; color: #06b6d4;">$12,500</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Swimming (55%)</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 1.25rem; font-weight: 600; color: #8b5cf6;">$4,800</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Fitness (21%)</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 1.25rem; font-weight: 600; color: #f97316;">$3,200</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Basketball (14%)</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 1.25rem; font-weight: 600; color: #64748b;">$2,400</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Memberships (10%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revenue by Source -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Revenue by Source</h3>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div class="donut-chart" style="background: conic-gradient(#22c55e 0deg 200deg, #a855f7 200deg 360deg);">
+                <div class="donut-center">
+                  <div class="donut-value">$22.9K</div>
+                </div>
+              </div>
+              <div class="legend" style="margin-top: 1.5rem;">
+                <div class="legend-item"><span class="legend-color direct"></span> Direct Pay: $12,700 (55%)</div>
+                <div class="legend-item"><span class="legend-color rc"></span> Regional Center: $10,200 (45%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profit Centers Table -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <h3 class="card-title">Profit Center Breakdown - December 2024</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Sessions</th>
+                    <th>Hours</th>
+                    <th>Revenue</th>
+                    <th>Direct Costs</th>
+                    <th>Gross Margin</th>
+                    <th>Margin %</th>
+                    <th>$/Hour</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="legend-color swim"></span>
+                        <strong>Swimming</strong>
+                      </div>
+                    </td>
+                    <td>156</td>
+                    <td>156 hrs</td>
+                    <td>$12,500</td>
+                    <td>$5,200</td>
+                    <td style="color: #22c55e; font-weight: 600;">$7,300</td>
+                    <td>
+                      <div class="progress-bar" style="width: 80px; display: inline-block; vertical-align: middle;">
+                        <div class="progress-bar-fill green" style="width: 58%;"></div>
+                      </div>
+                      <span style="margin-left: 0.5rem;">58%</span>
+                    </td>
+                    <td>$80</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="legend-color fitness"></span>
+                        <strong>Fitness</strong>
+                      </div>
+                    </td>
+                    <td>62</td>
+                    <td>62 hrs</td>
+                    <td>$4,800</td>
+                    <td>$2,100</td>
+                    <td style="color: #22c55e; font-weight: 600;">$2,700</td>
+                    <td>
+                      <div class="progress-bar" style="width: 80px; display: inline-block; vertical-align: middle;">
+                        <div class="progress-bar-fill green" style="width: 56%;"></div>
+                      </div>
+                      <span style="margin-left: 0.5rem;">56%</span>
+                    </td>
+                    <td>$77</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="legend-color basketball"></span>
+                        <strong>Basketball</strong>
+                      </div>
+                    </td>
+                    <td>38</td>
+                    <td>38 hrs</td>
+                    <td>$3,200</td>
+                    <td>$1,400</td>
+                    <td style="color: #22c55e; font-weight: 600;">$1,800</td>
+                    <td>
+                      <div class="progress-bar" style="width: 80px; display: inline-block; vertical-align: middle;">
+                        <div class="progress-bar-fill green" style="width: 56%;"></div>
+                      </div>
+                      <span style="margin-left: 0.5rem;">56%</span>
+                    </td>
+                    <td>$84</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="width: 12px; height: 12px; background: #64748b; border-radius: 3px;"></span>
+                        <strong>Memberships</strong>
+                      </div>
+                    </td>
+                    <td>24 members</td>
+                    <td>—</td>
+                    <td>$2,400</td>
+                    <td>$0</td>
+                    <td style="color: #22c55e; font-weight: 600;">$2,400</td>
+                    <td>
+                      <div class="progress-bar" style="width: 80px; display: inline-block; vertical-align: middle;">
+                        <div class="progress-bar-fill green" style="width: 100%;"></div>
+                      </div>
+                      <span style="margin-left: 0.5rem;">100%</span>
+                    </td>
+                    <td>—</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr style="font-weight: 600; background: #f8fafc;">
+                    <td>Total</td>
+                    <td>256 + 24</td>
+                    <td>256 hrs</td>
+                    <td>$22,900</td>
+                    <td>$8,700</td>
+                    <td style="color: #22c55e;">$14,200</td>
+                    <td>62%</td>
+                    <td>$89</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coach Performance -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Coach Performance - December 2024</h3>
+            <a href="staff.html" class="btn btn-secondary btn-sm">View Details</a>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Coach</th>
+                    <th>Hours Worked</th>
+                    <th>Sessions</th>
+                    <th>Revenue Generated</th>
+                    <th>Clients</th>
+                    <th>Cancel Rate</th>
+                    <th>$/Hour</th>
+                    <th>Utilization</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar swim" style="width: 32px; height: 32px; font-size: 0.75rem;">SC</div>
+                        Sarah Chen
+                      </div>
+                    </td>
+                    <td>42 hrs</td>
+                    <td>42</td>
+                    <td>$3,360</td>
+                    <td>12</td>
+                    <td><span style="color: #22c55e;">5%</span></td>
+                    <td>$80</td>
+                    <td>
+                      <div class="progress-bar" style="width: 60px; display: inline-block;">
+                        <div class="progress-bar-fill blue" style="width: 88%;"></div>
+                      </div>
+                      88%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar fitness" style="width: 32px; height: 32px; font-size: 0.75rem;">MJ</div>
+                        Marcus Johnson
+                      </div>
+                    </td>
+                    <td>38 hrs</td>
+                    <td>38</td>
+                    <td>$2,850</td>
+                    <td>10</td>
+                    <td><span style="color: #22c55e;">8%</span></td>
+                    <td>$75</td>
+                    <td>
+                      <div class="progress-bar" style="width: 60px; display: inline-block;">
+                        <div class="progress-bar-fill blue" style="width: 79%;"></div>
+                      </div>
+                      79%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar basketball" style="width: 32px; height: 32px; font-size: 0.75rem;">DW</div>
+                        David Williams
+                      </div>
+                    </td>
+                    <td>32 hrs</td>
+                    <td>32</td>
+                    <td>$2,720</td>
+                    <td>8</td>
+                    <td><span style="color: #f59e0b;">12%</span></td>
+                    <td>$85</td>
+                    <td>
+                      <div class="progress-bar" style="width: 60px; display: inline-block;">
+                        <div class="progress-bar-fill blue" style="width: 67%;"></div>
+                      </div>
+                      67%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="avatar swim" style="width: 32px; height: 32px; font-size: 0.75rem;">ER</div>
+                        Emily Rodriguez
+                      </div>
+                    </td>
+                    <td>36 hrs</td>
+                    <td>36</td>
+                    <td>$2,880</td>
+                    <td>9</td>
+                    <td><span style="color: #22c55e;">6%</span></td>
+                    <td>$80</td>
+                    <td>
+                      <div class="progress-bar" style="width: 60px; display: inline-block;">
+                        <div class="progress-bar-fill blue" style="width: 75%;"></div>
+                      </div>
+                      75%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+</body>
+</html>
