@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Dashboard | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Company Dashboard Styles */
+        .dashboard-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .filter-bar label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .filter-bar select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            min-width: 180px;
+            font-size: 0.9rem;
+        }
+
+        .filter-bar .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-bar .filter-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 0.5rem;
+        }
+
+        .filter-bar .btn-reset {
+            margin-left: auto;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .filter-bar .btn-reset:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .filter-active-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Summary Stats Row */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+        }
+
+        .summary-stat {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .summary-stat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .summary-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .summary-stat-change {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .summary-stat-change.positive { color: #10b981; }
+        .summary-stat-change.negative { color: #ef4444; }
+        .summary-stat-change.neutral { color: var(--text-muted); }
+
+        /* Main Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .dashboard-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dashboard-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dashboard-card-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .dashboard-card-body {
+            padding: 1.25rem;
+        }
+
+        /* OKR Health Section */
+        .okr-health-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .okr-status-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .okr-status-card .status-count {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .okr-status-card .status-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .okr-status-card.on-track .status-count { color: #10b981; }
+        .okr-status-card.at-risk .status-count { color: #f59e0b; }
+        .okr-status-card.behind .status-count { color: #ef4444; }
+        .okr-status-card.completed .status-count { color: #6366f1; }
+
+        /* Progress Distribution */
+        .progress-distribution {
+            margin-top: 1.5rem;
+        }
+
+        .progress-distribution h4 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar-container {
+            height: 24px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .progress-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            min-width: 30px;
+            transition: width 0.3s;
+        }
+
+        .progress-segment.high { background: #10b981; }
+        .progress-segment.medium { background: #f59e0b; }
+        .progress-segment.low { background: #ef4444; }
+
+        .progress-legend {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.high { background: #10b981; }
+        .legend-dot.medium { background: #f59e0b; }
+        .legend-dot.low { background: #ef4444; }
+
+        /* Department Scorecard */
+        .dept-scorecard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .dept-score-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .dept-score-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dept-score-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dept-score-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dept-score-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .dept-score-progress {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+
+        .dept-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .dept-progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .dept-progress-text {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Attention Items */
+        .attention-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .attention-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            border-left: 3px solid;
+        }
+
+        .attention-item.critical { border-left-color: #ef4444; }
+        .attention-item.warning { border-left-color: #f59e0b; }
+        .attention-item.info { border-left-color: #3b82f6; }
+
+        .attention-icon {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .attention-item.critical .attention-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .attention-item.warning .attention-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .attention-item.info .attention-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+        .attention-content {
+            flex: 1;
+        }
+
+        .attention-title {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .attention-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Recent Activity */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.okr { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .activity-icon.process { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .activity-icon.role { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .activity-icon.dept { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            font-size: 0.9rem;
+        }
+
+        .activity-text strong {
+            font-weight: 600;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .summary-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .okr-health-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .filter-bar {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Company Dashboard</h1>
+                    <p class="header-subtitle">Organization health and OKR progress at a glance</p>
+                </div>
+                <div class="header-actions">
+                    <div class="theme-toggle-wrapper">
+                        <label class="theme-toggle" title="Toggle dark/light mode">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="toggle-slider">
+                                <i data-lucide="sun" class="toggle-icon sun"></i>
+                                <i data-lucide="moon" class="toggle-icon moon"></i>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-layout">
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label>Department</label>
+                        <select id="deptFilter">
+                            <option value="">All Departments</option>
+                        </select>
+                    </div>
+                    <div class="filter-divider"></div>
+                    <div class="filter-group">
+                        <label>Time Period</label>
+                        <select id="periodFilter">
+                            <option value="">All Periods</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                        </select>
+                    </div>
+                    <div class="filter-divider"></div>
+                    <div class="filter-group">
+                        <label>Quarter</label>
+                        <select id="quarterFilter">
+                            <option value="">All Quarters</option>
+                            <option value="Q1">Q1</option>
+                            <option value="Q2">Q2</option>
+                            <option value="Q3">Q3</option>
+                            <option value="Q4">Q4</option>
+                        </select>
+                    </div>
+                    <span id="filterBadge" class="filter-active-badge" style="display:none;">Filtered</span>
+                    <button class="btn-reset" onclick="resetFilters()">
+                        <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
+                        Reset
+                    </button>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-stat-header">
+                            <i data-lucide="target" style="width:16px;height:16px;"></i>
+                            Total OKRs
+                        </div>
+                        <div class="summary-stat-value" id="totalOKRs">0</div>
+                        <div class="summary-stat-change neutral" id="okrChange">
+                            <i data-lucide="minus" style="width:12px;height:12px;"></i>
+                            <span>--</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header">
+                            <i data-lucide="trending-up" style="width:16px;height:16px;"></i>
+                            Avg Progress
+                        </div>
+                        <div class="summary-stat-value" id="avgProgress">0%</div>
+                        <div class="summary-stat-change neutral" id="progressChange">
+                            <i data-lucide="minus" style="width:12px;height:12px;"></i>
+                            <span>--</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header">
+                            <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                            Departments
+                        </div>
+                        <div class="summary-stat-value" id="totalDepts">0</div>
+                        <div class="summary-stat-change neutral">
+                            <span>Active units</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header">
+                            <i data-lucide="users" style="width:16px;height:16px;"></i>
+                            Roles Defined
+                        </div>
+                        <div class="summary-stat-value" id="totalRoles">0</div>
+                        <div class="summary-stat-change neutral">
+                            <span>Across org</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header">
+                            <i data-lucide="workflow" style="width:16px;height:16px;"></i>
+                            Processes
+                        </div>
+                        <div class="summary-stat-value" id="totalProcesses">0</div>
+                        <div class="summary-stat-change neutral">
+                            <span>Documented</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Grid -->
+                <div class="dashboard-grid">
+                    <!-- Left Column -->
+                    <div class="dashboard-column">
+                        <!-- OKR Health -->
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="heart-pulse" style="width:18px;height:18px;"></i> OKR Health</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="okr-health-grid" id="okrHealthGrid">
+                                    <div class="okr-status-card on-track">
+                                        <div class="status-count" id="onTrackCount">0</div>
+                                        <div class="status-label">On Track (70%+)</div>
+                                    </div>
+                                    <div class="okr-status-card at-risk">
+                                        <div class="status-count" id="atRiskCount">0</div>
+                                        <div class="status-label">At Risk (40-69%)</div>
+                                    </div>
+                                    <div class="okr-status-card behind">
+                                        <div class="status-count" id="behindCount">0</div>
+                                        <div class="status-label">Behind (&lt;40%)</div>
+                                    </div>
+                                    <div class="okr-status-card completed">
+                                        <div class="status-count" id="completedCount">0</div>
+                                        <div class="status-label">Completed</div>
+                                    </div>
+                                </div>
+
+                                <div class="progress-distribution">
+                                    <h4>Progress Distribution</h4>
+                                    <div class="progress-bar-container" id="progressDistribution">
+                                        <div class="progress-segment high" style="width: 0%"></div>
+                                        <div class="progress-segment medium" style="width: 0%"></div>
+                                        <div class="progress-segment low" style="width: 0%"></div>
+                                    </div>
+                                    <div class="progress-legend">
+                                        <div class="legend-item">
+                                            <div class="legend-dot high"></div>
+                                            <span>70-100%</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-dot medium"></div>
+                                            <span>40-69%</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-dot low"></div>
+                                            <span>0-39%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Scorecard -->
+                        <div class="dashboard-card" style="margin-top: 1.5rem;">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i> Department Scorecard</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="dept-scorecard-list" id="deptScorecard">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="dashboard-column">
+                        <!-- Attention Needed -->
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i> Needs Attention</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="attention-list" id="attentionList">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="dashboard-card" style="margin-top: 1.5rem;">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="activity" style="width:18px;height:18px;"></i> Recent Activity</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="activity-list" id="activityList">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Supabase client -->
+    <script src="/js/supabase.js"></script>
+    <script src="/js/navigation.js"></script>
+
+    <script>
+        // State
+        let departments = [];
+        let roles = [];
+        let okrs = [];
+        let processes = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadAllData();
+            setupFilterListeners();
+        });
+
+        // Load all data
+        async function loadAllData() {
+            try {
+                const [deptRes, rolesRes, okrsRes, procRes] = await Promise.all([
+                    fetch('/api/parthenon/departments'),
+                    fetch('/api/parthenon/roles'),
+                    fetch('/api/parthenon/okrs'),
+                    fetch('/api/parthenon/processes')
+                ]);
+
+                const [deptData, rolesData, okrsData, procData] = await Promise.all([
+                    deptRes.json(),
+                    rolesRes.json(),
+                    okrsRes.json(),
+                    procRes.json()
+                ]);
+
+                if (deptData.success) departments = deptData.data;
+                if (rolesData.success) roles = rolesData.data;
+                if (okrsData.success) okrs = okrsData.data;
+                if (procData.success) processes = procData.data;
+
+                populateDeptFilter();
+                updateDashboard();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Populate department filter
+        function populateDeptFilter() {
+            const select = document.getElementById('deptFilter');
+            select.innerHTML = '<option value="">All Departments</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+
+        // Setup filter listeners
+        function setupFilterListeners() {
+            document.getElementById('deptFilter').addEventListener('change', updateDashboard);
+            document.getElementById('periodFilter').addEventListener('change', updateDashboard);
+            document.getElementById('quarterFilter').addEventListener('change', updateDashboard);
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('deptFilter').value = '';
+            document.getElementById('periodFilter').value = '';
+            document.getElementById('quarterFilter').value = '';
+            updateDashboard();
+        }
+
+        // Get filtered data
+        function getFilteredData() {
+            const deptFilter = document.getElementById('deptFilter').value;
+            const periodFilter = document.getElementById('periodFilter').value;
+            const quarterFilter = document.getElementById('quarterFilter').value;
+
+            let filteredOKRs = [...okrs];
+            let filteredRoles = [...roles];
+            let filteredProcesses = [...processes];
+            let filteredDepts = [...departments];
+
+            // Department filter
+            if (deptFilter) {
+                filteredOKRs = filteredOKRs.filter(o => o.department_id === deptFilter);
+                filteredRoles = filteredRoles.filter(r => r.department_id === deptFilter);
+                filteredProcesses = filteredProcesses.filter(p => p.department_id === deptFilter);
+                filteredDepts = filteredDepts.filter(d => d.id === deptFilter);
+            }
+
+            // Period filter
+            if (periodFilter) {
+                filteredOKRs = filteredOKRs.filter(o => o.period && o.period.includes(periodFilter));
+            }
+
+            // Quarter filter
+            if (quarterFilter) {
+                filteredOKRs = filteredOKRs.filter(o => o.period && o.period.includes(quarterFilter));
+            }
+
+            // Show filter badge
+            const filterBadge = document.getElementById('filterBadge');
+            if (deptFilter || periodFilter || quarterFilter) {
+                filterBadge.style.display = 'inline-block';
+            } else {
+                filterBadge.style.display = 'none';
+            }
+
+            return {
+                okrs: filteredOKRs,
+                roles: filteredRoles,
+                processes: filteredProcesses,
+                departments: filteredDepts
+            };
+        }
+
+        // Update entire dashboard
+        function updateDashboard() {
+            const data = getFilteredData();
+            updateSummaryStats(data);
+            updateOKRHealth(data.okrs);
+            updateDeptScorecard(data);
+            updateAttentionList(data.okrs);
+            updateActivityList();
+            lucide.createIcons();
+        }
+
+        // Update summary stats
+        function updateSummaryStats(data) {
+            document.getElementById('totalOKRs').textContent = data.okrs.length;
+            document.getElementById('totalDepts').textContent = data.departments.length;
+            document.getElementById('totalRoles').textContent = data.roles.length;
+            document.getElementById('totalProcesses').textContent = data.processes.length;
+
+            // Calculate average progress
+            if (data.okrs.length > 0) {
+                const avgProgress = Math.round(
+                    data.okrs.reduce((sum, o) => sum + (o.progress || 0), 0) / data.okrs.length
+                );
+                document.getElementById('avgProgress').textContent = avgProgress + '%';
+            } else {
+                document.getElementById('avgProgress').textContent = '0%';
+            }
+        }
+
+        // Update OKR health section
+        function updateOKRHealth(filteredOKRs) {
+            let onTrack = 0, atRisk = 0, behind = 0, completed = 0;
+
+            filteredOKRs.forEach(okr => {
+                const progress = okr.progress || 0;
+                if (okr.status === 'completed' || progress === 100) {
+                    completed++;
+                } else if (progress >= 70) {
+                    onTrack++;
+                } else if (progress >= 40) {
+                    atRisk++;
+                } else {
+                    behind++;
+                }
+            });
+
+            document.getElementById('onTrackCount').textContent = onTrack;
+            document.getElementById('atRiskCount').textContent = atRisk;
+            document.getElementById('behindCount').textContent = behind;
+            document.getElementById('completedCount').textContent = completed;
+
+            // Update progress distribution bar
+            const total = filteredOKRs.length || 1;
+            const highPct = Math.round((onTrack + completed) / total * 100);
+            const medPct = Math.round(atRisk / total * 100);
+            const lowPct = Math.round(behind / total * 100);
+
+            const container = document.getElementById('progressDistribution');
+            container.innerHTML = `
+                <div class="progress-segment high" style="width: ${highPct}%">${highPct > 10 ? highPct + '%' : ''}</div>
+                <div class="progress-segment medium" style="width: ${medPct}%">${medPct > 10 ? medPct + '%' : ''}</div>
+                <div class="progress-segment low" style="width: ${lowPct}%">${lowPct > 10 ? lowPct + '%' : ''}</div>
+            `;
+        }
+
+        // Update department scorecard
+        function updateDeptScorecard(data) {
+            const container = document.getElementById('deptScorecard');
+            const deptFilter = document.getElementById('deptFilter').value;
+
+            // Get departments to show
+            const deptsToShow = deptFilter ? data.departments : departments;
+
+            if (deptsToShow.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No departments to display</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = deptsToShow.map(dept => {
+                const deptOKRs = okrs.filter(o => o.department_id === dept.id);
+                const deptRoles = roles.filter(r => r.department_id === dept.id);
+                const deptProcesses = processes.filter(p => p.department_id === dept.id);
+
+                // Apply period/quarter filters to dept OKRs
+                const periodFilter = document.getElementById('periodFilter').value;
+                const quarterFilter = document.getElementById('quarterFilter').value;
+                let filteredDeptOKRs = deptOKRs;
+                if (periodFilter) {
+                    filteredDeptOKRs = filteredDeptOKRs.filter(o => o.period && o.period.includes(periodFilter));
+                }
+                if (quarterFilter) {
+                    filteredDeptOKRs = filteredDeptOKRs.filter(o => o.period && o.period.includes(quarterFilter));
+                }
+
+                const avgProgress = filteredDeptOKRs.length > 0
+                    ? Math.round(filteredDeptOKRs.reduce((sum, o) => sum + (o.progress || 0), 0) / filteredDeptOKRs.length)
+                    : 0;
+
+                const progressColor = avgProgress >= 70 ? '#10b981' : avgProgress >= 40 ? '#f59e0b' : '#ef4444';
+
+                return `
+                    <div class="dept-score-item">
+                        <div class="dept-score-icon" style="background: ${dept.color}20; color: ${dept.color}">
+                            <i data-lucide="${dept.icon || 'building-2'}" style="width:18px;height:18px;"></i>
+                        </div>
+                        <div class="dept-score-info">
+                            <div class="dept-score-name">${dept.name}</div>
+                            <div class="dept-score-meta">
+                                <span>${filteredDeptOKRs.length} OKRs</span>
+                                <span>${deptRoles.length} roles</span>
+                                <span>${deptProcesses.length} processes</span>
+                            </div>
+                        </div>
+                        <div class="dept-score-progress">
+                            <div class="dept-progress-bar">
+                                <div class="dept-progress-fill" style="width: ${avgProgress}%; background: ${progressColor}"></div>
+                            </div>
+                            <div class="dept-progress-text" style="color: ${progressColor}">${avgProgress}%</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update attention list
+        function updateAttentionList(filteredOKRs) {
+            const container = document.getElementById('attentionList');
+            const attentionItems = [];
+
+            // Find behind OKRs
+            const behindOKRs = filteredOKRs.filter(o => (o.progress || 0) < 40 && o.status === 'active');
+            behindOKRs.slice(0, 3).forEach(okr => {
+                attentionItems.push({
+                    type: 'critical',
+                    icon: 'alert-circle',
+                    title: okr.title,
+                    desc: `${okr.progress || 0}% complete - needs immediate attention`
+                });
+            });
+
+            // Find at-risk OKRs
+            const atRiskOKRs = filteredOKRs.filter(o => {
+                const progress = o.progress || 0;
+                return progress >= 40 && progress < 70 && o.status === 'active';
+            });
+            atRiskOKRs.slice(0, 2).forEach(okr => {
+                attentionItems.push({
+                    type: 'warning',
+                    icon: 'alert-triangle',
+                    title: okr.title,
+                    desc: `${okr.progress || 0}% complete - may miss target`
+                });
+            });
+
+            // Check for departments without OKRs
+            const deptsWithoutOKRs = departments.filter(d =>
+                !okrs.some(o => o.department_id === d.id)
+            );
+            if (deptsWithoutOKRs.length > 0 && attentionItems.length < 5) {
+                attentionItems.push({
+                    type: 'info',
+                    icon: 'info',
+                    title: 'Departments without OKRs',
+                    desc: `${deptsWithoutOKRs.length} department(s) have no objectives defined`
+                });
+            }
+
+            if (attentionItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✅</div>
+                        <p>No items need attention</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = attentionItems.map(item => `
+                <div class="attention-item ${item.type}">
+                    <div class="attention-icon">
+                        <i data-lucide="${item.icon}" style="width:14px;height:14px;"></i>
+                    </div>
+                    <div class="attention-content">
+                        <div class="attention-title">${item.title}</div>
+                        <div class="attention-desc">${item.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update activity list
+        function updateActivityList() {
+            const container = document.getElementById('activityList');
+            const activities = [];
+
+            // Get recent items by created_at
+            const allItems = [
+                ...okrs.map(o => ({ ...o, type: 'okr', label: 'OKR' })),
+                ...processes.map(p => ({ ...p, type: 'process', label: 'Process', title: p.name })),
+                ...roles.map(r => ({ ...r, type: 'role', label: 'Role', title: r.title })),
+                ...departments.map(d => ({ ...d, type: 'dept', label: 'Department', title: d.name }))
+            ];
+
+            // Sort by created_at descending
+            allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            // Take first 5
+            const recentItems = allItems.slice(0, 5);
+
+            if (recentItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>No recent activity</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = recentItems.map(item => {
+                const timeAgo = getTimeAgo(new Date(item.created_at));
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon ${item.type}">
+                            <i data-lucide="${getActivityIcon(item.type)}" style="width:16px;height:16px;"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-text">
+                                <strong>${item.label}</strong> "${item.title}" was created
+                            </div>
+                            <div class="activity-time">${timeAgo}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                okr: 'target',
+                process: 'workflow',
+                role: 'user',
+                dept: 'building-2'
+            };
+            return icons[type] || 'circle';
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            const intervals = {
+                year: 31536000,
+                month: 2592000,
+                week: 604800,
+                day: 86400,
+                hour: 3600,
+                minute: 60
+            };
+
+            for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+                const interval = Math.floor(seconds / secondsInUnit);
+                if (interval >= 1) {
+                    return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+                }
+            }
+            return 'Just now';
+        }
+    </script>
+</body>
+</html>

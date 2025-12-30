@@ -143,6 +143,35 @@
             gap: 1rem;
         }
 
+        /* Section Header Actions */
+        .section-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Filter Select */
+        .filter-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            min-width: 160px;
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
         /* Department Card */
         .dept-card {
             background: var(--bg-secondary);
@@ -467,6 +496,243 @@
             color: var(--text-primary);
         }
 
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .dept-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .dept-header, .dept-description {
+            cursor: pointer;
+        }
+
+        .role-card {
+            position: relative;
+        }
+
+        .role-card .btn-delete {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+
+        .okr-card, .process-card {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .okr-card .btn-delete,
+        .process-card .btn-delete {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+
+        /* Process Steps */
+        .process-steps-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-secondary);
+        }
+
+        .process-step-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .process-step-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .process-step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-number {
+            background: var(--accent);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-title-input {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.4rem 0.6rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .step-description-input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.4rem 0.6rem;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 50px;
+        }
+
+        .step-remove-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+
+        .step-remove-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .btn-add-step {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-add-step:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .no-steps-message {
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Import Modal */
+        .modal-wide {
+            max-width: 800px !important;
+        }
+
+        .form-help {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .import-preview {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .import-preview label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .preview-step-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .preview-step-item .step-number {
+            flex-shrink: 0;
+        }
+
+        .preview-step-content {
+            flex: 1;
+        }
+
+        .preview-step-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .preview-step-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Process card department badge */
+        .process-dept-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
         /* Modal */
         .modal-overlay {
             position: fixed;
@@ -733,9 +999,14 @@
                 <div class="tab-content" id="rolesTab">
                     <div class="section-header">
                         <h2><i data-lucide="users" style="width:20px;height:20px;"></i> Roles</h2>
-                        <button class="btn-primary" onclick="showRoleModal()">
-                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Role
-                        </button>
+                        <div class="section-header-actions">
+                            <select id="rolesDeptFilter" class="filter-select" onchange="filterRolesByDept()">
+                                <option value="">All Departments</option>
+                            </select>
+                            <button class="btn-primary" onclick="showRoleModal()">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Role
+                            </button>
+                        </div>
                     </div>
                     <div id="rolesList" class="cards-grid">
                         <!-- Populated by JS -->
@@ -746,9 +1017,22 @@
                 <div class="tab-content" id="okrsTab">
                     <div class="section-header">
                         <h2><i data-lucide="target" style="width:20px;height:20px;"></i> Objectives & Key Results</h2>
-                        <button class="btn-primary" onclick="showOKRModal()">
-                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add OKR
-                        </button>
+                        <div class="section-header-actions">
+                            <select id="okrsDeptFilter" class="filter-select" onchange="filterOKRs()">
+                                <option value="">All Departments</option>
+                                <option value="company">Company-wide</option>
+                            </select>
+                            <select id="okrsPeriodFilter" class="filter-select" onchange="filterOKRs()">
+                                <option value="">All Periods</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                            </select>
+                            <button class="btn-primary" onclick="showOKRModal()">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i> Add OKR
+                            </button>
+                        </div>
                     </div>
                     <div id="okrsList" class="cards-grid">
                         <!-- Populated by JS -->
@@ -759,9 +1043,17 @@
                 <div class="tab-content" id="processesTab">
                     <div class="section-header">
                         <h2><i data-lucide="workflow" style="width:20px;height:20px;"></i> Processes</h2>
-                        <button class="btn-primary" onclick="showProcessModal()">
-                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Process
-                        </button>
+                        <div class="section-header-actions">
+                            <select id="processesDeptFilter" class="filter-select" onchange="filterProcessesByDept()">
+                                <option value="">All Departments</option>
+                            </select>
+                            <button class="btn-secondary" onclick="showImportProcessModal()">
+                                <i data-lucide="upload" style="width:16px;height:16px;"></i> Import
+                            </button>
+                            <button class="btn-primary" onclick="showProcessModal()">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i> Add Process
+                            </button>
+                        </div>
                     </div>
                     <div id="processesList" class="cards-grid">
                         <!-- Populated by JS -->
@@ -845,6 +1137,209 @@
                 <button class="btn-secondary" onclick="closeRoleModal()">Cancel</button>
                 <button class="btn-primary" onclick="saveRole()">
                     <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div><!-- end modal-content -->
+    </div>
+
+    <!-- OKR Modal -->
+    <div class="modal-overlay" id="okrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="target"></i> <span id="okrModalTitle">Add OKR</span></h2>
+                <button class="modal-close" onclick="closeOKRModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Objective Title</label>
+                    <input type="text" id="okrTitle" placeholder="e.g., Increase customer satisfaction">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="okrDescription" rows="2" placeholder="What does this objective aim to achieve?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Scope</label>
+                    <select id="okrScope">
+                        <option value="company">Company</option>
+                        <option value="department">Department</option>
+                        <option value="team">Team</option>
+                        <option value="individual">Individual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Department (optional)</label>
+                    <select id="okrDepartment">
+                        <option value="">Select department...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Period</label>
+                    <select id="okrPeriod">
+                        <optgroup label="2025">
+                            <option value="Q1 2025">Q1 2025</option>
+                            <option value="Q2 2025">Q2 2025</option>
+                            <option value="Q3 2025">Q3 2025</option>
+                            <option value="Q4 2025">Q4 2025</option>
+                            <option value="2025 Annual">2025 Annual</option>
+                        </optgroup>
+                        <optgroup label="2026">
+                            <option value="Q1 2026">Q1 2026</option>
+                            <option value="Q2 2026">Q2 2026</option>
+                            <option value="Q3 2026">Q3 2026</option>
+                            <option value="Q4 2026">Q4 2026</option>
+                            <option value="2026 Annual">2026 Annual</option>
+                        </optgroup>
+                        <optgroup label="2027">
+                            <option value="Q1 2027">Q1 2027</option>
+                            <option value="Q2 2027">Q2 2027</option>
+                            <option value="Q3 2027">Q3 2027</option>
+                            <option value="Q4 2027">Q4 2027</option>
+                            <option value="2027 Annual">2027 Annual</option>
+                        </optgroup>
+                        <optgroup label="2028">
+                            <option value="Q1 2028">Q1 2028</option>
+                            <option value="Q2 2028">Q2 2028</option>
+                            <option value="Q3 2028">Q3 2028</option>
+                            <option value="Q4 2028">Q4 2028</option>
+                            <option value="2028 Annual">2028 Annual</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="okrStatus">
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeOKRModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveOKR()">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div><!-- end modal-content -->
+    </div>
+
+    <!-- Process Modal -->
+    <div class="modal-overlay" id="processModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="workflow"></i> <span id="processModalTitle">Add Process</span></h2>
+                <button class="modal-close" onclick="closeProcessModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Process Name</label>
+                    <input type="text" id="processName" placeholder="e.g., Client Onboarding Procedure">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="processDescription" rows="2" placeholder="What does this process accomplish?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="processType">
+                        <option value="procedure">Procedure</option>
+                        <option value="policy">Policy</option>
+                        <option value="standard">Standard</option>
+                        <option value="workflow">Workflow</option>
+                        <option value="checklist">Checklist</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Department (optional)</label>
+                    <select id="processDepartment">
+                        <option value="">Select department...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="processStatus">
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Process Steps</label>
+                    <div id="processStepsContainer" class="process-steps-container">
+                        <!-- Steps will be rendered here -->
+                    </div>
+                    <button type="button" class="btn-add-step" onclick="addProcessStep()">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Step
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeProcessModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveProcess()">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div><!-- end modal-content -->
+    </div>
+
+    <!-- Import Process Modal -->
+    <div class="modal-overlay" id="importProcessModal">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h2><i data-lucide="upload"></i> Import Process</h2>
+                <button class="modal-close" onclick="closeImportProcessModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Paste Process Data</label>
+                    <p class="form-help">Paste structured text (numbered steps, bullet points, or JSON). Each line becomes a step.</p>
+                    <textarea id="importProcessData" rows="10" placeholder="1. First step - Description of the first step
+2. Second step - Description of the second step
+3. Third step - Description of the third step
+
+Or paste JSON:
+[{&quot;title&quot;: &quot;Step 1&quot;, &quot;description&quot;: &quot;...&quot;}, ...]"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Process Name</label>
+                    <input type="text" id="importProcessName" placeholder="e.g., Customer Onboarding Workflow">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="importProcessType">
+                            <option value="procedure">Procedure</option>
+                            <option value="workflow">Workflow</option>
+                            <option value="checklist">Checklist</option>
+                            <option value="policy">Policy</option>
+                            <option value="standard">Standard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="importProcessDepartment">
+                            <option value="">Select department...</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="importPreview" class="import-preview" style="display:none;">
+                    <label>Preview (<span id="importStepCount">0</span> steps detected)</label>
+                    <div id="importPreviewSteps" class="process-steps-container"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeImportProcessModal()">Cancel</button>
+                <button class="btn-secondary" onclick="previewImportProcess()">
+                    <i data-lucide="eye" style="width:16px;height:16px;"></i> Preview
+                </button>
+                <button class="btn-primary" onclick="executeImportProcess()">
+                    <i data-lucide="download" style="width:16px;height:16px;"></i> Import
                 </button>
             </div>
         </div><!-- end modal-content -->
@@ -944,16 +1439,19 @@
             }
 
             container.innerHTML = departments.map(dept => `
-                <div class="dept-card" onclick="editDepartment('${dept.id}')">
-                    <div class="dept-header">
+                <div class="dept-card">
+                    <div class="dept-header" onclick="editDepartment('${dept.id}')">
                         <div class="dept-icon" style="background: ${dept.color}20; color: ${dept.color};">
                             <i data-lucide="${dept.icon || 'building-2'}"></i>
                         </div>
                         <span class="dept-name">${dept.name}</span>
                     </div>
-                    <p class="dept-description">${dept.description || 'No description'}</p>
+                    <p class="dept-description" onclick="editDepartment('${dept.id}')">${dept.description || 'No description'}</p>
                     <div class="dept-meta">
                         <span><i data-lucide="users" style="width:12px;height:12px;"></i> ${roles.filter(r => r.department_id === dept.id).length} roles</span>
+                        <button class="btn-delete" onclick="event.stopPropagation(); deleteDepartment('${dept.id}')" title="Delete">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -968,15 +1466,38 @@
                 const data = await res.json();
                 if (data.success) {
                     roles = data.data;
+                    populateRolesDeptFilter();
                     renderRoles();
+                    // Re-render departments to update role counts
+                    renderDepartments();
                 }
             } catch (error) {
                 console.error('Error loading roles:', error);
             }
         }
 
+        // Populate the department filter dropdown for roles
+        function populateRolesDeptFilter() {
+            const select = document.getElementById('rolesDeptFilter');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">All Departments</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            select.value = currentValue; // Preserve selection
+        }
+
+        // Filter roles by department
+        function filterRolesByDept() {
+            renderRoles();
+        }
+
         function renderRoles() {
             const container = document.getElementById('rolesList');
+            const filterDeptId = document.getElementById('rolesDeptFilter')?.value || '';
+
+            // Apply department filter
+            const filteredRoles = filterDeptId
+                ? roles.filter(r => r.department_id === filterDeptId)
+                : roles;
 
             if (roles.length === 0) {
                 container.innerHTML = `
@@ -993,16 +1514,35 @@
                 return;
             }
 
-            container.innerHTML = roles.map(role => `
-                <div class="role-card" onclick="editRole('${role.id}')">
-                    <div class="role-avatar">
+            if (filteredRoles.length === 0) {
+                const deptName = departments.find(d => d.id === filterDeptId)?.name || 'this department';
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">🔍</div>
+                        <h3>No Roles in ${deptName}</h3>
+                        <p>No roles found for the selected department.</p>
+                        <button class="btn-secondary" onclick="document.getElementById('rolesDeptFilter').value=''; filterRolesByDept();">
+                            Show All Roles
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = filteredRoles.map(role => `
+                <div class="role-card">
+                    <div class="role-avatar" onclick="editRole('${role.id}')">
                         <i data-lucide="user" style="width:20px;height:20px;"></i>
                     </div>
-                    <div class="role-info">
+                    <div class="role-info" onclick="editRole('${role.id}')">
                         <div class="role-title">${role.title}</div>
                         <div class="role-dept">${role.departments?.name || 'No department'}</div>
                         <span class="role-level ${role.level}">${role.level}</span>
                     </div>
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteRole('${role.id}')" title="Delete">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
                 </div>
             `).join('');
 
@@ -1016,6 +1556,7 @@
                 const data = await res.json();
                 if (data.success) {
                     okrs = data.data;
+                    populateOKRsDeptFilter();
                     renderOKRs();
                 }
             } catch (error) {
@@ -1023,8 +1564,45 @@
             }
         }
 
+        // Populate the department filter dropdown for OKRs
+        function populateOKRsDeptFilter() {
+            const select = document.getElementById('okrsDeptFilter');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">All Departments</option>' +
+                '<option value="company">Company-wide</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            select.value = currentValue; // Preserve selection
+        }
+
+        // Filter OKRs (called by both department and period filters)
+        function filterOKRs() {
+            renderOKRs();
+        }
+
+        // Legacy function name for compatibility
+        function filterOKRsByDept() {
+            renderOKRs();
+        }
+
         function renderOKRs() {
             const container = document.getElementById('okrsList');
+            const deptFilter = document.getElementById('okrsDeptFilter')?.value || '';
+            const periodFilter = document.getElementById('okrsPeriodFilter')?.value || '';
+
+            // Apply filters
+            let filteredOKRs = okrs;
+
+            // Department filter
+            if (deptFilter === 'company') {
+                filteredOKRs = filteredOKRs.filter(o => o.scope === 'company' || !o.department_id);
+            } else if (deptFilter) {
+                filteredOKRs = filteredOKRs.filter(o => o.department_id === deptFilter);
+            }
+
+            // Period/Year filter
+            if (periodFilter) {
+                filteredOKRs = filteredOKRs.filter(o => o.period && o.period.includes(periodFilter));
+            }
 
             if (okrs.length === 0) {
                 container.innerHTML = `
@@ -1041,8 +1619,32 @@
                 return;
             }
 
-            container.innerHTML = okrs.map(okr => `
-                <div class="okr-card">
+            if (filteredOKRs.length === 0) {
+                const deptLabel = deptFilter === 'company'
+                    ? 'Company-wide'
+                    : deptFilter ? departments.find(d => d.id === deptFilter)?.name : null;
+                const periodLabel = periodFilter || null;
+                let filterDesc = [deptLabel, periodLabel].filter(Boolean).join(' / ') || 'selected filters';
+
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">🔍</div>
+                        <h3>No OKRs Found</h3>
+                        <p>No objectives match: ${filterDesc}</p>
+                        <button class="btn-secondary" onclick="clearOKRFilters()">
+                            Clear Filters
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = filteredOKRs.map(okr => `
+                <div class="okr-card" onclick="editOKR('${okr.id}')">
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteOKR('${okr.id}')" title="Delete">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
                     <div class="okr-header">
                         <span class="okr-title">${okr.title}</span>
                         <span class="okr-scope ${okr.scope}">${okr.scope}</span>
@@ -1063,6 +1665,13 @@
             lucide.createIcons();
         }
 
+        // Clear OKR filters
+        function clearOKRFilters() {
+            document.getElementById('okrsDeptFilter').value = '';
+            document.getElementById('okrsPeriodFilter').value = '';
+            filterOKRs();
+        }
+
         // Load processes
         async function loadProcesses() {
             try {
@@ -1070,6 +1679,7 @@
                 const data = await res.json();
                 if (data.success) {
                     processes = data.data;
+                    populateProcessesDeptFilter();
                     renderProcesses();
                 }
             } catch (error) {
@@ -1079,24 +1689,38 @@
 
         function renderProcesses() {
             const container = document.getElementById('processesList');
+            const deptFilter = document.getElementById('processesDeptFilter')?.value || '';
 
-            if (processes.length === 0) {
+            // Apply filter
+            let filteredProcesses = processes;
+            if (deptFilter) {
+                filteredProcesses = processes.filter(p => p.department_id === deptFilter);
+            }
+
+            if (filteredProcesses.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
                         <div class="empty-icon">⚙️</div>
-                        <h3>No Processes Yet</h3>
-                        <p>Document your business processes, standards, and procedures.</p>
-                        <button class="btn-primary" onclick="showProcessModal()">
+                        <h3>${deptFilter ? 'No Processes Found' : 'No Processes Yet'}</h3>
+                        <p>${deptFilter ? 'No processes match the selected filter.' : 'Document your business processes, standards, and procedures.'}</p>
+                        ${!deptFilter ? `<button class="btn-primary" onclick="showProcessModal()">
                             <i data-lucide="plus" style="width:16px;height:16px;"></i> Add First Process
-                        </button>
+                        </button>` : ''}
                     </div>
                 `;
                 lucide.createIcons();
                 return;
             }
 
-            container.innerHTML = processes.map(proc => `
-                <div class="process-card">
+            container.innerHTML = filteredProcesses.map(proc => {
+                const dept = departments.find(d => d.id === proc.department_id);
+                const deptBadge = dept ? `<div class="process-dept-badge"><i data-lucide="building-2" style="width:10px;height:10px;"></i> ${dept.name}</div>` : '';
+
+                return `
+                <div class="process-card" onclick="editProcess('${proc.id}')">
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteProcess('${proc.id}')" title="Delete">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
                     <div class="process-header">
                         <div class="process-icon">
                             <i data-lucide="${proc.icon || 'workflow'}" style="width:18px;height:18px;"></i>
@@ -1105,14 +1729,26 @@
                         <span class="process-type ${proc.type}">${proc.type}</span>
                     </div>
                     <p class="process-description">${proc.description || 'No description'}</p>
+                    ${deptBadge}
                     <div class="process-meta">
                         <span><i data-lucide="list" style="width:12px;height:12px;"></i> ${(proc.steps || []).length} steps</span>
                         <span>v${proc.version || '1.0'}</span>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
 
             lucide.createIcons();
+        }
+
+        function populateProcessesDeptFilter() {
+            const select = document.getElementById('processesDeptFilter');
+            if (!select) return;
+            select.innerHTML = '<option value="">All Departments</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+
+        function filterProcessesByDept() {
+            renderProcesses();
         }
 
         // Populate department select
@@ -1228,12 +1864,485 @@
             }
         }
 
-        function showOKRModal() {
-            alert('OKR creation modal coming soon!');
+        // Edit Role
+        function editRole(id) {
+            const role = roles.find(r => r.id === id);
+            if (!role) return;
+
+            editingId = id;
+            document.getElementById('roleModalTitle').textContent = 'Edit Role';
+            document.getElementById('roleTitle').value = role.title || '';
+            document.getElementById('roleDepartment').value = role.department_id || '';
+            document.getElementById('roleLevel').value = role.level || 'individual';
+            document.getElementById('roleDescription').value = role.description || '';
+            document.getElementById('roleModal').classList.add('active');
         }
 
+        // Delete Department
+        async function deleteDepartment(id) {
+            const dept = departments.find(d => d.id === id);
+            if (!confirm(`Delete department "${dept?.name}"? This will deactivate the department.`)) return;
+
+            try {
+                const res = await fetch(`/api/parthenon/departments/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadDepartments();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting department:', error);
+                alert('Error deleting department');
+            }
+        }
+
+        // Delete Role
+        async function deleteRole(id) {
+            const role = roles.find(r => r.id === id);
+            if (!confirm(`Delete role "${role?.title}"? This will deactivate the role.`)) return;
+
+            try {
+                const res = await fetch(`/api/parthenon/roles/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadRoles();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting role:', error);
+                alert('Error deleting role');
+            }
+        }
+
+        // OKR Modal Functions
+        function showOKRModal() {
+            editingId = null;
+            document.getElementById('okrModalTitle').textContent = 'Add OKR';
+            document.getElementById('okrTitle').value = '';
+            document.getElementById('okrDescription').value = '';
+            document.getElementById('okrScope').value = 'company';
+            document.getElementById('okrDepartment').value = '';
+            document.getElementById('okrPeriod').value = 'Q1 2025';
+            document.getElementById('okrStatus').value = 'draft';
+            populateOKRDeptSelect();
+            document.getElementById('okrModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeOKRModal() {
+            document.getElementById('okrModal').classList.remove('active');
+        }
+
+        function populateOKRDeptSelect() {
+            const select = document.getElementById('okrDepartment');
+            select.innerHTML = '<option value="">Select department...</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+
+        function editOKR(id) {
+            const okr = okrs.find(o => o.id === id);
+            if (!okr) return;
+
+            editingId = id;
+            document.getElementById('okrModalTitle').textContent = 'Edit OKR';
+            document.getElementById('okrTitle').value = okr.title || '';
+            document.getElementById('okrDescription').value = okr.description || '';
+            document.getElementById('okrScope').value = okr.scope || 'company';
+            document.getElementById('okrDepartment').value = okr.department_id || '';
+            document.getElementById('okrPeriod').value = okr.period || 'Q1 2025';
+            document.getElementById('okrStatus').value = okr.status || 'draft';
+            populateOKRDeptSelect();
+            document.getElementById('okrModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        async function saveOKR() {
+            const data = {
+                title: document.getElementById('okrTitle').value,
+                description: document.getElementById('okrDescription').value,
+                scope: document.getElementById('okrScope').value,
+                department_id: document.getElementById('okrDepartment').value || null,
+                period: document.getElementById('okrPeriod').value,
+                status: document.getElementById('okrStatus').value
+            };
+
+            if (!data.title || !data.period) {
+                alert('Title and Period are required');
+                return;
+            }
+
+            try {
+                const url = editingId ? `/api/parthenon/okrs/${editingId}` : '/api/parthenon/okrs';
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeOKRModal();
+                    await loadOKRs();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving OKR:', error);
+                alert('Error saving OKR');
+            }
+        }
+
+        async function deleteOKR(id) {
+            const okr = okrs.find(o => o.id === id);
+            if (!confirm(`Delete OKR "${okr?.title}"?`)) return;
+
+            try {
+                const res = await fetch(`/api/parthenon/okrs/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadOKRs();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting OKR:', error);
+                alert('Error deleting OKR');
+            }
+        }
+
+        // Process Modal Functions
+        // Track current process steps being edited
+        let currentProcessSteps = [];
+
         function showProcessModal() {
-            alert('Process creation modal coming soon!');
+            editingId = null;
+            currentProcessSteps = [];
+            document.getElementById('processModalTitle').textContent = 'Add Process';
+            document.getElementById('processName').value = '';
+            document.getElementById('processDescription').value = '';
+            document.getElementById('processType').value = 'procedure';
+            document.getElementById('processDepartment').value = '';
+            document.getElementById('processStatus').value = 'draft';
+            populateProcessDeptSelect();
+            renderProcessSteps();
+            document.getElementById('processModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeProcessModal() {
+            document.getElementById('processModal').classList.remove('active');
+        }
+
+        function populateProcessDeptSelect() {
+            const select = document.getElementById('processDepartment');
+            select.innerHTML = '<option value="">Select department...</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+
+        function editProcess(id) {
+            const proc = processes.find(p => p.id === id);
+            if (!proc) return;
+
+            editingId = id;
+            // Deep clone steps to avoid modifying original
+            currentProcessSteps = JSON.parse(JSON.stringify(proc.steps || []));
+            document.getElementById('processModalTitle').textContent = 'Edit Process';
+            document.getElementById('processName').value = proc.name || '';
+            document.getElementById('processDescription').value = proc.description || '';
+            document.getElementById('processType').value = proc.type || 'procedure';
+            document.getElementById('processDepartment').value = proc.department_id || '';
+            document.getElementById('processStatus').value = proc.status || 'draft';
+            populateProcessDeptSelect();
+            renderProcessSteps();
+            document.getElementById('processModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function renderProcessSteps() {
+            const container = document.getElementById('processStepsContainer');
+            if (currentProcessSteps.length === 0) {
+                container.innerHTML = '<div class="no-steps-message">No steps defined. Click "Add Step" to create one.</div>';
+                return;
+            }
+
+            container.innerHTML = currentProcessSteps.map((step, index) => `
+                <div class="process-step-item" data-index="${index}">
+                    <button type="button" class="step-remove-btn" onclick="removeProcessStep(${index})" title="Remove step">
+                        <i data-lucide="x" style="width:14px;height:14px;"></i>
+                    </button>
+                    <div class="process-step-header">
+                        <span class="step-number">${index + 1}</span>
+                        <input type="text" class="step-title-input"
+                            value="${escapeHtml(step.title || '')}"
+                            placeholder="Step title"
+                            onchange="updateStepField(${index}, 'title', this.value)">
+                    </div>
+                    <textarea class="step-description-input"
+                        placeholder="Step description (optional)"
+                        onchange="updateStepField(${index}, 'description', this.value)">${escapeHtml(step.description || '')}</textarea>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function addProcessStep() {
+            currentProcessSteps.push({
+                order: currentProcessSteps.length + 1,
+                title: '',
+                description: ''
+            });
+            renderProcessSteps();
+        }
+
+        function removeProcessStep(index) {
+            currentProcessSteps.splice(index, 1);
+            // Update order values
+            currentProcessSteps.forEach((step, i) => {
+                step.order = i + 1;
+            });
+            renderProcessSteps();
+        }
+
+        function updateStepField(index, field, value) {
+            if (currentProcessSteps[index]) {
+                currentProcessSteps[index][field] = value;
+            }
+        }
+
+        async function saveProcess() {
+            // Filter out steps with empty titles
+            const validSteps = currentProcessSteps.filter(s => s.title && s.title.trim());
+            // Re-index order
+            validSteps.forEach((step, i) => { step.order = i + 1; });
+
+            const data = {
+                name: document.getElementById('processName').value,
+                description: document.getElementById('processDescription').value,
+                type: document.getElementById('processType').value,
+                department_id: document.getElementById('processDepartment').value || null,
+                status: document.getElementById('processStatus').value,
+                steps: validSteps
+            };
+
+            if (!data.name) {
+                alert('Process name is required');
+                return;
+            }
+
+            try {
+                const url = editingId ? `/api/parthenon/processes/${editingId}` : '/api/parthenon/processes';
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeProcessModal();
+                    await loadProcesses();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving process:', error);
+                alert('Error saving process');
+            }
+        }
+
+        async function deleteProcess(id) {
+            const proc = processes.find(p => p.id === id);
+            if (!confirm(`Delete process "${proc?.name}"?`)) return;
+
+            try {
+                const res = await fetch(`/api/parthenon/processes/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await loadProcesses();
+                    await loadOverview();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting process:', error);
+                alert('Error deleting process');
+            }
+        }
+
+        // Import Process Modal Functions
+        let importedSteps = [];
+
+        function showImportProcessModal() {
+            document.getElementById('importProcessData').value = '';
+            document.getElementById('importProcessName').value = '';
+            document.getElementById('importProcessType').value = 'procedure';
+            document.getElementById('importProcessDepartment').value = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importPreviewSteps').innerHTML = '';
+            importedSteps = [];
+
+            // Populate department dropdown
+            const deptSelect = document.getElementById('importProcessDepartment');
+            deptSelect.innerHTML = '<option value="">Select department...</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+
+            document.getElementById('importProcessModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeImportProcessModal() {
+            document.getElementById('importProcessModal').classList.remove('active');
+        }
+
+        function parseImportData(text) {
+            const lines = text.trim().split('\n').filter(line => line.trim());
+            const steps = [];
+
+            // Try to parse as JSON first
+            try {
+                const json = JSON.parse(text);
+                if (Array.isArray(json)) {
+                    return json.map((item, idx) => ({
+                        order: idx + 1,
+                        title: item.title || item.name || `Step ${idx + 1}`,
+                        description: item.description || item.desc || ''
+                    }));
+                }
+            } catch (e) {
+                // Not JSON, parse as text
+            }
+
+            // Parse numbered or bulleted list
+            lines.forEach((line, idx) => {
+                let title = '';
+                let description = '';
+
+                // Remove common prefixes: numbers, bullets, dashes
+                let cleaned = line.trim()
+                    .replace(/^[\d]+[\.\)\-:]\s*/, '')  // 1. or 1) or 1- or 1:
+                    .replace(/^[-•*]\s*/, '')          // - or • or *
+                    .replace(/^\[\s*\]\s*/, '')        // [ ]
+                    .replace(/^\[x\]\s*/i, '');        // [x]
+
+                // Check for title - description separator
+                const separators = [' - ', ': ', ' – ', ' — '];
+                for (const sep of separators) {
+                    if (cleaned.includes(sep)) {
+                        const parts = cleaned.split(sep);
+                        title = parts[0].trim();
+                        description = parts.slice(1).join(sep).trim();
+                        break;
+                    }
+                }
+
+                if (!title) {
+                    title = cleaned;
+                }
+
+                if (title) {
+                    steps.push({
+                        order: steps.length + 1,
+                        title: title,
+                        description: description
+                    });
+                }
+            });
+
+            return steps;
+        }
+
+        function previewImportProcess() {
+            const data = document.getElementById('importProcessData').value;
+            if (!data.trim()) {
+                alert('Please paste some process data first');
+                return;
+            }
+
+            importedSteps = parseImportData(data);
+
+            if (importedSteps.length === 0) {
+                alert('Could not parse any steps from the data');
+                return;
+            }
+
+            document.getElementById('importStepCount').textContent = importedSteps.length;
+            document.getElementById('importPreviewSteps').innerHTML = importedSteps.map(step => `
+                <div class="preview-step-item">
+                    <span class="step-number">${step.order}</span>
+                    <div class="preview-step-content">
+                        <div class="preview-step-title">${escapeHtml(step.title)}</div>
+                        ${step.description ? `<div class="preview-step-desc">${escapeHtml(step.description)}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('importPreview').style.display = 'block';
+            lucide.createIcons();
+        }
+
+        async function executeImportProcess() {
+            const name = document.getElementById('importProcessName').value.trim();
+            if (!name) {
+                alert('Please enter a process name');
+                return;
+            }
+
+            if (importedSteps.length === 0) {
+                // Try to parse if preview wasn't clicked
+                const data = document.getElementById('importProcessData').value;
+                importedSteps = parseImportData(data);
+                if (importedSteps.length === 0) {
+                    alert('No steps to import. Please paste data and preview first.');
+                    return;
+                }
+            }
+
+            const processData = {
+                name: name,
+                description: '',
+                type: document.getElementById('importProcessType').value,
+                department_id: document.getElementById('importProcessDepartment').value || null,
+                status: 'draft',
+                steps: importedSteps
+            };
+
+            try {
+                const res = await fetch('/api/parthenon/processes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(processData)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeImportProcessModal();
+                    await loadProcesses();
+                    await loadOverview();
+                    alert(`Successfully imported "${name}" with ${importedSteps.length} steps`);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error importing process:', error);
+                alert('Error importing process');
+            }
         }
 
         // Seed defaults

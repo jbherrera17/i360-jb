@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy-to-Execution | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* S2E Page Styles */
+        .s2e-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Progress Stepper */
+        .strategy-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .step-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .step.active .step-number {
+            background: var(--primary);
+            color: white;
+        }
+
+        .step.active .step-label {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step.completed .step-label {
+            color: var(--text-primary);
+        }
+
+        .step-connector {
+            width: 40px;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .step-connector.completed {
+            background: #10b981;
+        }
+
+        /* Step Content Panels */
+        .step-panel {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        .panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .panel-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+        }
+
+        .panel-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Styling */
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .form-help {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        /* Strategic Themes List */
+        .themes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .theme-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .theme-item .theme-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .theme-item .theme-content {
+            flex: 1;
+        }
+
+        .theme-item .theme-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .theme-item .theme-rationale {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .theme-item .theme-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            padding: 0.4rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-icon.danger:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .add-theme-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-theme-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* BSC Perspectives Grid */
+        .perspectives-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .perspective-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .perspective-header {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .perspective-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .perspective-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .perspective-question {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .perspective-body {
+            padding: 1rem;
+        }
+
+        .objectives-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .objective-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+        }
+
+        .objective-item .objective-name {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .objective-item .objective-status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .objective-item .objective-status.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .add-objective-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem;
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+
+        .add-objective-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* OKR Linkage Table */
+        .linkage-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .linkage-table th,
+        .linkage-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .linkage-table th {
+            background: var(--bg-tertiary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .linkage-table tr:hover {
+            background: var(--bg-primary);
+        }
+
+        .link-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .link-status.linked {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .link-status.unlinked {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        /* Strategy Map Preview */
+        .strategy-map-preview {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .map-row {
+            display: flex;
+            align-items: stretch;
+            margin-bottom: 1rem;
+        }
+
+        .map-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .map-label {
+            width: 150px;
+            padding: 0.75rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .map-objectives {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding-left: 1rem;
+        }
+
+        .map-objective {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.2s;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            max-height: calc(100vh - 4rem);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 12rem);
+        }
+
+        .modal-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .perspectives-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .strategy-stepper {
+                flex-wrap: wrap;
+            }
+            .step-connector {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Strategy-to-Execution</h1>
+                    <p class="header-subtitle">Translate vision into measurable action</p>
+                </div>
+                <div class="header-actions">
+                    <div class="theme-toggle-wrapper">
+                        <label class="theme-toggle" title="Toggle dark/light mode">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="toggle-slider">
+                                <i data-lucide="sun" class="toggle-icon sun"></i>
+                                <i data-lucide="moon" class="toggle-icon moon"></i>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <div class="s2e-layout">
+                <!-- Progress Stepper -->
+                <div class="strategy-stepper">
+                    <div class="step active" data-step="1" onclick="goToStep(1)">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Foundation</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="2" onclick="goToStep(2)">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Themes</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="3" onclick="goToStep(3)">
+                        <div class="step-number">3</div>
+                        <div class="step-label">BSC Objectives</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="4" onclick="goToStep(4)">
+                        <div class="step-number">4</div>
+                        <div class="step-label">OKR Linkage</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="5" onclick="goToStep(5)">
+                        <div class="step-number">5</div>
+                        <div class="step-label">Strategy Map</div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Strategic Foundation -->
+                <div class="step-panel active" id="step1">
+                    <div class="panel-header">
+                        <h2><i data-lucide="compass" style="width:20px;height:20px;"></i> Strategic Foundation</h2>
+                        <p>Define your vision, mission, and planning horizon. This is the "North Star" that guides all strategic decisions.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label>Vision Statement</label>
+                                <textarea id="vision" placeholder="What does success look like in 3-5 years? Describe the aspirational future state..."></textarea>
+                                <div class="form-help">A compelling, aspirational description of your desired future state (3-5 years out)</div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label>Mission Statement</label>
+                                <textarea id="mission" placeholder="Why does this organization exist? What value do you create?"></textarea>
+                                <div class="form-help">Your reason for being - the enduring purpose that drives daily decisions</div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Planning Period</label>
+                                <input type="text" id="planningPeriod" placeholder="e.g., 2025-2027">
+                            </div>
+                            <div class="form-group">
+                                <label>Vision Horizon</label>
+                                <select id="visionHorizon">
+                                    <option value="3-5 years">3-5 years</option>
+                                    <option value="5-10 years">5-10 years</option>
+                                    <option value="1-3 years">1-3 years</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="heart" style="width:16px;height:16px;"></i>
+                                Core Values
+                            </div>
+                            <div id="coreValuesList" class="themes-list">
+                                <!-- Values populated here -->
+                            </div>
+                            <button type="button" class="add-theme-btn" onclick="addCoreValue()">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                Add Core Value
+                            </button>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <div></div>
+                        <button class="btn-primary" onclick="saveFoundationAndNext()">
+                            Save & Continue
+                            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Strategic Themes -->
+                <div class="step-panel" id="step2">
+                    <div class="panel-header">
+                        <h2><i data-lucide="layers" style="width:20px;height:20px;"></i> Strategic Themes</h2>
+                        <p>Define 2-4 major strategic focus areas. These are the "big bets" that will drive your strategy.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div id="themesList" class="themes-list">
+                            <!-- Themes populated here -->
+                        </div>
+                        <button type="button" class="add-theme-btn" onclick="showThemeModal()" style="margin-top: 1rem;">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                            Add Strategic Theme
+                        </button>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToStep(1)">
+                            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                            Back
+                        </button>
+                        <button class="btn-primary" onclick="saveThemesAndNext()">
+                            Continue to BSC
+                            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: BSC Objectives -->
+                <div class="step-panel" id="step3">
+                    <div class="panel-header">
+                        <h2><i data-lucide="layout-grid" style="width:20px;height:20px;"></i> Balanced Scorecard Objectives</h2>
+                        <p>Define 2-3 strategic objectives for each perspective. These are directional commitments, not metrics.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div class="perspectives-grid" id="perspectivesGrid">
+                            <!-- Perspectives populated here -->
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToStep(2)">
+                            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                            Back
+                        </button>
+                        <button class="btn-primary" onclick="goToStep(4)">
+                            Continue to OKR Linkage
+                            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: OKR Linkage -->
+                <div class="step-panel" id="step4">
+                    <div class="panel-header">
+                        <h2><i data-lucide="link" style="width:20px;height:20px;"></i> OKR Strategic Linkage</h2>
+                        <p>Connect your existing OKRs to strategic objectives. This creates the "why" behind each goal.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div id="okrLinkageContainer">
+                            <table class="linkage-table">
+                                <thead>
+                                    <tr>
+                                        <th>OKR</th>
+                                        <th>Department</th>
+                                        <th>Progress</th>
+                                        <th>Strategic Link</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="okrLinkageBody">
+                                    <!-- OKRs populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToStep(3)">
+                            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                            Back
+                        </button>
+                        <button class="btn-primary" onclick="goToStep(5)">
+                            View Strategy Map
+                            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Strategy Map -->
+                <div class="step-panel" id="step5">
+                    <div class="panel-header">
+                        <h2><i data-lucide="map" style="width:20px;height:20px;"></i> Strategy Map</h2>
+                        <p>Your complete strategy visualization showing the cause-effect chain from learning to financial outcomes.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div class="strategy-map-preview" id="strategyMapPreview">
+                            <!-- Strategy map rendered here -->
+                        </div>
+
+                        <div class="form-row" style="margin-top: 1.5rem;">
+                            <div class="form-group">
+                                <label>Alignment Rate</label>
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--primary);" id="alignmentRate">0%</div>
+                                <div class="form-help">OKRs linked to strategic objectives</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Coverage</label>
+                                <div style="font-size: 2rem; font-weight: 700; color: #10b981;" id="coverageRate">0/0</div>
+                                <div class="form-help">Objectives with linked OKRs</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToStep(4)">
+                            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                            Back
+                        </button>
+                        <button class="btn-primary" onclick="activateStrategy()">
+                            <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
+                            Activate Strategy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Theme Modal -->
+    <div class="modal-overlay" id="themeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="compass"></i> <span id="themeModalTitle">Add Strategic Theme</span></h2>
+                <button class="modal-close" onclick="closeThemeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Theme Name</label>
+                    <input type="text" id="themeName" placeholder="e.g., Customer Excellence">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="themeDescription" rows="2" placeholder="Brief description of this strategic focus area"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Strategic Rationale</label>
+                    <textarea id="themeRationale" rows="3" placeholder="Why is this theme critical now? What happens if we don't focus here?"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Icon</label>
+                        <select id="themeIcon">
+                            <option value="compass">Compass</option>
+                            <option value="target">Target</option>
+                            <option value="rocket">Rocket</option>
+                            <option value="shield">Shield</option>
+                            <option value="heart">Heart</option>
+                            <option value="zap">Zap</option>
+                            <option value="star">Star</option>
+                            <option value="trending-up">Growth</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Color</label>
+                        <input type="color" id="themeColor" value="#6366f1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeThemeModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveTheme()">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Objective Modal -->
+    <div class="modal-overlay" id="objectiveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="target"></i> <span id="objectiveModalTitle">Add Objective</span></h2>
+                <button class="modal-close" onclick="closeObjectiveModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Objective Name</label>
+                    <input type="text" id="objectiveName" placeholder="e.g., Predictable cash flow">
+                    <div class="form-help">A directional commitment, not a metric (avoid numbers)</div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="objectiveDescription" rows="2" placeholder="What does success look like for this objective?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Linked Theme (optional)</label>
+                    <select id="objectiveTheme">
+                        <option value="">Select a theme...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeObjectiveModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveObjective()">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link OKR Modal -->
+    <div class="modal-overlay" id="linkOkrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="link"></i> Link to Strategic Objective</h2>
+                <button class="modal-close" onclick="closeLinkOkrModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>OKR</label>
+                    <div id="linkOkrTitle" style="font-weight: 600; padding: 0.5rem 0;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Strategic Objective</label>
+                    <select id="linkObjectiveSelect">
+                        <option value="">Select an objective...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Link Type</label>
+                    <select id="linkType">
+                        <option value="supports">Supports</option>
+                        <option value="measures">Measures</option>
+                        <option value="enables">Enables</option>
+                        <option value="validates">Validates</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>How does this OKR contribute?</label>
+                    <textarea id="linkContribution" rows="2" placeholder="Describe how this OKR advances the strategic objective"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeLinkOkrModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveLinkOkr()">
+                    <i data-lucide="link" style="width:16px;height:16px;"></i> Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/supabase.js"></script>
+    <script src="/js/navigation.js"></script>
+
+    <script>
+        // State
+        let currentStep = 1;
+        let foundation = null;
+        let themes = [];
+        let perspectives = [];
+        let objectives = [];
+        let okrs = [];
+        let departments = [];
+        let okrLinks = [];
+        let coreValues = [];
+
+        // Editing state
+        let editingThemeId = null;
+        let editingObjectiveId = null;
+        let currentPerspectiveId = null;
+        let linkingOkrId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadAllData();
+        });
+
+        // Load all data
+        async function loadAllData() {
+            try {
+                // Load foundation
+                const foundationRes = await fetch('/api/s2e/foundations/current');
+                const foundationData = await foundationRes.json();
+                if (foundationData.success && foundationData.data) {
+                    foundation = foundationData.data;
+                    themes = foundation.themes || [];
+                    perspectives = foundation.perspectives || [];
+                    coreValues = foundation.core_values || [];
+
+                    // Flatten objectives
+                    objectives = [];
+                    perspectives.forEach(p => {
+                        (p.objectives || []).forEach(o => {
+                            objectives.push({ ...o, perspective_id: p.id });
+                        });
+                    });
+
+                    populateFoundationForm();
+                    updateStepperCompletion();
+                }
+
+                // Load OKRs and departments
+                const [okrsRes, deptsRes, linksRes] = await Promise.all([
+                    fetch('/api/parthenon/okrs'),
+                    fetch('/api/parthenon/departments'),
+                    fetch('/api/s2e/okr-links')
+                ]);
+
+                const okrsData = await okrsRes.json();
+                const deptsData = await deptsRes.json();
+                const linksData = await linksRes.json();
+
+                if (okrsData.success) okrs = okrsData.data || [];
+                if (deptsData.success) departments = deptsData.data || [];
+                if (linksData.success) okrLinks = linksData.data || [];
+
+                renderCurrentStep();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Populate foundation form
+        function populateFoundationForm() {
+            if (foundation) {
+                document.getElementById('vision').value = foundation.vision || '';
+                document.getElementById('mission').value = foundation.mission || '';
+                document.getElementById('planningPeriod').value = foundation.planning_period || '';
+                document.getElementById('visionHorizon').value = foundation.vision_horizon || '3-5 years';
+            }
+            renderCoreValues();
+        }
+
+        // Step navigation
+        function goToStep(step) {
+            currentStep = step;
+
+            // Update stepper UI
+            document.querySelectorAll('.step').forEach(s => {
+                const stepNum = parseInt(s.dataset.step);
+                s.classList.remove('active');
+                if (stepNum === step) s.classList.add('active');
+            });
+
+            // Update panels
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+
+            renderCurrentStep();
+            lucide.createIcons();
+        }
+
+        function renderCurrentStep() {
+            switch (currentStep) {
+                case 1:
+                    renderCoreValues();
+                    break;
+                case 2:
+                    renderThemes();
+                    break;
+                case 3:
+                    renderPerspectives();
+                    break;
+                case 4:
+                    renderOkrLinkage();
+                    break;
+                case 5:
+                    renderStrategyMap();
+                    break;
+            }
+        }
+
+        function updateStepperCompletion() {
+            // Mark steps as completed based on data
+            const step1Complete = foundation && foundation.vision && foundation.mission;
+            const step2Complete = themes.length > 0;
+            const step3Complete = objectives.length > 0;
+            const step4Complete = okrLinks.length > 0;
+
+            document.querySelectorAll('.step').forEach(s => {
+                const stepNum = parseInt(s.dataset.step);
+                s.classList.remove('completed');
+                if (stepNum === 1 && step1Complete) s.classList.add('completed');
+                if (stepNum === 2 && step2Complete) s.classList.add('completed');
+                if (stepNum === 3 && step3Complete) s.classList.add('completed');
+                if (stepNum === 4 && step4Complete) s.classList.add('completed');
+            });
+
+            // Update connectors
+            document.querySelectorAll('.step-connector').forEach((c, i) => {
+                c.classList.remove('completed');
+                if (i === 0 && step1Complete) c.classList.add('completed');
+                if (i === 1 && step2Complete) c.classList.add('completed');
+                if (i === 2 && step3Complete) c.classList.add('completed');
+                if (i === 3 && step4Complete) c.classList.add('completed');
+            });
+        }
+
+        // ============= STEP 1: Foundation =============
+
+        function renderCoreValues() {
+            const container = document.getElementById('coreValuesList');
+            if (coreValues.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No core values defined yet</p>';
+                return;
+            }
+
+            container.innerHTML = coreValues.map((value, index) => `
+                <div class="theme-item" style="border-left-color: #8b5cf6;">
+                    <div class="theme-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+                        <i data-lucide="heart" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div class="theme-content">
+                        <div class="theme-name">${value.name}</div>
+                        <div class="theme-rationale">${value.description || ''}</div>
+                    </div>
+                    <div class="theme-actions">
+                        <button class="btn-icon danger" onclick="removeCoreValue(${index})" title="Remove">
+                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addCoreValue() {
+            const name = prompt('Core value name:');
+            if (!name) return;
+            const description = prompt('Brief description (optional):');
+            coreValues.push({ name, description: description || '' });
+            renderCoreValues();
+        }
+
+        function removeCoreValue(index) {
+            coreValues.splice(index, 1);
+            renderCoreValues();
+        }
+
+        async function saveFoundationAndNext() {
+            const data = {
+                vision: document.getElementById('vision').value,
+                vision_horizon: document.getElementById('visionHorizon').value,
+                mission: document.getElementById('mission').value,
+                planning_period: document.getElementById('planningPeriod').value,
+                core_values: coreValues,
+                is_current: true,
+                status: 'active'
+            };
+
+            if (!data.vision || !data.mission) {
+                alert('Please provide both vision and mission statements');
+                return;
+            }
+
+            try {
+                const url = foundation ? `/api/s2e/foundations/${foundation.id}` : '/api/s2e/foundations';
+                const method = foundation ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    foundation = result.data;
+
+                    // Initialize BSC perspectives if new foundation
+                    if (method === 'POST') {
+                        await fetch('/api/s2e/perspectives/initialize', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ foundation_id: foundation.id })
+                        });
+                    }
+
+                    updateStepperCompletion();
+                    goToStep(2);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving foundation:', error);
+                alert('Error saving foundation');
+            }
+        }
+
+        // ============= STEP 2: Themes =============
+
+        function renderThemes() {
+            const container = document.getElementById('themesList');
+            if (themes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <h3>No Strategic Themes Yet</h3>
+                        <p>Define 2-4 major focus areas that will drive your strategy.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = themes.map(theme => `
+                <div class="theme-item" style="border-left-color: ${theme.color};">
+                    <div class="theme-icon" style="background: ${theme.color}20; color: ${theme.color}">
+                        <i data-lucide="${theme.icon || 'compass'}" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div class="theme-content">
+                        <div class="theme-name">${theme.name}</div>
+                        <div class="theme-rationale">${theme.rationale || theme.description || ''}</div>
+                    </div>
+                    <div class="theme-actions">
+                        <button class="btn-icon" onclick="editTheme('${theme.id}')" title="Edit">
+                            <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+                        </button>
+                        <button class="btn-icon danger" onclick="deleteTheme('${theme.id}')" title="Delete">
+                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function showThemeModal(themeId = null) {
+            editingThemeId = themeId;
+            const theme = themeId ? themes.find(t => t.id === themeId) : null;
+
+            document.getElementById('themeModalTitle').textContent = theme ? 'Edit Theme' : 'Add Strategic Theme';
+            document.getElementById('themeName').value = theme?.name || '';
+            document.getElementById('themeDescription').value = theme?.description || '';
+            document.getElementById('themeRationale').value = theme?.rationale || '';
+            document.getElementById('themeIcon').value = theme?.icon || 'compass';
+            document.getElementById('themeColor').value = theme?.color || '#6366f1';
+
+            document.getElementById('themeModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeThemeModal() {
+            document.getElementById('themeModal').classList.remove('active');
+            editingThemeId = null;
+        }
+
+        function editTheme(id) {
+            showThemeModal(id);
+        }
+
+        async function saveTheme() {
+            const data = {
+                foundation_id: foundation.id,
+                name: document.getElementById('themeName').value,
+                description: document.getElementById('themeDescription').value,
+                rationale: document.getElementById('themeRationale').value,
+                icon: document.getElementById('themeIcon').value,
+                color: document.getElementById('themeColor').value
+            };
+
+            if (!data.name) {
+                alert('Theme name is required');
+                return;
+            }
+
+            try {
+                const url = editingThemeId ? `/api/s2e/themes/${editingThemeId}` : '/api/s2e/themes';
+                const method = editingThemeId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    if (editingThemeId) {
+                        const index = themes.findIndex(t => t.id === editingThemeId);
+                        if (index !== -1) themes[index] = result.data;
+                    } else {
+                        themes.push(result.data);
+                    }
+                    closeThemeModal();
+                    renderThemes();
+                    updateStepperCompletion();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving theme:', error);
+                alert('Error saving theme');
+            }
+        }
+
+        async function deleteTheme(id) {
+            if (!confirm('Delete this strategic theme?')) return;
+
+            try {
+                const res = await fetch(`/api/s2e/themes/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    themes = themes.filter(t => t.id !== id);
+                    renderThemes();
+                    updateStepperCompletion();
+                }
+            } catch (error) {
+                console.error('Error deleting theme:', error);
+            }
+        }
+
+        async function saveThemesAndNext() {
+            // Reload perspectives before moving to step 3
+            try {
+                const res = await fetch(`/api/s2e/perspectives?foundation_id=${foundation.id}`);
+                const data = await res.json();
+                if (data.success) {
+                    perspectives = data.data || [];
+                }
+            } catch (error) {
+                console.error('Error loading perspectives:', error);
+            }
+            goToStep(3);
+        }
+
+        // ============= STEP 3: BSC Objectives =============
+
+        async function renderPerspectives() {
+            const container = document.getElementById('perspectivesGrid');
+
+            if (perspectives.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>No Perspectives Yet</h3>
+                        <p>Please complete Step 1 to initialize BSC perspectives.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Load objectives for each perspective
+            for (const p of perspectives) {
+                const res = await fetch(`/api/s2e/objectives?perspective_id=${p.id}`);
+                const data = await res.json();
+                p.objectives = data.success ? data.data : [];
+            }
+
+            container.innerHTML = perspectives.map(p => {
+                const iconColors = {
+                    financial: { bg: 'rgba(16, 185, 129, 0.15)', fg: '#10b981' },
+                    customer: { bg: 'rgba(59, 130, 246, 0.15)', fg: '#3b82f6' },
+                    internal_process: { bg: 'rgba(245, 158, 11, 0.15)', fg: '#f59e0b' },
+                    learning_growth: { bg: 'rgba(139, 92, 246, 0.15)', fg: '#8b5cf6' }
+                };
+                const colors = iconColors[p.perspective_type] || { bg: '#f1f1f1', fg: '#666' };
+
+                return `
+                    <div class="perspective-card">
+                        <div class="perspective-header">
+                            <div class="perspective-icon" style="background: ${colors.bg}; color: ${colors.fg}">
+                                <i data-lucide="${p.icon || 'circle'}" style="width:18px;height:18px;"></i>
+                            </div>
+                            <div>
+                                <h3>${p.name}</h3>
+                                <div class="perspective-question">${p.guiding_question || ''}</div>
+                            </div>
+                        </div>
+                        <div class="perspective-body">
+                            <div class="objectives-list">
+                                ${(p.objectives || []).map(o => `
+                                    <div class="objective-item">
+                                        <span class="objective-name">${o.name}</span>
+                                        <span class="objective-status ${o.status === 'active' ? 'active' : ''}">${o.status}</span>
+                                        <button class="btn-icon danger" onclick="deleteObjective('${o.id}')" title="Delete">
+                                            <i data-lucide="x" style="width:14px;height:14px;"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="add-objective-btn" onclick="showObjectiveModal('${p.id}')">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                Add Objective
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function showObjectiveModal(perspectiveId) {
+            currentPerspectiveId = perspectiveId;
+            editingObjectiveId = null;
+
+            document.getElementById('objectiveModalTitle').textContent = 'Add Objective';
+            document.getElementById('objectiveName').value = '';
+            document.getElementById('objectiveDescription').value = '';
+
+            // Populate theme dropdown
+            const themeSelect = document.getElementById('objectiveTheme');
+            themeSelect.innerHTML = '<option value="">Select a theme...</option>' +
+                themes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+            document.getElementById('objectiveModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeObjectiveModal() {
+            document.getElementById('objectiveModal').classList.remove('active');
+            currentPerspectiveId = null;
+            editingObjectiveId = null;
+        }
+
+        async function saveObjective() {
+            const data = {
+                perspective_id: currentPerspectiveId,
+                name: document.getElementById('objectiveName').value,
+                description: document.getElementById('objectiveDescription').value,
+                theme_id: document.getElementById('objectiveTheme').value || null,
+                status: 'active'
+            };
+
+            if (!data.name) {
+                alert('Objective name is required');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/s2e/objectives', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeObjectiveModal();
+                    renderPerspectives();
+                    updateStepperCompletion();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving objective:', error);
+                alert('Error saving objective');
+            }
+        }
+
+        async function deleteObjective(id) {
+            if (!confirm('Delete this objective?')) return;
+
+            try {
+                const res = await fetch(`/api/s2e/objectives/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    renderPerspectives();
+                }
+            } catch (error) {
+                console.error('Error deleting objective:', error);
+            }
+        }
+
+        // ============= STEP 4: OKR Linkage =============
+
+        async function renderOkrLinkage() {
+            const tbody = document.getElementById('okrLinkageBody');
+
+            // Reload objectives and links
+            const [objRes, linksRes] = await Promise.all([
+                fetch('/api/s2e/objectives'),
+                fetch('/api/s2e/okr-links')
+            ]);
+
+            const objData = await objRes.json();
+            const linksData = await linksRes.json();
+
+            objectives = objData.success ? objData.data : [];
+            okrLinks = linksData.success ? linksData.data : [];
+
+            if (okrs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No OKRs found. Create OKRs in Parthenon first.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = okrs.map(okr => {
+                const dept = departments.find(d => d.id === okr.department_id);
+                const link = okrLinks.find(l => l.okr_id === okr.id);
+                const linkedObj = link ? objectives.find(o => o.id === link.bsc_objective_id) : null;
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${okr.title}</strong>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${okr.period || ''}</div>
+                        </td>
+                        <td>${dept?.name || '-'}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div style="width: 60px; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                                    <div style="width: ${okr.progress || 0}%; height: 100%; background: ${okr.progress >= 70 ? '#10b981' : okr.progress >= 40 ? '#f59e0b' : '#ef4444'}; border-radius: 3px;"></div>
+                                </div>
+                                <span style="font-size: 0.85rem;">${okr.progress || 0}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            ${linkedObj ? `
+                                <span class="link-status linked">
+                                    <i data-lucide="check" style="width:12px;height:12px;"></i>
+                                    ${linkedObj.name}
+                                </span>
+                            ` : `
+                                <span class="link-status unlinked">
+                                    <i data-lucide="alert-circle" style="width:12px;height:12px;"></i>
+                                    Unlinked
+                                </span>
+                            `}
+                        </td>
+                        <td>
+                            <button class="btn-icon" onclick="showLinkOkrModal('${okr.id}')" title="${link ? 'Change link' : 'Link to objective'}">
+                                <i data-lucide="link" style="width:16px;height:16px;"></i>
+                            </button>
+                            ${link ? `
+                                <button class="btn-icon danger" onclick="unlinkOkr('${link.id}')" title="Remove link">
+                                    <i data-lucide="unlink" style="width:16px;height:16px;"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function showLinkOkrModal(okrId) {
+            linkingOkrId = okrId;
+            const okr = okrs.find(o => o.id === okrId);
+
+            document.getElementById('linkOkrTitle').textContent = okr?.title || '';
+
+            // Populate objectives dropdown
+            const select = document.getElementById('linkObjectiveSelect');
+            select.innerHTML = '<option value="">Select an objective...</option>' +
+                objectives.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+
+            // Check if already linked
+            const existingLink = okrLinks.find(l => l.okr_id === okrId);
+            if (existingLink) {
+                select.value = existingLink.bsc_objective_id;
+                document.getElementById('linkType').value = existingLink.link_type || 'supports';
+                document.getElementById('linkContribution').value = existingLink.contribution_description || '';
+            } else {
+                document.getElementById('linkType').value = 'supports';
+                document.getElementById('linkContribution').value = '';
+            }
+
+            document.getElementById('linkOkrModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeLinkOkrModal() {
+            document.getElementById('linkOkrModal').classList.remove('active');
+            linkingOkrId = null;
+        }
+
+        async function saveLinkOkr() {
+            const objectiveId = document.getElementById('linkObjectiveSelect').value;
+            if (!objectiveId) {
+                alert('Please select an objective');
+                return;
+            }
+
+            // Remove existing link first
+            const existingLink = okrLinks.find(l => l.okr_id === linkingOkrId);
+            if (existingLink) {
+                await fetch(`/api/s2e/okr-links/${existingLink.id}`, { method: 'DELETE' });
+            }
+
+            const data = {
+                okr_id: linkingOkrId,
+                bsc_objective_id: objectiveId,
+                link_type: document.getElementById('linkType').value,
+                contribution_description: document.getElementById('linkContribution').value,
+                is_primary: true
+            };
+
+            try {
+                const res = await fetch('/api/s2e/okr-links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    closeLinkOkrModal();
+                    renderOkrLinkage();
+                    updateStepperCompletion();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error linking OKR:', error);
+                alert('Error linking OKR');
+            }
+        }
+
+        async function unlinkOkr(linkId) {
+            if (!confirm('Remove this strategic link?')) return;
+
+            try {
+                const res = await fetch(`/api/s2e/okr-links/${linkId}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    renderOkrLinkage();
+                    updateStepperCompletion();
+                }
+            } catch (error) {
+                console.error('Error unlinking OKR:', error);
+            }
+        }
+
+        // ============= STEP 5: Strategy Map =============
+
+        async function renderStrategyMap() {
+            const container = document.getElementById('strategyMapPreview');
+
+            // Reload data
+            const mapRes = await fetch('/api/s2e/strategy-map');
+            const mapData = await mapRes.json();
+
+            if (!mapData.success || !mapData.data) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🗺️</div>
+                        <h3>Strategy Map Unavailable</h3>
+                        <p>Complete the previous steps to generate your strategy map.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const { perspectives: mapPerspectives } = mapData.data;
+
+            // Order perspectives: Learning -> Process -> Customer -> Financial (cause-effect)
+            const orderedTypes = ['learning_growth', 'internal_process', 'customer', 'financial'];
+            const orderedPerspectives = orderedTypes
+                .map(type => mapPerspectives.find(p => p.perspective_type === type))
+                .filter(Boolean);
+
+            const perspectiveColors = {
+                financial: { bg: '#10b981', label: 'Financial' },
+                customer: { bg: '#3b82f6', label: 'Customer' },
+                internal_process: { bg: '#f59e0b', label: 'Process' },
+                learning_growth: { bg: '#8b5cf6', label: 'Learning' }
+            };
+
+            container.innerHTML = orderedPerspectives.map(p => {
+                const colors = perspectiveColors[p.perspective_type];
+                return `
+                    <div class="map-row">
+                        <div class="map-label" style="background: ${colors.bg}; color: white;">
+                            ${colors.label}
+                        </div>
+                        <div class="map-objectives">
+                            ${(p.objectives || []).map(o => `
+                                <div class="map-objective" style="border-left: 3px solid ${colors.bg}">
+                                    ${o.name}
+                                    ${o.okr_count > 0 ? `<span style="margin-left: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">(${o.okr_count} OKRs)</span>` : ''}
+                                </div>
+                            `).join('') || '<span style="color: var(--text-muted); font-size: 0.85rem;">No objectives</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Calculate metrics
+            const reportRes = await fetch('/api/s2e/alignment-report');
+            const reportData = await reportRes.json();
+
+            if (reportData.success) {
+                document.getElementById('alignmentRate').textContent = reportData.data.summary.alignment_rate + '%';
+
+                const totalObjectives = mapPerspectives.reduce((sum, p) => sum + (p.objectives?.length || 0), 0);
+                const objectivesWithOKRs = mapPerspectives.reduce((sum, p) =>
+                    sum + (p.objectives?.filter(o => o.okr_count > 0).length || 0), 0);
+                document.getElementById('coverageRate').textContent = `${objectivesWithOKRs}/${totalObjectives}`;
+            }
+
+            lucide.createIcons();
+        }
+
+        async function activateStrategy() {
+            if (!foundation) {
+                alert('No strategy foundation to activate');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/s2e/foundations/${foundation.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'active', is_current: true })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    alert('Strategy activated! Your strategic framework is now live.');
+                    foundation = result.data;
+                }
+            } catch (error) {
+                console.error('Error activating strategy:', error);
+                alert('Error activating strategy');
+            }
+        }
+    </script>
+</body>
+</html>

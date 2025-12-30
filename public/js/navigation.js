@@ -14,6 +14,8 @@
 
 const navItems = [
     { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
+    { href: '/company-dashboard.html', icon: 'building', label: 'Company' },
+    { href: '/strategy.html', icon: 'compass', label: 'Strategy (S2E)' },
     { href: '/chat.html', icon: 'message-square', label: 'Multi-LLM Chat' },
     { href: '/context.html', icon: 'database', label: 'Context Assets' },
     { href: '/agents.html', icon: 'bot', label: 'Agent Library' },

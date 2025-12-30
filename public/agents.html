@@ -512,25 +512,43 @@
             flex: 1;
             min-width: 400px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             background: var(--bg-primary);
             overflow: hidden;
-            position: relative;
         }
 
-        /* Right Sidebar */
+        /* Detail Content Wrapper - contains header and main content */
+        .detail-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        /* Detail Body - scrollable content area below header */
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Agent Detail container - flex row layout */
+        #agentDetail {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* Right Sidebar - full height */
         .detail-sidebar {
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
             width: 280px;
             min-width: 200px;
             max-width: 500px;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border);
             overflow-y: auto;
-            z-index: 5;
+            flex-shrink: 0;
+            position: relative;
         }
 
         .detail-sidebar-content {
@@ -1187,10 +1205,26 @@
 
             .detail-panel.mobile-active {
                 display: flex;
+                flex-direction: column;
                 position: fixed;
                 inset: 0;
                 margin-top: var(--nav-height);
                 z-index: 500;
+            }
+
+            .detail-panel.mobile-active #agentDetail {
+                flex-direction: column;
+            }
+
+            .detail-content-wrapper {
+                flex: none;
+            }
+
+            .detail-sidebar {
+                width: 100%;
+                max-width: none;
+                border-left: none;
+                border-top: 1px solid var(--border);
             }
         }
 
@@ -1838,36 +1872,44 @@
                 </div>
 
                 <div id="agentDetail" style="display: none;">
-                    <div class="detail-header">
-                        <div class="detail-header-top">
-                            <div class="detail-title">
-                                <div class="detail-title-icon" id="detailIcon">🤖</div>
-                                <div class="detail-title-info">
-                                    <h2 id="detailName">Agent Name</h2>
-                                    <div class="detail-title-meta">
-                                        <span id="detailPlatform"></span>
-                                        <span id="detailStatus"></span>
+                    <!-- Left side: Header + Content -->
+                    <div class="detail-content-wrapper">
+                        <div class="detail-header">
+                            <div class="detail-header-top">
+                                <div class="detail-title">
+                                    <div class="detail-title-icon" id="detailIcon">🤖</div>
+                                    <div class="detail-title-info">
+                                        <h2 id="detailName">Agent Name</h2>
+                                        <div class="detail-title-meta">
+                                            <span id="detailPlatform"></span>
+                                            <span id="detailStatus"></span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="detail-actions">
+                                    <button class="btn btn-primary btn-run" id="btnLaunch">
+                                        <i data-lucide="play" style="width:18px;height:18px;"></i>
+                                        Run Agent
+                                    </button>
+                                    <button class="btn btn-secondary" id="btnEdit">
+                                        <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
+                                        <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="detail-actions">
-                                <button class="btn btn-primary btn-run" id="btnLaunch">
-                                    <i data-lucide="play" style="width:18px;height:18px;"></i>
-                                    Run Agent
-                                </button>
-                                <button class="btn btn-secondary" id="btnEdit">
-                                    <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
-                                    Edit
-                                </button>
-                                <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
-                                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                                </button>
-                            </div>
+                            <div class="detail-description" id="detailDescription">—</div>
                         </div>
-                        <div class="detail-description" id="detailDescription">—</div>
+
+                        <!-- Scrollable content area below header -->
+                        <div class="detail-body">
+                            <!-- Main content area can be used for future content -->
+                        </div>
                     </div>
 
-                    <!-- Right Sidebar -->
+                    <!-- Right Sidebar - full height -->
                     <div class="detail-sidebar" id="detailSidebar">
                         <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
                         <div class="detail-sidebar-content">
@@ -1930,10 +1972,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                </div> <!-- Close agentDetail -->
+            </div> <!-- Close detail-panel -->
+        </div> <!-- Close content -->
+    </div> <!-- Close main-container -->
 
     <!-- Create/Edit Agent Modal -->
     <div class="modal-overlay" id="agentModal">
