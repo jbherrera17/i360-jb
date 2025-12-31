@@ -1,47 +1,50 @@
 /**
- * OpenAI Service - Phase 2 Fixed
- * 
- * All current GPT models including GPT-4.1, o-series reasoning, and audio support
+ * OpenAI Service - Phase 2 Updated
+ *
+ * OpenAI SDK v6.x with current GPT models, o-series reasoning, audio, and image generation
  */
 
 const OpenAI = require('openai');
 
-// Available OpenAI models (November 2025)
+// Available OpenAI models (December 2025)
 const OPENAI_MODELS = {
-    // GPT-4.1 Family (Latest standard models)
-    'gpt-4.1': {
-        name: 'GPT-4.1',
-        description: 'Latest GPT model - excels at coding and instruction following',
-        maxTokens: 16384,
-        contextWindow: 1000000,
+    // GPT-5.2 Family (Latest - December 2025)
+    'gpt-5.2': {
+        name: 'GPT-5.2 Thinking',
+        description: 'Best for structured work like coding and planning',
+        maxTokens: 128000,
+        contextWindow: 400000,
+        vision: true,
+        reasoning: true,
+        tier: 'flagship',
+        default: true
+    },
+    'gpt-5.2-chat-latest': {
+        name: 'GPT-5.2 Instant',
+        description: 'Faster at writing and information seeking',
+        maxTokens: 128000,
+        contextWindow: 400000,
         vision: true,
         tier: 'flagship'
     },
-    'gpt-4.1-mini': {
-        name: 'GPT-4.1 Mini',
-        description: 'Fast and affordable - nearly matches GPT-4o quality',
-        maxTokens: 16384,
-        contextWindow: 1000000,
+    'gpt-5.2-pro': {
+        name: 'GPT-5.2 Pro',
+        description: 'Most accurate answers for difficult questions',
+        maxTokens: 128000,
+        contextWindow: 400000,
         vision: true,
-        tier: 'efficient'
+        reasoning: true,
+        tier: 'premium'
     },
-    'gpt-4.1-nano': {
-        name: 'GPT-4.1 Nano',
-        description: 'Fastest and cheapest - ideal for classification and autocomplete',
-        maxTokens: 16384,
-        contextWindow: 1000000,
-        vision: false,
-        tier: 'fast'
-    },
-    // GPT-4o Family (Multimodal)
+    // GPT-4o Family
     'gpt-4o': {
         name: 'GPT-4o',
-        description: 'Multimodal flagship - text, vision, and audio',
+        description: 'Multimodal with text, vision, and audio',
         maxTokens: 16384,
         contextWindow: 128000,
         vision: true,
-        tier: 'flagship',
-        default: true
+        audio: true,
+        tier: 'standard'
     },
     'gpt-4o-mini': {
         name: 'GPT-4o Mini',
@@ -61,47 +64,29 @@ const OPENAI_MODELS = {
         audio: true,
         tier: 'audio'
     },
-    'gpt-4o-mini-audio-preview': {
-        name: 'GPT-4o Mini Audio',
-        description: 'Budget audio model - voice at 1/4 the cost',
-        maxTokens: 16384,
-        contextWindow: 128000,
-        vision: true,
-        audio: true,
-        tier: 'audio'
-    },
     // O-Series Reasoning Models
-    'o3': {
-        name: 'o3',
-        description: 'Most capable reasoning model - complex analysis',
+    'o1': {
+        name: 'o1',
+        description: 'Advanced reasoning model - complex analysis and math',
         maxTokens: 100000,
         contextWindow: 200000,
         vision: true,
         reasoning: true,
         tier: 'reasoning'
     },
-    'o4-mini': {
-        name: 'o4-mini',
+    'o1-mini': {
+        name: 'o1-mini',
         description: 'Fast reasoning - great for math and coding',
         maxTokens: 65536,
-        contextWindow: 200000,
-        vision: true,
-        reasoning: true,
-        tier: 'reasoning'
-    },
-    'o3-mini': {
-        name: 'o3-mini',
-        description: 'Efficient reasoning for everyday problems',
-        maxTokens: 65536,
-        contextWindow: 200000,
+        contextWindow: 128000,
         vision: false,
         reasoning: true,
         tier: 'reasoning'
     },
-    // Legacy but still useful
+    // Legacy
     'gpt-4-turbo': {
         name: 'GPT-4 Turbo',
-        description: 'Previous flagship - still powerful',
+        description: 'Previous flagship with vision',
         maxTokens: 4096,
         contextWindow: 128000,
         vision: true,
@@ -109,19 +94,45 @@ const OPENAI_MODELS = {
     }
 };
 
+// Image generation models
+const IMAGE_MODELS = {
+    'gpt-image-1.5': {
+        name: 'GPT Image 1.5',
+        description: 'Latest image generation with better instruction-following',
+        sizes: ['1024x1024', '1024x1792', '1792x1024'],
+        qualities: ['standard', 'hd'],
+        styles: ['vivid', 'natural'],
+        default: true
+    },
+    'dall-e-3': {
+        name: 'DALL-E 3',
+        description: 'High quality image generation with detailed prompts',
+        sizes: ['1024x1024', '1024x1792', '1792x1024'],
+        qualities: ['standard', 'hd'],
+        styles: ['vivid', 'natural']
+    },
+    'dall-e-2': {
+        name: 'DALL-E 2',
+        description: 'Fast image generation, supports variations and edits',
+        sizes: ['256x256', '512x512', '1024x1024'],
+        qualities: ['standard'],
+        styles: []
+    }
+};
+
 // Model aliases
 const MODEL_ALIASES = {
-    'gpt-4.1': 'gpt-4.1',
-    'gpt-4.1-mini': 'gpt-4.1-mini',
-    'gpt-4.1-nano': 'gpt-4.1-nano',
+    'gpt-5.2': 'gpt-5.2',
+    'gpt-5.2-chat-latest': 'gpt-5.2-chat-latest',
+    'gpt-5.2-pro': 'gpt-5.2-pro',
     'gpt-4o': 'gpt-4o',
     'gpt-4o-mini': 'gpt-4o-mini',
     'gpt-4-turbo': 'gpt-4-turbo',
-    'o3': 'o3',
-    'o4-mini': 'o4-mini',
-    'o3-mini': 'o3-mini',
+    'o1': 'o1',
+    'o1-mini': 'o1-mini',
     // Convenience aliases
-    'gpt4': 'gpt-4.1',
+    'gpt5': 'gpt-5.2',
+    'gpt4': 'gpt-4-turbo',
     'gpt4o': 'gpt-4o',
     'gpt4-mini': 'gpt-4o-mini'
 };
@@ -153,26 +164,26 @@ function initialize(apiKey, searchSvc = null) {
  * Resolve model alias to actual model ID
  */
 function resolveModel(modelInput) {
-    if (!modelInput) return 'gpt-4o';
-    
+    if (!modelInput) return 'gpt-5.2';
+
     const normalized = modelInput.toLowerCase();
-    
+
     if (MODEL_ALIASES[normalized]) {
         return MODEL_ALIASES[normalized];
     }
-    
+
     if (OPENAI_MODELS[modelInput]) {
         return modelInput;
     }
-    
+
     // Fuzzy match
     for (const [id, info] of Object.entries(OPENAI_MODELS)) {
         if (id.includes(normalized) || info.name.toLowerCase().includes(normalized)) {
             return id;
         }
     }
-    
-    return 'gpt-4o';
+
+    return 'gpt-5.2';
 }
 
 /**
@@ -246,10 +257,17 @@ async function chat(options) {
     
     const requestParams = {
         model: resolvedModel,
-        messages,
-        max_tokens: Math.min(maxTokens, modelInfo.maxTokens || 16384)
+        messages
     };
-    
+
+    // GPT-5.x and o-series use max_completion_tokens, others use max_tokens
+    const tokenLimit = Math.min(maxTokens, modelInfo.maxTokens || 16384);
+    if (resolvedModel.startsWith('gpt-5') || resolvedModel.startsWith('o1')) {
+        requestParams.max_completion_tokens = tokenLimit;
+    } else {
+        requestParams.max_tokens = tokenLimit;
+    }
+
     // Add reasoning effort for o-series models
     if (reasoningEffort && modelInfo.reasoning) {
         requestParams.reasoning_effort = reasoningEffort;
@@ -348,10 +366,17 @@ async function* streamChat(options) {
     const requestParams = {
         model: resolvedModel,
         messages,
-        max_tokens: Math.min(maxTokens, modelInfo.maxTokens || 16384),
         stream: true
     };
-    
+
+    // GPT-5.x and o-series use max_completion_tokens, others use max_tokens
+    const tokenLimit = Math.min(maxTokens, modelInfo.maxTokens || 16384);
+    if (resolvedModel.startsWith('gpt-5') || resolvedModel.startsWith('o1')) {
+        requestParams.max_completion_tokens = tokenLimit;
+    } else {
+        requestParams.max_tokens = tokenLimit;
+    }
+
     // Add web search tool if enabled
     if (enableSearch && searchService && searchService.isAvailable()) {
         requestParams.tools = [{
@@ -550,10 +575,117 @@ async function textToSpeech(text, options = {}) {
 }
 
 /**
+ * Generate an image using DALL-E
+ */
+async function generateImage(prompt, options = {}) {
+    if (!client) {
+        throw new Error('OpenAI client not initialized');
+    }
+
+    const {
+        model = 'dall-e-3',
+        size = '1024x1024',
+        quality = 'standard',
+        style = 'vivid',
+        n = 1,
+        responseFormat = 'url'
+    } = options;
+
+    const modelInfo = IMAGE_MODELS[model];
+    if (!modelInfo) {
+        throw new Error(`Unknown image model: ${model}. Available: ${Object.keys(IMAGE_MODELS).join(', ')}`);
+    }
+
+    // Validate size
+    if (!modelInfo.sizes.includes(size)) {
+        throw new Error(`Invalid size for ${model}: ${size}. Available: ${modelInfo.sizes.join(', ')}`);
+    }
+
+    try {
+        const requestParams = {
+            model,
+            prompt,
+            n: model === 'dall-e-3' ? 1 : Math.min(n, 10), // DALL-E 3 only supports n=1
+            size,
+            response_format: responseFormat === 'base64' ? 'b64_json' : 'url'
+        };
+
+        // DALL-E 3 specific options
+        if (model === 'dall-e-3') {
+            requestParams.quality = quality;
+            if (modelInfo.styles.includes(style)) {
+                requestParams.style = style;
+            }
+        }
+
+        const response = await client.images.generate(requestParams);
+
+        return {
+            images: response.data.map(img => ({
+                url: img.url || null,
+                base64: img.b64_json || null,
+                revisedPrompt: img.revised_prompt || null
+            })),
+            model,
+            modelName: modelInfo.name
+        };
+    } catch (error) {
+        console.error('Image generation error:', error);
+        throw new Error(`Image generation failed: ${error.message}`);
+    }
+}
+
+/**
+ * Create image variations (DALL-E 2 only)
+ */
+async function createImageVariation(imageBuffer, options = {}) {
+    if (!client) {
+        throw new Error('OpenAI client not initialized');
+    }
+
+    const {
+        n = 1,
+        size = '1024x1024',
+        responseFormat = 'url'
+    } = options;
+
+    try {
+        const response = await client.images.createVariation({
+            image: imageBuffer,
+            n: Math.min(n, 10),
+            size,
+            response_format: responseFormat === 'base64' ? 'b64_json' : 'url'
+        });
+
+        return {
+            images: response.data.map(img => ({
+                url: img.url || null,
+                base64: img.b64_json || null
+            })),
+            model: 'dall-e-2'
+        };
+    } catch (error) {
+        console.error('Image variation error:', error);
+        throw new Error(`Image variation failed: ${error.message}`);
+    }
+}
+
+/**
  * Get available models
  */
 function getModels() {
     return Object.entries(OPENAI_MODELS).map(([id, info]) => ({
+        id,
+        ...info,
+        provider: 'openai'
+    }));
+}
+
+/**
+ * Get available image models
+ */
+function getImageModels() {
+    return Object.entries(IMAGE_MODELS).map(([id, info]) => ({
         id,
         ...info,
         provider: 'openai'
@@ -573,9 +705,13 @@ module.exports = {
     streamChat,
     transcribeAudio,
     textToSpeech,
+    generateImage,
+    createImageVariation,
     getModels,
+    getImageModels,
     resolveModel,
     isAvailable,
     OPENAI_MODELS,
+    IMAGE_MODELS,
     MODEL_ALIASES
 };

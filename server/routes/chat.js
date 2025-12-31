@@ -19,25 +19,36 @@ if (process.env.OPENAI_API_KEY && openai.initialize) {
     openai.initialize(process.env.OPENAI_API_KEY);
 }
 
-// Model configurations for frontend
+// Model configurations for frontend with capability flags
 const CLAUDE_MODELS = [
-    { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', tier: 'premium' },
-    { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', tier: 'default' },
-    { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', tier: 'fast' },
-    { id: 'claude-opus-4-1-20250805', name: 'Claude Opus 4.1', tier: 'premium' },
-    { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', tier: 'premium' },
-    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', tier: 'standard' }
+    { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', tier: 'premium', vision: true, pdf: true },
+    { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', tier: 'default', vision: true, pdf: true },
+    { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', tier: 'fast', vision: true, pdf: true },
+    { id: 'claude-opus-4-1-20250805', name: 'Claude Opus 4.1', tier: 'premium', vision: true, pdf: true },
+    { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', tier: 'premium', vision: true, pdf: true },
+    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', tier: 'standard', vision: true, pdf: true }
 ];
 
 const OPENAI_MODELS = [
-    { id: 'gpt-4.1', name: 'GPT-4.1', tier: 'flagship' },
-    { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', tier: 'efficient' },
-    { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', tier: 'fast' },
-    { id: 'gpt-4o', name: 'GPT-4o', tier: 'default' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', tier: 'efficient' },
-    { id: 'o3', name: 'o3', tier: 'reasoning' },
-    { id: 'o4-mini', name: 'o4-mini', tier: 'reasoning' },
-    { id: 'o3-mini', name: 'o3-mini', tier: 'reasoning' }
+    // GPT-5.2 Family (Latest - December 2025)
+    { id: 'gpt-5.2', name: 'GPT-5.2 Thinking', tier: 'flagship', vision: true, reasoning: true, imageGen: true },
+    { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Instant', tier: 'flagship', vision: true, imageGen: true },
+    { id: 'gpt-5.2-pro', name: 'GPT-5.2 Pro', tier: 'premium', vision: true, reasoning: true, imageGen: true },
+    // GPT-4o Family
+    { id: 'gpt-4o', name: 'GPT-4o', tier: 'standard', vision: true, audio: true, imageGen: true },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', tier: 'efficient', vision: true, imageGen: true },
+    // O-Series Reasoning
+    { id: 'o1', name: 'o1', tier: 'reasoning', vision: true, reasoning: true },
+    { id: 'o1-mini', name: 'o1-mini', tier: 'reasoning', reasoning: true },
+    // Legacy
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', tier: 'legacy', vision: true, imageGen: true }
+];
+
+// Image generation models (separate from chat models)
+const IMAGE_MODELS = [
+    { id: 'gpt-image-1.5', name: 'GPT Image 1.5', tier: 'flagship', sizes: ['1024x1024', '1024x1792', '1792x1024'] },
+    { id: 'dall-e-3', name: 'DALL-E 3', tier: 'premium', sizes: ['1024x1024', '1024x1792', '1792x1024'] },
+    { id: 'dall-e-2', name: 'DALL-E 2', tier: 'standard', sizes: ['256x256', '512x512', '1024x1024'] }
 ];
 
 /**
@@ -46,7 +57,7 @@ const OPENAI_MODELS = [
 function getProvider(modelId) {
     if (!modelId) return 'anthropic';
     if (modelId.startsWith('claude')) return 'anthropic';
-    if (modelId.startsWith('gpt') || modelId.startsWith('o3') || modelId.startsWith('o4')) return 'openai';
+    if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('dall-e')) return 'openai';
     return 'anthropic'; // Default
 }
 
@@ -113,12 +124,12 @@ function normalizeHistoryMessages(messages) {
  * GET /api/chat/models
  * Returns available models grouped by provider
  */
-router.get('/models', (req, res) => {
+router.get('/models', (_req, res) => {
     const models = {
         anthropic: CLAUDE_MODELS,
         openai: OPENAI_MODELS
     };
-    
+
     // Filter out providers without API keys
     const available = {};
     if (process.env.ANTHROPIC_API_KEY) {
@@ -126,8 +137,9 @@ router.get('/models', (req, res) => {
     }
     if (process.env.OPENAI_API_KEY) {
         available.openai = models.openai;
+        available.imageModels = IMAGE_MODELS;
     }
-    
+
     res.json({
         success: true,
         models: available,

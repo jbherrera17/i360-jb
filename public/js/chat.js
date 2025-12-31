@@ -11,6 +11,7 @@ let attachedFiles = [];
 let currentConversationId = null;
 let conversations = [];
 let loadingMessageController = null; // Controller for rotating loading messages
+let modelCapabilities = {}; // Store model capabilities for UI display
 
 // DOM Elements
 const chatInput = document.getElementById('chatInput');
@@ -55,23 +56,34 @@ async function loadModels() {
     try {
         const response = await fetch('/api/chat/models');
         const data = await response.json();
-        
+
         if (data.success && data.models) {
             const claudeGroup = document.getElementById('claudeModels');
             const gptGroup = document.getElementById('gptModels');
-            
-            if (data.models.anthropic && claudeGroup) {
-                claudeGroup.innerHTML = data.models.anthropic.map(m => 
-                    `<option value="${m.id}" ${m.id === data.default ? 'selected' : ''}>${m.name}</option>`
-                ).join('');
+
+            // Build capabilities map and populate dropdowns
+            if (data.models.anthropic) {
+                data.models.anthropic.forEach(m => {
+                    modelCapabilities[m.id] = m;
+                });
+                if (claudeGroup) {
+                    claudeGroup.innerHTML = data.models.anthropic.map(m =>
+                        `<option value="${m.id}" ${m.id === data.default ? 'selected' : ''}>${m.name}</option>`
+                    ).join('');
+                }
             }
-            
-            if (data.models.openai && gptGroup) {
-                gptGroup.innerHTML = data.models.openai.map(m => 
-                    `<option value="${m.id}">${m.name}</option>`
-                ).join('');
+
+            if (data.models.openai) {
+                data.models.openai.forEach(m => {
+                    modelCapabilities[m.id] = m;
+                });
+                if (gptGroup) {
+                    gptGroup.innerHTML = data.models.openai.map(m =>
+                        `<option value="${m.id}">${m.name}</option>`
+                    ).join('');
+                }
             }
-            
+
             currentModel = data.default || currentModel;
             updateModelIndicator();
         }
@@ -152,13 +164,27 @@ function checkUrlParams() {
 }
 
 /**
- * Update model indicator badge
+ * Update model indicator badge with capability icons
  */
 function updateModelIndicator() {
     if (!modelIndicator) return;
-    
+
     const option = modelSelect?.querySelector(`option[value="${currentModel}"]`);
-    modelIndicator.textContent = option ? option.textContent : currentModel;
+    const modelName = option ? option.textContent : currentModel;
+    const caps = modelCapabilities[currentModel] || {};
+
+    // Build capability badges with custom tooltips
+    const badges = [];
+    if (caps.vision) badges.push('<span class="cap-badge" data-tooltip="Vision - analyzes images">👁️</span>');
+    if (caps.pdf) badges.push('<span class="cap-badge" data-tooltip="PDF - reads documents">📄</span>');
+    if (caps.audio) badges.push('<span class="cap-badge" data-tooltip="Audio - voice input/output">🎤</span>');
+    if (caps.imageGen) badges.push('<span class="cap-badge" data-tooltip="Image Generation">🖼️</span>');
+    if (caps.reasoning) badges.push('<span class="cap-badge" data-tooltip="Advanced Reasoning">🧠</span>');
+
+    modelIndicator.innerHTML = `
+        <span class="model-name">${modelName}</span>
+        ${badges.length > 0 ? `<span class="cap-badges">${badges.join('')}</span>` : ''}
+    `;
 }
 
 /**
@@ -1173,6 +1199,77 @@ messageStyles.textContent = `
         align-items: center;
         justify-content: space-between;
         gap: var(--spacing-sm);
+    }
+
+    /* Model capability badges */
+    .cap-badges {
+        display: inline-flex;
+        gap: 2px;
+        margin-left: 6px;
+    }
+
+    .cap-badge {
+        position: relative;
+        font-size: 0.75rem;
+        cursor: help;
+        opacity: 0.85;
+        transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .cap-badge:hover {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+
+    .cap-badge::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-primary, #1a1a2e);
+        color: var(--text-primary, #fff);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+        z-index: 1000;
+        border: 1px solid var(--border, #333);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        pointer-events: none;
+    }
+
+    .cap-badge::before {
+        content: '';
+        position: absolute;
+        top: calc(100% + 2px);
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-bottom-color: var(--border, #333);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+        z-index: 1001;
+    }
+
+    .cap-badge:hover::after,
+    .cap-badge:hover::before {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    #modelIndicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .model-name {
+        font-weight: 500;
     }
 `;
 document.head.appendChild(messageStyles);
