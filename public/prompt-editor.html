@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Transformer | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Page Layout */
+        .transformer-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            gap: 0;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            margin: 0.25rem 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .header-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Editor Layout */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left Panel - Input */
+        .input-panel {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background: var(--bg-primary);
+        }
+
+        .panel-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            margin: 0 0 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-header p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        .prompt-textarea {
+            flex: 1;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .prompt-textarea textarea {
+            flex: 1;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            resize: none;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .prompt-textarea textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .prompt-textarea textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Analysis Bar */
+        .analysis-bar {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .analysis-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .analysis-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .analysis-item.detected-type {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--primary);
+        }
+
+        .confidence-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .confidence-high { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .confidence-medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .confidence-low { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        /* Transform Actions */
+        .transform-actions {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .target-select {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+
+        .target-option {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .target-option:hover {
+            border-color: var(--primary);
+        }
+
+        .target-option.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .transform-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .transform-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .transform-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .transform-btn.loading {
+            pointer-events: none;
+        }
+
+        .transform-btn.loading .icon {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Right Panel - Output */
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        .output-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .output-tab {
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .output-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .output-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .output-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+        }
+
+        .output-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .output-placeholder i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* JSON View */
+        .json-view {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow: auto;
+        }
+
+        .json-key { color: #f97316; }
+        .json-string { color: #22c55e; }
+        .json-number { color: #3b82f6; }
+        .json-boolean { color: #a855f7; }
+        .json-null { color: #6b7280; }
+
+        /* Markdown View */
+        .markdown-view {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow: auto;
+        }
+
+        /* Save Panel */
+        .save-panel {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            display: none;
+        }
+
+        .save-panel.visible {
+            display: block;
+        }
+
+        .save-options {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .save-name {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .save-btn {
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .save-btn:hover {
+            background: #059669;
+        }
+
+        /* History Sidebar */
+        .history-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 320px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-sidebar.open {
+            transform: translateX(0);
+        }
+
+        .history-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .history-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .close-history {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .history-item {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: var(--primary);
+            background: var(--bg-tertiary);
+        }
+
+        .history-item-type {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .history-item-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-item-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+        .toast.info { border-left: 4px solid #3b82f6; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .editor-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+
+            .input-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar - injected by navigation.js -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="transformer-layout">
+                <!-- Page Header -->
+                <header class="page-header">
+                    <div>
+                        <h1><i data-lucide="file-code"></i> Prompt Transformer</h1>
+                        <p>Convert system prompts into Skills, Context Assets, or Agents</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                            <i data-lucide="help-circle"></i>
+                        </button>
+                        <button class="header-btn" onclick="toggleHistory()">
+                            <i data-lucide="history"></i>
+                            History
+                        </button>
+                        <div class="theme-toggle-wrapper">
+                            <label class="theme-toggle" title="Toggle dark/light mode">
+                                <input type="checkbox" id="themeToggle">
+                                <span class="theme-toggle-slider">
+                                    <span class="theme-toggle-icon moon">&#127769;</span>
+                                    <span class="theme-toggle-icon sun">&#9728;</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Editor Area -->
+                <div class="editor-layout">
+                    <!-- Left Panel - Input -->
+                    <div class="input-panel">
+                        <div class="panel-header">
+                            <h2><i data-lucide="file-input"></i> System Prompt</h2>
+                            <p>Paste your system prompt to transform it into a structured format</p>
+                        </div>
+
+                        <div class="prompt-textarea">
+                            <textarea
+                                id="promptInput"
+                                placeholder="Paste your system prompt here...
+
+Example:
+You are a helpful email assistant. When the user provides a topic:
+1. Ask about the target audience
+2. Suggest 3 subject lines
+3. Draft the email body with a clear CTA
+4. Add a compelling P.S. line
+
+Always be conversational and avoid corporate jargon. Never start with 'Dear Sir/Madam'."
+                                oninput="analyzePrompt()"
+                            ></textarea>
+                        </div>
+
+                        <!-- Analysis Bar -->
+                        <div class="analysis-bar" id="analysisBar" style="display: none;">
+                            <div class="analysis-content">
+                                <div class="analysis-item detected-type" id="detectedType">
+                                    <i data-lucide="scan"></i>
+                                    <span>Detected: <strong id="typeLabel">-</strong></span>
+                                    <span class="confidence-badge" id="confidenceBadge">-</span>
+                                </div>
+                                <div class="analysis-item" id="promptStats">
+                                    <i data-lucide="text"></i>
+                                    <span id="wordCount">0 words</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transform Actions -->
+                        <div class="transform-actions">
+                            <div class="target-select">
+                                <button class="target-option active" data-type="auto" onclick="selectTarget('auto')">
+                                    <i data-lucide="sparkles"></i> Auto
+                                </button>
+                                <button class="target-option" data-type="skill" onclick="selectTarget('skill')">
+                                    <i data-lucide="wand-2"></i> Skill
+                                </button>
+                                <button class="target-option" data-type="voice_dna" onclick="selectTarget('voice_dna')">
+                                    <i data-lucide="mic"></i> Voice
+                                </button>
+                                <button class="target-option" data-type="icp" onclick="selectTarget('icp')">
+                                    <i data-lucide="users"></i> ICP
+                                </button>
+                                <button class="target-option" data-type="agent" onclick="selectTarget('agent')">
+                                    <i data-lucide="bot"></i> Agent
+                                </button>
+                            </div>
+                            <button class="transform-btn" id="transformBtn" onclick="transformPrompt()" disabled>
+                                <i data-lucide="wand-2" class="icon"></i>
+                                Transform
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel - Output -->
+                    <div class="output-panel">
+                        <div class="output-tabs">
+                            <button class="output-tab active" data-tab="preview" onclick="switchTab('preview')">
+                                <i data-lucide="eye"></i> Preview
+                            </button>
+                            <button class="output-tab" data-tab="json" onclick="switchTab('json')">
+                                <i data-lucide="braces"></i> JSON
+                            </button>
+                            <button class="output-tab" data-tab="markdown" onclick="switchTab('markdown')" id="markdownTab" style="display: none;">
+                                <i data-lucide="file-text"></i> SKILL.md
+                            </button>
+                        </div>
+
+                        <div class="output-content" id="outputContent">
+                            <div class="output-placeholder" id="outputPlaceholder">
+                                <i data-lucide="sparkles"></i>
+                                <h3>Ready to Transform</h3>
+                                <p>Paste a system prompt and click Transform to see the structured output.</p>
+                            </div>
+                            <div class="json-view" id="jsonOutput" style="display: none;"></div>
+                            <div class="markdown-view" id="markdownOutput" style="display: none;"></div>
+                        </div>
+
+                        <!-- Save Panel -->
+                        <div class="save-panel" id="savePanel">
+                            <div class="save-options">
+                                <input type="text" class="save-name" id="saveName" placeholder="Enter name for this asset...">
+                                <button class="save-btn" onclick="saveTransformation()">
+                                    <i data-lucide="save"></i> Save to Insight 360
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- History Sidebar -->
+    <aside class="history-sidebar" id="historySidebar">
+        <div class="history-header">
+            <h3><i data-lucide="history"></i> Recent Transformations</h3>
+            <button class="close-history" onclick="toggleHistory()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="history-list" id="historyList">
+            <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+                No transformations yet
+            </p>
+        </div>
+    </aside>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i data-lucide="check-circle"></i>
+        <span id="toastMessage">Action completed</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let selectedTarget = 'auto';
+        let currentTransformation = null;
+        let analysisTimeout = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadHistory();
+
+            // Initialize help modal
+            HelpModal.init({
+                helpFile: '/api/docs/prompt-transformer-user-guide.md',
+                title: 'Prompt Transformer Help'
+            });
+        });
+
+        // Analyze prompt on input
+        function analyzePrompt() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            const analysisBar = document.getElementById('analysisBar');
+            const transformBtn = document.getElementById('transformBtn');
+
+            // Update word count
+            const wordCount = prompt ? prompt.split(/\s+/).length : 0;
+            document.getElementById('wordCount').textContent = `${wordCount} words`;
+
+            if (prompt.length < 20) {
+                analysisBar.style.display = 'none';
+                transformBtn.disabled = true;
+                return;
+            }
+
+            transformBtn.disabled = false;
+            analysisBar.style.display = 'block';
+
+            // Debounce API call
+            clearTimeout(analysisTimeout);
+            analysisTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch('/api/prompts/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const typeLabel = document.getElementById('typeLabel');
+                        const badge = document.getElementById('confidenceBadge');
+
+                        typeLabel.textContent = getTypeName(data.data.detected_type);
+                        badge.textContent = data.data.confidence;
+                        badge.className = `confidence-badge confidence-${data.data.confidence}`;
+                    }
+                } catch (error) {
+                    console.error('Analysis error:', error);
+                }
+            }, 500);
+        }
+
+        // Get display name for type
+        function getTypeName(type) {
+            const names = {
+                skill: 'Claude Skill',
+                voice_dna: 'Voice DNA',
+                icp: 'ICP',
+                business_profile: 'Business Profile',
+                agent: 'Insight 360 Agent'
+            };
+            return names[type] || type;
+        }
+
+        // Select target type
+        function selectTarget(type) {
+            selectedTarget = type;
+            document.querySelectorAll('.target-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+        }
+
+        // Transform prompt
+        async function transformPrompt() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt || prompt.length < 20) return;
+
+            const btn = document.getElementById('transformBtn');
+            btn.classList.add('loading');
+            btn.innerHTML = '<i data-lucide="loader-2" class="icon"></i> Transforming...';
+            lucide.createIcons();
+
+            try {
+                const response = await fetch('/api/prompts/transform', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        target_type: selectedTarget,
+                        save: false
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentTransformation = data.data;
+                    displayTransformation(data.data);
+                    showToast('Transformation complete!', 'success');
+                } else {
+                    showToast(data.error || 'Transformation failed', 'error');
+                }
+            } catch (error) {
+                console.error('Transform error:', error);
+                showToast('Failed to transform prompt', 'error');
+            } finally {
+                btn.classList.remove('loading');
+                btn.innerHTML = '<i data-lucide="wand-2" class="icon"></i> Transform';
+                lucide.createIcons();
+            }
+        }
+
+        // Display transformation result
+        function displayTransformation(data) {
+            const placeholder = document.getElementById('outputPlaceholder');
+            const jsonOutput = document.getElementById('jsonOutput');
+            const markdownOutput = document.getElementById('markdownOutput');
+            const markdownTab = document.getElementById('markdownTab');
+            const savePanel = document.getElementById('savePanel');
+
+            placeholder.style.display = 'none';
+            jsonOutput.style.display = 'block';
+            savePanel.classList.add('visible');
+
+            // Format JSON with syntax highlighting
+            jsonOutput.innerHTML = syntaxHighlightJson(JSON.stringify(data.transformed, null, 2));
+
+            // Show markdown tab for skills
+            if (data.target_type === 'skill' && data.skill_markdown) {
+                markdownTab.style.display = 'flex';
+                markdownOutput.textContent = data.skill_markdown;
+            } else {
+                markdownTab.style.display = 'none';
+            }
+
+            // Set suggested name
+            const nameInput = document.getElementById('saveName');
+            nameInput.value = data.transformed.name || data.transformed.display_name || '';
+        }
+
+        // Syntax highlight JSON
+        function syntaxHighlightJson(json) {
+            return json
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
+                    let cls = 'json-string';
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                        match = match.replace(':', '');
+                        return `<span class="${cls}">${match}</span>:`;
+                    }
+                    return `<span class="${cls}">${match}</span>`;
+                })
+                .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+                .replace(/\bnull\b/g, '<span class="json-null">null</span>')
+                .replace(/\b(-?\d+\.?\d*)\b/g, '<span class="json-number">$1</span>');
+        }
+
+        // Switch output tab
+        function switchTab(tab) {
+            document.querySelectorAll('.output-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+
+            const jsonOutput = document.getElementById('jsonOutput');
+            const markdownOutput = document.getElementById('markdownOutput');
+            const placeholder = document.getElementById('outputPlaceholder');
+
+            jsonOutput.style.display = tab === 'json' || tab === 'preview' ? 'block' : 'none';
+            markdownOutput.style.display = tab === 'markdown' ? 'block' : 'none';
+
+            if (!currentTransformation) {
+                placeholder.style.display = 'flex';
+                jsonOutput.style.display = 'none';
+            }
+        }
+
+        // Save transformation
+        async function saveTransformation() {
+            if (!currentTransformation) return;
+
+            const name = document.getElementById('saveName').value.trim();
+            if (!name) {
+                showToast('Please enter a name', 'error');
+                return;
+            }
+
+            const prompt = document.getElementById('promptInput').value.trim();
+
+            try {
+                const response = await fetch('/api/prompts/transform', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        target_type: currentTransformation.target_type,
+                        name_hint: name,
+                        save: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.data.saved) {
+                    showToast(`Saved as "${data.data.saved.name}"`, 'success');
+                    loadHistory();
+                } else {
+                    showToast(data.error || 'Failed to save', 'error');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('Failed to save transformation', 'error');
+            }
+        }
+
+        // Toggle history sidebar
+        function toggleHistory() {
+            document.getElementById('historySidebar').classList.toggle('open');
+        }
+
+        // Load transformation history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/prompts/history?limit=20');
+                const data = await response.json();
+
+                const list = document.getElementById('historyList');
+
+                if (data.success && data.data.length > 0) {
+                    list.innerHTML = data.data.map(item => `
+                        <div class="history-item" onclick="loadHistoryItem('${item.type}', '${item.id}')">
+                            <div class="history-item-type">
+                                ${getTypeIcon(item.type)}
+                                <span>${getTypeName(item.type)}</span>
+                            </div>
+                            <div class="history-item-name">${item.name || item.display_name || 'Unnamed'}</div>
+                            <div class="history-item-date">${formatDate(item.created_at)}</div>
+                        </div>
+                    `).join('');
+                    lucide.createIcons();
+                } else {
+                    list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No transformations yet</p>';
+                }
+            } catch (error) {
+                console.error('History load error:', error);
+            }
+        }
+
+        // Get icon for type
+        function getTypeIcon(type) {
+            const icons = {
+                skill: '<i data-lucide="wand-2"></i>',
+                voice_dna: '<i data-lucide="mic"></i>',
+                icp: '<i data-lucide="users"></i>',
+                business_profile: '<i data-lucide="briefcase"></i>',
+                agent: '<i data-lucide="bot"></i>'
+            };
+            return icons[type] || '<i data-lucide="file"></i>';
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toast.className = `toast ${type}`;
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to transform
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                transformPrompt();
+            }
+            // Escape to close history
+            if (e.key === 'Escape') {
+                document.getElementById('historySidebar').classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

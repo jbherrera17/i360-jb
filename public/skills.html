@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -705,6 +706,9 @@
                         <button class="btn-primary" onclick="goToCreator()">
                             <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Skill
                         </button>
+                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                            <i data-lucide="help-circle"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -1210,5 +1214,7 @@ Your skill instructions here..."></textarea>
         }
     </script>
     <script src="/js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 </body>
 </html>

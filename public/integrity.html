@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/integrity-styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -28,6 +29,9 @@
                     <button class="btn-secondary" onclick="refreshData()">
                         <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                         Refresh
+                    </button>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
                     </button>
                     <div class="theme-toggle-wrapper">
                         <label class="theme-toggle" title="Toggle dark/light mode">
@@ -582,5 +586,7 @@
         }
     </script>
     <script src="/js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 </body>
 </html>

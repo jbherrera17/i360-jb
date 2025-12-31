@@ -1,0 +1,479 @@
+/**
+ * Insight 360 - Help Modal Component
+ * Resizable modal for displaying page-specific documentation
+ * Version: 1.0.0
+ */
+
+/* ============================================
+   HELP BUTTON
+   ============================================ */
+
+.help-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.help-btn:hover {
+    border-color: var(--info);
+    color: var(--info);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.help-btn i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Text variant */
+.help-btn.with-text {
+    width: auto;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* ============================================
+   MODAL OVERLAY
+   ============================================ */
+
+.help-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-base);
+}
+
+.help-modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================================
+   MODAL CONTAINER
+   ============================================ */
+
+.help-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 800px;
+    max-width: 90vw;
+    height: 600px;
+    max-height: 85vh;
+    min-width: 400px;
+    min-height: 300px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl), 0 0 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-base);
+    overflow: hidden;
+}
+
+.help-modal-overlay.open .help-modal {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+
+.help-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+    cursor: move;
+    user-select: none;
+}
+
+.help-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.help-modal-title i {
+    width: 20px;
+    height: 20px;
+    color: var(--info);
+}
+
+.help-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-modal-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.help-modal-action:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.help-modal-action.close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.help-modal-action i {
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
+   MODAL CONTENT
+   ============================================ */
+
+.help-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background: var(--bg-primary);
+}
+
+/* Loading state */
+.help-modal-content.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.help-modal-content.loading::after {
+    content: '';
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error state */
+.help-modal-content.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--danger);
+    text-align: center;
+    gap: 1rem;
+}
+
+/* ============================================
+   MARKDOWN CONTENT STYLING
+   ============================================ */
+
+.help-content {
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.help-content h1 {
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-primary);
+}
+
+.help-content h2 {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.help-content h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem 0;
+    color: var(--text-primary);
+}
+
+.help-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.5rem 0;
+    color: var(--text-secondary);
+}
+
+.help-content p {
+    margin: 0 0 1rem 0;
+}
+
+.help-content ul,
+.help-content ol {
+    margin: 0 0 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.help-content li {
+    margin-bottom: 0.5rem;
+}
+
+.help-content li > ul,
+.help-content li > ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.help-content strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.help-content em {
+    font-style: italic;
+}
+
+.help-content a {
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--transition-fast);
+}
+
+.help-content a:hover {
+    border-bottom-color: var(--primary);
+}
+
+/* Code styling */
+.help-content code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 0.2em 0.4em;
+    background: var(--bg-code);
+    border-radius: var(--radius-sm);
+    color: var(--secondary);
+}
+
+.help-content pre {
+    margin: 0 0 1rem 0;
+    padding: 1rem;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+
+.help-content pre code {
+    padding: 0;
+    background: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+/* Tables */
+.help-content table {
+    width: 100%;
+    margin: 0 0 1rem 0;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.help-content th,
+.help-content td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border: 1px solid var(--border);
+}
+
+.help-content th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.help-content td {
+    background: var(--bg-secondary);
+}
+
+.help-content tr:hover td {
+    background: var(--bg-tertiary);
+}
+
+/* Blockquotes */
+.help-content blockquote {
+    margin: 0 0 1rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--primary);
+    background: var(--bg-tertiary);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--text-secondary);
+}
+
+.help-content blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Horizontal rules */
+.help-content hr {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* Images */
+.help-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+/* ============================================
+   RESIZE HANDLES
+   ============================================ */
+
+.help-modal-resize {
+    position: absolute;
+    background: transparent;
+}
+
+.help-modal-resize-e {
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+}
+
+.help-modal-resize-s {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    cursor: ns-resize;
+}
+
+.help-modal-resize-se {
+    right: 0;
+    bottom: 0;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+}
+
+.help-modal-resize-se::after {
+    content: '';
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    opacity: 0.5;
+}
+
+/* ============================================
+   MODAL FOOTER (Optional TOC/Navigation)
+   ============================================ */
+
+.help-modal-footer {
+    padding: 0.75rem 1.25rem;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.help-modal-footer a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.help-modal-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .help-modal {
+        width: 95vw;
+        height: 90vh;
+        max-width: none;
+        max-height: none;
+        border-radius: var(--radius-md);
+    }
+
+    .help-modal-content {
+        padding: 1rem;
+    }
+
+    .help-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .help-content h2 {
+        font-size: 1.15rem;
+    }
+
+    .help-content table {
+        font-size: 0.8rem;
+    }
+
+    .help-content th,
+    .help-content td {
+        padding: 0.5rem;
+    }
+}

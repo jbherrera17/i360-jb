@@ -6,6 +6,7 @@
     <title>Agent Registry | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/css/help-modal.css">
     <style>
         :root {
             /* Light Mode (default) */
@@ -507,12 +508,12 @@
             background: var(--primary);
         }
 
-        /* Detail Panel */
+        /* Center Panel - Detail/Editor Area */
         .detail-panel {
             flex: 1;
             min-width: 400px;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             background: var(--bg-primary);
             overflow: hidden;
         }
@@ -532,42 +533,57 @@
             overflow-y: auto;
         }
 
-        /* Agent Detail container - flex row layout */
+        /* Agent Detail container - flex column layout now (no sidebar) */
         #agentDetail {
             flex: 1;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
         }
 
-        /* Right Sidebar - full height */
-        .detail-sidebar {
-            width: 280px;
-            min-width: 200px;
-            max-width: 500px;
+        /* Right Panel - Details (always visible like context.html Preview) */
+        .details-panel {
+            width: 320px;
+            min-width: 250px;
+            max-width: 600px;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border);
-            overflow-y: auto;
-            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             position: relative;
+            flex-shrink: 0;
         }
 
-        .detail-sidebar-content {
-            padding: 1.5rem;
-        }
-
-        .detail-sidebar .info-grid {
-            gap: 0.75rem;
-        }
-
-        .detail-sidebar .info-item {
+        .details-panel .panel-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
             background: var(--bg-tertiary);
-            border-radius: 10px;
-            padding: 0.875rem;
-            text-align: center;
         }
 
-        /* Right Sidebar Resize Handle */
-        .sidebar-resize-handle {
+        .details-panel .panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .details-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .details-placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* Details Panel Resize Handle - on left side */
+        .details-resize-handle {
             position: absolute;
             left: 0;
             top: 0;
@@ -576,12 +592,41 @@
             cursor: col-resize;
             background: transparent;
             z-index: 10;
-            transition: background 0.15s ease;
+            transition: background 0.2s;
         }
 
-        .sidebar-resize-handle:hover,
-        .sidebar-resize-handle.active {
+        .details-resize-handle:hover,
+        .details-resize-handle.active {
             background: var(--primary);
+        }
+
+        /* Sidebar sections (used in details panel) */
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .details-panel .info-grid {
+            gap: 0.75rem;
+        }
+
+        .details-panel .info-item {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 0.875rem;
+            text-align: center;
         }
 
         .detail-header {
@@ -852,37 +897,71 @@
             color: var(--text-primary);
         }
 
-        /* Empty State */
+        /* Detail Panel Empty State - matches context.html style */
+        .detail-empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+        }
+
+        .detail-empty-state .empty-state-content {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .detail-empty-state .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .detail-empty-state h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .detail-empty-state p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 320px;
+            margin: 0 auto 1.5rem auto;
+            line-height: 1.6;
+        }
+
+        /* Small Empty States (for sidebar sections) */
         .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            padding: 3rem;
+            padding: 2rem;
             text-align: center;
             color: var(--text-muted);
         }
 
         .empty-state i {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             margin-bottom: 1rem;
             opacity: 0.3;
             color: var(--primary);
         }
 
         .empty-state h3 {
-            font-size: 1.25rem;
+            font-size: 1rem;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
             font-weight: 600;
         }
 
         .empty-state p {
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-            max-width: 300px;
+            font-size: 0.85rem;
+            margin-bottom: 0;
+            max-width: 280px;
             line-height: 1.5;
         }
 
@@ -1178,7 +1257,13 @@
             }
         }
 
-        /* Responsive */
+        /* Responsive - hide details panel on smaller screens */
+        @media (max-width: 1200px) {
+            .details-panel {
+                display: none;
+            }
+        }
+
         @media (max-width: 1024px) {
             .sidebar {
                 display: none;
@@ -1188,7 +1273,8 @@
                 width: 240px;
             }
 
-            .resize-handle {
+            .resize-handle,
+            .details-resize-handle {
                 display: none;
             }
         }
@@ -1767,6 +1853,9 @@
             </a>
         </div>
         <div class="nav-actions">
+            <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                <i data-lucide="help-circle" style="width:20px;height:20px;"></i>
+            </button>
             <button class="theme-toggle" id="themeToggle" title="Toggle theme">
                 <i data-lucide="moon" style="width:20px;height:20px;"></i>
             </button>
@@ -1875,16 +1964,19 @@
                 <div class="resize-handle" id="resizeHandle"></div>
             </div>
 
-            <!-- Detail Panel -->
+            <!-- Center Panel - Agent Details -->
             <div class="detail-panel" id="detailPanel">
-                <div class="empty-state" id="emptyState">
-                    <i data-lucide="bot"></i>
-                    <h3>Select an Agent</h3>
-                    <p>Choose an agent from the list to view details and manage context mappings.</p>
-                    <button class="btn btn-primary" id="btnNewAgentEmpty">
-                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                        Create New Agent
-                    </button>
+                <!-- Empty State - shown when no agent selected -->
+                <div class="detail-empty-state" id="emptyState">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">🤖</div>
+                        <h3>Select an Agent</h3>
+                        <p>Choose an agent from the list to view details, manage context mappings, and run conversations.</p>
+                        <button class="btn btn-primary" id="btnNewAgentEmpty">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                            Create New Agent
+                        </button>
+                    </div>
                 </div>
 
                 <div id="agentDetail" style="display: none;">
@@ -1924,72 +2016,82 @@
                             <!-- Main content area can be used for future content -->
                         </div>
                     </div>
+                </div> <!-- Close agentDetail -->
+            </div> <!-- Close detail-panel -->
 
-                    <!-- Right Sidebar - full height -->
-                    <div class="detail-sidebar" id="detailSidebar">
-                        <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
-                        <div class="detail-sidebar-content">
-                            <!-- Overview Section -->
-                            <div class="sidebar-section">
-                                <div class="sidebar-title">Overview</div>
-                                <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
-                                    <div class="info-item">
-                                        <div class="info-label">Suite</div>
-                                        <div class="info-value" id="detailSuite">—</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Category</div>
-                                        <div class="info-value" id="detailCategory">—</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Total Runs</div>
-                                        <div class="info-value" id="detailUsage">0</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Status</div>
-                                        <div class="info-value" id="detailStatusText">Active</div>
-                                    </div>
+            <!-- Right Panel - Details (always visible like context.html Preview) -->
+            <div class="details-panel" id="detailsPanel">
+                <!-- Resize Handle for Details Panel -->
+                <div class="details-resize-handle" id="detailsResizeHandle"></div>
+                <div class="panel-header">
+                    <h2><i data-lucide="info"></i> Details</h2>
+                </div>
+                <div id="detailsContent" class="details-content">
+                    <!-- Placeholder shown when no agent selected -->
+                    <p class="details-placeholder" id="detailsPlaceholder">Select or create an agent to see details</p>
+
+                    <!-- Actual details content (hidden until agent selected) -->
+                    <div id="detailsSidebarContent" style="display: none;">
+                        <!-- Overview Section -->
+                        <div class="sidebar-section">
+                            <div class="sidebar-title">Overview</div>
+                            <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                                <div class="info-item">
+                                    <div class="info-label">Suite</div>
+                                    <div class="info-value" id="detailSuite">—</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Category</div>
+                                    <div class="info-value" id="detailCategory">—</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Total Runs</div>
+                                    <div class="info-value" id="detailUsage">0</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Status</div>
+                                    <div class="info-value" id="detailStatusText">Active</div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Context Mappings Section -->
-                            <div class="sidebar-section">
-                                <div class="sidebar-title">
-                                    <i data-lucide="link" style="width:14px;height:14px;"></i>
-                                    Context Mappings
-                                </div>
-                                <div class="context-mappings">
-                                    <div class="mapping-header">
-                                        <h4>Assigned Context Assets</h4>
-                                        <button class="btn btn-secondary" id="btnAddContext">
-                                            <i data-lucide="plus" style="width:14px;height:14px;"></i>
-                                            Add
-                                        </button>
-                                    </div>
-                                    <div class="mapping-list" id="mappingList">
-                                        <div class="empty-state" style="padding: 2rem;">
-                                            <p>No context assets mapped to this agent.</p>
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Context Mappings Section -->
+                        <div class="sidebar-section">
+                            <div class="sidebar-title">
+                                <i data-lucide="link" style="width:14px;height:14px;"></i>
+                                Context Mappings
                             </div>
-
-                            <!-- Execution History Section -->
-                            <div class="sidebar-section">
-                                <div class="sidebar-title">
-                                    <i data-lucide="history" style="width:14px;height:14px;"></i>
-                                    Recent Executions
+                            <div class="context-mappings">
+                                <div class="mapping-header">
+                                    <h4>Assigned Context Assets</h4>
+                                    <button class="btn btn-secondary" id="btnAddContext">
+                                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                        Add
+                                    </button>
                                 </div>
-                                <div class="execution-history" id="executionHistory">
-                                    <div class="empty-state" style="padding: 1.5rem;">
-                                        <p>No executions yet. Launch the agent to start a conversation.</p>
+                                <div class="mapping-list" id="mappingList">
+                                    <div class="empty-state" style="padding: 2rem;">
+                                        <p>No context assets mapped to this agent.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Execution History Section -->
+                        <div class="sidebar-section">
+                            <div class="sidebar-title">
+                                <i data-lucide="history" style="width:14px;height:14px;"></i>
+                                Recent Executions
+                            </div>
+                            <div class="execution-history" id="executionHistory">
+                                <div class="empty-state" style="padding: 1.5rem;">
+                                    <p>No executions yet. Launch the agent to start a conversation.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div> <!-- Close agentDetail -->
-            </div> <!-- Close detail-panel -->
+                </div>
+            </div> <!-- Close details-panel -->
         </div> <!-- Close content -->
     </div> <!-- Close main-container -->
 
@@ -2542,6 +2644,12 @@
             emptyState.style.display = 'none';
             agentDetail.style.display = 'flex';
 
+            // Show details panel content, hide placeholder
+            const detailsPlaceholder = document.getElementById('detailsPlaceholder');
+            const detailsSidebarContent = document.getElementById('detailsSidebarContent');
+            if (detailsPlaceholder) detailsPlaceholder.style.display = 'none';
+            if (detailsSidebarContent) detailsSidebarContent.style.display = 'block';
+
             const provider = agent.llm_provider || agent.source_type || 'native';
             const status = agent.is_active !== false ? 'active' : 'inactive';
             const statusLabel = status === 'active' ? 'Active' : 'Inactive';
@@ -2612,6 +2720,12 @@
         function showEmptyState() {
             emptyState.style.display = 'flex';
             agentDetail.style.display = 'none';
+
+            // Show placeholder, hide details content
+            const detailsPlaceholder = document.getElementById('detailsPlaceholder');
+            const detailsSidebarContent = document.getElementById('detailsSidebarContent');
+            if (detailsPlaceholder) detailsPlaceholder.style.display = 'block';
+            if (detailsSidebarContent) detailsSidebarContent.style.display = 'none';
         }
 
         function updateStats() {
@@ -3563,54 +3677,54 @@
                 }
             }
 
-            // Right Sidebar Resize
-            const sidebar = document.getElementById('detailSidebar');
-            const sidebarHandle = document.getElementById('sidebarResizeHandle');
+            // Right Details Panel Resize
+            const detailsPanel = document.getElementById('detailsPanel');
+            const detailsHandle = document.getElementById('detailsResizeHandle');
 
-            if (sidebar && sidebarHandle) {
-                let isResizingSidebar = false;
-                let sidebarStartX = 0;
-                let sidebarStartWidth = 0;
+            if (detailsPanel && detailsHandle) {
+                let isResizingDetails = false;
+                let detailsStartX = 0;
+                let detailsStartWidth = 0;
 
-                // Clear any invalid saved width
-                const savedWidth = localStorage.getItem('detailSidebarWidth');
-                if (savedWidth) {
-                    const parsed = parseInt(savedWidth);
-                    if (parsed >= 200 && parsed <= 500) {
-                        sidebar.style.width = parsed + 'px';
+                // Restore saved width
+                const savedDetailsWidth = localStorage.getItem('agentsDetailsPanelWidth');
+                if (savedDetailsWidth) {
+                    const parsed = parseInt(savedDetailsWidth);
+                    if (parsed >= 250 && parsed <= 600) {
+                        detailsPanel.style.width = parsed + 'px';
                     } else {
-                        localStorage.removeItem('detailSidebarWidth');
+                        localStorage.removeItem('agentsDetailsPanelWidth');
                     }
                 }
 
-                sidebarHandle.addEventListener('mousedown', (e) => {
-                    isResizingSidebar = true;
-                    sidebarStartX = e.clientX;
-                    sidebarStartWidth = sidebar.offsetWidth;
-                    sidebarHandle.classList.add('active');
+                detailsHandle.addEventListener('mousedown', (e) => {
+                    isResizingDetails = true;
+                    detailsStartX = e.clientX;
+                    detailsStartWidth = detailsPanel.offsetWidth;
+                    detailsHandle.classList.add('active');
                     document.body.style.cursor = 'col-resize';
                     document.body.style.userSelect = 'none';
                     e.preventDefault();
                 });
 
                 document.addEventListener('mousemove', (e) => {
-                    if (!isResizingSidebar) return;
+                    if (!isResizingDetails) return;
 
-                    // Resize handle is on LEFT of sidebar
-                    // Drag left = sidebar wider, drag right = sidebar narrower
-                    const mouseDelta = sidebarStartX - e.clientX;
-                    const newWidth = sidebarStartWidth + mouseDelta;
-                    const clampedWidth = Math.max(200, Math.min(500, newWidth));
-                    sidebar.style.width = clampedWidth + 'px';
+                    // Resize handle is on LEFT of panel
+                    // Drag left = panel wider, drag right = panel narrower
+                    const mouseDelta = detailsStartX - e.clientX;
+                    const newWidth = detailsStartWidth + mouseDelta;
+                    const clampedWidth = Math.max(250, Math.min(600, newWidth));
+                    detailsPanel.style.width = clampedWidth + 'px';
                 });
 
                 document.addEventListener('mouseup', () => {
-                    if (isResizingSidebar) {
-                        isResizingSidebar = false;
-                        sidebarHandle.classList.remove('active');
+                    if (isResizingDetails) {
+                        isResizingDetails = false;
+                        detailsHandle.classList.remove('active');
                         document.body.style.cursor = '';
                         document.body.style.userSelect = '';
-                        localStorage.setItem('detailSidebarWidth', sidebar.offsetWidth);
+                        localStorage.setItem('agentsDetailsPanelWidth', detailsPanel.offsetWidth);
                     }
                 });
             }
@@ -3633,5 +3747,7 @@
 
         init();
     </script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 </body>
 </html>

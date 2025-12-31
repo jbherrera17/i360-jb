@@ -23,6 +23,7 @@ const navItems = [
     { href: '/parthenon.html', icon: 'landmark', label: 'Parthenon' },
     { href: '/actions.html', icon: 'zap', label: 'Actions' },
     { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
+    { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' },
     { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
     { href: '/integrity.html', icon: 'activity', label: 'Integrity' }
 ];

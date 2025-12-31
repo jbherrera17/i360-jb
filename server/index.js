@@ -28,6 +28,7 @@ const s2eRoutes = require('./routes/s2e');
 const actionsRoutes = require('./routes/actions');
 const skillsRoutes = require('./routes/skills');
 const briefingRoutes = require('./routes/briefing');
+const promptsRoutes = require('./routes/prompts');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -234,6 +235,7 @@ function initializeServices() {
         app.use('/api/actions', actionsRoutes(supabase));
         app.use('/api/skills', skillsRoutes(supabase));
         app.use('/api/briefing', briefingRoutes(supabase));
+        app.use('/api/prompts', promptsRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
@@ -241,6 +243,7 @@ function initializeServices() {
         console.log('  ✅ Actions routes registered');
         console.log('  ✅ Skills routes registered');
         console.log('  ✅ Briefing routes registered');
+        console.log('  ✅ Prompts (Transformer) routes registered');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()
@@ -284,6 +287,10 @@ try {
 // Health check route
 const healthRoutes = require('./routes/health');
 app.use('/api/health', healthRoutes);
+
+// Documentation routes (for help system)
+const docsRoutes = require('./routes/docs');
+app.use('/api/docs', docsRoutes);
 
 // Chat routes (multi-LLM, streaming, voice, search)
 const chatRoutes = require('./routes/chat');

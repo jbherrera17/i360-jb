@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/loading-spinner.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -226,6 +227,9 @@
                             <span>Voice</span>
                         </label>
                     </div>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
                 </div>
             </header>
 
@@ -364,6 +368,8 @@
     <!-- Then load chat functionality -->
     <script src="/js/chat.js"></script>
     <script src="/js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 
     <!-- Panel resize functionality -->
     <script>
