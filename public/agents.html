@@ -997,12 +997,18 @@
             background: var(--bg-primary);
             border-radius: 16px;
             width: 90%;
-            max-width: 600px;
+            max-width: 700px;
+            min-width: 400px;
+            min-height: 300px;
             max-height: 90vh;
             overflow: hidden;
             box-shadow: var(--shadow-lg);
             transform: scale(0.95);
             transition: transform 0.2s;
+            resize: both;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
         .modal-overlay.active .modal {
@@ -1039,7 +1045,8 @@
         .modal-body {
             padding: 1.5rem;
             overflow-y: auto;
-            max-height: calc(90vh - 140px);
+            flex: 1;
+            min-height: 0;
         }
 
         .modal-footer {
@@ -1082,6 +1089,28 @@
         .form-textarea {
             min-height: 100px;
             resize: vertical;
+        }
+
+        /* System prompt textarea - larger and more visible */
+        .form-textarea.system-prompt-textarea {
+            min-height: 200px;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* Modal resize indicator */
+        .modal::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%);
+            opacity: 0.3;
+            pointer-events: none;
+            border-radius: 0 0 4px 0;
         }
 
         .form-select {
@@ -2196,7 +2225,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">System Prompt</label>
-                            <textarea class="form-input form-textarea" id="formSystemPrompt" placeholder="You are a helpful assistant that..." style="min-height: 150px; font-family: 'Fira Code', monospace; font-size: 0.85rem;"></textarea>
+                            <textarea class="form-input form-textarea system-prompt-textarea" id="formSystemPrompt" placeholder="You are a helpful assistant that..."></textarea>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
