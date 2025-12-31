@@ -14,13 +14,13 @@ const notionService = require('../server/services/notionService');
 async function main() {
     // Get version from command line or use latest
     const version = process.argv[2] || 'v2-20';
-    const blueprintPath = path.join(__dirname, '..', 'documentation', `I360 Blueprint ${version}.md`);
+    const blueprintPath = path.join(__dirname, '..', 'documentation', 'blueprints', `I360 Blueprint ${version}.md`);
 
     // Check if file exists
     if (!fs.existsSync(blueprintPath)) {
         console.error(`Blueprint not found: ${blueprintPath}`);
         console.error('\nAvailable blueprints:');
-        const docs = fs.readdirSync(path.join(__dirname, '..', 'documentation'))
+        const docs = fs.readdirSync(path.join(__dirname, '..', 'documentation', 'blueprints'))
             .filter(f => f.startsWith('I360 Blueprint'));
         docs.forEach(d => console.error(`  - ${d}`));
         process.exit(1);
