@@ -13,7 +13,7 @@ const notionService = require('../server/services/notionService');
 
 async function publishBlueprint(version) {
     // Find the blueprint file
-    const blueprintDir = path.join(__dirname, '../documentation');
+    const blueprintDir = path.join(__dirname, '../documentation/blueprints');
     const blueprintFile = version
         ? path.join(blueprintDir, `I360 Blueprint v${version}.md`)
         : null;

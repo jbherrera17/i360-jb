@@ -173,7 +173,7 @@ const response = await openai.chat({
 
 ### Environment Variables
 
-```env
+```bash
 OPENAI_API_KEY=sk-...           # Required for OpenAI models
 ANTHROPIC_API_KEY=sk-ant-...    # Required for Claude models
 ```
