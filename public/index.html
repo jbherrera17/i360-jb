@@ -380,164 +380,10 @@
             padding: 1rem;
         }
 
-        /* Quick Launch Dropdown */
-        .nav-dropdown {
-            position: relative;
-        }
-
-        .nav-dropdown-trigger {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
-            font-family: inherit;
-        }
-
-        .nav-dropdown-trigger:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .nav-dropdown-trigger i:first-child {
-            width: 20px;
-            height: 20px;
-        }
-
-        .dropdown-chevron {
-            width: 16px !important;
-            height: 16px !important;
-            margin-left: auto;
-            transition: transform 0.2s;
-        }
-
-        .nav-dropdown.open .dropdown-chevron {
-            transform: rotate(180deg);
-        }
-
-        .nav-dropdown-menu {
-            display: none;
-            position: absolute;
-            left: 100%;
-            top: 0;
-            width: 280px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            overflow: hidden;
-            margin-left: 8px;
-        }
-
-        .nav-dropdown.open .nav-dropdown-menu {
-            display: block;
-            animation: slideIn 0.2s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .dropdown-header {
-            padding: 0.75rem 1rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .dropdown-items {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .dropdown-loading {
-            padding: 1rem;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            transition: background 0.15s;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .dropdown-item:hover {
-            background: var(--bg-hover);
-        }
-
-        .dropdown-item-icon {
-            font-size: 1.25rem;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-tertiary);
-            border-radius: 6px;
-            flex-shrink: 0;
-        }
-
-        .dropdown-item-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .dropdown-item-name {
-            font-weight: 500;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .dropdown-item-type {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        .dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0.5rem 0;
-        }
-
-        .dropdown-item-link {
-            color: var(--primary);
-            font-size: 0.85rem;
-        }
-
-        .dropdown-item-link i {
-            color: var(--primary);
-        }
     </style>
 
     <script>
-        // Quick Launch and Recent Agents functionality
+        // Recent Agents functionality for dashboard widget
         async function loadRecentAgents() {
             try {
                 const response = await fetch('/api/agents?sort=last_used_at&order=desc&limit=5');
@@ -545,19 +391,19 @@
 
                 if (data.success && data.data) {
                     renderRecentAgentsWidget(data.data);
-                    renderQuickLaunchDropdown(data.data);
                 }
             } catch (error) {
                 console.error('Failed to load recent agents:', error);
-                document.getElementById('recentAgentsList').innerHTML =
-                    '<p class="empty-text">Failed to load agents</p>';
-                document.getElementById('quickLaunchAgents').innerHTML =
-                    '<p class="dropdown-loading">Failed to load</p>';
+                const container = document.getElementById('recentAgentsList');
+                if (container) {
+                    container.innerHTML = '<p class="empty-text">Failed to load agents</p>';
+                }
             }
         }
 
         function renderRecentAgentsWidget(agents) {
             const container = document.getElementById('recentAgentsList');
+            if (!container) return;
 
             if (!agents || agents.length === 0) {
                 container.innerHTML = '<p class="empty-text">No agents yet. Create one in the Agent Library.</p>';
@@ -584,32 +430,9 @@
                 `;
             }).join('');
 
-            lucide.createIcons();
-        }
-
-        function renderQuickLaunchDropdown(agents) {
-            const container = document.getElementById('quickLaunchAgents');
-
-            if (!agents || agents.length === 0) {
-                container.innerHTML = '<p class="dropdown-loading">No agents available</p>';
-                return;
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
             }
-
-            container.innerHTML = agents.slice(0, 6).map(agent => {
-                const type = agent.source_type || 'native';
-                const icon = renderAgentIcon(agent.icon);
-                return `
-                    <a href="/agent-runner.html?id=${agent.id}" class="dropdown-item" target="_blank">
-                        <div class="dropdown-item-icon">${icon}</div>
-                        <div class="dropdown-item-info">
-                            <div class="dropdown-item-name">${escapeHtml(agent.name)}</div>
-                            <div class="dropdown-item-type">${type}</div>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-
-            lucide.createIcons();
         }
 
         function renderAgentIcon(icon) {
@@ -627,22 +450,6 @@
             div.textContent = text;
             return div.innerHTML;
         }
-
-        // Quick Launch Dropdown Toggle
-        document.getElementById('quickLaunchTrigger').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const dropdown = document.getElementById('quickLaunchDropdown');
-            dropdown.classList.toggle('open');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('quickLaunchDropdown');
-            if (!dropdown.contains(e.target)) {
-                dropdown.classList.remove('open');
-            }
-        });
 
         // Load agents on page load
         document.addEventListener('DOMContentLoaded', function() {

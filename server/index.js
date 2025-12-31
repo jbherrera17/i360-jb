@@ -29,6 +29,7 @@ const actionsRoutes = require('./routes/actions');
 const skillsRoutes = require('./routes/skills');
 const briefingRoutes = require('./routes/briefing');
 const promptsRoutes = require('./routes/prompts');
+const align120Routes = require('./routes/align120');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -236,6 +237,7 @@ function initializeServices() {
         app.use('/api/skills', skillsRoutes(supabase));
         app.use('/api/briefing', briefingRoutes(supabase));
         app.use('/api/prompts', promptsRoutes(supabase));
+        app.use('/api/align120', align120Routes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
@@ -244,6 +246,7 @@ function initializeServices() {
         console.log('  ✅ Skills routes registered');
         console.log('  ✅ Briefing routes registered');
         console.log('  ✅ Prompts (Transformer) routes registered');
+        console.log('  ✅ Align 120 routes registered');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()
@@ -369,6 +372,11 @@ app.get('/briefing', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/briefing.html'));
 });
 
+// Align 120 page (Phase 7)
+app.get('/align120', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/align120.html'));
+});
+
 // ============================================
 // ERROR HANDLERS (registered after services init)
 // ============================================
@@ -430,6 +438,7 @@ function startServer() {
         console.log(`📦 Context: http://localhost:${PORT}/context`);
         console.log(`🏛️  Parthenon: http://localhost:${PORT}/parthenon`);
         console.log(`⚡ Actions: http://localhost:${PORT}/actions`);
+        console.log(`🧭 Align 120: http://localhost:${PORT}/align120`);
         console.log(`🤖 Agents API: http://localhost:${PORT}/api/agents`);
         console.log('\n========================================\n');
     });

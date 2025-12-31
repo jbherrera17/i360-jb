@@ -1,18 +1,19 @@
 # Company Dashboard User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** December 31, 2025
 
 ---
 
 ## Why Company Dashboard Is Important
 
-The Company Dashboard provides a unified view of organizational health and OKR progress. Instead of checking multiple systems, get the complete picture in one place:
+The Company Dashboard provides a unified view of organizational health and OKR progress. It also displays your Company Profile data generated from Align 120 assessments. Instead of checking multiple systems, get the complete picture in one place:
 
 - **At-a-glance health**: See overall progress instantly
 - **Department comparison**: Understand relative performance
 - **Early warning**: Identify issues before they escalate
 - **Activity tracking**: Know what's happening across the organization
+- **Align 120 outputs**: View AI maturity, team readiness, and corporate alignment scores
 
 ---
 
@@ -165,10 +166,30 @@ Each entry shows:
 
 ---
 
+## Connection to Align 120
+
+The Company Dashboard displays outputs from your Align 120 assessments:
+
+| Metric | Source Module |
+|--------|---------------|
+| AI Maturity Score | Module 1: AI Audit & Assessment |
+| Team Readiness | Module 3: Team UpSkilling |
+| Corporate Alignment | Module 5: Corporate Alignment |
+| Align 120 Progress | Session completion status |
+
+**To update these scores:**
+1. Navigate to **Align 120** in the sidebar
+2. Start or resume a session
+3. Complete the relevant module
+4. Return to Company Dashboard to see updated data
+
+---
+
 ## Related Documentation
 
 | Document | Description | Location |
 |----------|-------------|----------|
+| Align 120 Guide | Foundation & readiness assessment | [align120-user-guide.md](./align120-user-guide.md) |
 | Parthenon Guide | Manage OKRs and processes | [parthenon-user-guide.md](./parthenon-user-guide.md) |
 | Strategy Guide | Strategic framework | [strategy-user-guide.md](./strategy-user-guide.md) |
 | Dashboard Guide | Main system dashboard | [dashboard-user-guide.md](./dashboard-user-guide.md) |

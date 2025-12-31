@@ -10,8 +10,8 @@ const fs = require('fs').promises;
 
 const router = express.Router();
 
-// Documentation directory
-const DOCS_DIR = path.join(__dirname, '../../documentation');
+// Documentation directory (guides subfolder)
+const DOCS_DIR = path.join(__dirname, '../../documentation/guides');
 
 // Allowed documentation files (whitelist for security)
 const ALLOWED_DOCS = [
@@ -29,7 +29,8 @@ const ALLOWED_DOCS = [
     'strategy-user-guide.md',
     'governance-user-guide.md',
     'integrity-user-guide.md',
-    'company-user-guide.md'
+    'company-user-guide.md',
+    'align120-user-guide.md'
 ];
 
 /**

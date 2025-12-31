@@ -187,6 +187,7 @@ The Strategy Map shows your complete strategic framework:
 
 | Document | Description | Location |
 |----------|-------------|----------|
+| Align 120 Guide | Foundation & readiness (run first) | [align120-user-guide.md](./align120-user-guide.md) |
 | Governance Guide | Monitor strategy health | [governance-user-guide.md](./governance-user-guide.md) |
 | Parthenon Guide | OKRs and processes | [parthenon-user-guide.md](./parthenon-user-guide.md) |
 | Dashboard Guide | System overview | [dashboard-user-guide.md](./dashboard-user-guide.md) |

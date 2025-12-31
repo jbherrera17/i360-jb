@@ -66,6 +66,10 @@ const HelpRegistry = {
         '/company-dashboard': {
             file: '/api/docs/company-user-guide.md',
             title: 'Company Dashboard Help'
+        },
+        '/align120': {
+            file: '/api/docs/align120-user-guide.md',
+            title: 'Align 120 Help'
         }
     },
 

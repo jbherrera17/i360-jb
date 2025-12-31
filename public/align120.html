@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Align 120 | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/theme-toggle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Align 120 Page Styles */
+        .align-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Module Stepper */
+        .module-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .module-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .module-step:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .module-step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .module-step-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .module-step-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .module-step-sublabel {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        .module-step.active {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        .module-step.active .module-step-number {
+            background: var(--primary);
+            color: white;
+        }
+
+        .module-step.active .module-step-label {
+            color: var(--text-primary);
+        }
+
+        .module-step.completed .module-step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .module-step.completed .module-step-label {
+            color: var(--text-primary);
+        }
+
+        .step-connector {
+            width: 24px;
+            height: 2px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-connector.completed {
+            background: #10b981;
+        }
+
+        /* Module Panel */
+        .module-panel {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .module-panel.active {
+            display: block;
+        }
+
+        .panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .panel-header-content {
+            flex: 1;
+        }
+
+        .panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .panel-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .panel-header-badge {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-agents {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .badge-outputs {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+        }
+
+        .panel-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Agent Grid */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .agent-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .agent-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .agent-card.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .agent-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .agent-icon.opus { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .agent-icon.sonnet { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .agent-icon.haiku { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .agent-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .agent-card-model {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .agent-card-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Output Checklist */
+        .output-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .output-section h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .output-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .output-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .output-item.complete {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .output-item.complete .output-check {
+            color: #10b981;
+        }
+
+        .output-check {
+            color: var(--text-muted);
+        }
+
+        /* Session Info */
+        .session-info {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .session-info-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .session-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .session-info-item strong {
+            color: var(--text-primary);
+        }
+
+        /* Progress Ring */
+        .progress-ring-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 6;
+        }
+
+        .progress-ring .bg {
+            stroke: var(--bg-tertiary);
+        }
+
+        .progress-ring .progress {
+            stroke: var(--primary);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s;
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-ring-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-ai:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Start Session Card */
+        .start-session-card {
+            background: var(--bg-primary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .start-session-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .start-session-card p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .start-session-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            color: var(--primary);
+        }
+
+        /* Company Profile Summary */
+        .profile-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .profile-item-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-item-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .profile-item-value.empty {
+            color: var(--text-muted);
+            font-style: italic;
+            font-weight: normal;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .loading-card h3 {
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .loading-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .module-stepper {
+                gap: 0.5rem;
+            }
+            .step-connector {
+                display: none;
+            }
+            .module-step-sublabel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .module-step-content {
+                display: none;
+            }
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+            .panel-footer {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .btn-group {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Align 120</h1>
+                    <p class="header-subtitle">Foundation & Readiness Assessment for AI Transformation</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <div class="theme-toggle-wrapper">
+                        <label class="theme-toggle" title="Toggle dark/light mode">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="toggle-slider">
+                                <i data-lucide="sun" class="toggle-icon sun"></i>
+                                <i data-lucide="moon" class="toggle-icon moon"></i>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <div class="align-layout">
+                <!-- Session Info Bar -->
+                <div class="session-info" id="sessionInfo" style="display: none;">
+                    <div class="session-info-left">
+                        <div class="session-info-item">
+                            <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                            <span>Company: <strong id="sessionCompany">--</strong></span>
+                        </div>
+                        <div class="session-info-item">
+                            <i data-lucide="calendar" style="width:16px;height:16px;"></i>
+                            <span>Started: <strong id="sessionDate">--</strong></span>
+                        </div>
+                    </div>
+                    <div class="progress-ring-container">
+                        <div class="progress-ring">
+                            <svg width="60" height="60">
+                                <circle class="bg" cx="30" cy="30" r="24"></circle>
+                                <circle class="progress" cx="30" cy="30" r="24"
+                                    stroke-dasharray="150.8"
+                                    stroke-dashoffset="150.8"
+                                    id="progressCircle"></circle>
+                            </svg>
+                            <span class="progress-ring-text" id="progressPercent">0%</span>
+                        </div>
+                        <span class="progress-ring-label">Overall Progress</span>
+                    </div>
+                </div>
+
+                <!-- Module Stepper -->
+                <div class="module-stepper" id="moduleStepper">
+                    <div class="module-step" data-module="1">
+                        <div class="module-step-number">1</div>
+                        <div class="module-step-content">
+                            <span class="module-step-label">AI Audit</span>
+                            <span class="module-step-sublabel">Assessment</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="module-step" data-module="2">
+                        <div class="module-step-number">2</div>
+                        <div class="module-step-content">
+                            <span class="module-step-label">Business</span>
+                            <span class="module-step-sublabel">Fundamentals</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="module-step" data-module="3">
+                        <div class="module-step-number">3</div>
+                        <div class="module-step-content">
+                            <span class="module-step-label">Team</span>
+                            <span class="module-step-sublabel">UpSkilling</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="module-step" data-module="4">
+                        <div class="module-step-number">4</div>
+                        <div class="module-step-content">
+                            <span class="module-step-label">Brand</span>
+                            <span class="module-step-sublabel">Alignment</span>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="module-step" data-module="5">
+                        <div class="module-step-number">5</div>
+                        <div class="module-step-content">
+                            <span class="module-step-label">Corporate</span>
+                            <span class="module-step-sublabel">Alignment</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Start Session Panel -->
+                <div class="module-panel active" id="startPanel">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="play-circle"></i> Start Align 120 Session</h2>
+                            <p>Begin your AI transformation journey with a comprehensive readiness assessment</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="start-session-card">
+                            <div class="start-session-icon">
+                                <i data-lucide="rocket" style="width:40px;height:40px;"></i>
+                            </div>
+                            <h3>Ready to Transform?</h3>
+                            <p>Align 120 guides you through 5 modules to establish your AI readiness foundation. You'll work with specialized AI agents to assess your current state and build your Company Profile.</p>
+                            <button class="btn-ai" onclick="startNewSession()">
+                                <i data-lucide="sparkles"></i> Start New Session
+                            </button>
+                        </div>
+
+                        <div id="existingSessions" style="margin-top: 2rem;">
+                            <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="history" style="width:18px;height:18px;"></i>
+                                Previous Sessions
+                            </h4>
+                            <div id="sessionsList">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 1: AI Audit & Assessment -->
+                <div class="module-panel" id="module1Panel">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="search-check"></i> Module 1: AI Audit & Assessment</h2>
+                            <p>Evaluate your current AI landscape, maturity level, risks, and opportunities</p>
+                        </div>
+                        <div class="panel-header-badge">
+                            <span class="badge badge-agents">4 Agents</span>
+                            <span class="badge badge-outputs">4 Outputs</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="agent-grid" id="module1Agents">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="output-section">
+                            <h4><i data-lucide="file-output" style="width:16px;height:16px;"></i> Module Outputs</h4>
+                            <div class="output-list" id="module1Outputs">
+                                <div class="output-item" data-output="ai_inventory">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    AI Tool Inventory
+                                </div>
+                                <div class="output-item" data-output="risk_assessment">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Risk Assessment
+                                </div>
+                                <div class="output-item" data-output="opportunity_ranking">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Opportunity Ranking
+                                </div>
+                                <div class="output-item" data-output="maturity_score">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Maturity Score
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToModule(0)">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <div class="btn-group">
+                            <button class="btn-ai" onclick="runModuleAgents(1)">
+                                <i data-lucide="sparkles"></i> Run AI Assessment
+                            </button>
+                            <button class="btn-primary" onclick="goToModule(2)" id="module1Next" disabled>
+                                Next Module <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 2: Business Fundamentals -->
+                <div class="module-panel" id="module2Panel">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="landmark"></i> Module 2: Business Fundamentals</h2>
+                            <p>Define your values, vision, mission, and map core business processes</p>
+                        </div>
+                        <div class="panel-header-badge">
+                            <span class="badge badge-agents">5 Agents</span>
+                            <span class="badge badge-outputs">5 Outputs</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="agent-grid" id="module2Agents">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="output-section">
+                            <h4><i data-lucide="file-output" style="width:16px;height:16px;"></i> Module Outputs</h4>
+                            <div class="output-list" id="module2Outputs">
+                                <div class="output-item" data-output="core_values">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Core Values
+                                </div>
+                                <div class="output-item" data-output="vision_mission">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Vision & Mission
+                                </div>
+                                <div class="output-item" data-output="process_inventory">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Process Inventory
+                                </div>
+                                <div class="output-item" data-output="unit_economics">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Unit Economics
+                                </div>
+                                <div class="output-item" data-output="kpi_alignment">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    KPI/OKR Alignment
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToModule(1)">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <div class="btn-group">
+                            <button class="btn-ai" onclick="runModuleAgents(2)">
+                                <i data-lucide="sparkles"></i> Run AI Assessment
+                            </button>
+                            <button class="btn-primary" onclick="goToModule(3)" id="module2Next" disabled>
+                                Next Module <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 3: Team UpSkilling -->
+                <div class="module-panel" id="module3Panel">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="users"></i> Module 3: Team UpSkilling</h2>
+                            <p>Assess team readiness, skills gaps, and design AI ways of working</p>
+                        </div>
+                        <div class="panel-header-badge">
+                            <span class="badge badge-agents">4 Agents</span>
+                            <span class="badge badge-outputs">4 Outputs</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="agent-grid" id="module3Agents">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="output-section">
+                            <h4><i data-lucide="file-output" style="width:16px;height:16px;"></i> Module Outputs</h4>
+                            <div class="output-list" id="module3Outputs">
+                                <div class="output-item" data-output="skills_matrix">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Skills Matrix
+                                </div>
+                                <div class="output-item" data-output="training_paths">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Training Paths
+                                </div>
+                                <div class="output-item" data-output="change_readiness">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Change Readiness
+                                </div>
+                                <div class="output-item" data-output="ai_ways_of_working">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    AI Ways of Working
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToModule(2)">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <div class="btn-group">
+                            <button class="btn-ai" onclick="runModuleAgents(3)">
+                                <i data-lucide="sparkles"></i> Run AI Assessment
+                            </button>
+                            <button class="btn-primary" onclick="goToModule(4)" id="module3Next" disabled>
+                                Next Module <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 4: Brand Alignment -->
+                <div class="module-panel" id="module4Panel">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="palette"></i> Module 4: Brand Alignment</h2>
+                            <p>Extract brand voice, establish trust messaging, and competitive positioning</p>
+                        </div>
+                        <div class="panel-header-badge">
+                            <span class="badge badge-agents">4 Agents</span>
+                            <span class="badge badge-outputs">4 Outputs</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="agent-grid" id="module4Agents">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="output-section">
+                            <h4><i data-lucide="file-output" style="width:16px;height:16px;"></i> Module Outputs</h4>
+                            <div class="output-list" id="module4Outputs">
+                                <div class="output-item" data-output="brand_voice">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Brand Voice Guide
+                                </div>
+                                <div class="output-item" data-output="trust_messaging">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Trust Messaging
+                                </div>
+                                <div class="output-item" data-output="sentiment_baseline">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Sentiment Baseline
+                                </div>
+                                <div class="output-item" data-output="competitive_position">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Competitive Position
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToModule(3)">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <div class="btn-group">
+                            <button class="btn-ai" onclick="runModuleAgents(4)">
+                                <i data-lucide="sparkles"></i> Run AI Assessment
+                            </button>
+                            <button class="btn-primary" onclick="goToModule(5)" id="module4Next" disabled>
+                                Next Module <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 5: Corporate Alignment -->
+                <div class="module-panel" id="module5Panel">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="network"></i> Module 5: Corporate Alignment</h2>
+                            <p>Map stakeholders, define governance, draft policies, and prioritize portfolio</p>
+                        </div>
+                        <div class="panel-header-badge">
+                            <span class="badge badge-agents">4 Agents</span>
+                            <span class="badge badge-outputs">4 Outputs</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="agent-grid" id="module5Agents">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="output-section">
+                            <h4><i data-lucide="file-output" style="width:16px;height:16px;"></i> Module Outputs</h4>
+                            <div class="output-list" id="module5Outputs">
+                                <div class="output-item" data-output="stakeholder_map">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Stakeholder Map
+                                </div>
+                                <div class="output-item" data-output="governance_raci">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Governance RACI
+                                </div>
+                                <div class="output-item" data-output="policy_drafts">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Policy Drafts
+                                </div>
+                                <div class="output-item" data-output="portfolio_priority">
+                                    <span class="output-check"><i data-lucide="circle" style="width:14px;height:14px;"></i></span>
+                                    Portfolio Priority
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-secondary" onclick="goToModule(4)">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <div class="btn-group">
+                            <button class="btn-ai" onclick="runModuleAgents(5)">
+                                <i data-lucide="sparkles"></i> Run AI Assessment
+                            </button>
+                            <button class="btn-primary" onclick="completeSession()" id="module5Next" disabled>
+                                Complete Session <i data-lucide="check-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <img src="/assets/loading-spinner.svg" alt="Loading..." style="width:48px;height:48px;">
+            <h3 id="loadingTitle">Running AI Assessment</h3>
+            <p id="loadingMessage">Please wait while the agents analyze your data...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/supabase.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script>
+        // State
+        let currentModule = 0;
+        let currentSession = null;
+        let moduleAgents = {};
+        let moduleProgress = { 1: false, 2: false, 3: false, 4: false, 5: false };
+
+        // Module definitions
+        const modules = {
+            1: { name: 'AI Audit & Assessment', suite: 'align120', category: 'assessment' },
+            2: { name: 'Business Fundamentals', suite: 'align120', category: 'fundamentals' },
+            3: { name: 'Team UpSkilling', suite: 'align120', category: 'upskilling' },
+            4: { name: 'Brand Alignment', suite: 'align120', category: 'brand' },
+            5: { name: 'Corporate Alignment', suite: 'align120', category: 'corporate' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadAgents();
+            await loadSessions();
+            setupStepperClicks();
+        });
+
+        // Load Align 120 agents
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents?suite=align120');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Group agents by category
+                    data.data.forEach(agent => {
+                        const category = agent.category || 'platform';
+                        if (!moduleAgents[category]) {
+                            moduleAgents[category] = [];
+                        }
+                        moduleAgents[category].push(agent);
+                    });
+
+                    // Populate each module's agent grid
+                    populateModuleAgents(1, 'assessment');
+                    populateModuleAgents(2, 'fundamentals');
+                    populateModuleAgents(3, 'upskilling');
+                    populateModuleAgents(4, 'brand');
+                    populateModuleAgents(5, 'corporate');
+                }
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+        // Populate agent cards for a module
+        function populateModuleAgents(moduleNum, category) {
+            const container = document.getElementById(`module${moduleNum}Agents`);
+            const agents = moduleAgents[category] || [];
+
+            if (agents.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <i data-lucide="bot" style="width:48px;height:48px;opacity:0.5;"></i>
+                        <p style="margin-top: 1rem;">No agents available for this module yet</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = agents.map(agent => {
+                const model = agent.llm_model || 'sonnet';
+                const modelClass = model.includes('opus') ? 'opus' : model.includes('haiku') ? 'haiku' : 'sonnet';
+                const icon = agent.icon || 'bot';
+
+                return `
+                    <div class="agent-card" data-agent-id="${agent.id}" onclick="selectAgent('${agent.id}')">
+                        <div class="agent-card-header">
+                            <div class="agent-icon ${modelClass}">
+                                <i data-lucide="${icon}" style="width:20px;height:20px;"></i>
+                            </div>
+                            <div>
+                                <div class="agent-card-title">${agent.name}</div>
+                                <div class="agent-card-model">${model}</div>
+                            </div>
+                        </div>
+                        <div class="agent-card-desc">${agent.description || 'No description available'}</div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Load existing sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/align120/sessions');
+                const data = await response.json();
+
+                const container = document.getElementById('sessionsList');
+
+                if (!data.success || !data.data || data.data.length === 0) {
+                    container.innerHTML = `
+                        <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); background: var(--bg-primary); border-radius: 8px;">
+                            <p>No previous sessions found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.data.map(session => {
+                    const progress = calculateSessionProgress(session);
+                    const date = new Date(session.created_at).toLocaleDateString();
+                    const statusColor = session.status === 'completed' ? '#10b981' :
+                                       session.status === 'in_progress' ? '#f59e0b' : '#6366f1';
+
+                    return `
+                        <div class="agent-card" style="margin-bottom: 0.75rem;" onclick="resumeSession('${session.id}')">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600;">${session.company_name || 'Unnamed Company'}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                        Started ${date} | Module ${session.current_module || 1}/5
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; background: ${statusColor}20; color: ${statusColor};">
+                                        ${session.status || 'draft'}
+                                    </span>
+                                    <span style="font-weight: 600; color: var(--primary);">${progress}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('sessionsList').innerHTML = `
+                    <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); background: var(--bg-primary); border-radius: 8px;">
+                        <p>Unable to load sessions</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Calculate session progress
+        function calculateSessionProgress(session) {
+            if (!session.module_progress) return 0;
+            const completed = Object.values(session.module_progress).filter(v => v === true).length;
+            return Math.round((completed / 5) * 100);
+        }
+
+        // Setup stepper clicks
+        function setupStepperClicks() {
+            document.querySelectorAll('.module-step').forEach(step => {
+                step.addEventListener('click', () => {
+                    const moduleNum = parseInt(step.dataset.module);
+                    if (currentSession) {
+                        goToModule(moduleNum);
+                    }
+                });
+            });
+        }
+
+        // Start new session
+        async function startNewSession() {
+            const companyName = prompt('Enter company name for this assessment:');
+            if (!companyName) return;
+
+            showLoading('Creating Session', 'Setting up your Align 120 assessment session...');
+
+            try {
+                const response = await fetch('/api/align120/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company_name: companyName })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentSession = data.data;
+                    updateSessionInfo();
+                    goToModule(1);
+                } else {
+                    alert('Failed to create session: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error creating session:', error);
+                alert('Error creating session');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Resume existing session
+        async function resumeSession(sessionId) {
+            showLoading('Loading Session', 'Retrieving your previous assessment...');
+
+            try {
+                const response = await fetch(`/api/align120/sessions/${sessionId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    currentSession = data.data;
+                    moduleProgress = currentSession.module_progress || { 1: false, 2: false, 3: false, 4: false, 5: false };
+                    updateSessionInfo();
+                    updateStepperState();
+                    goToModule(currentSession.current_module || 1);
+                } else {
+                    alert('Failed to load session: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error loading session:', error);
+                alert('Error loading session');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update session info display
+        function updateSessionInfo() {
+            if (!currentSession) return;
+
+            document.getElementById('sessionInfo').style.display = 'flex';
+            document.getElementById('sessionCompany').textContent = currentSession.company_name || '--';
+            document.getElementById('sessionDate').textContent = new Date(currentSession.created_at).toLocaleDateString();
+            updateProgressRing();
+        }
+
+        // Update progress ring
+        function updateProgressRing() {
+            const completed = Object.values(moduleProgress).filter(v => v === true).length;
+            const percent = Math.round((completed / 5) * 100);
+            const circumference = 150.8;
+            const offset = circumference - (percent / 100) * circumference;
+
+            document.getElementById('progressCircle').style.strokeDashoffset = offset;
+            document.getElementById('progressPercent').textContent = `${percent}%`;
+        }
+
+        // Update stepper state
+        function updateStepperState() {
+            document.querySelectorAll('.module-step').forEach(step => {
+                const moduleNum = parseInt(step.dataset.module);
+                step.classList.remove('active', 'completed');
+
+                if (moduleNum === currentModule) {
+                    step.classList.add('active');
+                } else if (moduleProgress[moduleNum]) {
+                    step.classList.add('completed');
+                }
+            });
+
+            // Update connectors
+            document.querySelectorAll('.step-connector').forEach((conn, i) => {
+                conn.classList.toggle('completed', moduleProgress[i + 1]);
+            });
+        }
+
+        // Go to module
+        function goToModule(moduleNum) {
+            currentModule = moduleNum;
+
+            // Hide all panels
+            document.querySelectorAll('.module-panel').forEach(p => p.classList.remove('active'));
+
+            // Show appropriate panel
+            if (moduleNum === 0) {
+                document.getElementById('startPanel').classList.add('active');
+                document.getElementById('sessionInfo').style.display = 'none';
+            } else {
+                document.getElementById(`module${moduleNum}Panel`).classList.add('active');
+                document.getElementById('sessionInfo').style.display = 'flex';
+            }
+
+            updateStepperState();
+            lucide.createIcons();
+
+            // Save current module to session
+            if (currentSession && moduleNum > 0) {
+                saveSessionProgress();
+            }
+        }
+
+        // Select agent
+        function selectAgent(agentId) {
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.agentId === agentId);
+            });
+        }
+
+        // Run module agents
+        async function runModuleAgents(moduleNum) {
+            if (!currentSession) {
+                alert('Please start or resume a session first');
+                return;
+            }
+
+            const moduleName = modules[moduleNum].name;
+            showLoading(`Running ${moduleName}`, 'AI agents are analyzing your company data...');
+
+            try {
+                const response = await fetch(`/api/align120/sessions/${currentSession.id}/run-module`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ module: moduleNum })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Mark module as complete
+                    moduleProgress[moduleNum] = true;
+                    updateProgressRing();
+                    updateStepperState();
+
+                    // Update output checkmarks
+                    updateModuleOutputs(moduleNum, data.outputs || {});
+
+                    // Enable next button
+                    const nextBtn = document.getElementById(`module${moduleNum}Next`);
+                    if (nextBtn) nextBtn.disabled = false;
+
+                    // Save progress
+                    await saveSessionProgress();
+                } else {
+                    alert('Assessment failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error running module:', error);
+                alert('Error running assessment');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update module outputs display
+        function updateModuleOutputs(moduleNum, outputs) {
+            const container = document.getElementById(`module${moduleNum}Outputs`);
+            if (!container) return;
+
+            container.querySelectorAll('.output-item').forEach(item => {
+                const outputKey = item.dataset.output;
+                if (outputs[outputKey]) {
+                    item.classList.add('complete');
+                    item.querySelector('.output-check').innerHTML = '<i data-lucide="check-circle" style="width:14px;height:14px;"></i>';
+                }
+            });
+
+            lucide.createIcons();
+        }
+
+        // Save session progress
+        async function saveSessionProgress() {
+            if (!currentSession) return;
+
+            try {
+                await fetch(`/api/align120/sessions/${currentSession.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_module: currentModule,
+                        module_progress: moduleProgress
+                    })
+                });
+            } catch (error) {
+                console.error('Error saving progress:', error);
+            }
+        }
+
+        // Complete session
+        async function completeSession() {
+            if (!currentSession) return;
+
+            showLoading('Completing Session', 'Generating your Company Profile...');
+
+            try {
+                const response = await fetch(`/api/align120/sessions/${currentSession.id}/complete`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Session completed successfully! Your Company Profile has been generated.');
+                    window.location.href = '/company-dashboard.html';
+                } else {
+                    alert('Failed to complete session: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error completing session:', error);
+                alert('Error completing session');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Loading helpers
+        function showLoading(title, message) {
+            document.getElementById('loadingTitle').textContent = title;
+            document.getElementById('loadingMessage').textContent = message;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+    </script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+</body>
+</html>
