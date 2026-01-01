@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -621,6 +622,209 @@
                 display: none;
             }
         }
+
+        /* AI Agent Panel Styles */
+        .ai-agent-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .ai-panel-header {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .ai-panel-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .ai-panel-header.expanded {
+            border-bottom-color: var(--border);
+        }
+
+        .ai-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .ai-panel-title .panel-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .ai-panel-toggle {
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .ai-panel-header.expanded .ai-panel-toggle {
+            transform: rotate(180deg);
+        }
+
+        .ai-panel-body {
+            display: none;
+            padding: 1rem;
+        }
+
+        .ai-panel-body.expanded {
+            display: block;
+        }
+
+        .agent-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-chip {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .category-chip:hover {
+            background: var(--bg-primary);
+            border-color: var(--primary);
+        }
+
+        .category-chip.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .agent-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .agent-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .agent-card-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .agent-card-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .agent-card-model {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .agent-card-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Agent Chat Modal */
+        .agent-modal {
+            max-width: 700px;
+        }
+
+        .agent-modal .modal-body {
+            display: flex;
+            flex-direction: column;
+            max-height: 60vh;
+        }
+
+        .agent-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            min-height: 200px;
+        }
+
+        .chat-message {
+            margin-bottom: 0.75rem;
+        }
+
+        .chat-message.assistant {
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .chat-message.user {
+            padding: 0.75rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 8px;
+            text-align: right;
+        }
+
+        .agent-input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .agent-input-area input {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -677,6 +881,30 @@
                     <div class="step" data-step="5" onclick="goToStep(5)">
                         <div class="step-number">5</div>
                         <div class="step-label">Strategy Map</div>
+                    </div>
+                </div>
+
+                <!-- AI Agent Panel -->
+                <div class="ai-agent-panel">
+                    <div class="ai-panel-header" id="aiPanelHeader" onclick="toggleAIPanel()">
+                        <div class="ai-panel-title">
+                            <div class="panel-icon">
+                                <i data-lucide="bot" style="width:18px;height:18px;"></i>
+                            </div>
+                            <span>Strategy 120 AI Agents</span>
+                            <span style="font-weight: 400; color: var(--text-muted); font-size: 0.8rem;">(<span id="agentCount">0</span> agents)</span>
+                        </div>
+                        <div class="ai-panel-toggle">
+                            <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
+                        </div>
+                    </div>
+                    <div class="ai-panel-body" id="aiPanelBody">
+                        <div class="agent-categories" id="agentCategories">
+                            <!-- Categories populated dynamically -->
+                        </div>
+                        <div class="agents-grid" id="agentsGrid">
+                            <!-- Agents populated dynamically -->
+                        </div>
                     </div>
                 </div>
 
@@ -995,6 +1223,34 @@
         </div>
     </div>
 
+    <!-- Agent Chat Modal -->
+    <div class="modal-overlay" id="agentChatModal">
+        <div class="modal-content agent-modal">
+            <div class="modal-header">
+                <h2>
+                    <i data-lucide="bot"></i>
+                    <span id="chatAgentName">Agent</span>
+                </h2>
+                <button class="modal-close" onclick="closeAgentChatModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="agent-chat-messages" id="agentChatMessages">
+                    <div class="chat-message assistant">
+                        <p>Hello! I'm ready to help with your strategic planning. What would you like to explore?</p>
+                    </div>
+                </div>
+                <div class="agent-input-area">
+                    <input type="text" id="agentChatInput" placeholder="Ask a question..." onkeypress="handleChatKeypress(event)">
+                    <button class="btn-primary" onclick="sendAgentMessage()">
+                        <i data-lucide="send" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="/js/supabase.js"></script>
     <script src="/js/navigation.js"></script>
@@ -1019,10 +1275,17 @@
         let currentPerspectiveId = null;
         let linkingOkrId = null;
 
+        // Strategy 120 Agent state
+        let strategy120Agents = [];
+        let selectedCategory = 'all';
+        let currentChatAgent = null;
+        let aiPanelExpanded = false;
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             await loadAllData();
+            await loadStrategy120Agents();
         });
 
         // Load all data
@@ -1768,6 +2031,314 @@
                 console.error('Error activating strategy:', error);
                 alert('Error activating strategy');
             }
+        }
+
+        // ============= STRATEGY 120 AI AGENTS =============
+
+        // Category labels for display
+        const categoryLabels = {
+            'all': 'All Agents',
+            'orchestration': 'Orchestration',
+            'platform': 'Platform',
+            'planning': 'Planning',
+            'financial_perspective': 'Financial',
+            'customer_perspective': 'Customer',
+            'process_perspective': 'Process',
+            'learning_perspective': 'Learning & Growth',
+            'investment': 'Investment',
+            'intelligence': 'Intelligence',
+            'decision_support': 'Decision Support',
+            'governance': 'Governance'
+        };
+
+        // Category colors
+        const categoryColors = {
+            'orchestration': { bg: '#6366f1', fg: '#6366f1' },
+            'platform': { bg: '#8b5cf6', fg: '#8b5cf6' },
+            'planning': { bg: '#0ea5e9', fg: '#0ea5e9' },
+            'financial_perspective': { bg: '#10b981', fg: '#10b981' },
+            'customer_perspective': { bg: '#3b82f6', fg: '#3b82f6' },
+            'process_perspective': { bg: '#f59e0b', fg: '#f59e0b' },
+            'learning_perspective': { bg: '#8b5cf6', fg: '#8b5cf6' },
+            'investment': { bg: '#14b8a6', fg: '#14b8a6' },
+            'intelligence': { bg: '#f97316', fg: '#f97316' },
+            'decision_support': { bg: '#ec4899', fg: '#ec4899' },
+            'governance': { bg: '#6366f1', fg: '#6366f1' }
+        };
+
+        // Load Strategy 120 agents from API
+        async function loadStrategy120Agents() {
+            try {
+                const res = await fetch('/api/agents?suite=strategy');
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    strategy120Agents = data.data;
+                    document.getElementById('agentCount').textContent = strategy120Agents.length;
+                    renderAgentCategories();
+                    renderAgentsGrid();
+                }
+            } catch (error) {
+                console.error('Error loading Strategy 120 agents:', error);
+            }
+        }
+
+        // Toggle AI panel expand/collapse
+        function toggleAIPanel() {
+            aiPanelExpanded = !aiPanelExpanded;
+            const header = document.getElementById('aiPanelHeader');
+            const body = document.getElementById('aiPanelBody');
+
+            if (aiPanelExpanded) {
+                header.classList.add('expanded');
+                body.classList.add('expanded');
+            } else {
+                header.classList.remove('expanded');
+                body.classList.remove('expanded');
+            }
+            lucide.createIcons();
+        }
+
+        // Render category filter chips
+        function renderAgentCategories() {
+            const container = document.getElementById('agentCategories');
+            const categories = [...new Set(strategy120Agents.map(a => a.category))];
+
+            // Add 'All' category first
+            let html = `<div class="category-chip ${selectedCategory === 'all' ? 'active' : ''}" onclick="filterByCategory('all')">All (${strategy120Agents.length})</div>`;
+
+            // Add other categories
+            categories.sort().forEach(cat => {
+                const count = strategy120Agents.filter(a => a.category === cat).length;
+                const label = categoryLabels[cat] || cat;
+                html += `<div class="category-chip ${selectedCategory === cat ? 'active' : ''}" onclick="filterByCategory('${cat}')">${label} (${count})</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Filter agents by category
+        function filterByCategory(category) {
+            selectedCategory = category;
+            renderAgentCategories();
+            renderAgentsGrid();
+        }
+
+        // Render agents grid
+        function renderAgentsGrid() {
+            const container = document.getElementById('agentsGrid');
+            let filteredAgents = strategy120Agents;
+
+            if (selectedCategory !== 'all') {
+                filteredAgents = strategy120Agents.filter(a => a.category === selectedCategory);
+            }
+
+            if (filteredAgents.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No agents found in this category.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredAgents.map(agent => {
+                const colors = categoryColors[agent.category] || { bg: '#6b7280', fg: '#6b7280' };
+                const modelShort = agent.llm_model?.includes('opus') ? 'Opus' :
+                                   agent.llm_model?.includes('sonnet') ? 'Sonnet' :
+                                   agent.llm_model?.includes('haiku') ? 'Haiku' : 'AI';
+
+                return `
+                    <div class="agent-card" onclick="openAgentChat('${agent.id}')">
+                        <div class="agent-card-header">
+                            <div class="agent-card-icon" style="background: ${colors.bg}20; color: ${colors.fg}">
+                                <i data-lucide="${agent.icon || 'bot'}" style="width:16px;height:16px;"></i>
+                            </div>
+                            <div class="agent-card-name" title="${agent.name}">${agent.name}</div>
+                            <div class="agent-card-model">${modelShort}</div>
+                        </div>
+                        <div class="agent-card-desc">${agent.description || 'AI-powered strategy agent'}</div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Open agent chat modal
+        function openAgentChat(agentId) {
+            currentChatAgent = strategy120Agents.find(a => a.id === agentId);
+            if (!currentChatAgent) return;
+
+            document.getElementById('chatAgentName').textContent = currentChatAgent.name;
+            document.getElementById('agentChatMessages').innerHTML = `
+                <div class="chat-message assistant">
+                    <p>Hello! I'm ${currentChatAgent.name}. ${currentChatAgent.description || 'How can I help with your strategic planning?'}</p>
+                </div>
+            `;
+            document.getElementById('agentChatInput').value = '';
+            document.getElementById('agentChatModal').classList.add('active');
+            lucide.createIcons();
+
+            // Focus input
+            setTimeout(() => {
+                document.getElementById('agentChatInput').focus();
+            }, 100);
+        }
+
+        // Close agent chat modal
+        function closeAgentChatModal() {
+            document.getElementById('agentChatModal').classList.remove('active');
+            currentChatAgent = null;
+        }
+
+        // Handle enter key in chat input
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendAgentMessage();
+            }
+        }
+
+        // Send message to agent
+        async function sendAgentMessage() {
+            const input = document.getElementById('agentChatInput');
+            const message = input.value.trim();
+
+            if (!message || !currentChatAgent) return;
+
+            const messagesContainer = document.getElementById('agentChatMessages');
+
+            // Add user message
+            messagesContainer.innerHTML += `
+                <div class="chat-message user">
+                    <p>${escapeHtml(message)}</p>
+                </div>
+            `;
+
+            // Clear input
+            input.value = '';
+
+            // Add typing indicator
+            messagesContainer.innerHTML += `
+                <div class="chat-message assistant" id="loadingMessage">
+                    <div class="typing-indicator">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            `;
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            try {
+                // Build context from current strategy data
+                const context = buildStrategyContext();
+
+                // Call chat API with agent
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        agent_id: currentChatAgent.id,
+                        context: context,
+                        stream: false
+                    })
+                });
+
+                const data = await res.json();
+
+                // Remove loading message
+                document.getElementById('loadingMessage')?.remove();
+
+                if (data.success && data.response) {
+                    messagesContainer.innerHTML += `
+                        <div class="chat-message assistant">
+                            <p>${formatResponse(data.response)}</p>
+                        </div>
+                    `;
+                } else {
+                    messagesContainer.innerHTML += `
+                        <div class="chat-message assistant">
+                            <p><i>Sorry, I encountered an error. Please try again.</i></p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                document.getElementById('loadingMessage')?.remove();
+                messagesContainer.innerHTML += `
+                    <div class="chat-message assistant">
+                        <p><i>Connection error. Please check your network and try again.</i></p>
+                    </div>
+                `;
+            }
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Build strategy context for agent
+        function buildStrategyContext() {
+            let context = '';
+
+            if (foundation) {
+                context += `## Current Strategic Foundation\n`;
+                context += `- Vision: ${foundation.vision || 'Not set'}\n`;
+                context += `- Mission: ${foundation.mission || 'Not set'}\n`;
+                context += `- Planning Period: ${foundation.planning_period || 'Not set'}\n\n`;
+            }
+
+            if (themes.length > 0) {
+                context += `## Strategic Themes\n`;
+                themes.forEach(t => {
+                    context += `- ${t.name}: ${t.rationale || t.description || ''}\n`;
+                });
+                context += '\n';
+            }
+
+            if (perspectives.length > 0) {
+                context += `## BSC Perspectives & Objectives\n`;
+                perspectives.forEach(p => {
+                    context += `### ${p.name}\n`;
+                    (p.objectives || []).forEach(o => {
+                        context += `- ${o.name}\n`;
+                    });
+                });
+                context += '\n';
+            }
+
+            if (okrs.length > 0) {
+                context += `## Active OKRs\n`;
+                okrs.slice(0, 10).forEach(o => {
+                    context += `- ${o.title} (${o.progress || 0}% progress)\n`;
+                });
+                if (okrs.length > 10) {
+                    context += `... and ${okrs.length - 10} more OKRs\n`;
+                }
+            }
+
+            return context;
+        }
+
+        // Escape HTML for safe display
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Format response with basic markdown
+        function formatResponse(text) {
+            // Convert markdown-style formatting
+            let formatted = escapeHtml(text);
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/\n/g, '<br>');
+            return formatted;
         }
     </script>
 </body>

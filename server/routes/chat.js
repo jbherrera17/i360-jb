@@ -1,7 +1,7 @@
 /**
  * Chat Routes - Insight 360
  * Multi-LLM chat endpoints (Claude + OpenAI)
- * Version: 2.1.1 - Fixed to match service interfaces
+ * Version: 2.2.0 - Added root POST endpoint for agent-based chat
  */
 
 const express = require('express');
@@ -145,6 +145,98 @@ router.get('/models', (_req, res) => {
         models: available,
         default: 'claude-sonnet-4-5-20250929'
     });
+});
+
+/**
+ * POST /api/chat
+ * Primary chat endpoint - supports both direct LLM chat and agent-based chat
+ *
+ * For agent chat: { message, agent_id, context? }
+ * For direct chat: { message, model?, systemPrompt? }
+ */
+router.post('/', async (req, res) => {
+    try {
+        const { message, agent_id, context, model, systemPrompt } = req.body;
+
+        if (!message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Message is required'
+            });
+        }
+
+        // Agent-based chat
+        if (agent_id) {
+            try {
+                const { executeAgent } = require('../services/agentService');
+
+                const result = await executeAgent(agent_id, {
+                    userMessage: message,
+                    conversationHistory: [],
+                    includeOnDemand: []
+                });
+
+                return res.json({
+                    success: true,
+                    response: result.response,
+                    model: result.model,
+                    provider: result.provider,
+                    usage: result.usage
+                });
+            } catch (agentError) {
+                console.error('Agent execution error:', agentError);
+                return res.status(500).json({
+                    success: false,
+                    error: agentError.message || 'Agent execution failed'
+                });
+            }
+        }
+
+        // Direct LLM chat (no agent)
+        const selectedModel = model || 'claude-sonnet-4-5-20250929';
+        const provider = getProvider(selectedModel);
+
+        // Build system prompt with optional context
+        let fullSystemPrompt = systemPrompt || '';
+        if (context) {
+            fullSystemPrompt += (fullSystemPrompt ? '\n\n' : '') + '# Context\n\n' + context;
+        }
+
+        let response;
+
+        if (provider === 'anthropic') {
+            response = await anthropic.chat({
+                message,
+                model: selectedModel,
+                systemPrompt: fullSystemPrompt,
+                history: []
+            });
+        } else if (provider === 'openai') {
+            response = await openai.chat({
+                message,
+                model: selectedModel,
+                systemPrompt: fullSystemPrompt,
+                history: []
+            });
+        } else {
+            throw new Error(`Unknown provider: ${provider}`);
+        }
+
+        res.json({
+            success: true,
+            response: response.content,
+            model: response.model,
+            provider,
+            usage: response.usage
+        });
+
+    } catch (error) {
+        console.error('Chat error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
 });
 
 /**

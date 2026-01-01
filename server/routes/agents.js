@@ -13,6 +13,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { assembleContext, estimateTokens } = require('../services/contextInjection');
 const { executeAgent, streamAgent } = require('../services/agentService');
 const { generateSignedEmbedUrl } = require('../services/mindstudioService');
+const { canEditAgent, canDeleteAgent } = require('../middleware/auth');
 
 /**
  * Agent Routes Factory
@@ -473,11 +474,40 @@ module.exports = function(supabase) {
     /**
      * PUT /api/agents/:id
      * Update agent
+     * Permission: Admin can edit all; users can only edit their own non-system agents
      */
     router.put('/:id', async (req, res) => {
         try {
             const { id } = req.params;
             const updates = req.body;
+
+            // First, get the agent to check permissions
+            const { data: agent, error: fetchError } = await supabase
+                .from('agents')
+                .select('id, user_id, is_system')
+                .eq('id', id)
+                .single();
+
+            if (fetchError) throw fetchError;
+            if (!agent) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Agent not found'
+                });
+            }
+
+            // Check permission
+            const userRole = req.userRole || 'user';
+            const userId = req.userId || null;
+
+            if (!canEditAgent(userRole, userId, agent)) {
+                return res.status(403).json({
+                    success: false,
+                    error: agent.is_system
+                        ? 'System agents can only be edited by administrators'
+                        : 'You do not have permission to edit this agent'
+                });
+            }
 
             // Remove fields that shouldn't be updated directly
             delete updates.id;
@@ -485,6 +515,7 @@ module.exports = function(supabase) {
             delete updates.created_at;
             delete updates.created_by;
             delete updates.usage_count;
+            delete updates.is_system; // Prevent changing is_system flag
 
             // Parse numeric fields
             if (updates.temperature !== undefined) {
@@ -510,9 +541,9 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Error updating agent:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });
@@ -520,11 +551,40 @@ module.exports = function(supabase) {
     /**
      * DELETE /api/agents/:id
      * Delete agent (soft delete by setting is_active = false)
+     * Permission: Admin can delete all; users can only delete their own non-system agents
      */
     router.delete('/:id', async (req, res) => {
         try {
             const { id } = req.params;
             const { hard = false } = req.query;
+
+            // First, get the agent to check permissions
+            const { data: agent, error: fetchError } = await supabase
+                .from('agents')
+                .select('id, user_id, is_system, name')
+                .eq('id', id)
+                .single();
+
+            if (fetchError) throw fetchError;
+            if (!agent) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Agent not found'
+                });
+            }
+
+            // Check permission
+            const userRole = req.userRole || 'user';
+            const userId = req.userId || null;
+
+            if (!canDeleteAgent(userRole, userId, agent)) {
+                return res.status(403).json({
+                    success: false,
+                    error: agent.is_system
+                        ? 'System agents can only be deleted by administrators'
+                        : 'You do not have permission to delete this agent'
+                });
+            }
 
             if (hard === 'true') {
                 // Hard delete
@@ -551,9 +611,9 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Error deleting agent:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });

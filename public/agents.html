@@ -2611,6 +2611,7 @@
                 const provider = agent.llm_provider || agent.source_type || 'native';
                 const status = agent.is_active !== false ? 'active' : 'inactive';
                 const iconHtml = renderAgentIcon(agent.icon);
+                const systemBadge = agent.is_system ? '<span class="status-badge" style="background:#6366f1;color:white;font-size:0.65rem;">sys</span>' : '';
                 return `
                 <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}"
                      data-id="${agent.id}">
@@ -2620,6 +2621,7 @@
                         <div class="agent-meta">
                             <span class="platform-badge ${provider}">${provider}</span>
                             <span class="status-badge ${status}">${status}</span>
+                            ${systemBadge}
                         </div>
                     </div>
                     <div class="agent-usage">
@@ -2683,6 +2685,17 @@
             const status = agent.is_active !== false ? 'active' : 'inactive';
             const statusLabel = status === 'active' ? 'Active' : 'Inactive';
 
+            // Hide edit/delete buttons for system agents
+            const btnEdit = document.getElementById('btnEdit');
+            const btnDelete = document.getElementById('btnDelete');
+            if (agent.is_system) {
+                btnEdit.style.display = 'none';
+                btnDelete.style.display = 'none';
+            } else {
+                btnEdit.style.display = '';
+                btnDelete.style.display = '';
+            }
+
             document.getElementById('detailIcon').innerHTML = renderAgentIcon(agent.icon);
             document.getElementById('detailName').textContent = agent.name;
             document.getElementById('detailPlatform').innerHTML = `
@@ -2694,8 +2707,9 @@
 
             document.getElementById('detailSuite').textContent = suiteLabels[agent.suite] || agent.suite || '—';
             document.getElementById('detailCategory').textContent = cat?.display_name || cat?.name || agent.category || '—';
-            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>`;
-            document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>`;
+            const systemBadge = agent.is_system ? '<span class="status-badge system" style="background:#6366f1;color:white;margin-left:4px;">System</span>' : '';
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
+            document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
             document.getElementById('detailUsage').textContent = agent.usage_count || 0;
             document.getElementById('detailDescription').textContent = agent.description || 'No description provided.';
 

@@ -30,6 +30,8 @@ const skillsRoutes = require('./routes/skills');
 const briefingRoutes = require('./routes/briefing');
 const promptsRoutes = require('./routes/prompts');
 const align120Routes = require('./routes/align120');
+const strategy120Routes = require('./routes/strategy120');
+const authRoutes = require('./routes/auth');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -238,7 +240,10 @@ function initializeServices() {
         app.use('/api/briefing', briefingRoutes(supabase));
         app.use('/api/prompts', promptsRoutes(supabase));
         app.use('/api/align120', align120Routes(supabase));
+        app.use('/api/strategy120', strategy120Routes(supabase));
+        app.use('/api/auth', authRoutes(supabase));
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Auth routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
         console.log('  ✅ S2E (Strategy-to-Execution) routes registered');
@@ -247,6 +252,7 @@ function initializeServices() {
         console.log('  ✅ Briefing routes registered');
         console.log('  ✅ Prompts (Transformer) routes registered');
         console.log('  ✅ Align 120 routes registered');
+        console.log('  ✅ Strategy 120 routes registered');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()
@@ -377,6 +383,16 @@ app.get('/align120', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/align120.html'));
 });
 
+// Strategy 120 page (Phase 8)
+app.get('/strategy120', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/strategy120.html'));
+});
+
+// Login page
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
 // ============================================
 // ERROR HANDLERS (registered after services init)
 // ============================================
@@ -439,6 +455,7 @@ function startServer() {
         console.log(`🏛️  Parthenon: http://localhost:${PORT}/parthenon`);
         console.log(`⚡ Actions: http://localhost:${PORT}/actions`);
         console.log(`🧭 Align 120: http://localhost:${PORT}/align120`);
+        console.log(`📊 Strategy 120: http://localhost:${PORT}/strategy120`);
         console.log(`🤖 Agents API: http://localhost:${PORT}/api/agents`);
         console.log('\n========================================\n');
     });

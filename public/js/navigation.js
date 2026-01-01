@@ -17,6 +17,7 @@ const navItems = [
     { href: '/company-dashboard.html', icon: 'building', label: 'Company' },
     { href: '/align120.html', icon: 'compass', label: 'Align 120' },
     { href: '/strategy.html', icon: 'target', label: 'Strategy (S2E)' },
+    { href: '/strategy120.html', icon: 'brain', label: 'Strategy 120' },
     { href: '/strategy-governance.html', icon: 'shield-check', label: 'Governance' },
     { href: '/chat.html', icon: 'message-square', label: 'Multi-LLM Chat' },
     { href: '/context.html', icon: 'database', label: 'Context Assets' },
@@ -26,7 +27,8 @@ const navItems = [
     { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
     { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' },
     { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
-    { href: '/integrity.html', icon: 'activity', label: 'Integrity' }
+    { href: '/integrity.html', icon: 'activity', label: 'Integrity' },
+    { href: '/admin.html', icon: 'users', label: 'User Management', adminOnly: true }
 ];
 
 /**
@@ -57,20 +59,39 @@ function getActivePath() {
 }
 
 /**
+ * Get current user role from localStorage
+ */
+function getCurrentUserRole() {
+    try {
+        const userData = localStorage.getItem('insight360_user');
+        if (userData) {
+            const user = JSON.parse(userData);
+            return user.role || 'user';
+        }
+    } catch (e) {
+        console.warn('Could not parse user data');
+    }
+    return 'user';
+}
+
+/**
  * Generate navigation HTML
  */
 function generateNavHTML() {
     const activePath = getActivePath();
+    const userRole = getCurrentUserRole();
 
-    return navItems.map(item => {
-        const isActive = item.href === activePath;
-        return `
-            <a href="${item.href}" class="nav-item${isActive ? ' active' : ''}">
-                <i data-lucide="${item.icon}"></i>
-                <span>${item.label}</span>
-            </a>
-        `;
-    }).join('');
+    return navItems
+        .filter(item => !item.adminOnly || userRole === 'admin')
+        .map(item => {
+            const isActive = item.href === activePath;
+            return `
+                <a href="${item.href}" class="nav-item${isActive ? ' active' : ''}">
+                    <i data-lucide="${item.icon}"></i>
+                    <span>${item.label}</span>
+                </a>
+            `;
+        }).join('');
 }
 
 /**

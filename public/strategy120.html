@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy 120 - AI-Powered Strategic Planning | Insight 360</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/loading-spinner.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Strategy 120 Page Styles */
+        .strategy120-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .strategy120-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow: visible;
+            }
+        }
+
+        /* Left Panel - Agent Categories */
+        .agent-sidebar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-header .icon-wrapper {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .sidebar-header p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .category-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .category-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+
+        .category-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .category-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .category-item .cat-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .category-item .cat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .category-item .cat-count {
+            background: var(--bg-primary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .category-item.active .cat-count {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Main Content Area */
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0 0 1rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .panel-tab {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .panel-tab:hover {
+            border-color: var(--primary);
+        }
+
+        .panel-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Agents Grid */
+        .agents-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .agent-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .agent-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .agent-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .agent-meta {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .agent-badges {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .agent-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .agent-badge.opus { background: #fef3c7; color: #92400e; }
+        .agent-badge.sonnet { background: #dbeafe; color: #1e40af; }
+        .agent-badge.haiku { background: #dcfce7; color: #166534; }
+
+        .agent-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .agent-actions button {
+            flex: 1;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+
+        /* Initiatives Tab */
+        .initiatives-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .initiatives-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .initiative-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .initiative-priority {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .initiative-priority.high { background: #fef2f2; color: #dc2626; }
+        .initiative-priority.medium { background: #fefce8; color: #ca8a04; }
+        .initiative-priority.low { background: #f0fdf4; color: #16a34a; }
+
+        .initiative-info {
+            flex: 1;
+        }
+
+        .initiative-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .initiative-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .initiative-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .initiative-status.ideation { background: #f3f4f6; color: #6b7280; }
+        .initiative-status.planning { background: #dbeafe; color: #1e40af; }
+        .initiative-status.in_progress { background: #fef3c7; color: #92400e; }
+        .initiative-status.completed { background: #dcfce7; color: #166534; }
+
+        /* Decisions Tab */
+        .decision-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .decision-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .decision-title {
+            font-weight: 600;
+        }
+
+        .decision-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .decision-rationale {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        /* Intelligence Tab */
+        .intel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .intel-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .intel-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .intel-type.market { background: #dbeafe; color: #1e40af; }
+        .intel-type.competitive { background: #fce7f3; color: #be185d; }
+        .intel-type.technology { background: #f3e8ff; color: #7c3aed; }
+        .intel-type.regulatory { background: #fef3c7; color: #92400e; }
+
+        .intel-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .intel-summary {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .intel-relevance {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .relevance-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .relevance-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        /* Chat Modal */
+        .chat-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .chat-modal.active {
+            display: flex;
+        }
+
+        .chat-container {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-agent-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chat-agent-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .chat-close:hover {
+            color: var(--text-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .message.assistant {
+            background: var(--bg-secondary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.loading {
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            font-size: 0.9rem;
+        }
+
+        .chat-input-area input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .chat-input-area button {
+            padding: 0.75rem 1.25rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Strategy 120</h1>
+                    <p class="header-subtitle">AI-Powered Strategic Planning & Execution</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="location.href='/strategy.html'">
+                        <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                        Back to S2E
+                    </button>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <div class="theme-toggle-wrapper">
+                        <label class="theme-toggle" title="Toggle dark/light mode">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="toggle-slider">
+                                <i data-lucide="sun" class="toggle-icon sun"></i>
+                                <i data-lucide="moon" class="toggle-icon moon"></i>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <div class="strategy120-layout">
+                <!-- Agent Categories Sidebar -->
+                <div class="agent-sidebar">
+                    <div class="sidebar-header">
+                        <div class="icon-wrapper">
+                            <i data-lucide="brain" style="width:22px;height:22px;"></i>
+                        </div>
+                        <div>
+                            <h2>AI Agents</h2>
+                            <p><span id="totalAgentCount">0</span> strategy agents</p>
+                        </div>
+                    </div>
+                    <div class="category-list" id="categoryList">
+                        <!-- Categories populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Main Panel -->
+                <div class="main-panel">
+                    <div class="panel-tabs">
+                        <div class="panel-tab active" data-tab="agents" onclick="switchTab('agents')">
+                            <i data-lucide="bot" style="width:16px;height:16px;"></i>
+                            Agents
+                        </div>
+                        <div class="panel-tab" data-tab="initiatives" onclick="switchTab('initiatives')">
+                            <i data-lucide="rocket" style="width:16px;height:16px;"></i>
+                            Initiatives
+                        </div>
+                        <div class="panel-tab" data-tab="decisions" onclick="switchTab('decisions')">
+                            <i data-lucide="scale" style="width:16px;height:16px;"></i>
+                            Decisions
+                        </div>
+                        <div class="panel-tab" data-tab="intelligence" onclick="switchTab('intelligence')">
+                            <i data-lucide="radar" style="width:16px;height:16px;"></i>
+                            Intelligence
+                        </div>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Agents Tab -->
+                        <div class="tab-pane active" id="agentsTab">
+                            <div class="agents-container" id="agentsContainer">
+                                <!-- Agents populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Initiatives Tab -->
+                        <div class="tab-pane" id="initiativesTab">
+                            <div class="initiatives-header">
+                                <h3>Strategic Initiatives</h3>
+                                <button class="btn-primary" onclick="showCreateInitiativeModal()">
+                                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                    New Initiative
+                                </button>
+                            </div>
+                            <div class="initiatives-list" id="initiativesList">
+                                <!-- Initiatives populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Decisions Tab -->
+                        <div class="tab-pane" id="decisionsTab">
+                            <div class="initiatives-header">
+                                <h3>Decision Log</h3>
+                                <button class="btn-primary" onclick="showCreateDecisionModal()">
+                                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                    Log Decision
+                                </button>
+                            </div>
+                            <div id="decisionsList">
+                                <!-- Decisions populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Intelligence Tab -->
+                        <div class="tab-pane" id="intelligenceTab">
+                            <div class="initiatives-header">
+                                <h3>Intelligence Briefs</h3>
+                                <button class="btn-primary" onclick="showCreateIntelModal()">
+                                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                    New Brief
+                                </button>
+                            </div>
+                            <div class="intel-grid" id="intelligenceGrid">
+                                <!-- Intel briefs populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="chat-modal" id="chatModal">
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <div class="chat-agent-icon" id="chatAgentIcon">
+                        <i data-lucide="bot" style="width:22px;height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;" id="chatAgentName">Agent</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);" id="chatAgentCategory">Category</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="closeChatModal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages populated dynamically -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Ask a question..." onkeypress="handleChatKeypress(event)">
+                <button class="btn-primary" onclick="sendMessage()">
+                    <i data-lucide="send" style="width:16px;height:16px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/supabase.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script src="/js/theme-toggle.js"></script>
+
+    <script>
+        // State
+        let agents = [];
+        let selectedCategory = 'all';
+        let currentAgent = null;
+        let initiatives = [];
+        let decisions = [];
+        let intelligence = [];
+        let foundation = null;
+        let themes = [];
+        let perspectives = [];
+        let okrs = [];
+
+        // Category configuration
+        const categories = {
+            'all': { label: 'All Agents', icon: 'layers', color: '#6366f1' },
+            'orchestration': { label: 'Orchestration', icon: 'compass', color: '#6366f1' },
+            'platform': { label: 'Platform', icon: 'server', color: '#8b5cf6' },
+            'planning': { label: 'Planning', icon: 'map', color: '#0ea5e9' },
+            'financial_perspective': { label: 'Financial', icon: 'dollar-sign', color: '#10b981' },
+            'customer_perspective': { label: 'Customer', icon: 'users', color: '#3b82f6' },
+            'process_perspective': { label: 'Process', icon: 'settings', color: '#f59e0b' },
+            'learning_perspective': { label: 'Learning & Growth', icon: 'graduation-cap', color: '#8b5cf6' },
+            'investment': { label: 'Investment', icon: 'trending-up', color: '#14b8a6' },
+            'intelligence': { label: 'Intelligence', icon: 'radar', color: '#f97316' },
+            'decision_support': { label: 'Decision Support', icon: 'scale', color: '#ec4899' },
+            'governance': { label: 'Governance', icon: 'shield', color: '#6366f1' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadAllData();
+        });
+
+        // Load all data
+        async function loadAllData() {
+            try {
+                // Load agents
+                const agentsRes = await fetch('/api/agents?suite=strategy');
+                const agentsData = await agentsRes.json();
+                if (agentsData.success) {
+                    agents = agentsData.data || [];
+                    document.getElementById('totalAgentCount').textContent = agents.length;
+                    renderCategories();
+                    renderAgents();
+                }
+
+                // Load strategy foundation
+                const foundationRes = await fetch('/api/s2e/foundations/current');
+                const foundationData = await foundationRes.json();
+                if (foundationData.success && foundationData.data) {
+                    foundation = foundationData.data;
+                    themes = foundation.themes || [];
+                    perspectives = foundation.perspectives || [];
+                }
+
+                // Load OKRs
+                const okrsRes = await fetch('/api/parthenon/okrs');
+                const okrsData = await okrsRes.json();
+                if (okrsData.success) {
+                    okrs = okrsData.data || [];
+                }
+
+                // Load initiatives
+                const initRes = await fetch('/api/strategy120/initiatives');
+                const initData = await initRes.json();
+                if (initData.success) {
+                    initiatives = initData.data || [];
+                    renderInitiatives();
+                }
+
+                // Load decisions
+                const decRes = await fetch('/api/strategy120/decisions');
+                const decData = await decRes.json();
+                if (decData.success) {
+                    decisions = decData.data || [];
+                    renderDecisions();
+                }
+
+                // Load intelligence
+                const intelRes = await fetch('/api/strategy120/intelligence');
+                const intelData = await intelRes.json();
+                if (intelData.success) {
+                    intelligence = intelData.data || [];
+                    renderIntelligence();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Render category list
+        function renderCategories() {
+            const container = document.getElementById('categoryList');
+            const agentCategories = [...new Set(agents.map(a => a.category))];
+
+            let html = '';
+
+            // All category
+            html += `
+                <div class="category-item ${selectedCategory === 'all' ? 'active' : ''}" onclick="selectCategory('all')">
+                    <div class="cat-info">
+                        <div class="cat-icon" style="background: ${categories.all.color}20; color: ${categories.all.color}">
+                            <i data-lucide="${categories.all.icon}" style="width:18px;height:18px;"></i>
+                        </div>
+                        <span>${categories.all.label}</span>
+                    </div>
+                    <span class="cat-count">${agents.length}</span>
+                </div>
+            `;
+
+            // Other categories
+            agentCategories.sort().forEach(cat => {
+                const config = categories[cat] || { label: cat, icon: 'folder', color: '#6b7280' };
+                const count = agents.filter(a => a.category === cat).length;
+
+                html += `
+                    <div class="category-item ${selectedCategory === cat ? 'active' : ''}" onclick="selectCategory('${cat}')">
+                        <div class="cat-info">
+                            <div class="cat-icon" style="background: ${config.color}20; color: ${config.color}">
+                                <i data-lucide="${config.icon}" style="width:18px;height:18px;"></i>
+                            </div>
+                            <span>${config.label}</span>
+                        </div>
+                        <span class="cat-count">${count}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Select category
+        function selectCategory(category) {
+            selectedCategory = category;
+            renderCategories();
+            renderAgents();
+        }
+
+        // Render agents grid
+        function renderAgents() {
+            const container = document.getElementById('agentsContainer');
+            let filtered = agents;
+
+            if (selectedCategory !== 'all') {
+                filtered = agents.filter(a => a.category === selectedCategory);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="bot" style="width:48px;height:48px;"></i>
+                        <p>No agents found in this category.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = filtered.map(agent => {
+                const config = categories[agent.category] || { color: '#6b7280' };
+                const modelClass = agent.llm_model?.includes('opus') ? 'opus' :
+                                   agent.llm_model?.includes('sonnet') ? 'sonnet' : 'haiku';
+                const modelLabel = modelClass.charAt(0).toUpperCase() + modelClass.slice(1);
+
+                return `
+                    <div class="agent-card">
+                        <div class="agent-card-header">
+                            <div class="agent-icon" style="background: ${config.color}20; color: ${config.color}">
+                                <i data-lucide="${agent.icon || 'bot'}" style="width:22px;height:22px;"></i>
+                            </div>
+                            <div class="agent-meta">
+                                <div class="agent-name">${agent.name}</div>
+                                <div class="agent-badges">
+                                    <span class="agent-badge ${modelClass}">${modelLabel}</span>
+                                    <span class="agent-badge">T: ${agent.temperature || 0.5}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="agent-desc">${agent.description || 'AI-powered strategy agent'}</div>
+                        <div class="agent-actions">
+                            <button class="btn-primary" onclick="openChat('${agent.id}')">
+                                <i data-lucide="message-circle" style="width:14px;height:14px;"></i>
+                                Chat
+                            </button>
+                            <button class="btn-secondary" onclick="viewAgentDetails('${agent.id}')">
+                                <i data-lucide="info" style="width:14px;height:14px;"></i>
+                                Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render initiatives
+        function renderInitiatives() {
+            const container = document.getElementById('initiativesList');
+
+            if (initiatives.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="rocket" style="width:48px;height:48px;"></i>
+                        <p>No initiatives yet. Create your first strategic initiative.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = initiatives.map(init => {
+                const priorityClass = init.priority >= 80 ? 'high' : init.priority >= 50 ? 'medium' : 'low';
+                const statusClass = init.status.replace('_', '-');
+
+                return `
+                    <div class="initiative-card">
+                        <div class="initiative-priority ${priorityClass}">${init.priority}</div>
+                        <div class="initiative-info">
+                            <div class="initiative-name">${init.name}</div>
+                            <div class="initiative-meta">
+                                <span>${init.perspective_type || 'General'}</span>
+                                <span>${init.ai_investment_type || 'Not specified'}</span>
+                            </div>
+                        </div>
+                        <div class="initiative-status ${statusClass}">${init.status.replace('_', ' ')}</div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render decisions
+        function renderDecisions() {
+            const container = document.getElementById('decisionsList');
+
+            if (decisions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="scale" style="width:48px;height:48px;"></i>
+                        <p>No decisions logged yet.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = decisions.map(dec => `
+                <div class="decision-card">
+                    <div class="decision-header">
+                        <div class="decision-title">${dec.title}</div>
+                        <div class="decision-date">${new Date(dec.decision_date).toLocaleDateString()}</div>
+                    </div>
+                    ${dec.decision_rationale ? `<div class="decision-rationale">${dec.decision_rationale}</div>` : ''}
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Status: ${dec.decision_status} | Category: ${dec.decision_category || 'General'}
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render intelligence
+        function renderIntelligence() {
+            const container = document.getElementById('intelligenceGrid');
+
+            if (intelligence.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <i data-lucide="radar" style="width:48px;height:48px;"></i>
+                        <p>No intelligence briefs yet.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = intelligence.map(intel => `
+                <div class="intel-card">
+                    <div class="intel-type ${intel.brief_type}">${intel.brief_type}</div>
+                    <div class="intel-title">${intel.title}</div>
+                    <div class="intel-summary">${intel.summary}</div>
+                    <div class="intel-relevance">
+                        <span>Relevance:</span>
+                        <div class="relevance-bar">
+                            <div class="relevance-fill" style="width: ${intel.relevance_score || 50}%"></div>
+                        </div>
+                        <span>${intel.relevance_score || 50}%</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Switch tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`${tabId}Tab`).classList.add('active');
+        }
+
+        // Open chat modal
+        function openChat(agentId) {
+            currentAgent = agents.find(a => a.id === agentId);
+            if (!currentAgent) return;
+
+            const config = categories[currentAgent.category] || { color: '#6b7280' };
+
+            document.getElementById('chatAgentName').textContent = currentAgent.name;
+            document.getElementById('chatAgentCategory').textContent = categories[currentAgent.category]?.label || currentAgent.category;
+            document.getElementById('chatAgentIcon').style.background = `${config.color}20`;
+            document.getElementById('chatAgentIcon').style.color = config.color;
+
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message assistant">
+                    Hello! I'm ${currentAgent.name}. ${currentAgent.description || 'How can I help with your strategic planning?'}
+                </div>
+            `;
+
+            document.getElementById('chatInput').value = '';
+            document.getElementById('chatModal').classList.add('active');
+
+            setTimeout(() => {
+                document.getElementById('chatInput').focus();
+            }, 100);
+
+            lucide.createIcons();
+        }
+
+        // Close chat modal
+        function closeChatModal() {
+            document.getElementById('chatModal').classList.remove('active');
+            currentAgent = null;
+        }
+
+        // Handle chat keypress
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message || !currentAgent) return;
+
+            const container = document.getElementById('chatMessages');
+
+            // Add user message
+            container.innerHTML += `<div class="message user">${escapeHtml(message)}</div>`;
+            input.value = '';
+
+            // Add typing indicator
+            container.innerHTML += `
+                <div class="message assistant" id="loadingMsg">
+                    <div class="typing-indicator">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>`;
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const context = buildContext();
+
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        agent_id: currentAgent.id,
+                        context: context,
+                        stream: false
+                    })
+                });
+
+                const data = await res.json();
+                document.getElementById('loadingMsg')?.remove();
+
+                if (data.success && data.response) {
+                    container.innerHTML += `<div class="message assistant">${formatResponse(data.response)}</div>`;
+                } else {
+                    container.innerHTML += `<div class="message assistant">Sorry, I encountered an error. Please try again.</div>`;
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                document.getElementById('loadingMsg')?.remove();
+                container.innerHTML += `<div class="message assistant">Connection error. Please try again.</div>`;
+            }
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Build context
+        function buildContext() {
+            let ctx = '';
+
+            if (foundation) {
+                ctx += `## Strategic Foundation\n`;
+                ctx += `- Vision: ${foundation.vision || 'Not set'}\n`;
+                ctx += `- Mission: ${foundation.mission || 'Not set'}\n\n`;
+            }
+
+            if (themes.length > 0) {
+                ctx += `## Strategic Themes\n`;
+                themes.forEach(t => ctx += `- ${t.name}\n`);
+                ctx += '\n';
+            }
+
+            if (initiatives.length > 0) {
+                ctx += `## Active Initiatives (${initiatives.length})\n`;
+                initiatives.slice(0, 5).forEach(i => ctx += `- ${i.name} (${i.status})\n`);
+                ctx += '\n';
+            }
+
+            return ctx;
+        }
+
+        // View agent details
+        function viewAgentDetails(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (!agent) return;
+            alert(`${agent.name}\n\nModel: ${agent.llm_model}\nTemperature: ${agent.temperature}\n\n${agent.description}`);
+        }
+
+        // Placeholder functions for create modals
+        function showCreateInitiativeModal() {
+            alert('Create Initiative modal - Coming soon!\n\nUse the Business Case Builder agent to help structure your initiative.');
+        }
+
+        function showCreateDecisionModal() {
+            alert('Log Decision modal - Coming soon!\n\nUse the Decision Framer agent to help structure your decision.');
+        }
+
+        function showCreateIntelModal() {
+            alert('Create Intelligence Brief modal - Coming soon!\n\nUse the Market Intelligence Scout agent to gather insights.');
+        }
+
+        // Utilities
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatResponse(text) {
+            let formatted = escapeHtml(text);
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/\n/g, '<br>');
+            return formatted;
+        }
+    </script>
+</body>
+</html>
