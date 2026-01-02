@@ -82,10 +82,17 @@
             background: var(--bg-tertiary);
         }
 
+        .panel-header-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
         .panel-header h2 {
             font-family: 'Orbitron', sans-serif;
             font-size: 1rem;
-            margin: 0 0 0.75rem 0;
+            margin: 0;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -1153,12 +1160,17 @@
                 <!-- Left Panel - Asset List -->
                 <div class="asset-list-panel">
                     <div class="panel-header">
-                        <h2>
-                            <i data-lucide="database"></i>
-                            Context Assets
-                            <span id="assetCount" class="count">0</span>
-                        </h2>
-                        
+                        <div class="panel-header-title-row">
+                            <h2>
+                                <i data-lucide="database"></i>
+                                Context Assets
+                                <span id="assetCount" class="count">0</span>
+                            </h2>
+                            <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                                <i data-lucide="help-circle"></i>
+                            </button>
+                        </div>
+
                         <div class="filter-row">
                             <select id="typeFilter">
                                 <option value="">All Types</option>
@@ -1179,9 +1191,6 @@
                             <input type="file" id="importInput" accept=".json" class="hidden">
                             <button id="exportBtn" class="btn-secondary btn-icon-only" title="Export all assets">
                                 <i data-lucide="download"></i>
-                            </button>
-                            <button class="help-btn" onclick="HelpModal.open()" title="Help">
-                                <i data-lucide="help-circle"></i>
                             </button>
                         </div>
                     </div>

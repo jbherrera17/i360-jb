@@ -30,7 +30,9 @@ const ALLOWED_DOCS = [
     'governance-user-guide.md',
     'integrity-user-guide.md',
     'company-user-guide.md',
-    'align120-user-guide.md'
+    'align120-user-guide.md',
+    'strategy120-user-guide.md',
+    'how-to-use-insight-360.md'
 ];
 
 /**

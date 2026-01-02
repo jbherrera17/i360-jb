@@ -42,6 +42,35 @@
     </div>
 </header>
             <div class="dashboard-grid">
+                <!-- Getting Started -->
+                <div class="dashboard-card getting-started-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); border: 1px solid var(--primary);">
+                    <div class="card-header">
+                        <h2><i data-lucide="rocket" class="card-icon"></i> Getting Started</h2>
+                        <a href="/guides" class="view-all-link">View All Guides</a>
+                    </div>
+                    <div class="card-content">
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">New to Insight 360? Learn how to build powerful AI workflows with Context Assets, Skills, and Agents.</p>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button class="btn-primary" onclick="HelpModal.open('/api/docs/how-to-use-insight-360.md')" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="book-open" style="width: 16px; height: 16px;"></i>
+                                How To Use Insight 360
+                            </button>
+                            <a href="/context" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                                <i data-lucide="database" style="width: 16px; height: 16px;"></i>
+                                Create Context Assets
+                            </a>
+                            <a href="/skills" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                                <i data-lucide="wand-2" style="width: 16px; height: 16px;"></i>
+                                Build Skills
+                            </a>
+                            <a href="/agents.html" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                                <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+                                Configure Agents
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- System Status -->
                 <div class="dashboard-card status-card">
                     <div class="card-header">

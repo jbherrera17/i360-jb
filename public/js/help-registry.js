@@ -70,6 +70,10 @@ const HelpRegistry = {
         '/align120': {
             file: '/api/docs/align120-user-guide.md',
             title: 'Align 120 Help'
+        },
+        '/strategy120': {
+            file: '/api/docs/strategy120-user-guide.md',
+            title: 'Strategy 120 Help'
         }
     },
 

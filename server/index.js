@@ -388,6 +388,11 @@ app.get('/strategy120', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/strategy120.html'));
 });
 
+// Guides page (documentation hub)
+app.get('/guides', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/guides.html'));
+});
+
 // Login page
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/login.html'));

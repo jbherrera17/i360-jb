@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strategy 120 - AI-Powered Strategic Planning | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/loading-spinner.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Strategy 120 Page Styles */
@@ -427,11 +432,11 @@
         .chat-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 9999;
             padding: 1rem;
         }
 
@@ -440,7 +445,9 @@
         }
 
         .chat-container {
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             border-radius: 16px;
             width: 100%;
             max-width: 700px;
@@ -582,9 +589,9 @@
                     <div class="theme-toggle-wrapper">
                         <label class="theme-toggle" title="Toggle dark/light mode">
                             <input type="checkbox" id="themeToggle">
-                            <span class="toggle-slider">
-                                <i data-lucide="sun" class="toggle-icon sun"></i>
-                                <i data-lucide="moon" class="toggle-icon moon"></i>
+                            <span class="theme-toggle-slider">
+                                <span class="theme-toggle-icon moon">&#127769;</span>
+                                <span class="theme-toggle-icon sun">&#9728;</span>
                             </span>
                         </label>
                     </div>
@@ -684,6 +691,29 @@
         </main>
     </div>
 
+    <!-- Agent Details Modal -->
+    <div class="chat-modal" id="detailsModal">
+        <div class="chat-container" style="max-width:500px;">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <div class="chat-agent-icon" id="detailsAgentIcon">
+                        <i data-lucide="bot" style="width:22px;height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;" id="detailsAgentName">Agent</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);" id="detailsAgentCategory">Category</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="closeDetailsModal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div style="padding:1.25rem;" id="detailsContent">
+                <!-- Details populated dynamically -->
+            </div>
+        </div>
+    </div>
+
     <!-- Chat Modal -->
     <div class="chat-modal" id="chatModal">
         <div class="chat-container">
@@ -718,7 +748,6 @@
     <script src="/js/navigation.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
-    <script src="/js/theme-toggle.js"></script>
 
     <script>
         // State
@@ -752,6 +781,21 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Initialize theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                const currentTheme = localStorage.getItem('insight360-theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                themeToggle.checked = currentTheme === 'light';
+
+                themeToggle.addEventListener('change', function() {
+                    const newTheme = this.checked ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('insight360-theme', newTheme);
+                });
+            }
+
             await loadAllData();
         });
 
@@ -1155,7 +1199,56 @@
         function viewAgentDetails(agentId) {
             const agent = agents.find(a => a.id === agentId);
             if (!agent) return;
-            alert(`${agent.name}\n\nModel: ${agent.llm_model}\nTemperature: ${agent.temperature}\n\n${agent.description}`);
+
+            const config = categories[agent.category] || { color: '#6b7280', label: agent.category };
+            const modelClass = agent.llm_model?.includes('opus') ? 'opus' :
+                               agent.llm_model?.includes('sonnet') ? 'sonnet' : 'haiku';
+            const modelLabel = modelClass.charAt(0).toUpperCase() + modelClass.slice(1);
+
+            document.getElementById('detailsAgentName').textContent = agent.name;
+            document.getElementById('detailsAgentCategory').textContent = config.label || agent.category;
+            document.getElementById('detailsAgentIcon').style.background = `${config.color}20`;
+            document.getElementById('detailsAgentIcon').style.color = config.color;
+
+            document.getElementById('detailsContent').innerHTML = `
+                <div style="margin-bottom:1rem;">
+                    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Description</div>
+                    <div style="line-height:1.5;">${agent.description || 'AI-powered strategy agent'}</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                    <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;">
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Model</div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span class="agent-badge ${modelClass}">${modelLabel}</span>
+                            <span style="font-size:0.85rem;">${agent.llm_model || 'Default'}</span>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;">
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Temperature</div>
+                        <div style="font-size:1.1rem;font-weight:600;">${agent.temperature || 0.5}</div>
+                    </div>
+                </div>
+                ${agent.system_prompt ? `
+                <div style="margin-bottom:1rem;">
+                    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">System Prompt</div>
+                    <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;font-size:0.85rem;max-height:150px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(agent.system_prompt.substring(0, 500))}${agent.system_prompt.length > 500 ? '...' : ''}</div>
+                </div>
+                ` : ''}
+                <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                    <button class="btn-primary" style="flex:1;" onclick="closeDetailsModal(); openChat('${agent.id}');">
+                        <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+                        Start Chat
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('detailsModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        // Close details modal
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.remove('active');
         }
 
         // Placeholder functions for create modals
