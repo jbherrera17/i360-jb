@@ -322,14 +322,6 @@ try {
     // Conversations handled by chat routes
 }
 
-// Briefing routes (Phase 4 - placeholder)
-try {
-    const briefingRoutes = require('./routes/briefing');
-    app.use('/api/briefing', briefingRoutes);
-} catch (error) {
-    // Briefings not yet implemented
-}
-
 // ============================================
 // FRONTEND ROUTES
 // ============================================

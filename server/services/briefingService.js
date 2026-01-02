@@ -65,7 +65,7 @@ async function getConfigWithSections(userId) {
         .from('briefing_sections')
         .select(`
             *,
-            agent:agents(id, name, display_name, icon)
+            agent:agents(id, name, icon)
         `)
         .eq('config_id', config.id)
         .order('sort_order', { ascending: true });
@@ -154,7 +154,7 @@ async function addSection(userId, sectionData) {
         })
         .select(`
             *,
-            agent:agents(id, name, display_name, icon)
+            agent:agents(id, name, icon)
         `)
         .single();
 
@@ -196,7 +196,7 @@ async function updateSection(userId, sectionId, updates) {
         .eq('config_id', config.id)
         .select(`
             *,
-            agent:agents(id, name, display_name, icon)
+            agent:agents(id, name, icon)
         `)
         .single();
 

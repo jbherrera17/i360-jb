@@ -93,33 +93,7 @@ module.exports = function(supabase) {
         }
     });
 
-    /**
-     * GET /api/briefing/:id
-     * Get a specific briefing by ID
-     */
-    router.get('/:id', async (req, res) => {
-        try {
-            const userId = getUser(req);
-            const { id } = req.params;
-
-            const briefing = await briefingService.getBriefingById(userId, id);
-
-            if (!briefing) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Briefing not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                data: briefing
-            });
-        } catch (error) {
-            console.error('Error fetching briefing:', error);
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
+    // NOTE: /:id route moved to end of file to avoid matching specific routes like /config
 
     // ============================================================================
     // CONFIGURATION ENDPOINTS
@@ -453,9 +427,9 @@ module.exports = function(supabase) {
         try {
             const { data: agents, error } = await supabase
                 .from('agents')
-                .select('id, name, display_name, description, icon, suite, type')
+                .select('id, name, description, icon, suite, type')
                 .eq('is_active', true)
-                .order('display_name');
+                .order('name');
 
             if (error) throw error;
 
@@ -465,6 +439,38 @@ module.exports = function(supabase) {
             });
         } catch (error) {
             console.error('Error fetching agents:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // DYNAMIC ID ROUTE (must be last to avoid matching specific routes)
+    // ============================================================================
+
+    /**
+     * GET /api/briefing/:id
+     * Get a specific briefing by ID
+     */
+    router.get('/:id', async (req, res) => {
+        try {
+            const userId = getUser(req);
+            const { id } = req.params;
+
+            const briefing = await briefingService.getBriefingById(userId, id);
+
+            if (!briefing) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Briefing not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: briefing
+            });
+        } catch (error) {
+            console.error('Error fetching briefing:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });

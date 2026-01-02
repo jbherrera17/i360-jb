@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/theme-toggle.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* Briefing Layout */
         .briefing-layout {
@@ -210,6 +211,112 @@
 
         .section-content p:last-child {
             margin-bottom: 0;
+        }
+
+        /* Markdown Content Styling */
+        .section-content h1,
+        .section-content h2,
+        .section-content h3,
+        .section-content h4 {
+            margin: 1.5rem 0 0.75rem 0;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .section-content h1:first-child,
+        .section-content h2:first-child,
+        .section-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .section-content h2 { font-size: 1.25rem; }
+        .section-content h3 { font-size: 1.1rem; }
+        .section-content h4 { font-size: 1rem; }
+
+        .section-content ul,
+        .section-content ol {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .section-content li {
+            margin: 0.4rem 0;
+        }
+
+        .section-content li::marker {
+            color: var(--accent);
+        }
+
+        .section-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .section-content em {
+            color: var(--text-secondary);
+        }
+
+        .section-content code {
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+
+        .section-content pre {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .section-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .section-content blockquote {
+            border-left: 3px solid var(--accent);
+            margin: 1rem 0;
+            padding: 0.5rem 0 0.5rem 1rem;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .section-content a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .section-content a:hover {
+            text-decoration: underline;
+        }
+
+        .section-content hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1.5rem 0;
+        }
+
+        .section-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .section-content th,
+        .section-content td {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .section-content th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
         }
 
         /* Empty State */
@@ -1179,11 +1286,8 @@
 
         function formatContent(content) {
             if (!content) return '<p><em>No content</em></p>';
-            // Basic markdown-like formatting
-            return content
-                .split('\n\n')
-                .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-                .join('');
+            // Render markdown to HTML
+            return marked.parse(content);
         }
 
         // Generate briefing

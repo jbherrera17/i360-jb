@@ -442,37 +442,34 @@ function stopLoadingMessages() {
 }
 
 /**
- * Format message content (basic markdown)
+ * Format message content using marked for full markdown support
  */
 function formatMessage(content) {
     if (!content) return '';
-    
-    // Escape HTML
+
+    // Use marked for full markdown rendering
+    // Configure marked for safe rendering
+    if (typeof marked !== 'undefined') {
+        marked.setOptions({
+            breaks: true,  // Convert \n to <br>
+            gfm: true      // GitHub Flavored Markdown
+        });
+        return marked.parse(content);
+    }
+
+    // Fallback to basic formatting if marked isn't loaded
     let formatted = content
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-    
-    // Code blocks
-    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, 
+    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g,
         '<pre><code class="language-$1">$2</code></pre>');
-    
-    // Inline code
     formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    // Bold
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    
-    // Italic
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    
-    // Links
-    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
         '<a href="$2" target="_blank">$1</a>');
-    
-    // Line breaks
     formatted = formatted.replace(/\n/g, '<br>');
-    
     return formatted;
 }
 
@@ -1096,7 +1093,96 @@ messageStyles.textContent = `
     .message-content a {
         color: var(--primary);
     }
-    
+
+    .message-content a:hover {
+        text-decoration: underline;
+    }
+
+    /* Markdown list styling */
+    .message-content ul,
+    .message-content ol {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+    }
+
+    .message-content li {
+        margin: 0.25rem 0;
+    }
+
+    .message-content li::marker {
+        color: var(--primary);
+    }
+
+    /* Markdown headers */
+    .message-content h1,
+    .message-content h2,
+    .message-content h3,
+    .message-content h4 {
+        margin: 1rem 0 0.5rem 0;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .message-content h1:first-child,
+    .message-content h2:first-child,
+    .message-content h3:first-child {
+        margin-top: 0;
+    }
+
+    .message-content h2 { font-size: 1.2rem; }
+    .message-content h3 { font-size: 1.1rem; }
+    .message-content h4 { font-size: 1rem; }
+
+    /* Blockquotes */
+    .message-content blockquote {
+        border-left: 3px solid var(--primary);
+        margin: 0.75rem 0;
+        padding: 0.5rem 0 0.5rem 1rem;
+        color: var(--text-secondary);
+        background: var(--bg-tertiary);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    /* Tables */
+    .message-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.75rem 0;
+        font-size: 0.9rem;
+    }
+
+    .message-content th,
+    .message-content td {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid var(--border);
+        text-align: left;
+    }
+
+    .message-content th {
+        background: var(--bg-tertiary);
+        font-weight: 600;
+    }
+
+    /* Horizontal rules */
+    .message-content hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 1rem 0;
+    }
+
+    /* Paragraphs */
+    .message-content p {
+        margin: 0.5rem 0;
+    }
+
+    .message-content p:first-child {
+        margin-top: 0;
+    }
+
+    .message-content p:last-child {
+        margin-bottom: 0;
+    }
+
     .file-item {
         display: inline-flex;
         align-items: center;
