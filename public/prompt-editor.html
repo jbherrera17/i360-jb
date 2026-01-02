@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
-    <script src="/js/theme-toggle.js"></script>
+    <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Page Layout */
@@ -530,9 +530,9 @@
             <div class="transformer-layout">
                 <!-- Page Header -->
                 <header class="page-header">
-                    <div>
-                        <h1><i data-lucide="file-code"></i> Prompt Transformer</h1>
-                        <p>Convert system prompts into Skills, Context Assets, or Agents</p>
+                    <div class="header-content">
+                        <h1>Prompt Transformer</h1>
+                        <p class="header-subtitle">Convert system prompts into Skills, Context Assets, or Agents</p>
                     </div>
                     <div class="header-actions">
                         <button class="help-btn" onclick="HelpModal.open()" title="Help">
@@ -542,15 +542,6 @@
                             <i data-lucide="history"></i>
                             History
                         </button>
-                        <div class="theme-toggle-wrapper">
-                            <label class="theme-toggle" title="Toggle dark/light mode">
-                                <input type="checkbox" id="themeToggle">
-                                <span class="theme-toggle-slider">
-                                    <span class="theme-toggle-icon moon">&#127769;</span>
-                                    <span class="theme-toggle-icon sun">&#9728;</span>
-                                </span>
-                            </label>
-                        </div>
                     </div>
                 </header>
 

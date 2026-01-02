@@ -1,7 +1,7 @@
 /**
  * Chat Routes - Insight 360
- * Multi-LLM chat endpoints (Claude + OpenAI)
- * Version: 2.2.0 - Added root POST endpoint for agent-based chat
+ * Multi-LLM chat endpoints (Claude + OpenAI + Perplexity)
+ * Version: 2.3.0 - Using centralized LLM registry
  */
 
 const express = require('express');
@@ -10,6 +10,8 @@ const router = express.Router();
 // Import LLM services
 const anthropic = require('../services/anthropic');
 const openai = require('../services/openai');
+const perplexity = require('../services/perplexity');
+const llmRegistry = require('../services/llmRegistry');
 
 // Initialize services with API keys
 if (process.env.ANTHROPIC_API_KEY) {
@@ -18,48 +20,12 @@ if (process.env.ANTHROPIC_API_KEY) {
 if (process.env.OPENAI_API_KEY && openai.initialize) {
     openai.initialize(process.env.OPENAI_API_KEY);
 }
-
-// Model configurations for frontend with capability flags
-const CLAUDE_MODELS = [
-    { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', tier: 'premium', vision: true, pdf: true },
-    { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', tier: 'default', vision: true, pdf: true },
-    { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', tier: 'fast', vision: true, pdf: true },
-    { id: 'claude-opus-4-1-20250805', name: 'Claude Opus 4.1', tier: 'premium', vision: true, pdf: true },
-    { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', tier: 'premium', vision: true, pdf: true },
-    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', tier: 'standard', vision: true, pdf: true }
-];
-
-const OPENAI_MODELS = [
-    // GPT-5.2 Family (Latest - December 2025)
-    { id: 'gpt-5.2', name: 'GPT-5.2 Thinking', tier: 'flagship', vision: true, reasoning: true, imageGen: true },
-    { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Instant', tier: 'flagship', vision: true, imageGen: true },
-    { id: 'gpt-5.2-pro', name: 'GPT-5.2 Pro', tier: 'premium', vision: true, reasoning: true, imageGen: true },
-    // GPT-4o Family
-    { id: 'gpt-4o', name: 'GPT-4o', tier: 'standard', vision: true, audio: true, imageGen: true },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', tier: 'efficient', vision: true, imageGen: true },
-    // O-Series Reasoning
-    { id: 'o1', name: 'o1', tier: 'reasoning', vision: true, reasoning: true },
-    { id: 'o1-mini', name: 'o1-mini', tier: 'reasoning', reasoning: true },
-    // Legacy
-    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', tier: 'legacy', vision: true, imageGen: true }
-];
-
-// Image generation models (separate from chat models)
-const IMAGE_MODELS = [
-    { id: 'gpt-image-1.5', name: 'GPT Image 1.5', tier: 'flagship', sizes: ['1024x1024', '1024x1792', '1792x1024'] },
-    { id: 'dall-e-3', name: 'DALL-E 3', tier: 'premium', sizes: ['1024x1024', '1024x1792', '1792x1024'] },
-    { id: 'dall-e-2', name: 'DALL-E 2', tier: 'standard', sizes: ['256x256', '512x512', '1024x1024'] }
-];
-
-/**
- * Determine provider from model ID
- */
-function getProvider(modelId) {
-    if (!modelId) return 'anthropic';
-    if (modelId.startsWith('claude')) return 'anthropic';
-    if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('dall-e')) return 'openai';
-    return 'anthropic'; // Default
+if (process.env.PERPLEXITY_API_KEY) {
+    perplexity.initialize(process.env.PERPLEXITY_API_KEY);
 }
+
+// Use centralized registry for provider detection
+const { getProvider } = llmRegistry;
 
 /**
  * Extract text and multimodal content from a message
@@ -125,25 +91,38 @@ function normalizeHistoryMessages(messages) {
  * Returns available models grouped by provider
  */
 router.get('/models', (_req, res) => {
-    const models = {
-        anthropic: CLAUDE_MODELS,
-        openai: OPENAI_MODELS
+    const apiKeys = {
+        anthropic: !!process.env.ANTHROPIC_API_KEY,
+        openai: !!process.env.OPENAI_API_KEY,
+        perplexity: !!process.env.PERPLEXITY_API_KEY
     };
 
-    // Filter out providers without API keys
-    const available = {};
-    if (process.env.ANTHROPIC_API_KEY) {
-        available.anthropic = models.anthropic;
-    }
-    if (process.env.OPENAI_API_KEY) {
-        available.openai = models.openai;
-        available.imageModels = IMAGE_MODELS;
-    }
+    const available = llmRegistry.getAvailableModels(apiKeys);
 
     res.json({
         success: true,
         models: available,
-        default: 'claude-sonnet-4-5-20250929'
+        default: llmRegistry.getDefaultModel('anthropic')
+    });
+});
+
+/**
+ * GET /api/chat/models/all
+ * Returns all chat models as a flat list (for agent configuration dropdowns)
+ */
+router.get('/models/all', (_req, res) => {
+    const apiKeys = {
+        anthropic: !!process.env.ANTHROPIC_API_KEY,
+        openai: !!process.env.OPENAI_API_KEY,
+        perplexity: !!process.env.PERPLEXITY_API_KEY
+    };
+
+    const models = llmRegistry.getAllChatModels(apiKeys);
+
+    res.json({
+        success: true,
+        models,
+        default: llmRegistry.getDefaultModel('anthropic')
     });
 });
 
@@ -218,6 +197,13 @@ router.post('/', async (req, res) => {
                 systemPrompt: fullSystemPrompt,
                 history: []
             });
+        } else if (provider === 'perplexity') {
+            response = await perplexity.chat({
+                message,
+                model: selectedModel,
+                systemPrompt: fullSystemPrompt,
+                history: []
+            });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
@@ -227,6 +213,7 @@ router.post('/', async (req, res) => {
             response: response.content,
             model: response.model,
             provider,
+            citations: response.citations || null,
             usage: response.usage
         });
 
@@ -283,6 +270,13 @@ router.post('/message', async (req, res) => {
                 history: normalizedHistory,
                 images: allMedia
             });
+        } else if (provider === 'perplexity') {
+            response = await perplexity.chat({
+                message: text,
+                model,
+                systemPrompt,
+                history: normalizedHistory
+            });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
@@ -292,6 +286,7 @@ router.post('/message', async (req, res) => {
             response: response.content,
             model: response.model,
             provider,
+            citations: response.citations || null,
             usage: response.usage
         });
 
@@ -371,6 +366,13 @@ router.post('/stream', async (req, res) => {
             } else {
                 throw new Error('OpenAI streaming not available');
             }
+        } else if (provider === 'perplexity') {
+            stream = perplexity.streamChat({
+                message: text,
+                model,
+                systemPrompt,
+                history: normalizedHistory
+            });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
@@ -385,6 +387,8 @@ router.post('/stream', async (req, res) => {
                 res.write(`data: ${JSON.stringify({ type: 'done', usage: chunk.usage })}\n\n`);
             } else if (chunk.type === 'error') {
                 res.write(`data: ${JSON.stringify({ type: 'error', error: chunk.error })}\n\n`);
+            } else if (chunk.type === 'citations') {
+                res.write(`data: ${JSON.stringify({ type: 'citations', citations: chunk.citations })}\n\n`);
             } else if (chunk.type === 'search_start' || chunk.type === 'search_query' || chunk.type === 'search_complete') {
                 res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             }
@@ -479,16 +483,29 @@ router.post('/with-search', async (req, res) => {
                 history: normalizedHistory,
                 images: allMedia
             });
+        } else if (provider === 'perplexity') {
+            // Perplexity has built-in search, so use it directly
+            response = await perplexity.chat({
+                message: text,
+                model,
+                systemPrompt: augmentedSystemPrompt,
+                history: normalizedHistory
+            });
+            // Perplexity returns its own citations
+            if (response.citations) {
+                searchResults = response.citations;
+            }
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
-        
+
         res.json({
             success: true,
             response: response.content,
             model: response.model,
             provider,
             searchResults: searchResults || null,
+            citations: response.citations || null,
             usage: response.usage
         });
         

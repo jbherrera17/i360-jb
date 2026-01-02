@@ -60,6 +60,7 @@ async function loadModels() {
         if (data.success && data.models) {
             const claudeGroup = document.getElementById('claudeModels');
             const gptGroup = document.getElementById('gptModels');
+            const perplexityGroup = document.getElementById('perplexityModels');
 
             // Build capabilities map and populate dropdowns
             if (data.models.anthropic) {
@@ -79,6 +80,17 @@ async function loadModels() {
                 });
                 if (gptGroup) {
                     gptGroup.innerHTML = data.models.openai.map(m =>
+                        `<option value="${m.id}">${m.name}</option>`
+                    ).join('');
+                }
+            }
+
+            if (data.models.perplexity) {
+                data.models.perplexity.forEach(m => {
+                    modelCapabilities[m.id] = m;
+                });
+                if (perplexityGroup) {
+                    perplexityGroup.innerHTML = data.models.perplexity.map(m =>
                         `<option value="${m.id}">${m.name}</option>`
                     ).join('');
                 }
@@ -180,6 +192,8 @@ function updateModelIndicator() {
     if (caps.audio) badges.push('<span class="cap-badge" data-tooltip="Audio - voice input/output">🎤</span>');
     if (caps.imageGen) badges.push('<span class="cap-badge" data-tooltip="Image Generation">🖼️</span>');
     if (caps.reasoning) badges.push('<span class="cap-badge" data-tooltip="Advanced Reasoning">🧠</span>');
+    if (caps.search) badges.push('<span class="cap-badge" data-tooltip="Built-in Web Search">🔍</span>');
+    if (caps.research) badges.push('<span class="cap-badge" data-tooltip="Deep Research Mode">📚</span>');
 
     modelIndicator.innerHTML = `
         <span class="model-name">${modelName}</span>

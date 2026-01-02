@@ -78,29 +78,46 @@
             min-height: 100vh;
         }
 
-        /* Navigation */
-        .nav {
+        /* Main Layout - Sidebar Navigation Pattern */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Navigation Sidebar (injected by navigation.js) */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            height: var(--nav-height);
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
+            bottom: 0;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1.5rem;
-            z-index: 1000;
-            backdrop-filter: blur(20px);
+            flex-direction: column;
+            z-index: 100;
         }
 
-        .nav-logo {
+        .sidebar-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
             text-decoration: none;
+        }
+
+        .logo-image {
+            height: 32px;
+            width: auto;
+        }
+
+        .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 700;
             background: var(--gradient-primary);
             -webkit-background-clip: text;
@@ -108,79 +125,155 @@
             background-clip: text;
         }
 
-        .nav-logo .logo-image {
-            height: 36px;
-            width: auto;
+        .sidebar-nav {
+            padding: 1rem;
+            flex: 1;
+            overflow-y: auto;
         }
 
-        .nav-logo .logo-text {
-            margin-left: 0.5rem;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .nav-link {
+        .nav-item {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
             color: var(--text-secondary);
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+            transition: all 0.15s;
         }
 
-        .nav-link:hover {
+        .nav-item:hover {
             background: var(--bg-hover);
             color: var(--text-primary);
         }
 
-        .nav-link.active {
+        .nav-item.active {
             background: var(--primary);
             color: white;
         }
 
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+        .nav-item i {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
-        .theme-toggle {
-            background: none;
+        /* Navigation Sections */
+        .nav-section {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-primary {
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Navigation Groups (Collapsible) */
+        .nav-group {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-group-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.25rem 0.75rem;
+            background: transparent;
             border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 0.5rem;
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.15s;
         }
 
-        .theme-toggle:hover {
+        .nav-group-header:hover {
             background: var(--bg-hover);
-            color: var(--text-primary);
+            color: var(--text-secondary);
         }
 
-        /* Main Layout */
+        .nav-group-header .group-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .nav-group-header .group-label {
+            flex: 1;
+            text-align: left;
+        }
+
+        .nav-group-header .group-chevron {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.15s;
+        }
+
+        .nav-group.collapsed .group-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .nav-group-items {
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.2s ease-out, opacity 0.2s ease-out;
+            padding-left: 0.5rem;
+        }
+
+        .nav-group.collapsed .nav-group-items {
+            max-height: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .nav-group-items .nav-item {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.75rem;
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .sidebar-footer .nav-item {
+            margin-bottom: 0;
+        }
+
+        .sidebar-footer .theme-toggle {
+            width: 100%;
+            justify-content: flex-start;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        /* Main Content Area */
         .main-container {
             display: flex;
-            margin-top: var(--nav-height);
-            height: calc(100vh - var(--nav-height));
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            height: 100vh;
         }
 
-        /* Sidebar / Filters */
-        .sidebar {
-            width: var(--sidebar-width);
+        /* Filter Panel (previously sidebar) */
+        .filter-panel {
+            width: 310px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             padding: 1.5rem;
             overflow-y: auto;
+            height: 100vh;
             flex-shrink: 0;
         }
 
@@ -295,8 +388,8 @@
 
         /* Agent List */
         .agent-list {
-            width: 260px;
-            min-width: 220px;
+            width: 310px;
+            min-width: 270px;
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
@@ -1299,7 +1392,7 @@
             }
 
             .agent-list {
-                width: 240px;
+                width: 290px;
             }
 
             .resize-handle,
@@ -1829,72 +1922,14 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="nav">
-        <a href="index.html" class="nav-logo">
-            <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" style="height: 36px;" onerror="this.style.display='none'">
-            <span class="logo-text">Insight 360</span>
-        </a>
-        <div class="nav-links">
-            <a href="index.html" class="nav-link">
-                <i data-lucide="layout-dashboard" style="width:18px;height:18px;"></i>
-                Dashboard
-            </a>
-            <a href="company-dashboard.html" class="nav-link">
-                <i data-lucide="building" style="width:18px;height:18px;"></i>
-                Company
-            </a>
-            <a href="strategy.html" class="nav-link">
-                <i data-lucide="compass" style="width:18px;height:18px;"></i>
-                Strategy
-            </a>
-            <a href="chat.html" class="nav-link">
-                <i data-lucide="message-square" style="width:18px;height:18px;"></i>
-                Chat
-            </a>
-            <a href="context.html" class="nav-link">
-                <i data-lucide="database" style="width:18px;height:18px;"></i>
-                Context
-            </a>
-            <a href="agents.html" class="nav-link active">
-                <i data-lucide="bot" style="width:18px;height:18px;"></i>
-                Agents
-            </a>
-            <a href="parthenon.html" class="nav-link">
-                <i data-lucide="landmark" style="width:18px;height:18px;"></i>
-                Parthenon
-            </a>
-            <a href="actions.html" class="nav-link">
-                <i data-lucide="zap" style="width:18px;height:18px;"></i>
-                Actions
-            </a>
-            <a href="skills.html" class="nav-link">
-                <i data-lucide="wand-2" style="width:18px;height:18px;"></i>
-                Skills
-            </a>
-            <a href="briefing.html" class="nav-link">
-                <i data-lucide="newspaper" style="width:18px;height:18px;"></i>
-                Briefing
-            </a>
-            <a href="integrity.html" class="nav-link">
-                <i data-lucide="activity" style="width:18px;height:18px;"></i>
-                Integrity
-            </a>
-        </div>
-        <div class="nav-actions">
-            <button class="help-btn" onclick="HelpModal.open()" title="Help">
-                <i data-lucide="help-circle" style="width:20px;height:20px;"></i>
-            </button>
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-                <i data-lucide="moon" style="width:20px;height:20px;"></i>
-            </button>
-        </div>
-    </nav>
+    <div class="app-layout">
+        <!-- Navigation Sidebar (injected by navigation.js) -->
+        <aside class="sidebar"></aside>
 
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Filter Panel -->
+            <aside class="filter-panel">
             <!-- Stats -->
             <div class="sidebar-section">
                 <div class="sidebar-title">Overview</div>
@@ -2123,6 +2158,7 @@
             </div> <!-- Close details-panel -->
         </div> <!-- Close content -->
     </div> <!-- Close main-container -->
+    </div> <!-- Close app-layout -->
 
     <!-- Create/Edit Agent Modal -->
     <div class="modal-overlay" id="agentModal">
@@ -2231,25 +2267,7 @@
                             <div class="form-group">
                                 <label class="form-label">Model</label>
                                 <select class="form-input form-select" id="formModel">
-                                    <optgroup label="Claude (Anthropic)">
-                                        <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Default)</option>
-                                        <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
-                                        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
-                                        <option value="claude-opus-4-1-20250805">Claude Opus 4.1</option>
-                                        <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-                                        <option value="claude-opus-4-20250514">Claude Opus 4</option>
-                                    </optgroup>
-                                    <optgroup label="GPT (OpenAI)">
-                                        <option value="gpt-4.1">GPT-4.1</option>
-                                        <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                                        <option value="gpt-4o">GPT-4o</option>
-                                        <option value="gpt-4o-mini">GPT-4o Mini</option>
-                                    </optgroup>
-                                    <optgroup label="Reasoning (OpenAI)">
-                                        <option value="o3">o3</option>
-                                        <option value="o4-mini">o4-mini</option>
-                                        <option value="o3-mini">o3-mini</option>
-                                    </optgroup>
+                                    <option value="">Loading models...</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -2494,6 +2512,82 @@
             } catch (error) {
                 console.error('Error fetching context assets:', error);
             }
+        }
+
+        // Store loaded models for lookup
+        let availableModels = [];
+        let defaultModel = 'claude-sonnet-4-5-20250929';
+
+        async function fetchModels() {
+            try {
+                const response = await fetch('/api/chat/models/all');
+                const data = await response.json();
+                if (data.success) {
+                    availableModels = data.models;
+                    defaultModel = data.default || 'claude-sonnet-4-5-20250929';
+                    populateModelDropdown();
+                }
+            } catch (error) {
+                console.error('Error fetching models:', error);
+                // Fallback to basic models if API fails
+                populateModelDropdownFallback();
+            }
+        }
+
+        function populateModelDropdown() {
+            const select = document.getElementById('formModel');
+            if (!select) return;
+
+            // Group models by provider
+            const byProvider = {};
+            availableModels.forEach(model => {
+                const provider = model.providerName || model.provider || 'Other';
+                if (!byProvider[provider]) {
+                    byProvider[provider] = [];
+                }
+                byProvider[provider].push(model);
+            });
+
+            // Build dropdown HTML
+            let html = '';
+            const providerOrder = ['Anthropic', 'OpenAI', 'Perplexity'];
+
+            providerOrder.forEach(provider => {
+                if (byProvider[provider] && byProvider[provider].length > 0) {
+                    html += `<optgroup label="${provider}">`;
+                    byProvider[provider].forEach(model => {
+                        const isDefault = model.id === defaultModel;
+                        html += `<option value="${model.id}"${isDefault ? ' selected' : ''}>${model.name}${isDefault ? ' (Default)' : ''}</option>`;
+                    });
+                    html += '</optgroup>';
+                }
+            });
+
+            // Add any remaining providers
+            Object.keys(byProvider).forEach(provider => {
+                if (!providerOrder.includes(provider) && byProvider[provider].length > 0) {
+                    html += `<optgroup label="${provider}">`;
+                    byProvider[provider].forEach(model => {
+                        html += `<option value="${model.id}">${model.name}</option>`;
+                    });
+                    html += '</optgroup>';
+                }
+            });
+
+            select.innerHTML = html || '<option value="">No models available</option>';
+        }
+
+        function populateModelDropdownFallback() {
+            const select = document.getElementById('formModel');
+            if (!select) return;
+
+            select.innerHTML = `
+                <optgroup label="Claude (Anthropic)">
+                    <option value="claude-sonnet-4-5-20250929" selected>Claude Sonnet 4.5 (Default)</option>
+                    <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
+                    <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                </optgroup>
+            `;
         }
 
         async function saveAgent(agentData) {
@@ -3003,11 +3097,11 @@
         }
 
         function updateThemeIcon(theme) {
-            const icon = document.querySelector('#themeToggle i');
-            if (icon) {
+            // Update any theme toggle icons (both old and sidebar)
+            document.querySelectorAll('#themeToggle i, #sidebarThemeToggle i').forEach(icon => {
                 icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
-                lucide.createIcons();
-            }
+            });
+            lucide.createIcons();
         }
 
         // =========================================================================
@@ -3514,6 +3608,10 @@
 
         function getModelDisplayName(modelId) {
             if (!modelId) return 'Default Model';
+            // First check dynamically loaded models
+            const model = availableModels.find(m => m.id === modelId);
+            if (model) return model.name;
+            // Fallback to static mapping
             return MODEL_DISPLAY_NAMES[modelId] || modelId;
         }
 
@@ -3532,7 +3630,7 @@
         // Event Listeners
         // =========================================================================
 
-        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        // Theme toggle is now handled by the sidebar navigation (sidebarThemeToggle)
         document.getElementById('btnNewAgent').addEventListener('click', () => openModal());
         document.getElementById('btnNewAgentEmpty').addEventListener('click', () => openModal());
         document.getElementById('modalClose').addEventListener('click', closeModal);
@@ -3601,7 +3699,17 @@
                 agentData.system_prompt = document.getElementById('formSystemPrompt').value;
                 agentData.llm_model = document.getElementById('formModel').value;
                 agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
-                agentData.llm_provider = agentData.llm_model?.startsWith('gpt') ? 'openai' : 'anthropic';
+                // Get provider from loaded models, fallback to detection logic
+                const selectedModel = availableModels.find(m => m.id === agentData.llm_model);
+                if (selectedModel) {
+                    agentData.llm_provider = selectedModel.provider;
+                } else if (agentData.llm_model?.startsWith('gpt') || agentData.llm_model?.startsWith('o1')) {
+                    agentData.llm_provider = 'openai';
+                } else if (agentData.llm_model?.startsWith('sonar')) {
+                    agentData.llm_provider = 'perplexity';
+                } else {
+                    agentData.llm_provider = 'anthropic';
+                }
             } else {
                 // MindStudio agents - store config for API or embed execution
                 const executionMode = document.getElementById('formExecutionMode').value;
@@ -3782,7 +3890,8 @@
             initPanelResize();
             await Promise.all([
                 fetchCategories(),
-                fetchContextAssets()
+                fetchContextAssets(),
+                fetchModels()
             ]);
             await fetchAgents();
             fetchStats();
@@ -3790,6 +3899,7 @@
 
         init();
     </script>
+    <script src="/js/navigation.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

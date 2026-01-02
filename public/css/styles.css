@@ -245,6 +245,105 @@ select {
     margin-left: auto;
 }
 
+/* Navigation Sections */
+.nav-section {
+    margin-bottom: var(--spacing-sm);
+}
+
+.nav-primary {
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Navigation Groups (Collapsible) */
+.nav-group {
+    margin-bottom: var(--spacing-xs);
+}
+
+.nav-group-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.nav-group-header:hover {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+}
+
+.nav-group-header .group-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+}
+
+.nav-group-header .group-label {
+    flex: 1;
+    text-align: left;
+}
+
+.nav-group-header .group-chevron {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--transition-fast);
+}
+
+.nav-group.collapsed .group-chevron {
+    transform: rotate(-90deg);
+}
+
+.nav-group-items {
+    overflow: hidden;
+    max-height: 500px;
+    transition: max-height 0.2s ease-out, opacity 0.2s ease-out;
+    padding-left: var(--spacing-sm);
+}
+
+.nav-group.collapsed .nav-group-items {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.nav-group-items .nav-item {
+    font-size: 0.9rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+}
+
+.sidebar-footer .nav-item {
+    margin-bottom: 0;
+}
+
+.sidebar-footer .theme-toggle {
+    width: 100%;
+    justify-content: flex-start;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+}
+
 .sidebar-section {
     padding: var(--spacing-md);
     border-top: 1px solid var(--border);

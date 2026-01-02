@@ -199,6 +199,22 @@ function initializeServices() {
         console.log('  ⚪ GPT (OpenAI) - No API key');
     }
 
+    // Initialize Perplexity (Sonar)
+    if (process.env.PERPLEXITY_API_KEY) {
+        try {
+            const perplexityService = require('./services/perplexity');
+            if (typeof perplexityService.initialize === 'function') {
+                perplexityService.initialize(process.env.PERPLEXITY_API_KEY);
+            }
+            serviceStatus.perplexity = true;
+            console.log('  ✅ Perplexity (Sonar) - Ready');
+        } catch (error) {
+            console.log('  ❌ Perplexity (Sonar) - Failed:', error.message);
+        }
+    } else {
+        console.log('  ⚪ Perplexity (Sonar) - No API key');
+    }
+
     // Initialize Web Search
     const searchApiKey = process.env.BRAVE_SEARCH_API_KEY || 
                          process.env.TAVILY_API_KEY || 

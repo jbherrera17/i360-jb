@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
-    <script src="/js/theme-toggle.js"></script>
+    <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Skills Specific Styles */
@@ -689,28 +689,25 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <div class="skills-layout">
-                <!-- Page Header -->
-                <div class="page-header">
-                    <div>
-                        <h1>
-                            <i data-lucide="wand-2" style="width:28px;height:28px;"></i>
-                            Skills Library
-                        </h1>
-                        <p>Reusable AI skill definitions for consistent, high-quality outputs</p>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn-secondary" onclick="showImportModal()">
-                            <i data-lucide="upload" style="width:16px;height:16px;"></i> Import
-                        </button>
-                        <button class="btn-primary" onclick="goToCreator()">
-                            <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Skill
-                        </button>
-                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
-                            <i data-lucide="help-circle"></i>
-                        </button>
-                    </div>
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Skills Library</h1>
+                    <p class="header-subtitle">Reusable AI skill definitions for consistent, high-quality outputs</p>
                 </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="showImportModal()">
+                        <i data-lucide="upload" style="width:16px;height:16px;"></i> Import
+                    </button>
+                    <button class="btn-primary" onclick="goToCreator()">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Skill
+                    </button>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="skills-layout">
 
                 <!-- Stats Row -->
                 <div class="stats-row">
