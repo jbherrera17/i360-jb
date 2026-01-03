@@ -599,9 +599,12 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Store token and user
+                    // Store token in localStorage and cookie
                     localStorage.setItem('insight360_token', data.session.access_token);
                     localStorage.setItem('insight360_user', JSON.stringify(data.user));
+
+                    // Set auth_token cookie for server-side authentication
+                    document.cookie = `auth_token=${data.session.access_token}; path=/; max-age=${60*60*24*7}; SameSite=Lax`;
 
                     currentUser = data.user;
                     showUserCard(data.user);
@@ -762,9 +765,10 @@
                 console.error('Logout error:', error);
             }
 
-            // Clear local storage
+            // Clear local storage and cookie
             localStorage.removeItem('insight360_token');
             localStorage.removeItem('insight360_user');
+            document.cookie = 'auth_token=; path=/; max-age=0';
             currentUser = null;
 
             showAuthCard();
