@@ -11,6 +11,7 @@
 
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
+const anthropicService = require('../services/anthropic');
 
 /**
  * Actions Routes Factory
@@ -22,6 +23,68 @@ module.exports = function(supabase) {
 
     // Get user ID helper
     const getUserId = (req) => req.user?.id || process.env.DEV_USER_ID || null;
+
+    /**
+     * Build system prompt for action execution
+     * @param {object} action - Action configuration
+     * @returns {string} System prompt
+     */
+    function buildActionSystemPrompt(action) {
+        let prompt = `You are an AI assistant executing the action "${action.name}".`;
+
+        if (action.description) {
+            prompt += `\n\nAction Description: ${action.description}`;
+        }
+
+        if (action.instructions) {
+            prompt += `\n\nInstructions:\n${action.instructions}`;
+        }
+
+        if (action.output_format) {
+            prompt += `\n\nExpected Output Format: ${action.output_format}`;
+        }
+
+        // Add any context from the action's configuration
+        if (action.system_prompt) {
+            prompt += `\n\n${action.system_prompt}`;
+        }
+
+        return prompt;
+    }
+
+    /**
+     * Build user message for action execution
+     * @param {object} action - Action configuration
+     * @param {object} inputData - User-provided input data
+     * @returns {string} User message
+     */
+    function buildActionUserMessage(action, inputData) {
+        let message = '';
+
+        // If there's a prompt template, use it
+        if (action.prompt_template) {
+            message = action.prompt_template;
+            // Replace placeholders with input data
+            for (const [key, value] of Object.entries(inputData)) {
+                message = message.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+                message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+            }
+        } else {
+            // Build message from input data
+            if (inputData.message || inputData.input || inputData.query) {
+                message = inputData.message || inputData.input || inputData.query;
+            } else if (Object.keys(inputData).length > 0) {
+                message = 'Please process the following input:\n\n';
+                for (const [key, value] of Object.entries(inputData)) {
+                    message += `${key}: ${value}\n`;
+                }
+            } else {
+                message = 'Execute this action with default parameters.';
+            }
+        }
+
+        return message;
+    }
 
     // ============================================================================
     // ACTIONS CRUD ENDPOINTS
@@ -40,9 +103,14 @@ module.exports = function(supabase) {
                 featured,
                 sort = 'name',
                 order = 'asc',
-                limit = 50,
-                offset = 0
+                limit: rawLimit = 50,
+                offset: rawOffset = 0
             } = req.query;
+
+            // Validate pagination bounds to prevent DoS
+            const MAX_LIMIT = 100;
+            const limit = Math.min(Math.max(1, parseInt(rawLimit) || 50), MAX_LIMIT);
+            const offset = Math.max(0, parseInt(rawOffset) || 0);
 
             const userId = getUserId(req);
 
@@ -76,8 +144,8 @@ module.exports = function(supabase) {
                 ? sort : 'name';
             query = query.order(sortColumn, { ascending: order === 'asc' });
 
-            // Apply pagination
-            query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+            // Apply pagination (values already validated above)
+            query = query.range(offset, offset + limit - 1);
 
             const { data, error, count } = await query;
 
@@ -88,8 +156,8 @@ module.exports = function(supabase) {
                 data: data || [],
                 pagination: {
                     total: count,
-                    limit: parseInt(limit),
-                    offset: parseInt(offset)
+                    limit,
+                    offset
                 }
             });
 
@@ -108,7 +176,9 @@ module.exports = function(supabase) {
      */
     router.get('/featured', async (req, res) => {
         try {
-            const { limit = 6 } = req.query;
+            const { limit: rawLimit = 6 } = req.query;
+            // Validate limit bounds (max 20 for featured)
+            const limit = Math.min(Math.max(1, parseInt(rawLimit) || 6), 20);
 
             const { data, error } = await supabase
                 .from('actions')
@@ -116,7 +186,7 @@ module.exports = function(supabase) {
                 .eq('is_featured', true)
                 .eq('status', 'active')
                 .order('usage_count', { ascending: false })
-                .limit(parseInt(limit));
+                .limit(limit);
 
             if (error) throw error;
 
@@ -588,17 +658,59 @@ module.exports = function(supabase) {
                     started_at: startedAt
                 });
 
-            // TODO: Actually execute the action with AI
-            // For now, return a placeholder response
-            const output_data = {
-                message: 'Action execution placeholder',
-                action_name: action.name,
-                input_received: input_data
-            };
+            // Execute the action with AI
+            let output_data;
+            let aiEngine = 'native';
+            let modelUsed = 'claude-sonnet-4-5-20250929';
+
+            try {
+                // Build system prompt from action configuration
+                const systemPrompt = buildActionSystemPrompt(action);
+
+                // Build user message from input data
+                const userMessage = buildActionUserMessage(action, input_data);
+
+                // Determine model to use
+                modelUsed = action.ai_engine?.native?.model || 'claude-sonnet-4-5-20250929';
+                aiEngine = action.ai_engine?.type || 'native';
+
+                // Call AI service
+                const aiResponse = await anthropicService.chat({
+                    message: userMessage,
+                    model: modelUsed,
+                    systemPrompt: systemPrompt,
+                    maxTokens: action.ai_engine?.native?.max_tokens || 4096
+                });
+
+                output_data = {
+                    response: aiResponse.text,
+                    action_name: action.name,
+                    input_received: input_data,
+                    usage: aiResponse.usage,
+                    model: modelUsed
+                };
+            } catch (aiError) {
+                console.error('Action AI execution error:', aiError);
+                // Update execution as failed
+                await supabase
+                    .from('action_executions')
+                    .update({
+                        status: 'failed',
+                        error_message: aiError.message,
+                        completed_at: new Date().toISOString()
+                    })
+                    .eq('id', executionId);
+
+                return res.status(500).json({
+                    success: false,
+                    error: 'Action execution failed: ' + aiError.message
+                });
+            }
 
             // Update execution record
             const completedAt = new Date().toISOString();
-            const durationMs = new Date(completedAt) - new Date(startedAt);
+            // Use explicit getTime() for reliable millisecond calculation
+            const durationMs = new Date(completedAt).getTime() - new Date(startedAt).getTime();
 
             const { data: execution, error: updateError } = await supabase
                 .from('action_executions')
@@ -607,8 +719,8 @@ module.exports = function(supabase) {
                     output_data,
                     completed_at: completedAt,
                     duration_ms: durationMs,
-                    ai_engine_used: action.ai_engine?.type || 'native',
-                    model_used: action.ai_engine?.native?.model || 'claude-sonnet-4'
+                    ai_engine_used: aiEngine,
+                    model_used: modelUsed
                 })
                 .eq('id', executionId)
                 .select()
@@ -650,14 +762,19 @@ module.exports = function(supabase) {
     router.get('/:id/executions', async (req, res) => {
         try {
             const { id } = req.params;
-            const { limit = 20, offset = 0 } = req.query;
+            const { limit: rawLimit = 20, offset: rawOffset = 0 } = req.query;
+
+            // Validate pagination bounds to prevent DoS
+            const MAX_LIMIT = 100;
+            const limit = Math.min(Math.max(1, parseInt(rawLimit) || 20), MAX_LIMIT);
+            const offset = Math.max(0, parseInt(rawOffset) || 0);
 
             const { data, error, count } = await supabase
                 .from('action_executions')
                 .select('*', { count: 'exact' })
                 .eq('action_id', id)
                 .order('created_at', { ascending: false })
-                .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+                .range(offset, offset + limit - 1);
 
             if (error) throw error;
 
@@ -666,8 +783,8 @@ module.exports = function(supabase) {
                 data: data || [],
                 pagination: {
                     total: count,
-                    limit: parseInt(limit),
-                    offset: parseInt(offset)
+                    limit,
+                    offset
                 }
             });
 

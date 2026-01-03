@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/navigation.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Insight 360 | AI Command Center</title>
@@ -15,22 +14,22 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+        <!-- Sidebar (injected by navigation.js) -->
         <aside class="sidebar"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
-<header class="page-header">
-    <div class="header-content">
-        <h1>Dashboard</h1>
-        <p class="header-subtitle">Welcome to your AI Command Center</p>
-    </div>
-    <div class="header-actions">
-        <button class="help-btn" onclick="HelpModal.open()" title="Help">
-            <i data-lucide="help-circle"></i>
-        </button>
-    </div>
-</header>
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Dashboard</h1>
+                    <p class="header-subtitle">Welcome to your AI Command Center</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
             <div class="dashboard-grid">
                 <!-- Getting Started -->
                 <div class="dashboard-card getting-started-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); border: 1px solid var(--primary);">
@@ -135,40 +134,33 @@
                     </div>
                 </div>
 
-                <!-- Phase Progress -->
+                <!-- I360 Roadmap -->
                 <div class="dashboard-card">
                     <div class="card-header">
-                        <h2><i data-lucide="layers" class="card-icon"></i> Development Progress</h2>
+                        <h2><i data-lucide="map" class="card-icon"></i> I360 Roadmap</h2>
+                        <a href="/admin.html#roadmap" class="view-all-link">Full Roadmap</a>
                     </div>
                     <div class="card-content">
                         <div class="phase-list">
                             <div class="phase-item complete">
                                 <span class="phase-indicator">&#10003;</span>
-                                <span class="phase-name">Phase 1-2: Foundation & Core Chat</span>
-                            </div>
-                            <div class="phase-item complete">
-                                <span class="phase-indicator">&#10003;</span>
-                                <span class="phase-name">Phase 3: Agent Framework</span>
-                            </div>
-                            <div class="phase-item complete">
-                                <span class="phase-indicator">&#10003;</span>
-                                <span class="phase-name">Phase 4: Actions & Integrity</span>
-                            </div>
-                            <div class="phase-item complete">
-                                <span class="phase-indicator">&#10003;</span>
-                                <span class="phase-name">Phase 5: Skills Framework</span>
-                            </div>
-                            <div class="phase-item complete">
-                                <span class="phase-indicator">&#10003;</span>
-                                <span class="phase-name">Phase 6: Daily Briefing & UX</span>
-                            </div>
-                            <div class="phase-item complete">
-                                <span class="phase-indicator">&#10003;</span>
-                                <span class="phase-name">Phase 7: Align 120 & Company Profile</span>
+                                <span class="phase-name">Phase 1-8: Feature Development</span>
                             </div>
                             <div class="phase-item current">
                                 <span class="phase-indicator">&rarr;</span>
-                                <span class="phase-name">Phase 8: Strategy 120 & Execute 120</span>
+                                <span class="phase-name">Phase 9: Bug Fixes & Security</span>
+                            </div>
+                            <div class="phase-item upcoming">
+                                <span class="phase-indicator">&#9675;</span>
+                                <span class="phase-name">Phase 10: Security Hardening</span>
+                            </div>
+                            <div class="phase-item upcoming">
+                                <span class="phase-indicator">&#9675;</span>
+                                <span class="phase-name">Phase 11: Observability</span>
+                            </div>
+                            <div class="phase-item upcoming">
+                                <span class="phase-indicator">&#9675;</span>
+                                <span class="phase-name">Phase 12: Testing & QA</span>
                             </div>
                         </div>
                     </div>
@@ -177,9 +169,12 @@
         </main>
     </div>
 
-    <!-- Dashboard JavaScript -->
+    <!-- JavaScript -->
+    <script src="/js/navigation.js"></script>
     <script src="/js/dashboard.js"></script>
-    
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+
     <script>
         // Initialize Lucide icons after page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -479,8 +474,5 @@
             loadRecentAgents();
         });
     </script>
-    <script src="/js/navigation.js"></script>
-    <script src="/js/help-modal.js"></script>
-    <script src="/js/help-registry.js"></script>
 </body>
 </html>

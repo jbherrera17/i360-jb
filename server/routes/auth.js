@@ -140,8 +140,14 @@ module.exports = function(supabase) {
                 .eq('id', data.user.id)
                 .single();
 
-            if (profileError && profileError.code !== 'PGRST116') {
-                console.error('Profile fetch error:', profileError);
+            if (profileError) {
+                if (profileError.code !== 'PGRST116') {
+                    console.error('Profile fetch error:', profileError);
+                } else {
+                    console.log('User profile not found in public.users, using defaults for:', email);
+                }
+            } else {
+                console.log('Login profile loaded:', { email, role: profile?.role, hasProfile: !!profile });
             }
 
             res.json({
@@ -165,6 +171,146 @@ module.exports = function(supabase) {
             res.status(500).json({
                 success: false,
                 error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/auth/forgot-password
+     * Send password reset email
+     */
+    router.post('/forgot-password', async (req, res) => {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Email is required'
+                });
+            }
+
+            // Send password reset email via Supabase
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/login.html?reset=true`
+            });
+
+            if (error) {
+                console.error('Password reset error:', error);
+                // Don't reveal if email exists or not for security
+            }
+
+            // Always return success to prevent email enumeration
+            res.json({
+                success: true,
+                message: 'If an account exists with this email, a password reset link has been sent.'
+            });
+
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to process request'
+            });
+        }
+    });
+
+    /**
+     * POST /api/auth/reset-password
+     * Reset password with token (called after user clicks email link)
+     */
+    router.post('/reset-password', async (req, res) => {
+        try {
+            const { access_token, new_password } = req.body;
+
+            if (!new_password) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'New password is required'
+                });
+            }
+
+            if (new_password.length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Password must be at least 6 characters'
+                });
+            }
+
+            let currentUser = null;
+
+            // If access_token provided, use it to set the session first
+            if (access_token) {
+                const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                    access_token,
+                    refresh_token: access_token // Supabase uses same token for reset
+                });
+
+                if (sessionError) {
+                    console.error('Session error:', sessionError);
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Invalid or expired reset token'
+                    });
+                }
+
+                currentUser = sessionData?.user;
+            }
+
+            // Update the password
+            const { data: updateData, error } = await supabase.auth.updateUser({
+                password: new_password
+            });
+
+            if (error) {
+                console.error('Password update error:', error);
+                return res.status(400).json({
+                    success: false,
+                    error: error.message || 'Failed to reset password'
+                });
+            }
+
+            // Ensure user exists in public.users table (sync from auth)
+            // IMPORTANT: Preserve existing role if user already exists
+            const user = currentUser || updateData?.user;
+            if (user) {
+                // First check if user exists and get their current role
+                const { data: existingUser } = await supabase
+                    .from('users')
+                    .select('id, role')
+                    .eq('id', user.id)
+                    .single();
+
+                const { error: syncError } = await supabase
+                    .from('users')
+                    .upsert({
+                        id: user.id,
+                        email: user.email,
+                        display_name: user.user_metadata?.display_name || user.email.split('@')[0],
+                        role: existingUser?.role || 'user', // Preserve existing role or default to 'user'
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'id',
+                        ignoreDuplicates: false
+                    });
+
+                if (syncError) {
+                    console.warn('User sync warning (non-fatal):', syncError);
+                } else {
+                    console.log('User synced to public.users:', user.email, 'role:', existingUser?.role || 'user');
+                }
+            }
+
+            res.json({
+                success: true,
+                message: 'Password has been reset successfully. You can now log in with your new password.'
+            });
+
+        } catch (error) {
+            console.error('Reset password error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to reset password'
             });
         }
     });
@@ -601,6 +747,152 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Delete user error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/auth/sync-users
+     * Admin: Sync users from Supabase Auth to public.users table
+     */
+    router.post('/sync-users', requireAdmin, async (req, res) => {
+        try {
+            // Get all users from Supabase Auth
+            const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+
+            if (authError) {
+                console.error('List auth users error:', authError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to fetch users from authentication system'
+                });
+            }
+
+            if (!authUsers || !authUsers.users || authUsers.users.length === 0) {
+                return res.json({
+                    success: true,
+                    message: 'No users found in authentication system',
+                    synced: 0,
+                    failed: 0
+                });
+            }
+
+            // Get existing users from public.users
+            const { data: existingUsers } = await supabase
+                .from('users')
+                .select('id, role');
+
+            const existingUserMap = new Map();
+            (existingUsers || []).forEach(u => existingUserMap.set(u.id, u));
+
+            let synced = 0;
+            let failed = 0;
+            const results = [];
+
+            // Sync each auth user to public.users
+            for (const authUser of authUsers.users) {
+                try {
+                    const existing = existingUserMap.get(authUser.id);
+
+                    const { error: upsertError } = await supabase
+                        .from('users')
+                        .upsert({
+                            id: authUser.id,
+                            email: authUser.email,
+                            display_name: authUser.user_metadata?.display_name || authUser.email.split('@')[0],
+                            role: existing?.role || 'user', // Preserve existing role or default to 'user'
+                            updated_at: new Date().toISOString()
+                        }, {
+                            onConflict: 'id',
+                            ignoreDuplicates: false
+                        });
+
+                    if (upsertError) {
+                        console.error(`Sync error for ${authUser.email}:`, upsertError);
+                        failed++;
+                        results.push({ email: authUser.email, status: 'failed', error: upsertError.message });
+                    } else {
+                        synced++;
+                        results.push({ email: authUser.email, status: existing ? 'updated' : 'created' });
+                    }
+                } catch (err) {
+                    console.error(`Sync exception for ${authUser.email}:`, err);
+                    failed++;
+                    results.push({ email: authUser.email, status: 'failed', error: err.message });
+                }
+            }
+
+            res.json({
+                success: true,
+                message: `Synced ${synced} users, ${failed} failed`,
+                synced,
+                failed,
+                total: authUsers.users.length,
+                results
+            });
+
+        } catch (error) {
+            console.error('Sync users error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/auth/debug-user/:email
+     * Admin: Debug user role by email
+     */
+    router.get('/debug-user/:email', requireAdmin, async (req, res) => {
+        try {
+            const { email } = req.params;
+
+            // Get from auth.users via admin API
+            const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+            const authUser = authUsers?.users?.find(u => u.email === email);
+
+            // Get from public.users
+            const { data: publicUser, error: publicError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .single();
+
+            // Also try by ID if we found auth user
+            let publicUserById = null;
+            if (authUser) {
+                const { data } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', authUser.id)
+                    .single();
+                publicUserById = data;
+            }
+
+            res.json({
+                success: true,
+                debug: {
+                    email,
+                    authUser: authUser ? {
+                        id: authUser.id,
+                        email: authUser.email,
+                        created_at: authUser.created_at
+                    } : null,
+                    authError: authError?.message,
+                    publicUserByEmail: publicUser,
+                    publicUserById: publicUserById,
+                    publicError: publicError?.message,
+                    idMatch: authUser && publicUser ? authUser.id === publicUser.id : null,
+                    idMatchById: authUser && publicUserById ? authUser.id === publicUserById.id : null
+                }
+            });
+
+        } catch (error) {
+            console.error('Debug user error:', error);
             res.status(500).json({
                 success: false,
                 error: error.message

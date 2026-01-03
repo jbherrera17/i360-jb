@@ -328,6 +328,7 @@
             <div class="login-tabs">
                 <button class="login-tab active" data-tab="login">Sign In</button>
                 <button class="login-tab" data-tab="register">Create Account</button>
+                <button class="login-tab" data-tab="forgot">Reset Password</button>
             </div>
 
             <!-- Error/Success Messages -->
@@ -372,6 +373,42 @@
                 </form>
             </div>
 
+            <!-- Forgot Password Form -->
+            <div class="form-panel" id="forgotPanel">
+                <form id="forgotForm">
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg); font-size: 0.9rem;">
+                        Enter your email address and we'll send you a link to reset your password.
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label" for="forgotEmail">Email</label>
+                        <input type="email" class="form-input" id="forgotEmail" placeholder="you@example.com" required>
+                    </div>
+                    <button type="submit" class="btn-primary" id="forgotBtn">
+                        <span>Send Reset Link</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Reset Password Form (shown when user clicks email link) -->
+            <div class="form-panel" id="resetPanel">
+                <form id="resetForm">
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg); font-size: 0.9rem;">
+                        Enter your new password below.
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label" for="newPassword">New Password</label>
+                        <input type="password" class="form-input" id="newPassword" placeholder="At least 6 characters" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn-primary" id="resetBtn">
+                        <span>Reset Password</span>
+                    </button>
+                </form>
+            </div>
+
             <div class="form-footer">
                 <a href="/">Back to Dashboard</a>
             </div>
@@ -390,11 +427,13 @@
                 <span>Go to Dashboard</span>
             </a>
 
-            <a href="/agents" class="btn-outline">
+            <a href="/agents.html" class="btn-outline" style="display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                <i data-lucide="bot" style="width: 18px; height: 18px; margin-right: 0.5rem;"></i>
                 <span>Manage Agents</span>
             </a>
 
             <button class="btn-outline btn-logout" id="logoutBtn">
+                <i data-lucide="log-out" style="width: 18px; height: 18px; margin-right: 0.5rem;"></i>
                 Sign Out
             </button>
         </div>
@@ -415,6 +454,21 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Check for password reset token in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+            // Supabase sends tokens in the hash fragment
+            const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+            const resetMode = urlParams.get('reset') === 'true' || accessToken;
+
+            if (resetMode && accessToken) {
+                // Show reset password form
+                showResetPasswordForm(accessToken);
+                return;
+            }
+
             await checkAuthStatus();
             setupEventListeners();
         });
@@ -476,6 +530,20 @@
             lucide.createIcons();
         }
 
+        // Show reset password form (when user clicks email link)
+        function showResetPasswordForm(accessToken) {
+            // Store token for form submission
+            window.resetAccessToken = accessToken;
+
+            // Hide tabs and show reset panel
+            document.querySelector('.login-tabs').style.display = 'none';
+            panels.forEach(p => p.classList.remove('active'));
+            document.getElementById('resetPanel').classList.add('active');
+
+            // Setup reset form handler
+            document.getElementById('resetForm').addEventListener('submit', handleResetPassword);
+        }
+
         // Setup event listeners
         function setupEventListeners() {
             // Tab switching
@@ -498,6 +566,12 @@
 
             // Register form
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
+
+            // Forgot password form
+            document.getElementById('forgotForm').addEventListener('submit', handleForgotPassword);
+
+            // Reset password form
+            document.getElementById('resetForm').addEventListener('submit', handleResetPassword);
 
             // Logout button
             document.getElementById('logoutBtn').addEventListener('click', handleLogout);
@@ -581,6 +655,95 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Create Account</span>';
+            }
+        }
+
+        // Handle forgot password
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            hideMessages();
+
+            const btn = document.getElementById('forgotBtn');
+            const email = document.getElementById('forgotEmail').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(data.message || 'If an account exists with this email, a password reset link has been sent.');
+                    document.getElementById('forgotForm').reset();
+                } else {
+                    showError(data.error || 'Failed to send reset email');
+                }
+            } catch (error) {
+                showError('Connection error. Please try again.');
+                console.error('Forgot password error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Send Reset Link</span>';
+            }
+        }
+
+        // Handle reset password
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            hideMessages();
+
+            const btn = document.getElementById('resetBtn');
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const response = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        access_token: window.resetAccessToken,
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(data.message || 'Password reset successfully!');
+                    // Clear URL parameters and show login form
+                    setTimeout(() => {
+                        window.history.replaceState({}, document.title, '/login.html');
+                        document.querySelector('.login-tabs').style.display = 'flex';
+                        tabs[0].click(); // Switch to login tab
+                    }, 2000);
+                } else {
+                    showError(data.error || 'Failed to reset password');
+                }
+            } catch (error) {
+                showError('Connection error. Please try again.');
+                console.error('Reset password error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Reset Password</span>';
             }
         }
 

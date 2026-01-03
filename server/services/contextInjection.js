@@ -9,6 +9,62 @@
 // Token estimation constants
 const CHARS_PER_TOKEN = 4;
 
+// Maximum input length for regex testing (prevents DoS on long inputs)
+const MAX_REGEX_INPUT_LENGTH = 10000;
+
+/**
+ * Check if a regex pattern is potentially vulnerable to ReDoS
+ * Detects common catastrophic backtracking patterns
+ */
+function isReDoSVulnerable(pattern) {
+    // Patterns that can cause catastrophic backtracking:
+    // 1. Nested quantifiers: (a+)+ or (a*)*
+    // 2. Overlapping alternations: (a|a)+
+    // 3. Adjacent quantifiers on same char class: \d+\d+
+
+    const dangerousPatterns = [
+        /\([^)]*[+*][^)]*\)[+*]/,           // Nested quantifiers: (a+)+, (a*)*
+        /\([^)]*\|[^)]*\)[+*]/,             // Alternation with quantifier: (a|b)+
+        /([+*])\s*\1/,                       // Adjacent same quantifiers
+        /\[[^\]]*\][+*]\[[^\]]*\][+*]/,     // Adjacent quantified char classes
+        /\.{2,}[+*]/,                        // Multiple dots with quantifier
+        /\(\?[^)]*[+*][^)]*\)[+*]/,         // Non-capturing group with nested quantifier
+    ];
+
+    for (const dangerous of dangerousPatterns) {
+        if (dangerous.test(pattern)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Safely test a regex pattern against input with validation and length limits
+ * Returns true if matches, false if no match or regex is unsafe
+ */
+function safeRegexTest(pattern, input) {
+    // Validate pattern isn't potentially vulnerable
+    if (isReDoSVulnerable(pattern)) {
+        console.warn('Potentially unsafe regex pattern rejected:', pattern);
+        return false;
+    }
+
+    // Limit input length to prevent DoS
+    const safeInput = input.length > MAX_REGEX_INPUT_LENGTH
+        ? input.substring(0, MAX_REGEX_INPUT_LENGTH)
+        : input;
+
+    try {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(safeInput);
+    } catch (e) {
+        console.warn('Invalid regex pattern:', pattern, e.message);
+        return false;
+    }
+}
+
 /**
  * Estimate token count for a string
  */
@@ -33,14 +89,9 @@ function shouldInjectConditional(mapping, userQuery) {
         if (hasKeyword) return true;
     }
     
-    // Check regex trigger
+    // Check regex trigger (with ReDoS protection)
     if (mapping.trigger_regex) {
-        try {
-            const regex = new RegExp(mapping.trigger_regex, 'i');
-            if (regex.test(userQuery)) return true;
-        } catch (e) {
-            console.warn('Invalid trigger regex:', mapping.trigger_regex);
-        }
+        if (safeRegexTest(mapping.trigger_regex, userQuery)) return true;
     }
     
     return false;

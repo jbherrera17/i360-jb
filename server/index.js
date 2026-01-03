@@ -122,9 +122,19 @@ function initializeSupabase() {
     if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
         try {
             const { createClient } = require('@supabase/supabase-js');
+
+            // Security: Prefer service key for server-side operations (bypasses RLS)
+            // Fall back to anon key but warn - admin operations may fail
+            const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+            const usingServiceKey = !!process.env.SUPABASE_SERVICE_KEY;
+
+            if (!usingServiceKey && process.env.NODE_ENV === 'production') {
+                console.warn('⚠️  WARNING: SUPABASE_SERVICE_KEY not set. Using ANON_KEY - admin operations may fail due to RLS.');
+            }
+
             supabase = createClient(
                 process.env.SUPABASE_URL,
-                process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY,
+                supabaseKey,
                 {
                     auth: {
                         autoRefreshToken: false,

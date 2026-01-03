@@ -17,9 +17,13 @@ async function authenticate(req, res, next) {
         '/api/health',
         '/api/status',
         '/api/chat/models',
-        '/api/context'  // Phase 3: Allow context access during development
+        '/api/context',  // Phase 3: Allow context access during development
+        '/api/auth/login',
+        '/api/auth/register',
+        '/api/auth/forgot-password',
+        '/api/auth/reset-password'
     ];
-    
+
     if (publicPaths.some(path => req.path.startsWith(path))) {
         return next();
     }
@@ -100,8 +104,9 @@ async function authenticate(req, res, next) {
  * Use this for endpoints that must have a logged-in user
  */
 function requireAuth(req, res, next) {
-    // Development mode bypass
-    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    // Development mode bypass - ONLY when explicitly set to 'development'
+    // Security fix: removed !process.env.NODE_ENV check to prevent auth bypass in production
+    if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
         // Set a default user ID for development
         if (!req.userId) {
             req.userId = process.env.DEV_USER_ID || 'dev-user-001';
@@ -134,8 +139,9 @@ function optionalAuth(req, res, next) {
  * Use this for endpoints that must have admin access
  */
 function requireAdmin(req, res, next) {
-    // Development mode bypass with admin role
-    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    // Development mode bypass with admin role - ONLY when explicitly enabled
+    // Security fix: removed !process.env.NODE_ENV check to prevent auth bypass in production
+    if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
         if (!req.userId) {
             req.userId = process.env.DEV_USER_ID || 'dev-user-001';
             req.userRole = 'admin';
@@ -196,8 +202,9 @@ function canDeleteAgent(userRole, userId, agent) {
  */
 function requireRole(...allowedRoles) {
     return (req, res, next) => {
-        // Development mode bypass
-        if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+        // Development mode bypass - ONLY when explicitly enabled
+        // Security fix: removed !process.env.NODE_ENV check to prevent auth bypass in production
+        if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
             if (!req.userId) {
                 req.userId = process.env.DEV_USER_ID || 'dev-user-001';
                 req.userRole = 'admin';
@@ -231,6 +238,23 @@ function requireRole(...allowedRoles) {
  * Phase 5 will have more sophisticated rate limiting
  */
 const rateLimits = new Map();
+const RATE_LIMIT_MAX_ENTRIES = 10000; // Maximum entries to prevent memory exhaustion
+const RATE_LIMIT_CLEANUP_INTERVAL = 60000; // Cleanup every minute
+
+// Periodic cleanup of expired rate limit entries
+let lastCleanup = Date.now();
+function cleanupExpiredRateLimits() {
+    const now = Date.now();
+    // Only cleanup once per interval
+    if (now - lastCleanup < RATE_LIMIT_CLEANUP_INTERVAL) return;
+    lastCleanup = now;
+
+    for (const [key, limit] of rateLimits.entries()) {
+        if (now > limit.resetAt) {
+            rateLimits.delete(key);
+        }
+    }
+}
 
 function rateLimit(options = {}) {
     const {
@@ -238,25 +262,39 @@ function rateLimit(options = {}) {
         max = 60,          // 60 requests per minute
         message = 'Too many requests, please try again later'
     } = options;
-    
+
     return (req, res, next) => {
         const key = req.userId || req.ip;
         const now = Date.now();
-        
+
+        // Periodic cleanup to prevent unbounded memory growth
+        cleanupExpiredRateLimits();
+
+        // Hard cap on entries to prevent memory exhaustion from distributed attacks
+        if (!rateLimits.has(key) && rateLimits.size >= RATE_LIMIT_MAX_ENTRIES) {
+            // Under attack scenario - reject new entries
+            return res.status(429).json({
+                success: false,
+                error: 'Server under high load, please try again later',
+                code: 'RATE_LIMITED',
+                retryAfter: 60
+            });
+        }
+
         if (!rateLimits.has(key)) {
             rateLimits.set(key, { count: 1, resetAt: now + windowMs });
             return next();
         }
-        
+
         const limit = rateLimits.get(key);
-        
+
         // Reset if window expired
         if (now > limit.resetAt) {
             limit.count = 1;
             limit.resetAt = now + windowMs;
             return next();
         }
-        
+
         // Check limit
         if (limit.count >= max) {
             return res.status(429).json({
@@ -266,7 +304,7 @@ function rateLimit(options = {}) {
                 retryAfter: Math.ceil((limit.resetAt - now) / 1000)
             });
         }
-        
+
         limit.count++;
         next();
     };

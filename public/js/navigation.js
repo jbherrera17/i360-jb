@@ -127,19 +127,61 @@ function getActiveGroup() {
 }
 
 /**
- * Get current user role from localStorage
+ * Get current user data from localStorage
  */
-function getCurrentUserRole() {
+function getCurrentUser() {
     try {
         const userData = localStorage.getItem('insight360_user');
         if (userData) {
-            const user = JSON.parse(userData);
-            return user.role || 'user';
+            return JSON.parse(userData);
         }
     } catch (e) {
         console.warn('Could not parse user data');
     }
-    return 'user';
+    return null;
+}
+
+/**
+ * Get current user role from localStorage
+ */
+function getCurrentUserRole() {
+    const user = getCurrentUser();
+    return user?.role || 'user';
+}
+
+/**
+ * Get user initials for avatar
+ */
+function getUserInitials(user) {
+    if (!user) return '?';
+    if (user.display_name) {
+        const parts = user.display_name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return parts[0].substring(0, 2).toUpperCase();
+    }
+    if (user.email) {
+        return user.email.substring(0, 2).toUpperCase();
+    }
+    return '?';
+}
+
+/**
+ * Handle user logout
+ */
+async function handleLogout() {
+    try {
+        // Call logout API
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+        console.warn('Logout API call failed:', e);
+    }
+    // Clear local storage
+    localStorage.removeItem('insight360_user');
+    localStorage.removeItem('insight360_token');
+    // Redirect to login
+    window.location.href = '/login.html';
 }
 
 /**
@@ -240,6 +282,92 @@ function generateNavHTML() {
 }
 
 /**
+ * Generate user profile HTML for sidebar
+ */
+function generateUserProfileHTML() {
+    const user = getCurrentUser();
+
+    if (!user) {
+        return `
+            <a href="/login.html" class="nav-item user-login-link">
+                <i data-lucide="log-in"></i>
+                <span>Sign In</span>
+            </a>
+        `;
+    }
+
+    const initials = getUserInitials(user);
+    const displayName = user.display_name || user.email?.split('@')[0] || 'User';
+    // Sanitize role to only allow alphanumeric characters (prevents XSS in class name)
+    const role = (user.role || 'user').replace(/[^a-zA-Z0-9]/g, '');
+    const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
+    return `
+        <div class="user-profile">
+            <div class="user-avatar">${escapeHTML(initials)}</div>
+            <div class="user-info">
+                <span class="user-name">${escapeHTML(displayName)}</span>
+                <span class="user-role ${escapeHTML(role)}">${escapeHTML(roleLabel)}</span>
+            </div>
+            <button class="user-menu-btn" onclick="toggleUserMenu()" title="User menu">
+                <i data-lucide="more-vertical"></i>
+            </button>
+        </div>
+        <div class="user-menu" id="userMenu">
+            <a href="/profile.html" class="user-menu-item">
+                <i data-lucide="user"></i>
+                <span>Profile</span>
+            </a>
+            <a href="/admin.html" class="user-menu-item ${role !== 'admin' ? 'hidden' : ''}">
+                <i data-lucide="settings"></i>
+                <span>Admin Settings</span>
+            </a>
+            <button class="user-menu-item logout" onclick="handleLogout()">
+                <i data-lucide="log-out"></i>
+                <span>Sign Out</span>
+            </button>
+        </div>
+    `;
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[char]));
+}
+
+/**
+ * Toggle user menu visibility
+ */
+function toggleUserMenu() {
+    const menu = document.getElementById('userMenu');
+    if (menu) {
+        menu.classList.toggle('open');
+    }
+}
+
+/**
+ * Close user menu when clicking outside
+ */
+function setupUserMenuClose() {
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('userMenu');
+        const btn = e.target.closest('.user-menu-btn');
+        if (menu && !btn && !e.target.closest('.user-menu')) {
+            menu.classList.remove('open');
+        }
+    });
+}
+
+/**
  * Generate full sidebar HTML
  */
 function generateSidebarHTML() {
@@ -254,6 +382,7 @@ function generateSidebarHTML() {
             ${generateNavHTML()}
         </nav>
         <div class="sidebar-footer">
+            ${generateUserProfileHTML()}
             <button class="nav-item theme-toggle" id="sidebarThemeToggle" onclick="toggleTheme && toggleTheme()">
                 <i data-lucide="moon"></i>
                 <span>Toggle Theme</span>
@@ -291,6 +420,9 @@ function initNavigation() {
 
     // Update theme toggle icon based on current theme
     updateThemeToggleIcon();
+
+    // Setup user menu close on outside click
+    setupUserMenuClose();
 }
 
 /**
@@ -358,6 +490,8 @@ function toggleTheme() {
 window.toggleNavGroup = toggleNavGroup;
 window.toggleTheme = toggleTheme;
 window.updateThemeToggleIcon = updateThemeToggleIcon;
+window.toggleUserMenu = toggleUserMenu;
+window.handleLogout = handleLogout;
 
 // Auto-initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', initNavigation);

@@ -30,6 +30,22 @@ const HelpModal = (function() {
     let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
 
     /**
+     * Escape HTML to prevent XSS
+     * @param {string} str - String to escape
+     * @returns {string} - Escaped string
+     */
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    /**
      * Initialize the help modal
      * @param {Object} options - Configuration options
      */
@@ -258,10 +274,12 @@ const HelpModal = (function() {
             console.error('HelpModal: Error loading content', error);
             contentDiv.classList.remove('loading');
             contentDiv.classList.add('error');
+            // Escape error message to prevent XSS
+            const safeErrorMessage = escapeHtml(error.message || 'Unknown error');
             helpContent.innerHTML = `
                 <i data-lucide="alert-circle" style="width: 48px; height: 48px;"></i>
                 <p>Unable to load help content</p>
-                <p style="font-size: 0.85rem;">${error.message}</p>
+                <p style="font-size: 0.85rem;">${safeErrorMessage}</p>
             `;
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
@@ -305,11 +323,19 @@ const HelpModal = (function() {
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
 
-        // Links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+        // Links - sanitize href to prevent javascript: XSS
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+            // Block javascript: and data: URLs to prevent XSS
+            const safeUrl = /^(javascript|data|vbscript):/i.test(url.trim()) ? '#' : url;
+            return `<a href="${safeUrl}" target="_blank">${text}</a>`;
+        });
 
-        // Images
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+        // Images - sanitize src to prevent javascript: XSS
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
+            // Block javascript: and data: URLs to prevent XSS
+            const safeSrc = /^(javascript|data|vbscript):/i.test(src.trim()) ? '' : src;
+            return `<img src="${safeSrc}" alt="${alt}">`;
+        });
 
         // Blockquotes
         html = html.replace(/^&gt; (.+)$/gm, '<blockquote><p>$1</p></blockquote>');

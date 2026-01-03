@@ -408,7 +408,7 @@ module.exports = function(supabase) {
             }
 
             // Get user ID from auth (if available)
-            const userId = req.user?.id || null;
+            const userId = req.userId || null;
 
             const agentData = {
                 id: uuidv4(),
@@ -643,7 +643,7 @@ module.exports = function(supabase) {
             }
 
             // Create duplicate
-            const userId = req.user?.id || original.user_id;
+            const userId = req.userId || original.user_id;
             const duplicateData = {
                 ...original,
                 id: uuidv4(),
@@ -991,7 +991,7 @@ module.exports = function(supabase) {
                 });
             }
 
-            const userId = req.user?.id || null;
+            const userId = req.userId || null;
 
             const result = await executeAgent(id, {
                 userMessage: message,
@@ -1046,7 +1046,7 @@ module.exports = function(supabase) {
             res.setHeader('Connection', 'keep-alive');
             res.setHeader('X-Accel-Buffering', 'no');
 
-            const userId = req.user?.id || null;
+            const userId = req.userId || null;
 
             await streamAgent(id, {
                 userMessage: message,
@@ -1116,7 +1116,7 @@ module.exports = function(supabase) {
             }
 
             // Generate a unique user ID if not provided
-            const userId = user_id || req.user?.id || `anon-${uuidv4().slice(0, 8)}`;
+            const userId = user_id || req.userId || `anon-${uuidv4().slice(0, 8)}`;
 
             const result = await generateSignedEmbedUrl(mindstudioAppId, userId);
 
