@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -396,8 +397,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.6);
             z-index: 1000;
             display: flex;
@@ -416,14 +417,22 @@
         }
 
         .modal {
+            position: relative;
             background: var(--bg-secondary);
             border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
+            width: 80vw;
+            max-width: 900px;
+            min-width: 400px;
+            height: auto;
+            min-height: 300px;
+            max-height: 85vh;
             overflow: hidden;
             transform: scale(0.95);
             transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            resize: both;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         }
 
         .modal-overlay.active .modal {
@@ -436,6 +445,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
         }
 
         .modal-header h2 {
@@ -464,7 +474,8 @@
         .modal-body {
             padding: 1.5rem;
             overflow-y: auto;
-            max-height: 60vh;
+            flex: 1;
+            min-height: 0;
         }
 
         .modal-footer {
@@ -473,6 +484,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
+            flex-shrink: 0;
         }
 
         /* Templates Grid */
@@ -519,6 +531,138 @@
             text-transform: uppercase;
         }
 
+        /* Execute Modal Styles */
+        .execute-modal {
+            width: 85vw;
+            max-width: 1000px;
+            min-height: 500px;
+        }
+
+        .execute-header-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .execute-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .execute-icon.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .execute-icon.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .execute-icon.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .execute-textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .execute-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .execute-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            gap: 1rem;
+        }
+
+        .execute-loading .loading-spinner {
+            width: 48px;
+            height: 48px;
+        }
+
+        .execute-results {
+            margin-top: 1.5rem;
+        }
+
+        .execute-output {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .execute-output h1, .execute-output h2, .execute-output h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .execute-output p {
+            margin-bottom: 0.75rem;
+        }
+
+        .execute-output ul, .execute-output ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .execute-metadata {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .execute-metadata span {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        /* Modal resize handle indicator */
+        .modal::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%);
+            opacity: 0.3;
+            pointer-events: none;
+            border-radius: 0 0 8px 0;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .suite-tabs {
@@ -529,6 +673,15 @@
             }
             .actions-grid {
                 grid-template-columns: 1fr;
+            }
+            .modal {
+                width: 95vw;
+                min-width: unset;
+                max-height: 90vh;
+                resize: vertical;
+            }
+            .templates-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
         }
     </style>
@@ -650,6 +803,65 @@
                 <button class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
                 <button class="btn-primary" id="createFromTemplateBtn" onclick="createFromTemplate()" disabled>
                     <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Action
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execute Action Modal -->
+    <div class="modal-overlay" id="executeModal">
+        <div class="modal execute-modal">
+            <div class="modal-header">
+                <div class="execute-header-info">
+                    <div class="execute-icon" id="executeActionIcon">
+                        <i data-lucide="zap"></i>
+                    </div>
+                    <div>
+                        <h2 id="executeActionName">Action Name</h2>
+                        <span class="action-suite execute" id="executeActionSuite">execute</span>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeExecuteModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="action-description" id="executeActionDescription" style="margin-bottom: 1.5rem;"></p>
+
+                <!-- Input Section -->
+                <div id="executeInputSection">
+                    <label class="input-label">
+                        <i data-lucide="message-square" style="width:14px;height:14px;"></i>
+                        Your Input
+                    </label>
+                    <textarea
+                        id="executeInput"
+                        class="execute-textarea"
+                        placeholder="What would you like this action to help you with?"
+                        rows="4"
+                    ></textarea>
+                </div>
+
+                <!-- Loading State -->
+                <div id="executeLoading" class="execute-loading" style="display: none;">
+                    <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner">
+                    <span id="executeLoadingText" class="loading-text">Executing action...</span>
+                </div>
+
+                <!-- Results Section -->
+                <div id="executeResults" class="execute-results" style="display: none;">
+                    <label class="input-label">
+                        <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+                        Results
+                    </label>
+                    <div id="executeOutput" class="execute-output"></div>
+                    <div id="executeMetadata" class="execute-metadata"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeExecuteModal()">Close</button>
+                <button class="btn-primary" id="executeBtn" onclick="runAction()">
+                    <i data-lucide="play" style="width:16px;height:16px;"></i> Run Action
                 </button>
             </div>
         </div>
@@ -910,12 +1122,181 @@
             }
         }
 
+        // ============================================
+        // EXECUTE ACTION MODAL
+        // ============================================
+        let currentAction = null;
+        let loadingController = null;
+
+        // Action-specific loading messages
+        const ACTION_LOADING_MESSAGES = [
+            'Executing action...',
+            'Processing your request...',
+            'Applying context assets...',
+            'Generating content...',
+            'Running through AI engine...',
+            'Analyzing input...',
+            'Building response...',
+            'Applying Parthenon principles...',
+            'Almost there...',
+            'Crafting output...'
+        ];
+
         function openAction(slug) {
-            // In the future, this would open the action's dedicated UI
-            alert(`Opening action: ${slug}\n\nAction execution UI coming soon!`);
+            // Find the action by slug
+            const action = actions.find(a => a.slug === slug);
+            if (!action) {
+                alert('Action not found');
+                return;
+            }
+
+            currentAction = action;
+
+            // Update modal header
+            document.getElementById('executeActionName').textContent = action.name;
+            document.getElementById('executeActionDescription').textContent = action.description || '';
+
+            // Update suite badge
+            const suiteBadge = document.getElementById('executeActionSuite');
+            suiteBadge.textContent = action.suite;
+            suiteBadge.className = `action-suite ${action.suite}`;
+
+            // Update icon
+            const iconContainer = document.getElementById('executeActionIcon');
+            iconContainer.className = `execute-icon ${action.suite}`;
+            iconContainer.innerHTML = `<i data-lucide="${action.icon || 'zap'}"></i>`;
+
+            // Reset modal state
+            document.getElementById('executeInput').value = '';
+            document.getElementById('executeInputSection').style.display = 'block';
+            document.getElementById('executeLoading').style.display = 'none';
+            document.getElementById('executeResults').style.display = 'none';
+            document.getElementById('executeBtn').disabled = false;
+            document.getElementById('executeBtn').innerHTML = '<i data-lucide="play" style="width:16px;height:16px;"></i> Run Action';
+
+            lucide.createIcons();
+            document.getElementById('executeModal').classList.add('active');
+        }
+
+        function closeExecuteModal() {
+            document.getElementById('executeModal').classList.remove('active');
+            currentAction = null;
+        }
+
+        async function runAction() {
+            if (!currentAction) return;
+
+            const input = document.getElementById('executeInput').value.trim();
+            const btn = document.getElementById('executeBtn');
+
+            // Show loading state
+            document.getElementById('executeInputSection').style.display = 'none';
+            document.getElementById('executeLoading').style.display = 'flex';
+            document.getElementById('executeResults').style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width:16px;height:16px;"></i> Running...';
+            lucide.createIcons();
+
+            // Start rotating loading messages
+            const loadingTextEl = document.getElementById('executeLoadingText');
+            loadingController = LoadingMessages.start(loadingTextEl, {
+                messages: ACTION_LOADING_MESSAGES,
+                interval: 2500
+            });
+
+            try {
+                const res = await fetch(`/api/actions/${currentAction.id}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input_data: {
+                            message: input || 'Execute with default parameters'
+                        }
+                    })
+                });
+
+                const result = await res.json();
+
+                // Stop loading messages and hide loading
+                if (loadingController) {
+                    loadingController.stop();
+                    loadingController = null;
+                }
+                document.getElementById('executeLoading').style.display = 'none';
+
+                if (result.success) {
+                    // Show results
+                    const output = result.data.output_data?.response || 'No response generated';
+                    document.getElementById('executeOutput').innerHTML = formatMarkdown(output);
+
+                    // Show metadata
+                    const metadata = document.getElementById('executeMetadata');
+                    const duration = result.data.duration_ms ? `${(result.data.duration_ms / 1000).toFixed(1)}s` : 'N/A';
+                    const model = result.data.model_used || 'claude';
+                    metadata.innerHTML = `
+                        <span><i data-lucide="clock" style="width:14px;height:14px;"></i> ${duration}</span>
+                        <span><i data-lucide="cpu" style="width:14px;height:14px;"></i> ${model}</span>
+                        <span><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Completed</span>
+                    `;
+
+                    document.getElementById('executeResults').style.display = 'block';
+                    btn.innerHTML = '<i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> Run Again';
+                    btn.disabled = false;
+
+                    // Reload stats to update execution count
+                    loadStats();
+                    loadActions();
+                } else {
+                    // Show error
+                    document.getElementById('executeOutput').innerHTML = `<div style="color: #ef4444;">Error: ${result.error}</div>`;
+                    document.getElementById('executeMetadata').innerHTML = '';
+                    document.getElementById('executeResults').style.display = 'block';
+                    btn.innerHTML = '<i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> Try Again';
+                    btn.disabled = false;
+                }
+
+                lucide.createIcons();
+
+            } catch (error) {
+                console.error('Error executing action:', error);
+                // Stop loading messages
+                if (loadingController) {
+                    loadingController.stop();
+                    loadingController = null;
+                }
+                document.getElementById('executeLoading').style.display = 'none';
+                document.getElementById('executeOutput').innerHTML = `<div style="color: #ef4444;">Error: ${error.message}</div>`;
+                document.getElementById('executeMetadata').innerHTML = '';
+                document.getElementById('executeResults').style.display = 'block';
+                btn.innerHTML = '<i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> Try Again';
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        // Simple markdown formatter
+        function formatMarkdown(text) {
+            if (!text) return '';
+
+            return text
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                // Bold
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Italic
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Lists
+                .replace(/^\- (.*$)/gim, '<li>$1</li>')
+                .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+                // Line breaks
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
         }
     </script>
-    <script src="/js/navigation.js"></script>
+    <script src="/js/loading-messages.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>
