@@ -122,8 +122,6 @@ app.use((req, res, next) => {
     const tokenMatch = cookies.match(/auth_token=([^;]+)/);
     const token = tokenMatch ? tokenMatch[1] : null;
 
-    console.log(`[Auth] Path: ${req.path}, Has cookie: ${!!token}, Cookie header: ${cookies.substring(0, 50)}...`);
-
     if (!token) {
         return res.redirect('/login');
     }
