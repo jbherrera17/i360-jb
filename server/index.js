@@ -94,6 +94,43 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ============================================
+// PAGE AUTHENTICATION (before static files)
+// ============================================
+
+// Protected HTML pages - must authenticate before serving
+const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/agents.html',
+    '/briefing', '/briefing.html', '/context', '/context.html', '/parthenon', '/parthenon.html',
+    '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
+    '/strategy120', '/strategy120.html', '/guides', '/guides.html', '/admin', '/admin.html'];
+
+// Page auth middleware - runs before static file serving
+app.use((req, res, next) => {
+    // Only check HTML page requests, not static assets
+    const isProtectedPage = protectedPages.some(page => req.path === page);
+
+    if (!isProtectedPage) {
+        return next();
+    }
+
+    // Development mode bypass
+    if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
+        return next();
+    }
+
+    // Check for auth token in cookie
+    const cookies = req.headers.cookie || '';
+    const tokenMatch = cookies.match(/auth_token=([^;]+)/);
+    const token = tokenMatch ? tokenMatch[1] : null;
+
+    if (!token) {
+        return res.redirect('/login');
+    }
+
+    // Token exists - let it through (Supabase validation happens in API routes)
+    next();
+});
+
+// ============================================
 // STATIC FILES
 // ============================================
 
@@ -298,7 +335,7 @@ function initializeServices() {
 
 // Try to load auth middleware if it exists
 try {
-    const { authenticate, requirePageAuth, rateLimit } = require('./middleware/auth');
+    const { authenticate, rateLimit } = require('./middleware/auth');
 
     // Apply authentication to API routes
     app.use('/api', authenticate);
@@ -310,19 +347,7 @@ try {
         message: 'Too many chat requests. Please wait a moment.'
     }));
 
-    // Apply page authentication to protected HTML routes
-    // This redirects unauthenticated users to /login
-    const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/agents.html',
-        '/briefing', '/briefing.html', '/context', '/context.html', '/parthenon', '/parthenon.html',
-        '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
-        '/strategy120', '/strategy120.html', '/guides', '/guides.html', '/admin', '/admin.html'];
-
-    protectedPages.forEach(page => {
-        app.use(page, requirePageAuth);
-    });
-
     console.log('🔐 Authentication middleware loaded\n');
-    console.log('🔒 Page protection enabled - login required\n');
 } catch (error) {
     // Auth middleware not available, continue without it
     console.log('ℹ️  Auth middleware not loaded (optional)\n');
