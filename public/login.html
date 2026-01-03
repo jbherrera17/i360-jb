@@ -604,7 +604,8 @@
                     localStorage.setItem('insight360_user', JSON.stringify(data.user));
 
                     // Set auth_token cookie for server-side authentication
-                    document.cookie = `auth_token=${data.session.access_token}; path=/; max-age=${60*60*24*7}; SameSite=Lax`;
+                    const maxAge = 60 * 60 * 24 * 7; // 7 days
+                    document.cookie = 'auth_token=' + data.session.access_token + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
 
                     currentUser = data.user;
                     showUserCard(data.user);
