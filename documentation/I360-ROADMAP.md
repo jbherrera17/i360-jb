@@ -2,9 +2,9 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** January 2, 2026
-**Current System Version:** v2.26 (Phase 8.2 Complete)
+**Current System Version:** v2.27 (Phase 9 In Progress)
 
 ---
 
@@ -12,17 +12,17 @@
 
 Insight 360 is a multi-LLM orchestration platform with solid foundational architecture. After completing 8+ development phases focused on features, the system requires **production hardening** before deployment to production environments. This roadmap redefines the phase structure to focus on stability, security, and scalability.
 
-**Current Production Readiness Score: 5.4/10** *(Updated Jan 2, 2026)*
+**Current Production Readiness Score: 5.8/10** *(Updated Jan 2, 2026)*
 
 | Area | Score | Risk Level | Notes |
 |------|-------|------------|-------|
 | Architecture | 7/10 | Medium | Solid foundation |
-| Security | 6/10 | High | Auth bypass, XSS, ReDoS fixed |
+| Security | 7/10 | Medium | Auth bypass, XSS, ReDoS, RLS fixed |
 | Error Handling | 7/10 | Medium | Good coverage |
-| Database | 6/10 | Medium | RLS policies in place |
+| Database | 6.5/10 | Medium | RLS policies fixed |
 | Testing | 0/10 | **Critical** | No tests yet |
-| Observability | 1/10 | High | Minimal logging |
-| Documentation | 5/10 | Medium | Blueprints exist |
+| Observability | 1.5/10 | High | Added debug logging |
+| Documentation | 5.5/10 | Medium | Blueprints + roadmap |
 
 ---
 
@@ -43,6 +43,7 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 | 8 | User Management | Complete | RBAC, Strategy 120 |
 | 8.1 | Help System | Complete | Documentation hub |
 | 8.2 | Navigation Redesign | Complete | UI consistency |
+| 9 | Security & Bug Fixes | **In Progress** | Production hardening |
 
 ---
 
@@ -50,7 +51,7 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ### Phase 9: Critical Bug Fixes & Security Patches
 **Priority:** CRITICAL
-**Target:** Immediate
+**Status:** IN PROGRESS (90% complete)
 
 #### 9.1 Security Vulnerabilities (Critical)
 
@@ -63,6 +64,11 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
   - File: `server/index.js`
   - Issue: No warning when service key not configured
   - Fixed: Added production warning when SUPABASE_SERVICE_KEY is missing
+
+- [x] **Fix RLS infinite recursion on users table** ✅
+  - File: `db/migration-users-rls-fix-v2.sql`
+  - Issue: Admin policy caused infinite recursion when checking admin status
+  - Fixed: Created SECURITY DEFINER `is_admin()` function to bypass RLS
 
 - [ ] **Add .env to .gitignore and rotate exposed API keys**
   - Issue: API keys were committed to repository
@@ -401,11 +407,11 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 | Metric | Current | Target | Timeline |
 |--------|---------|--------|----------|
-| Security Score | 6/10 | 8/10 | Phase 10 |
+| Security Score | 7/10 | 8/10 | Phase 10 |
 | Test Coverage | 0% | 60% | Phase 12 |
-| Observability | 1/10 | 8/10 | Phase 11 |
-| Documentation | 5/10 | 8/10 | Ongoing |
-| **Overall Score** | **5.4/10** | **8/10** | Phase 14 |
+| Observability | 1.5/10 | 8/10 | Phase 11 |
+| Documentation | 5.5/10 | 8/10 | Ongoing |
+| **Overall Score** | **5.8/10** | **8/10** | Phase 14 |
 
 ### Operational Targets
 
