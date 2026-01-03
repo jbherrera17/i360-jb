@@ -98,6 +98,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // ============================================
 
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/documentation', express.static(path.join(__dirname, '../documentation')));
 
 // ============================================
 // REQUEST LOGGING (Development)
@@ -297,19 +298,31 @@ function initializeServices() {
 
 // Try to load auth middleware if it exists
 try {
-    const { authenticate, rateLimit } = require('./middleware/auth');
-    
+    const { authenticate, requirePageAuth, rateLimit } = require('./middleware/auth');
+
     // Apply authentication to API routes
     app.use('/api', authenticate);
-    
+
     // Rate limiting for chat endpoints
     app.use('/api/chat', rateLimit({
         windowMs: 60000, // 1 minute
         max: 30, // 30 requests per minute
         message: 'Too many chat requests. Please wait a moment.'
     }));
-    
+
+    // Apply page authentication to protected HTML routes
+    // This redirects unauthenticated users to /login
+    const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/agents.html',
+        '/briefing', '/briefing.html', '/context', '/context.html', '/parthenon', '/parthenon.html',
+        '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
+        '/strategy120', '/strategy120.html', '/guides', '/guides.html', '/admin', '/admin.html'];
+
+    protectedPages.forEach(page => {
+        app.use(page, requirePageAuth);
+    });
+
     console.log('🔐 Authentication middleware loaded\n');
+    console.log('🔒 Page protection enabled - login required\n');
 } catch (error) {
     // Auth middleware not available, continue without it
     console.log('ℹ️  Auth middleware not loaded (optional)\n');

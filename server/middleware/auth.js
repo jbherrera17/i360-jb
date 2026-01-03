@@ -234,6 +234,65 @@ function requireRole(...allowedRoles) {
 }
 
 /**
+ * Page authentication middleware
+ * Redirects unauthenticated users to login page for protected HTML routes
+ * Checks for token in cookie or Authorization header
+ */
+function requirePageAuth(req, res, next) {
+    // Public pages that don't require authentication
+    const publicPages = ['/login', '/login.html', '/register', '/register.html', '/forgot-password'];
+
+    // Check if current path is public
+    if (publicPages.some(page => req.path === page || req.path.startsWith(page))) {
+        return next();
+    }
+
+    // Development mode bypass
+    if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
+        return next();
+    }
+
+    // Check for auth token in cookie
+    const cookies = req.headers.cookie || '';
+    const tokenMatch = cookies.match(/auth_token=([^;]+)/);
+    const token = tokenMatch ? tokenMatch[1] : null;
+
+    // Also check Authorization header (for API clients)
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    const authToken = token || bearerToken;
+
+    if (!authToken) {
+        // No token - redirect to login
+        return res.redirect('/login');
+    }
+
+    // Verify token with Supabase if available
+    const supabase = req.supabase;
+    if (supabase) {
+        supabase.auth.getUser(authToken)
+            .then(({ data: { user }, error }) => {
+                if (error || !user) {
+                    // Invalid token - redirect to login
+                    return res.redirect('/login');
+                }
+                // Valid token - allow access
+                req.user = user;
+                req.userId = user.id;
+                next();
+            })
+            .catch(() => {
+                res.redirect('/login');
+            });
+    } else {
+        // No Supabase - just check token exists (basic validation)
+        // In production, Supabase should always be configured
+        next();
+    }
+}
+
+/**
  * Rate limiting by user (basic implementation)
  * Phase 5 will have more sophisticated rate limiting
  */
@@ -325,6 +384,7 @@ setInterval(() => {
 module.exports = {
     authenticate,
     requireAuth,
+    requirePageAuth,
     optionalAuth,
     requireAdmin,
     requireRole,
