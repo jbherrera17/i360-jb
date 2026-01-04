@@ -2,9 +2,9 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 1.3
+**Version:** 1.4
 **Last Updated:** January 4, 2026
-**Current System Version:** v2.29 (Phase 11 Complete)
+**Current System Version:** v2.30 (Phase 12 Complete)
 
 ---
 
@@ -46,7 +46,8 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 | 8.2 | Navigation Redesign | Complete | UI consistency |
 | 9 | Security & Bug Fixes | Complete | Production hardening |
 | 10 | Execute 120 | Complete | Department-focused execution hub |
-| 11 | User Onboarding | **Complete** | Onboarding wizard, profile page, new client setup |
+| 11 | User Onboarding | Complete | Onboarding wizard, profile page, new client setup |
+| 12 | Navigation & UX | **Complete** | Nav restructure, Agent Library UX, category data fix |
 
 ---
 
@@ -194,11 +195,43 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 12: Security Hardening
+### Phase 12: Navigation & Agent Library UX Improvements
+**Priority:** High
+**Status:** COMPLETE
+
+#### 12.1 Navigation Restructuring (Complete)
+
+- [x] Move Execute 120 from primary to I360 Systems category
+- [x] Rename Strategy 120 to Strategy Agents
+- [x] Move Strategy Agents to Components category
+- [x] Fix sidebar footer user menu as positioned dropdown
+
+#### 12.2 Execute 120 Page Structure (Complete)
+
+- [x] Add proper sidebar navigation structure
+- [x] Use standard page header layout
+- [x] Consistent with other pages (Align 120)
+
+#### 12.3 Agent Library Improvements (Complete)
+
+- [x] Reorder filters: Suite → Category → Status → Platform
+- [x] Update agent listing to show Suite, Category, Status badges
+- [x] Add suite-badge and category-badge CSS styles
+
+#### 12.4 Agent Category Data Fix (Complete)
+
+- [x] Create category migration script
+- [x] Fix 51 agents with invalid categories
+- [x] Map deprecated categories to valid master list
+- [x] All agents now use valid categories
+
+---
+
+### Phase 13: Security Hardening
 **Priority:** High
 **Target:** Next
 
-#### 12.1 Authentication & Authorization
+#### 13.1 Authentication & Authorization
 
 - [ ] Implement proper JWT validation with expiration
 - [ ] Add refresh token rotation
@@ -206,14 +239,14 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 - [ ] Add multi-factor authentication (optional)
 - [ ] Implement session management and forced logout
 
-#### 12.2 Input Validation
+#### 13.2 Input Validation
 
 - [ ] Add Zod/Joi schema validation to all endpoints
 - [ ] Implement request body size limits
 - [ ] Add file upload validation and scanning
 - [ ] Sanitize all user inputs before database operations
 
-#### 12.3 Infrastructure Security
+#### 13.3 Infrastructure Security
 
 - [ ] Implement distributed rate limiting (Redis)
 - [ ] Add HTTPS enforcement (HSTS headers)
@@ -221,7 +254,7 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 - [ ] Add Web Application Firewall rules
 - [ ] Implement API key rotation mechanism
 
-#### 12.4 Audit & Compliance
+#### 13.4 Audit & Compliance
 
 - [ ] Add security audit logging
 - [ ] Implement GDPR data deletion flow
@@ -230,32 +263,32 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 13: Observability & Monitoring
+### Phase 14: Observability & Monitoring
 **Priority:** High
-**Target:** After Phase 12
+**Target:** After Phase 13
 
-#### 13.1 Logging Infrastructure
+#### 14.1 Logging Infrastructure
 
 - [ ] Replace console.log with Winston structured logging
 - [ ] Add request correlation IDs
 - [ ] Configure log levels by environment
 - [ ] Set up log aggregation (ELK/Datadog/CloudWatch)
 
-#### 13.2 Metrics & Monitoring
+#### 14.2 Metrics & Monitoring
 
 - [ ] Add Prometheus metrics endpoint
 - [ ] Track API latency, error rates, throughput
 - [ ] Monitor LLM API costs and usage
 - [ ] Create operational dashboards
 
-#### 13.3 Error Tracking
+#### 14.3 Error Tracking
 
 - [ ] Integrate Sentry for error tracking
 - [ ] Add source maps for frontend error tracking
 - [ ] Configure alerting for critical errors
 - [ ] Implement error budgets and SLOs
 
-#### 13.4 Health Checks
+#### 14.4 Health Checks
 
 - [ ] Add `/health` endpoint with dependency checks
 - [ ] Add `/ready` endpoint for Kubernetes probes
@@ -264,32 +297,32 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 14: Testing & Quality Assurance
+### Phase 15: Testing & Quality Assurance
 **Priority:** High
-**Target:** After Phase 13
+**Target:** After Phase 14
 
-#### 14.1 Unit Testing
+#### 15.1 Unit Testing
 
 - [ ] Set up Jest configuration
 - [ ] Write unit tests for all services (target: 60% coverage)
 - [ ] Add snapshot tests for API responses
 - [ ] Implement test data factories
 
-#### 14.2 Integration Testing
+#### 15.2 Integration Testing
 
 - [ ] Create integration tests for all API endpoints
 - [ ] Add database integration tests
 - [ ] Test authentication flows end-to-end
 - [ ] Test LLM provider failover scenarios
 
-#### 14.3 End-to-End Testing
+#### 15.3 End-to-End Testing
 
 - [ ] Set up Playwright/Cypress for E2E tests
 - [ ] Create smoke test suite
 - [ ] Add visual regression tests
 - [ ] Test streaming endpoints
 
-#### 14.4 Performance Testing
+#### 15.4 Performance Testing
 
 - [ ] Load test streaming chat endpoints
 - [ ] Stress test rate limiting
@@ -298,25 +331,25 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 15: Reliability & Resilience
+### Phase 16: Reliability & Resilience
 **Priority:** Medium
-**Target:** After Phase 14
+**Target:** After Phase 15
 
-#### 15.1 Error Recovery
+#### 16.1 Error Recovery
 
 - [ ] Implement retry logic with exponential backoff
 - [ ] Add circuit breakers for LLM APIs
 - [ ] Handle partial failures gracefully
 - [ ] Implement dead letter queues for failed operations
 
-#### 15.2 Graceful Degradation
+#### 16.2 Graceful Degradation
 
 - [ ] Add fallback responses when services fail
 - [ ] Implement service health status checks
 - [ ] Create degraded mode for non-critical features
 - [ ] Add timeout configurations for all operations
 
-#### 15.3 Data Integrity
+#### 16.3 Data Integrity
 
 - [ ] Implement database migrations with rollback
 - [ ] Add data validation at persistence layer
@@ -325,32 +358,32 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 16: Deployment & DevOps
+### Phase 17: Deployment & DevOps
 **Priority:** Medium
-**Target:** After Phase 15
+**Target:** After Phase 16
 
-#### 16.1 Containerization
+#### 17.1 Containerization
 
 - [ ] Create production Dockerfile
 - [ ] Optimize Docker image size
 - [ ] Add Docker Compose for local development
 - [ ] Create Kubernetes manifests
 
-#### 16.2 CI/CD Pipeline
+#### 17.2 CI/CD Pipeline
 
 - [ ] Set up GitHub Actions workflow
 - [ ] Add automated testing on PR
 - [ ] Implement automated deployments
 - [ ] Add security scanning (Snyk, npm audit)
 
-#### 16.3 Infrastructure as Code
+#### 17.3 Infrastructure as Code
 
 - [ ] Create Terraform/CloudFormation templates
 - [ ] Document infrastructure requirements
 - [ ] Set up environment parity (dev/staging/prod)
 - [ ] Implement secrets management (Vault/AWS Secrets)
 
-#### 16.4 Operational Procedures
+#### 17.4 Operational Procedures
 
 - [ ] Create deployment runbooks
 - [ ] Document rollback procedures
@@ -359,25 +392,25 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 17: Performance & Scalability
+### Phase 18: Performance & Scalability
 **Priority:** Medium
-**Target:** After Phase 16
+**Target:** After Phase 17
 
-#### 17.1 Caching
+#### 18.1 Caching
 
 - [ ] Add Redis caching layer
 - [ ] Cache frequently accessed data (agents, context)
 - [ ] Implement cache invalidation strategies
 - [ ] Add CDN for static assets
 
-#### 17.2 Database Optimization
+#### 18.2 Database Optimization
 
 - [ ] Analyze and optimize slow queries
 - [ ] Add missing indexes
 - [ ] Implement connection pooling
 - [ ] Set up read replicas if needed
 
-#### 17.3 Application Performance
+#### 18.3 Application Performance
 
 - [ ] Implement response compression (Brotli)
 - [ ] Optimize frontend bundle size
@@ -386,11 +419,11 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 ---
 
-### Phase 18: Feature Enhancements (Post-Production)
+### Phase 19: Feature Enhancements (Post-Production)
 **Priority:** Low
 **Target:** After production deployment
 
-#### 18.1 Execute 120 Enhancements
+#### 19.1 Execute 120 Enhancements
 
 - [x] Execute 120 core schema (Complete)
 - [x] 16 agents seeded (Complete)
@@ -400,14 +433,14 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 - [ ] Workflow templates marketplace
 - [ ] Workflow analytics and usage tracking
 
-#### 18.2 Advanced Analytics
+#### 19.2 Advanced Analytics
 
 - [ ] Agent usage analytics
 - [ ] Cost tracking per conversation
 - [ ] User behavior insights
 - [ ] ROI calculations
 
-#### 18.3 Collaboration Features
+#### 19.3 Collaboration Features
 
 - [ ] Multi-user conversations
 - [ ] Agent sharing and templates
@@ -486,12 +519,12 @@ Insight 360 is a multi-LLM orchestration platform with solid foundational archit
 
 | Metric | Current | Target | Timeline |
 |--------|---------|--------|----------|
-| Security Score | 7/10 | 8/10 | Phase 12 |
-| Test Coverage | 0% | 60% | Phase 14 |
-| Observability | 1.5/10 | 8/10 | Phase 13 |
+| Security Score | 7/10 | 8/10 | Phase 13 |
+| Test Coverage | 0% | 60% | Phase 15 |
+| Observability | 1.5/10 | 8/10 | Phase 14 |
 | Documentation | 8/10 | 9/10 | Ongoing |
 | User Experience | 7/10 | 8/10 | Ongoing |
-| **Overall Score** | **6.5/10** | **8/10** | Phase 16 |
+| **Overall Score** | **6.5/10** | **8/10** | Phase 17 |
 
 ### Operational Targets
 
