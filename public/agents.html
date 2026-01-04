@@ -575,6 +575,39 @@
             color: var(--text-muted);
         }
 
+        .suite-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .suite-badge.align {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .suite-badge.strategy {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+        }
+
+        .suite-badge.execute {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .category-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: rgba(110, 110, 115, 0.15);
+            color: var(--text-secondary);
+        }
+
         .agent-usage {
             font-size: 0.75rem;
             color: var(--text-muted);
@@ -1977,18 +2010,18 @@
                 </div>
 
                 <div class="filter-group">
+                    <label class="filter-label">Category</label>
+                    <select class="filter-select" id="filterCategory">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <label class="filter-label">Status</label>
                     <select class="filter-select" id="filterStatus">
                         <option value="">All Status</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Category</label>
-                    <select class="filter-select" id="filterCategory">
-                        <option value="">All Categories</option>
                     </select>
                 </div>
 
@@ -2701,11 +2734,15 @@
                 return;
             }
 
+            const suiteLabels = { align: 'Align', strategy: 'Strategy', execute: 'Execute' };
+
             agentList.innerHTML = agents.map(agent => {
-                const provider = agent.llm_provider || agent.source_type || 'native';
                 const status = agent.is_active !== false ? 'active' : 'inactive';
                 const iconHtml = renderAgentIcon(agent.icon);
                 const systemBadge = agent.is_system ? '<span class="status-badge" style="background:#6366f1;color:white;font-size:0.65rem;">sys</span>' : '';
+                const suiteLabel = suiteLabels[agent.suite] || agent.suite || '—';
+                const cat = categories.find(c => c.id === agent.category || c.name === agent.category);
+                const categoryLabel = cat?.display_name || cat?.name || agent.category || '—';
                 return `
                 <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}"
                      data-id="${agent.id}">
@@ -2713,7 +2750,8 @@
                     <div class="agent-info">
                         <div class="agent-name">${agent.name}</div>
                         <div class="agent-meta">
-                            <span class="platform-badge ${provider}">${provider}</span>
+                            <span class="suite-badge ${agent.suite || ''}">${suiteLabel}</span>
+                            <span class="category-badge">${categoryLabel}</span>
                             <span class="status-badge ${status}">${status}</span>
                             ${systemBadge}
                         </div>

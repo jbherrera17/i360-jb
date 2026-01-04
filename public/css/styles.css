@@ -445,13 +445,24 @@ select {
     height: 18px;
 }
 
+.sidebar-footer {
+    position: relative;
+}
+
 .user-menu {
     display: none;
     flex-direction: column;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     overflow: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
     margin-bottom: var(--spacing-sm);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    z-index: 100;
 }
 
 .user-menu.open {

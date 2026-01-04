@@ -20,8 +20,7 @@ const navConfig = {
     primary: [
         { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
         { href: '/chat.html', icon: 'message-square', label: 'Multi-LLM Chat' },
-        { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
-        { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
+        { href: '/agents.html', icon: 'bot', label: 'Agent Library' }
     ],
 
     // Grouped items - collapsible categories
@@ -43,7 +42,7 @@ const navConfig = {
             items: [
                 { href: '/align120.html', icon: 'compass', label: 'Align 120' },
                 { href: '/strategy.html', icon: 'milestone', label: 'Strategy (S2E)' },
-                { href: '/strategy120.html', icon: 'brain', label: 'Strategy 120' }
+                { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
             ]
         },
         {
@@ -54,7 +53,8 @@ const navConfig = {
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
-                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' }
+                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' },
+                { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' }
             ]
         },
         {

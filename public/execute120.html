@@ -17,49 +17,6 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            padding: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* Page Header */
-        .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-
-        .page-header-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .page-header-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            margin: 0;
-        }
-
-        .page-header p {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin: 0;
         }
 
         /* Department Tabs */
@@ -722,34 +679,37 @@
     </style>
 </head>
 <body>
-    <!-- Navigation will be injected -->
-    <div id="nav-container"></div>
+    <div class="app-container">
+        <!-- Sidebar (injected by navigation.js) -->
+        <aside class="sidebar"></aside>
 
-    <main class="execute120-layout">
-        <!-- Page Header -->
-        <div class="page-header">
-            <div class="page-header-content">
-                <div class="page-header-icon">
-                    <i data-lucide="rocket"></i>
-                </div>
-                <div>
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
                     <h1>Execute 120</h1>
-                    <p>Department-focused execution with workflow wizards</p>
+                    <p class="header-subtitle">Department-focused execution with workflow wizards</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="execute120-layout">
+                <!-- Department Tabs -->
+                <div class="department-tabs" id="departmentTabs">
+                    <!-- Tabs will be dynamically loaded -->
+                    <div class="loading-spinner"></div>
+                </div>
+
+                <!-- Department Contents -->
+                <div id="departmentContents">
+                    <!-- Content will be dynamically loaded -->
                 </div>
             </div>
-        </div>
-
-        <!-- Department Tabs -->
-        <div class="department-tabs" id="departmentTabs">
-            <!-- Tabs will be dynamically loaded -->
-            <div class="loading-spinner"></div>
-        </div>
-
-        <!-- Department Contents -->
-        <div id="departmentContents">
-            <!-- Content will be dynamically loaded -->
-        </div>
-    </main>
+        </main>
+    </div>
 
     <!-- Workflow Wizard Modal -->
     <div class="workflow-modal" id="workflowModal">
