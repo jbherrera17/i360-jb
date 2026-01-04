@@ -3,9 +3,9 @@
 
 -- Align 120 Suite (Foundation/Alignment)
 -- Agents focused on values, governance, and organizational alignment
-UPDATE agents SET suite = 'align' WHERE id = 'a0000000-0000-0000-0000-000000000101'; -- Integrity Auditor
-UPDATE agents SET suite = 'align' WHERE id = 'a0000000-0000-0000-0000-000000000102'; -- Risk Sentinel
-UPDATE agents SET suite = 'align' WHERE id = 'a0000000-0000-0000-0000-000000000103'; -- Counterfactual Analyst
+UPDATE agents SET suite = 'align' WHERE id = 'a0000001-0000-4000-a000-000000000101'; -- Integrity Auditor
+UPDATE agents SET suite = 'align' WHERE id = 'a0000001-0000-4000-a000-000000000102'; -- Risk Sentinel
+UPDATE agents SET suite = 'align' WHERE id = 'a0000001-0000-4000-a000-000000000103'; -- Counterfactual Analyst
 
 -- Strategy 120 Suite (Planning)
 -- Agents focused on strategic planning, research, and decision-making

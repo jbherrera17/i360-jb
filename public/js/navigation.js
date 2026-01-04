@@ -37,7 +37,7 @@ const navConfig = {
         },
         {
             id: 'strategy',
-            label: 'Strategy',
+            label: 'I360 Systems',
             icon: 'target',
             items: [
                 { href: '/align120.html', icon: 'compass', label: 'Align 120' },

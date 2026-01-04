@@ -31,6 +31,7 @@ const briefingRoutes = require('./routes/briefing');
 const promptsRoutes = require('./routes/prompts');
 const align120Routes = require('./routes/align120');
 const strategy120Routes = require('./routes/strategy120');
+const execute120Routes = require('./routes/execute120');
 const authRoutes = require('./routes/auth');
 const schedulerService = require('./services/schedulerService');
 
@@ -101,7 +102,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/agents.html',
     '/briefing', '/briefing.html', '/context', '/context.html', '/parthenon', '/parthenon.html',
     '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
-    '/strategy120', '/strategy120.html', '/guides', '/guides.html', '/admin', '/admin.html'];
+    '/strategy120', '/strategy120.html', '/execute120', '/execute120.html',
+    '/guides', '/guides.html', '/admin', '/admin.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -305,6 +307,7 @@ function initializeServices() {
         app.use('/api/prompts', promptsRoutes(supabase));
         app.use('/api/align120', align120Routes(supabase));
         app.use('/api/strategy120', strategy120Routes(supabase));
+        app.use('/api/execute120', execute120Routes(supabase));
         app.use('/api/auth', authRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Auth routes registered');
@@ -317,6 +320,7 @@ function initializeServices() {
         console.log('  ✅ Prompts (Transformer) routes registered');
         console.log('  ✅ Align 120 routes registered');
         console.log('  ✅ Strategy 120 routes registered');
+        console.log('  ✅ Execute 120 routes registered');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()

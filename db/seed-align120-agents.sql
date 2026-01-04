@@ -15,7 +15,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000201',
+    'a0000001-0000-4000-a000-000000000201',
     NULL,
     'AI Inventory Scanner',
     'Discovers and catalogs all AI systems in use across the organization, including shadow AI.',
@@ -85,7 +85,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000202',
+    'a0000001-0000-4000-a000-000000000202',
     NULL,
     'AI Risk & Compliance Scout',
     'Assesses AI-related risks including privacy, IP, vendor, and regulatory compliance.',
@@ -167,7 +167,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000203',
+    'a0000001-0000-4000-a000-000000000203',
     NULL,
     'AI Opportunity Ranker',
     'Identifies and prioritizes AI opportunities based on impact and feasibility.',
@@ -243,7 +243,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000204',
+    'a0000001-0000-4000-a000-000000000204',
     NULL,
     'AI Maturity Scorer',
     'Calculates overall AI maturity score across data, governance, skills, tooling, adoption, and culture.',

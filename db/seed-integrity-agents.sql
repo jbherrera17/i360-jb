@@ -12,7 +12,7 @@
 INSERT INTO agents (id, user_id, name, description, icon, is_active, is_public, category, llm_provider, llm_model, system_prompt, temperature, max_tokens)
 VALUES
 (
-    'a0000000-0000-0000-0000-000000000101',
+    'a0000001-0000-4000-a000-000000000101',
     NULL,
     'Integrity Auditor',
     'Performs Front Page Tests on sampled decisions and calculates Values Drift Scores. Reviews AI-influenced decisions against organizational values.',
@@ -82,7 +82,7 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO agents (id, user_id, name, description, icon, is_active, is_public, category, llm_provider, llm_model, system_prompt, temperature, max_tokens)
 VALUES
 (
-    'a0000000-0000-0000-0000-000000000102',
+    'a0000001-0000-4000-a000-000000000102',
     NULL,
     'Risk Sentinel',
     'Monitors leading indicators and alerts on integrity drift signals. Watches for early warning signs before lagging indicators manifest.',
@@ -150,7 +150,7 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO agents (id, user_id, name, description, icon, is_active, is_public, category, llm_provider, llm_model, system_prompt, temperature, max_tokens)
 VALUES
 (
-    'a0000000-0000-0000-0000-000000000103',
+    'a0000001-0000-4000-a000-000000000103',
     NULL,
     'Counterfactual Analyst',
     'Calculates ROI on integrity investments and compliance cost avoidance. Answers: What is our integrity spending actually buying?',
@@ -255,7 +255,7 @@ ON CONFLICT (id) DO NOTHING;
 /*
 INSERT INTO agent_context_mappings (agent_id, asset_id, injection_mode, priority)
 SELECT
-    'a0000000-0000-0000-0000-000000000101',
+    'a0000001-0000-4000-a000-000000000101',
     id,
     'always',
     CASE
@@ -271,7 +271,7 @@ ON CONFLICT (agent_id, asset_id) DO NOTHING;
 -- Risk Sentinel mappings
 INSERT INTO agent_context_mappings (agent_id, asset_id, injection_mode, priority)
 SELECT
-    'a0000000-0000-0000-0000-000000000102',
+    'a0000001-0000-4000-a000-000000000102',
     id,
     'always',
     CASE
@@ -287,7 +287,7 @@ ON CONFLICT (agent_id, asset_id) DO NOTHING;
 -- Counterfactual Analyst mappings
 INSERT INTO agent_context_mappings (agent_id, asset_id, injection_mode, priority)
 SELECT
-    'a0000000-0000-0000-0000-000000000103',
+    'a0000001-0000-4000-a000-000000000103',
     id,
     'always',
     CASE
@@ -311,9 +311,9 @@ BEGIN
     SELECT COUNT(*) INTO agent_count
     FROM agents
     WHERE id IN (
-        'a0000000-0000-0000-0000-000000000101',
-        'a0000000-0000-0000-0000-000000000102',
-        'a0000000-0000-0000-0000-000000000103'
+        'a0000001-0000-4000-a000-000000000101',
+        'a0000001-0000-4000-a000-000000000102',
+        'a0000001-0000-4000-a000-000000000103'
     ) AND is_active = true;
 
     RAISE NOTICE '';

@@ -1858,16 +1858,41 @@
         function parseMarkdown(md) {
             let html = md;
 
-            // Escape HTML first
-            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-            // Code blocks (before other processing)
+            // Extract code blocks first (before HTML escaping)
+            const codeBlocks = [];
             html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+                const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+                // Escape HTML inside code blocks
+                const escapedCode = code.trim()
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                codeBlocks.push(`<pre><code class="language-${lang}">${escapedCode}</code></pre>`);
+                return placeholder;
             });
 
-            // Inline code
-            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            // Extract inline code (before HTML escaping)
+            const inlineCodes = [];
+            html = html.replace(/`([^`]+)`/g, (match, code) => {
+                const placeholder = `__INLINE_CODE_${inlineCodes.length}__`;
+                const escapedCode = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                inlineCodes.push(`<code>${escapedCode}</code>`);
+                return placeholder;
+            });
+
+            // Escape HTML in remaining content
+            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Restore code blocks and inline code
+            codeBlocks.forEach((block, i) => {
+                html = html.replace(`__CODE_BLOCK_${i}__`, block);
+            });
+            inlineCodes.forEach((code, i) => {
+                html = html.replace(`__INLINE_CODE_${i}__`, code);
+            });
 
             // Headers
             html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');

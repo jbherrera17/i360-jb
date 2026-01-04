@@ -15,7 +15,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000101',
+    'a0000001-0000-4000-a000-000000000101',
     NULL,
     'Integrity Auditor',
     'Performs Front Page Tests on sampled decisions and calculates Values Drift Scores. Reviews AI-influenced decisions against organizational values.',
@@ -90,7 +90,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000102',
+    'a0000001-0000-4000-a000-000000000102',
     NULL,
     'Risk Sentinel',
     'Monitors leading indicators and alerts on integrity drift signals. Watches for early warning signs before lagging indicators manifest.',
@@ -163,7 +163,7 @@ INSERT INTO agents (
     suite, category, llm_provider, llm_model, system_prompt, temperature, max_tokens, tools
 )
 VALUES (
-    'a0000000-0000-0000-0000-000000000103',
+    'a0000001-0000-4000-a000-000000000103',
     NULL,
     'Counterfactual Analyst',
     'Calculates ROI on integrity investments and compliance cost avoidance. Answers: What is our integrity spending actually buying?',
@@ -266,7 +266,7 @@ BEGIN
     -- Integrity Auditor mappings
     INSERT INTO agent_context_mappings (agent_id, asset_id, injection_mode, priority, is_required)
     SELECT
-        'a0000000-0000-0000-0000-000000000101'::uuid,
+        'a0000001-0000-4000-a000-000000000101'::uuid,
         id,
         'always',
         CASE
@@ -283,7 +283,7 @@ BEGIN
     -- Risk Sentinel mappings
     INSERT INTO agent_context_mappings (agent_id, asset_id, injection_mode, priority, is_required)
     SELECT
-        'a0000000-0000-0000-0000-000000000102'::uuid,
+        'a0000001-0000-4000-a000-000000000102'::uuid,
         id,
         'always',
         CASE
@@ -300,7 +300,7 @@ BEGIN
     -- Counterfactual Analyst mappings
     INSERT INTO agent_context_mappings (agent_id, asset_id, injection_mode, priority, is_required)
     SELECT
-        'a0000000-0000-0000-0000-000000000103'::uuid,
+        'a0000001-0000-4000-a000-000000000103'::uuid,
         id,
         'always',
         CASE
@@ -330,9 +330,9 @@ BEGIN
     SELECT COUNT(*) INTO agent_count
     FROM agents
     WHERE id IN (
-        'a0000000-0000-0000-0000-000000000101',
-        'a0000000-0000-0000-0000-000000000102',
-        'a0000000-0000-0000-0000-000000000103'
+        'a0000001-0000-4000-a000-000000000101',
+        'a0000001-0000-4000-a000-000000000102',
+        'a0000001-0000-4000-a000-000000000103'
     ) AND is_active = true;
 
     RAISE NOTICE '';

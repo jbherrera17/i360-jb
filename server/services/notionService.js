@@ -305,19 +305,28 @@ class NotionService {
     mapLanguage(lang) {
         const languageMap = {
             'js': 'javascript',
+            'javascript': 'javascript',
             'ts': 'typescript',
+            'typescript': 'typescript',
             'py': 'python',
+            'python': 'python',
             'sh': 'bash',
             'shell': 'bash',
+            'bash': 'bash',
             'sql': 'sql',
             'json': 'json',
             'html': 'html',
+            'xml': 'xml',
             'css': 'css',
             'md': 'markdown',
+            'markdown': 'markdown',
+            'yaml': 'yaml',
+            'yml': 'yaml',
             'plain text': 'plain text',
+            'text': 'plain text',
             '': 'plain text'
         };
-        return languageMap[lang.toLowerCase()] || lang.toLowerCase();
+        return languageMap[lang.toLowerCase()] || 'plain text';
     }
 
     /**

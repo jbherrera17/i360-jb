@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Execute 120 | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Execute 120 Page Styles */
+        .execute120-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .page-header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-header-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .page-header p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Department Tabs */
+        .department-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        .department-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .department-tab:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .department-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .department-tab .tab-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Department Content */
+        .department-content {
+            display: none;
+        }
+
+        .department-content.active {
+            display: block;
+        }
+
+        /* Department Header */
+        .department-header {
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .department-header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .department-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .department-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .department-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .department-tagline {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0;
+            font-style: italic;
+        }
+
+        /* Metrics */
+        .department-metrics {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .metric-badge {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Section Card */
+        .section-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-content {
+            padding: 1rem 1.25rem;
+        }
+
+        /* Agent Cards */
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .agent-item:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .agent-item.featured {
+            border-left: 3px solid var(--primary);
+        }
+
+        .agent-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .agent-item-info {
+            flex: 1;
+        }
+
+        .agent-item-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .agent-item-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .agent-item-action {
+            padding: 0.4rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .agent-item:hover .agent-item-action {
+            opacity: 1;
+        }
+
+        /* Workflow Cards */
+        .workflow-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .workflow-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .workflow-item:hover {
+            border-color: var(--primary);
+        }
+
+        .workflow-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .workflow-item-info {
+            flex: 1;
+        }
+
+        .workflow-item-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .workflow-item-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .workflow-item-action {
+            padding: 0.4rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Quick Prompts */
+        .prompt-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .prompt-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .prompt-item:hover {
+            border-color: var(--primary);
+            background: var(--bg-primary);
+        }
+
+        .prompt-item-icon {
+            margin-top: 0.125rem;
+            color: var(--primary);
+        }
+
+        .prompt-item-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .prompt-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .prompt-item:hover .prompt-item-actions {
+            opacity: 1;
+        }
+
+        .prompt-btn {
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        .prompt-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .prompt-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Workflow Wizard Modal */
+        .workflow-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .workflow-modal.active {
+            display: flex;
+        }
+
+        .workflow-modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .workflow-modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .workflow-modal-header h2 {
+            font-size: 1.2rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .workflow-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .workflow-modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        /* Step Progress */
+        .step-progress {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            gap: 0.5rem;
+            background: var(--bg-tertiary);
+            overflow-x: auto;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            border: 2px solid var(--border);
+        }
+
+        .step-indicator.active .step-number {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .step-indicator.completed .step-number {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .step-indicator.active .step-label {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .step-connector {
+            width: 24px;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .step-connector.completed {
+            background: #10b981;
+        }
+
+        /* Step Content */
+        .workflow-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .step-description {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-label.required::after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 0.25rem;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Agent Chat Step */
+        .agent-chat-container {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-chat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-chat-prompt {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .agent-chat-prompt-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-chat-prompt-text {
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+        }
+
+        .agent-chat-response {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+
+        /* Review Step */
+        .review-content {
+            background: var(--bg-tertiary);
+            padding: 1.25rem;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Modal Footer */
+        .workflow-modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .workflow-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .workflow-btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .workflow-btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .workflow-btn-primary {
+            background: var(--primary);
+            border: 1px solid var(--primary);
+            color: white;
+        }
+
+        .workflow-btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
+        }
+
+        /* Loading */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation will be injected -->
+    <div id="nav-container"></div>
+
+    <main class="execute120-layout">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-content">
+                <div class="page-header-icon">
+                    <i data-lucide="rocket"></i>
+                </div>
+                <div>
+                    <h1>Execute 120</h1>
+                    <p>Department-focused execution with workflow wizards</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Tabs -->
+        <div class="department-tabs" id="departmentTabs">
+            <!-- Tabs will be dynamically loaded -->
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Department Contents -->
+        <div id="departmentContents">
+            <!-- Content will be dynamically loaded -->
+        </div>
+    </main>
+
+    <!-- Workflow Wizard Modal -->
+    <div class="workflow-modal" id="workflowModal">
+        <div class="workflow-modal-content">
+            <div class="workflow-modal-header">
+                <h2 id="workflowTitle">
+                    <i data-lucide="zap"></i>
+                    <span>Workflow Name</span>
+                </h2>
+                <button class="workflow-modal-close" onclick="closeWorkflowModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="step-progress" id="stepProgress">
+                <!-- Steps will be dynamically loaded -->
+            </div>
+            <div class="workflow-modal-body" id="workflowBody">
+                <!-- Step content will be dynamically loaded -->
+            </div>
+            <div class="workflow-modal-footer">
+                <button class="workflow-btn workflow-btn-secondary" id="prevStepBtn" onclick="previousStep()">
+                    <i data-lucide="arrow-left"></i>
+                    Previous
+                </button>
+                <button class="workflow-btn workflow-btn-primary" id="nextStepBtn" onclick="nextStep()">
+                    Next
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <script src="/js/help-modal.js"></script>
+
+    <script>
+        // State
+        let departments = [];
+        let currentDepartment = null;
+        let currentWorkflow = null;
+        let currentExecution = null;
+        let currentStep = 1;
+
+        // Default departments if none configured
+        const defaultDepartments = [
+            { id: 'executive', name: 'Executive', icon: 'crown', color: '#6366f1', tagline: 'Architect your legacy enterprise' },
+            { id: 'marketing', name: 'Marketing', icon: 'megaphone', color: '#ec4899', tagline: 'Craft magnetic stories that convert' },
+            { id: 'sales', name: 'Sales', icon: 'dollar-sign', color: '#10b981', tagline: 'Crush quota with precision and relationships' },
+            { id: 'finance', name: 'Finance', icon: 'pie-chart', color: '#f59e0b', tagline: 'Every dollar returns multiples' },
+            { id: 'operations', name: 'Operations', icon: 'settings', color: '#8b5cf6', tagline: 'Process excellence fuels growth' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDepartments();
+            lucide.createIcons();
+        });
+
+        // Load departments from API or use defaults
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/execute120/departments');
+                const result = await response.json();
+
+                if (result.success && result.data.length > 0) {
+                    departments = result.data;
+                } else {
+                    departments = defaultDepartments;
+                }
+
+                renderDepartmentTabs();
+
+                // Load saved preference or default to first
+                const savedDept = localStorage.getItem('execute120_department');
+                const defaultDept = departments.find(d => d.id === savedDept) || departments[0];
+                selectDepartment(defaultDept.id);
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                departments = defaultDepartments;
+                renderDepartmentTabs();
+                selectDepartment(departments[0].id);
+            }
+        }
+
+        // Render department tabs
+        function renderDepartmentTabs() {
+            const tabsContainer = document.getElementById('departmentTabs');
+            tabsContainer.innerHTML = departments.map(dept => `
+                <button class="department-tab" data-id="${dept.id}" onclick="selectDepartment('${dept.id}')">
+                    <i data-lucide="${dept.icon || 'folder'}" class="tab-icon"></i>
+                    <span>${dept.name}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Select department
+        async function selectDepartment(deptId) {
+            // Update tab active state
+            document.querySelectorAll('.department-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.id === deptId);
+            });
+
+            // Save preference
+            localStorage.setItem('execute120_department', deptId);
+
+            // Load department content
+            currentDepartment = departments.find(d => d.id === deptId);
+            await renderDepartmentContent(currentDepartment);
+        }
+
+        // Render department content
+        async function renderDepartmentContent(dept) {
+            const container = document.getElementById('departmentContents');
+
+            // Show loading
+            container.innerHTML = '<div style="text-align: center; padding: 2rem;"><div class="loading-spinner"></div></div>';
+
+            // Try to fetch full department data with agents and workflows
+            let fullDept = dept;
+            try {
+                if (dept.id && dept.id.length > 10) { // UUID check
+                    const response = await fetch(`/api/execute120/departments/${dept.id}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        fullDept = result.data;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading department details:', error);
+            }
+
+            // Load workflows for this category
+            let workflows = fullDept.workflows || [];
+            try {
+                const response = await fetch(`/api/execute120/workflows?category=${dept.name?.toLowerCase() || dept.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    workflows = result.data;
+                }
+            } catch (error) {
+                console.error('Error loading workflows:', error);
+            }
+
+            // Render content
+            container.innerHTML = `
+                <div class="department-content active">
+                    <!-- Department Header -->
+                    <div class="department-header">
+                        <div class="department-header-top">
+                            <div class="department-info">
+                                <div class="department-icon" style="background: ${dept.color || '#6366f1'}">
+                                    <i data-lucide="${dept.icon || 'folder'}"></i>
+                                </div>
+                                <div>
+                                    <h2 class="department-name">${dept.name}</h2>
+                                    <p class="department-tagline">"${dept.tagline || 'Your department hub'}"</p>
+                                </div>
+                            </div>
+                            ${dept.metrics ? `
+                                <div class="department-metrics">
+                                    ${(Array.isArray(dept.metrics) ? dept.metrics : []).map(m => `
+                                        <span class="metric-badge">${typeof m === 'string' ? m : m.name}</span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Content Grid -->
+                    <div class="content-grid">
+                        <!-- Workflows Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3><i data-lucide="zap"></i> Workflow Wizards</h3>
+                            </div>
+                            <div class="section-content">
+                                ${workflows.length > 0 ? `
+                                    <div class="workflow-list">
+                                        ${workflows.map(w => `
+                                            <div class="workflow-item" onclick="startWorkflow('${w.id}')">
+                                                <div class="workflow-item-icon" style="background: ${w.color || '#6366f1'}">
+                                                    <i data-lucide="${w.icon || 'zap'}"></i>
+                                                </div>
+                                                <div class="workflow-item-info">
+                                                    <div class="workflow-item-name">${w.name}</div>
+                                                    <div class="workflow-item-meta">
+                                                        ${w.estimated_minutes ? `<span><i data-lucide="clock" style="width:12px;height:12px;"></i> ${w.estimated_minutes} min</span>` : ''}
+                                                        ${w.usage_count ? `<span><i data-lucide="play" style="width:12px;height:12px;"></i> ${w.usage_count} uses</span>` : ''}
+                                                    </div>
+                                                </div>
+                                                <button class="workflow-item-action">Start</button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="workflow"></i></div>
+                                        <p>No workflows configured yet</p>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- Agents Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3><i data-lucide="bot"></i> Recommended Agents</h3>
+                                <a href="/strategy120" style="font-size: 0.8rem; color: var(--primary);">View All</a>
+                            </div>
+                            <div class="section-content">
+                                ${(fullDept.agents || []).length > 0 ? `
+                                    <div class="agent-list">
+                                        ${fullDept.agents.slice(0, 5).map(a => `
+                                            <div class="agent-item ${a.is_featured ? 'featured' : ''}" onclick="openAgentChat('${a.id}')">
+                                                <div class="agent-item-icon">
+                                                    <i data-lucide="${a.icon || 'bot'}"></i>
+                                                </div>
+                                                <div class="agent-item-info">
+                                                    <div class="agent-item-name">${a.name}</div>
+                                                    <div class="agent-item-desc">${a.use_case_summary || a.description || ''}</div>
+                                                </div>
+                                                <button class="agent-item-action">Chat</button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="bot"></i></div>
+                                        <p>No agents assigned to this department</p>
+                                        <a href="/strategy120" style="color: var(--primary);">Browse all agents</a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- Quick Start Prompts -->
+                        <div class="section-card" style="grid-column: span 2;">
+                            <div class="section-header">
+                                <h3><i data-lucide="message-square"></i> Quick Start Prompts</h3>
+                            </div>
+                            <div class="section-content">
+                                ${(dept.quick_prompts || getDefaultPrompts(dept.id)).length > 0 ? `
+                                    <div class="prompt-list">
+                                        ${(dept.quick_prompts || getDefaultPrompts(dept.id)).slice(0, 4).map(prompt => `
+                                            <div class="prompt-item" onclick="usePrompt('${encodeURIComponent(prompt)}')">
+                                                <div class="prompt-item-icon">
+                                                    <i data-lucide="terminal"></i>
+                                                </div>
+                                                <div class="prompt-item-text">${prompt}</div>
+                                                <div class="prompt-item-actions">
+                                                    <button class="prompt-btn" onclick="event.stopPropagation(); copyPrompt('${encodeURIComponent(prompt)}')">Copy</button>
+                                                    <button class="prompt-btn primary" onclick="event.stopPropagation(); usePrompt('${encodeURIComponent(prompt)}')">Use</button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <p>No prompts configured for this department</p>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+
+        // Get default prompts for department
+        function getDefaultPrompts(deptId) {
+            const prompts = {
+                executive: [
+                    'Prepare board materials for our Q4 review covering revenue, key initiatives, and strategic outlook...',
+                    'Draft an investor update highlighting our recent product launch and growth metrics...',
+                    'Analyze this strategic decision using first principles: Should we expand into [market]?'
+                ],
+                marketing: [
+                    'Develop a Q2 campaign strategy for [product] targeting [audience]...',
+                    'Create a competitive battlecard for [competitor]...',
+                    'Write a thought leadership blog post on [topic] that positions us as experts...'
+                ],
+                sales: [
+                    'Create a proposal for [company] addressing their challenges with [problem]...',
+                    'Prepare me for a meeting with [company] - research their business and key stakeholders...',
+                    'Help me respond to this objection: "Your solution is too expensive..."'
+                ],
+                finance: [
+                    'Prepare a board financial summary for Q4 explaining revenue vs plan variance...',
+                    'Analyze this investment opportunity: $500K for [project] with expected ROI of...',
+                    'Assess financial risks for expanding into [market]...'
+                ],
+                operations: [
+                    'Create an SOP for our customer onboarding process...',
+                    'Document this process with all decision points and exception handling...',
+                    'Evaluate these vendors for [category] against our criteria...'
+                ]
+            };
+            return prompts[deptId] || [];
+        }
+
+        // Start workflow
+        async function startWorkflow(workflowId) {
+            try {
+                // Fetch workflow details
+                const response = await fetch(`/api/execute120/workflows/${workflowId}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('Failed to load workflow');
+                    return;
+                }
+
+                currentWorkflow = result.data;
+                currentStep = 1;
+
+                // Start execution
+                const execResponse = await fetch(`/api/execute120/workflows/${workflowId}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initial_variables: {} })
+                });
+                const execResult = await execResponse.json();
+
+                if (execResult.success) {
+                    currentExecution = execResult.data;
+                }
+
+                // Open modal
+                openWorkflowModal();
+            } catch (error) {
+                console.error('Error starting workflow:', error);
+                alert('Failed to start workflow');
+            }
+        }
+
+        // Open workflow modal
+        function openWorkflowModal() {
+            const modal = document.getElementById('workflowModal');
+            modal.classList.add('active');
+
+            // Update title
+            document.getElementById('workflowTitle').innerHTML = `
+                <i data-lucide="${currentWorkflow.icon || 'zap'}"></i>
+                <span>${currentWorkflow.name}</span>
+            `;
+
+            // Render step progress
+            renderStepProgress();
+
+            // Render current step
+            renderCurrentStep();
+
+            lucide.createIcons();
+        }
+
+        // Close workflow modal
+        function closeWorkflowModal() {
+            const modal = document.getElementById('workflowModal');
+            modal.classList.remove('active');
+            currentWorkflow = null;
+            currentExecution = null;
+            currentStep = 1;
+        }
+
+        // Render step progress
+        function renderStepProgress() {
+            const container = document.getElementById('stepProgress');
+            const steps = currentWorkflow.steps || [];
+
+            container.innerHTML = steps.map((step, index) => `
+                ${index > 0 ? `<div class="step-connector ${index < currentStep ? 'completed' : ''}"></div>` : ''}
+                <div class="step-indicator ${index + 1 === currentStep ? 'active' : ''} ${index + 1 < currentStep ? 'completed' : ''}">
+                    <div class="step-number">${index + 1 < currentStep ? '<i data-lucide="check" style="width:14px;height:14px;"></i>' : index + 1}</div>
+                    <span class="step-label">${step.name}</span>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render current step
+        function renderCurrentStep() {
+            const container = document.getElementById('workflowBody');
+            const steps = currentWorkflow.steps || [];
+            const step = steps[currentStep - 1];
+
+            if (!step) {
+                container.innerHTML = '<div class="empty-state">No steps defined</div>';
+                return;
+            }
+
+            let content = `
+                <h3 class="step-title">${step.name}</h3>
+                <p class="step-description">${step.description || step.instructions || ''}</p>
+            `;
+
+            switch (step.step_type) {
+                case 'user_input':
+                    content += renderUserInputStep(step);
+                    break;
+                case 'agent_chat':
+                    content += renderAgentChatStep(step);
+                    break;
+                case 'review':
+                    content += renderReviewStep(step);
+                    break;
+                case 'output':
+                    content += renderOutputStep(step);
+                    break;
+                default:
+                    content += '<p>Unknown step type</p>';
+            }
+
+            container.innerHTML = content;
+
+            // Update buttons
+            document.getElementById('prevStepBtn').style.display = currentStep > 1 ? 'flex' : 'none';
+            document.getElementById('nextStepBtn').textContent = currentStep >= steps.length ? 'Complete' : 'Next';
+
+            lucide.createIcons();
+        }
+
+        // Render user input step
+        function renderUserInputStep(step) {
+            const fields = step.input_fields || [];
+            return `
+                <div class="form-container">
+                    ${fields.map(field => `
+                        <div class="form-group">
+                            <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                            ${field.type === 'textarea' ? `
+                                <textarea class="form-textarea"
+                                    name="${field.name}"
+                                    placeholder="${field.placeholder || ''}"
+                                    ${field.required ? 'required' : ''}></textarea>
+                            ` : field.type === 'select' ? `
+                                <select class="form-select" name="${field.name}" ${field.required ? 'required' : ''}>
+                                    <option value="">Select...</option>
+                                    ${(field.options || []).map(opt => `
+                                        <option value="${opt}">${opt}</option>
+                                    `).join('')}
+                                </select>
+                            ` : `
+                                <input type="text" class="form-input"
+                                    name="${field.name}"
+                                    placeholder="${field.placeholder || ''}"
+                                    ${field.required ? 'required' : ''}>
+                            `}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Render agent chat step
+        function renderAgentChatStep(step) {
+            const agent = step.agent || {};
+            const prevOutputs = currentExecution?.step_outputs || {};
+
+            // Process prompt template
+            let processedPrompt = step.prompt_template || '';
+            Object.entries(prevOutputs).forEach(([key, value]) => {
+                if (typeof value === 'object') {
+                    Object.entries(value).forEach(([k, v]) => {
+                        processedPrompt = processedPrompt.replace(new RegExp(`\\{\\{${key}\\.${k}\\}\\}`, 'g'), v || '');
+                    });
+                }
+            });
+
+            return `
+                <div class="agent-chat-container">
+                    <div class="agent-chat-header">
+                        <div class="agent-item-icon">
+                            <i data-lucide="${agent.icon || 'bot'}"></i>
+                        </div>
+                        <div>
+                            <strong>${agent.name || 'AI Agent'}</strong>
+                            <p style="margin:0; font-size:0.8rem; color:var(--text-muted);">${agent.description || ''}</p>
+                        </div>
+                    </div>
+                    <div class="agent-chat-prompt">
+                        <div class="agent-chat-prompt-label">Generated Prompt</div>
+                        <div class="agent-chat-prompt-text">${processedPrompt}</div>
+                    </div>
+                    <button class="workflow-btn workflow-btn-primary" onclick="executeAgentStep('${step.agent_id}', '${encodeURIComponent(processedPrompt)}')" style="width:100%;">
+                        <i data-lucide="play"></i>
+                        Run with Agent
+                    </button>
+                    <div class="agent-chat-response" id="agentResponse" style="margin-top:1rem; display:none;">
+                        <div class="agent-chat-prompt-label">Response</div>
+                        <div id="agentResponseContent"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render review step
+        function renderReviewStep(step) {
+            const prevOutputs = currentExecution?.step_outputs || {};
+            const prevStepOutput = prevOutputs[currentStep - 1];
+
+            return `
+                <div class="review-content">
+                    ${prevStepOutput ? (typeof prevStepOutput === 'string' ? prevStepOutput : JSON.stringify(prevStepOutput, null, 2)) : 'No previous output to review'}
+                </div>
+                <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label">Refinements or feedback (optional)</label>
+                    <textarea class="form-textarea" name="review_feedback" placeholder="Add any refinements or additional instructions..."></textarea>
+                </div>
+            `;
+        }
+
+        // Render output step
+        function renderOutputStep(step) {
+            const prevOutputs = currentExecution?.step_outputs || {};
+            return `
+                <div class="review-content" style="max-height:500px;">
+                    <h4 style="margin-top:0;">Final Output</h4>
+                    ${Object.entries(prevOutputs).map(([stepNum, output]) => `
+                        <div style="margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
+                            <strong>Step ${stepNum}</strong>
+                            <pre style="white-space:pre-wrap; margin-top:0.5rem;">${typeof output === 'string' ? output : JSON.stringify(output, null, 2)}</pre>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Execute agent step
+        async function executeAgentStep(agentId, encodedPrompt) {
+            const prompt = decodeURIComponent(encodedPrompt);
+            // Redirect to chat with agent and prompt pre-filled
+            window.location.href = `/chat?agent=${agentId}&prompt=${encodeURIComponent(prompt)}`;
+        }
+
+        // Next step
+        async function nextStep() {
+            const steps = currentWorkflow.steps || [];
+
+            // Collect form data
+            const formData = {};
+            document.querySelectorAll('.form-input, .form-textarea, .form-select').forEach(input => {
+                if (input.name) {
+                    formData[input.name] = input.value;
+                }
+            });
+
+            // Save step output
+            if (currentExecution) {
+                try {
+                    await fetch(`/api/execute120/executions/${currentExecution.id}/step/${currentStep}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_input: formData })
+                    });
+                } catch (error) {
+                    console.error('Error saving step:', error);
+                }
+            }
+
+            if (currentStep >= steps.length) {
+                // Complete workflow
+                if (currentExecution) {
+                    try {
+                        await fetch(`/api/execute120/executions/${currentExecution.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'completed' })
+                        });
+                    } catch (error) {
+                        console.error('Error completing workflow:', error);
+                    }
+                }
+                closeWorkflowModal();
+                alert('Workflow completed!');
+            } else {
+                currentStep++;
+                renderStepProgress();
+                renderCurrentStep();
+            }
+        }
+
+        // Previous step
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                renderStepProgress();
+                renderCurrentStep();
+            }
+        }
+
+        // Open agent chat
+        function openAgentChat(agentId) {
+            window.location.href = `/chat?agent=${agentId}`;
+        }
+
+        // Copy prompt
+        function copyPrompt(encodedPrompt) {
+            const prompt = decodeURIComponent(encodedPrompt);
+            navigator.clipboard.writeText(prompt);
+            // Could show toast notification
+        }
+
+        // Use prompt
+        function usePrompt(encodedPrompt) {
+            const prompt = decodeURIComponent(encodedPrompt);
+            window.location.href = `/chat?prompt=${encodeURIComponent(prompt)}`;
+        }
+    </script>
+</body>
+</html>
