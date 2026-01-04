@@ -403,10 +403,12 @@ class NotionService {
             }
 
             for (const chunk of chunks) {
-                await this.client.blocks.children.append({
-                    block_id: toggleId,
-                    children: chunk
-                });
+                if (chunk && chunk.length > 0) {
+                    await this.client.blocks.children.append({
+                        block_id: toggleId,
+                        children: chunk
+                    });
+                }
             }
 
             blocksToAppend = contentBlocks;
@@ -420,10 +422,12 @@ class NotionService {
             }
 
             for (const chunk of chunks) {
-                await this.client.blocks.children.append({
-                    block_id: pageId,
-                    children: chunk
-                });
+                if (chunk && chunk.length > 0) {
+                    await this.client.blocks.children.append({
+                        block_id: pageId,
+                        children: chunk
+                    });
+                }
             }
         }
 
