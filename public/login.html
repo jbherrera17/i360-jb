@@ -608,6 +608,16 @@
                     document.cookie = 'auth_token=' + data.session.access_token + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
 
                     currentUser = data.user;
+
+                    // Check if this is a new user who needs onboarding
+                    // Redirect to dashboard with onboarding param to trigger wizard
+                    const isNewUser = !localStorage.getItem('insight360_onboarding_shown');
+                    if (isNewUser) {
+                        localStorage.setItem('insight360_onboarding_shown', 'true');
+                        window.location.href = '/?onboarding=true';
+                        return;
+                    }
+
                     showUserCard(data.user);
                 } else {
                     showError(data.error || 'Login failed');

@@ -60,6 +60,28 @@
                     </div>
                 </div>
 
+                <!-- Onboarding Progress (shown if not complete) -->
+                <div class="dashboard-card onboarding-card" id="onboardingCard" style="display: none; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border: 1px solid rgba(99, 102, 241, 0.3);">
+                    <div class="card-header">
+                        <h2><i data-lucide="sparkles" class="card-icon"></i> Complete Your Setup</h2>
+                        <span class="onboarding-progress-badge" id="onboardingProgressBadge">0/3</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="onboardingChecklist" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+                            <button class="btn-primary" onclick="OnboardingWizard.show()" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                                Continue Setup
+                            </button>
+                            <button class="btn-secondary" onclick="dismissOnboardingCard()" style="padding: 0.5rem 1rem;">
+                                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- System Status -->
                 <div class="dashboard-card status-card">
                     <div class="card-header">
@@ -174,6 +196,7 @@
     <script src="/js/dashboard.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
+    <script src="/js/onboarding-wizard.js"></script>
 
     <script>
         // Initialize Lucide icons after page load
@@ -472,7 +495,80 @@
         // Load agents on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadRecentAgents();
+            loadOnboardingProgress();
         });
+
+        // Onboarding Progress Widget
+        async function loadOnboardingProgress() {
+            try {
+                const token = getAuthToken();
+                if (!token) return;
+
+                const response = await fetch('/api/onboarding/state', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const state = result.data;
+
+                    // Hide card if completed or skipped
+                    if (state.status === 'completed' || state.status === 'skipped') {
+                        return;
+                    }
+
+                    renderOnboardingWidget(state);
+                }
+            } catch (error) {
+                console.error('Error loading onboarding state:', error);
+            }
+        }
+
+        function getAuthToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return localStorage.getItem('insight360_token');
+        }
+
+        function renderOnboardingWidget(state) {
+            const card = document.getElementById('onboardingCard');
+            const checklist = document.getElementById('onboardingChecklist');
+            const badge = document.getElementById('onboardingProgressBadge');
+
+            const items = [
+                { key: 'profile_completed', label: 'Set up your profile', icon: 'user' },
+                { key: 'tour_completed', label: 'Take the feature tour', icon: 'compass' },
+                { key: 'first_workflow_completed', label: 'Run your first workflow', icon: 'zap' }
+            ];
+
+            const completed = items.filter(i => state[i.key]).length;
+            badge.textContent = `${completed}/3`;
+
+            checklist.innerHTML = items.map(item => {
+                const isComplete = state[item.key];
+                return `
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: ${isComplete ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-secondary)'}; color: ${isComplete ? '#10b981' : 'var(--text-muted)'};">
+                            <i data-lucide="${isComplete ? 'check' : item.icon}" style="width: 14px; height: 14px;"></i>
+                        </div>
+                        <span style="color: ${isComplete ? 'var(--text-muted)' : 'var(--text-primary)'}; ${isComplete ? 'text-decoration: line-through;' : ''}">${item.label}</span>
+                    </div>
+                `;
+            }).join('');
+
+            card.style.display = 'block';
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function dismissOnboardingCard() {
+            document.getElementById('onboardingCard').style.display = 'none';
+        }
     </script>
 </body>
 </html>

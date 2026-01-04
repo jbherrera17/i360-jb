@@ -20,7 +20,8 @@ const navConfig = {
     primary: [
         { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
         { href: '/chat.html', icon: 'message-square', label: 'Multi-LLM Chat' },
-        { href: '/agents.html', icon: 'bot', label: 'Agent Library' }
+        { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
+        { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
     ],
 
     // Grouped items - collapsible categories

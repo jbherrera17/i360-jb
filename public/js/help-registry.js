@@ -74,6 +74,18 @@ const HelpRegistry = {
         '/strategy120': {
             file: '/api/docs/strategy120-user-guide.md',
             title: 'Strategy 120 Help'
+        },
+        '/execute120': {
+            file: '/api/docs/execute120-user-guide.md',
+            title: 'Execute 120 Help'
+        },
+        '/profile': {
+            file: '/api/docs/profile-user-guide.md',
+            title: 'Profile Help'
+        },
+        '/workflow-run': {
+            file: '/api/docs/workflow-user-guide.md',
+            title: 'Workflow Execution Help'
         }
     },
 

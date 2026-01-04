@@ -938,5 +938,153 @@ module.exports = function(supabase) {
         }
     });
 
+    // ============================================================================
+    // USER PROFILE ENDPOINTS (Self-service)
+    // ============================================================================
+
+    /**
+     * PUT /api/auth/profile
+     * Update own profile (display_name, avatar, department, preferences)
+     */
+    router.put('/profile', async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required'
+                });
+            }
+
+            const token = authHeader.substring(7);
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+            if (authError || !user) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Invalid or expired token'
+                });
+            }
+
+            const { display_name, avatar_url, department_id, preferences } = req.body;
+
+            const updates = {
+                updated_at: new Date().toISOString()
+            };
+
+            if (display_name !== undefined) updates.display_name = display_name;
+            if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+            if (department_id !== undefined) updates.department_id = department_id;
+            if (preferences !== undefined) updates.preferences = preferences;
+
+            const { data, error } = await supabase
+                .from('users')
+                .update(updates)
+                .eq('id', user.id)
+                .select(`
+                    id,
+                    email,
+                    display_name,
+                    avatar_url,
+                    role,
+                    department_id,
+                    preferences,
+                    created_at,
+                    updated_at,
+                    department:departments(id, name, icon, color)
+                `)
+                .single();
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data
+            });
+
+        } catch (error) {
+            console.error('Update profile error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/auth/profile
+     * Get full profile with department info
+     */
+    router.get('/profile', async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required'
+                });
+            }
+
+            const token = authHeader.substring(7);
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+            if (authError || !user) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Invalid or expired token'
+                });
+            }
+
+            const { data: profile, error } = await supabase
+                .from('users')
+                .select(`
+                    id,
+                    email,
+                    display_name,
+                    avatar_url,
+                    role,
+                    department_id,
+                    preferences,
+                    created_at,
+                    updated_at,
+                    department:departments(id, name, icon, color)
+                `)
+                .eq('id', user.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error;
+
+            // If profile doesn't exist, return basic info from auth
+            if (!profile) {
+                return res.json({
+                    success: true,
+                    data: {
+                        id: user.id,
+                        email: user.email,
+                        display_name: user.user_metadata?.display_name || user.email.split('@')[0],
+                        avatar_url: null,
+                        role: 'user',
+                        department_id: null,
+                        preferences: {},
+                        created_at: user.created_at,
+                        department: null
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                data: profile
+            });
+
+        } catch (error) {
+            console.error('Get profile error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
     return router;
 };

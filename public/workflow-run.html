@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run Workflow | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .workflow-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .workflow-sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .workflow-sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .workflow-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .workflow-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .workflow-steps {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.5rem;
+        }
+
+        .workflow-step:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .workflow-step.active {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--primary);
+        }
+
+        .workflow-step.completed {
+            opacity: 0.7;
+        }
+
+        .step-indicator {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .workflow-step.active .step-indicator {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .workflow-step.completed .step-indicator {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .step-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .step-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-type {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .workflow-sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Main Content */
+        .workflow-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .workflow-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .workflow-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        .current-step-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .workflow-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .step-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .step-instructions {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        /* Form Fields */
+        .input-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .field-label {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .field-label .required {
+            color: #ef4444;
+        }
+
+        .field-input,
+        .field-textarea,
+        .field-select {
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .field-input:focus,
+        .field-textarea:focus,
+        .field-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .field-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .field-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Agent Chat */
+        .agent-chat-container {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .agent-chat-header {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-weight: 600;
+        }
+
+        .agent-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .chat-messages {
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+        }
+
+        .chat-message.assistant {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .chat-message.user {
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-left: 2rem;
+        }
+
+        .chat-message-content {
+            line-height: 1.6;
+        }
+
+        .chat-message-content p {
+            margin: 0 0 0.75rem;
+        }
+
+        .chat-message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            resize: none;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .chat-send-btn {
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-send-btn:hover {
+            opacity: 0.9;
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Review Section */
+        .review-content {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .review-content h1,
+        .review-content h2,
+        .review-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .review-content h1:first-child,
+        .review-content h2:first-child,
+        .review-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .review-content ul,
+        .review-content ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .review-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .review-content code {
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .review-content pre {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        /* Previous Outputs */
+        .previous-outputs {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .previous-outputs-title {
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .previous-output {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+        }
+
+        .previous-output-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .previous-output-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .previous-output-body {
+            padding: 1rem;
+            display: none;
+        }
+
+        .previous-output.expanded .previous-output-body {
+            display: block;
+        }
+
+        /* Footer */
+        .workflow-footer {
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .footer-right {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border: 1px solid #10b981;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading States */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-message {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            color: var(--text-muted);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .workflow-layout {
+                flex-direction: column;
+            }
+
+            .workflow-sidebar {
+                width: 100%;
+                max-height: 200px;
+            }
+
+            .workflow-steps {
+                display: flex;
+                overflow-x: auto;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+
+            .workflow-step {
+                flex-shrink: 0;
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="workflow-layout">
+        <!-- Sidebar with Steps -->
+        <div class="workflow-sidebar">
+            <div class="workflow-sidebar-header">
+                <h1 class="workflow-title" id="workflowTitle">
+                    <i data-lucide="zap"></i>
+                    <span>Loading...</span>
+                </h1>
+                <div class="workflow-meta" id="workflowMeta">-</div>
+            </div>
+            <div class="workflow-steps" id="workflowSteps">
+                <!-- Steps loaded dynamically -->
+            </div>
+            <div class="workflow-sidebar-footer">
+                <a href="/execute120.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+                    <i data-lucide="arrow-left"></i> Back to Execute 120
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="workflow-main">
+            <div class="workflow-header">
+                <div class="workflow-header-left">
+                    <button class="back-btn" onclick="goBack()">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Exit</span>
+                    </button>
+                    <span class="current-step-title" id="currentStepTitle">-</span>
+                </div>
+                <div id="headerActions">
+                    <!-- Dynamic actions -->
+                </div>
+            </div>
+
+            <div class="workflow-content" id="workflowContent">
+                <!-- Step content loaded dynamically -->
+                <div class="empty-state">
+                    <div class="loading-spinner" style="border-color: var(--border); border-top-color: var(--primary); width: 40px; height: 40px; margin: 0 auto 1rem;"></div>
+                    <p>Loading workflow...</p>
+                </div>
+            </div>
+
+            <div class="workflow-footer">
+                <div class="footer-left">
+                    <span id="progressIndicator" style="color: var(--text-muted); font-size: 0.9rem;">Step 1 of 1</span>
+                </div>
+                <div class="footer-right">
+                    <button class="btn btn-secondary" id="prevBtn" onclick="prevStep()" style="display: none;">
+                        <i data-lucide="arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                        Next <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let workflow = null;
+        let steps = [];
+        let currentStepIndex = 0;
+        let execution = null;
+        let stepOutputs = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+
+            const params = new URLSearchParams(window.location.search);
+            const workflowId = params.get('id');
+            const executionId = params.get('execution');
+
+            if (!workflowId) {
+                showError('No workflow ID provided');
+                return;
+            }
+
+            await loadWorkflow(workflowId);
+
+            if (executionId) {
+                await loadExecution(executionId);
+            }
+        });
+
+        // Get auth token
+        function getAuthToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return localStorage.getItem('insight360_token');
+        }
+
+        // Load workflow
+        async function loadWorkflow(workflowId) {
+            try {
+                const response = await fetch(`/api/execute120/workflows/${workflowId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    workflow = result.data.workflow;
+                    steps = result.data.steps || [];
+
+                    renderWorkflowInfo();
+                    renderStepsSidebar();
+                    renderCurrentStep();
+                } else {
+                    showError(result.error || 'Failed to load workflow');
+                }
+            } catch (error) {
+                console.error('Error loading workflow:', error);
+                showError('Failed to load workflow');
+            }
+        }
+
+        // Load execution (resume)
+        async function loadExecution(executionId) {
+            try {
+                const token = getAuthToken();
+                const response = await fetch(`/api/execute120/executions/${executionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    execution = result.data;
+                    stepOutputs = execution.step_outputs || {};
+                    currentStepIndex = (execution.current_step || 1) - 1;
+                    renderStepsSidebar();
+                    renderCurrentStep();
+                }
+            } catch (error) {
+                console.error('Error loading execution:', error);
+            }
+        }
+
+        // Render workflow info
+        function renderWorkflowInfo() {
+            document.getElementById('workflowTitle').innerHTML = `
+                <i data-lucide="${workflow.icon || 'zap'}"></i>
+                <span>${escapeHtml(workflow.name)}</span>
+            `;
+            document.getElementById('workflowMeta').textContent =
+                `${workflow.category || 'General'} | ~${workflow.estimated_minutes || '?'} min`;
+
+            lucide.createIcons();
+        }
+
+        // Render steps sidebar
+        function renderStepsSidebar() {
+            const container = document.getElementById('workflowSteps');
+            container.innerHTML = steps.map((step, index) => {
+                const isActive = index === currentStepIndex;
+                const isCompleted = index < currentStepIndex || stepOutputs[step.step_number];
+
+                return `
+                    <div class="workflow-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}"
+                         onclick="goToStep(${index})">
+                        <div class="step-indicator">
+                            ${isCompleted && !isActive ? '<i data-lucide="check" style="width: 14px; height: 14px;"></i>' : index + 1}
+                        </div>
+                        <div class="step-info">
+                            <div class="step-name">${escapeHtml(step.name)}</div>
+                            <div class="step-type">${formatStepType(step.step_type)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render current step content
+        function renderCurrentStep() {
+            if (!steps.length) {
+                showError('This workflow has no steps');
+                return;
+            }
+
+            const step = steps[currentStepIndex];
+            document.getElementById('currentStepTitle').textContent = step.name;
+            document.getElementById('progressIndicator').textContent =
+                `Step ${currentStepIndex + 1} of ${steps.length}`;
+
+            // Update buttons
+            document.getElementById('prevBtn').style.display = currentStepIndex > 0 ? 'flex' : 'none';
+
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentStepIndex === steps.length - 1) {
+                nextBtn.innerHTML = '<i data-lucide="check"></i> Complete';
+                nextBtn.className = 'btn btn-success';
+            } else {
+                nextBtn.innerHTML = 'Next <i data-lucide="arrow-right"></i>';
+                nextBtn.className = 'btn btn-primary';
+            }
+
+            // Render step content based on type
+            let content = '';
+
+            switch (step.step_type) {
+                case 'user_input':
+                    content = renderUserInputStep(step);
+                    break;
+                case 'agent_chat':
+                    content = renderAgentChatStep(step);
+                    break;
+                case 'review':
+                    content = renderReviewStep(step);
+                    break;
+                case 'output':
+                    content = renderOutputStep(step);
+                    break;
+                default:
+                    content = renderGenericStep(step);
+            }
+
+            // Add previous outputs section if applicable
+            if (currentStepIndex > 0 && step.show_previous_output !== false) {
+                content += renderPreviousOutputs();
+            }
+
+            document.getElementById('workflowContent').innerHTML = `
+                <div class="step-container">
+                    ${step.description ? `<p class="step-description">${escapeHtml(step.description)}</p>` : ''}
+                    ${step.instructions ? `<div class="step-instructions">${escapeHtml(step.instructions)}</div>` : ''}
+                    ${content}
+                </div>
+            `;
+
+            lucide.createIcons();
+            renderStepsSidebar();
+        }
+
+        // Render user input step
+        function renderUserInputStep(step) {
+            const fields = step.input_fields || [];
+            const savedData = stepOutputs[step.step_number] || {};
+
+            return `
+                <div class="input-fields">
+                    ${fields.map(field => {
+                        const value = savedData[field.name] || '';
+                        const required = field.required ? '<span class="required">*</span>' : '';
+
+                        if (field.type === 'textarea') {
+                            return `
+                                <div class="field-group">
+                                    <label class="field-label">${escapeHtml(field.label)} ${required}</label>
+                                    <textarea class="field-textarea" id="field_${field.name}"
+                                              placeholder="${escapeHtml(field.placeholder || '')}"
+                                              ${field.required ? 'required' : ''}>${escapeHtml(value)}</textarea>
+                                </div>
+                            `;
+                        } else if (field.type === 'select') {
+                            const options = field.options || [];
+                            return `
+                                <div class="field-group">
+                                    <label class="field-label">${escapeHtml(field.label)} ${required}</label>
+                                    <select class="field-select" id="field_${field.name}"
+                                            ${field.required ? 'required' : ''}>
+                                        <option value="">Select...</option>
+                                        ${options.map(opt => `
+                                            <option value="${escapeHtml(opt)}" ${value === opt ? 'selected' : ''}>
+                                                ${escapeHtml(opt)}
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            `;
+                        } else {
+                            return `
+                                <div class="field-group">
+                                    <label class="field-label">${escapeHtml(field.label)} ${required}</label>
+                                    <input type="${field.type || 'text'}" class="field-input" id="field_${field.name}"
+                                           value="${escapeHtml(value)}"
+                                           placeholder="${escapeHtml(field.placeholder || '')}"
+                                           ${field.required ? 'required' : ''}>
+                                </div>
+                            `;
+                        }
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Render agent chat step
+        function renderAgentChatStep(step) {
+            const existingOutput = stepOutputs[step.step_number];
+
+            return `
+                <div class="agent-chat-container">
+                    <div class="agent-chat-header">
+                        <div class="agent-avatar">
+                            <i data-lucide="bot"></i>
+                        </div>
+                        <div class="agent-info">
+                            <div class="agent-name">AI Assistant</div>
+                            <div class="agent-status">Ready to help</div>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        ${existingOutput ? `
+                            <div class="chat-message assistant">
+                                <div class="chat-message-content">${marked.parse(existingOutput)}</div>
+                            </div>
+                        ` : `
+                            <div class="loading-message">
+                                <div class="loading-spinner" style="border-color: var(--border); border-top-color: var(--primary);"></div>
+                                <span>Generating response...</span>
+                            </div>
+                        `}
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea class="chat-input" id="chatInput" rows="2"
+                                  placeholder="Ask follow-up questions or request changes..."></textarea>
+                        <button class="chat-send-btn" onclick="sendChatMessage()">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render review step
+        function renderReviewStep(step) {
+            // Get output from previous step
+            const prevStepNumber = step.step_number - 1;
+            const prevOutput = stepOutputs[prevStepNumber] || 'No content to review.';
+
+            return `
+                <div class="review-content">
+                    ${typeof prevOutput === 'string' ? marked.parse(prevOutput) : JSON.stringify(prevOutput, null, 2)}
+                </div>
+            `;
+        }
+
+        // Render output step
+        function renderOutputStep(step) {
+            // Collect all outputs
+            const allOutputs = Object.entries(stepOutputs)
+                .filter(([num, _]) => parseInt(num) < step.step_number)
+                .map(([num, output]) => {
+                    const s = steps.find(s => s.step_number === parseInt(num));
+                    return { step: s, output };
+                })
+                .filter(item => item.output);
+
+            return `
+                <div class="review-content">
+                    <h2>Generated Output</h2>
+                    ${allOutputs.map(item => `
+                        <h3>${escapeHtml(item.step?.name || 'Output')}</h3>
+                        ${typeof item.output === 'string' ? marked.parse(item.output) : `<pre>${JSON.stringify(item.output, null, 2)}</pre>`}
+                    `).join('<hr style="margin: 2rem 0; border-color: var(--border);">')}
+                </div>
+            `;
+        }
+
+        // Render generic step
+        function renderGenericStep(step) {
+            return `
+                <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                    <i data-lucide="info" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                    <p>Step type: ${step.step_type}</p>
+                </div>
+            `;
+        }
+
+        // Render previous outputs
+        function renderPreviousOutputs() {
+            const outputs = Object.entries(stepOutputs)
+                .filter(([num, _]) => parseInt(num) < steps[currentStepIndex].step_number)
+                .map(([num, output]) => {
+                    const step = steps.find(s => s.step_number === parseInt(num));
+                    return { step, output };
+                })
+                .filter(item => item.output);
+
+            if (!outputs.length) return '';
+
+            return `
+                <div class="previous-outputs">
+                    <div class="previous-outputs-title">
+                        <i data-lucide="history"></i>
+                        Previous Steps
+                    </div>
+                    ${outputs.map(item => `
+                        <div class="previous-output" onclick="this.classList.toggle('expanded')">
+                            <div class="previous-output-header">
+                                <span>${escapeHtml(item.step?.name || 'Output')}</span>
+                                <i data-lucide="chevron-down"></i>
+                            </div>
+                            <div class="previous-output-body">
+                                ${typeof item.output === 'string' ?
+                                    marked.parse(item.output.substring(0, 500) + (item.output.length > 500 ? '...' : '')) :
+                                    `<pre>${JSON.stringify(item.output, null, 2)}</pre>`
+                                }
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Collect user input data
+        function collectUserInput(step) {
+            const fields = step.input_fields || [];
+            const data = {};
+
+            for (const field of fields) {
+                const el = document.getElementById(`field_${field.name}`);
+                if (el) {
+                    data[field.name] = el.value;
+
+                    if (field.required && !el.value.trim()) {
+                        el.focus();
+                        return null;
+                    }
+                }
+            }
+
+            return data;
+        }
+
+        // Send chat message
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesContainer = document.getElementById('chatMessages');
+
+            // Add user message
+            messagesContainer.innerHTML += `
+                <div class="chat-message user">
+                    <div class="chat-message-content">${escapeHtml(message)}</div>
+                </div>
+                <div class="chat-message assistant">
+                    <div class="loading-message">
+                        <div class="loading-spinner" style="border-color: var(--border); border-top-color: var(--primary);"></div>
+                        <span>Generating response...</span>
+                    </div>
+                </div>
+            `;
+
+            input.value = '';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // TODO: Actually send to agent API
+            // For now, simulate a response
+            setTimeout(() => {
+                const lastMessage = messagesContainer.querySelector('.chat-message.assistant:last-child');
+                if (lastMessage) {
+                    lastMessage.innerHTML = `
+                        <div class="chat-message-content">
+                            <p>I've noted your feedback. The response has been updated accordingly.</p>
+                        </div>
+                    `;
+                }
+            }, 1500);
+        }
+
+        // Go to specific step
+        function goToStep(index) {
+            if (index >= 0 && index < steps.length) {
+                currentStepIndex = index;
+                renderCurrentStep();
+            }
+        }
+
+        // Next step
+        async function nextStep() {
+            const step = steps[currentStepIndex];
+
+            // Collect and save step output
+            if (step.step_type === 'user_input') {
+                const data = collectUserInput(step);
+                if (data === null) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                stepOutputs[step.step_number] = data;
+            }
+
+            // Save execution state
+            await saveExecution();
+
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                renderCurrentStep();
+            } else {
+                await completeWorkflow();
+            }
+        }
+
+        // Previous step
+        function prevStep() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                renderCurrentStep();
+            }
+        }
+
+        // Save execution
+        async function saveExecution() {
+            try {
+                const token = getAuthToken();
+                const body = {
+                    workflow_id: workflow.id,
+                    current_step: currentStepIndex + 1,
+                    step_outputs: stepOutputs,
+                    status: 'in_progress'
+                };
+
+                if (execution) {
+                    await fetch(`/api/execute120/executions/${execution.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(body)
+                    });
+                } else {
+                    const response = await fetch('/api/execute120/executions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        execution = result.data;
+                        // Update URL with execution ID
+                        const url = new URL(window.location);
+                        url.searchParams.set('execution', execution.id);
+                        history.replaceState({}, '', url);
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving execution:', error);
+            }
+        }
+
+        // Complete workflow
+        async function completeWorkflow() {
+            try {
+                const token = getAuthToken();
+
+                if (execution) {
+                    await fetch(`/api/execute120/executions/${execution.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            status: 'completed',
+                            completed_at: new Date().toISOString()
+                        })
+                    });
+                }
+
+                // Mark first workflow completed for onboarding
+                await fetch('/api/onboarding/state', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ first_workflow_completed: true })
+                });
+
+                // Show completion message
+                document.getElementById('workflowContent').innerHTML = `
+                    <div class="step-container" style="text-align: center; padding: 3rem;">
+                        <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="check" style="width: 40px; height: 40px; color: white;"></i>
+                        </div>
+                        <h2 style="font-family: 'Orbitron', sans-serif; margin-bottom: 1rem;">Workflow Complete!</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                            You've successfully completed the ${escapeHtml(workflow.name)} workflow.
+                        </p>
+                        <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                            <a href="/execute120.html" class="btn btn-primary">
+                                <i data-lucide="zap"></i> Run Another Workflow
+                            </a>
+                            <a href="/" class="btn btn-secondary">
+                                <i data-lucide="home"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('nextBtn').style.display = 'none';
+                document.getElementById('prevBtn').style.display = 'none';
+
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Error completing workflow:', error);
+            }
+        }
+
+        // Go back
+        function goBack() {
+            window.location.href = '/execute120.html';
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('workflowContent').innerHTML = `
+                <div class="empty-state">
+                    <i data-lucide="alert-circle" class="empty-state-icon"></i>
+                    <p>${escapeHtml(message)}</p>
+                    <a href="/execute120.html" class="btn btn-primary" style="margin-top: 1rem;">
+                        Back to Execute 120
+                    </a>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Format step type
+        function formatStepType(type) {
+            const types = {
+                'user_input': 'Input',
+                'agent_chat': 'AI Chat',
+                'review': 'Review',
+                'output': 'Output',
+                'decision': 'Decision',
+                'context_load': 'Context'
+            };
+            return types[type] || type;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

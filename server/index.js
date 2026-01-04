@@ -33,6 +33,7 @@ const align120Routes = require('./routes/align120');
 const strategy120Routes = require('./routes/strategy120');
 const execute120Routes = require('./routes/execute120');
 const authRoutes = require('./routes/auth');
+const onboardingRoutes = require('./routes/onboarding');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -103,7 +104,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/briefing', '/briefing.html', '/context', '/context.html', '/parthenon', '/parthenon.html',
     '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
     '/strategy120', '/strategy120.html', '/execute120', '/execute120.html',
-    '/guides', '/guides.html', '/admin', '/admin.html'];
+    '/guides', '/guides.html', '/admin', '/admin.html', '/profile', '/profile.html',
+    '/workflow-run', '/workflow-run.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -309,8 +311,10 @@ function initializeServices() {
         app.use('/api/strategy120', strategy120Routes(supabase));
         app.use('/api/execute120', execute120Routes(supabase));
         app.use('/api/auth', authRoutes(supabase));
+        app.use('/api/onboarding', onboardingRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Auth routes registered');
+        console.log('  ✅ Onboarding routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
         console.log('  ✅ S2E (Strategy-to-Execution) routes registered');
