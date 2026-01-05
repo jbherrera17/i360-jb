@@ -14,15 +14,9 @@
     <style>
         /* Context Admin Specific Styles */
 
-        /* Override main-content to use fixed height for proper flex */
-        .main-content {
-            height: 100vh;
-            min-height: unset;
-        }
-
         .context-layout {
             display: flex;
-            height: 100%;
+            flex: 1;
             overflow: hidden;
         }
 
@@ -1155,7 +1149,19 @@
         <aside class="sidebar"></aside>
 
         <!-- Main Content -->
-        <main class="main-content" style="padding: 0; overflow: hidden;">
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Context Assets</h1>
+                    <p class="header-subtitle">Manage your organization's knowledge base and context data</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
             <div class="context-layout">
                 <!-- Left Panel - Asset List -->
                 <div class="asset-list-panel">
@@ -1163,12 +1169,9 @@
                         <div class="panel-header-title-row">
                             <h2>
                                 <i data-lucide="database"></i>
-                                Context Assets
+                                Assets
                                 <span id="assetCount" class="count">0</span>
                             </h2>
-                            <button class="help-btn" onclick="HelpModal.open()" title="Help">
-                                <i data-lucide="help-circle"></i>
-                            </button>
                         </div>
 
                         <div class="filter-row">

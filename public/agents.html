@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Registry | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             /* Light Mode (default) */
@@ -78,10 +81,11 @@
             min-height: 100vh;
         }
 
-        /* Main Layout - Sidebar Navigation Pattern */
-        .app-layout {
+        /* Agent Layout - Three panel design */
+        .agent-layout {
             display: flex;
-            min-height: 100vh;
+            flex: 1;
+            overflow: hidden;
         }
 
         /* Navigation Sidebar (injected by navigation.js) */
@@ -258,22 +262,13 @@
             font-size: inherit;
         }
 
-        /* Main Content Area */
-        .main-container {
-            display: flex;
-            margin-left: var(--sidebar-width);
-            flex: 1;
-            height: 100vh;
-        }
-
-        /* Filter Panel (previously sidebar) */
+        /* Filter Panel */
         .filter-panel {
             width: 310px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             padding: 1.5rem;
             overflow-y: auto;
-            height: 100vh;
             flex-shrink: 0;
         }
 
@@ -1119,7 +1114,18 @@
             visibility: visible;
         }
 
-        .modal {
+        /* Override global styles.css .modal - it uses :not(.hidden) which makes modals visible */
+        .modal-overlay .modal {
+            /* Reset global positioning */
+            position: static;
+            top: auto;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            /* Inherit visibility from parent .modal-overlay */
+            opacity: 1;
+            visibility: inherit;
+            /* Agent-specific modal styles */
             background: var(--bg-primary);
             border-radius: 16px;
             width: 90%;
@@ -1955,14 +1961,28 @@
     </style>
 </head>
 <body>
-    <div class="app-layout">
+    <div class="app-container">
         <!-- Navigation Sidebar (injected by navigation.js) -->
         <aside class="sidebar"></aside>
 
-        <!-- Main Container -->
-        <div class="main-container">
-            <!-- Filter Panel -->
-            <aside class="filter-panel">
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Agent Library</h1>
+                    <p class="header-subtitle">Manage your AI agents and their configurations</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Agent Layout Container -->
+            <div class="agent-layout">
+                <!-- Filter Panel -->
+                <aside class="filter-panel">
             <!-- Stats -->
             <div class="sidebar-section">
                 <div class="sidebar-title">Overview</div>
@@ -2190,8 +2210,9 @@
                 </div>
             </div> <!-- Close details-panel -->
         </div> <!-- Close content -->
-    </div> <!-- Close main-container -->
-    </div> <!-- Close app-layout -->
+            </div> <!-- Close agent-layout -->
+        </main> <!-- Close main-content -->
+    </div> <!-- Close app-container -->
 
     <!-- Create/Edit Agent Modal -->
     <div class="modal-overlay" id="agentModal">
