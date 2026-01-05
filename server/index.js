@@ -1,7 +1,7 @@
 /**
- * Insight 360 Server - v2.1.2
+ * Insight 360 Server - v2.31.0
  * Values-Based AI Ecosystem
- * 
+ *
  * Features:
  * - Multi-LLM support (Anthropic Claude, OpenAI GPT)
  * - Voice input/output (Speech-to-Text, Text-to-Speech)
@@ -12,6 +12,7 @@
  * - System health monitoring
  * - Context Assets management (Phase 3)
  * - Agent Framework (Phase 3)
+ * - Observability & Monitoring (Phase 14)
  */
 
 require('dotenv').config();
@@ -20,6 +21,9 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
+const logger = require('./services/logger');
+const metrics = require('./services/metrics');
+const { observabilityMiddleware, errorLogger } = require('./middleware/observability');
 const agentsRoutes = require('./routes/agents');
 const injectionRoutes = require('./routes/injection');
 const conversationsRoutes = require('./routes/conversations');
@@ -147,16 +151,11 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/documentation', express.static(path.join(__dirname, '../documentation')));
 
 // ============================================
-// REQUEST LOGGING (Development)
+// OBSERVABILITY MIDDLEWARE (Phase 14)
 // ============================================
 
-if (process.env.NODE_ENV !== 'production') {
-    app.use((req, res, next) => {
-        const timestamp = new Date().toISOString();
-        console.log(`${timestamp} ${req.method} ${req.path}`);
-        next();
-    });
-}
+// Add correlation IDs, request logging, and metrics collection
+app.use(observabilityMiddleware);
 
 // ============================================
 // SUPABASE CLIENT
@@ -380,9 +379,21 @@ try {
 // API ROUTES
 // ============================================
 
-// Health check route
+// Health check route (enhanced in Phase 14)
 const healthRoutes = require('./routes/health');
 app.use('/api/health', healthRoutes);
+
+// Prometheus metrics endpoint (Phase 14)
+app.get('/metrics', async (req, res) => {
+    try {
+        const metricsData = await metrics.getMetrics();
+        res.set('Content-Type', metrics.getContentType());
+        res.send(metricsData);
+    } catch (err) {
+        logger.error('Error generating metrics', { error: err.message });
+        res.status(500).send('Error generating metrics');
+    }
+});
 
 // Documentation routes (for help system)
 const docsRoutes = require('./routes/docs');
@@ -487,12 +498,15 @@ app.get('/login', (req, res) => {
 // ============================================
 
 function registerErrorHandlers() {
+    // Error logging middleware (Phase 14)
+    app.use(errorLogger);
+
     // 404 handler
     app.use((req, res, next) => {
         if (req.path.startsWith('/api/')) {
-            res.status(404).json({ 
-                success: false, 
-                error: 'API endpoint not found' 
+            res.status(404).json({
+                success: false,
+                error: 'API endpoint not found'
             });
         } else {
             // Serve index.html for unknown routes (SPA support)
@@ -523,52 +537,61 @@ function registerErrorHandlers() {
 
 function startServer() {
     // Display banner
-    console.log('\n========================================');
-    console.log('         INSIGHT 360 v2.11');
-    console.log('      Values-Based AI Ecosystem');
-    console.log('   Parthenon + Actions Framework');
-    console.log('========================================\n');
-    
+    logger.info('========================================');
+    logger.info('         INSIGHT 360 v2.31.0');
+    logger.info('      Values-Based AI Ecosystem');
+    logger.info('   Phase 14: Observability & Monitoring');
+    logger.info('========================================');
+
     // Initialize all services (including Supabase-dependent routes)
     initializeServices();
-    
+
     // Register error handlers AFTER all routes are set up
     registerErrorHandlers();
-    
+
     // Start listening
     app.listen(PORT, () => {
-        console.log(`🌐 Server running at http://localhost:${PORT}`);
-        console.log(`📊 Dashboard: http://localhost:${PORT}/`);
-        console.log(`💬 Chat: http://localhost:${PORT}/chat.html`);
-        console.log(`📦 Context: http://localhost:${PORT}/context`);
-        console.log(`🏛️  Parthenon: http://localhost:${PORT}/parthenon`);
-        console.log(`⚡ Actions: http://localhost:${PORT}/actions`);
-        console.log(`🧭 Align 120: http://localhost:${PORT}/align120`);
-        console.log(`📊 Strategy 120: http://localhost:${PORT}/strategy120`);
-        console.log(`🤖 Agents API: http://localhost:${PORT}/api/agents`);
-        console.log('\n========================================\n');
+        // Mark service as ready for health checks
+        healthRoutes.markReady();
+
+        logger.info(`Server running at http://localhost:${PORT}`, {
+            port: PORT,
+            environment: process.env.NODE_ENV || 'development',
+            nodeVersion: process.version,
+        });
+        logger.info('Available endpoints:', {
+            dashboard: `http://localhost:${PORT}/`,
+            chat: `http://localhost:${PORT}/chat.html`,
+            metrics: `http://localhost:${PORT}/metrics`,
+            health: `http://localhost:${PORT}/api/health`,
+            healthReady: `http://localhost:${PORT}/api/health/ready`,
+            healthLive: `http://localhost:${PORT}/api/health/live`,
+        });
+        logger.info('========================================');
     });
 }
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
+    logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
     process.exit(1);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error('Unhandled Rejection', { reason: String(reason) });
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('\n👋 SIGTERM received. Shutting down gracefully...');
+    logger.info('SIGTERM received. Shutting down gracefully...');
+    healthRoutes.markNotReady();
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
-    console.log('\n👋 SIGINT received. Shutting down gracefully...');
+    logger.info('SIGINT received. Shutting down gracefully...');
+    healthRoutes.markNotReady();
     process.exit(0);
 });
 
