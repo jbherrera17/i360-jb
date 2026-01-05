@@ -1,10 +1,30 @@
 /**
- * OpenAI Service - Phase 2 Updated
+ * OpenAI Service - Phase 16 Enhanced
  *
  * OpenAI SDK v6.x with current GPT models, o-series reasoning, audio, and image generation
+ * Includes reliability features: retry, circuit breaker, timeout
  */
 
 const OpenAI = require('openai');
+const { withResilience, getCircuitBreaker } = require('./reliability');
+const logger = require('./logger');
+
+// Circuit breaker configuration for OpenAI API
+const OPENAI_CIRCUIT_CONFIG = {
+    failureThreshold: 5,
+    successThreshold: 2,
+    timeout: 60000, // 1 minute before attempting recovery
+    volumeThreshold: 3,
+    errorPercentageThreshold: 50,
+};
+
+// Retry configuration for OpenAI API
+const OPENAI_RETRY_CONFIG = {
+    maxRetries: 3,
+    initialDelayMs: 1000,
+    maxDelayMs: 30000,
+    backoffMultiplier: 2,
+};
 
 // Available OpenAI models (December 2025)
 const OPENAI_MODELS = {
@@ -145,17 +165,19 @@ let searchService = null;
  */
 function initialize(apiKey, searchSvc = null) {
     if (!apiKey) {
-        console.warn('OpenAI API key not provided');
+        logger.warn('OpenAI API key not provided');
         return false;
     }
-    
+
     try {
         client = new OpenAI({ apiKey });
         searchService = searchSvc;
-        console.log('✓ OpenAI GPT initialized');
+        // Initialize circuit breaker
+        getCircuitBreaker('openai', OPENAI_CIRCUIT_CONFIG);
+        logger.info('OpenAI GPT initialized with reliability features');
         return true;
     } catch (error) {
-        console.error('Failed to initialize OpenAI:', error.message);
+        logger.error('Failed to initialize OpenAI', { error: error.message });
         return false;
     }
 }
@@ -292,18 +314,19 @@ async function chat(options) {
         requestParams.tool_choice = 'auto';
     }
     
-    try {
+    // Use resilience wrapper for API call
+    const makeApiCall = async () => {
         let response = await client.chat.completions.create(requestParams);
         let responseMessage = response.choices[0].message;
-        
+
         // Handle tool calls (web search)
         if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
             const toolCall = responseMessage.tool_calls[0];
-            
+
             if (toolCall.function.name === 'web_search') {
                 const args = JSON.parse(toolCall.function.arguments);
                 const searchResults = await searchService.search(args.query);
-                
+
                 // Continue with tool result
                 const continueMessages = [
                     ...messages,
@@ -311,18 +334,30 @@ async function chat(options) {
                     {
                         role: 'tool',
                         tool_call_id: toolCall.id,
-                        content: JSON.stringify(searchResults)
-                    }
+                        content: JSON.stringify(searchResults),
+                    },
                 ];
-                
+
                 response = await client.chat.completions.create({
                     ...requestParams,
-                    messages: continueMessages
+                    messages: continueMessages,
                 });
                 responseMessage = response.choices[0].message;
             }
         }
-        
+
+        return { response, responseMessage };
+    };
+
+    try {
+        const { response, responseMessage } = await withResilience(makeApiCall, {
+            operationName: 'openai-chat',
+            timeout: 120000, // 2 minutes for complex requests
+            circuitBreaker: 'openai',
+            circuitBreakerOptions: OPENAI_CIRCUIT_CONFIG,
+            retryOptions: OPENAI_RETRY_CONFIG,
+        });
+
         return {
             content: responseMessage.content || '',
             model: resolvedModel,
@@ -330,12 +365,27 @@ async function chat(options) {
             usage: {
                 prompt_tokens: response.usage?.prompt_tokens || 0,
                 completion_tokens: response.usage?.completion_tokens || 0,
-                total_tokens: response.usage?.total_tokens || 0
+                total_tokens: response.usage?.total_tokens || 0,
             },
-            finishReason: response.choices[0].finish_reason
+            finishReason: response.choices[0].finish_reason,
         };
     } catch (error) {
-        console.error('OpenAI chat error:', error);
+        logger.error('OpenAI chat error', {
+            error: error.message,
+            code: error.code,
+            model: resolvedModel,
+        });
+
+        // Provide user-friendly error messages
+        if (error.code === 'CIRCUIT_OPEN') {
+            throw new Error(
+                'OpenAI API is temporarily unavailable. Please try again in a few minutes.'
+            );
+        }
+        if (error.code === 'ETIMEDOUT') {
+            throw new Error('Request to OpenAI API timed out. Please try again.');
+        }
+
         throw new Error(`OpenAI API error: ${error.message}`);
     }
 }
@@ -699,6 +749,22 @@ function isAvailable() {
     return client !== null;
 }
 
+/**
+ * Get circuit breaker status for OpenAI API
+ */
+function getCircuitStatus() {
+    const cb = getCircuitBreaker('openai');
+    return cb.getStatus();
+}
+
+/**
+ * Reset the circuit breaker (for admin use)
+ */
+function resetCircuit() {
+    const cb = getCircuitBreaker('openai');
+    cb.reset();
+}
+
 module.exports = {
     initialize,
     chat,
@@ -711,7 +777,9 @@ module.exports = {
     getImageModels,
     resolveModel,
     isAvailable,
+    getCircuitStatus,
+    resetCircuit,
     OPENAI_MODELS,
     IMAGE_MODELS,
-    MODEL_ALIASES
+    MODEL_ALIASES,
 };

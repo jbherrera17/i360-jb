@@ -14,6 +14,16 @@ jest.mock('@anthropic-ai/sdk', () => {
   }));
 });
 
+// Mock reliability module to bypass retry delays in tests
+jest.mock('../../../server/services/reliability', () => ({
+  withResilience: jest.fn((operation) => operation()),
+  getCircuitBreaker: jest.fn(() => ({
+    getStatus: jest.fn(() => ({ state: 'CLOSED', failures: 0 })),
+    reset: jest.fn()
+  })),
+  resetAllCircuits: jest.fn()
+}));
+
 const Anthropic = require('@anthropic-ai/sdk');
 
 // Import after mocking

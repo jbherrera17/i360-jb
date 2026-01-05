@@ -1,10 +1,30 @@
 /**
- * Anthropic Claude Service - Phase 2 Fixed
- * 
+ * Anthropic Claude Service - Phase 16 Enhanced
+ *
  * All current Claude models with streaming, vision, and tool use support
+ * Includes reliability features: retry, circuit breaker, timeout
  */
 
 const Anthropic = require('@anthropic-ai/sdk');
+const { withResilience, getCircuitBreaker } = require('./reliability');
+const logger = require('./logger');
+
+// Circuit breaker configuration for Anthropic API
+const ANTHROPIC_CIRCUIT_CONFIG = {
+    failureThreshold: 5,
+    successThreshold: 2,
+    timeout: 60000, // 1 minute before attempting recovery
+    volumeThreshold: 3,
+    errorPercentageThreshold: 50,
+};
+
+// Retry configuration for Anthropic API
+const ANTHROPIC_RETRY_CONFIG = {
+    maxRetries: 3,
+    initialDelayMs: 1000,
+    maxDelayMs: 30000,
+    backoffMultiplier: 2,
+};
 
 // Available Claude models (November 2025)
 const CLAUDE_MODELS = {
@@ -85,17 +105,19 @@ let searchService = null;
  */
 function initialize(apiKey, searchSvc = null) {
     if (!apiKey) {
-        console.warn('Anthropic API key not provided');
+        logger.warn('Anthropic API key not provided');
         return false;
     }
-    
+
     try {
         client = new Anthropic({ apiKey });
         searchService = searchSvc;
-        console.log('✓ Anthropic Claude initialized');
+        // Initialize circuit breaker
+        getCircuitBreaker('anthropic', ANTHROPIC_CIRCUIT_CONFIG);
+        logger.info('Anthropic Claude initialized with reliability features');
         return true;
     } catch (error) {
-        console.error('Failed to initialize Anthropic:', error.message);
+        logger.error('Failed to initialize Anthropic', { error: error.message });
         return false;
     }
 }
@@ -248,55 +270,85 @@ async function chat(options) {
         }];
     }
     
-    try {
+    // Use resilience wrapper for API call
+    const makeApiCall = async () => {
         let response = await client.messages.create(requestParams);
-        
+
         // Handle tool use (web search)
         if (response.stop_reason === 'tool_use') {
-            const toolUse = response.content.find(c => c.type === 'tool_use');
-            
+            const toolUse = response.content.find((c) => c.type === 'tool_use');
+
             if (toolUse && toolUse.name === 'web_search') {
                 const searchResults = await searchService.search(toolUse.input.query);
-                
+
                 // Continue conversation with search results
                 const toolResultMessages = [
                     ...messages,
                     { role: 'assistant', content: response.content },
                     {
                         role: 'user',
-                        content: [{
-                            type: 'tool_result',
-                            tool_use_id: toolUse.id,
-                            content: JSON.stringify(searchResults)
-                        }]
-                    }
+                        content: [
+                            {
+                                type: 'tool_result',
+                                tool_use_id: toolUse.id,
+                                content: JSON.stringify(searchResults),
+                            },
+                        ],
+                    },
                 ];
-                
+
                 response = await client.messages.create({
                     ...requestParams,
-                    messages: toolResultMessages
+                    messages: toolResultMessages,
                 });
             }
         }
-        
+
+        return response;
+    };
+
+    try {
+        const response = await withResilience(makeApiCall, {
+            operationName: 'anthropic-chat',
+            timeout: 120000, // 2 minutes for complex requests
+            circuitBreaker: 'anthropic',
+            circuitBreakerOptions: ANTHROPIC_CIRCUIT_CONFIG,
+            retryOptions: ANTHROPIC_RETRY_CONFIG,
+        });
+
         // Extract text content
         const textContent = response.content
-            .filter(c => c.type === 'text')
-            .map(c => c.text)
+            .filter((c) => c.type === 'text')
+            .map((c) => c.text)
             .join('');
-        
+
         return {
             content: textContent,
             model: resolvedModel,
             modelName: modelInfo.name || resolvedModel,
             usage: {
                 input_tokens: response.usage?.input_tokens || 0,
-                output_tokens: response.usage?.output_tokens || 0
+                output_tokens: response.usage?.output_tokens || 0,
             },
-            stopReason: response.stop_reason
+            stopReason: response.stop_reason,
         };
     } catch (error) {
-        console.error('Anthropic chat error:', error);
+        logger.error('Anthropic chat error', {
+            error: error.message,
+            code: error.code,
+            model: resolvedModel,
+        });
+
+        // Provide user-friendly error messages
+        if (error.code === 'CIRCUIT_OPEN') {
+            throw new Error(
+                'Claude API is temporarily unavailable. Please try again in a few minutes.'
+            );
+        }
+        if (error.code === 'ETIMEDOUT') {
+            throw new Error('Request to Claude API timed out. Please try again.');
+        }
+
         throw new Error(`Claude API error: ${error.message}`);
     }
 }
@@ -419,7 +471,7 @@ async function* streamChat(options) {
                         }
                     }
                 } catch (e) {
-                    console.error('Tool execution error:', e);
+                    logger.error('Tool execution error', { error: e.message });
                 }
                 toolUseBuffer = null;
             } else if (event.type === 'message_start') {
@@ -436,7 +488,7 @@ async function* streamChat(options) {
             usage: { input_tokens: inputTokens, output_tokens: outputTokens }
         };
     } catch (error) {
-        console.error('Anthropic stream error:', error);
+        logger.error('Anthropic stream error', { error: error.message });
         yield { type: 'error', error: error.message };
     }
 }
@@ -459,6 +511,22 @@ function isAvailable() {
     return client !== null;
 }
 
+/**
+ * Get circuit breaker status for Anthropic API
+ */
+function getCircuitStatus() {
+    const cb = getCircuitBreaker('anthropic');
+    return cb.getStatus();
+}
+
+/**
+ * Reset the circuit breaker (for admin use)
+ */
+function resetCircuit() {
+    const cb = getCircuitBreaker('anthropic');
+    cb.reset();
+}
+
 module.exports = {
     initialize,
     chat,
@@ -466,6 +534,8 @@ module.exports = {
     getModels,
     resolveModel,
     isAvailable,
+    getCircuitStatus,
+    resetCircuit,
     CLAUDE_MODELS,
-    MODEL_ALIASES
+    MODEL_ALIASES,
 };

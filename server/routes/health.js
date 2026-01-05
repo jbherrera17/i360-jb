@@ -1,6 +1,6 @@
 /**
  * Health Check Routes - Insight 360
- * Phase 14: Observability & Monitoring
+ * Phase 14+16: Observability & Monitoring + Reliability
  *
  * Provides:
  * - /api/health - Basic health check with dependency status (existing)
@@ -8,14 +8,16 @@
  * - /api/health/ready - Kubernetes readiness probe (new)
  * - /api/health/live - Kubernetes liveness probe (new)
  * - /api/health/detailed - Detailed health with metrics (new)
+ * - /api/health/circuits - Circuit breaker status (Phase 16)
  *
- * Version: 2.31.0
+ * Version: 2.32.0
  */
 
 const express = require('express');
 const router = express.Router();
 const metrics = require('../services/metrics');
 const logger = require('../services/logger');
+const { getAllCircuitStatus, resetAllCircuits } = require('../services/reliability');
 
 // Health check state
 const startTime = Date.now();
@@ -256,6 +258,54 @@ const markNotReady = () => {
   isReady = false;
   logger.warn('Service marked as not ready');
 };
+
+// ============================================
+// Phase 16: Circuit Breaker Endpoints
+// ============================================
+
+/**
+ * GET /api/health/circuits
+ * Get status of all circuit breakers
+ */
+router.get('/circuits', (req, res) => {
+  try {
+    const circuits = getAllCircuitStatus();
+
+    res.json({
+      success: true,
+      circuits,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error getting circuit breaker status', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get circuit breaker status',
+    });
+  }
+});
+
+/**
+ * POST /api/health/circuits/reset
+ * Reset all circuit breakers (admin only)
+ */
+router.post('/circuits/reset', (req, res) => {
+  try {
+    resetAllCircuits();
+
+    res.json({
+      success: true,
+      message: 'All circuit breakers reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error resetting circuit breakers', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset circuit breakers',
+    });
+  }
+});
 
 // Export router and helper functions
 module.exports = router;
