@@ -34,6 +34,11 @@ const strategy120Routes = require('./routes/strategy120');
 const execute120Routes = require('./routes/execute120');
 const authRoutes = require('./routes/auth');
 const onboardingRoutes = require('./routes/onboarding');
+const businessRolesRoutes = require('./routes/business-roles');
+const departmentsRoutes = require('./routes/departments');
+const departmentStrategyRoutes = require('./routes/department-strategy');
+const governanceRoutes = require('./routes/governance');
+const integrityRoutes = require('./routes/integrity');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -105,7 +110,7 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
     '/strategy120', '/strategy120.html', '/execute120', '/execute120.html',
     '/guides', '/guides.html', '/admin', '/admin.html', '/profile', '/profile.html',
-    '/workflow-run', '/workflow-run.html'];
+    '/workflow-run', '/workflow-run.html', '/system-health', '/system-health.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -312,9 +317,19 @@ function initializeServices() {
         app.use('/api/execute120', execute120Routes(supabase));
         app.use('/api/auth', authRoutes(supabase));
         app.use('/api/onboarding', onboardingRoutes(supabase));
+        app.use('/api/business-roles', businessRolesRoutes);
+        app.use('/api/departments', departmentsRoutes);
+        app.use('/api/department-strategy', departmentStrategyRoutes);
+        app.use('/api/governance', governanceRoutes);
+        app.use('/api/integrity', integrityRoutes);
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Auth routes registered');
         console.log('  ✅ Onboarding routes registered');
+        console.log('  ✅ Business Roles routes registered');
+        console.log('  ✅ Departments routes registered');
+        console.log('  ✅ Department Strategy routes registered');
+        console.log('  ✅ Governance routes registered');
+        console.log('  ✅ Integrity routes registered');
         console.log('  ✅ Conversations routes registered');
         console.log('  ✅ Parthenon routes registered');
         console.log('  ✅ S2E (Strategy-to-Execution) routes registered');
@@ -455,6 +470,11 @@ app.get('/strategy120', (req, res) => {
 // Guides page (documentation hub)
 app.get('/guides', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/guides.html'));
+});
+
+// System Health page (Phase 13)
+app.get('/system-health', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/system-health.html'));
 });
 
 // Login page

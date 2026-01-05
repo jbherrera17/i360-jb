@@ -605,6 +605,158 @@
             color: var(--success);
         }
 
+        /* Business Role Badges */
+        .business-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .business-role-badge.executive {
+            background: rgba(124, 58, 237, 0.15);
+            color: #7c3aed;
+        }
+
+        .business-role-badge.director {
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+        }
+
+        .business-role-badge.manager {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .business-role-badge.supervisor {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .business-role-badge.ic {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Permission Grid */
+        .permission-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .permission-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .permission-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .permission-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .permission-card-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .permission-card-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .permission-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .permission-item:last-child {
+            border-bottom: none;
+        }
+
+        .permission-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .permission-value {
+            font-size: 0.85rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .permission-value.enabled {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .permission-value.disabled {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--text-muted);
+        }
+
         .actions-cell {
             display: flex;
             gap: 0.5rem;
@@ -1103,9 +1255,9 @@
             <header class="page-header">
                 <div class="header-content">
                     <h1>User Management</h1>
-                    <p class="header-subtitle">Manage user accounts and roles</p>
+                    <p class="header-subtitle">Manage user accounts, roles, and permissions</p>
                 </div>
-                <div class="header-actions">
+                <div class="header-actions" id="usersHeaderActions">
                     <button class="btn btn-secondary" id="syncUsersBtn" title="Sync users from authentication system">
                         <i data-lucide="refresh-cw" style="width:18px;height:18px;"></i>
                         Sync Users
@@ -1117,32 +1269,62 @@
                 </div>
             </header>
 
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card admin">
-                    <div class="stat-value" id="adminCount">0</div>
-                    <div class="stat-label">Administrators</div>
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="users">
+                    <i data-lucide="users" style="width:16px;height:16px;margin-right:0.5rem;"></i>
+                    Users
+                </button>
+                <button class="tab-btn" data-tab="business-roles">
+                    <i data-lucide="briefcase" style="width:16px;height:16px;margin-right:0.5rem;"></i>
+                    Business Role Defaults
+                </button>
+            </div>
+
+            <!-- Users Tab Content -->
+            <div class="tab-content active" id="usersTab">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card admin">
+                        <div class="stat-value" id="adminCount">0</div>
+                        <div class="stat-label">Administrators</div>
+                    </div>
+                    <div class="stat-card user">
+                        <div class="stat-value" id="userCount">0</div>
+                        <div class="stat-label">Users</div>
+                    </div>
+                    <div class="stat-card viewer">
+                        <div class="stat-value" id="viewerCount">0</div>
+                        <div class="stat-label">Viewers</div>
+                    </div>
                 </div>
-                <div class="stat-card user">
-                    <div class="stat-value" id="userCount">0</div>
-                    <div class="stat-label">Users</div>
-                </div>
-                <div class="stat-card viewer">
-                    <div class="stat-value" id="viewerCount">0</div>
-                    <div class="stat-label">Viewers</div>
+
+                <!-- Users Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <span class="table-title">All Users</span>
+                        <span id="userTotal" style="color: var(--text-secondary);"></span>
+                    </div>
+                    <div id="tableContent">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading users...
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Users Table -->
-            <div class="table-container">
-                <div class="table-header">
-                    <span class="table-title">All Users</span>
-                    <span id="userTotal" style="color: var(--text-secondary);"></span>
+            <!-- Business Roles Tab Content -->
+            <div class="tab-content" id="businessRolesTab">
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="color: var(--text-secondary);">
+                        Configure default permissions for each business role level. These permissions apply to all users with that role unless overridden individually.
+                    </p>
                 </div>
-                <div id="tableContent">
+                <div class="permission-grid" id="businessRolesGrid">
                     <div class="loading">
                         <div class="spinner"></div>
-                        Loading users...
+                        Loading business roles...
                     </div>
                 </div>
             </div>
@@ -1266,11 +1448,31 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="userRole">Role</label>
+                        <label class="form-label" for="userRole">System Role</label>
                         <select id="userRole" class="form-select">
                             <option value="user">User - Can create and manage own agents</option>
                             <option value="viewer">Viewer - Read-only access</option>
                             <option value="admin">Admin - Full access to all features</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls platform-level access</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userBusinessRole">Business Role</label>
+                        <select id="userBusinessRole" class="form-select">
+                            <option value="ic">Individual Contributor</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="manager">Manager</option>
+                            <option value="director">Director</option>
+                            <option value="executive">Executive</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls department and strategy access</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userDepartment">Department</label>
+                        <select id="userDepartment" class="form-select">
+                            <option value="">-- Select Department --</option>
                         </select>
                     </div>
                 </form>
@@ -1349,6 +1551,9 @@
         let users = [];
         let editingUserId = null;
         let deletingUserId = null;
+        let businessRoles = [];
+        let businessRoleDefaults = [];
+        let departments = [];
 
         // ============================================================================
         // API Functions
@@ -1449,6 +1654,70 @@
             return data;
         }
 
+        async function fetchBusinessRoles() {
+            try {
+                const response = await fetch('/api/business-roles/levels', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    businessRoles = data.data;
+                    return businessRoles;
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching business roles:', error);
+                return [];
+            }
+        }
+
+        async function fetchBusinessRoleDefaults() {
+            try {
+                const response = await fetch('/api/business-roles/defaults', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    businessRoleDefaults = data.data;
+                    return businessRoleDefaults;
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching business role defaults:', error);
+                return [];
+            }
+        }
+
+        async function fetchDepartments() {
+            try {
+                const response = await fetch('/api/departments', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    departments = data.data || [];
+                    return departments;
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+                return [];
+            }
+        }
+
+        async function updateUserBusinessRole(userId, businessRole, departmentId) {
+            const response = await fetch(`/api/business-roles/users/${userId}/role`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ business_role: businessRole })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update business role');
+            }
+            return data;
+        }
+
         // ============================================================================
         // UI Functions
         // ============================================================================
@@ -1486,6 +1755,11 @@
             });
         }
 
+        function getBusinessRoleName(roleId) {
+            const role = businessRoles.find(r => r.id === roleId);
+            return role ? role.name : 'Individual Contributor';
+        }
+
         function renderUsersTable() {
             const tableContent = document.getElementById('tableContent');
             const userTotal = document.getElementById('userTotal');
@@ -1508,7 +1782,8 @@
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Role</th>
+                            <th>System Role</th>
+                            <th>Business Role</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -1527,6 +1802,9 @@
                                 </td>
                                 <td>
                                     <span class="role-badge ${user.role}">${user.role}</span>
+                                </td>
+                                <td>
+                                    <span class="business-role-badge ${user.business_role || 'ic'}">${getBusinessRoleName(user.business_role || 'ic')}</span>
                                 </td>
                                 <td>${formatDate(user.created_at)}</td>
                                 <td>
@@ -1553,6 +1831,98 @@
             document.getElementById('viewerCount').textContent = summary.viewer || 0;
         }
 
+        function renderBusinessRolesGrid() {
+            const grid = document.getElementById('businessRolesGrid');
+
+            if (businessRoleDefaults.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="briefcase" class="empty-icon"></i>
+                        <p>No business role defaults found</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const permissionLabels = {
+                can_view_own_dept: 'View Own Department',
+                can_edit_own_dept: 'Edit Own Department',
+                can_view_other_depts: 'View Other Departments',
+                can_edit_other_depts: 'Edit Other Departments',
+                can_view_company_strategy: 'View Company Strategy',
+                can_edit_company_strategy: 'Edit Company Strategy',
+                can_edit_dept_strategy: 'Edit Dept Strategy',
+                can_run_workflows: 'Run Workflows',
+                can_create_workflows: 'Create Workflows',
+                can_access_all_agents: 'Access All Agents'
+            };
+
+            grid.innerHTML = businessRoleDefaults.map(role => {
+                const roleInfo = role.business_role_levels || {};
+                return `
+                    <div class="permission-card">
+                        <div class="permission-card-header">
+                            <div class="permission-card-icon" style="background: ${roleInfo.color}20; color: ${roleInfo.color};">
+                                <i data-lucide="${roleInfo.icon || 'user'}" style="width:20px;height:20px;"></i>
+                            </div>
+                            <div>
+                                <div class="permission-card-title">${roleInfo.name || role.business_role}</div>
+                                <div class="permission-card-subtitle">Level ${roleInfo.level || 1}</div>
+                            </div>
+                        </div>
+                        <div class="permission-list">
+                            ${Object.entries(permissionLabels).map(([key, label]) => `
+                                <div class="permission-item">
+                                    <span class="permission-label">${label}</span>
+                                    <span class="permission-value ${role[key] ? 'enabled' : 'disabled'}">
+                                        ${role[key] ? 'Yes' : 'No'}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+
+            // Update tab content
+            document.getElementById('usersTab').classList.toggle('active', tabName === 'users');
+            document.getElementById('businessRolesTab').classList.toggle('active', tabName === 'business-roles');
+
+            // Show/hide header actions
+            document.getElementById('usersHeaderActions').style.display = tabName === 'users' ? 'flex' : 'none';
+
+            // Load business roles if switching to that tab
+            if (tabName === 'business-roles' && businessRoleDefaults.length === 0) {
+                loadBusinessRoleDefaults();
+            }
+        }
+
+        async function loadBusinessRoleDefaults() {
+            await fetchBusinessRoleDefaults();
+            renderBusinessRolesGrid();
+        }
+
+        function populateDepartmentDropdown() {
+            const select = document.getElementById('userDepartment');
+            select.innerHTML = '<option value="">-- Select Department --</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            });
+        }
+
         // ============================================================================
         // Modal Functions
         // ============================================================================
@@ -1575,6 +1945,8 @@
             document.getElementById('userEmail').value = user.email;
             document.getElementById('userDisplayName').value = user.display_name || '';
             document.getElementById('userRole').value = user.role;
+            document.getElementById('userBusinessRole').value = user.business_role || 'ic';
+            document.getElementById('userDepartment').value = user.department_id || '';
             document.getElementById('passwordGroup').style.display = 'none';
             document.getElementById('userPassword').required = false;
             document.getElementById('userModal').classList.add('active');
@@ -1604,20 +1976,28 @@
             const password = document.getElementById('userPassword').value;
             const displayName = document.getElementById('userDisplayName').value;
             const role = document.getElementById('userRole').value;
+            const businessRole = document.getElementById('userBusinessRole').value;
+            const departmentId = document.getElementById('userDepartment').value || null;
 
             try {
                 if (editingUserId) {
+                    // Update user info
                     await updateUser(editingUserId, {
                         display_name: displayName,
-                        role: role
+                        role: role,
+                        department_id: departmentId
                     });
+                    // Update business role separately
+                    await updateUserBusinessRole(editingUserId, businessRole);
                     showToast('User updated successfully');
                 } else {
                     await createUser({
                         email,
                         password,
                         display_name: displayName,
-                        role
+                        role,
+                        business_role: businessRole,
+                        department_id: departmentId
                     });
                     showToast('User created successfully');
                 }
@@ -1672,12 +2052,15 @@
         // ============================================================================
         async function loadData() {
             try {
-                const [usersData, summary] = await Promise.all([
+                const [usersData, summary, roles, depts] = await Promise.all([
                     fetchUsers(),
-                    fetchRolesSummary()
+                    fetchRolesSummary(),
+                    fetchBusinessRoles(),
+                    fetchDepartments()
                 ]);
                 renderUsersTable();
                 updateStats(summary);
+                populateDepartmentDropdown();
             } catch (error) {
                 showToast('Failed to load users', 'error');
             }
@@ -1770,6 +2153,11 @@
             document.getElementById('deleteModalClose').addEventListener('click', closeDeleteModal);
             document.getElementById('deleteCancel').addEventListener('click', closeDeleteModal);
             document.getElementById('deleteConfirm').addEventListener('click', handleDeleteUser);
+
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            });
 
             // Close modals on overlay click
             document.getElementById('userModal').addEventListener('click', (e) => {

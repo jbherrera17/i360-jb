@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Health - Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --border: #2a2a3a;
+            --border-light: #1f1f2f;
+            --primary: #6366f1;
+            --primary-hover: #5558e3;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        /* Overall Health Card */
+        .health-overview {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .health-score-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .health-score {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .health-score.healthy { color: var(--success); }
+        .health-score.degraded { color: var(--warning); }
+        .health-score.unhealthy { color: var(--error); }
+
+        .health-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .health-status.healthy {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .health-status.degraded {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .health-status.unhealthy {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .health-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .health-stat {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .health-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .health-stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .health-stat.healthy .health-stat-value { color: var(--success); }
+        .health-stat.degraded .health-stat-value { color: var(--warning); }
+        .health-stat.unhealthy .health-stat-value { color: var(--error); }
+        .health-stat.unknown .health-stat-value { color: var(--text-muted); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-btn .badge {
+            background: var(--error);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Components Grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .component-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .component-card:hover {
+            border-color: var(--primary);
+        }
+
+        .component-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .component-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .component-info {
+            flex: 1;
+        }
+
+        .component-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .component-category {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .component-status-badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .component-status-badge.healthy {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .component-status-badge.degraded {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .component-status-badge.unhealthy {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .component-status-badge.unknown {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--text-muted);
+        }
+
+        .component-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .component-metric {
+            text-align: center;
+        }
+
+        .component-metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .component-metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Alerts List */
+        .alerts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .alert-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-severity {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .alert-severity.critical { background: var(--error); box-shadow: 0 0 8px var(--error); }
+        .alert-severity.error { background: var(--error); }
+        .alert-severity.warning { background: var(--warning); }
+        .alert-severity.info { background: var(--info); }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-message {
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .alert-btn {
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .alert-btn.acknowledge {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+        }
+
+        .alert-btn.acknowledge:hover {
+            background: rgba(59, 130, 246, 0.25);
+        }
+
+        .alert-btn.resolve {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .alert-btn.resolve:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+
+        /* Incidents List */
+        .incidents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .incident-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .incident-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .incident-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .incident-severity {
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .incident-severity.critical {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .incident-severity.high {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .incident-severity.medium {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+        }
+
+        .incident-severity.low {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--text-muted);
+        }
+
+        .incident-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .incident-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .incident-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.75rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--error); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Last updated */
+        .last-updated {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .health-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .health-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div class="page-container">
+        <!-- Header -->
+        <header class="page-header">
+            <div>
+                <h1>System Health</h1>
+                <p>Monitor system components, alerts, and incidents</p>
+                <div class="last-updated" id="lastUpdated"></div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="refreshBtn">
+                    <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Health Overview -->
+        <div class="health-overview">
+            <div class="health-score-card">
+                <div class="health-score" id="healthScore">--</div>
+                <div class="health-status" id="healthStatus">
+                    <i data-lucide="activity" style="width:16px;height:16px;"></i>
+                    <span>Loading...</span>
+                </div>
+            </div>
+            <div class="health-stats">
+                <div class="health-stat healthy">
+                    <div class="health-stat-value" id="healthyCount">-</div>
+                    <div class="health-stat-label">Healthy</div>
+                </div>
+                <div class="health-stat degraded">
+                    <div class="health-stat-value" id="degradedCount">-</div>
+                    <div class="health-stat-label">Degraded</div>
+                </div>
+                <div class="health-stat unhealthy">
+                    <div class="health-stat-value" id="unhealthyCount">-</div>
+                    <div class="health-stat-label">Unhealthy</div>
+                </div>
+                <div class="health-stat unknown">
+                    <div class="health-stat-value" id="unknownCount">-</div>
+                    <div class="health-stat-label">Unknown</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="components">
+                <i data-lucide="server" style="width:16px;height:16px;"></i>
+                Components
+            </button>
+            <button class="tab-btn" data-tab="alerts">
+                <i data-lucide="bell" style="width:16px;height:16px;"></i>
+                Alerts
+                <span class="badge" id="alertsBadge" style="display:none;">0</span>
+            </button>
+            <button class="tab-btn" data-tab="incidents">
+                <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i>
+                Incidents
+                <span class="badge" id="incidentsBadge" style="display:none;">0</span>
+            </button>
+        </div>
+
+        <!-- Components Tab -->
+        <div class="tab-content active" id="componentsTab">
+            <div class="components-grid" id="componentsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading components...
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div class="tab-content" id="alertsTab">
+            <div class="alerts-list" id="alertsList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading alerts...
+                </div>
+            </div>
+        </div>
+
+        <!-- Incidents Tab -->
+        <div class="tab-content" id="incidentsTab">
+            <div class="incidents-list" id="incidentsList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading incidents...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // State
+        // ============================================================================
+        let healthData = null;
+        let alertsData = [];
+        let incidentsData = [];
+
+        // ============================================================================
+        // API Functions
+        // ============================================================================
+        function getAuthHeaders() {
+            const token = localStorage.getItem('insight360_token');
+            return {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+        }
+
+        async function fetchHealth() {
+            const response = await fetch('/api/integrity/health', {
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+            if (data.success) {
+                healthData = data.data;
+                return healthData;
+            }
+            throw new Error(data.error);
+        }
+
+        async function fetchAlerts() {
+            const response = await fetch('/api/integrity/alerts?status=active&limit=50', {
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+            if (data.success) {
+                alertsData = data.data || [];
+                return alertsData;
+            }
+            throw new Error(data.error);
+        }
+
+        async function fetchIncidents() {
+            const response = await fetch('/api/integrity/incidents/active', {
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+            if (data.success) {
+                incidentsData = data.data || [];
+                return incidentsData;
+            }
+            throw new Error(data.error);
+        }
+
+        async function acknowledgeAlert(alertId) {
+            const userId = localStorage.getItem('insight360_user_id');
+            const response = await fetch(`/api/integrity/alerts/${alertId}/acknowledge`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ user_id: userId })
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error);
+            return data;
+        }
+
+        async function resolveAlert(alertId) {
+            const response = await fetch(`/api/integrity/alerts/${alertId}/resolve`, {
+                method: 'PUT',
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error);
+            return data;
+        }
+
+        // ============================================================================
+        // UI Functions
+        // ============================================================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" style="width:16px;height:16px;"></i>
+                ${message}
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function formatRelativeTime(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return `${diffDays}d ago`;
+        }
+
+        function renderHealthOverview() {
+            if (!healthData) return;
+
+            const scoreEl = document.getElementById('healthScore');
+            const statusEl = document.getElementById('healthStatus');
+
+            scoreEl.textContent = healthData.overall_score;
+            scoreEl.className = `health-score ${healthData.overall_status}`;
+
+            const statusIcon = healthData.overall_status === 'healthy' ? 'check-circle' :
+                              healthData.overall_status === 'degraded' ? 'alert-circle' : 'x-circle';
+            statusEl.className = `health-status ${healthData.overall_status}`;
+            statusEl.innerHTML = `
+                <i data-lucide="${statusIcon}" style="width:16px;height:16px;"></i>
+                <span>${healthData.overall_status}</span>
+            `;
+
+            document.getElementById('healthyCount').textContent = healthData.summary.healthy;
+            document.getElementById('degradedCount').textContent = healthData.summary.degraded;
+            document.getElementById('unhealthyCount').textContent = healthData.summary.unhealthy;
+            document.getElementById('unknownCount').textContent = healthData.summary.unknown;
+
+            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+
+            lucide.createIcons();
+        }
+
+        function renderComponents() {
+            const grid = document.getElementById('componentsGrid');
+
+            if (!healthData || !healthData.components || healthData.components.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="server" style="width:48px;height:48px;"></i>
+                        <p>No components found</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = healthData.components.map(comp => `
+                <div class="component-card">
+                    <div class="component-header">
+                        <div class="component-icon" style="background: ${comp.color}20; color: ${comp.color};">
+                            <i data-lucide="${comp.icon || 'box'}" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div class="component-info">
+                            <div class="component-name">${comp.name}</div>
+                            <div class="component-category">${comp.category}${comp.is_critical ? ' • Critical' : ''}</div>
+                        </div>
+                        <span class="component-status-badge ${comp.status}">${comp.status}</span>
+                    </div>
+                    <div class="component-metrics">
+                        <div class="component-metric">
+                            <div class="component-metric-value">${comp.health_score || 0}%</div>
+                            <div class="component-metric-label">Health</div>
+                        </div>
+                        <div class="component-metric">
+                            <div class="component-metric-value">${comp.uptime_percentage || 100}%</div>
+                            <div class="component-metric-label">Uptime</div>
+                        </div>
+                        <div class="component-metric">
+                            <div class="component-metric-value">${comp.active_alerts || 0}</div>
+                            <div class="component-metric-label">Alerts</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderAlerts() {
+            const list = document.getElementById('alertsList');
+            const badge = document.getElementById('alertsBadge');
+
+            if (alertsData.length > 0) {
+                badge.textContent = alertsData.length;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            if (alertsData.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="check-circle" style="width:48px;height:48px;"></i>
+                        <p>No active alerts</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            list.innerHTML = alertsData.map(alert => `
+                <div class="alert-card">
+                    <div class="alert-severity ${alert.severity}"></div>
+                    <div class="alert-content">
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-meta">
+                            <span>${alert.component?.name || 'System'}</span>
+                            <span>${formatRelativeTime(alert.triggered_at)}</span>
+                            <span class="status-${alert.status}">${alert.status}</span>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        ${alert.status === 'active' ? `
+                            <button class="alert-btn acknowledge" onclick="handleAcknowledgeAlert('${alert.id}')">
+                                Acknowledge
+                            </button>
+                        ` : ''}
+                        ${alert.status !== 'resolved' ? `
+                            <button class="alert-btn resolve" onclick="handleResolveAlert('${alert.id}')">
+                                Resolve
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderIncidents() {
+            const list = document.getElementById('incidentsList');
+            const badge = document.getElementById('incidentsBadge');
+
+            if (incidentsData.length > 0) {
+                badge.textContent = incidentsData.length;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            if (incidentsData.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="check-circle" style="width:48px;height:48px;"></i>
+                        <p>No active incidents</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            list.innerHTML = incidentsData.map(incident => `
+                <div class="incident-card">
+                    <div class="incident-header">
+                        <div>
+                            <div class="incident-title">${incident.title}</div>
+                            <span class="incident-severity ${incident.severity}">${incident.severity}</span>
+                        </div>
+                    </div>
+                    ${incident.description ? `<div class="incident-description">${incident.description}</div>` : ''}
+                    <div class="incident-meta">
+                        <div class="incident-meta-item">
+                            <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                            Started ${formatRelativeTime(incident.started_at)}
+                        </div>
+                        <div class="incident-meta-item">
+                            <i data-lucide="activity" style="width:14px;height:14px;"></i>
+                            ${incident.status}
+                        </div>
+                        ${incident.component_name ? `
+                            <div class="incident-meta-item">
+                                <i data-lucide="server" style="width:14px;height:14px;"></i>
+                                ${incident.component_name}
+                            </div>
+                        ` : ''}
+                        ${incident.assigned_to_name ? `
+                            <div class="incident-meta-item">
+                                <i data-lucide="user" style="width:14px;height:14px;"></i>
+                                ${incident.assigned_to_name}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // ============================================================================
+        // Event Handlers
+        // ============================================================================
+        async function handleAcknowledgeAlert(alertId) {
+            try {
+                await acknowledgeAlert(alertId);
+                showToast('Alert acknowledged');
+                await loadAlerts();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function handleResolveAlert(alertId) {
+            try {
+                await resolveAlert(alertId);
+                showToast('Alert resolved');
+                await loadAlerts();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        // ============================================================================
+        // Data Loading
+        // ============================================================================
+        async function loadHealth() {
+            try {
+                await fetchHealth();
+                renderHealthOverview();
+                renderComponents();
+            } catch (error) {
+                console.error('Error loading health:', error);
+                showToast('Failed to load health data', 'error');
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                await fetchAlerts();
+                renderAlerts();
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        async function loadIncidents() {
+            try {
+                await fetchIncidents();
+                renderIncidents();
+            } catch (error) {
+                console.error('Error loading incidents:', error);
+            }
+        }
+
+        async function loadAll() {
+            await Promise.all([
+                loadHealth(),
+                loadAlerts(),
+                loadIncidents()
+            ]);
+        }
+
+        // ============================================================================
+        // Initialization
+        // ============================================================================
+        function init() {
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            });
+
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+            // Initial load
+            loadAll();
+
+            // Auto-refresh every 30 seconds
+            setInterval(loadAll, 30000);
+
+            lucide.createIcons();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <script src="/js/navigation.js"></script>
+</body>
+</html>
