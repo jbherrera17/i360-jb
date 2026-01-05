@@ -13,18 +13,21 @@ const notionService = require('../server/services/notionService');
 
 async function main() {
     // Get version from command line or use latest
-    const version = process.argv[2] || 'v2-20';
-    const blueprintPath = path.join(__dirname, '..', 'documentation', 'blueprints', `I360 Blueprint ${version}.md`);
+    const version = process.argv[2] || 'v2-33';
+    const blueprintsDir = path.join(__dirname, '..', 'documentation', 'blueprints');
 
-    // Check if file exists
-    if (!fs.existsSync(blueprintPath)) {
-        console.error(`Blueprint not found: ${blueprintPath}`);
+    // Find blueprint file (with or without date suffix)
+    const allBlueprints = fs.readdirSync(blueprintsDir).filter(f => f.startsWith('I360 Blueprint'));
+    const blueprintFile = allBlueprints.find(f => f.includes(version));
+
+    if (!blueprintFile) {
+        console.error(`Blueprint not found for version: ${version}`);
         console.error('\nAvailable blueprints:');
-        const docs = fs.readdirSync(path.join(__dirname, '..', 'documentation', 'blueprints'))
-            .filter(f => f.startsWith('I360 Blueprint'));
-        docs.forEach(d => console.error(`  - ${d}`));
+        allBlueprints.forEach(d => console.error(`  - ${d}`));
         process.exit(1);
     }
+
+    const blueprintPath = path.join(blueprintsDir, blueprintFile);
 
     // Check Notion configuration
     if (!notionService.isConfigured()) {

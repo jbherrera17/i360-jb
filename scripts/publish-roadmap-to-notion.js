@@ -11,13 +11,18 @@ const path = require('path');
 const notionService = require('../server/services/notionService');
 
 async function main() {
-    const roadmapPath = path.join(__dirname, '..', 'documentation', 'I360-ROADMAP.md');
+    const docsDir = path.join(__dirname, '..', 'documentation');
 
-    // Check if file exists
-    if (!fs.existsSync(roadmapPath)) {
-        console.error(`Roadmap not found: ${roadmapPath}`);
+    // Find roadmap file (with or without date suffix)
+    const allDocs = fs.readdirSync(docsDir).filter(f => f.startsWith('I360-ROADMAP'));
+    const roadmapFile = allDocs.sort().reverse()[0]; // Get most recent
+
+    if (!roadmapFile) {
+        console.error('Roadmap not found in documentation directory');
         process.exit(1);
     }
+
+    const roadmapPath = path.join(docsDir, roadmapFile);
 
     // Check Notion configuration
     if (!notionService.isConfigured()) {
@@ -34,7 +39,7 @@ async function main() {
     try {
         // Publish to Notion with toggle heading
         const result = await notionService.publishToPage(markdown, {
-            toggleTitle: 'I360 Roadmap v1.2',
+            toggleTitle: 'I360 Roadmap v1.7',
             useToggles: true
         });
 
