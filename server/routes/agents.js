@@ -75,9 +75,9 @@ module.exports = function(supabase) {
             }
 
             // Apply sorting
-            const sortColumn = ['name', 'created_at', 'usage_count'].includes(sort)
+            const sortColumn = ['name', 'created_at', 'usage_count', 'last_used_at'].includes(sort)
                 ? sort : 'name';
-            query = query.order(sortColumn, { ascending: order === 'asc' });
+            query = query.order(sortColumn, { ascending: order === 'asc', nullsFirst: false });
 
             // Apply pagination
             query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
@@ -377,6 +377,7 @@ module.exports = function(supabase) {
                 temperature = 0.7,
                 max_tokens = 4096,
                 system_prompt,
+                introduction = null,
                 mindstudio_workflow_id,
                 config,
                 is_active = true,
@@ -438,6 +439,7 @@ module.exports = function(supabase) {
                 agentData.temperature = parseFloat(temperature);
                 agentData.max_tokens = parseInt(max_tokens);
                 agentData.system_prompt = system_prompt;
+                agentData.introduction = introduction;
                 agentData.conversation_starters = conversation_starters;
                 agentData.guardrails = {
                     max_context_tokens: 8000,

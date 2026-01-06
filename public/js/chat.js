@@ -230,7 +230,10 @@ async function sendMessage() {
     const displayMessage = processedFiles.length > 0
         ? `${message}\n\n📎 ${processedFiles.map(f => f.name).join(', ')}`
         : message;
-    addMessage('user', displayMessage);
+    const userMessageDiv = addMessage('user', displayMessage);
+
+    // Scroll user message to top of viewport
+    scrollMessageToTop(userMessageDiv);
 
     // Clear input and files
     if (chatInput) {
@@ -258,8 +261,8 @@ async function sendMessage() {
     isStreaming = true;
 
     try {
-        // Create assistant message placeholder with loading spinner
-        const assistantDiv = addMessage('assistant', '', true);
+        // Create assistant message placeholder with loading spinner (don't auto-scroll)
+        const assistantDiv = addMessage('assistant', '', true, false);
         const contentDiv = assistantDiv.querySelector('.message-content');
 
         // Determine if we should use search
@@ -386,8 +389,9 @@ async function sendMessage() {
  * @param {string} role - 'user' or 'assistant'
  * @param {string} content - Message content
  * @param {boolean} isLoading - Show loading spinner (for assistant)
+ * @param {boolean} autoScroll - Whether to auto-scroll to bottom
  */
-function addMessage(role, content, isLoading = false) {
+function addMessage(role, content, isLoading = false, autoScroll = true) {
     if (!chatMessages) return null;
 
     const messageDiv = document.createElement('div');
@@ -424,7 +428,9 @@ function addMessage(role, content, isLoading = false) {
     lucide.createIcons();
 
     chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (autoScroll) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
     // Start rotating loading messages if this is a loading state
     if (isLoading && typeof LoadingMessages !== 'undefined') {
@@ -494,6 +500,17 @@ function setStatus(text) {
     if (statusText) {
         statusText.textContent = text;
     }
+}
+
+/**
+ * Scroll to show a specific message element at the top of the viewport
+ * @param {HTMLElement} messageEl - The message element to scroll into view
+ */
+function scrollMessageToTop(messageEl) {
+    if (!messageEl || !chatMessages) return;
+    // Scroll so the message is at the top with a small offset
+    const offsetTop = messageEl.offsetTop - 16;
+    chatMessages.scrollTo({ top: offsetTop, behavior: 'smooth' });
 }
 
 /**

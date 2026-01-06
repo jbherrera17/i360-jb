@@ -73,7 +73,8 @@ const navConfig = {
             icon: 'settings',
             adminOnly: true,
             items: [
-                { href: '/admin.html', icon: 'users', label: 'User Management' }
+                { href: '/admin.html', icon: 'users', label: 'User Management' },
+                { href: '/system-health.html', icon: 'activity', label: 'System Health' }
             ]
         }
     ]

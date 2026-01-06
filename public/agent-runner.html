@@ -879,45 +879,9 @@
                                 <span class="model-option-badge default">Default</span>
                                 <i data-lucide="check" class="check-icon"></i>
                             </div>
-                            <!-- Anthropic Models -->
-                            <div class="model-group-label">Anthropic Claude</div>
-                            <div class="model-option" data-model="claude-opus-4-5-20251101">
-                                <span class="model-option-name">Claude Opus 4.5</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="claude-sonnet-4-5-20250929">
-                                <span class="model-option-name">Claude Sonnet 4.5</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="claude-haiku-4-5-20251001">
-                                <span class="model-option-name">Claude Haiku 4.5</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="claude-opus-4-20250514">
-                                <span class="model-option-name">Claude Opus 4</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="claude-sonnet-4-20250514">
-                                <span class="model-option-name">Claude Sonnet 4</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <!-- OpenAI Models -->
-                            <div class="model-group-label">OpenAI GPT</div>
-                            <div class="model-option" data-model="gpt-4.1">
-                                <span class="model-option-name">GPT-4.1</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="gpt-4.1-mini">
-                                <span class="model-option-name">GPT-4.1 Mini</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="gpt-4o">
-                                <span class="model-option-name">GPT-4o</span>
-                                <i data-lucide="check" class="check-icon"></i>
-                            </div>
-                            <div class="model-option" data-model="gpt-4o-mini">
-                                <span class="model-option-name">GPT-4o Mini</span>
-                                <i data-lucide="check" class="check-icon"></i>
+                            <!-- Dynamic models loaded from API -->
+                            <div id="dynamicModelOptions">
+                                <div class="model-group-label">Loading models...</div>
                             </div>
                         </div>
                     </div>
@@ -1049,7 +1013,7 @@
             }
 
             currentAgent = data.data;
-            updateHeader(currentAgent);
+            await updateHeader(currentAgent);
 
             // Determine view based on agent type and execution mode
             const agentType = currentAgent.type || currentAgent.source_type || 'custom';
@@ -1072,7 +1036,7 @@
             }
         }
 
-        function updateHeader(agent) {
+        async function updateHeader(agent) {
             document.getElementById('agentIcon').innerHTML = renderIcon(agent.icon);
             document.getElementById('agentName').textContent = agent.name;
             document.title = `${agent.name} | Insight 360`;
@@ -1087,8 +1051,8 @@
             document.getElementById('defaultModelName').textContent = getModelDisplayName(agentDefaultModel);
             document.getElementById('modelDisplayName').textContent = getModelDisplayName(agentDefaultModel);
 
-            // Initialize model selector
-            initModelSelector();
+            // Initialize model selector (async - loads models from API)
+            await initModelSelector();
 
             // Re-render lucide icons in the selector
             lucide.createIcons();
@@ -1177,19 +1141,13 @@
             // Collapse context preview
             document.getElementById('contextPreview').classList.remove('expanded');
 
-            // Show greeting message from the agent first
-            addMessage('assistant', 'Greetings! I am beginning to process your request. One moment please.');
+            // Show agent introduction if available, otherwise use default greeting
+            const introMessage = agent.introduction || 'Hello! I\'m ready to assist you. How can I help?';
+            addMessage('assistant', introMessage);
 
-            // Use the first conversation starter, or a default greeting prompt
-            const initialPrompt = (agent.conversation_starters && agent.conversation_starters.length > 0)
-                ? agent.conversation_starters[0]
-                : 'Hello! Please introduce yourself and let me know how you can help me today.';
-
-            // Small delay to ensure DOM is fully ready, then send the prompt
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Now execute the prompt
-            await executePrompt(initialPrompt);
+            // If no conversation starters, we're done - wait for user input
+            // If there are starters, show them as clickable options (already rendered in showChatView)
+            // Don't auto-execute the first starter anymore - let user choose
         }
 
         async function executePrompt(message) {
@@ -1198,8 +1156,9 @@
                 return;
             }
 
-            // Add user message to UI
-            addMessage('user', message);
+            // Add user message to UI and scroll it to the top of the view
+            const userMessageDiv = addMessage('user', message);
+            scrollMessageToTop(userMessageDiv);
 
             // Add to history
             conversationHistory.push({ role: 'user', content: message });
@@ -1209,8 +1168,8 @@
             isStreaming = true;
 
             try {
-                // Create assistant message placeholder
-                const assistantDiv = addMessage('assistant', '', true);
+                // Create assistant message placeholder (don't scroll - keep user message visible)
+                const assistantDiv = addMessage('assistant', '', true, false);
                 const contentDiv = assistantDiv.querySelector('.message-content');
 
                 // Build request body with model override if set
@@ -1260,7 +1219,7 @@
                                 if (parsed.type === 'token' && parsed.content) {
                                     fullResponse += parsed.content;
                                     contentDiv.innerHTML = formatMessage(fullResponse);
-                                    scrollToBottom();
+                                    // Don't scroll during streaming - keep user message visible at top
                                 } else if (parsed.type === 'error') {
                                     throw new Error(parsed.error);
                                 }
@@ -1398,7 +1357,7 @@
             await executePrompt(message);
         }
 
-        function addMessage(role, content, isLoading = false) {
+        function addMessage(role, content, isLoading = false, autoScroll = true) {
             const container = document.getElementById('messagesContainer');
             const div = document.createElement('div');
             div.className = `message ${role}`;
@@ -1435,7 +1394,9 @@
 
             container.appendChild(div);
             lucide.createIcons();
-            scrollToBottom();
+            if (autoScroll) {
+                scrollToBottom();
+            }
 
             return div;
         }
@@ -1497,6 +1458,18 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        /**
+         * Scroll to show a specific message element at the top of the viewport
+         * @param {HTMLElement} messageEl - The message element to scroll into view
+         */
+        function scrollMessageToTop(messageEl) {
+            if (!messageEl) return;
+            const container = document.getElementById('messagesContainer');
+            // Scroll so the message is at the top with a small offset
+            const offsetTop = messageEl.offsetTop - 16;
+            container.scrollTo({ top: offsetTop, behavior: 'smooth' });
+        }
+
         function setStatus(text) {
             document.getElementById('inputStatus').textContent = text;
         }
@@ -1534,6 +1507,9 @@
             return div.innerHTML;
         }
 
+        // Store loaded models for display name lookup (declared early for getModelDisplayName)
+        let loadedModels = [];
+
         // Model name mapping for display
         const MODEL_DISPLAY_NAMES = {
             'claude-opus-4-5-20251101': 'Claude Opus 4.5',
@@ -1560,6 +1536,10 @@
 
         function getModelDisplayName(modelId) {
             if (!modelId) return 'Default Model';
+            // First check dynamically loaded models
+            const loaded = loadedModels.find(m => m.id === modelId);
+            if (loaded) return loaded.name;
+            // Fall back to static mapping
             return MODEL_DISPLAY_NAMES[modelId] || modelId;
         }
 
@@ -1579,10 +1559,13 @@
         // MODEL SELECTOR
         // =====================================================================
 
-        function initModelSelector() {
+        async function initModelSelector() {
             const selector = document.getElementById('modelSelector');
             const btn = document.getElementById('modelSelectorBtn');
             const menu = document.getElementById('modelSelectorMenu');
+
+            // Load models from API
+            await loadModelsFromAPI();
 
             // Toggle dropdown
             btn.addEventListener('click', (e) => {
@@ -1597,13 +1580,68 @@
                 }
             });
 
-            // Handle model selection
-            menu.querySelectorAll('.model-option').forEach(option => {
-                option.addEventListener('click', () => {
+            // Handle model selection (using event delegation for dynamic elements)
+            menu.addEventListener('click', (e) => {
+                const option = e.target.closest('.model-option');
+                if (option && option.dataset.model) {
                     selectModel(option.dataset.model);
                     selector.classList.remove('open');
-                });
+                }
             });
+        }
+
+        async function loadModelsFromAPI() {
+            const container = document.getElementById('dynamicModelOptions');
+            try {
+                const response = await fetch('/api/chat/models');
+                const data = await response.json();
+
+                if (data.success && data.models) {
+                    loadedModels = data.models;
+
+                    // Group models by provider
+                    const grouped = {};
+                    data.models.forEach(model => {
+                        const provider = model.provider || 'other';
+                        if (!grouped[provider]) grouped[provider] = [];
+                        grouped[provider].push(model);
+                    });
+
+                    // Provider display names
+                    const providerNames = {
+                        'anthropic': 'Anthropic Claude',
+                        'openai': 'OpenAI GPT',
+                        'perplexity': 'Perplexity',
+                        'other': 'Other'
+                    };
+
+                    // Build HTML
+                    let html = '';
+                    const providerOrder = ['anthropic', 'openai', 'perplexity', 'other'];
+
+                    providerOrder.forEach(provider => {
+                        if (grouped[provider] && grouped[provider].length > 0) {
+                            html += `<div class="model-group-label">${providerNames[provider] || provider}</div>`;
+                            grouped[provider].forEach(model => {
+                                html += `
+                                    <div class="model-option" data-model="${model.id}">
+                                        <span class="model-option-name">${model.name}</span>
+                                        <i data-lucide="check" class="check-icon"></i>
+                                    </div>
+                                `;
+                            });
+                        }
+                    });
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                } else {
+                    container.innerHTML = '<div class="model-group-label">No models available</div>';
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                container.innerHTML = '<div class="model-group-label">Failed to load models</div>';
+            }
         }
 
         function selectModel(modelId) {

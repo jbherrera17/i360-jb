@@ -1018,11 +1018,11 @@
 
         // Module definitions
         const modules = {
-            1: { name: 'AI Audit & Assessment', suite: 'align120', category: 'assessment' },
-            2: { name: 'Business Fundamentals', suite: 'align120', category: 'fundamentals' },
-            3: { name: 'Team UpSkilling', suite: 'align120', category: 'upskilling' },
-            4: { name: 'Brand Alignment', suite: 'align120', category: 'brand' },
-            5: { name: 'Corporate Alignment', suite: 'align120', category: 'corporate' }
+            1: { name: 'AI Audit & Assessment', suite: 'align', category: 'assessment' },
+            2: { name: 'Business Fundamentals', suite: 'align', category: 'fundamentals' },
+            3: { name: 'Team UpSkilling', suite: 'align', category: 'upskilling' },
+            4: { name: 'Brand Alignment', suite: 'align', category: 'brand' },
+            5: { name: 'Corporate Alignment', suite: 'align', category: 'corporate' }
         };
 
         // Initialize
@@ -1036,7 +1036,7 @@
         // Load Align 120 agents
         async function loadAgents() {
             try {
-                const response = await fetch('/api/agents?suite=align120');
+                const response = await fetch('/api/agents?suite=align');
                 const data = await response.json();
 
                 if (data.success) {
@@ -1325,8 +1325,8 @@
                     updateProgressRing();
                     updateStepperState();
 
-                    // Update output checkmarks
-                    updateModuleOutputs(moduleNum, data.outputs || {});
+                    // Update output checkmarks (API returns data.data.outputs)
+                    updateModuleOutputs(moduleNum, data.data?.outputs || {});
 
                     // Enable next button
                     const nextBtn = document.getElementById(`module${moduleNum}Next`);

@@ -208,7 +208,7 @@ module.exports = function(supabase) {
             const { data: agents, error: agentError } = await supabase
                 .from('agents')
                 .select('*')
-                .eq('suite', 'align120')
+                .eq('suite', 'align')
                 .eq('category', categoryMap[moduleNum])
                 .eq('is_active', true);
 
