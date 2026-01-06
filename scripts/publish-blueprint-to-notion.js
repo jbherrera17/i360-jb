@@ -13,7 +13,7 @@ const notionService = require('../server/services/notionService');
 
 async function main() {
     // Get version from command line or use latest
-    const version = process.argv[2] || 'v2-33';
+    const version = process.argv[2] || 'v2-34';
     const blueprintsDir = path.join(__dirname, '..', 'documentation', 'blueprints');
 
     // Find blueprint file (with or without date suffix)
