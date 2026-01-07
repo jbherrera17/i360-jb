@@ -22,6 +22,7 @@
 const express = require('express');
 const router = express.Router();
 const { randomUUID: uuidv4 } = require('crypto');
+const { getUserId } = require('../utils/auth');
 
 // ============================================
 // ASSET TYPE DEFINITIONS
@@ -98,17 +99,6 @@ function generateContentText(contentJson) {
     return extractText(contentJson).trim().substring(0, 10000);
 }
 
-/**
- * Get user ID from request (with fallback for dev)
- */
-function getUserId(req) {
-    // Try to get from authenticated user
-    if (req.user?.id) return req.user.id;
-
-    // Development fallback - use a consistent dev user UUID
-    // In production, this should throw an error or return null
-    return process.env.NODE_ENV === 'production' ? null : '00000000-0000-0000-0000-000000000001';
-}
 
 // ============================================
 // GET /api/context/types

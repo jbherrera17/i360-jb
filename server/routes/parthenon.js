@@ -11,6 +11,7 @@
 
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
+const { getUserId } = require('../utils/auth');
 
 /**
  * Parthenon Routes Factory
@@ -19,9 +20,6 @@ const { randomUUID: uuidv4 } = require('crypto');
  */
 module.exports = function(supabase) {
     const router = express.Router();
-
-    // Get user ID helper
-    const getUserId = (req) => req.user?.id || process.env.DEV_USER_ID || null;
 
     // ============================================================================
     // DEPARTMENTS ENDPOINTS

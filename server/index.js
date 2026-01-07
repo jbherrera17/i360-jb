@@ -174,7 +174,9 @@ function initializeSupabase() {
             const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
             const usingServiceKey = !!process.env.SUPABASE_SERVICE_KEY;
 
-            if (!usingServiceKey && process.env.NODE_ENV === 'production') {
+            if (usingServiceKey) {
+                console.log('🔑 Using SUPABASE_SERVICE_KEY (RLS bypassed)');
+            } else if (process.env.NODE_ENV === 'production') {
                 console.warn('⚠️  WARNING: SUPABASE_SERVICE_KEY not set. Using ANON_KEY - admin operations may fail due to RLS.');
             }
 

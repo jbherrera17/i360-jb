@@ -12,6 +12,7 @@
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
 const anthropicService = require('../services/anthropic');
+const { getUserId } = require('../utils/auth');
 
 /**
  * Actions Routes Factory
@@ -20,9 +21,6 @@ const anthropicService = require('../services/anthropic');
  */
 module.exports = function(supabase) {
     const router = express.Router();
-
-    // Get user ID helper
-    const getUserId = (req) => req.user?.id || process.env.DEV_USER_ID || null;
 
     /**
      * Build system prompt for action execution

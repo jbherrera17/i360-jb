@@ -18,6 +18,7 @@
 
 const express = require('express');
 const s2eService = require('../services/s2eService');
+const { getUserId } = require('../utils/auth');
 
 /**
  * S2E Routes Factory
@@ -26,9 +27,6 @@ const s2eService = require('../services/s2eService');
  */
 module.exports = function(supabase) {
     const router = express.Router();
-
-    // Get user ID helper
-    const getUserId = (req) => req.user?.id || process.env.DEV_USER_ID || null;
 
     // ============================================================================
     // STRATEGIC FOUNDATIONS ENDPOINTS

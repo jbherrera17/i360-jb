@@ -13,6 +13,7 @@
  */
 
 const express = require('express');
+const { getUserId } = require('../utils/auth');
 
 /**
  * Onboarding Routes Factory
@@ -21,9 +22,6 @@ const express = require('express');
  */
 module.exports = function(supabase) {
     const router = express.Router();
-
-    // Get user ID from request (set by auth middleware or fallback)
-    const getUserId = (req) => req.userId || req.user?.id || process.env.DEV_USER_ID || null;
 
     /**
      * GET /api/onboarding/state

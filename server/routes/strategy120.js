@@ -14,6 +14,7 @@
  */
 
 const express = require('express');
+const { getUserId } = require('../utils/auth');
 
 /**
  * Strategy 120 Routes Factory
@@ -22,9 +23,6 @@ const express = require('express');
  */
 module.exports = function(supabase) {
     const router = express.Router();
-
-    // Get user ID helper
-    const getUserId = (req) => req.user?.id || process.env.DEV_USER_ID || null;
 
     // ============================================================================
     // STRATEGY INITIATIVES ENDPOINTS

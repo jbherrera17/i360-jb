@@ -89,13 +89,15 @@ Navigate to: **http://localhost:3000**
 | `OPENAI_API_KEY` | Yes* | GPT API key |
 | `SUPABASE_URL` | No | Supabase project URL |
 | `SUPABASE_ANON_KEY` | No | Supabase anonymous key |
-| `SUPABASE_SERVICE_KEY` | No | Supabase service role key |
+| `SUPABASE_SERVICE_KEY` | **Prod** | Supabase service role key (required for production) |
 | `BRAVE_SEARCH_API_KEY` | No | Brave Search API key |
 | `TAVILY_API_KEY` | No | Tavily Search API key |
 | `SERPER_API_KEY` | No | Serper Search API key |
 | `ALLOWED_ORIGINS` | No | CORS allowed origins (comma-separated) |
 
 *At least one LLM API key is required.
+
+**Important:** `SUPABASE_SERVICE_KEY` is required for production deployments. Without it, Row Level Security (RLS) policies will block server-side database operations like creating actions from templates. The service key bypasses RLS, allowing the server to manage data on behalf of users.
 
 ---
 

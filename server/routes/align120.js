@@ -12,6 +12,7 @@
 
 const express = require('express');
 const agentService = require('../services/agentService');
+const { getUserId } = require('../utils/auth');
 
 /**
  * Align 120 Routes Factory
@@ -20,9 +21,6 @@ const agentService = require('../services/agentService');
  */
 module.exports = function(supabase) {
     const router = express.Router();
-
-    // Get user ID helper
-    const getUserId = (req) => req.user?.id || process.env.DEV_USER_ID || null;
 
     // ============================================================================
     // ALIGN 120 SESSIONS ENDPOINTS
