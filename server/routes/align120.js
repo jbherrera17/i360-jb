@@ -11,6 +11,7 @@
  */
 
 const express = require('express');
+const agentService = require('../services/agentService');
 
 /**
  * Align 120 Routes Factory
@@ -178,7 +179,8 @@ module.exports = function(supabase) {
     router.post('/sessions/:id/run-module', async (req, res) => {
         try {
             const { id } = req.params;
-            const { module: moduleNum } = req.body;
+            const { module: moduleNum, companyContext } = req.body;
+            const userId = getUserId(req);
 
             if (!moduleNum || moduleNum < 1 || moduleNum > 5) {
                 return res.status(400).json({
@@ -199,10 +201,18 @@ module.exports = function(supabase) {
             // Get agents for this module
             const categoryMap = {
                 1: 'assessment',
-                2: 'fundamentals',
-                3: 'upskilling',
-                4: 'brand',
+                2: 'strategy',
+                3: 'productivity',
+                4: 'content',
                 5: 'corporate'
+            };
+
+            const moduleNames = {
+                1: 'AI Maturity Assessment',
+                2: 'Business Fundamentals',
+                3: 'Team Readiness',
+                4: 'Brand Alignment',
+                5: 'Corporate Alignment'
             };
 
             const { data: agents, error: agentError } = await supabase
@@ -214,20 +224,67 @@ module.exports = function(supabase) {
 
             if (agentError) throw agentError;
 
-            // Simulate running agents (in production, this would call the actual LLM service)
-            const outputs = {};
-            const outputMap = {
-                1: ['ai_inventory', 'risk_assessment', 'opportunity_ranking', 'maturity_score'],
-                2: ['core_values', 'vision_mission', 'process_inventory', 'unit_economics', 'kpi_alignment'],
-                3: ['skills_matrix', 'training_paths', 'change_readiness', 'ai_ways_of_working'],
-                4: ['brand_voice', 'trust_messaging', 'sentiment_baseline', 'competitive_position'],
-                5: ['stakeholder_map', 'governance_raci', 'policy_drafts', 'portfolio_priority']
-            };
+            // Build context message for agents
+            const contextMessage = `
+You are running an Align 120 assessment for ${session.company_name}.
+Module: ${moduleNum} - ${moduleNames[moduleNum]}
 
-            // Mark all outputs as complete (placeholder - real implementation would call agents)
-            outputMap[moduleNum].forEach(output => {
-                outputs[output] = true;
-            });
+${companyContext ? `Company Context:\n${companyContext}\n\n` : ''}
+Please provide a comprehensive assessment based on the available information.
+Format your response as a structured analysis with clear sections and actionable insights.
+`;
+
+            // Execute each agent and collect results
+            const agentResults = [];
+            const outputs = {};
+
+            for (const agent of (agents || [])) {
+                try {
+                    console.log(`Running agent: ${agent.name} for module ${moduleNum}`);
+
+                    const result = await agentService.executeAgent(agent.id, {
+                        userMessage: contextMessage,
+                        userId: userId,
+                        conversationHistory: []
+                    });
+
+                    agentResults.push({
+                        agent_id: agent.id,
+                        agent_name: agent.name,
+                        response: result.response,
+                        execution_id: result.execution_id,
+                        usage: result.usage,
+                        duration_ms: result.duration_ms
+                    });
+
+                    // Mark this agent's output as complete
+                    outputs[agent.name.toLowerCase().replace(/\s+/g, '_')] = {
+                        completed: true,
+                        response: result.response,
+                        execution_id: result.execution_id
+                    };
+
+                } catch (agentError) {
+                    console.error(`Error running agent ${agent.name}:`, agentError);
+                    agentResults.push({
+                        agent_id: agent.id,
+                        agent_name: agent.name,
+                        error: agentError.message
+                    });
+                    outputs[agent.name.toLowerCase().replace(/\s+/g, '_')] = {
+                        completed: false,
+                        error: agentError.message
+                    };
+                }
+            }
+
+            // Store module results in session
+            const moduleResults = session.module_results || {};
+            moduleResults[moduleNum] = {
+                completed_at: new Date().toISOString(),
+                agents_run: agentResults.length,
+                results: agentResults
+            };
 
             // Update session progress
             const moduleProgress = session.module_progress || {};
@@ -237,6 +294,7 @@ module.exports = function(supabase) {
                 .from('align120_sessions')
                 .update({
                     module_progress: moduleProgress,
+                    module_results: moduleResults,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', id);
@@ -245,7 +303,9 @@ module.exports = function(supabase) {
                 success: true,
                 data: {
                     module: moduleNum,
-                    agents_run: agents?.length || 0,
+                    module_name: moduleNames[moduleNum],
+                    agents_run: agentResults.length,
+                    results: agentResults,
                     outputs
                 }
             });

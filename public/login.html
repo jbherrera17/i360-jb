@@ -327,7 +327,6 @@
             <!-- Tabs -->
             <div class="login-tabs">
                 <button class="login-tab active" data-tab="login">Sign In</button>
-                <button class="login-tab" data-tab="register">Create Account</button>
                 <button class="login-tab" data-tab="forgot">Reset Password</button>
             </div>
 
@@ -348,27 +347,6 @@
                     </div>
                     <button type="submit" class="btn-primary" id="loginBtn">
                         <span>Sign In</span>
-                    </button>
-                </form>
-            </div>
-
-            <!-- Register Form -->
-            <div class="form-panel" id="registerPanel">
-                <form id="registerForm">
-                    <div class="form-group">
-                        <label class="form-label" for="registerName">Display Name</label>
-                        <input type="text" class="form-input" id="registerName" placeholder="Your name">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="registerEmail">Email</label>
-                        <input type="email" class="form-input" id="registerEmail" placeholder="you@example.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="registerPassword">Password</label>
-                        <input type="password" class="form-input" id="registerPassword" placeholder="At least 6 characters" required minlength="6">
-                    </div>
-                    <button type="submit" class="btn-primary" id="registerBtn">
-                        <span>Create Account</span>
                     </button>
                 </form>
             </div>
@@ -564,9 +542,6 @@
             // Login form
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
-            // Register form
-            document.getElementById('registerForm').addEventListener('submit', handleRegister);
-
             // Forgot password form
             document.getElementById('forgotForm').addEventListener('submit', handleForgotPassword);
 
@@ -628,47 +603,6 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Sign In</span>';
-            }
-        }
-
-        // Handle register
-        async function handleRegister(e) {
-            e.preventDefault();
-            hideMessages();
-
-            const btn = document.getElementById('registerBtn');
-            const display_name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading-spinner"></div>';
-
-            try {
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, display_name })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showSuccess(data.message || 'Account created! Please check your email.');
-                    // Switch to login tab
-                    setTimeout(() => {
-                        tabs[0].click();
-                        document.getElementById('loginEmail').value = email;
-                    }, 2000);
-                } else {
-                    showError(data.error || 'Registration failed');
-                }
-            } catch (error) {
-                showError('Connection error. Please try again.');
-                console.error('Register error:', error);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Create Account</span>';
             }
         }
 

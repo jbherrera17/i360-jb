@@ -304,6 +304,99 @@
             color: var(--text-muted);
         }
 
+        .output-item.error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .output-item.error .output-check {
+            color: #ef4444;
+        }
+
+        /* Agent Results Section */
+        .agent-results-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+
+        .agent-results-section h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .agent-result-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .agent-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .agent-result-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .agent-result-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .agent-result-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .agent-result-body {
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .agent-result-body.expanded {
+            display: block;
+        }
+
+        .agent-result-body pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 0;
+        }
+
+        .agent-result-card.success .agent-result-title {
+            color: #10b981;
+        }
+
+        .agent-result-card.error .agent-result-title {
+            color: #ef4444;
+        }
+
         /* Session Info */
         .session-info {
             background: var(--bg-tertiary);
@@ -758,6 +851,11 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="agent-results-section" id="module1Results" style="display:none;">
+                            <h4><i data-lucide="file-text" style="width:16px;height:16px;"></i> Agent Results</h4>
+                            <div class="agent-results-list"></div>
+                        </div>
                     </div>
                     <div class="panel-footer">
                         <button class="btn-secondary" onclick="goToModule(0)">
@@ -816,6 +914,11 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="agent-results-section" id="module2Results" style="display:none;">
+                            <h4><i data-lucide="file-text" style="width:16px;height:16px;"></i> Agent Results</h4>
+                            <div class="agent-results-list"></div>
+                        </div>
                     </div>
                     <div class="panel-footer">
                         <button class="btn-secondary" onclick="goToModule(1)">
@@ -869,6 +972,11 @@
                                     AI Ways of Working
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="agent-results-section" id="module3Results" style="display:none;">
+                            <h4><i data-lucide="file-text" style="width:16px;height:16px;"></i> Agent Results</h4>
+                            <div class="agent-results-list"></div>
                         </div>
                     </div>
                     <div class="panel-footer">
@@ -924,6 +1032,11 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="agent-results-section" id="module4Results" style="display:none;">
+                            <h4><i data-lucide="file-text" style="width:16px;height:16px;"></i> Agent Results</h4>
+                            <div class="agent-results-list"></div>
+                        </div>
                     </div>
                     <div class="panel-footer">
                         <button class="btn-secondary" onclick="goToModule(3)">
@@ -977,6 +1090,11 @@
                                     Portfolio Priority
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="agent-results-section" id="module5Results" style="display:none;">
+                            <h4><i data-lucide="file-text" style="width:16px;height:16px;"></i> Agent Results</h4>
+                            <div class="agent-results-list"></div>
                         </div>
                     </div>
                     <div class="panel-footer">
@@ -1050,10 +1168,16 @@
                     });
 
                     // Populate each module's agent grid
+                    // Categories aligned with database values:
+                    // Module 1: No dedicated category - using 'assessment' or custom agents
+                    // Module 2: 'strategy' (Values, Vision, Process, Economics, KPI)
+                    // Module 3: 'productivity' (Skills, Training, Change, Ways of Working)
+                    // Module 4: 'content' (Brand Voice, Trust, Sentiment, Competitive)
+                    // Module 5: 'corporate' (Stakeholder, RACI, Policy, Portfolio)
                     populateModuleAgents(1, 'assessment');
-                    populateModuleAgents(2, 'fundamentals');
-                    populateModuleAgents(3, 'upskilling');
-                    populateModuleAgents(4, 'brand');
+                    populateModuleAgents(2, 'strategy');
+                    populateModuleAgents(3, 'productivity');
+                    populateModuleAgents(4, 'content');
                     populateModuleAgents(5, 'corporate');
                 }
             } catch (error) {
@@ -1125,9 +1249,9 @@
                                        session.status === 'in_progress' ? '#f59e0b' : '#6366f1';
 
                     return `
-                        <div class="agent-card" style="margin-bottom: 0.75rem;" onclick="resumeSession('${session.id}')">
+                        <div class="agent-card" style="margin-bottom: 0.75rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
+                                <div style="flex: 1; cursor: pointer;" onclick="resumeSession('${session.id}')">
                                     <div style="font-weight: 600;">${session.company_name || 'Unnamed Company'}</div>
                                     <div style="font-size: 0.8rem; color: var(--text-muted);">
                                         Started ${date} | Module ${session.current_module || 1}/5
@@ -1138,11 +1262,32 @@
                                         ${session.status || 'draft'}
                                     </span>
                                     <span style="font-weight: 600; color: var(--primary);">${progress}%</span>
+                                    <button class="delete-session-btn"
+                                            data-session-id="${session.id}"
+                                            data-company-name="${(session.company_name || 'Unnamed Company').replace(/"/g, '&quot;')}"
+                                            style="padding: 0.35rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                                            title="Delete session">
+                                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     `;
                 }).join('');
+
+                // Re-initialize Lucide icons for delete buttons
+                lucide.createIcons();
+
+                // Attach delete button event listeners
+                document.querySelectorAll('.delete-session-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const sessionId = btn.dataset.sessionId;
+                        const companyName = btn.dataset.companyName;
+                        await deleteSession(sessionId, companyName);
+                    });
+                });
             } catch (error) {
                 console.error('Error loading sessions:', error);
                 document.getElementById('sessionsList').innerHTML = `
@@ -1223,6 +1368,42 @@
             } catch (error) {
                 console.error('Error loading session:', error);
                 alert('Error loading session');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete a session
+        async function deleteSession(sessionId, companyName) {
+            const confirmed = confirm(`Are you sure you want to delete the session for "${companyName}"?\n\nThis action cannot be undone.`);
+            if (!confirmed) {
+                return;
+            }
+
+            showLoading('Deleting Session', 'Removing session and related data...');
+
+            try {
+                const response = await fetch(`/api/align120/sessions/${sessionId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // If we're currently viewing this session, reset the view
+                    if (currentSession && currentSession.id === sessionId) {
+                        currentSession = null;
+                        moduleProgress = { 1: false, 2: false, 3: false, 4: false, 5: false };
+                        document.getElementById('sessionInfo').style.display = 'none';
+                        goToModule(0); // Go back to start panel
+                    }
+                    // Reload the sessions list
+                    await loadSessions();
+                } else {
+                    alert('Failed to delete session: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                alert('Error deleting session: ' + error.message);
             } finally {
                 hideLoading();
             }
@@ -1314,7 +1495,10 @@
                 const response = await fetch(`/api/align120/sessions/${currentSession.id}/run-module`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ module: moduleNum })
+                    body: JSON.stringify({
+                        module: moduleNum,
+                        companyContext: `Company: ${currentSession.company_name}`
+                    })
                 });
 
                 const data = await response.json();
@@ -1325,8 +1509,9 @@
                     updateProgressRing();
                     updateStepperState();
 
-                    // Update output checkmarks (API returns data.data.outputs)
+                    // Update output checkmarks and show results
                     updateModuleOutputs(moduleNum, data.data?.outputs || {});
+                    displayAgentResults(moduleNum, data.data?.results || []);
 
                     // Enable next button
                     const nextBtn = document.getElementById(`module${moduleNum}Next`);
@@ -1350,14 +1535,80 @@
             const container = document.getElementById(`module${moduleNum}Outputs`);
             if (!container) return;
 
-            container.querySelectorAll('.output-item').forEach(item => {
-                const outputKey = item.dataset.output;
-                if (outputs[outputKey]) {
-                    item.classList.add('complete');
-                    item.querySelector('.output-check').innerHTML = '<i data-lucide="check-circle" style="width:14px;height:14px;"></i>';
-                }
+            // Mark outputs as complete based on agent results
+            Object.keys(outputs).forEach(key => {
+                const output = outputs[key];
+                // Find matching output item (try various formats)
+                container.querySelectorAll('.output-item').forEach(item => {
+                    const outputKey = item.dataset.output;
+                    // Check if agent name matches output key
+                    if (key.includes(outputKey) || outputKey.includes(key) ||
+                        key.replace(/_/g, '').includes(outputKey.replace(/_/g, ''))) {
+                        if (output.completed) {
+                            item.classList.add('complete');
+                            item.querySelector('.output-check').innerHTML = '<i data-lucide="check-circle" style="width:14px;height:14px;"></i>';
+                        } else if (output.error) {
+                            item.classList.add('error');
+                            item.querySelector('.output-check').innerHTML = '<i data-lucide="x-circle" style="width:14px;height:14px;"></i>';
+                        }
+                    }
+                });
             });
 
+            // Also mark all outputs as complete if we got results
+            if (Object.keys(outputs).length > 0) {
+                container.querySelectorAll('.output-item').forEach(item => {
+                    if (!item.classList.contains('complete') && !item.classList.contains('error')) {
+                        item.classList.add('complete');
+                        item.querySelector('.output-check').innerHTML = '<i data-lucide="check-circle" style="width:14px;height:14px;"></i>';
+                    }
+                });
+            }
+
+            lucide.createIcons();
+        }
+
+        // Display agent results in expandable cards
+        function displayAgentResults(moduleNum, results) {
+            const resultsSection = document.getElementById(`module${moduleNum}Results`);
+            if (!resultsSection || results.length === 0) return;
+
+            const resultsList = resultsSection.querySelector('.agent-results-list');
+            resultsList.innerHTML = results.map((result, index) => `
+                <div class="agent-result-card ${result.error ? 'error' : 'success'}">
+                    <div class="agent-result-header" onclick="toggleAgentResult(this)">
+                        <div class="agent-result-title">
+                            <i data-lucide="${result.error ? 'x-circle' : 'check-circle'}" style="width:16px;height:16px;"></i>
+                            ${result.agent_name}
+                        </div>
+                        <div class="agent-result-meta">
+                            ${result.duration_ms ? `<span>${(result.duration_ms / 1000).toFixed(1)}s</span>` : ''}
+                            ${result.usage ? `<span>${result.usage.total_tokens || 0} tokens</span>` : ''}
+                            <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+                        </div>
+                    </div>
+                    <div class="agent-result-body">
+                        <pre>${result.error || result.response || 'No response'}</pre>
+                    </div>
+                </div>
+            `).join('');
+
+            resultsSection.style.display = 'block';
+            lucide.createIcons();
+        }
+
+        // Toggle agent result expansion
+        function toggleAgentResult(header) {
+            const body = header.nextElementSibling;
+            const icon = header.querySelector('[data-lucide="chevron-down"], [data-lucide="chevron-up"]');
+
+            if (body.classList.contains('expanded')) {
+                body.classList.remove('expanded');
+                if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+            } else {
+                body.classList.add('expanded');
+                if (icon) icon.setAttribute('data-lucide', 'chevron-up');
+            }
             lucide.createIcons();
         }
 
