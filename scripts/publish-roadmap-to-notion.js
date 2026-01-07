@@ -39,7 +39,7 @@ async function main() {
     try {
         // Publish to Notion with toggle heading
         const result = await notionService.publishToPage(markdown, {
-            toggleTitle: 'I360 Roadmap v1.7',
+            toggleTitle: 'I360 Roadmap v1.9',
             useToggles: true
         });
 
