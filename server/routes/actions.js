@@ -425,8 +425,8 @@ module.exports = function(supabase) {
                 parthenon_context: customizations.parthenon_context || template.parthenon_context,
                 ai_engine: customizations.ai_engine || template.ai_engine,
                 ux_config: customizations.ux_config || template.ux_config,
-                status: 'draft',
-                is_public: false,
+                status: 'active',
+                is_public: true,
                 is_featured: false,
                 usage_count: 0
             };
