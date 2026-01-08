@@ -124,29 +124,35 @@ router.get('/types', (req, res) => {
 router.get('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
-        const { 
-            type, 
-            search, 
-            tags, 
+        const {
+            type,
+            search,
+            tags,
             current = 'true',
             archived,
-            limit = 100, 
+            department_id,
+            limit = 100,
             offset = 0,
             sort = 'updated_at',
             order = 'desc'
         } = req.query;
-        
+
         let query = supabase
             .from('context_assets')
             .select('*')
             .order(sort, { ascending: order === 'asc' })
             .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
-        
+
         // Filter by type
         if (type) {
             query = query.eq('asset_type', type);
         }
-        
+
+        // Filter by department (show assets for this dept OR assets with no dept)
+        if (department_id) {
+            query = query.or(`department_id.eq.${department_id},department_id.is.null`);
+        }
+
         // Filter by current/archived status
         if (archived === 'true') {
             query = query.eq('is_current', false);
@@ -237,13 +243,14 @@ router.get('/assets/:id', async (req, res) => {
 router.post('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
-        const { 
-            asset_type, 
-            name, 
-            description, 
-            content_json, 
+        const {
+            asset_type,
+            name,
+            description,
+            content_json,
             tags = [],
-            visibility = 'private'
+            visibility = 'private',
+            department_id = null
         } = req.body;
         
         // Validation
@@ -282,7 +289,8 @@ router.post('/assets', async (req, res) => {
             usage_count: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            created_by: userId
+            created_by: userId,
+            department_id: department_id || null
         };
         
         const { data, error } = await supabase
@@ -323,13 +331,14 @@ router.put('/assets/:id', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const { id } = req.params;
-        const { 
-            name, 
-            description, 
-            content_json, 
-            tags, 
+        const {
+            name,
+            description,
+            content_json,
+            tags,
             change_summary,
-            visibility
+            visibility,
+            department_id
         } = req.body;
         
         // Get current asset
@@ -398,6 +407,7 @@ router.put('/assets/:id', async (req, res) => {
         if (description !== undefined) updateData.description = description;
         if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
         if (visibility !== undefined) updateData.visibility = visibility;
+        if (department_id !== undefined) updateData.department_id = department_id || null;
         
         if (content_json !== undefined) {
             updateData.content_json = content_json;

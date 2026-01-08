@@ -2020,6 +2020,13 @@
                 <div class="sidebar-title">Filters</div>
 
                 <div class="filter-group">
+                    <label class="filter-label">Department</label>
+                    <select class="filter-select" id="filterDepartment">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <label class="filter-label">Suite</label>
                     <select class="filter-select" id="filterSuite">
                         <option value="">All Suites</option>
@@ -2277,6 +2284,14 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select class="form-input form-select" id="formDepartment">
+                            <option value="">No Department (Available to all)</option>
+                        </select>
+                        <div class="form-hint">Assign this agent to a specific department</div>
+                    </div>
+
                     <!-- Platform-specific fields (MindStudio) -->
                     <div class="platform-fields" id="platformFieldsEmbed">
                         <div class="platform-fields-title">
@@ -2510,12 +2525,14 @@
         async function fetchAgents() {
             try {
                 const params = new URLSearchParams();
+                const department = document.getElementById('filterDepartment').value;
                 const suite = document.getElementById('filterSuite').value;
                 const status = document.getElementById('filterStatus').value;
                 const category = document.getElementById('filterCategory').value;
                 const platform = document.getElementById('filterPlatform').value;
                 const search = document.getElementById('searchInput').value;
 
+                if (department) params.append('department_id', department);
                 if (suite) params.append('suite', suite);
                 if (status) params.append('active', status === 'active' ? 'true' : 'false');
                 if (category) params.append('category', category);
@@ -2546,6 +2563,38 @@
                 }
             } catch (error) {
                 console.error('Error fetching categories:', error);
+            }
+        }
+
+        async function fetchDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const data = await response.json();
+                if (data.success) {
+                    // Populate filter dropdown
+                    const filterSelect = document.getElementById('filterDepartment');
+                    filterSelect.innerHTML = '<option value="">All Departments</option>';
+                    data.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        filterSelect.appendChild(option);
+                    });
+
+                    // Populate form dropdown
+                    const formSelect = document.getElementById('formDepartment');
+                    if (formSelect) {
+                        formSelect.innerHTML = '<option value="">No Department (Available to all)</option>';
+                        data.data.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.id;
+                            option.textContent = dept.name;
+                            formSelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching departments:', error);
             }
         }
 
@@ -2973,10 +3022,14 @@
                 // Conversation starters - convert array to newline-separated text
                 const starters = agent.conversation_starters || [];
                 document.getElementById('formConversationStarters').value = Array.isArray(starters) ? starters.join('\n') : '';
+
+                // Department assignment
+                document.getElementById('formDepartment').value = agent.department_id || '';
             } else {
                 document.getElementById('agentForm').reset();
                 document.getElementById('formIcon').value = '🤖';
                 document.getElementById('formExecutionMode').value = 'api';
+                document.getElementById('formDepartment').value = '';
             }
 
             updatePlatformFields();
@@ -3757,6 +3810,7 @@
             
             const platform = document.getElementById('formPlatform').value;
             
+            const departmentValue = document.getElementById('formDepartment')?.value;
             const agentData = {
                 name: document.getElementById('formName').value,
                 icon: document.getElementById('formIcon').value || '🤖',
@@ -3764,7 +3818,8 @@
                 type: platform,
                 is_active: document.getElementById('formStatus').value === 'active',
                 category: document.getElementById('formCategory').value || null,
-                suite: document.getElementById('formSuite')?.value || 'execute'
+                suite: document.getElementById('formSuite')?.value || 'execute',
+                department_id: departmentValue || null
             };
 
             // 'custom' and 'llm' are native types with LLM configuration
@@ -3825,7 +3880,7 @@
         });
 
         // Filters
-        ['filterSuite', 'filterStatus', 'filterCategory', 'filterPlatform'].forEach(id => {
+        ['filterDepartment', 'filterSuite', 'filterStatus', 'filterCategory', 'filterPlatform'].forEach(id => {
             document.getElementById(id).addEventListener('change', fetchAgents);
         });
 
@@ -3966,6 +4021,7 @@
             initTheme();
             initPanelResize();
             await Promise.all([
+                fetchDepartments(),
                 fetchCategories(),
                 fetchContextAssets(),
                 fetchModels()

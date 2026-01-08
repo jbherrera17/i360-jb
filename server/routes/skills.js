@@ -38,6 +38,7 @@ module.exports = function(supabase) {
                 visibility,
                 search,
                 required_context,
+                department_id,
                 sort = 'display_name',
                 order = 'asc',
                 limit = 50,
@@ -68,6 +69,10 @@ module.exports = function(supabase) {
             }
             if (required_context) {
                 query = query.contains('required_context_types', [required_context]);
+            }
+            // Filter by department (show skills for this dept OR skills with no dept)
+            if (department_id) {
+                query = query.or(`department_id.eq.${department_id},department_id.is.null`);
             }
 
             // Sorting
@@ -262,7 +267,8 @@ module.exports = function(supabase) {
                 examples = [],
                 templates = [],
                 visibility = 'private',
-                status = 'draft'
+                status = 'draft',
+                department_id = null
             } = req.body;
 
             // Validation
@@ -306,7 +312,8 @@ module.exports = function(supabase) {
                 version: '1.0.0',
                 visibility,
                 status,
-                created_by: userId
+                created_by: userId,
+                department_id: department_id || null
             };
 
             const { data, error } = await supabase

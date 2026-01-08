@@ -20,14 +20,16 @@ const supabase = createClient(
 async function createConversation(data = {}) {
     const {
         title = 'New Conversation',
-        model = 'claude-sonnet-4-5-20250929'
+        model = 'claude-sonnet-4-5-20250929',
+        userId = null
     } = data;
 
     const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
             title,
-            model
+            model,
+            user_id: userId
         })
         .select()
         .single();
@@ -48,7 +50,8 @@ async function createConversation(data = {}) {
 async function getConversations(options = {}) {
     const {
         limit = 50,
-        offset = 0
+        offset = 0,
+        userId = null
     } = options;
 
     let query = supabase
@@ -64,6 +67,11 @@ async function getConversations(options = {}) {
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
+    // Filter by user_id if provided
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -77,19 +85,26 @@ async function getConversations(options = {}) {
 /**
  * Get a single conversation with its messages
  * @param {string} conversationId - Conversation UUID
+ * @param {string} userId - User ID for ownership verification (optional)
  * @returns {object} Conversation with messages
  */
-async function getConversation(conversationId) {
+async function getConversation(conversationId, userId = null) {
     // Get conversation
-    const { data: conversation, error: convError } = await supabase
+    let query = supabase
         .from('conversations')
         .select('*')
-        .eq('id', conversationId)
-        .single();
+        .eq('id', conversationId);
+
+    // Verify ownership if userId provided
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+
+    const { data: conversation, error: convError } = await query.single();
 
     if (convError) {
         if (convError.code === 'PGRST116') {
-            return null; // Not found
+            return null; // Not found or not owned by user
         }
         throw new Error(`Failed to fetch conversation: ${convError.message}`);
     }

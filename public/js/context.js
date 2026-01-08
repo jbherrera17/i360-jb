@@ -11,8 +11,10 @@
 const state = {
     assets: [],
     assetTypes: [],
+    departments: [],
     selectedAsset: null,
     filters: {
+        department: '',
         type: '',
         search: '',
         status: 'current'
@@ -65,6 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load data
     await loadAssetTypes();
+    await loadDepartments();
     await loadAssets();
 
     // Set up event listeners
@@ -104,9 +107,47 @@ async function loadAssetTypes() {
     }
 }
 
+async function loadDepartments() {
+    try {
+        const response = await apiCall('/api/departments');
+        state.departments = response.data || [];
+        populateDepartmentFilter();
+        console.log(`Loaded ${state.departments.length} departments`);
+    } catch (error) {
+        console.error('Failed to load departments:', error);
+        state.departments = [];
+    }
+}
+
+function populateDepartmentFilter() {
+    const select = document.getElementById('departmentFilter');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">All Departments</option>';
+    state.departments.forEach(dept => {
+        const option = document.createElement('option');
+        option.value = dept.id;
+        option.textContent = dept.name;
+        select.appendChild(option);
+    });
+
+    // Also populate the form department dropdown
+    const formSelect = document.getElementById('assetDepartment');
+    if (formSelect) {
+        formSelect.innerHTML = '<option value="">No Department (Available to all)</option>';
+        state.departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept.id;
+            option.textContent = dept.name;
+            formSelect.appendChild(option);
+        });
+    }
+}
+
 async function loadAssets() {
     try {
         const params = new URLSearchParams();
+        if (state.filters.department) params.append('department_id', state.filters.department);
         if (state.filters.type) params.append('type', state.filters.type);
         if (state.filters.search) params.append('search', state.filters.search);
         if (state.filters.status === 'archived') {
@@ -114,7 +155,7 @@ async function loadAssets() {
         } else {
             params.append('current', 'true');
         }
-        
+
         const response = await apiCall(`/api/context/assets?${params}`);
         // API returns { success: true, data: [...] }
         state.assets = response.data || [];
@@ -275,6 +316,10 @@ function loadAssetIntoEditor(asset) {
     if (descInput) descInput.value = asset.description || '';
     if (typeSelect) typeSelect.value = asset.asset_type || '';
     if (tagsInput) tagsInput.value = (asset.tags || []).join(', ');
+
+    // Set department
+    const deptSelect = document.getElementById('assetDepartment');
+    if (deptSelect) deptSelect.value = asset.department_id || '';
     
     // Load JSON content
     if (jsonEditor) {
@@ -353,6 +398,10 @@ function showCreateModal() {
     if (tagsInput) tagsInput.value = '';
     if (jsonEditor) jsonEditor.value = '{\n  \n}';
     if (plainTextEditor) plainTextEditor.value = '';
+
+    // Reset department
+    const deptSelect = document.getElementById('assetDepartment');
+    if (deptSelect) deptSelect.value = '';
     
     // Update editor header
     const editorTitle = document.getElementById('editorTitle');
@@ -415,13 +464,18 @@ async function saveAsset() {
         .split(',')
         .map(t => t.trim())
         .filter(t => t.length > 0);
-    
+
+    // Get department
+    const departmentSelect = document.getElementById('assetDepartment');
+    const department_id = departmentSelect?.value || null;
+
     const assetData = {
         name,
         asset_type,
         description: descInput?.value?.trim() || '',
         content_json,
-        tags
+        tags,
+        department_id
     };
     
     try {
@@ -773,8 +827,16 @@ function switchTab(tabName) {
 
 function setupEventListeners() {
     // Filter changes
+    const departmentFilter = document.getElementById('departmentFilter');
     const typeFilter = document.getElementById('typeFilter');
     const searchInput = document.getElementById('searchInput');
+
+    if (departmentFilter) {
+        departmentFilter.addEventListener('change', (e) => {
+            state.filters.department = e.target.value;
+            loadAssets();
+        });
+    }
 
     if (typeFilter) {
         typeFilter.addEventListener('change', (e) => {

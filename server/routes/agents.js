@@ -40,12 +40,24 @@ module.exports = function(supabase) {
                 active,
                 search,
                 platform_type,
-                // department, status - columns don't exist in agents table
+                department_id,
                 sort = 'name',
                 order = 'asc',
                 limit = 50,
                 offset = 0
             } = req.query;
+
+            // If department_id is provided, first get agent IDs from junction table
+            let departmentAgentIds = null;
+            if (department_id) {
+                const { data: deptAgents, error: deptError } = await supabase
+                    .from('department_agents')
+                    .select('agent_id')
+                    .eq('department_id', department_id);
+
+                if (deptError) throw deptError;
+                departmentAgentIds = (deptAgents || []).map(da => da.agent_id);
+            }
 
             let query = supabase
                 .from('agent_summary')
@@ -64,8 +76,19 @@ module.exports = function(supabase) {
             if (platform_type && platform_type !== 'all') {
                 query = query.eq('type', platform_type);
             }
-            // Note: 'department' and 'status' columns don't exist in agents table
-            // Department filter would need to be added via schema migration
+            // Filter by department via junction table
+            if (departmentAgentIds !== null) {
+                if (departmentAgentIds.length > 0) {
+                    query = query.in('id', departmentAgentIds);
+                } else {
+                    // No agents assigned to this department
+                    return res.json({
+                        success: true,
+                        data: [],
+                        pagination: { total: 0, limit: parseInt(limit), offset: parseInt(offset) }
+                    });
+                }
+            }
             // Status is represented by is_active boolean
             if (active !== undefined) {
                 query = query.eq('is_active', active === 'true');
@@ -332,7 +355,7 @@ module.exports = function(supabase) {
                 .select(`
                     *,
                     context_assets (
-                        id, name, asset_type, description, 
+                        id, name, asset_type, description,
                         content_json, version, usage_count
                     )
                 `)
@@ -342,11 +365,25 @@ module.exports = function(supabase) {
 
             if (mappingsError) throw mappingsError;
 
+            // Get department assignments
+            const { data: deptAssignments, error: deptError } = await supabase
+                .from('department_agents')
+                .select('department_id, departments(id, name)')
+                .eq('agent_id', id);
+
+            if (deptError) throw deptError;
+
+            // Get primary department (first one for UI simplicity)
+            const department_id = deptAssignments?.length > 0 ? deptAssignments[0].department_id : null;
+            const departments = deptAssignments?.map(da => da.departments) || [];
+
             res.json({
                 success: true,
                 data: {
                     ...agent,
-                    context_mappings: mappings || []
+                    context_mappings: mappings || [],
+                    department_id,
+                    departments
                 }
             });
 
@@ -459,16 +496,29 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Handle department assignment if provided
+            const { department_id } = req.body;
+            if (department_id) {
+                await supabase
+                    .from('department_agents')
+                    .insert({
+                        department_id,
+                        agent_id: data.id,
+                        is_featured: false,
+                        sort_order: 999
+                    });
+            }
+
             res.status(201).json({
                 success: true,
-                data
+                data: { ...data, department_id: department_id || null }
             });
 
         } catch (error) {
             console.error('Error creating agent:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });
@@ -482,6 +532,7 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
             const updates = req.body;
+            const { department_id } = updates;
 
             // First, get the agent to check permissions
             const { data: agent, error: fetchError } = await supabase
@@ -518,6 +569,7 @@ module.exports = function(supabase) {
             delete updates.created_by;
             delete updates.usage_count;
             delete updates.is_system; // Prevent changing is_system flag
+            delete updates.department_id; // Handle separately via junction table
 
             // Parse numeric fields
             if (updates.temperature !== undefined) {
@@ -536,9 +588,30 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Handle department assignment update
+            if (department_id !== undefined) {
+                // Remove existing department assignments
+                await supabase
+                    .from('department_agents')
+                    .delete()
+                    .eq('agent_id', id);
+
+                // Add new department assignment if provided
+                if (department_id) {
+                    await supabase
+                        .from('department_agents')
+                        .insert({
+                            department_id,
+                            agent_id: id,
+                            is_featured: false,
+                            sort_order: 999
+                        });
+                }
+            }
+
             res.json({
                 success: true,
-                data
+                data: { ...data, department_id: department_id || null }
             });
 
         } catch (error) {

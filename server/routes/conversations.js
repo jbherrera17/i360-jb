@@ -1,25 +1,28 @@
 /**
  * Conversations Routes - Insight 360
  * API endpoints for conversation management
- * Version: 1.0.0
+ * Version: 1.0.1 - Added user-specific filtering
  */
 
 const express = require('express');
 const router = express.Router();
 const conversationService = require('../services/conversationService');
+const { getUserId } = require('../utils/auth');
 
 /**
  * GET /api/conversations
- * List all conversations
+ * List all conversations for the current user
  */
 router.get('/', async (req, res) => {
     try {
         const { limit = 50, offset = 0, includeArchived = false } = req.query;
+        const userId = getUserId(req);
 
         const conversations = await conversationService.getConversations({
             limit: parseInt(limit),
             offset: parseInt(offset),
-            includeArchived: includeArchived === 'true'
+            includeArchived: includeArchived === 'true',
+            userId
         });
 
         res.json({
@@ -38,17 +41,19 @@ router.get('/', async (req, res) => {
 
 /**
  * POST /api/conversations
- * Create a new conversation
+ * Create a new conversation for the current user
  */
 router.post('/', async (req, res) => {
     try {
         const { title, model, systemPrompt, metadata } = req.body;
+        const userId = getUserId(req);
 
         const conversation = await conversationService.createConversation({
             title,
             model,
             systemPrompt,
-            metadata
+            metadata,
+            userId
         });
 
         res.status(201).json({
@@ -66,13 +71,14 @@ router.post('/', async (req, res) => {
 
 /**
  * GET /api/conversations/:id
- * Get a conversation with its messages
+ * Get a conversation with its messages (user must own it)
  */
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const userId = getUserId(req);
 
-        const conversation = await conversationService.getConversation(id);
+        const conversation = await conversationService.getConversation(id, userId);
 
         if (!conversation) {
             return res.status(404).json({

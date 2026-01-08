@@ -99,6 +99,7 @@ module.exports = function(supabase) {
                 status,
                 search,
                 featured,
+                department_id,
                 sort = 'name',
                 order = 'asc',
                 limit: rawLimit = 50,
@@ -112,6 +113,18 @@ module.exports = function(supabase) {
 
             const userId = getUserId(req);
 
+            // If department_id is provided, first get action IDs from junction table
+            let departmentActionIds = null;
+            if (department_id) {
+                const { data: deptActions, error: deptError } = await supabase
+                    .from('action_departments')
+                    .select('action_id')
+                    .eq('department_id', department_id);
+
+                if (deptError) throw deptError;
+                departmentActionIds = (deptActions || []).map(da => da.action_id);
+            }
+
             let query = supabase
                 .from('actions')
                 .select('*', { count: 'exact' });
@@ -121,6 +134,20 @@ module.exports = function(supabase) {
                 query = query.or(`user_id.eq.${userId},is_public.eq.true`);
             } else {
                 query = query.eq('is_public', true);
+            }
+
+            // Filter by department via junction table
+            if (departmentActionIds !== null) {
+                if (departmentActionIds.length > 0) {
+                    query = query.in('id', departmentActionIds);
+                } else {
+                    // No actions assigned to this department
+                    return res.json({
+                        success: true,
+                        data: [],
+                        pagination: { total: 0, limit, offset }
+                    });
+                }
             }
 
             // Apply filters
@@ -392,7 +419,7 @@ module.exports = function(supabase) {
     router.post('/from-template/:templateSlug', async (req, res) => {
         try {
             const { templateSlug } = req.params;
-            const { name, customizations = {} } = req.body;
+            const { name, customizations = {}, department_id } = req.body;
 
             // Get template
             const { data: template, error: templateError } = await supabase
@@ -439,9 +466,20 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Handle department assignment if provided
+            if (department_id) {
+                await supabase
+                    .from('action_departments')
+                    .insert({
+                        action_id: data.id,
+                        department_id,
+                        is_primary: true
+                    });
+            }
+
             res.status(201).json({
                 success: true,
-                data,
+                data: { ...data, department_id: department_id || null },
                 template_used: template.slug
             });
 
@@ -456,12 +494,34 @@ module.exports = function(supabase) {
 
     /**
      * PUT /api/actions/:id
-     * Update action
+     * Update action (user must own it)
      */
     router.put('/:id', async (req, res) => {
         try {
             const { id } = req.params;
             const updates = req.body;
+            const userId = getUserId(req);
+
+            // Verify ownership
+            const { data: action, error: fetchError } = await supabase
+                .from('actions')
+                .select('user_id')
+                .eq('id', id)
+                .single();
+
+            if (fetchError || !action) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Action not found'
+                });
+            }
+
+            if (action.user_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'You do not have permission to edit this action'
+                });
+            }
 
             // Remove protected fields
             delete updates.id;
@@ -494,12 +554,34 @@ module.exports = function(supabase) {
 
     /**
      * DELETE /api/actions/:id
-     * Delete action
+     * Delete action (user must own it)
      */
     router.delete('/:id', async (req, res) => {
         try {
             const { id } = req.params;
             const { hard = 'false' } = req.query;
+            const userId = getUserId(req);
+
+            // Verify ownership
+            const { data: action, error: fetchError } = await supabase
+                .from('actions')
+                .select('user_id')
+                .eq('id', id)
+                .single();
+
+            if (fetchError || !action) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Action not found'
+                });
+            }
+
+            if (action.user_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'You do not have permission to delete this action'
+                });
+            }
 
             if (hard === 'true') {
                 const { error } = await supabase
