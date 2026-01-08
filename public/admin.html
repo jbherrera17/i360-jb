@@ -752,6 +752,11 @@
             color: var(--success);
         }
 
+        .permission-value.team {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+        }
+
         .permission-value.disabled {
             background: rgba(107, 114, 128, 0.15);
             color: var(--text-muted);
@@ -1772,8 +1777,16 @@
                 can_access_all_agents: 'Access All Agents'
             };
 
+            const visibilityLabels = {
+                private: 'Private (Only creator)',
+                team: 'Team (Department)',
+                public: 'Public (Everyone)'
+            };
+
             grid.innerHTML = businessRoleDefaults.map(role => {
                 const roleInfo = role.business_role_levels || {};
+                const visibility = role.default_visibility || 'team';
+                const visibilityClass = visibility === 'public' ? 'enabled' : visibility === 'team' ? 'team' : 'disabled';
                 return `
                     <div class="permission-card">
                         <div class="permission-card-header">
@@ -1786,6 +1799,12 @@
                             </div>
                         </div>
                         <div class="permission-list">
+                            <div class="permission-item" style="border-bottom: 2px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 0.5rem;">
+                                <span class="permission-label" style="font-weight: 600;">Default Visibility</span>
+                                <span class="permission-value ${visibilityClass}" style="min-width: 120px; text-align: center;">
+                                    ${visibilityLabels[visibility]}
+                                </span>
+                            </div>
                             ${Object.entries(permissionLabels).map(([key, label]) => `
                                 <div class="permission-item">
                                     <span class="permission-label">${label}</span>

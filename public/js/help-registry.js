@@ -86,6 +86,10 @@ const HelpRegistry = {
         '/workflow-run': {
             file: '/api/docs/workflow-user-guide.md',
             title: 'Workflow Execution Help'
+        },
+        '/workflow-builder': {
+            file: '/api/docs/workflow-user-guide.md',
+            title: 'Workflow Builder Help'
         }
     },
 
@@ -150,6 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (typeof HelpModal !== 'undefined') {
             HelpRegistry.initForCurrentPage();
+
+            // Check if we need to auto-open help (from onboarding navigation)
+            const autoOpenHelp = sessionStorage.getItem('insight360_open_help');
+            if (autoOpenHelp) {
+                sessionStorage.removeItem('insight360_open_help');
+                // Delay slightly to ensure page is ready
+                setTimeout(() => {
+                    HelpModal.open(autoOpenHelp);
+                }, 300);
+            }
         }
     }, 100);
 });

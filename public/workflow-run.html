@@ -614,8 +614,11 @@
                     </button>
                     <span class="current-step-title" id="currentStepTitle">-</span>
                 </div>
-                <div id="headerActions">
+                <div id="headerActions" style="display: flex; align-items: center; gap: 0.5rem;">
                     <!-- Dynamic actions -->
+                    <button class="help-btn" onclick="HelpModal.open('/api/docs/workflow-user-guide.md')" title="Help" style="margin-left: auto;">
+                        <i data-lucide="help-circle"></i>
+                    </button>
                 </div>
             </div>
 
@@ -1479,5 +1482,9 @@
             return div.innerHTML;
         }
     </script>
+
+    <!-- Help Modal -->
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 </body>
 </html>

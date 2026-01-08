@@ -808,15 +808,25 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select id="category">
-                            <option value="content">Content - Writing & creation</option>
-                            <option value="research">Research - Information gathering</option>
-                            <option value="analysis">Analysis - Data & insights</option>
-                            <option value="workflow">Workflow - Multi-step automation</option>
-                            <option value="custom">Custom - User-defined</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="category">
+                                <option value="content">Content - Writing & creation</option>
+                                <option value="research">Research - Information gathering</option>
+                                <option value="analysis">Analysis - Data & insights</option>
+                                <option value="workflow">Workflow - Multi-step automation</option>
+                                <option value="custom">Custom - User-defined</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Department</label>
+                            <select id="department">
+                                <option value="">No Department (Available to all)</option>
+                            </select>
+                            <p class="hint">Assign to a specific department</p>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -987,6 +997,7 @@ You are an expert at...
             color: '#8b5cf6',
             suite: 'execute',
             category: 'content',
+            department_id: null,
             tags: [],
             required_context_types: [],
             optional_context_types: [],
@@ -997,6 +1008,8 @@ You are an expert at...
             conversation_starters: [],
             examples: []
         };
+
+        let departments = [];
 
         const icons = [
             'wand-2', 'sparkles', 'pencil', 'file-text', 'book-open',
@@ -1029,6 +1042,7 @@ You are an expert at...
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            await fetchDepartments();
             initIconPicker();
             initColorPicker();
             initContextTypes();
@@ -1043,6 +1057,27 @@ You are an expert at...
 
             updateUI();
         });
+
+        // Fetch departments
+        async function fetchDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const data = await response.json();
+                if (data.success) {
+                    departments = data.data;
+                    const select = document.getElementById('department');
+                    select.innerHTML = '<option value="">No Department (Available to all)</option>';
+                    departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+            }
+        }
 
         // Load skill for editing
         async function loadSkillForEdit(id) {
@@ -1063,6 +1098,7 @@ You are an expert at...
             document.getElementById('skillName').value = skill.name || '';
             document.getElementById('description').value = skill.description || '';
             document.getElementById('category').value = skill.category || 'content';
+            document.getElementById('department').value = skill.department_id || '';
             document.getElementById('contextTokenBudget').value = skill.context_token_budget || 8000;
             document.getElementById('instructions').value = skill.instructions || '';
             document.getElementById('outputFormat').value = skill.output_format || '';
@@ -1379,6 +1415,8 @@ You are an expert at...
                     break;
                 case 2:
                     skill.category = document.getElementById('category').value;
+                    const deptValue = document.getElementById('department').value;
+                    skill.department_id = deptValue ? deptValue : null;
                     skill.tags = skill.tags.filter(t => t.trim());
                     break;
                 case 3:

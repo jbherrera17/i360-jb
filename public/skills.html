@@ -740,6 +740,16 @@
                     </div>
                 </div>
 
+                <!-- Department Filter -->
+                <div class="filter-row" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="filterDepartment" style="font-size: 0.9rem; color: var(--text-secondary);">Department:</label>
+                        <select id="filterDepartment" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; min-width: 180px;">
+                            <option value="">All Departments</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Suite Tabs -->
                 <div class="suite-tabs">
                     <button class="suite-tab active" data-suite="all">
@@ -854,17 +864,50 @@ Your skill instructions here..."></textarea>
         // State
         let skills = [];
         let categories = [];
+        let departments = [];
         let currentSuite = 'all';
         let currentCategory = 'all';
+        let currentDepartment = '';
         let selectedSkill = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            await fetchDepartments();
             await loadCategories();
             await loadSkills();
             setupSuiteTabs();
+            setupDepartmentFilter();
         });
+
+        // Fetch departments
+        async function fetchDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const data = await response.json();
+                if (data.success) {
+                    departments = data.data;
+                    const select = document.getElementById('filterDepartment');
+                    select.innerHTML = '<option value="">All Departments</option>';
+                    departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+            }
+        }
+
+        // Setup department filter
+        function setupDepartmentFilter() {
+            document.getElementById('filterDepartment').addEventListener('change', (e) => {
+                currentDepartment = e.target.value;
+                loadSkills();
+            });
+        }
 
         // Load categories
         async function loadCategories() {
@@ -919,7 +962,12 @@ Your skill instructions here..."></textarea>
         // Load skills
         async function loadSkills() {
             try {
-                const res = await fetch('/api/skills');
+                const params = new URLSearchParams();
+                if (currentDepartment) {
+                    params.append('department_id', currentDepartment);
+                }
+                const url = '/api/skills' + (params.toString() ? '?' + params.toString() : '');
+                const res = await fetch(url);
                 const data = await res.json();
                 if (data.success) {
                     skills = data.data;

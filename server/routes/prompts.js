@@ -457,8 +457,32 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
             // Post-process based on type
             const userId = req.user?.id || null;
             let savedRecord = null;
+            let defaultVisibility = 'team'; // Default visibility
 
             if (save) {
+                // Require authentication for saving
+                if (!userId) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Authentication required to save transformations. Please log in.'
+                    });
+                }
+
+                // Get user's default visibility from business role
+                try {
+                    const { data: userPerms } = await supabase
+                        .from('user_effective_permissions')
+                        .select('default_visibility')
+                        .eq('user_id', userId)
+                        .single();
+
+                    if (userPerms?.default_visibility) {
+                        defaultVisibility = userPerms.default_visibility;
+                    }
+                } catch (permErr) {
+                    console.log('Using default visibility (team):', permErr.message);
+                }
+
                 switch (finalTargetType) {
                     case 'skill':
                         // Save to skills table
@@ -477,7 +501,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                             tags: ['transformed', 'from-prompt'],
                             version: '1.0.0',
                             status: 'draft',
-                            visibility: 'private',
+                            visibility: defaultVisibility,
                             created_by: userId
                         };
 
@@ -493,6 +517,8 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
 
                     case 'agent':
                         // Save to agents table
+                        // Map visibility to is_public (public=true, team/private=false)
+                        const isPublic = defaultVisibility === 'public';
                         const agentData = {
                             id: uuidv4(),
                             user_id: userId,
@@ -506,13 +532,15 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                             temperature: transformed.temperature || 0.7,
                             max_tokens: 4096,
                             is_active: true,
+                            is_public: isPublic,
                             required_context_types: transformed.required_context_types || [],
                             optional_context_types: transformed.optional_context_types || [],
                             tags: transformed.tags || ['transformed'],
                             metadata: {
                                 source: 'prompt-transformer',
                                 original_prompt_length: prompt.length,
-                                transformation_date: new Date().toISOString()
+                                transformation_date: new Date().toISOString(),
+                                visibility: defaultVisibility
                             }
                         };
 
@@ -542,7 +570,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                             content_json: transformed,
                             content_text: JSON.stringify(transformed),
                             tags: ['transformed', 'from-prompt'],
-                            visibility: 'private',
+                            visibility: defaultVisibility,
                             version: 1,
                             is_current: true,
                             usage_count: 0,

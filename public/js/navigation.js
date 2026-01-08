@@ -53,8 +53,18 @@ const navConfig = {
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
+                { href: '/skill-creator.html', icon: 'sparkles', label: 'Skill Creator' },
                 { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' },
                 { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' }
+            ]
+        },
+        {
+            id: 'workflows',
+            label: 'Workflows',
+            icon: 'git-branch',
+            items: [
+                { href: '/workflow-builder.html', icon: 'workflow', label: 'Workflow Builder' },
+                { href: '/workflow-run.html', icon: 'play-circle', label: 'Workflow Runner' }
             ]
         },
         {

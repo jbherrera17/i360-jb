@@ -20,6 +20,7 @@ const OnboardingWizard = (function() {
     let currentStep = 0;
     let onboardingState = null;
     let departments = [];
+    let profileData = null;
     let isVisible = false;
 
     // Avatar emoji options
@@ -43,9 +44,9 @@ const OnboardingWizard = (function() {
             icon: 'compass'
         },
         {
-            id: 'workflow',
-            title: 'Try Your First Workflow',
-            icon: 'zap'
+            id: 'execute120',
+            title: 'Execute 120',
+            icon: 'rocket'
         },
         {
             id: 'complete',
@@ -636,6 +637,22 @@ const OnboardingWizard = (function() {
         }
     }
 
+    // Fetch profile from database (same as profile.html)
+    async function fetchProfile() {
+        try {
+            const token = getAuthToken();
+            const response = await fetch('/api/auth/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success) {
+                profileData = result.data;
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+        }
+    }
+
     // Render progress dots
     function renderProgress() {
         const container = document.getElementById('onboardingProgress');
@@ -676,8 +693,8 @@ const OnboardingWizard = (function() {
             case 'tour':
                 content = renderTourStep();
                 break;
-            case 'workflow':
-                content = renderWorkflowStep();
+            case 'execute120':
+                content = renderExecute120Step();
                 break;
             case 'complete':
                 content = renderCompleteStep();
@@ -723,9 +740,10 @@ const OnboardingWizard = (function() {
         `;
     }
 
-    // Profile step
+    // Profile step - uses profileData fetched from database
     function renderProfileStep() {
-        const user = JSON.parse(localStorage.getItem('insight360_user') || '{}');
+        // Use profile data from database (fetched in show()), fall back to localStorage
+        const user = profileData || JSON.parse(localStorage.getItem('insight360_user') || '{}');
         const deptOptions = departments.map(d => `
             <option value="${d.id}" ${user.department_id === d.id ? 'selected' : ''}>${d.name}</option>
         `).join('');
@@ -766,32 +784,35 @@ const OnboardingWizard = (function() {
     function renderTourStep() {
         const features = [
             {
+                icon: 'database',
+                color: '#10b981',
+                title: 'Context Assets',
+                desc: 'Reusable knowledge that powers your AI agents',
+                href: '/context.html',
+                helpFile: '/api/docs/context-user-guide.md'
+            },
+            {
                 icon: 'bot',
                 color: '#6366f1',
                 title: 'Agent Library',
                 desc: 'Specialized AI agents trained for specific tasks',
-                href: '/agents.html'
+                href: '/agents.html',
+                helpFile: '/api/docs/agents-user-guide.md'
             },
             {
-                icon: 'zap',
+                icon: 'git-branch',
                 color: '#ec4899',
-                title: 'Workflow Wizards',
-                desc: 'Multi-step guided workflows for complex tasks',
-                href: '/execute120.html'
-            },
-            {
-                icon: 'database',
-                color: '#10b981',
-                title: 'Context Assets',
-                desc: 'Reusable knowledge that powers your AI',
-                href: '/context.html'
+                title: 'Workflows',
+                desc: 'Build and run multi-step automated workflows',
+                href: '/workflow-builder.html',
+                helpFile: '/api/docs/workflow-user-guide.md'
             }
         ];
 
         return `
             <div class="tour-features">
                 ${features.map(f => `
-                    <div class="tour-feature" onclick="window.open('${f.href}', '_blank')">
+                    <div class="tour-feature" onclick="OnboardingWizard.navigateWithHelp('${f.href}', '${f.helpFile}')">
                         <div class="tour-feature-icon" style="background: ${f.color}">
                             <i data-lucide="${f.icon}"></i>
                         </div>
@@ -806,31 +827,38 @@ const OnboardingWizard = (function() {
         `;
     }
 
-    // Workflow step
-    function renderWorkflowStep() {
-        const workflows = [
-            { name: 'Campaign Strategy Builder', category: 'Marketing', color: '#ec4899', icon: 'layout' },
-            { name: 'Proposal Builder', category: 'Sales', color: '#10b981', icon: 'file-text' },
-            { name: 'SOP Creator', category: 'Operations', color: '#8b5cf6', icon: 'clipboard-list' }
-        ];
-
+    // Execute 120 step
+    function renderExecute120Step() {
         return `
-            <div class="workflow-intro">
-                <p>Workflows guide you through complex tasks step by step.</p>
-            </div>
-            <div class="workflow-suggestions">
-                ${workflows.map(w => `
-                    <div class="workflow-suggestion" onclick="OnboardingWizard.startWorkflow('${w.name}')">
-                        <div class="workflow-suggestion-icon" style="background: ${w.color}">
-                            <i data-lucide="${w.icon}"></i>
+            <div class="execute120-intro">
+                <div class="execute120-icon" style="width: 64px; height: 64px; margin: 0 auto 1.5rem; border-radius: 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white;">
+                    <i data-lucide="rocket" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h3 style="text-align: center; margin-bottom: 1rem; font-size: 1.25rem;">Your AI Execution Hub</h3>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                    Execute 120 is where the magic happens. Run pre-built workflows,
+                    leverage AI agents, and accomplish complex tasks with guided step-by-step execution.
+                </p>
+                <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i data-lucide="check-circle" style="color: #10b981; width: 18px; height: 18px;"></i>
+                            <span style="font-size: 0.95rem;">Run workflows with AI-powered assistance</span>
                         </div>
-                        <div class="workflow-suggestion-info">
-                            <div class="workflow-suggestion-name">${w.name}</div>
-                            <div class="workflow-suggestion-meta">${w.category}</div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i data-lucide="check-circle" style="color: #10b981; width: 18px; height: 18px;"></i>
+                            <span style="font-size: 0.95rem;">Get guided through complex multi-step tasks</span>
                         </div>
-                        <i data-lucide="play" style="color: var(--primary);"></i>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i data-lucide="check-circle" style="color: #10b981; width: 18px; height: 18px;"></i>
+                            <span style="font-size: 0.95rem;">Generate deliverables in minutes, not hours</span>
+                        </div>
                     </div>
-                `).join('')}
+                </div>
+                <button class="onboarding-btn onboarding-btn-primary" style="width: 100%; justify-content: center;" onclick="OnboardingWizard.navigateWithHelp('/execute120.html', '/api/docs/execute120-user-guide.md')">
+                    <i data-lucide="external-link"></i>
+                    Explore Execute 120
+                </button>
             </div>
         `;
     }
@@ -851,11 +879,11 @@ const OnboardingWizard = (function() {
                     <a href="/chat.html" class="complete-action">
                         <i data-lucide="message-square"></i> Start a Chat
                     </a>
-                    <a href="/execute120.html" class="complete-action">
-                        <i data-lucide="zap"></i> Run a Workflow
-                    </a>
                     <a href="/agents.html" class="complete-action">
                         <i data-lucide="bot"></i> Browse Agents
+                    </a>
+                    <a href="/execute120.html" class="complete-action">
+                        <i data-lucide="rocket"></i> Execute 120
                     </a>
                 </div>
             </div>
@@ -906,10 +934,12 @@ const OnboardingWizard = (function() {
         }
     }
 
-    // Start workflow
-    function startWorkflow(name) {
+    // Navigate to page and open help modal
+    function navigateWithHelp(href, helpFile) {
         hide();
-        window.location.href = '/execute120.html';
+        // Store the help file to open after navigation
+        sessionStorage.setItem('insight360_open_help', helpFile);
+        window.location.href = href;
     }
 
     // Next step
@@ -995,6 +1025,7 @@ const OnboardingWizard = (function() {
 
         await fetchState();
         await fetchDepartments();
+        await fetchProfile();
 
         // Determine starting step
         if (onboardingState && onboardingState.current_step > 0) {
@@ -1059,7 +1090,7 @@ const OnboardingWizard = (function() {
         dismiss,
         checkAndShow,
         selectAvatar,
-        startWorkflow
+        navigateWithHelp
     };
 })();
 
