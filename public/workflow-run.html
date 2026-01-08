@@ -877,6 +877,14 @@
         function renderAgentChatStep(step) {
             const existingOutput = stepOutputs[step.step_number];
 
+            // Reset chat history when entering a new step
+            chatHistory = [];
+
+            // If no existing output and has a prompt template, auto-execute
+            if (!existingOutput && step.prompt_template) {
+                setTimeout(() => executeAgentStep(step), 500);
+            }
+
             return `
                 <div class="agent-chat-container">
                     <div class="agent-chat-header">
@@ -884,8 +892,8 @@
                             <i data-lucide="bot"></i>
                         </div>
                         <div class="agent-info">
-                            <div class="agent-name">AI Assistant</div>
-                            <div class="agent-status">Ready to help</div>
+                            <div class="agent-name">${step.agent?.name || 'AI Assistant'}</div>
+                            <div class="agent-status" id="agentStatus">Ready to help</div>
                         </div>
                     </div>
                     <div class="chat-messages" id="chatMessages">
@@ -894,21 +902,147 @@
                                 <div class="chat-message-content">${marked.parse(existingOutput)}</div>
                             </div>
                         ` : `
-                            <div class="loading-message">
+                            <div class="loading-message" id="initialLoader">
                                 <div class="loading-spinner" style="border-color: var(--border); border-top-color: var(--primary);"></div>
-                                <span>Generating response...</span>
+                                <span>Processing your request...</span>
                             </div>
                         `}
                     </div>
                     <div class="chat-input-container">
                         <textarea class="chat-input" id="chatInput" rows="2"
-                                  placeholder="Ask follow-up questions or request changes..."></textarea>
+                                  placeholder="Ask follow-up questions or request changes..."
+                                  onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendChatMessage(); }"></textarea>
                         <button class="chat-send-btn" onclick="sendChatMessage()">
                             <i data-lucide="send"></i>
                         </button>
                     </div>
                 </div>
             `;
+        }
+
+        // Auto-execute agent step with prompt template
+        async function executeAgentStep(step) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const statusEl = document.getElementById('agentStatus');
+
+            if (statusEl) {
+                statusEl.textContent = 'Generating response...';
+            }
+
+            try {
+                const token = getAuthToken();
+
+                // Build prompt from template
+                let prompt = step.prompt_template || '';
+
+                // Replace variables from previous steps
+                Object.entries(stepOutputs).forEach(([stepNum, output]) => {
+                    if (typeof output === 'object') {
+                        Object.entries(output).forEach(([key, value]) => {
+                            prompt = prompt.replace(new RegExp(`\\{\\{step_${stepNum}\\.${key}\\}\\}`, 'g'), value || '');
+                            prompt = prompt.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
+                        });
+                    } else if (typeof output === 'string') {
+                        prompt = prompt.replace(new RegExp(`\\{\\{step_${stepNum}_output\\}\\}`, 'g'), output);
+                    }
+                });
+
+                // Build context from previous steps
+                let context = '';
+                Object.entries(stepOutputs).forEach(([stepNum, output]) => {
+                    if (parseInt(stepNum) < step.step_number) {
+                        const prevStep = steps.find(s => s.step_number === parseInt(stepNum));
+                        if (prevStep && output) {
+                            context += `\n\n## ${prevStep.name}\n`;
+                            if (typeof output === 'object') {
+                                Object.entries(output).forEach(([key, value]) => {
+                                    context += `**${key}:** ${value}\n`;
+                                });
+                            } else {
+                                context += output;
+                            }
+                        }
+                    }
+                });
+
+                const messages = [];
+                if (context) {
+                    messages.push({
+                        role: 'user',
+                        content: `Here is context from the previous workflow steps:\n${context}`
+                    });
+                    messages.push({
+                        role: 'assistant',
+                        content: 'I understand the context. I will use this information for the current task.'
+                    });
+                }
+
+                messages.push({
+                    role: 'user',
+                    content: prompt
+                });
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        messages,
+                        agent_id: step.agent_id,
+                        model: 'claude-sonnet-4-20250514',
+                        stream: false
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.content || result.message) {
+                    const responseContent = result.content || result.message;
+                    chatHistory.push({ role: 'assistant', content: responseContent });
+
+                    // Save to step outputs
+                    stepOutputs[step.step_number] = responseContent;
+                    await saveExecution();
+
+                    // Update UI
+                    if (messagesContainer) {
+                        messagesContainer.innerHTML = `
+                            <div class="chat-message assistant">
+                                <div class="chat-message-content">${marked.parse(responseContent)}</div>
+                            </div>
+                        `;
+                    }
+
+                    if (statusEl) {
+                        statusEl.textContent = 'Response generated';
+                    }
+                } else {
+                    if (messagesContainer) {
+                        messagesContainer.innerHTML = `
+                            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                <p>No response generated. Try sending a message below.</p>
+                            </div>
+                        `;
+                    }
+                    if (statusEl) {
+                        statusEl.textContent = 'Waiting for input';
+                    }
+                }
+            } catch (error) {
+                console.error('Error executing agent step:', error);
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                            <p>Error generating response. Please try sending a message below.</p>
+                        </div>
+                    `;
+                }
+                if (statusEl) {
+                    statusEl.textContent = 'Error - try again';
+                }
+            }
         }
 
         // Render review step
@@ -1012,6 +1146,9 @@
             return data;
         }
 
+        // Chat conversation history for current step
+        let chatHistory = [];
+
         // Send chat message
         async function sendChatMessage() {
             const input = document.getElementById('chatInput');
@@ -1019,13 +1156,14 @@
             if (!message) return;
 
             const messagesContainer = document.getElementById('chatMessages');
+            const step = steps[currentStepIndex];
 
-            // Add user message
+            // Add user message to UI
             messagesContainer.innerHTML += `
                 <div class="chat-message user">
                     <div class="chat-message-content">${escapeHtml(message)}</div>
                 </div>
-                <div class="chat-message assistant">
+                <div class="chat-message assistant" id="pendingResponse">
                     <div class="loading-message">
                         <div class="loading-spinner" style="border-color: var(--border); border-top-color: var(--primary);"></div>
                         <span>Generating response...</span>
@@ -1036,18 +1174,126 @@
             input.value = '';
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // TODO: Actually send to agent API
-            // For now, simulate a response
-            setTimeout(() => {
-                const lastMessage = messagesContainer.querySelector('.chat-message.assistant:last-child');
-                if (lastMessage) {
-                    lastMessage.innerHTML = `
-                        <div class="chat-message-content">
-                            <p>I've noted your feedback. The response has been updated accordingly.</p>
+            // Add to history
+            chatHistory.push({ role: 'user', content: message });
+
+            try {
+                const token = getAuthToken();
+
+                // Build messages with context from previous steps
+                const contextMessages = buildContextMessages(step, message);
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        messages: contextMessages,
+                        agent_id: step.agent_id,
+                        model: 'claude-sonnet-4-20250514',
+                        stream: false
+                    })
+                });
+
+                const result = await response.json();
+
+                const pendingEl = document.getElementById('pendingResponse');
+                if (pendingEl) {
+                    if (result.content || result.message) {
+                        const responseContent = result.content || result.message;
+                        chatHistory.push({ role: 'assistant', content: responseContent });
+
+                        // Save to step outputs
+                        stepOutputs[step.step_number] = responseContent;
+                        await saveExecution();
+
+                        pendingEl.id = '';
+                        pendingEl.innerHTML = `
+                            <div class="chat-message-content">${marked.parse(responseContent)}</div>
+                        `;
+                    } else {
+                        pendingEl.innerHTML = `
+                            <div class="chat-message-content" style="color: var(--text-muted);">
+                                <p>Sorry, I couldn't generate a response. Please try again.</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                const pendingEl = document.getElementById('pendingResponse');
+                if (pendingEl) {
+                    pendingEl.innerHTML = `
+                        <div class="chat-message-content" style="color: #ef4444;">
+                            <p>Error: Failed to get response. Please try again.</p>
                         </div>
                     `;
                 }
-            }, 1500);
+            }
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Build context messages for chat
+        function buildContextMessages(step, userMessage) {
+            const messages = [];
+
+            // Add system context from previous steps
+            let context = '';
+            Object.entries(stepOutputs).forEach(([stepNum, output]) => {
+                if (parseInt(stepNum) < step.step_number) {
+                    const prevStep = steps.find(s => s.step_number === parseInt(stepNum));
+                    if (prevStep && output) {
+                        context += `\n\n## ${prevStep.name}\n`;
+                        if (typeof output === 'object') {
+                            Object.entries(output).forEach(([key, value]) => {
+                                context += `**${key}:** ${value}\n`;
+                            });
+                        } else {
+                            context += output;
+                        }
+                    }
+                }
+            });
+
+            if (context) {
+                messages.push({
+                    role: 'user',
+                    content: `Context from previous workflow steps:\n${context}\n\n---\n\nCurrent step: ${step.name}\n${step.instructions || step.description || ''}`
+                });
+                messages.push({
+                    role: 'assistant',
+                    content: 'I understand the context. How can I help you with this step?'
+                });
+            }
+
+            // Add conversation history
+            chatHistory.forEach(msg => {
+                messages.push(msg);
+            });
+
+            // If this is the first message and no history, use the processed prompt template
+            if (chatHistory.length === 1 && step.prompt_template) {
+                let prompt = step.prompt_template;
+                // Replace variables
+                Object.entries(stepOutputs).forEach(([stepNum, output]) => {
+                    if (typeof output === 'object') {
+                        Object.entries(output).forEach(([key, value]) => {
+                            prompt = prompt.replace(new RegExp(`\\{\\{step_${stepNum}\\.${key}\\}\\}`, 'g'), value || '');
+                            prompt = prompt.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
+                        });
+                    }
+                });
+
+                // If the user message is short, prepend the prompt
+                if (userMessage.length < 50) {
+                    messages[messages.length - 1].content = `${prompt}\n\nUser request: ${userMessage}`;
+                }
+            }
+
+            return messages;
         }
 
         // Go to specific step

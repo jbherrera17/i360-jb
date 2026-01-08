@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Builder | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .builder-layout {
+            display: flex;
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        /* Left Panel - Step Library */
+        .step-library {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .library-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .library-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .library-search {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .library-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .library-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .library-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            padding-left: 0.25rem;
+        }
+
+        .step-type-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-type-card:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .step-type-card:active {
+            cursor: grabbing;
+        }
+
+        .step-type-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .step-type-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .step-type-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .step-type-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Center Panel - Canvas */
+        .builder-canvas {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .canvas-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .canvas-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .workflow-name-input {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        .workflow-name-input:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .workflow-name-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--bg-tertiary);
+        }
+
+        .canvas-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .canvas-content {
+            flex: 1;
+            overflow: auto;
+            padding: 2rem;
+        }
+
+        .steps-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Step Card */
+        .step-card {
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .step-connector-line {
+            position: absolute;
+            left: 19px;
+            top: 50px;
+            width: 2px;
+            height: calc(100% - 20px);
+            background: var(--border);
+        }
+
+        .step-card:last-child .step-connector-line {
+            display: none;
+        }
+
+        .step-number-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 40px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .step-card.selected .step-number {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .step-content {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-content:hover {
+            border-color: var(--primary);
+        }
+
+        .step-card.selected .step-content {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .step-type-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .step-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .step-actions {
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .step-content:hover .step-actions {
+            opacity: 1;
+        }
+
+        .step-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-action-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .step-action-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        /* Add Step Button */
+        .add-step-card {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .add-step-btn {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 52px;
+        }
+
+        .add-step-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Right Panel - Step Editor */
+        .step-editor {
+            width: 350px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .editor-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .editor-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .editor-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .editor-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.25rem;
+        }
+
+        .editor-empty {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .editor-empty-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            opacity: 0.5;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label.required::after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 0.25rem;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Field Builder */
+        .field-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 6px;
+        }
+
+        .field-item-name {
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .field-item-type {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .field-item-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .field-item-delete:hover {
+            color: #ef4444;
+        }
+
+        .add-field-btn {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .add-field-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border: 1px solid #10b981;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+        }
+
+        /* Execution Mode Toggle */
+        .execution-mode-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .execution-mode-btn {
+            flex: 1;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .execution-mode-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .execution-mode-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Step Type Colors */
+        .step-type-user_input { background: #10b981; }
+        .step-type-agent_chat { background: #6366f1; }
+        .step-type-skill_execution { background: #8b5cf6; }
+        .step-type-research { background: #f59e0b; }
+        .step-type-human_gate { background: #ef4444; }
+        .step-type-review { background: #0ea5e9; }
+        .step-type-output { background: #ec4899; }
+        .step-type-context_creation { background: #14b8a6; }
+        .step-type-artifact_generation { background: #f97316; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <main class="main-content" style="overflow: hidden;">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>Workflow Builder</h1>
+                    <p class="header-subtitle">Design intelligent workflows with HITL control</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="previewWorkflow()">
+                        <i data-lucide="play"></i> Preview
+                    </button>
+                    <button class="btn btn-primary" onclick="saveWorkflow()">
+                        <i data-lucide="save"></i> Save Workflow
+                    </button>
+                </div>
+            </header>
+
+            <div class="builder-layout">
+                <!-- Step Library -->
+                <div class="step-library">
+                    <div class="library-header">
+                        <h2><i data-lucide="blocks"></i> Step Library</h2>
+                        <input type="text" class="library-search" placeholder="Search steps..." oninput="filterSteps(this.value)">
+                    </div>
+                    <div class="library-content" id="stepLibrary">
+                        <!-- Input Steps -->
+                        <div class="library-section">
+                            <div class="library-section-title">Input</div>
+                            <div class="step-type-card" draggable="true" data-type="user_input" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-user_input">
+                                    <i data-lucide="text-cursor-input"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">User Input</div>
+                                    <div class="step-type-desc">Collect information from user</div>
+                                </div>
+                            </div>
+                            <div class="step-type-card" draggable="true" data-type="context_creation" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-context_creation">
+                                    <i data-lucide="file-plus-2"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Context Creation</div>
+                                    <div class="step-type-desc">Create a context asset</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Steps -->
+                        <div class="library-section">
+                            <div class="library-section-title">AI Processing</div>
+                            <div class="step-type-card" draggable="true" data-type="agent_chat" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-agent_chat">
+                                    <i data-lucide="bot"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Agent Chat</div>
+                                    <div class="step-type-desc">Process with AI agent</div>
+                                </div>
+                            </div>
+                            <div class="step-type-card" draggable="true" data-type="skill_execution" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-skill_execution">
+                                    <i data-lucide="sparkles"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Skill Execution</div>
+                                    <div class="step-type-desc">Run a specialized skill</div>
+                                </div>
+                            </div>
+                            <div class="step-type-card" draggable="true" data-type="research" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-research">
+                                    <i data-lucide="search"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Research</div>
+                                    <div class="step-type-desc">Web research with Perplexity</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Human Control -->
+                        <div class="library-section">
+                            <div class="library-section-title">Human Control</div>
+                            <div class="step-type-card" draggable="true" data-type="human_gate" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-human_gate">
+                                    <i data-lucide="shield-check"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Human Gate</div>
+                                    <div class="step-type-desc">Approval checkpoint</div>
+                                </div>
+                            </div>
+                            <div class="step-type-card" draggable="true" data-type="review" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-review">
+                                    <i data-lucide="eye"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Review</div>
+                                    <div class="step-type-desc">Review & refine output</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output -->
+                        <div class="library-section">
+                            <div class="library-section-title">Output</div>
+                            <div class="step-type-card" draggable="true" data-type="output" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-output">
+                                    <i data-lucide="file-check"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Final Output</div>
+                                    <div class="step-type-desc">Compile final result</div>
+                                </div>
+                            </div>
+                            <div class="step-type-card" draggable="true" data-type="artifact_generation" ondragstart="dragStart(event)">
+                                <div class="step-type-icon step-type-artifact_generation">
+                                    <i data-lucide="file-output"></i>
+                                </div>
+                                <div class="step-type-info">
+                                    <div class="step-type-name">Generate Artifact</div>
+                                    <div class="step-type-desc">Create document/file</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas -->
+                <div class="builder-canvas">
+                    <div class="canvas-header">
+                        <div class="canvas-header-left">
+                            <input type="text" class="workflow-name-input" id="workflowName" value="New Workflow" placeholder="Workflow Name">
+                            <select class="form-select" id="workflowCategory" style="width: auto;">
+                                <option value="executive">Executive</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="sales">Sales</option>
+                                <option value="finance">Finance</option>
+                                <option value="operations">Operations</option>
+                                <option value="general">General</option>
+                            </select>
+                        </div>
+                        <div class="canvas-header-right">
+                            <button class="btn btn-secondary btn-icon" onclick="undoAction()" title="Undo">
+                                <i data-lucide="undo"></i>
+                            </button>
+                            <button class="btn btn-secondary btn-icon" onclick="redoAction()" title="Redo">
+                                <i data-lucide="redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="canvas-content" id="canvasContent"
+                         ondrop="dropStep(event)" ondragover="allowDrop(event)">
+                        <div class="steps-timeline" id="stepsTimeline">
+                            <!-- Steps will be rendered here -->
+                        </div>
+                        <div class="add-step-card">
+                            <button class="add-step-btn" onclick="openStepLibrary()">
+                                <i data-lucide="plus"></i>
+                                Add Step
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Editor -->
+                <div class="step-editor" id="stepEditor">
+                    <div class="editor-header">
+                        <h3 id="editorTitle">Step Configuration</h3>
+                        <button class="editor-close" onclick="closeEditor()">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <div class="editor-content" id="editorContent">
+                        <div class="editor-empty">
+                            <div class="editor-empty-icon">
+                                <i data-lucide="mouse-pointer-click"></i>
+                            </div>
+                            <p>Select a step to configure it</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // State
+        let workflow = {
+            id: null,
+            name: 'New Workflow',
+            description: '',
+            icon: 'zap',
+            color: '#6366f1',
+            category: 'general',
+            suite: 'execute',
+            estimated_minutes: 15,
+            steps: []
+        };
+
+        let selectedStepIndex = null;
+        let agents = [];
+        let skills = [];
+        let undoStack = [];
+        let redoStack = [];
+
+        // Step type configurations
+        const stepTypes = {
+            user_input: {
+                name: 'User Input',
+                icon: 'text-cursor-input',
+                color: '#10b981',
+                defaultName: 'Gather Information',
+                hasInputFields: true
+            },
+            agent_chat: {
+                name: 'Agent Chat',
+                icon: 'bot',
+                color: '#6366f1',
+                defaultName: 'AI Processing',
+                hasAgent: true,
+                hasPromptTemplate: true
+            },
+            skill_execution: {
+                name: 'Skill Execution',
+                icon: 'sparkles',
+                color: '#8b5cf6',
+                defaultName: 'Execute Skill',
+                hasSkill: true,
+                hasPromptTemplate: true
+            },
+            research: {
+                name: 'Research',
+                icon: 'search',
+                color: '#f59e0b',
+                defaultName: 'Web Research',
+                hasPromptTemplate: true
+            },
+            human_gate: {
+                name: 'Human Gate',
+                icon: 'shield-check',
+                color: '#ef4444',
+                defaultName: 'Approval Checkpoint',
+                hasGateMessage: true
+            },
+            review: {
+                name: 'Review',
+                icon: 'eye',
+                color: '#0ea5e9',
+                defaultName: 'Review Output'
+            },
+            output: {
+                name: 'Final Output',
+                icon: 'file-check',
+                color: '#ec4899',
+                defaultName: 'Compile Results'
+            },
+            context_creation: {
+                name: 'Context Creation',
+                icon: 'file-plus-2',
+                color: '#14b8a6',
+                defaultName: 'Create Context Asset',
+                hasInputFields: true
+            },
+            artifact_generation: {
+                name: 'Generate Artifact',
+                icon: 'file-output',
+                color: '#f97316',
+                defaultName: 'Generate Document'
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+
+            // Check for workflow ID in URL
+            const params = new URLSearchParams(window.location.search);
+            const workflowId = params.get('id');
+
+            if (workflowId) {
+                await loadWorkflow(workflowId);
+            }
+
+            // Load agents and skills for dropdowns
+            await loadAgentsAndSkills();
+
+            renderSteps();
+        });
+
+        // Get auth token
+        function getAuthToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return localStorage.getItem('insight360_token');
+        }
+
+        // Load workflow from API
+        async function loadWorkflow(workflowId) {
+            try {
+                const response = await fetch(`/api/workflows/${workflowId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    workflow = {
+                        id: result.workflow.id,
+                        name: result.workflow.name,
+                        description: result.workflow.description || '',
+                        icon: result.workflow.icon || 'zap',
+                        color: result.workflow.color || '#6366f1',
+                        category: result.workflow.category || 'general',
+                        suite: result.workflow.suite || 'execute',
+                        estimated_minutes: result.workflow.estimated_minutes || 15,
+                        steps: result.workflow.steps || []
+                    };
+
+                    document.getElementById('workflowName').value = workflow.name;
+                    document.getElementById('workflowCategory').value = workflow.category;
+                    renderSteps();
+                }
+            } catch (error) {
+                console.error('Error loading workflow:', error);
+            }
+        }
+
+        // Load agents and skills
+        async function loadAgentsAndSkills() {
+            try {
+                const [agentsRes, skillsRes] = await Promise.all([
+                    fetch('/api/agents'),
+                    fetch('/api/skills')
+                ]);
+
+                const agentsResult = await agentsRes.json();
+                const skillsResult = await skillsRes.json();
+
+                if (agentsResult.success) {
+                    agents = agentsResult.agents || [];
+                }
+                if (skillsResult.success) {
+                    skills = skillsResult.skills || [];
+                }
+            } catch (error) {
+                console.error('Error loading agents/skills:', error);
+            }
+        }
+
+        // Render steps in canvas
+        function renderSteps() {
+            const container = document.getElementById('stepsTimeline');
+
+            if (workflow.steps.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i data-lucide="workflow" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <p>Drag steps from the library to build your workflow</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = workflow.steps.map((step, index) => {
+                const config = stepTypes[step.step_type] || {};
+                const isSelected = selectedStepIndex === index;
+
+                return `
+                    <div class="step-card ${isSelected ? 'selected' : ''}" data-index="${index}">
+                        <div class="step-connector-line"></div>
+                        <div class="step-number-col">
+                            <div class="step-number">${index + 1}</div>
+                        </div>
+                        <div class="step-content" onclick="selectStep(${index})">
+                            <div class="step-header">
+                                <div class="step-header-left">
+                                    <div class="step-icon" style="background: ${step.color || config.color}">
+                                        <i data-lucide="${step.icon || config.icon}"></i>
+                                    </div>
+                                    <span class="step-title">${escapeHtml(step.name)}</span>
+                                </div>
+                                <div class="step-actions">
+                                    <button class="step-action-btn" onclick="event.stopPropagation(); moveStep(${index}, -1)" title="Move Up" ${index === 0 ? 'disabled' : ''}>
+                                        <i data-lucide="chevron-up"></i>
+                                    </button>
+                                    <button class="step-action-btn" onclick="event.stopPropagation(); moveStep(${index}, 1)" title="Move Down" ${index === workflow.steps.length - 1 ? 'disabled' : ''}>
+                                        <i data-lucide="chevron-down"></i>
+                                    </button>
+                                    <button class="step-action-btn delete" onclick="event.stopPropagation(); deleteStep(${index})" title="Delete">
+                                        <i data-lucide="trash-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            ${step.description ? `<div class="step-description">${escapeHtml(step.description)}</div>` : ''}
+                            <div style="margin-top: 0.5rem;">
+                                <span class="step-type-badge">${config.name || step.step_type}</span>
+                                ${step.execution_mode === 'gate' ? '<span class="step-type-badge" style="background: rgba(239,68,68,0.1); color: #ef4444;">GATE</span>' : ''}
+                                ${step.execution_mode === 'review' ? '<span class="step-type-badge" style="background: rgba(14,165,233,0.1); color: #0ea5e9;">REVIEW</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Add a new step
+        function addStep(type, position = -1) {
+            saveUndoState();
+
+            const config = stepTypes[type] || {};
+            const newStep = {
+                step_type: type,
+                name: config.defaultName || 'New Step',
+                description: '',
+                icon: config.icon,
+                color: config.color,
+                execution_mode: 'auto',
+                input_fields: config.hasInputFields ? [] : undefined,
+                prompt_template: config.hasPromptTemplate ? '' : undefined,
+                agent_id: config.hasAgent ? null : undefined,
+                skill_id: config.hasSkill ? null : undefined,
+                gate_message: config.hasGateMessage ? 'Please review and approve to continue.' : undefined,
+                output_variable: `step_${workflow.steps.length + 1}_output`
+            };
+
+            if (position === -1) {
+                workflow.steps.push(newStep);
+            } else {
+                workflow.steps.splice(position, 0, newStep);
+            }
+
+            // Renumber steps
+            workflow.steps.forEach((s, i) => {
+                s.step_number = i + 1;
+            });
+
+            renderSteps();
+            selectStep(position === -1 ? workflow.steps.length - 1 : position);
+        }
+
+        // Select step for editing
+        function selectStep(index) {
+            selectedStepIndex = index;
+            renderSteps();
+            renderEditor();
+        }
+
+        // Close editor
+        function closeEditor() {
+            selectedStepIndex = null;
+            renderSteps();
+            document.getElementById('editorContent').innerHTML = `
+                <div class="editor-empty">
+                    <div class="editor-empty-icon">
+                        <i data-lucide="mouse-pointer-click"></i>
+                    </div>
+                    <p>Select a step to configure it</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Render step editor
+        function renderEditor() {
+            if (selectedStepIndex === null) return;
+
+            const step = workflow.steps[selectedStepIndex];
+            const config = stepTypes[step.step_type] || {};
+            const container = document.getElementById('editorContent');
+
+            document.getElementById('editorTitle').textContent = `Configure: ${step.name}`;
+
+            let html = `
+                <div class="form-group">
+                    <label class="form-label required">Step Name</label>
+                    <input type="text" class="form-input" value="${escapeHtml(step.name)}"
+                           onchange="updateStep('name', this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" placeholder="Describe what this step does..."
+                              onchange="updateStep('description', this.value)">${escapeHtml(step.description || '')}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Execution Mode</label>
+                    <div class="execution-mode-group">
+                        <button class="execution-mode-btn ${step.execution_mode === 'auto' ? 'active' : ''}"
+                                onclick="updateStep('execution_mode', 'auto')">
+                            Auto
+                        </button>
+                        <button class="execution-mode-btn ${step.execution_mode === 'review' ? 'active' : ''}"
+                                onclick="updateStep('execution_mode', 'review')">
+                            Review
+                        </button>
+                        <button class="execution-mode-btn ${step.execution_mode === 'gate' ? 'active' : ''}"
+                                onclick="updateStep('execution_mode', 'gate')">
+                            Gate
+                        </button>
+                    </div>
+                    <div class="form-help">
+                        Auto: Run without stopping | Review: Show output for review | Gate: Full stop until approved
+                    </div>
+                </div>
+            `;
+
+            // Agent selection
+            if (config.hasAgent) {
+                html += `
+                    <div class="form-group">
+                        <label class="form-label">Agent</label>
+                        <select class="form-select" onchange="updateStep('agent_id', this.value || null)">
+                            <option value="">Select an agent...</option>
+                            ${agents.map(a => `
+                                <option value="${a.id}" ${step.agent_id === a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Skill selection
+            if (config.hasSkill) {
+                html += `
+                    <div class="form-group">
+                        <label class="form-label">Skill</label>
+                        <select class="form-select" onchange="updateStep('skill_id', this.value || null)">
+                            <option value="">Select a skill...</option>
+                            ${skills.map(s => `
+                                <option value="${s.id}" ${step.skill_id === s.id ? 'selected' : ''}>${escapeHtml(s.display_name || s.name)}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Prompt template
+            if (config.hasPromptTemplate) {
+                html += `
+                    <div class="form-group">
+                        <label class="form-label">Prompt Template</label>
+                        <textarea class="form-textarea" style="min-height: 120px; font-family: monospace; font-size: 0.8rem;"
+                                  placeholder="Use {{variable_name}} for dynamic values..."
+                                  onchange="updateStep('prompt_template', this.value)">${escapeHtml(step.prompt_template || '')}</textarea>
+                        <div class="form-help">Use {{step_1_output.field}} to reference previous step outputs</div>
+                    </div>
+                `;
+            }
+
+            // Gate message
+            if (config.hasGateMessage || step.execution_mode === 'gate') {
+                html += `
+                    <div class="form-group">
+                        <label class="form-label">Gate Message</label>
+                        <textarea class="form-textarea" placeholder="Message shown when waiting for approval..."
+                                  onchange="updateStep('gate_message', this.value)">${escapeHtml(step.gate_message || '')}</textarea>
+                    </div>
+                `;
+            }
+
+            // Input fields builder
+            if (config.hasInputFields) {
+                const fields = step.input_fields || [];
+                html += `
+                    <div class="form-group">
+                        <label class="form-label">Input Fields</label>
+                        <div class="field-list">
+                            ${fields.map((f, i) => `
+                                <div class="field-item">
+                                    <span class="field-item-name">${escapeHtml(f.label || f.name)}</span>
+                                    <span class="field-item-type">${f.type}</span>
+                                    <button class="field-item-delete" onclick="removeInputField(${i})">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="add-field-btn" onclick="addInputField()">
+                            <i data-lucide="plus"></i> Add Field
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Output variable
+            html += `
+                <div class="form-group">
+                    <label class="form-label">Output Variable</label>
+                    <input type="text" class="form-input" value="${escapeHtml(step.output_variable || '')}"
+                           placeholder="step_output"
+                           onchange="updateStep('output_variable', this.value)">
+                    <div class="form-help">Variable name to store this step's output</div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Update step property
+        function updateStep(property, value) {
+            if (selectedStepIndex === null) return;
+            saveUndoState();
+            workflow.steps[selectedStepIndex][property] = value;
+            renderSteps();
+            renderEditor();
+        }
+
+        // Move step
+        function moveStep(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= workflow.steps.length) return;
+
+            saveUndoState();
+            const step = workflow.steps.splice(index, 1)[0];
+            workflow.steps.splice(newIndex, 0, step);
+
+            // Renumber
+            workflow.steps.forEach((s, i) => {
+                s.step_number = i + 1;
+            });
+
+            if (selectedStepIndex === index) {
+                selectedStepIndex = newIndex;
+            }
+
+            renderSteps();
+        }
+
+        // Delete step
+        function deleteStep(index) {
+            if (!confirm('Delete this step?')) return;
+
+            saveUndoState();
+            workflow.steps.splice(index, 1);
+
+            // Renumber
+            workflow.steps.forEach((s, i) => {
+                s.step_number = i + 1;
+            });
+
+            if (selectedStepIndex === index) {
+                closeEditor();
+            } else if (selectedStepIndex > index) {
+                selectedStepIndex--;
+            }
+
+            renderSteps();
+        }
+
+        // Add input field
+        function addInputField() {
+            if (selectedStepIndex === null) return;
+
+            const fieldName = prompt('Field name (e.g., topic, audience):');
+            if (!fieldName) return;
+
+            const fieldType = prompt('Field type (text, textarea, select):', 'text');
+            if (!fieldType) return;
+
+            saveUndoState();
+
+            if (!workflow.steps[selectedStepIndex].input_fields) {
+                workflow.steps[selectedStepIndex].input_fields = [];
+            }
+
+            workflow.steps[selectedStepIndex].input_fields.push({
+                name: fieldName.toLowerCase().replace(/\s+/g, '_'),
+                label: fieldName,
+                type: fieldType,
+                required: true
+            });
+
+            renderEditor();
+        }
+
+        // Remove input field
+        function removeInputField(fieldIndex) {
+            if (selectedStepIndex === null) return;
+            saveUndoState();
+            workflow.steps[selectedStepIndex].input_fields.splice(fieldIndex, 1);
+            renderEditor();
+        }
+
+        // Drag and drop
+        function dragStart(event) {
+            event.dataTransfer.setData('stepType', event.currentTarget.dataset.type);
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function dropStep(event) {
+            event.preventDefault();
+            const stepType = event.dataTransfer.getData('stepType');
+            if (stepType) {
+                addStep(stepType);
+            }
+        }
+
+        // Filter steps in library
+        function filterSteps(query) {
+            const cards = document.querySelectorAll('.step-type-card');
+            const lowerQuery = query.toLowerCase();
+
+            cards.forEach(card => {
+                const name = card.querySelector('.step-type-name').textContent.toLowerCase();
+                const desc = card.querySelector('.step-type-desc').textContent.toLowerCase();
+                const matches = name.includes(lowerQuery) || desc.includes(lowerQuery);
+                card.style.display = matches ? 'flex' : 'none';
+            });
+        }
+
+        // Undo/Redo
+        function saveUndoState() {
+            undoStack.push(JSON.stringify(workflow));
+            redoStack = [];
+            if (undoStack.length > 50) undoStack.shift();
+        }
+
+        function undoAction() {
+            if (undoStack.length === 0) return;
+            redoStack.push(JSON.stringify(workflow));
+            workflow = JSON.parse(undoStack.pop());
+            selectedStepIndex = null;
+            renderSteps();
+            closeEditor();
+        }
+
+        function redoAction() {
+            if (redoStack.length === 0) return;
+            undoStack.push(JSON.stringify(workflow));
+            workflow = JSON.parse(redoStack.pop());
+            selectedStepIndex = null;
+            renderSteps();
+            closeEditor();
+        }
+
+        // Save workflow
+        async function saveWorkflow() {
+            // Update from inputs
+            workflow.name = document.getElementById('workflowName').value;
+            workflow.category = document.getElementById('workflowCategory').value;
+
+            if (!workflow.name.trim()) {
+                alert('Please enter a workflow name');
+                return;
+            }
+
+            if (workflow.steps.length === 0) {
+                alert('Please add at least one step');
+                return;
+            }
+
+            try {
+                const token = getAuthToken();
+                const method = workflow.id ? 'PUT' : 'POST';
+                const url = workflow.id ? `/api/workflows/${workflow.id}` : '/api/workflows';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: workflow.name,
+                        description: workflow.description,
+                        icon: workflow.icon,
+                        color: workflow.color,
+                        category: workflow.category,
+                        suite: workflow.suite,
+                        estimated_minutes: workflow.estimated_minutes,
+                        is_active: true,
+                        is_public: false
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    workflow.id = result.workflow.id;
+
+                    // Save steps
+                    for (let i = 0; i < workflow.steps.length; i++) {
+                        const step = workflow.steps[i];
+                        const stepData = {
+                            workflow_id: workflow.id,
+                            step_number: i + 1,
+                            name: step.name,
+                            description: step.description,
+                            step_type: step.step_type,
+                            execution_mode: step.execution_mode || 'auto',
+                            agent_id: step.agent_id || null,
+                            skill_id: step.skill_id || null,
+                            prompt_template: step.prompt_template || null,
+                            input_fields: step.input_fields || null,
+                            output_variable: step.output_variable || `step_${i + 1}_output`,
+                            gate_message: step.gate_message || null,
+                            requires_approval: step.execution_mode === 'gate'
+                        };
+
+                        if (step.id) {
+                            await fetch(`/api/workflows/${workflow.id}/steps/${step.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify(stepData)
+                            });
+                        } else {
+                            const stepResponse = await fetch(`/api/workflows/${workflow.id}/steps`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify(stepData)
+                            });
+                            const stepResult = await stepResponse.json();
+                            if (stepResult.success) {
+                                workflow.steps[i].id = stepResult.step.id;
+                            }
+                        }
+                    }
+
+                    // Update URL
+                    history.replaceState({}, '', `/workflow-builder?id=${workflow.id}`);
+                    alert('Workflow saved successfully!');
+                } else {
+                    alert('Failed to save workflow: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving workflow:', error);
+                alert('Failed to save workflow');
+            }
+        }
+
+        // Preview workflow
+        function previewWorkflow() {
+            if (!workflow.id) {
+                alert('Please save the workflow first');
+                return;
+            }
+            window.open(`/workflow-run?id=${workflow.id}`, '_blank');
+        }
+
+        // Open step library (for mobile)
+        function openStepLibrary() {
+            // Scroll to library on mobile
+            document.querySelector('.step-library').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

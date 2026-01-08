@@ -690,6 +690,10 @@
                     <p class="header-subtitle">Department-focused execution with workflow wizards</p>
                 </div>
                 <div class="header-actions">
+                    <a href="/workflow-builder" class="workflow-btn workflow-btn-primary" style="text-decoration: none;">
+                        <i data-lucide="plus"></i>
+                        Create Workflow
+                    </a>
                     <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
                     </button>
@@ -1020,39 +1024,9 @@
             return prompts[deptId] || [];
         }
 
-        // Start workflow
-        async function startWorkflow(workflowId) {
-            try {
-                // Fetch workflow details
-                const response = await fetch(`/api/execute120/workflows/${workflowId}`);
-                const result = await response.json();
-
-                if (!result.success) {
-                    alert('Failed to load workflow');
-                    return;
-                }
-
-                currentWorkflow = result.data;
-                currentStep = 1;
-
-                // Start execution
-                const execResponse = await fetch(`/api/execute120/workflows/${workflowId}/execute`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ initial_variables: {} })
-                });
-                const execResult = await execResponse.json();
-
-                if (execResult.success) {
-                    currentExecution = execResult.data;
-                }
-
-                // Open modal
-                openWorkflowModal();
-            } catch (error) {
-                console.error('Error starting workflow:', error);
-                alert('Failed to start workflow');
-            }
+        // Start workflow - navigate to full-page workflow runner
+        function startWorkflow(workflowId) {
+            window.location.href = `/workflow-run?id=${workflowId}`;
         }
 
         // Open workflow modal

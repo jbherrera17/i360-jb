@@ -43,6 +43,7 @@ const departmentsRoutes = require('./routes/departments');
 const departmentStrategyRoutes = require('./routes/department-strategy');
 const governanceRoutes = require('./routes/governance');
 const integrityRoutes = require('./routes/integrity');
+const workflowsRoutes = require('./routes/workflows');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -114,7 +115,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/actions', '/actions.html', '/skills', '/skills.html', '/align120', '/align120.html',
     '/strategy120', '/strategy120.html', '/execute120', '/execute120.html',
     '/guides', '/guides.html', '/admin', '/admin.html', '/profile', '/profile.html',
-    '/workflow-run', '/workflow-run.html', '/system-health', '/system-health.html'];
+    '/workflow-run', '/workflow-run.html', '/workflow-builder', '/workflow-builder.html',
+    '/system-health', '/system-health.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -323,6 +325,7 @@ function initializeServices() {
         app.use('/api/department-strategy', departmentStrategyRoutes);
         app.use('/api/governance', governanceRoutes);
         app.use('/api/integrity', integrityRoutes);
+        app.use('/api/workflows', workflowsRoutes);
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Auth routes registered');
         console.log('  ✅ Onboarding routes registered');
@@ -341,6 +344,7 @@ function initializeServices() {
         console.log('  ✅ Align 120 routes registered');
         console.log('  ✅ Strategy 120 routes registered');
         console.log('  ✅ Execute 120 routes registered');
+        console.log('  ✅ Workflows routes registered');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()
@@ -488,6 +492,16 @@ app.get('/guides', (req, res) => {
 // System Health page (Phase 13)
 app.get('/system-health', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/system-health.html'));
+});
+
+// Workflow Builder page (Phase 18)
+app.get('/workflow-builder', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/workflow-builder.html'));
+});
+
+// Workflow Run page (Phase 18)
+app.get('/workflow-run', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/workflow-run.html'));
 });
 
 // Login page
