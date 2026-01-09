@@ -1119,12 +1119,11 @@ module.exports = function(supabase) {
 
     /**
      * POST /api/parthenon/seed-defaults
-     * Seed default departments (for new users)
+     * Seed default departments (for new users/clients)
+     * Creates shared departments with is_seed=true and user_id=null
      */
     router.post('/seed-defaults', async (req, res) => {
         try {
-            const userId = getUserId(req);
-
             const defaultDepartments = [
                 { name: 'Executive', description: 'Executive leadership and strategy', icon: 'crown', color: '#8b5cf6', sort_order: 1 },
                 { name: 'Finance', description: 'Financial operations and planning', icon: 'banknote', color: '#10b981', sort_order: 2 },
@@ -1133,13 +1132,33 @@ module.exports = function(supabase) {
                 { name: 'Marketing', description: 'Marketing and brand management', icon: 'megaphone', color: '#ec4899', sort_order: 5 },
                 { name: 'Production', description: 'Product development and delivery', icon: 'package', color: '#3b82f6', sort_order: 6 },
                 { name: 'Service', description: 'Customer service and support', icon: 'headphones', color: '#14b8a6', sort_order: 7 },
-                { name: 'Stakeholder Relations', description: 'External stakeholder management', icon: 'users', color: '#8b5cf6', sort_order: 8 }
+                { name: 'Stakeholder Relations', description: 'External stakeholder management', icon: 'users', color: '#8b5cf6', sort_order: 8 },
+                { name: 'HR', description: 'Human resources and talent management', icon: 'user-check', color: '#f97316', sort_order: 9 }
             ];
 
-            const departmentsWithIds = defaultDepartments.map(dept => ({
+            // Check if departments already exist
+            const { data: existing } = await supabase
+                .from('departments')
+                .select('name')
+                .in('name', defaultDepartments.map(d => d.name));
+
+            const existingNames = new Set((existing || []).map(d => d.name));
+            const newDepartments = defaultDepartments.filter(d => !existingNames.has(d.name));
+
+            if (newDepartments.length === 0) {
+                return res.json({
+                    success: true,
+                    message: 'All default departments already exist',
+                    data: []
+                });
+            }
+
+            // Create departments with is_seed=true and user_id=null (shared/system departments)
+            const departmentsWithIds = newDepartments.map(dept => ({
                 ...dept,
                 id: uuidv4(),
-                user_id: userId,
+                user_id: null,  // Null for shared/seeded departments
+                is_seed: true,  // Mark as system-seeded
                 is_active: true
             }));
 
