@@ -189,12 +189,32 @@
             padding: 1rem;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
 
         .agent-card:hover {
             border-color: var(--primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .agent-card.system-agent {
+            border-color: #6366f130;
+        }
+
+        .system-badge {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
         }
 
         .agent-card-header {
@@ -240,6 +260,9 @@
         .agent-badge.opus { background: #fef3c7; color: #92400e; }
         .agent-badge.sonnet { background: #dbeafe; color: #1e40af; }
         .agent-badge.haiku { background: #dcfce7; color: #166534; }
+        .agent-badge.gpt { background: #d1fae5; color: #065f46; }
+        .agent-badge.perplexity { background: #e0e7ff; color: #3730a3; }
+        .agent-badge.mindstudio { background: #fce7f3; color: #9d174d; }
 
         .agent-desc {
             font-size: 0.85rem;
@@ -597,6 +620,13 @@
                             <p><span id="totalAgentCount">0</span> strategy agents</p>
                         </div>
                     </div>
+                    <!-- Department Filter -->
+                    <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);">
+                        <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Department</label>
+                        <select id="departmentFilter" onchange="selectDepartment(this.value)" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-primary); font-size: 0.85rem;">
+                            <option value="all">All Departments</option>
+                        </select>
+                    </div>
                     <div class="category-list" id="categoryList">
                         <!-- Categories populated dynamically -->
                     </div>
@@ -730,6 +760,9 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toastContainer" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:10000;display:flex;flex-direction:column;gap:0.5rem;"></div>
+
     <!-- Scripts -->
     <script src="/js/supabase.js"></script>
     <script src="/js/navigation.js"></script>
@@ -740,6 +773,8 @@
         // State
         let agents = [];
         let selectedCategory = 'all';
+        let selectedDepartment = 'all';
+        let departments = [];
         let currentAgent = null;
         let initiatives = [];
         let decisions = [];
@@ -748,6 +783,40 @@
         let themes = [];
         let perspectives = [];
         let okrs = [];
+
+        // Get model display info from llm_model string
+        function getModelInfo(llmModel) {
+            if (!llmModel) return { class: 'haiku', label: 'Haiku' };
+
+            const model = llmModel.toLowerCase();
+
+            // Claude models
+            if (model.includes('opus')) return { class: 'opus', label: 'Opus' };
+            if (model.includes('sonnet')) return { class: 'sonnet', label: 'Sonnet' };
+            if (model.includes('haiku')) return { class: 'haiku', label: 'Haiku' };
+
+            // OpenAI/GPT models
+            if (model.includes('gpt') || model.includes('o1') || model.includes('o3')) {
+                // Extract version for display
+                const versionMatch = llmModel.match(/gpt-?([\d.]+)/i) || llmModel.match(/o(\d)/i);
+                const version = versionMatch ? versionMatch[1] : '';
+                return { class: 'gpt', label: `GPT${version ? ' ' + version : ''}` };
+            }
+
+            // Perplexity models
+            if (model.includes('perplexity') || model.includes('sonar')) {
+                return { class: 'perplexity', label: 'Perplexity' };
+            }
+
+            // MindStudio models
+            if (model.includes('mindstudio')) {
+                return { class: 'mindstudio', label: 'MindStudio' };
+            }
+
+            // Default - show shortened model name
+            const shortName = llmModel.split('/').pop().split('-')[0];
+            return { class: 'haiku', label: shortName || 'AI' };
+        }
 
         // Category configuration
         const categories = {
@@ -789,8 +858,16 @@
         // Load all data
         async function loadAllData() {
             try {
-                // Load agents
-                const agentsRes = await fetch('/api/agents?suite=strategy');
+                // Load departments first
+                const deptRes = await fetch('/api/departments');
+                const deptData = await deptRes.json();
+                if (deptData.success) {
+                    departments = deptData.data || [];
+                    populateDepartmentFilter();
+                }
+
+                // Load agents (active only)
+                const agentsRes = await fetch('/api/agents?suite=strategy&active=true');
                 const agentsData = await agentsRes.json();
                 if (agentsData.success) {
                     agents = agentsData.data || [];
@@ -892,20 +969,54 @@
             renderAgents();
         }
 
+        // Populate department filter dropdown
+        function populateDepartmentFilter() {
+            const select = document.getElementById('departmentFilter');
+            if (!select) return;
+
+            let options = '<option value="all">All Departments</option>';
+            options += '<option value="none">No Department</option>';
+
+            departments.forEach(dept => {
+                options += `<option value="${dept.id}">${escapeHtml(dept.name)}</option>`;
+            });
+
+            select.innerHTML = options;
+        }
+
+        // Select department filter
+        function selectDepartment(departmentId) {
+            selectedDepartment = departmentId;
+            renderAgents();
+        }
+
         // Render agents grid
         function renderAgents() {
             const container = document.getElementById('agentsContainer');
             let filtered = agents;
 
+            // Filter by category
             if (selectedCategory !== 'all') {
-                filtered = agents.filter(a => a.category === selectedCategory);
+                filtered = filtered.filter(a => a.category === selectedCategory);
+            }
+
+            // Filter by department
+            if (selectedDepartment !== 'all') {
+                filtered = filtered.filter(a => {
+                    // Check if agent has department assignment
+                    if (a.departments && a.departments.length > 0) {
+                        return a.departments.some(d => d.id === selectedDepartment);
+                    }
+                    // If no department, include only if filtering for "no department"
+                    return selectedDepartment === 'none' ? !a.departments || a.departments.length === 0 : false;
+                });
             }
 
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i data-lucide="bot" style="width:48px;height:48px;"></i>
-                        <p>No agents found in this category.</p>
+                        <p>No agents found matching the filters.</p>
                     </div>
                 `;
                 lucide.createIcons();
@@ -914,25 +1025,25 @@
 
             container.innerHTML = filtered.map(agent => {
                 const config = categories[agent.category] || { color: '#6b7280' };
-                const modelClass = agent.llm_model?.includes('opus') ? 'opus' :
-                                   agent.llm_model?.includes('sonnet') ? 'sonnet' : 'haiku';
-                const modelLabel = modelClass.charAt(0).toUpperCase() + modelClass.slice(1);
+                const modelInfo = getModelInfo(agent.llm_model);
+                const isSystem = agent.is_system;
 
                 return `
-                    <div class="agent-card">
+                    <div class="agent-card ${isSystem ? 'system-agent' : ''}">
+                        ${isSystem ? '<div class="system-badge" title="Platform-provided agent"><i data-lucide="shield-check" style="width:12px;height:12px;"></i></div>' : ''}
                         <div class="agent-card-header">
                             <div class="agent-icon" style="background: ${config.color}20; color: ${config.color}">
                                 <i data-lucide="${agent.icon || 'bot'}" style="width:22px;height:22px;"></i>
                             </div>
                             <div class="agent-meta">
-                                <div class="agent-name">${agent.name}</div>
+                                <div class="agent-name">${escapeHtml(agent.name)}</div>
                                 <div class="agent-badges">
-                                    <span class="agent-badge ${modelClass}">${modelLabel}</span>
+                                    <span class="agent-badge ${modelInfo.class}">${modelInfo.label}</span>
                                     <span class="agent-badge">T: ${agent.temperature || 0.5}</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="agent-desc">${agent.description || 'AI-powered strategy agent'}</div>
+                        <div class="agent-desc">${escapeHtml(agent.description || 'AI-powered strategy agent')}</div>
                         <div class="agent-actions">
                             <button class="btn-primary" onclick="openChat('${agent.id}')">
                                 <i data-lucide="message-circle" style="width:14px;height:14px;"></i>
@@ -941,6 +1052,9 @@
                             <button class="btn-secondary" onclick="viewAgentDetails('${agent.id}')">
                                 <i data-lucide="info" style="width:14px;height:14px;"></i>
                                 Details
+                            </button>
+                            <button class="btn-secondary" onclick="editAgent('${agent.id}')" title="Edit in Agent Library">
+                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
                             </button>
                         </div>
                     </div>
@@ -1182,60 +1296,150 @@
             return ctx;
         }
 
-        // View agent details
-        function viewAgentDetails(agentId) {
-            const agent = agents.find(a => a.id === agentId);
-            if (!agent) return;
+        // View agent details - fetch full agent data for system prompt
+        async function viewAgentDetails(agentId) {
+            const listAgent = agents.find(a => a.id === agentId);
+            if (!listAgent) return;
 
-            const config = categories[agent.category] || { color: '#6b7280', label: agent.category };
-            const modelClass = agent.llm_model?.includes('opus') ? 'opus' :
-                               agent.llm_model?.includes('sonnet') ? 'sonnet' : 'haiku';
-            const modelLabel = modelClass.charAt(0).toUpperCase() + modelClass.slice(1);
-
-            document.getElementById('detailsAgentName').textContent = agent.name;
-            document.getElementById('detailsAgentCategory').textContent = config.label || agent.category;
+            // Show modal immediately with basic info
+            const config = categories[listAgent.category] || { color: '#6b7280', label: listAgent.category };
+            document.getElementById('detailsAgentName').textContent = listAgent.name;
+            document.getElementById('detailsAgentCategory').textContent = config.label || listAgent.category;
             document.getElementById('detailsAgentIcon').style.background = `${config.color}20`;
             document.getElementById('detailsAgentIcon').style.color = config.color;
+            document.getElementById('detailsContent').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Loading...</div>';
+            document.getElementById('detailsModal').classList.add('active');
 
-            document.getElementById('detailsContent').innerHTML = `
-                <div style="margin-bottom:1rem;">
-                    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Description</div>
-                    <div style="line-height:1.5;">${agent.description || 'AI-powered strategy agent'}</div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-                    <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;">
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Model</div>
-                        <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <span class="agent-badge ${modelClass}">${modelLabel}</span>
-                            <span style="font-size:0.85rem;">${agent.llm_model || 'Default'}</span>
+            // Fetch full agent data including system_prompt
+            try {
+                const response = await fetch(`/api/agents/${agentId}`);
+                const result = await response.json();
+
+                if (!result.success) throw new Error(result.error);
+                const agent = result.data;
+
+                const modelInfo = getModelInfo(agent.llm_model);
+                const isSystem = agent.is_system;
+
+                document.getElementById('detailsContent').innerHTML = `
+                    ${isSystem ? `
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;padding:0.5rem 0.75rem;background:linear-gradient(135deg, #6366f120, #8b5cf620);border-radius:8px;border:1px solid #6366f140;">
+                        <i data-lucide="shield-check" style="width:16px;height:16px;color:#6366f1;"></i>
+                        <span style="font-size:0.85rem;color:#6366f1;font-weight:500;">System Agent</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);margin-left:auto;">Platform-provided</span>
+                    </div>
+                    ` : ''}
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Description</div>
+                        <div style="line-height:1.5;">${escapeHtml(agent.description || 'AI-powered strategy agent')}</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;">
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Model</div>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="agent-badge ${modelInfo.class}">${modelInfo.label}</span>
+                                <span style="font-size:0.85rem;">${escapeHtml(agent.llm_model || 'Default')}</span>
+                            </div>
+                        </div>
+                        <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;">
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Temperature</div>
+                            <div style="font-size:1.1rem;font-weight:600;">${agent.temperature || 0.5}</div>
                         </div>
                     </div>
-                    <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;">
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Temperature</div>
-                        <div style="font-size:1.1rem;font-weight:600;">${agent.temperature || 0.5}</div>
+                    ${agent.system_prompt ? `
+                    <div style="margin-bottom:1rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <div style="font-size:0.8rem;color:var(--text-muted);">System Prompt</div>
+                            <button onclick="togglePromptExpand()" class="btn-secondary" style="padding:0.25rem 0.5rem;font-size:0.75rem;" id="promptToggleBtn">
+                                <i data-lucide="expand" style="width:12px;height:12px;" id="promptToggleIcon"></i>
+                                <span id="promptToggleText">Expand</span>
+                            </button>
+                        </div>
+                        <div id="promptContainer" style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;font-size:0.85rem;max-height:150px;overflow-y:auto;white-space:pre-wrap;transition:max-height 0.3s ease;" data-expanded="false">
+                            <code style="font-family:'Source Code Pro',monospace;font-size:0.8rem;line-height:1.5;">${escapeHtml(agent.system_prompt)}</code>
+                        </div>
                     </div>
-                </div>
-                ${agent.system_prompt ? `
-                <div style="margin-bottom:1rem;">
-                    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">System Prompt</div>
-                    <div style="background:var(--bg-tertiary);padding:0.75rem;border-radius:8px;font-size:0.85rem;max-height:150px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(agent.system_prompt.substring(0, 500))}${agent.system_prompt.length > 500 ? '...' : ''}</div>
-                </div>
-                ` : ''}
-                <div style="display:flex;gap:0.5rem;margin-top:1rem;">
-                    <button class="btn-primary" style="flex:1;" onclick="closeDetailsModal(); openChat('${agent.id}');">
-                        <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
-                        Start Chat
-                    </button>
-                </div>
-            `;
+                    ` : ''}
+                    <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                        <button class="btn-primary" style="flex:1;" onclick="closeDetailsModal(); openChat('${agent.id}');">
+                            <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+                            Chat
+                        </button>
+                        <button class="btn-secondary" style="flex:1;" onclick="duplicateAgent('${agent.id}', '${escapeHtml(agent.name)}');">
+                            <i data-lucide="copy" style="width:16px;height:16px;"></i>
+                            Duplicate
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading agent details:', error);
+                document.getElementById('detailsContent').innerHTML = `
+                    <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+                        <p>Failed to load agent details</p>
+                        <p style="font-size:0.85rem;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
 
-            document.getElementById('detailsModal').classList.add('active');
+        // Toggle prompt expand/collapse
+        function togglePromptExpand() {
+            const container = document.getElementById('promptContainer');
+            const icon = document.getElementById('promptToggleIcon');
+            const text = document.getElementById('promptToggleText');
+            const isExpanded = container.dataset.expanded === 'true';
+
+            if (isExpanded) {
+                container.style.maxHeight = '150px';
+                container.dataset.expanded = 'false';
+                text.textContent = 'Expand';
+                icon.setAttribute('data-lucide', 'expand');
+            } else {
+                container.style.maxHeight = '500px';
+                container.dataset.expanded = 'true';
+                text.textContent = 'Collapse';
+                icon.setAttribute('data-lucide', 'minimize-2');
+            }
             lucide.createIcons();
+        }
+
+        // Duplicate agent
+        async function duplicateAgent(agentId, agentName) {
+            const newName = prompt(`Create a copy of "${agentName}"?\n\nEnter a name for your copy:`, `${agentName} (My Copy)`);
+            if (!newName) return;
+
+            try {
+                const response = await fetch(`/api/agents/${agentId}/duplicate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    closeDetailsModal();
+                    showToast(`Created "${result.data.name}" - you can now customize it in Agent Library`, 'success');
+                    // Refresh agent list
+                    await loadAllData();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error duplicating agent:', error);
+                showToast(`Failed to duplicate: ${error.message}`, 'error');
+            }
         }
 
         // Close details modal
         function closeDetailsModal() {
             document.getElementById('detailsModal').classList.remove('active');
+        }
+
+        // Edit agent - navigate to Agent Library with edit modal
+        function editAgent(agentId) {
+            // Navigate to agents page with query param to open edit modal
+            window.location.href = `/agents.html?edit=${agentId}`;
         }
 
         // Placeholder functions for create modals
@@ -1265,6 +1469,45 @@
             formatted = formatted.replace(/\n/g, '<br>');
             return formatted;
         }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                background: ${type === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                font-size: 0.9rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease;
+            `;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" style="width:18px;height:18px;"></i>
+                <span>${escapeHtml(message)}</span>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
     </script>
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
 </body>
 </html>

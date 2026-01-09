@@ -27,6 +27,12 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// Perplexity uses OpenAI-compatible API
+const perplexity = new OpenAI({
+    apiKey: process.env.PERPLEXITY_API_KEY,
+    baseURL: 'https://api.perplexity.ai'
+});
+
 // Valid Claude model mappings for legacy model names
 const CLAUDE_MODEL_ALIASES = {
     // Legacy Claude 3.x models
@@ -229,6 +235,50 @@ async function executeWithOpenAI(agent, systemPrompt, messages) {
 }
 
 /**
+ * Execute agent with Perplexity
+ * @param {object} agent - Agent configuration
+ * @param {string} systemPrompt - Complete system prompt
+ * @param {array} messages - Conversation messages
+ * @returns {object} - Response with metadata
+ */
+async function executeWithPerplexity(agent, systemPrompt, messages) {
+    const startTime = Date.now();
+
+    // Prepend system message
+    const fullMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages
+    ];
+
+    // Default to sonar model if not specified or invalid
+    const model = agent.llm_model && agent.llm_model.startsWith('sonar')
+        ? agent.llm_model
+        : 'sonar';
+
+    const response = await perplexity.chat.completions.create({
+        model: model,
+        max_tokens: agent.max_tokens || 4096,
+        temperature: agent.temperature || 0.7,
+        messages: fullMessages
+    });
+
+    const duration = Date.now() - startTime;
+
+    return {
+        content: response.choices[0].message.content,
+        model: model,
+        provider: 'perplexity',
+        usage: {
+            prompt_tokens: response.usage?.prompt_tokens || 0,
+            completion_tokens: response.usage?.completion_tokens || 0,
+            total_tokens: response.usage?.total_tokens || 0
+        },
+        duration_ms: duration,
+        stop_reason: response.choices[0].finish_reason
+    };
+}
+
+/**
  * Stream agent response with Anthropic Claude
  * @param {object} agent - Agent configuration
  * @param {string} systemPrompt - Complete system prompt
@@ -321,6 +371,63 @@ async function streamWithOpenAI(agent, systemPrompt, messages, onToken) {
         content: fullContent,
         model: agent.llm_model,
         provider: 'openai',
+        usage: {
+            prompt_tokens: estimatedPromptTokens,
+            completion_tokens: estimatedCompletionTokens,
+            total_tokens: estimatedPromptTokens + estimatedCompletionTokens
+        },
+        duration_ms: duration
+    };
+}
+
+/**
+ * Stream agent response with Perplexity
+ * @param {object} agent - Agent configuration
+ * @param {string} systemPrompt - Complete system prompt
+ * @param {array} messages - Conversation messages
+ * @param {function} onToken - Callback for each token
+ * @returns {object} - Final response metadata
+ */
+async function streamWithPerplexity(agent, systemPrompt, messages, onToken) {
+    const startTime = Date.now();
+    let fullContent = '';
+
+    const fullMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages
+    ];
+
+    // Default to sonar model if not specified or invalid
+    const model = agent.llm_model && agent.llm_model.startsWith('sonar')
+        ? agent.llm_model
+        : 'sonar';
+
+    const stream = await perplexity.chat.completions.create({
+        model: model,
+        max_tokens: agent.max_tokens || 4096,
+        temperature: agent.temperature || 0.7,
+        messages: fullMessages,
+        stream: true
+    });
+
+    for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+            fullContent += content;
+            onToken(content);
+        }
+    }
+
+    const duration = Date.now() - startTime;
+
+    // Estimate tokens for streaming
+    const estimatedPromptTokens = estimateTokens(systemPrompt + messages.map(m => m.content).join(' '));
+    const estimatedCompletionTokens = estimateTokens(fullContent);
+
+    return {
+        content: fullContent,
+        model: model,
+        provider: 'perplexity',
         usage: {
             prompt_tokens: estimatedPromptTokens,
             completion_tokens: estimatedCompletionTokens,
@@ -429,6 +536,9 @@ async function executeAgent(agentId, options = {}) {
                     break;
                 case 'openai':
                     result = await executeWithOpenAI(agent, systemPrompt, messages);
+                    break;
+                case 'perplexity':
+                    result = await executeWithPerplexity(agent, systemPrompt, messages);
                     break;
                 default:
                     throw new Error(`Unsupported provider: ${agent.llm_provider}`);
@@ -567,6 +677,9 @@ async function streamAgent(agentId, options = {}) {
                     break;
                 case 'openai':
                     result = await streamWithOpenAI(effectiveAgent, systemPrompt, messages, onToken);
+                    break;
+                case 'perplexity':
+                    result = await streamWithPerplexity(effectiveAgent, systemPrompt, messages, onToken);
                     break;
                 default:
                     throw new Error(`Unsupported provider: ${effectiveProvider}`);

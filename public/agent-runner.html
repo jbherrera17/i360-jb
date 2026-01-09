@@ -526,6 +526,281 @@
             font-family: var(--font-mono);
         }
 
+        /* Context Toggle Switch */
+        .context-toggle-switch {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .context-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .context-toggle-switch .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all var(--transition-fast);
+        }
+
+        .context-toggle-switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all var(--transition-fast);
+        }
+
+        .context-toggle-switch input:checked + .slider {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .context-toggle-switch input:checked + .slider:before {
+            transform: translateX(16px);
+            background: white;
+        }
+
+        .context-item.on-demand {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .context-item.on-demand.active {
+            background: rgba(99, 102, 241, 0.12);
+            border-left: 3px solid var(--primary);
+        }
+
+        .context-item .injection-mode {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .injection-mode.always {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .injection-mode.on_demand {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .injection-mode.conditional {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        /* Active Context Indicator */
+        .active-context-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .active-context-indicator.visible {
+            display: flex;
+        }
+
+        .active-context-indicator .indicator-icon {
+            color: var(--primary);
+        }
+
+        .active-context-indicator .context-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            flex: 1;
+        }
+
+        .context-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.15rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .context-pill.always { border-left: 2px solid var(--success); }
+        .context-pill.on_demand { border-left: 2px solid var(--primary); }
+        .context-pill.conditional { border-left: 2px solid var(--warning); }
+
+        /* Context Actions */
+        .context-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-tertiary);
+        }
+
+        .btn-add-context {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-add-context:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        /* Add Context Modal */
+        .add-context-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-context-modal.active {
+            display: flex;
+        }
+
+        .add-context-modal .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .add-context-modal .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .add-context-modal .modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .add-context-modal .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .add-context-modal .modal-body {
+            padding: 1rem 1.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .add-context-modal .asset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .add-context-modal .asset-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .add-context-modal .asset-option:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        .add-context-modal .asset-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .add-context-modal .asset-option.already-mapped {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .add-context-modal .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-modal {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-modal.primary {
+            background: var(--primary);
+            border: none;
+            color: white;
+        }
+
+        .btn-modal.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-modal.secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-modal.secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
         /* Messages Area */
         .messages-container {
             flex: 1;
@@ -932,6 +1207,22 @@
                 <div class="context-content" id="contextContent">
                     <p style="padding: 1rem 1.5rem; color: var(--text-muted);">No context assets mapped.</p>
                 </div>
+                <div class="context-actions" id="contextActions" style="display: none;">
+                    <button class="btn-add-context" onclick="openAddContextModal()">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                        Add Context
+                    </button>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">
+                        Toggle on-demand assets above
+                    </span>
+                </div>
+            </div>
+
+            <!-- Active Context Indicator -->
+            <div class="active-context-indicator" id="activeContextIndicator">
+                <i data-lucide="layers" style="width:14px;height:14px;" class="indicator-icon"></i>
+                <span>Active:</span>
+                <div class="context-pills" id="activeContextPills"></div>
             </div>
 
             <!-- Messages -->
@@ -965,6 +1256,36 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Add Context Modal -->
+    <div class="add-context-modal" id="addContextModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Context Asset</h3>
+                <button class="modal-close" onclick="closeAddContextModal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+                        Select assets to add to this conversation:
+                    </label>
+                    <select id="contextInjectionMode" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.75rem;">
+                        <option value="on_demand">On Demand (toggle per message)</option>
+                        <option value="always">Always (include in all messages)</option>
+                    </select>
+                </div>
+                <div class="asset-list" id="availableAssetsList">
+                    <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading assets...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal secondary" onclick="closeAddContextModal()">Cancel</button>
+                <button class="btn-modal primary" onclick="addSelectedContextAssets()">Add Selected</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
@@ -979,6 +1300,12 @@
         let selectedModelOverride = null; // null means use agent default
         let agentDefaultModel = null; // Store the agent's configured model
         let sessionId = null; // Browser session ID for tracking
+
+        // Context state
+        let contextMappings = []; // Full mappings with injection_mode
+        let selectedOnDemandAssets = new Set(); // Asset IDs toggled on for on-demand injection
+        let availableAssets = []; // All available context assets for adding
+        let selectedAssetsToAdd = new Set(); // Assets selected in the add modal
 
         // =====================================================================
         // INITIALIZATION
@@ -1184,6 +1511,11 @@
                     requestBody.model_override = selectedModelOverride;
                 }
 
+                // Add on-demand context asset IDs if any are selected
+                if (selectedOnDemandAssets.size > 0) {
+                    requestBody.include_context = Array.from(selectedOnDemandAssets);
+                }
+
                 // Stream response
                 const response = await fetch(`/api/agents/${currentAgent.id}/execute/stream`, {
                     method: 'POST',
@@ -1264,29 +1596,97 @@
 
         async function loadContextPreview(agentId) {
             try {
-                const response = await fetch(`/api/agents/${agentId}/context/preview`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_message: '' })
-                });
+                // Load context mappings with full details
+                const response = await fetch(`/api/agents/${agentId}/context/mappings`);
                 const data = await response.json();
 
                 if (data.success && data.data) {
-                    contextData = data.data;
-                    renderContextPreview(data.data);
+                    contextMappings = data.data;
+                    renderContextPreview(contextMappings);
+                    updateActiveContextIndicator();
+                } else {
+                    // Fallback to preview endpoint if mappings endpoint not available
+                    const previewResponse = await fetch(`/api/agents/${agentId}/context/preview`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_message: '' })
+                    });
+                    const previewData = await previewResponse.json();
+                    if (previewData.success && previewData.data) {
+                        contextData = previewData.data;
+                        renderContextPreviewSimple(previewData.data);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load context preview:', error);
             }
         }
 
-        function renderContextPreview(data) {
+        function renderContextPreview(mappings) {
             const content = document.getElementById('contextContent');
             const tokenCount = document.getElementById('tokenCount');
+            const actionsDiv = document.getElementById('contextActions');
+
+            if (!mappings || mappings.length === 0) {
+                content.innerHTML = '<p style="padding: 1rem 1.5rem; color: var(--text-muted);">No context assets mapped.</p>';
+                tokenCount.textContent = '0 tokens';
+                actionsDiv.style.display = 'flex';
+                return;
+            }
+
+            // Calculate total tokens for always-on and selected on-demand assets
+            let totalTokens = 0;
+            mappings.forEach(m => {
+                const asset = m.context_assets || m;
+                if (m.injection_mode === 'always' || selectedOnDemandAssets.has(asset.id)) {
+                    totalTokens += asset.tokens || estimateTokens(asset.content_text || JSON.stringify(asset.content_json || {}));
+                }
+            });
+            tokenCount.textContent = `~${totalTokens} tokens`;
+
+            content.innerHTML = mappings.map(m => {
+                const asset = m.context_assets || m;
+                const mode = m.injection_mode || 'always';
+                const isOnDemand = mode === 'on_demand';
+                const isActive = mode === 'always' || selectedOnDemandAssets.has(asset.id);
+                const assetTokens = asset.tokens || estimateTokens(asset.content_text || JSON.stringify(asset.content_json || {}));
+
+                return `
+                    <div class="context-item ${isOnDemand ? 'on-demand' : ''} ${isActive ? 'active' : ''}" data-asset-id="${asset.id}">
+                        <span class="asset-icon">${getAssetIcon(asset.asset_type) || '📄'}</span>
+                        <div class="asset-info">
+                            <div class="asset-name">
+                                ${escapeHtml(asset.name)}
+                                <span class="injection-mode ${mode}">${mode.replace('_', ' ')}</span>
+                            </div>
+                            <div class="asset-type">${asset.asset_type || ''}</div>
+                        </div>
+                        <span class="asset-tokens">~${assetTokens}</span>
+                        ${isOnDemand ? `
+                            <label class="context-toggle-switch">
+                                <input type="checkbox" ${selectedOnDemandAssets.has(asset.id) ? 'checked' : ''}
+                                       onchange="toggleOnDemandAsset('${asset.id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            actionsDiv.style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        // Fallback for simple preview (when mappings endpoint not available)
+        function renderContextPreviewSimple(data) {
+            const content = document.getElementById('contextContent');
+            const tokenCount = document.getElementById('tokenCount');
+            const actionsDiv = document.getElementById('contextActions');
 
             if (!data.assets || data.assets.length === 0) {
                 content.innerHTML = '<p style="padding: 1rem 1.5rem; color: var(--text-muted);">No context assets mapped.</p>';
                 tokenCount.textContent = '0 tokens';
+                actionsDiv.style.display = 'flex';
                 return;
             }
 
@@ -1302,10 +1702,195 @@
                     <span class="asset-tokens">~${asset.tokens || 0}</span>
                 </div>
             `).join('');
+
+            actionsDiv.style.display = 'flex';
         }
 
         function toggleContextPreview() {
             document.getElementById('contextPreview').classList.toggle('expanded');
+        }
+
+        // Toggle on-demand asset selection
+        function toggleOnDemandAsset(assetId, isChecked) {
+            if (isChecked) {
+                selectedOnDemandAssets.add(assetId);
+            } else {
+                selectedOnDemandAssets.delete(assetId);
+            }
+            // Re-render to update active state and token count
+            renderContextPreview(contextMappings);
+            updateActiveContextIndicator();
+        }
+
+        // Update the real-time context indicator
+        function updateActiveContextIndicator() {
+            const indicator = document.getElementById('activeContextIndicator');
+            const pillsContainer = document.getElementById('activeContextPills');
+
+            const activeAssets = [];
+
+            contextMappings.forEach(m => {
+                const asset = m.context_assets || m;
+                const mode = m.injection_mode || 'always';
+
+                if (mode === 'always') {
+                    activeAssets.push({ name: asset.name, mode: 'always' });
+                } else if (mode === 'on_demand' && selectedOnDemandAssets.has(asset.id)) {
+                    activeAssets.push({ name: asset.name, mode: 'on_demand' });
+                }
+                // Conditional assets are handled at runtime based on message
+            });
+
+            if (activeAssets.length > 0) {
+                indicator.classList.add('visible');
+                pillsContainer.innerHTML = activeAssets.map(a => `
+                    <span class="context-pill ${a.mode}">${escapeHtml(a.name)}</span>
+                `).join('');
+            } else {
+                indicator.classList.remove('visible');
+                pillsContainer.innerHTML = '';
+            }
+        }
+
+        // Estimate tokens for content
+        function estimateTokens(text) {
+            if (!text) return 0;
+            return Math.ceil(text.length / 4);
+        }
+
+        // Get icon for asset type
+        function getAssetIcon(assetType) {
+            const icons = {
+                'company_description': '🏢',
+                'why_we_win': '🏆',
+                'products': '📦',
+                'pain_points': '🎯',
+                'voice_dna': '🎤',
+                'icp': '👤',
+                'core_values': '💎',
+                'custom_processes': '⚙️',
+                'competitors': '⚔️',
+                'case_studies': '📖',
+                'faqs': '❓',
+                'team_bios': '👥',
+                'industry_context': '🌐',
+                'terminology': '📚',
+                'templates': '📝',
+                'pricing': '💰',
+                'brand_guidelines': '🎨',
+                'personas': '🎭'
+            };
+            return icons[assetType] || '📄';
+        }
+
+        // =====================================================================
+        // ADD CONTEXT MODAL
+        // =====================================================================
+
+        async function openAddContextModal() {
+            const modal = document.getElementById('addContextModal');
+            modal.classList.add('active');
+            selectedAssetsToAdd.clear();
+
+            // Load available assets
+            const listEl = document.getElementById('availableAssetsList');
+            listEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading assets...</p>';
+
+            try {
+                const response = await fetch('/api/context/assets?limit=100');
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    availableAssets = data.data;
+                    renderAvailableAssets();
+                } else {
+                    listEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No assets available</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load assets:', error);
+                listEl.innerHTML = '<p style="color: var(--danger); text-align: center; padding: 1rem;">Failed to load assets</p>';
+            }
+
+            lucide.createIcons();
+        }
+
+        function closeAddContextModal() {
+            document.getElementById('addContextModal').classList.remove('active');
+        }
+
+        function renderAvailableAssets() {
+            const listEl = document.getElementById('availableAssetsList');
+            const mappedAssetIds = new Set(contextMappings.map(m => (m.context_assets || m).id));
+
+            if (availableAssets.length === 0) {
+                listEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No assets available. Create assets in the Context Library.</p>';
+                return;
+            }
+
+            listEl.innerHTML = availableAssets.map(asset => {
+                const isMapped = mappedAssetIds.has(asset.id);
+                const isSelected = selectedAssetsToAdd.has(asset.id);
+
+                return `
+                    <div class="asset-option ${isSelected ? 'selected' : ''} ${isMapped ? 'already-mapped' : ''}"
+                         onclick="${isMapped ? '' : `toggleAssetToAdd('${asset.id}')`}"
+                         data-asset-id="${asset.id}">
+                        <span style="font-size: 1.5rem;">${getAssetIcon(asset.asset_type)}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; font-size: 0.9rem;">${escapeHtml(asset.name)}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${asset.asset_type}${isMapped ? ' - Already mapped' : ''}</div>
+                        </div>
+                        ${!isMapped ? `
+                            <i data-lucide="${isSelected ? 'check-circle' : 'circle'}"
+                               style="width:20px;height:20px;color:${isSelected ? 'var(--primary)' : 'var(--text-muted)'}"></i>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function toggleAssetToAdd(assetId) {
+            if (selectedAssetsToAdd.has(assetId)) {
+                selectedAssetsToAdd.delete(assetId);
+            } else {
+                selectedAssetsToAdd.add(assetId);
+            }
+            renderAvailableAssets();
+        }
+
+        async function addSelectedContextAssets() {
+            if (selectedAssetsToAdd.size === 0) {
+                showToast('Please select at least one asset', 'error');
+                return;
+            }
+
+            const injectionMode = document.getElementById('contextInjectionMode').value;
+
+            try {
+                // Add mappings for each selected asset
+                for (const assetId of selectedAssetsToAdd) {
+                    await fetch(`/api/agents/${currentAgent.id}/context/mappings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            asset_id: assetId,
+                            injection_mode: injectionMode,
+                            priority: 50
+                        })
+                    });
+                }
+
+                showToast(`Added ${selectedAssetsToAdd.size} context asset(s)`, 'success');
+                closeAddContextModal();
+
+                // Reload context preview
+                await loadContextPreview(currentAgent.id);
+            } catch (error) {
+                console.error('Failed to add context assets:', error);
+                showToast('Failed to add context assets', 'error');
+            }
         }
 
         // =====================================================================

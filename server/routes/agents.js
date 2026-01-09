@@ -695,12 +695,16 @@ module.exports = function(supabase) {
 
     /**
      * POST /api/agents/:id/duplicate
-     * Duplicate an agent
+     * Duplicate an agent with lineage tracking
+     *
+     * Body params:
+     *   - name: Custom name for the duplicate (optional)
+     *   - department_id: Department to assign the duplicate to (optional)
      */
     router.post('/:id/duplicate', async (req, res) => {
         try {
             const { id } = req.params;
-            const { name: newName } = req.body;
+            const { name: newName, department_id } = req.body;
 
             // Get original agent
             const { data: original, error: getError } = await supabase
@@ -717,18 +721,48 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Create duplicate
-            const userId = req.userId || original.user_id;
+            // Create duplicate with lineage tracking
+            const userId = req.userId || null;
+            const now = new Date().toISOString();
+
+            // Build the duplicate data, excluding system-specific fields
             const duplicateData = {
-                ...original,
                 id: uuidv4(),
-                name: newName || `${original.name} (Copy)`,
+                name: newName || `${original.name} (My Copy)`,
+                description: original.description,
+                icon: original.icon,
+                category: original.category,
+                suite: original.suite,
+                type: original.type,
+                llm_provider: original.llm_provider,
+                llm_model: original.llm_model,
+                temperature: original.temperature,
+                max_tokens: original.max_tokens,
+                system_prompt: original.system_prompt,
+                introduction: original.introduction,
+                conversation_starters: original.conversation_starters,
+                guardrails: original.guardrails,
+                config: original.config,
+                mindstudio_workflow_id: original.mindstudio_workflow_id,
+                tools: original.tools,
+                // User ownership
                 user_id: userId,
                 created_by: userId,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                // Duplicate is never a system agent
+                is_system: false,
+                is_active: true,
+                is_public: false,
+                // Reset usage stats
                 usage_count: 0,
-                last_used_at: null
+                last_used_at: null,
+                avg_response_time_ms: null,
+                // Timestamps
+                created_at: now,
+                updated_at: now,
+                // Lineage tracking (will be ignored if columns don't exist yet)
+                parent_agent_id: original.id,
+                forked_at: now,
+                forked_from_version: 1 // Could track version if we add versioning later
             };
 
             const { data, error } = await supabase
@@ -750,8 +784,8 @@ module.exports = function(supabase) {
                     ...m,
                     id: uuidv4(),
                     agent_id: data.id,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    created_at: now,
+                    updated_at: now
                 }));
 
                 await supabase
@@ -759,16 +793,34 @@ module.exports = function(supabase) {
                     .insert(newMappings);
             }
 
+            // Handle department assignment if provided
+            if (department_id) {
+                await supabase
+                    .from('department_agents')
+                    .insert({
+                        department_id,
+                        agent_id: data.id,
+                        is_featured: false,
+                        sort_order: 999
+                    });
+            }
+
             res.status(201).json({
                 success: true,
-                data
+                data: {
+                    ...data,
+                    parent_agent_name: original.name,
+                    parent_is_system: original.is_system,
+                    department_id: department_id || null
+                },
+                message: `Created "${data.name}" from "${original.name}"`
             });
 
         } catch (error) {
             console.error('Error duplicating agent:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });
@@ -1039,9 +1091,114 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Error previewing context:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/agents/:id/context/mappings
+     * Get context mappings for an agent with full asset details
+     */
+    router.get('/:id/context/mappings', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data: mappings, error } = await supabase
+                .from('agent_context_mappings')
+                .select(`
+                    id,
+                    injection_mode,
+                    priority,
+                    max_tokens,
+                    trigger_keywords,
+                    trigger_regex,
+                    is_active,
+                    context_assets (
+                        id, name, asset_type, description,
+                        content_json, content_text, version
+                    )
+                `)
+                .eq('agent_id', id)
+                .eq('is_active', true)
+                .order('priority', { ascending: false });
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data: mappings || []
+            });
+
+        } catch (error) {
+            console.error('Error getting context mappings:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/agents/:id/context/mappings
+     * Add a context mapping to an agent
+     */
+    router.post('/:id/context/mappings', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { asset_id, injection_mode = 'on_demand', priority = 50 } = req.body;
+
+            if (!asset_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'asset_id is required'
+                });
+            }
+
+            // Check if mapping already exists
+            const { data: existing } = await supabase
+                .from('agent_context_mappings')
+                .select('id')
+                .eq('agent_id', id)
+                .eq('asset_id', asset_id)
+                .single();
+
+            if (existing) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'This asset is already mapped to this agent'
+                });
+            }
+
+            const { data, error } = await supabase
+                .from('agent_context_mappings')
+                .insert({
+                    id: uuidv4(),
+                    agent_id: id,
+                    asset_id,
+                    injection_mode,
+                    priority,
+                    is_active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.status(201).json({
+                success: true,
+                data
+            });
+
+        } catch (error) {
+            console.error('Error adding context mapping:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });
@@ -1097,6 +1254,7 @@ module.exports = function(supabase) {
      *   - conversation_history: Previous messages array
      *   - model_override: Optional model ID to override agent's default
      *   - session_id: Browser session ID for tracking
+     *   - include_context: Array of on-demand context asset IDs to include
      */
     router.post('/:id/execute/stream', async (req, res) => {
         try {
@@ -1105,7 +1263,8 @@ module.exports = function(supabase) {
                 message,
                 conversation_history = [],
                 model_override = null,
-                session_id = null
+                session_id = null,
+                include_context = []
             } = req.body;
 
             if (!message) {
@@ -1129,6 +1288,7 @@ module.exports = function(supabase) {
                 userId,
                 modelOverride: model_override,
                 sessionId: session_id,
+                includeOnDemand: include_context,
                 onToken: (token) => {
                     res.write(`data: ${JSON.stringify({ type: 'token', content: token })}\n\n`);
                 },

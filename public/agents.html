@@ -2046,9 +2046,9 @@
                 <div class="filter-group">
                     <label class="filter-label">Status</label>
                     <select class="filter-select" id="filterStatus">
+                        <option value="active" selected>Active</option>
+                        <option value="inactive">Archived</option>
                         <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
 
@@ -2127,12 +2127,17 @@
                                         <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
                                         Edit
                                     </button>
+                                    <button class="btn btn-secondary" id="btnDuplicate" title="Create a copy you can customize">
+                                        <i data-lucide="copy" style="width:16px;height:16px;"></i>
+                                        Duplicate
+                                    </button>
                                     <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
                                         <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
                                     </button>
                                 </div>
                             </div>
                             <div class="detail-description" id="detailDescription">—</div>
+                            <div id="detailLineage" style="display:none;"></div>
                         </div>
 
                         <!-- Scrollable content area below header -->
@@ -2859,7 +2864,8 @@
             const agent = agents.find(a => a.id === id);
             if (!agent) return;
 
-            selectedAgent = agent;
+            // Don't set selectedAgent here - wait for loadAgentDetail to set it with full data
+            // This prevents race condition where Edit button uses incomplete data
 
             // Update list selection
             agentList.querySelectorAll('.agent-item').forEach(item => {
@@ -2924,6 +2930,29 @@
             document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
             document.getElementById('detailUsage').textContent = agent.usage_count || 0;
             document.getElementById('detailDescription').textContent = agent.description || 'No description provided.';
+
+            // Show lineage info if agent was duplicated from another
+            const lineageContainer = document.getElementById('detailLineage');
+            if (lineageContainer) {
+                if (agent.parent_agent_id || agent.parent_agent_name) {
+                    const parentName = agent.parent_agent_name || 'Unknown';
+                    const forkedDate = agent.forked_at ? new Date(agent.forked_at).toLocaleDateString() : '';
+                    lineageContainer.innerHTML = `
+                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--bg-tertiary);border-radius:8px;margin-top:0.75rem;">
+                            <i data-lucide="git-fork" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                            <div style="flex:1;">
+                                <div style="font-size:0.75rem;color:var(--text-muted);">Duplicated from</div>
+                                <div style="font-size:0.9rem;font-weight:500;">${escapeHtml(parentName)}</div>
+                            </div>
+                            ${forkedDate ? `<div style="font-size:0.75rem;color:var(--text-muted);">${forkedDate}</div>` : ''}
+                        </div>
+                    `;
+                    lineageContainer.style.display = 'block';
+                } else {
+                    lineageContainer.style.display = 'none';
+                    lineageContainer.innerHTML = '';
+                }
+            }
 
             // Render context mappings
             renderContextMappings(agent.context_mappings || []);
@@ -3777,6 +3806,34 @@
             }
         });
 
+        document.getElementById('btnDuplicate').addEventListener('click', async () => {
+            if (!selectedAgent) return;
+
+            const newName = prompt(`Create a copy of "${selectedAgent.name}"?\n\nEnter a name for your copy:`, `${selectedAgent.name} (My Copy)`);
+            if (!newName) return;
+
+            try {
+                const response = await fetch(`/api/agents/${selectedAgent.id}/duplicate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(`Created "${result.data.name}" - you can now customize it`, 'success');
+                    // Refresh agent list and select the new agent
+                    await fetchAgents();
+                    selectAgent(result.data.id);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error duplicating agent:', error);
+                showToast(`Failed to duplicate: ${error.message}`, 'error');
+            }
+        });
+
         document.getElementById('btnAddContext').addEventListener('click', openContextModal);
         document.getElementById('contextModalClose').addEventListener('click', closeContextModal);
         document.getElementById('btnContextCancel').addEventListener('click', closeContextModal);
@@ -4028,6 +4085,24 @@
             ]);
             await fetchAgents();
             fetchStats();
+
+            // Check for edit query parameter (from Strategy 120 redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const editAgentId = urlParams.get('edit');
+            if (editAgentId) {
+                // Verify agent exists in list
+                const agentExists = agents.find(a => a.id === editAgentId);
+                if (agentExists) {
+                    // Load full agent detail (which includes all fields like introduction, conversation_starters)
+                    await loadAgentDetail(editAgentId);
+                    // selectedAgent now has the full agent data from the API
+                    if (selectedAgent) {
+                        openModal(selectedAgent);
+                    }
+                    // Clean up URL (remove query param without refresh)
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
         }
 
         init();
