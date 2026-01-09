@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Management | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            /* Light Mode (default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f7;
+            --bg-tertiary: #e8e8ed;
+            --bg-hover: #f0f0f5;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-muted: #aeaeb2;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+
+            /* Brand Colors */
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+            /* Layout */
+            --nav-height: 60px;
+            --sidebar-width: 260px;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252540;
+            --bg-hover: #2a2a45;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b80;
+            --border: #2a2a40;
+            --border-light: #353550;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .main-container {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            max-width: 1400px;
+            flex: 1;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+    </style>
+    <style>
+        /* Tag-Specific Styles */
+        .tag-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tag-category-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .tag-category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tag-category-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+
+        .tag-category-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .tag-category-icon.skill { color: var(--primary); }
+        .tag-category-icon.domain { color: var(--success); }
+        .tag-category-icon.function { color: var(--warning); }
+
+        .tag-count {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        .tag-list {
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .tag-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+
+        .tag-item:hover {
+            border-color: var(--primary);
+        }
+
+        .tag-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tag-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+
+        .tag-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .tag-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .tag-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .tag-badge.skill {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .tag-badge.domain {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .tag-badge.function {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .tag-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        /* Hierarchy Tree */
+        .tag-hierarchy {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+
+        .hierarchy-tree {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        .hierarchy-node {
+            padding: 0.25rem 0;
+        }
+
+        .hierarchy-node .node-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .hierarchy-node .node-content:hover {
+            background: var(--bg-hover);
+        }
+
+        .hierarchy-children {
+            margin-left: 1.5rem;
+            border-left: 1px dashed var(--border);
+            padding-left: 0.75rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card.skill { border-left: 4px solid var(--primary); }
+        .stat-card.domain { border-left: 4px solid var(--success); }
+        .stat-card.function { border-left: 4px solid var(--warning); }
+        .stat-card.total { border-left: 4px solid var(--secondary); }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Search & Filter */
+        .controls-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 0.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .view-btn {
+            padding: 0.5rem 0.75rem;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 0.375rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .icon-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.25rem;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar injected by navigation.js -->
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <h1>Tag Management</h1>
+                    <p class="header-subtitle">Organize and manage skill, domain, and function tags</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="openCreateTagModal()">
+                        <i data-lucide="plus"></i>
+                        New Tag
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-value" id="total-tags">0</div>
+                    <div class="stat-label">Total Tags</div>
+                </div>
+                <div class="stat-card skill">
+                    <div class="stat-value" id="skill-tags">0</div>
+                    <div class="stat-label">Skill Tags</div>
+                </div>
+                <div class="stat-card domain">
+                    <div class="stat-value" id="domain-tags">0</div>
+                    <div class="stat-label">Domain Tags</div>
+                </div>
+                <div class="stat-card function">
+                    <div class="stat-value" id="function-tags">0</div>
+                    <div class="stat-label">Function Tags</div>
+                </div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="controls-bar">
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Search tags..." oninput="filterTags()">
+                </div>
+                <div class="filter-group">
+                    <button class="filter-btn active" data-category="all" onclick="setFilter('all', this)">All</button>
+                    <button class="filter-btn" data-category="skill" onclick="setFilter('skill', this)">Skills</button>
+                    <button class="filter-btn" data-category="domain" onclick="setFilter('domain', this)">Domains</button>
+                    <button class="filter-btn" data-category="function" onclick="setFilter('function', this)">Functions</button>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" onclick="setView('grid', this)">
+                        <i data-lucide="layout-grid"></i>
+                    </button>
+                    <button class="view-btn" data-view="hierarchy" onclick="setView('hierarchy', this)">
+                        <i data-lucide="git-branch"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('browse', this)">Browse Tags</button>
+                <button class="tab-btn" onclick="switchTab('hierarchy', this)">Tag Hierarchy</button>
+            </div>
+
+            <!-- Browse Tags Tab -->
+            <div class="tab-content active" id="tab-browse">
+                <div class="tag-grid" id="tag-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hierarchy Tab -->
+            <div class="tab-content" id="tab-hierarchy">
+                <div class="tag-hierarchy" id="tag-hierarchy">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Tag Modal -->
+    <div class="modal-overlay" id="tag-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Create New Tag</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="tag-form" onsubmit="saveTag(event)">
+                    <input type="hidden" id="tag-id">
+
+                    <div class="form-group">
+                        <label class="form-label">Tag Name *</label>
+                        <input type="text" class="form-input" id="tag-name" required placeholder="e.g., Strategic Planning">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-select" id="tag-category" required>
+                            <option value="">Select category...</option>
+                            <option value="skill">Skill</option>
+                            <option value="domain">Domain</option>
+                            <option value="function">Function</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Parent Tag (Optional)</label>
+                        <select class="form-select" id="tag-parent">
+                            <option value="">None (Top Level)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="tag-description" placeholder="Brief description of this tag..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="tag-form" id="save-btn">Create Tag</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Tag</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-tag-name"></strong>?</p>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()" style="background: var(--danger);">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/navigation.js"></script>
+    <script>
+        // State
+        let allTags = [];
+        let currentFilter = 'all';
+        let currentView = 'grid';
+        let editingTagId = null;
+        let deletingTagId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadTags();
+            await loadStats();
+        });
+
+        // Load all tags
+        async function loadTags() {
+            try {
+                const response = await fetch('/api/tags');
+                const data = await response.json();
+
+                if (data.success) {
+                    allTags = data.data;
+                    renderTags();
+                    populateParentSelect();
+                } else {
+                    showError('Failed to load tags');
+                }
+            } catch (error) {
+                console.error('Error loading tags:', error);
+                showError('Failed to load tags');
+            }
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/tags/stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    const stats = data.data;
+                    document.getElementById('total-tags').textContent = stats.total || 0;
+                    document.getElementById('skill-tags').textContent = stats.skill || 0;
+                    document.getElementById('domain-tags').textContent = stats.domain || 0;
+                    document.getElementById('function-tags').textContent = stats.function || 0;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Render tags in grid view
+        function renderTags() {
+            const grid = document.getElementById('tag-grid');
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+            // Filter tags
+            let filteredTags = allTags.filter(tag => {
+                const matchesSearch = tag.name.toLowerCase().includes(searchTerm) ||
+                                     (tag.description && tag.description.toLowerCase().includes(searchTerm));
+                const matchesCategory = currentFilter === 'all' || tag.category === currentFilter;
+                return matchesSearch && matchesCategory;
+            });
+
+            // Group by category
+            const grouped = {
+                skill: filteredTags.filter(t => t.category === 'skill'),
+                domain: filteredTags.filter(t => t.category === 'domain'),
+                function: filteredTags.filter(t => t.category === 'function')
+            };
+
+            if (filteredTags.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i data-lucide="tags"></i>
+                        <h3>No tags found</h3>
+                        <p>Try adjusting your search or filter</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '';
+
+            // Only show categories that have tags or match filter
+            const categoriesToShow = currentFilter === 'all'
+                ? ['skill', 'domain', 'function'].filter(cat => grouped[cat].length > 0)
+                : [currentFilter];
+
+            categoriesToShow.forEach(category => {
+                const tags = grouped[category];
+                if (tags.length === 0 && currentFilter !== 'all') {
+                    html += `
+                        <div class="tag-category-card">
+                            <div class="tag-category-header">
+                                <span class="tag-category-title">
+                                    <i data-lucide="${getCategoryIcon(category)}" class="tag-category-icon ${category}"></i>
+                                    ${capitalizeFirst(category)} Tags
+                                </span>
+                                <span class="tag-count">0</span>
+                            </div>
+                            <div class="tag-list">
+                                <div class="empty-state">
+                                    <p>No ${category} tags yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                html += `
+                    <div class="tag-category-card">
+                        <div class="tag-category-header">
+                            <span class="tag-category-title">
+                                <i data-lucide="${getCategoryIcon(category)}" class="tag-category-icon ${category}"></i>
+                                ${capitalizeFirst(category)} Tags
+                            </span>
+                            <span class="tag-count">${tags.length}</span>
+                        </div>
+                        <div class="tag-list">
+                            ${tags.map(tag => `
+                                <div class="tag-item">
+                                    <div class="tag-info">
+                                        <span class="tag-name">${escapeHtml(tag.name)}</span>
+                                        ${tag.description ? `<span class="tag-description">${escapeHtml(tag.description)}</span>` : ''}
+                                    </div>
+                                    <div class="tag-actions">
+                                        <button class="icon-btn" onclick="editTag('${tag.id}')" title="Edit">
+                                            <i data-lucide="pencil"></i>
+                                        </button>
+                                        <button class="icon-btn danger" onclick="deleteTag('${tag.id}', '${escapeHtml(tag.name)}')" title="Delete">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Render hierarchy view
+        async function renderHierarchy() {
+            const container = document.getElementById('tag-hierarchy');
+
+            try {
+                const response = await fetch('/api/tags/hierarchy');
+                const data = await response.json();
+
+                if (data.success) {
+                    const hierarchy = data.data;
+
+                    if (hierarchy.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i data-lucide="git-branch"></i>
+                                <h3>No tag hierarchy</h3>
+                                <p>Tags with parent relationships will appear here</p>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    container.innerHTML = `
+                        <div class="hierarchy-tree">
+                            ${renderHierarchyNodes(hierarchy)}
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error loading hierarchy:', error);
+                container.innerHTML = '<p style="color: var(--danger);">Failed to load hierarchy</p>';
+            }
+        }
+
+        function renderHierarchyNodes(nodes, level = 0) {
+            return nodes.map(node => `
+                <div class="hierarchy-node">
+                    <div class="node-content">
+                        <span class="tag-badge ${node.category}">${node.category}</span>
+                        <span>${escapeHtml(node.name)}</span>
+                    </div>
+                    ${node.children && node.children.length > 0 ? `
+                        <div class="hierarchy-children">
+                            ${renderHierarchyNodes(node.children, level + 1)}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Populate parent tag select
+        function populateParentSelect() {
+            const select = document.getElementById('tag-parent');
+            select.innerHTML = '<option value="">None (Top Level)</option>';
+
+            allTags.forEach(tag => {
+                select.innerHTML += `<option value="${tag.id}">${escapeHtml(tag.name)} (${tag.category})</option>`;
+            });
+        }
+
+        // Filter handlers
+        function setFilter(category, btn) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderTags();
+        }
+
+        function filterTags() {
+            renderTags();
+        }
+
+        // View handlers
+        function setView(view, btn) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // Tab handlers
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+
+            if (tab === 'hierarchy') {
+                renderHierarchy();
+            }
+        }
+
+        // Modal handlers
+        function openCreateTagModal() {
+            editingTagId = null;
+            document.getElementById('modal-title').textContent = 'Create New Tag';
+            document.getElementById('save-btn').textContent = 'Create Tag';
+            document.getElementById('tag-form').reset();
+            document.getElementById('tag-modal').classList.add('active');
+        }
+
+        function editTag(id) {
+            const tag = allTags.find(t => t.id === id);
+            if (!tag) return;
+
+            editingTagId = id;
+            document.getElementById('modal-title').textContent = 'Edit Tag';
+            document.getElementById('save-btn').textContent = 'Save Changes';
+            document.getElementById('tag-id').value = id;
+            document.getElementById('tag-name').value = tag.name;
+            document.getElementById('tag-category').value = tag.category;
+            document.getElementById('tag-parent').value = tag.parent_id || '';
+            document.getElementById('tag-description').value = tag.description || '';
+            document.getElementById('tag-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('tag-modal').classList.remove('active');
+            editingTagId = null;
+        }
+
+        // Save tag
+        async function saveTag(event) {
+            event.preventDefault();
+
+            const tagData = {
+                name: document.getElementById('tag-name').value.trim(),
+                category: document.getElementById('tag-category').value,
+                parent_id: document.getElementById('tag-parent').value || null,
+                description: document.getElementById('tag-description').value.trim() || null
+            };
+
+            try {
+                const url = editingTagId ? `/api/tags/${editingTagId}` : '/api/tags';
+                const method = editingTagId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tagData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal();
+                    await loadTags();
+                    await loadStats();
+                    showSuccess(editingTagId ? 'Tag updated successfully' : 'Tag created successfully');
+                } else {
+                    showError(data.error || 'Failed to save tag');
+                }
+            } catch (error) {
+                console.error('Error saving tag:', error);
+                showError('Failed to save tag');
+            }
+        }
+
+        // Delete tag
+        function deleteTag(id, name) {
+            deletingTagId = id;
+            document.getElementById('delete-tag-name').textContent = name;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+            deletingTagId = null;
+        }
+
+        async function confirmDelete() {
+            if (!deletingTagId) return;
+
+            try {
+                const response = await fetch(`/api/tags/${deletingTagId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeDeleteModal();
+                    await loadTags();
+                    await loadStats();
+                    showSuccess('Tag deleted successfully');
+                } else {
+                    showError(data.error || 'Failed to delete tag');
+                }
+            } catch (error) {
+                console.error('Error deleting tag:', error);
+                showError('Failed to delete tag');
+            }
+        }
+
+        // Utility functions
+        function getCategoryIcon(category) {
+            switch (category) {
+                case 'skill': return 'zap';
+                case 'domain': return 'globe';
+                case 'function': return 'briefcase';
+                default: return 'tag';
+            }
+        }
+
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showSuccess(message) {
+            // Simple alert for now - could be replaced with toast
+            console.log('Success:', message);
+        }
+
+        function showError(message) {
+            alert(message);
+        }
+    </script>
+</body>
+</html>

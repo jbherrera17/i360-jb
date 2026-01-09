@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Management | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f7;
+            --bg-tertiary: #e8e8ed;
+            --bg-hover: #f0f0f5;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-muted: #aeaeb2;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --sidebar-width: 260px;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252540;
+            --bg-hover: #2a2a45;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b80;
+            --border: #2a2a40;
+            --border-light: #353550;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .app-layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .main-container {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            max-width: 1400px;
+            flex: 1;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; }
+    </style>
+    <style>
+        /* Role-Specific Styles */
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .role-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .role-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .role-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 1.25rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .role-info {
+            flex: 1;
+        }
+
+        .role-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .role-department {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .role-level {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-level.executive { background: rgba(124, 58, 237, 0.15); color: #7c3aed; }
+        .role-level.director { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+        .role-level.manager { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .role-level.supervisor { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .role-level.ic { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        .role-card-body {
+            padding: 1.25rem;
+        }
+
+        .role-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .role-section {
+            margin-bottom: 1rem;
+        }
+
+        .role-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .role-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+
+        .tag-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+        }
+
+        .tag-chip.skill { border-color: var(--primary); color: var(--primary); }
+        .tag-chip.domain { border-color: var(--success); color: var(--success); }
+        .tag-chip.function { border-color: var(--warning); color: var(--warning); }
+
+        .responsibility-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .responsibility-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .responsibility-item i {
+            width: 14px;
+            height: 14px;
+            color: var(--success);
+        }
+
+        .role-card-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-primary);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card.roles { border-left: 4px solid var(--primary); }
+        .stat-card.responsibilities { border-left: 4px solid var(--success); }
+        .stat-card.templates { border-left: 4px solid var(--warning); }
+        .stat-card.users { border-left: 4px solid var(--secondary); }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Controls */
+        .controls-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            min-width: 180px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 0.375rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .icon-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            z-index: 1;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.25rem;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            position: sticky;
+            bottom: 0;
+            background: var(--bg-primary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Tag Selector */
+        .tag-selector {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .tag-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .tag-option:hover {
+            background: var(--bg-hover);
+        }
+
+        .tag-option input {
+            margin: 0;
+        }
+
+        .tag-option-label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar injected by navigation.js -->
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <h1>Role Management</h1>
+                    <p class="header-subtitle">Define department roles and their responsibilities</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="openTemplatesModal()">
+                        <i data-lucide="copy"></i>
+                        Templates
+                    </button>
+                    <button class="btn btn-primary" onclick="openCreateRoleModal()">
+                        <i data-lucide="plus"></i>
+                        New Role
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card roles">
+                    <div class="stat-value" id="total-roles">0</div>
+                    <div class="stat-label">Total Roles</div>
+                </div>
+                <div class="stat-card responsibilities">
+                    <div class="stat-value" id="total-responsibilities">0</div>
+                    <div class="stat-label">Responsibilities</div>
+                </div>
+                <div class="stat-card templates">
+                    <div class="stat-value" id="total-templates">0</div>
+                    <div class="stat-label">Templates</div>
+                </div>
+                <div class="stat-card users">
+                    <div class="stat-value" id="users-assigned">0</div>
+                    <div class="stat-label">Users Assigned</div>
+                </div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="controls-bar">
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Search roles..." oninput="filterRoles()">
+                </div>
+                <select class="filter-select" id="department-filter" onchange="filterRoles()">
+                    <option value="">All Departments</option>
+                </select>
+                <select class="filter-select" id="level-filter" onchange="filterRoles()">
+                    <option value="">All Levels</option>
+                    <option value="executive">Executive</option>
+                    <option value="director">Director</option>
+                    <option value="manager">Manager</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="ic">Individual Contributor</option>
+                </select>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('roles', this)">Department Roles</button>
+                <button class="tab-btn" onclick="switchTab('responsibilities', this)">Responsibilities</button>
+            </div>
+
+            <!-- Roles Tab -->
+            <div class="tab-content active" id="tab-roles">
+                <div class="role-grid" id="role-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsibilities Tab -->
+            <div class="tab-content" id="tab-responsibilities">
+                <div id="responsibilities-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Role Modal -->
+    <div class="modal-overlay" id="role-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Create New Role</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="role-form" onsubmit="saveRole(event)">
+                    <input type="hidden" id="role-id">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Role Title *</label>
+                            <input type="text" class="form-input" id="role-title" required placeholder="e.g., Senior Analyst">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Role Level *</label>
+                            <select class="form-select" id="role-level" required>
+                                <option value="">Select level...</option>
+                                <option value="executive">Executive</option>
+                                <option value="director">Director</option>
+                                <option value="manager">Manager</option>
+                                <option value="supervisor">Supervisor</option>
+                                <option value="ic">Individual Contributor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Department *</label>
+                        <select class="form-select" id="role-department" required>
+                            <option value="">Select department...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="role-description" placeholder="Brief description of this role..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Associated Tags</label>
+                        <div class="tag-selector" id="tag-selector">
+                            <!-- Tags loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Responsibilities</label>
+                        <div class="tag-selector" id="responsibility-selector">
+                            <!-- Responsibilities loaded dynamically -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="role-form" id="save-btn">Create Role</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div class="modal-overlay" id="templates-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Role Templates</h3>
+                <button class="modal-close" onclick="closeTemplatesModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Select a template to create a pre-configured role:</p>
+                <div id="templates-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplatesModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Role</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-role-name"></strong>?</p>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">This will remove all tag and responsibility associations.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn" onclick="confirmDelete()" style="background: var(--danger); color: white;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/navigation.js"></script>
+    <script>
+        // State
+        let allRoles = [];
+        let allTags = [];
+        let allResponsibilities = [];
+        let departments = [];
+        let editingRoleId = null;
+        let deletingRoleId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await Promise.all([
+                loadRoles(),
+                loadTags(),
+                loadResponsibilities(),
+                loadDepartments()
+            ]);
+            populateDepartmentFilters();
+        });
+
+        // Load all roles
+        async function loadRoles() {
+            try {
+                const response = await fetch('/api/roles');
+                const data = await response.json();
+
+                if (data.success) {
+                    allRoles = data.data;
+                    document.getElementById('total-roles').textContent = allRoles.length;
+                    renderRoles();
+                }
+            } catch (error) {
+                console.error('Error loading roles:', error);
+            }
+        }
+
+        // Load tags
+        async function loadTags() {
+            try {
+                const response = await fetch('/api/tags');
+                const data = await response.json();
+
+                if (data.success) {
+                    allTags = data.data;
+                    populateTagSelector();
+                }
+            } catch (error) {
+                console.error('Error loading tags:', error);
+            }
+        }
+
+        // Load responsibilities
+        async function loadResponsibilities() {
+            try {
+                const response = await fetch('/api/roles/responsibilities');
+                const data = await response.json();
+
+                if (data.success) {
+                    allResponsibilities = data.data;
+                    document.getElementById('total-responsibilities').textContent = allResponsibilities.length;
+                    populateResponsibilitySelector();
+                }
+            } catch (error) {
+                console.error('Error loading responsibilities:', error);
+            }
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const data = await response.json();
+
+                if (data.success) {
+                    departments = data.data || data;
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                // Fallback departments
+                departments = [
+                    { id: 'hr', name: 'Human Resources' },
+                    { id: 'finance', name: 'Finance' },
+                    { id: 'operations', name: 'Operations' },
+                    { id: 'it', name: 'Information Technology' },
+                    { id: 'marketing', name: 'Marketing' },
+                    { id: 'sales', name: 'Sales' }
+                ];
+            }
+        }
+
+        // Populate department filters
+        function populateDepartmentFilters() {
+            const filterSelect = document.getElementById('department-filter');
+            const formSelect = document.getElementById('role-department');
+
+            departments.forEach(dept => {
+                filterSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                formSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+            });
+        }
+
+        // Populate tag selector in form
+        function populateTagSelector() {
+            const selector = document.getElementById('tag-selector');
+            if (allTags.length === 0) {
+                selector.innerHTML = '<p style="color: var(--text-muted);">No tags available</p>';
+                return;
+            }
+
+            selector.innerHTML = allTags.map(tag => `
+                <label class="tag-option">
+                    <input type="checkbox" name="tags" value="${tag.id}">
+                    <span class="tag-option-label">
+                        <span class="tag-chip ${tag.category}">${tag.name}</span>
+                    </span>
+                </label>
+            `).join('');
+        }
+
+        // Populate responsibility selector in form
+        function populateResponsibilitySelector() {
+            const selector = document.getElementById('responsibility-selector');
+            if (allResponsibilities.length === 0) {
+                selector.innerHTML = '<p style="color: var(--text-muted);">No responsibilities available</p>';
+                return;
+            }
+
+            selector.innerHTML = allResponsibilities.map(resp => `
+                <label class="tag-option">
+                    <input type="checkbox" name="responsibilities" value="${resp.id}">
+                    <span class="tag-option-label">${resp.name}</span>
+                </label>
+            `).join('');
+        }
+
+        // Render roles grid
+        function renderRoles() {
+            const grid = document.getElementById('role-grid');
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const deptFilter = document.getElementById('department-filter').value;
+            const levelFilter = document.getElementById('level-filter').value;
+
+            let filteredRoles = allRoles.filter(role => {
+                const matchesSearch = role.title.toLowerCase().includes(searchTerm) ||
+                                     (role.description && role.description.toLowerCase().includes(searchTerm));
+                const matchesDept = !deptFilter || role.department_id === deptFilter;
+                const matchesLevel = !levelFilter || role.role_level === levelFilter;
+                return matchesSearch && matchesDept && matchesLevel;
+            });
+
+            if (filteredRoles.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i data-lucide="users"></i>
+                        <h3>No roles found</h3>
+                        <p>Try adjusting your search or filters</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = filteredRoles.map(role => `
+                <div class="role-card">
+                    <div class="role-card-header">
+                        <div class="role-info">
+                            <div class="role-title">${escapeHtml(role.title)}</div>
+                            <div class="role-department">
+                                <i data-lucide="building-2"></i>
+                                ${getDepartmentName(role.department_id)}
+                            </div>
+                        </div>
+                        <span class="role-level ${role.role_level}">${formatLevel(role.role_level)}</span>
+                    </div>
+                    <div class="role-card-body">
+                        ${role.description ? `<p class="role-description">${escapeHtml(role.description)}</p>` : ''}
+
+                        ${role.tags && role.tags.length > 0 ? `
+                            <div class="role-section">
+                                <div class="role-section-title">Associated Tags</div>
+                                <div class="tag-list">
+                                    ${role.tags.map(tag => `
+                                        <span class="tag-chip ${tag.category}">${escapeHtml(tag.name)}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${role.responsibilities && role.responsibilities.length > 0 ? `
+                            <div class="role-section">
+                                <div class="role-section-title">Responsibilities</div>
+                                <div class="responsibility-list">
+                                    ${role.responsibilities.slice(0, 3).map(resp => `
+                                        <div class="responsibility-item">
+                                            <i data-lucide="check-circle"></i>
+                                            ${escapeHtml(resp.name)}
+                                        </div>
+                                    `).join('')}
+                                    ${role.responsibilities.length > 3 ? `
+                                        <div class="responsibility-item" style="color: var(--text-muted);">
+                                            +${role.responsibilities.length - 3} more
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="role-card-footer">
+                        <button class="btn btn-sm btn-secondary" onclick="editRole('${role.id}')">
+                            <i data-lucide="pencil"></i>
+                            Edit
+                        </button>
+                        <button class="icon-btn danger" onclick="deleteRole('${role.id}', '${escapeHtml(role.title)}')">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Filter roles
+        function filterRoles() {
+            renderRoles();
+        }
+
+        // Tab switching
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+
+            if (tab === 'responsibilities') {
+                renderResponsibilities();
+            }
+        }
+
+        // Render responsibilities tab
+        function renderResponsibilities() {
+            const container = document.getElementById('responsibilities-container');
+
+            if (allResponsibilities.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="clipboard-list"></i>
+                        <h3>No responsibilities defined</h3>
+                        <p>Responsibilities help define what each role is accountable for</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="table-container" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border);">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-tertiary);">
+                                <th style="text-align: left; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Name</th>
+                                <th style="text-align: left; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Description</th>
+                                <th style="text-align: left; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Roles Using</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allResponsibilities.map(resp => `
+                                <tr>
+                                    <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light);">
+                                        <strong>${escapeHtml(resp.name)}</strong>
+                                    </td>
+                                    <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary);">
+                                        ${resp.description ? escapeHtml(resp.description) : '-'}
+                                    </td>
+                                    <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light);">
+                                        ${resp.role_count || 0}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Modal handlers
+        function openCreateRoleModal() {
+            editingRoleId = null;
+            document.getElementById('modal-title').textContent = 'Create New Role';
+            document.getElementById('save-btn').textContent = 'Create Role';
+            document.getElementById('role-form').reset();
+
+            // Clear checkboxes
+            document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#responsibility-selector input').forEach(cb => cb.checked = false);
+
+            document.getElementById('role-modal').classList.add('active');
+        }
+
+        async function editRole(id) {
+            const role = allRoles.find(r => r.id === id);
+            if (!role) return;
+
+            editingRoleId = id;
+            document.getElementById('modal-title').textContent = 'Edit Role';
+            document.getElementById('save-btn').textContent = 'Save Changes';
+            document.getElementById('role-id').value = id;
+            document.getElementById('role-title').value = role.title;
+            document.getElementById('role-level').value = role.role_level;
+            document.getElementById('role-department').value = role.department_id;
+            document.getElementById('role-description').value = role.description || '';
+
+            // Set tag checkboxes
+            document.querySelectorAll('#tag-selector input').forEach(cb => {
+                cb.checked = role.tags?.some(t => t.id === cb.value);
+            });
+
+            // Set responsibility checkboxes
+            document.querySelectorAll('#responsibility-selector input').forEach(cb => {
+                cb.checked = role.responsibilities?.some(r => r.id === cb.value);
+            });
+
+            document.getElementById('role-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('role-modal').classList.remove('active');
+            editingRoleId = null;
+        }
+
+        // Templates modal
+        async function openTemplatesModal() {
+            document.getElementById('templates-modal').classList.add('active');
+
+            try {
+                const response = await fetch('/api/roles/templates');
+                const data = await response.json();
+
+                const container = document.getElementById('templates-list');
+                if (data.success && data.data.length > 0) {
+                    container.innerHTML = data.data.map(template => `
+                        <div class="role-card" style="margin-bottom: 1rem; cursor: pointer;" onclick="useTemplate('${template.id}')">
+                            <div class="role-card-header">
+                                <div class="role-info">
+                                    <div class="role-title">${escapeHtml(template.title)}</div>
+                                    <div class="role-department">
+                                        <i data-lucide="building-2"></i>
+                                        ${getDepartmentName(template.department_id)}
+                                    </div>
+                                </div>
+                                <span class="role-level ${template.role_level}">${formatLevel(template.role_level)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    lucide.createIcons();
+                } else {
+                    container.innerHTML = '<p style="color: var(--text-muted);">No templates available</p>';
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        function closeTemplatesModal() {
+            document.getElementById('templates-modal').classList.remove('active');
+        }
+
+        async function useTemplate(templateId) {
+            try {
+                const response = await fetch(`/api/roles/templates/${templateId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const template = data.data;
+                    closeTemplatesModal();
+                    openCreateRoleModal();
+
+                    // Pre-fill form with template data
+                    document.getElementById('role-title').value = template.title;
+                    document.getElementById('role-level').value = template.role_level;
+                    document.getElementById('role-department').value = template.department_id;
+                    document.getElementById('role-description').value = template.description || '';
+                }
+            } catch (error) {
+                console.error('Error using template:', error);
+            }
+        }
+
+        // Save role
+        async function saveRole(event) {
+            event.preventDefault();
+
+            const selectedTags = Array.from(document.querySelectorAll('#tag-selector input:checked')).map(cb => cb.value);
+            const selectedResponsibilities = Array.from(document.querySelectorAll('#responsibility-selector input:checked')).map(cb => cb.value);
+
+            const roleData = {
+                title: document.getElementById('role-title').value.trim(),
+                role_level: document.getElementById('role-level').value,
+                department_id: document.getElementById('role-department').value,
+                description: document.getElementById('role-description').value.trim() || null,
+                tag_ids: selectedTags,
+                responsibility_ids: selectedResponsibilities
+            };
+
+            try {
+                const url = editingRoleId ? `/api/roles/${editingRoleId}` : '/api/roles';
+                const method = editingRoleId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(roleData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal();
+                    await loadRoles();
+                    showSuccess(editingRoleId ? 'Role updated successfully' : 'Role created successfully');
+                } else {
+                    showError(data.error || 'Failed to save role');
+                }
+            } catch (error) {
+                console.error('Error saving role:', error);
+                showError('Failed to save role');
+            }
+        }
+
+        // Delete role
+        function deleteRole(id, title) {
+            deletingRoleId = id;
+            document.getElementById('delete-role-name').textContent = title;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+            deletingRoleId = null;
+        }
+
+        async function confirmDelete() {
+            if (!deletingRoleId) return;
+
+            try {
+                const response = await fetch(`/api/roles/${deletingRoleId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeDeleteModal();
+                    await loadRoles();
+                    showSuccess('Role deleted successfully');
+                } else {
+                    showError(data.error || 'Failed to delete role');
+                }
+            } catch (error) {
+                console.error('Error deleting role:', error);
+                showError('Failed to delete role');
+            }
+        }
+
+        // Utility functions
+        function getDepartmentName(id) {
+            const dept = departments.find(d => d.id === id);
+            return dept ? dept.name : id;
+        }
+
+        function formatLevel(level) {
+            const levels = {
+                executive: 'Executive',
+                director: 'Director',
+                manager: 'Manager',
+                supervisor: 'Supervisor',
+                ic: 'IC'
+            };
+            return levels[level] || level;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showSuccess(message) {
+            console.log('Success:', message);
+        }
+
+        function showError(message) {
+            alert(message);
+        }
+    </script>
+</body>
+</html>

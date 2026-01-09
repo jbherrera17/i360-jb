@@ -44,6 +44,10 @@ const departmentStrategyRoutes = require('./routes/department-strategy');
 const governanceRoutes = require('./routes/governance');
 const integrityRoutes = require('./routes/integrity');
 const workflowsRoutes = require('./routes/workflows');
+const tagsRoutes = require('./routes/tags');
+const departmentRolesRoutes = require('./routes/department-roles');
+const userProfileRoutes = require('./routes/user-profile');
+const synerginexusRoutes = require('./routes/synerginexus');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -116,7 +120,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/strategy120', '/strategy120.html', '/execute120', '/execute120.html',
     '/guides', '/guides.html', '/admin', '/admin.html', '/profile', '/profile.html',
     '/workflow-run', '/workflow-run.html', '/workflow-builder', '/workflow-builder.html',
-    '/system-health', '/system-health.html'];
+    '/system-health', '/system-health.html', '/synerginexus', '/synerginexus.html',
+    '/tags', '/tags.html', '/roles', '/roles.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -326,6 +331,10 @@ function initializeServices() {
         app.use('/api/governance', governanceRoutes);
         app.use('/api/integrity', integrityRoutes);
         app.use('/api/workflows', workflowsRoutes);
+        app.use('/api/tags', tagsRoutes(supabase));
+        app.use('/api/roles', departmentRolesRoutes(supabase));
+        app.use('/api/user-profile', userProfileRoutes(supabase));
+        app.use('/api/synerginexus', synerginexusRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Auth routes registered');
         console.log('  ✅ Onboarding routes registered');
@@ -345,6 +354,10 @@ function initializeServices() {
         console.log('  ✅ Strategy 120 routes registered');
         console.log('  ✅ Execute 120 routes registered');
         console.log('  ✅ Workflows routes registered');
+        console.log('  ✅ Tags routes registered (Phase 3.0)');
+        console.log('  ✅ Department Roles routes registered (Phase 3.0)');
+        console.log('  ✅ User Profile routes registered (Phase 3.0)');
+        console.log('  ✅ SynergiNexus routes registered (Phase 3.0)');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()
@@ -507,6 +520,19 @@ app.get('/workflow-run', (req, res) => {
 // Login page
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// SynergiNexus pages (Phase 3.0)
+app.get('/synerginexus', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/synerginexus.html'));
+});
+
+app.get('/tags', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/tags.html'));
+});
+
+app.get('/roles', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/roles.html'));
 });
 
 // ============================================

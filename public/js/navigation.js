@@ -78,6 +78,16 @@ const navConfig = {
             ]
         },
         {
+            id: 'synerginexus',
+            label: 'SynergiNexus',
+            icon: 'brain-circuit',
+            items: [
+                { href: '/synerginexus.html', icon: 'shield-check', label: 'Governance' },
+                { href: '/tags.html', icon: 'tags', label: 'Tag Management' },
+                { href: '/roles.html', icon: 'user-cog', label: 'Role Management' }
+            ]
+        },
+        {
             id: 'admin',
             label: 'Administration',
             icon: 'settings',
