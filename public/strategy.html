@@ -528,81 +528,7 @@
             background: var(--border);
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: all 0.2s;
-            padding: 2rem;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            max-height: calc(100vh - 4rem);
-            overflow: hidden;
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .modal-header h2 {
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.25rem;
-        }
-
-        .modal-close:hover {
-            color: var(--text-primary);
-        }
-
-        .modal-body {
-            padding: 1.25rem;
-            overflow-y: auto;
-            max-height: calc(100vh - 12rem);
-        }
-
-        .modal-footer {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
+        /* Modal styles handled by modal-manager.js */
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -1087,8 +1013,8 @@
 
     <!-- Theme Modal -->
     <div class="modal-overlay" id="themeModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal" id="theme-modal-dialog">
+            <div class="modal-header" id="theme-modal-header">
                 <h2><i data-lucide="compass"></i> <span id="themeModalTitle">Add Strategic Theme</span></h2>
                 <button class="modal-close" onclick="closeThemeModal()">
                     <i data-lucide="x"></i>
@@ -1138,8 +1064,8 @@
 
     <!-- Objective Modal -->
     <div class="modal-overlay" id="objectiveModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal" id="objective-modal-dialog">
+            <div class="modal-header" id="objective-modal-header">
                 <h2><i data-lucide="target"></i> <span id="objectiveModalTitle">Add Objective</span></h2>
                 <button class="modal-close" onclick="closeObjectiveModal()">
                     <i data-lucide="x"></i>
@@ -1173,8 +1099,8 @@
 
     <!-- Link OKR Modal -->
     <div class="modal-overlay" id="linkOkrModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal" id="link-okr-modal-dialog">
+            <div class="modal-header" id="link-okr-modal-header">
                 <h2><i data-lucide="link"></i> Link to Strategic Objective</h2>
                 <button class="modal-close" onclick="closeLinkOkrModal()">
                     <i data-lucide="x"></i>
@@ -1216,8 +1142,8 @@
 
     <!-- Agent Chat Modal -->
     <div class="modal-overlay" id="agentChatModal">
-        <div class="modal-content agent-modal">
-            <div class="modal-header">
+        <div class="modal agent-modal" id="agent-chat-modal-dialog">
+            <div class="modal-header" id="agent-chat-modal-header">
                 <h2>
                     <i data-lucide="bot"></i>
                     <span id="chatAgentName">Agent</span>
@@ -1244,7 +1170,7 @@
 
     <!-- Scripts -->
     <script src="/js/supabase.js"></script>
-    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 
@@ -1271,6 +1197,27 @@
         let selectedCategory = 'all';
         let currentChatAgent = null;
         let aiPanelExpanded = false;
+
+        // Modal managers
+        let themeModalManager = null;
+        let objectiveModalManager = null;
+        let linkOkrModalManager = null;
+        let agentChatModalManager = null;
+
+        // Initialize modal managers
+        if (typeof ModalManager !== 'undefined') {
+            themeModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 500 });
+            themeModalManager.init('theme-modal-dialog', 'theme-modal-header', 'themeModal');
+
+            objectiveModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 500 });
+            objectiveModalManager.init('objective-modal-dialog', 'objective-modal-header', 'objectiveModal');
+
+            linkOkrModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 500 });
+            linkOkrModalManager.init('link-okr-modal-dialog', 'link-okr-modal-header', 'linkOkrModal');
+
+            agentChatModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 700 });
+            agentChatModalManager.init('agent-chat-modal-dialog', 'agent-chat-modal-header', 'agentChatModal');
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1539,12 +1486,20 @@
             document.getElementById('themeIcon').value = theme?.icon || 'compass';
             document.getElementById('themeColor').value = theme?.color || '#6366f1';
 
-            document.getElementById('themeModal').classList.add('active');
+            if (themeModalManager) {
+                themeModalManager.open();
+            } else {
+                document.getElementById('themeModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeThemeModal() {
-            document.getElementById('themeModal').classList.remove('active');
+            if (themeModalManager) {
+                themeModalManager.close();
+            } else {
+                document.getElementById('themeModal').classList.remove('active');
+            }
             editingThemeId = null;
         }
 
@@ -1706,12 +1661,20 @@
             themeSelect.innerHTML = '<option value="">Select a theme...</option>' +
                 themes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
 
-            document.getElementById('objectiveModal').classList.add('active');
+            if (objectiveModalManager) {
+                objectiveModalManager.open();
+            } else {
+                document.getElementById('objectiveModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeObjectiveModal() {
-            document.getElementById('objectiveModal').classList.remove('active');
+            if (objectiveModalManager) {
+                objectiveModalManager.close();
+            } else {
+                document.getElementById('objectiveModal').classList.remove('active');
+            }
             currentPerspectiveId = null;
             editingObjectiveId = null;
         }
@@ -1864,12 +1827,20 @@
                 document.getElementById('linkContribution').value = '';
             }
 
-            document.getElementById('linkOkrModal').classList.add('active');
+            if (linkOkrModalManager) {
+                linkOkrModalManager.open();
+            } else {
+                document.getElementById('linkOkrModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeLinkOkrModal() {
-            document.getElementById('linkOkrModal').classList.remove('active');
+            if (linkOkrModalManager) {
+                linkOkrModalManager.close();
+            } else {
+                document.getElementById('linkOkrModal').classList.remove('active');
+            }
             linkingOkrId = null;
         }
 
@@ -2168,7 +2139,11 @@
                 </div>
             `;
             document.getElementById('agentChatInput').value = '';
-            document.getElementById('agentChatModal').classList.add('active');
+            if (agentChatModalManager) {
+                agentChatModalManager.open();
+            } else {
+                document.getElementById('agentChatModal').classList.add('active');
+            }
             lucide.createIcons();
 
             // Focus input
@@ -2179,7 +2154,11 @@
 
         // Close agent chat modal
         function closeAgentChatModal() {
-            document.getElementById('agentChatModal').classList.remove('active');
+            if (agentChatModalManager) {
+                agentChatModalManager.close();
+            } else {
+                document.getElementById('agentChatModal').classList.remove('active');
+            }
             currentChatAgent = null;
         }
 

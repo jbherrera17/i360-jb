@@ -642,80 +642,7 @@
             }
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s;
-            padding: 2rem;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-overlay .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 500px;
-            max-height: calc(100vh - 4rem);
-            overflow: hidden;
-            transform: scale(0.95);
-            transition: transform 0.2s;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-header h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            max-height: 60vh;
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
+        /* Modal styles handled by modal-manager.js */
 
         .form-group {
             margin-bottom: 1rem;
@@ -948,8 +875,8 @@
 
     <!-- Add/Edit Section Modal -->
     <div class="modal-overlay" id="sectionModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal" id="section-modal-dialog">
+            <div class="modal-header" id="section-modal-header">
                 <h2 id="sectionModalTitle">Add Section</h2>
                 <button class="modal-close" onclick="closeSectionModal()">
                     <i data-lucide="x"></i>
@@ -994,10 +921,20 @@
         let editingSectionId = null;
         let historyPage = 1;
 
+        // Modal manager
+        let sectionModalManager = null;
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             setupTabs();
+
+            // Initialize modal manager if available
+            if (typeof ModalManager !== 'undefined') {
+                sectionModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 500 });
+                sectionModalManager.init('section-modal-dialog', 'section-modal-header', 'sectionModal');
+            }
+
             await loadConfig();
             await loadAgents();
             await loadTodaysBriefing();
@@ -1129,7 +1066,11 @@
             document.getElementById('sectionAgent').value = '';
             document.getElementById('sectionPrompt').value = '';
             document.getElementById('sectionIcon').value = 'file-text';
-            document.getElementById('sectionModal').classList.add('active');
+            if (sectionModalManager) {
+                sectionModalManager.open();
+            } else {
+                document.getElementById('sectionModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
@@ -1143,12 +1084,20 @@
             document.getElementById('sectionAgent').value = section.agent_id || '';
             document.getElementById('sectionPrompt').value = section.prompt_template || '';
             document.getElementById('sectionIcon').value = section.icon || 'file-text';
-            document.getElementById('sectionModal').classList.add('active');
+            if (sectionModalManager) {
+                sectionModalManager.open();
+            } else {
+                document.getElementById('sectionModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeSectionModal() {
-            document.getElementById('sectionModal').classList.remove('active');
+            if (sectionModalManager) {
+                sectionModalManager.close();
+            } else {
+                document.getElementById('sectionModal').classList.remove('active');
+            }
             editingSectionId = null;
         }
 
@@ -1451,7 +1400,7 @@
             setTimeout(() => toast.remove(), 3000);
         }
     </script>
-    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Actions Specific Styles */
@@ -443,100 +444,7 @@
             margin-right: auto;
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: all 0.2s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        .modal {
-            position: relative;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            width: 80vw;
-            max-width: 900px;
-            min-width: 400px;
-            height: auto;
-            min-height: 300px;
-            max-height: 85vh;
-            overflow: hidden;
-            transform: scale(0.95);
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            resize: both;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .modal-header h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 6px;
-        }
-
-        .modal-close:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            flex: 1;
-            min-height: 0;
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            flex-shrink: 0;
-        }
+        /* Modal styles handled by modal-manager.js */
 
         /* Templates Grid */
         .templates-grid {
@@ -700,19 +608,6 @@
             gap: 0.35rem;
         }
 
-        /* Modal resize handle indicator */
-        .modal::after {
-            content: '';
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            width: 12px;
-            height: 12px;
-            background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%);
-            opacity: 0.3;
-            pointer-events: none;
-            border-radius: 0 0 8px 0;
-        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -847,8 +742,8 @@
 
     <!-- Create Action Modal -->
     <div class="modal-overlay" id="createModal">
-        <div class="modal">
-            <div class="modal-header">
+        <div class="modal" id="create-modal-dialog">
+            <div class="modal-header" id="create-modal-header">
                 <h2><i data-lucide="zap"></i> Create Action</h2>
                 <button class="modal-close" onclick="closeCreateModal()">
                     <i data-lucide="x"></i>
@@ -881,8 +776,8 @@
 
     <!-- Execute Action Modal -->
     <div class="modal-overlay" id="executeModal">
-        <div class="modal execute-modal">
-            <div class="modal-header">
+        <div class="modal execute-modal" id="execute-modal-dialog">
+            <div class="modal-header" id="execute-modal-header">
                 <div class="execute-header-info">
                     <div class="execute-icon" id="executeActionIcon">
                         <i data-lucide="zap"></i>
@@ -940,8 +835,8 @@
 
     <!-- Edit Action Modal -->
     <div class="modal-overlay" id="editModal">
-        <div class="modal">
-            <div class="modal-header">
+        <div class="modal" id="edit-modal-dialog">
+            <div class="modal-header" id="edit-modal-header">
                 <h2><i data-lucide="edit"></i> Edit Action</h2>
                 <button class="modal-close" onclick="closeEditModal()">
                     <i data-lucide="x"></i>
@@ -1003,6 +898,23 @@
         let currentSuite = 'all';
         let currentDepartment = '';
         let currentUserId = null;
+
+        // Modal managers
+        let createModalManager = null;
+        let executeModalManager = null;
+        let editModalManager = null;
+
+        // Initialize modal managers
+        if (typeof ModalManager !== 'undefined') {
+            createModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 700 });
+            createModalManager.init('create-modal-dialog', 'create-modal-header', 'createModal');
+
+            executeModalManager = new ModalManager({ minWidth: 500, minHeight: 400, defaultWidth: 900 });
+            executeModalManager.init('execute-modal-dialog', 'execute-modal-header', 'executeModal');
+
+            editModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 600 });
+            editModalManager.init('edit-modal-dialog', 'edit-modal-header', 'editModal');
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1280,11 +1192,19 @@
             `).join('');
 
             lucide.createIcons();
-            document.getElementById('createModal').classList.add('active');
+            if (createModalManager) {
+                createModalManager.open();
+            } else {
+                document.getElementById('createModal').classList.add('active');
+            }
         }
 
         function closeCreateModal() {
-            document.getElementById('createModal').classList.remove('active');
+            if (createModalManager) {
+                createModalManager.close();
+            } else {
+                document.getElementById('createModal').classList.remove('active');
+            }
         }
 
         function selectTemplate(slug) {
@@ -1364,12 +1284,20 @@
             document.getElementById('editStatus').value = action.status || 'active';
             document.getElementById('editDepartment').value = action.department_id || '';
 
-            document.getElementById('editModal').classList.add('active');
             lucide.createIcons();
+            if (editModalManager) {
+                editModalManager.open();
+            } else {
+                document.getElementById('editModal').classList.add('active');
+            }
         }
 
         function closeEditModal() {
-            document.getElementById('editModal').classList.remove('active');
+            if (editModalManager) {
+                editModalManager.close();
+            } else {
+                document.getElementById('editModal').classList.remove('active');
+            }
         }
 
         async function saveAction() {
@@ -1483,11 +1411,19 @@
             document.getElementById('executeBtn').innerHTML = '<i data-lucide="play" style="width:16px;height:16px;"></i> Run Action';
 
             lucide.createIcons();
-            document.getElementById('executeModal').classList.add('active');
+            if (executeModalManager) {
+                executeModalManager.open();
+            } else {
+                document.getElementById('executeModal').classList.add('active');
+            }
         }
 
         function closeExecuteModal() {
-            document.getElementById('executeModal').classList.remove('active');
+            if (executeModalManager) {
+                executeModalManager.close();
+            } else {
+                document.getElementById('executeModal').classList.remove('active');
+            }
             currentAction = null;
         }
 

@@ -5,75 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SynergiNexus | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f7;
-            --bg-tertiary: #e8e8ed;
-            --bg-hover: #f0f0f5;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-muted: #aeaeb2;
-            --border: #d2d2d7;
-            --border-light: #e5e5ea;
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-            --sidebar-width: 260px;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #0f0f1a;
-            --bg-secondary: #1a1a2e;
-            --bg-tertiary: #252540;
-            --bg-hover: #2a2a45;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0b0;
-            --text-muted: #6b6b80;
-            --border: #2a2a40;
-            --border-light: #353550;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .app-layout { display: flex; min-height: 100vh; }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-        }
-
-        .main-container {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            max-width: 1400px;
-            flex: 1;
-        }
+        /* Base styles handled by /css/styles.css */
 
         .page-header {
             display: flex;
@@ -525,76 +462,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal {
-            background: var(--bg-primary);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-20px);
-            transition: transform 0.3s;
-        }
-
-        .modal-overlay.active .modal {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .modal-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-secondary);
-            padding: 0.25rem;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-        }
+        /* Modal styles handled by modal-manager.js */
 
         /* Form Elements */
         .form-group {
@@ -658,6 +526,9 @@
                     <button class="btn btn-secondary" onclick="refreshDashboard()">
                         <i data-lucide="refresh-cw"></i>
                         Refresh
+                    </button>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
                     </button>
                 </div>
             </div>
@@ -778,8 +649,8 @@
 
     <!-- Value Modal -->
     <div class="modal-overlay" id="value-modal">
-        <div class="modal">
-            <div class="modal-header">
+        <div class="modal" id="value-modal-dialog">
+            <div class="modal-header" id="value-modal-header">
                 <h3 class="modal-title">Add Governance Value</h3>
                 <button class="modal-close" onclick="closeValueModal()">
                     <i data-lucide="x"></i>
@@ -816,8 +687,8 @@
 
     <!-- Conflict Modal -->
     <div class="modal-overlay" id="conflict-modal">
-        <div class="modal">
-            <div class="modal-header">
+        <div class="modal" id="conflict-modal-dialog">
+            <div class="modal-header" id="conflict-modal-header">
                 <h3 class="modal-title">Log Governance Conflict</h3>
                 <button class="modal-close" onclick="closeConflictModal()">
                     <i data-lucide="x"></i>
@@ -852,7 +723,8 @@
         </div>
     </div>
 
-    <script src="js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script>
         // State
         let digmConfigs = [];
@@ -860,9 +732,27 @@
         let conflicts = [];
         let escalationRules = [];
 
+        // Modal managers
+        let valueModalManager = null;
+        let conflictModalManager = null;
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Initialize help modal
+            HelpModal.init({
+                helpFile: '/api/docs/synerginexus-user-guide.md',
+                title: 'SynergiNexus Guide'
+            });
+
+            // Initialize modal managers
+            valueModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 520 });
+            valueModalManager.init('value-modal-dialog', 'value-modal-header', 'value-modal');
+
+            conflictModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 520 });
+            conflictModalManager.init('conflict-modal-dialog', 'conflict-modal-header', 'conflict-modal');
+
             await loadDashboard();
         });
 
@@ -928,7 +818,8 @@
             };
 
             container.innerHTML = layers.map(layer => {
-                const configs = digmConfigs.filter(c => c.layer === layer);
+                // digmConfigs is an object with layer keys, not a flat array
+                const configs = digmConfigs[layer] || [];
 
                 return `
                     <div class="digm-layer-card">
@@ -1176,20 +1067,20 @@
         // Modal handlers
         function openValueModal() {
             document.getElementById('value-form').reset();
-            document.getElementById('value-modal').classList.add('active');
+            valueModalManager.open();
         }
 
         function closeValueModal() {
-            document.getElementById('value-modal').classList.remove('active');
+            valueModalManager.close();
         }
 
         function openConflictModal() {
             document.getElementById('conflict-form').reset();
-            document.getElementById('conflict-modal').classList.add('active');
+            conflictModalManager.open();
         }
 
         function closeConflictModal() {
-            document.getElementById('conflict-modal').classList.remove('active');
+            conflictModalManager.close();
         }
 
         // Save handlers
@@ -1285,7 +1176,9 @@
         }
 
         function viewConfig(id) {
-            const config = digmConfigs.find(c => c.id === id);
+            // digmConfigs is an object with layer keys, need to flatten to find by id
+            const allConfigs = Object.values(digmConfigs).flat();
+            const config = allConfigs.find(c => c.id === id);
             if (!config) return;
 
             alert(`Config: ${config.config_key}\n\nValue:\n${JSON.stringify(config.config_value, null, 2)}`);

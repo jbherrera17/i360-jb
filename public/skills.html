@@ -467,92 +467,7 @@
             margin-right: auto;
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: all 0.2s;
-            padding: 2rem;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        .modal-overlay .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 700px;
-            max-height: calc(100vh - 4rem);
-            overflow: hidden;
-            transform: scale(0.95);
-            transition: transform 0.2s;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            position: relative;
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-header h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 6px;
-        }
-
-        .modal-close:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            max-height: 60vh;
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
+        /* Modal styles handled by modal-manager.js */
 
         /* Skill Detail View */
         .skill-detail-header {
@@ -799,8 +714,8 @@
 
     <!-- Skill Detail Modal -->
     <div class="modal-overlay" id="detailModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal" id="detail-modal-dialog">
+            <div class="modal-header" id="detail-modal-header">
                 <h2 id="modalTitle"><i data-lucide="wand-2"></i> Skill Details</h2>
                 <button class="modal-close" onclick="closeDetailModal()">
                     <i data-lucide="x"></i>
@@ -825,8 +740,8 @@
 
     <!-- Import Modal -->
     <div class="modal-overlay" id="importModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal" id="import-modal-dialog">
+            <div class="modal-header" id="import-modal-header">
                 <h2><i data-lucide="upload"></i> Import Skill</h2>
                 <button class="modal-close" onclick="closeImportModal()">
                     <i data-lucide="x"></i>
@@ -870,9 +785,23 @@ Your skill instructions here..."></textarea>
         let currentDepartment = '';
         let selectedSkill = null;
 
+        // Modal managers
+        let detailModalManager = null;
+        let importModalManager = null;
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Initialize modal managers
+            if (typeof ModalManager !== 'undefined') {
+                detailModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 700 });
+                detailModalManager.init('detail-modal-dialog', 'detail-modal-header', 'detailModal');
+
+                importModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 550 });
+                importModalManager.init('import-modal-dialog', 'import-modal-header', 'importModal');
+            }
+
             await fetchDepartments();
             await loadCategories();
             await loadSkills();
@@ -1149,11 +1078,19 @@ Your skill instructions here..."></textarea>
             `;
 
             lucide.createIcons();
-            document.getElementById('detailModal').classList.add('active');
+            if (detailModalManager) {
+                detailModalManager.open();
+            } else {
+                document.getElementById('detailModal').classList.add('active');
+            }
         }
 
         function closeDetailModal() {
-            document.getElementById('detailModal').classList.remove('active');
+            if (detailModalManager) {
+                detailModalManager.close();
+            } else {
+                document.getElementById('detailModal').classList.remove('active');
+            }
             selectedSkill = null;
         }
 
@@ -1216,11 +1153,19 @@ Your skill instructions here..."></textarea>
 
         // Import modal
         function showImportModal() {
-            document.getElementById('importModal').classList.add('active');
+            if (importModalManager) {
+                importModalManager.open();
+            } else {
+                document.getElementById('importModal').classList.add('active');
+            }
         }
 
         function closeImportModal() {
-            document.getElementById('importModal').classList.remove('active');
+            if (importModalManager) {
+                importModalManager.close();
+            } else {
+                document.getElementById('importModal').classList.remove('active');
+            }
             document.getElementById('importContent').value = '';
         }
 
@@ -1258,7 +1203,7 @@ Your skill instructions here..."></textarea>
             window.location.href = '/skill-creator.html';
         }
     </script>
-    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Parthenon Specific Styles */
@@ -664,6 +665,93 @@
             max-width: 800px !important;
         }
 
+        /* Modal Form Inputs - Dark Theme */
+        .modal-content .form-group input,
+        .modal-content .form-group textarea,
+        .modal-content .form-group select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .modal-content .form-group input:focus,
+        .modal-content .form-group textarea:focus,
+        .modal-content .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .modal-content .form-group input::placeholder,
+        .modal-content .form-group textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .modal-content .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .modal-content .form-group select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-content .form-group input[type="color"] {
+            width: 60px;
+            height: 38px;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .modal-content .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-content .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-content .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            cursor: move;
+        }
+
+        .modal-content .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .modal-content .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
         .form-help {
             font-size: 0.8rem;
             color: var(--text-muted);
@@ -734,123 +822,7 @@
             margin-top: 0.5rem;
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: all 0.2s;
-            padding: 2rem;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        .modal-overlay .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 600px;
-            max-height: calc(100vh - 4rem);
-            overflow: hidden;
-            transform: scale(0.95);
-            transition: transform 0.2s;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            position: relative;
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-header h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 6px;
-        }
-
-        .modal-close:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            max-height: 60vh;
-        }
-
-        .modal-body .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .modal-body .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .modal-body .form-group input,
-        .modal-body .form-group select,
-        .modal-body .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .modal-body .form-group input:focus,
-        .modal-body .form-group select:focus,
-        .modal-body .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
+        /* Modal styles handled by modal-manager.js */
 
         /* Strategy Alignment Styles */
         .stat-icon.alignment { background: rgba(16, 185, 129, 0.15); color: #10b981; }
@@ -1342,8 +1314,8 @@
 
     <!-- Department Modal -->
     <div class="modal-overlay" id="deptModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content" id="dept-modal-dialog">
+            <div class="modal-header" id="dept-modal-header">
                 <h2><i data-lucide="building-2"></i> <span id="deptModalTitle">Add Department</span></h2>
                 <button class="modal-close" onclick="closeDeptModal()">
                     <i data-lucide="x"></i>
@@ -1378,8 +1350,8 @@
 
     <!-- Role Modal -->
     <div class="modal-overlay" id="roleModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content" id="role-modal-dialog">
+            <div class="modal-header" id="role-modal-header">
                 <h2><i data-lucide="user"></i> <span id="roleModalTitle">Add Role</span></h2>
                 <button class="modal-close" onclick="closeRoleModal()">
                     <i data-lucide="x"></i>
@@ -1421,8 +1393,8 @@
 
     <!-- OKR Modal -->
     <div class="modal-overlay" id="okrModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content" id="okr-modal-dialog">
+            <div class="modal-header" id="okr-modal-header">
                 <h2><i data-lucide="target"></i> <span id="okrModalTitle">Add OKR</span></h2>
                 <button class="modal-close" onclick="closeOKRModal()">
                     <i data-lucide="x"></i>
@@ -1541,8 +1513,8 @@
 
     <!-- Process Modal -->
     <div class="modal-overlay" id="processModal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content" id="process-modal-dialog">
+            <div class="modal-header" id="process-modal-header">
                 <h2><i data-lucide="workflow"></i> <span id="processModalTitle">Add Process</span></h2>
                 <button class="modal-close" onclick="closeProcessModal()">
                     <i data-lucide="x"></i>
@@ -1602,8 +1574,8 @@
 
     <!-- Import Process Modal -->
     <div class="modal-overlay" id="importProcessModal">
-        <div class="modal-content modal-wide">
-            <div class="modal-header">
+        <div class="modal-content modal-wide" id="import-process-modal-dialog">
+            <div class="modal-header" id="import-process-modal-header">
                 <h2><i data-lucide="upload"></i> Import Process</h2>
                 <button class="modal-close" onclick="closeImportProcessModal()">
                     <i data-lucide="x"></i>
@@ -1672,9 +1644,35 @@ Or paste JSON:
         let currentOKRStrategyLinks = [];
         let availableObjectives = [];
 
+        // Modal managers
+        let deptModalManager = null;
+        let roleModalManager = null;
+        let okrModalManager = null;
+        let processModalManager = null;
+        let importProcessModalManager = null;
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Initialize modal managers
+            if (typeof ModalManager !== 'undefined') {
+                deptModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 550 });
+                deptModalManager.init('dept-modal-dialog', 'dept-modal-header', 'deptModal');
+
+                roleModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 550 });
+                roleModalManager.init('role-modal-dialog', 'role-modal-header', 'roleModal');
+
+                okrModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 600 });
+                okrModalManager.init('okr-modal-dialog', 'okr-modal-header', 'okrModal');
+
+                processModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 600 });
+                processModalManager.init('process-modal-dialog', 'process-modal-header', 'processModal');
+
+                importProcessModalManager = new ModalManager({ minWidth: 500, minHeight: 400, defaultWidth: 800 });
+                importProcessModalManager.init('import-process-modal-dialog', 'import-process-modal-header', 'importProcessModal');
+            }
+
             await loadOverview();
             await loadDepartments();
             await loadRoles();
@@ -2091,11 +2089,19 @@ Or paste JSON:
             document.getElementById('deptDescription').value = '';
             document.getElementById('deptIcon').value = 'building-2';
             document.getElementById('deptColor').value = '#6366f1';
-            document.getElementById('deptModal').classList.add('active');
+            if (deptModalManager) {
+                deptModalManager.open();
+            } else {
+                document.getElementById('deptModal').classList.add('active');
+            }
         }
 
         function closeDeptModal() {
-            document.getElementById('deptModal').classList.remove('active');
+            if (deptModalManager) {
+                deptModalManager.close();
+            } else {
+                document.getElementById('deptModal').classList.remove('active');
+            }
         }
 
         function editDepartment(id) {
@@ -2108,7 +2114,11 @@ Or paste JSON:
             document.getElementById('deptDescription').value = dept.description || '';
             document.getElementById('deptIcon').value = dept.icon || 'building-2';
             document.getElementById('deptColor').value = dept.color || '#6366f1';
-            document.getElementById('deptModal').classList.add('active');
+            if (deptModalManager) {
+                deptModalManager.open();
+            } else {
+                document.getElementById('deptModal').classList.add('active');
+            }
         }
 
         async function saveDepartment() {
@@ -2150,11 +2160,19 @@ Or paste JSON:
             document.getElementById('roleDepartment').value = '';
             document.getElementById('roleLevel').value = 'individual';
             document.getElementById('roleDescription').value = '';
-            document.getElementById('roleModal').classList.add('active');
+            if (roleModalManager) {
+                roleModalManager.open();
+            } else {
+                document.getElementById('roleModal').classList.add('active');
+            }
         }
 
         function closeRoleModal() {
-            document.getElementById('roleModal').classList.remove('active');
+            if (roleModalManager) {
+                roleModalManager.close();
+            } else {
+                document.getElementById('roleModal').classList.remove('active');
+            }
         }
 
         async function saveRole() {
@@ -2200,7 +2218,11 @@ Or paste JSON:
             document.getElementById('roleDepartment').value = role.department_id || '';
             document.getElementById('roleLevel').value = role.level || 'individual';
             document.getElementById('roleDescription').value = role.description || '';
-            document.getElementById('roleModal').classList.add('active');
+            if (roleModalManager) {
+                roleModalManager.open();
+            } else {
+                document.getElementById('roleModal').classList.add('active');
+            }
         }
 
         // Delete Department
@@ -2259,12 +2281,20 @@ Or paste JSON:
             document.getElementById('okrStrategyLinksPanel').style.display = 'none';
             currentOKRStrategyLinks = [];
 
-            document.getElementById('okrModal').classList.add('active');
+            if (okrModalManager) {
+                okrModalManager.open();
+            } else {
+                document.getElementById('okrModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeOKRModal() {
-            document.getElementById('okrModal').classList.remove('active');
+            if (okrModalManager) {
+                okrModalManager.close();
+            } else {
+                document.getElementById('okrModal').classList.remove('active');
+            }
         }
 
         function populateOKRDeptSelect() {
@@ -2292,7 +2322,11 @@ Or paste JSON:
             document.getElementById('addStrategyLinkForm').classList.remove('active');
             loadOKRStrategyLinks(id);
 
-            document.getElementById('okrModal').classList.add('active');
+            if (okrModalManager) {
+                okrModalManager.open();
+            } else {
+                document.getElementById('okrModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
@@ -2614,12 +2648,20 @@ Or paste JSON:
             document.getElementById('processStatus').value = 'draft';
             populateProcessDeptSelect();
             renderProcessSteps();
-            document.getElementById('processModal').classList.add('active');
+            if (processModalManager) {
+                processModalManager.open();
+            } else {
+                document.getElementById('processModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeProcessModal() {
-            document.getElementById('processModal').classList.remove('active');
+            if (processModalManager) {
+                processModalManager.close();
+            } else {
+                document.getElementById('processModal').classList.remove('active');
+            }
         }
 
         function populateProcessDeptSelect() {
@@ -2643,7 +2685,11 @@ Or paste JSON:
             document.getElementById('processStatus').value = proc.status || 'draft';
             populateProcessDeptSelect();
             renderProcessSteps();
-            document.getElementById('processModal').classList.add('active');
+            if (processModalManager) {
+                processModalManager.open();
+            } else {
+                document.getElementById('processModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
@@ -2784,12 +2830,20 @@ Or paste JSON:
             deptSelect.innerHTML = '<option value="">Select department...</option>' +
                 departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
 
-            document.getElementById('importProcessModal').classList.add('active');
+            if (importProcessModalManager) {
+                importProcessModalManager.open();
+            } else {
+                document.getElementById('importProcessModal').classList.add('active');
+            }
             lucide.createIcons();
         }
 
         function closeImportProcessModal() {
-            document.getElementById('importProcessModal').classList.remove('active');
+            if (importProcessModalManager) {
+                importProcessModalManager.close();
+            } else {
+                document.getElementById('importProcessModal').classList.remove('active');
+            }
         }
 
         function parseImportData(text) {
@@ -2943,7 +2997,6 @@ Or paste JSON:
             }
         }
     </script>
-    <script src="/js/navigation.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

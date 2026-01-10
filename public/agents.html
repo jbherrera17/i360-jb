@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -1095,83 +1096,11 @@
             font-size: 0.85rem;
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Override global styles.css .modal - it uses :not(.hidden) which makes modals visible */
-        .modal-overlay .modal {
-            /* Reset global positioning */
-            position: static;
-            top: auto;
-            left: auto;
-            right: auto;
-            bottom: auto;
-            /* Inherit visibility from parent .modal-overlay */
-            opacity: 1;
-            visibility: inherit;
-            /* Agent-specific modal styles */
-            background: var(--bg-primary);
-            border-radius: 16px;
-            width: 90%;
-            max-width: 700px;
-            min-width: 400px;
-            min-height: 300px;
-            max-height: 90vh;
-            overflow: hidden;
-            box-shadow: var(--shadow-lg);
-            transform: scale(0.95);
-            transition: transform 0.2s;
-            resize: both;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        /* Modal styles handled by modal-manager.js */
+        /* Agent-specific modal overrides */
         .modal-header h2 {
             font-size: 1.25rem;
             font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-        }
-
-        .modal-close:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
         }
 
         .modal-body {
@@ -2228,8 +2157,8 @@
 
     <!-- Create/Edit Agent Modal -->
     <div class="modal-overlay" id="agentModal">
-        <div class="modal">
-            <div class="modal-header">
+        <div class="modal" id="agent-modal-dialog">
+            <div class="modal-header" id="agent-modal-header">
                 <h2 id="modalTitle">New Agent</h2>
                 <button class="modal-close" id="modalClose">
                     <i data-lucide="x" style="width:20px;height:20px;"></i>
@@ -2374,8 +2303,8 @@
 
     <!-- Add Context Modal -->
     <div class="modal-overlay" id="contextModal">
-        <div class="modal" style="max-width: 550px;">
-            <div class="modal-header">
+        <div class="modal" id="context-modal-dialog">
+            <div class="modal-header" id="context-modal-header">
                 <h2>Add Context Asset</h2>
                 <button class="modal-close" id="contextModalClose">
                     <i data-lucide="x" style="width:20px;height:20px;"></i>
@@ -2522,6 +2451,19 @@
         const emptyState = document.getElementById('emptyState');
         const agentModal = document.getElementById('agentModal');
         const contextModal = document.getElementById('contextModal');
+
+        // Modal managers
+        let agentModalManager = null;
+        let contextModalManager = null;
+
+        // Initialize modal managers when DOM ready
+        if (typeof ModalManager !== 'undefined') {
+            agentModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 700 });
+            agentModalManager.init('agent-modal-dialog', 'agent-modal-header', 'agentModal');
+
+            contextModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 550 });
+            contextModalManager.init('context-modal-dialog', 'context-modal-header', 'contextModal');
+        }
 
         // =========================================================================
         // API Functions
@@ -3063,11 +3005,19 @@
 
             updatePlatformFields();
             updateExecutionModeFields();
-            agentModal.classList.add('active');
+            if (agentModalManager) {
+                agentModalManager.open();
+            } else {
+                agentModal.classList.add('active');
+            }
         }
 
         function closeModal() {
-            agentModal.classList.remove('active');
+            if (agentModalManager) {
+                agentModalManager.close();
+            } else {
+                agentModal.classList.remove('active');
+            }
             editingAgent = null;
         }
 
@@ -3081,11 +3031,19 @@
             populateContextTypeFilter();
             populateContextAssetSelect('');
             updateInjectionModeHint();
-            contextModal.classList.add('active');
+            if (contextModalManager) {
+                contextModalManager.open();
+            } else {
+                contextModal.classList.add('active');
+            }
         }
 
         function closeContextModal() {
-            contextModal.classList.remove('active');
+            if (contextModalManager) {
+                contextModalManager.close();
+            } else {
+                contextModal.classList.remove('active');
+            }
             document.getElementById('contextTypeFilter').value = '';
             document.getElementById('contextAssetSelect').value = '';
             document.getElementById('contextInjectionMode').value = 'always';
@@ -4107,7 +4065,7 @@
 
         init();
     </script>
-    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

@@ -1247,35 +1247,51 @@ function formatFullDate(dateString) {
 // ============================================
 
 /**
+ * Generate modal manager instance
+ */
+let generateModalManager = null;
+
+/**
  * Open the generate modal
  */
 function openGenerateModal() {
     console.log('Opening generate modal...');
-    const modal = document.getElementById('generateModal');
-    if (modal) {
-        modal.classList.add('active');
-        // Populate asset type dropdown
-        populateGenerateTypeSelect();
-        // Refresh icons in modal
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-        console.log('Generate modal opened, asset types:', state.assetTypes.length);
-    } else {
-        console.error('Generate modal not found!');
+
+    // Initialize modal manager if not done yet
+    if (!generateModalManager && typeof ModalManager !== 'undefined') {
+        generateModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 600 });
+        generateModalManager.init('generate-modal-dialog', 'generate-modal-header', 'generateModal');
     }
+
+    if (generateModalManager) {
+        generateModalManager.open();
+    } else {
+        // Fallback if modal manager not available
+        const modal = document.getElementById('generateModal');
+        if (modal) modal.classList.add('active');
+    }
+
+    // Populate asset type dropdown
+    populateGenerateTypeSelect();
+    // Refresh icons in modal
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    console.log('Generate modal opened, asset types:', state.assetTypes.length);
 }
 
 /**
  * Close the generate modal
  */
 function closeGenerateModal() {
-    const modal = document.getElementById('generateModal');
-    if (modal) {
-        modal.classList.remove('active');
-        // Reset form
-        resetGenerateForm();
+    if (generateModalManager) {
+        generateModalManager.close();
+    } else {
+        const modal = document.getElementById('generateModal');
+        if (modal) modal.classList.remove('active');
     }
+    // Reset form
+    resetGenerateForm();
 }
 
 /**
