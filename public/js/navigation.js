@@ -334,20 +334,20 @@ function generateUserProfileHTML() {
             <button class="user-menu-btn" onclick="toggleUserMenu()" title="User menu">
                 <i data-lucide="more-vertical"></i>
             </button>
-        </div>
-        <div class="user-menu" id="userMenu">
-            <a href="/profile.html" class="user-menu-item">
-                <i data-lucide="user"></i>
-                <span>Profile</span>
-            </a>
-            <a href="/admin.html" class="user-menu-item ${role !== 'admin' ? 'hidden' : ''}">
-                <i data-lucide="settings"></i>
-                <span>Admin Settings</span>
-            </a>
-            <button class="user-menu-item logout" onclick="handleLogout()">
-                <i data-lucide="log-out"></i>
-                <span>Sign Out</span>
-            </button>
+            <div class="user-menu" id="userMenu">
+                <a href="/profile.html" class="user-menu-item">
+                    <i data-lucide="user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="/admin.html" class="user-menu-item ${role !== 'admin' ? 'hidden' : ''}">
+                    <i data-lucide="settings"></i>
+                    <span>Admin Settings</span>
+                </a>
+                <button class="user-menu-item logout" onclick="handleLogout()">
+                    <i data-lucide="log-out"></i>
+                    <span>Sign Out</span>
+                </button>
+            </div>
         </div>
     `;
 }
@@ -445,6 +445,48 @@ function initNavigation() {
 
     // Setup user menu close on outside click
     setupUserMenuClose();
+
+    // Setup scroll preservation for when lucide icons are replaced
+    setupScrollPreservation();
+
+    // Update active nav item and scroll into view
+    updateActiveNavItem();
+}
+
+/**
+ * Setup scroll preservation to maintain scroll position
+ * when external code (like lucide.createIcons()) modifies sidebar content
+ */
+function setupScrollPreservation() {
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (!sidebarNav) return;
+
+    // Use MutationObserver to detect when icons are replaced
+    const observer = new MutationObserver(() => {
+        // If we have a stored target scroll position, restore it
+        const targetScroll = parseInt(sidebarNav.dataset.targetScroll);
+        if (!isNaN(targetScroll) && targetScroll > 0) {
+            // Use requestAnimationFrame to ensure DOM has settled
+            requestAnimationFrame(() => {
+                if (sidebarNav.scrollTop !== targetScroll) {
+                    sidebarNav.scrollTop = targetScroll;
+                }
+            });
+        }
+    });
+
+    // Observe changes to child elements (icon replacements)
+    observer.observe(sidebarNav, {
+        childList: true,
+        subtree: true,
+        attributes: false
+    });
+
+    // Also preserve scroll on manual user scrolling
+    sidebarNav.addEventListener('scroll', () => {
+        // Update the target scroll when user manually scrolls
+        sidebarNav.dataset.targetScroll = sidebarNav.scrollTop;
+    }, { passive: true });
 }
 
 /**
@@ -473,9 +515,14 @@ function updateActiveNavItem() {
     const activeGroup = getActiveGroup();
 
     // Update item active states
+    let activeItem = null;
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
         const href = item.getAttribute('href');
-        item.classList.toggle('active', href === activePath);
+        const isActive = href === activePath;
+        item.classList.toggle('active', isActive);
+        if (isActive) {
+            activeItem = item;
+        }
     });
 
     // Expand group containing active item
@@ -485,6 +532,47 @@ function updateActiveNavItem() {
             groupEl.classList.remove('collapsed');
         }
     }
+
+    // Scroll active item into view within sidebar-nav container
+    if (activeItem) {
+        // Wait for group expansion animation to complete before scrolling
+        setTimeout(() => {
+            scrollActiveItemIntoView(activeItem);
+        }, 250); // Wait for group expand animation
+    }
+}
+
+/**
+ * Scroll the active nav item into view if it's not already visible
+ * Only scrolls if item is outside the visible area of sidebar-nav
+ */
+function scrollActiveItemIntoView(activeItem) {
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (!sidebarNav || !activeItem) return;
+
+    // Get positions relative to viewport
+    const navRect = sidebarNav.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+
+    // Check if item is already fully visible within the nav container
+    const isVisible = itemRect.top >= navRect.top &&
+                      itemRect.bottom <= navRect.bottom;
+
+    if (isVisible) {
+        // Item is already visible, no need to scroll
+        return;
+    }
+
+    // Calculate how far to scroll to center the item
+    const itemCenterY = itemRect.top + (itemRect.height / 2);
+    const navCenterY = navRect.top + (navRect.height / 2);
+    const scrollOffset = itemCenterY - navCenterY;
+
+    // Apply scroll
+    sidebarNav.scrollTop = Math.max(0, sidebarNav.scrollTop + scrollOffset);
+
+    // Store the scroll position to restore if external events reset it
+    sidebarNav.dataset.targetScroll = sidebarNav.scrollTop;
 }
 
 /**

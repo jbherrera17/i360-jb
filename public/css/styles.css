@@ -175,6 +175,7 @@ select {
     left: 0;
     bottom: 0;
     z-index: 100;
+    overflow: hidden;
 }
 
 .sidebar-header {
@@ -206,6 +207,7 @@ select {
 .sidebar-nav {
     padding: var(--spacing-md);
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -360,7 +362,7 @@ select {
 .sidebar-footer {
     padding: var(--spacing-md);
     border-top: 1px solid var(--border);
-    margin-top: auto;
+    flex-shrink: 0;
     position: relative;
 }
 
@@ -1208,7 +1210,32 @@ select {
    MODALS
    ============================================ */
 
-.modal {
+/* Modal overlay - covers entire screen when active */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--transition-base), visibility var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Legacy .modal as overlay (for backwards compatibility) */
+.modal:not(.modal-overlay .modal) {
     position: fixed;
     top: 0;
     left: 0;
@@ -1221,17 +1248,35 @@ select {
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: all var(--transition-base);
 }
 
-.modal.active,
-.modal:not(.hidden) {
+.modal:not(.modal-overlay .modal).active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .modal.hidden {
     display: none;
+}
+
+/* Modal dialog inside overlay */
+.modal-overlay .modal {
+    position: absolute;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    width: 560px;
+    max-width: 90%;
+    max-height: 85vh;
+    min-width: 400px;
+    min-height: 300px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
