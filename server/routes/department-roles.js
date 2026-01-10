@@ -155,6 +155,40 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/roles/responsibilities
+     * List all responsibilities (must be before /:id route)
+     */
+    router.get('/responsibilities', async (req, res) => {
+        try {
+            const { parent_id, search } = req.query;
+
+            let query = supabase
+                .from('responsibilities')
+                .select('*, parent:parent_id(id, name)')
+                .eq('is_active', true);
+
+            if (parent_id === 'null') {
+                query = query.is('parent_id', null);
+            } else if (parent_id) {
+                query = query.eq('parent_id', parent_id);
+            }
+
+            if (search) {
+                query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+            }
+
+            const { data, error } = await query.order('name');
+
+            if (error) throw error;
+
+            res.json({ success: true, data: data || [] });
+        } catch (error) {
+            console.error('Error listing responsibilities:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
      * GET /api/roles/:id
      * Get single role with full details
      */
