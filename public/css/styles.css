@@ -65,7 +65,7 @@
     --bg-secondary: #1a1a2e;
     --bg-tertiary: #252540;
     --bg-code: #0d0d14;
-    --bg-hover: rgba(99, 102, 241, 0.1);
+    --bg-hover: rgba(99, 102, 241, 0.15);
 
     --text-primary: #ffffff;
     --text-secondary: #a0a0b0;
@@ -110,6 +110,8 @@ html {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    height: 100%;
 }
 
 body {
@@ -117,8 +119,8 @@ body {
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
 }
 
 a {
@@ -151,9 +153,11 @@ select {
    APP LAYOUT
    ============================================ */
 
-.app-container {
+.app-container,
+.app-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* ============================================
@@ -202,6 +206,27 @@ select {
 .sidebar-nav {
     padding: var(--spacing-md);
     flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .nav-item {
@@ -216,17 +241,23 @@ select {
     transition: all var(--transition-fast);
 }
 
-.nav-item:hover {
+.nav-item:hover,
+.sidebar .nav-item:hover,
+.sidebar-nav .nav-item:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
 }
 
-.nav-item.active {
+.nav-item.active,
+.sidebar .nav-item.active,
+.sidebar-nav .nav-item.active {
     background: var(--primary);
     color: white;
 }
 
-.nav-item.active:hover {
+.nav-item.active:hover,
+.sidebar .nav-item.active:hover,
+.sidebar-nav .nav-item.active:hover {
     background: var(--primary-dark);
 }
 
@@ -279,7 +310,9 @@ select {
     transition: all var(--transition-fast);
 }
 
-.nav-group-header:hover {
+.nav-group-header:hover,
+.sidebar .nav-group-header:hover,
+.sidebar-nav .nav-group-header:hover {
     background: var(--bg-hover);
     color: var(--text-secondary);
 }
@@ -328,20 +361,25 @@ select {
     padding: var(--spacing-md);
     border-top: 1px solid var(--border);
     margin-top: auto;
+    position: relative;
 }
 
 .sidebar-footer .nav-item {
     margin-bottom: 0;
 }
 
-.sidebar-footer .theme-toggle {
+.sidebar-footer .theme-toggle,
+.sidebar .sidebar-footer .theme-toggle {
     width: 100%;
+    height: auto;
     justify-content: flex-start;
     background: transparent;
     border: none;
     cursor: pointer;
     font-family: inherit;
     font-size: inherit;
+    position: static;
+    display: flex;
 }
 
 .sidebar-section {
@@ -361,12 +399,6 @@ select {
     letter-spacing: 0.05em;
 }
 
-.sidebar-footer {
-    margin-top: auto;
-    padding: var(--spacing-md);
-    border-top: 1px solid var(--border);
-}
-
 /* User Profile in Sidebar */
 .user-profile {
     display: flex;
@@ -376,6 +408,7 @@ select {
     border-radius: var(--radius-md);
     background: var(--bg-tertiary);
     margin-bottom: var(--spacing-sm);
+    position: relative;
 }
 
 .user-profile .user-avatar {
@@ -445,24 +478,21 @@ select {
     height: 18px;
 }
 
-.sidebar-footer {
-    position: relative;
-}
-
 .user-menu {
     display: none;
     flex-direction: column;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
-    overflow: hidden;
+    overflow: visible;
     position: absolute;
     bottom: 100%;
-    left: var(--spacing-md);
-    right: var(--spacing-md);
+    left: 0;
+    right: 0;
     margin-bottom: var(--spacing-sm);
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     border: 1px solid var(--border);
-    z-index: 100;
+    z-index: 1000;
+    pointer-events: auto;
 }
 
 .user-menu.open {
@@ -483,6 +513,7 @@ select {
     width: 100%;
     text-align: left;
     transition: all var(--transition-base);
+    pointer-events: auto;
 }
 
 .user-menu-item:hover {
@@ -528,12 +559,20 @@ select {
    MAIN CONTENT
    ============================================ */
 
-.main-content {
+.main-content,
+.main-container {
     flex: 1;
     margin-left: var(--sidebar-width);
-    min-height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.main-container {
+    padding: var(--spacing-xl);
+    max-width: 1400px;
 }
 
 .page-header {
@@ -1444,7 +1483,8 @@ select {
         transform: translateX(0);
     }
     
-    .main-content {
+    .main-content,
+    .main-container {
         margin-left: 0;
     }
 }
