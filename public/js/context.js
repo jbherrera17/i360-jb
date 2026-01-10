@@ -515,9 +515,9 @@ async function saveAsset() {
 
 async function deleteAsset(id) {
     if (!confirm('Are you sure you want to delete this asset?')) return;
-    
+
     try {
-        await apiCall(`/api/context/assets/${id}`, {
+        await apiCall(`/api/context/assets/${id}?hard=true`, {
             method: 'DELETE'
         });
         

@@ -72,19 +72,8 @@ const navConfig = {
             label: 'Tools',
             icon: 'wrench',
             items: [
-                { href: '/parthenon.html', icon: 'landmark', label: 'Parthenon' },
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
                 { href: '/guides.html', icon: 'book-open', label: 'Guides' }
-            ]
-        },
-        {
-            id: 'synerginexus',
-            label: 'SynergiNexus',
-            icon: 'brain-circuit',
-            items: [
-                { href: '/synerginexus.html', icon: 'shield-check', label: 'Governance' },
-                { href: '/tags.html', icon: 'tags', label: 'Tag Management' },
-                { href: '/roles.html', icon: 'user-cog', label: 'Role Management' }
             ]
         },
         {
@@ -93,8 +82,12 @@ const navConfig = {
             icon: 'settings',
             adminOnly: true,
             items: [
+                { href: '/parthenon.html', icon: 'landmark', label: 'Parthenon' },
                 { href: '/admin.html', icon: 'users', label: 'User Management' },
-                { href: '/system-health.html', icon: 'activity', label: 'System Health' }
+                { href: '/system-health.html', icon: 'activity', label: 'System Health' },
+                { href: '/synerginexus.html', icon: 'brain-circuit', label: 'SynergiNexus' },
+                { href: '/tags.html', icon: 'tags', label: 'Tag Management' },
+                { href: '/roles.html', icon: 'user-cog', label: 'Role Management' }
             ]
         }
     ]

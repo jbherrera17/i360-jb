@@ -455,7 +455,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
             }
 
             // Post-process based on type
-            const userId = req.user?.id || null;
+            const userId = req.userId || req.user?.id || null;
             let savedRecord = null;
             let defaultVisibility = 'team'; // Default visibility
 
