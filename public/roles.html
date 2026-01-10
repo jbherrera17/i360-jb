@@ -5,75 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Role Management | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f7;
-            --bg-tertiary: #e8e8ed;
-            --bg-hover: #f0f0f5;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-muted: #aeaeb2;
-            --border: #d2d2d7;
-            --border-light: #e5e5ea;
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-            --sidebar-width: 260px;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #0f0f1a;
-            --bg-secondary: #1a1a2e;
-            --bg-tertiary: #252540;
-            --bg-hover: #2a2a45;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0b0;
-            --text-muted: #6b6b80;
-            --border: #2a2a40;
-            --border-light: #353550;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .app-layout { display: flex; min-height: 100vh; }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-        }
-
-        .main-container {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            max-width: 1400px;
-            flex: 1;
-        }
+        /* Base styles handled by /css/styles.css */
 
         .page-header {
             display: flex;
@@ -378,14 +315,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
             z-index: 2000;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s;
+            transition: opacity 0.3s, visibility 0.3s;
         }
 
         .modal-overlay.active {
@@ -394,36 +328,37 @@
         }
 
         .modal {
+            position: absolute;
             background: var(--bg-primary);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-20px);
-            transition: transform 0.3s;
-        }
-
-        .modal-overlay.active .modal {
-            transform: translateY(0);
+            border-radius: 12px;
+            min-width: 400px;
+            min-height: 300px;
+            width: 560px;
+            height: auto;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.25rem 1.5rem;
+            padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            background: var(--bg-primary);
-            z-index: 1;
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+            cursor: move;
+            user-select: none;
         }
 
         .modal-title {
             font-weight: 600;
             font-size: 1.1rem;
+            color: var(--text-primary);
         }
 
         .modal-close {
@@ -431,26 +366,103 @@
             border: none;
             cursor: pointer;
             color: var(--text-secondary);
-            padding: 0.25rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
         .modal-close:hover {
             color: var(--text-primary);
+            background: var(--bg-tertiary);
         }
 
         .modal-body {
             padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
         }
 
         .modal-footer {
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
-            padding: 1rem 1.5rem;
+            padding: 1rem 1.25rem;
             border-top: 1px solid var(--border);
-            position: sticky;
-            bottom: 0;
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            z-index: 10;
+        }
+
+        .resize-handle.top {
+            top: -4px;
+            left: 10px;
+            right: 10px;
+            height: 8px;
+            cursor: ns-resize;
+        }
+
+        .resize-handle.bottom {
+            bottom: -4px;
+            left: 10px;
+            right: 10px;
+            height: 8px;
+            cursor: ns-resize;
+        }
+
+        .resize-handle.left {
+            left: -4px;
+            top: 10px;
+            bottom: 10px;
+            width: 8px;
+            cursor: ew-resize;
+        }
+
+        .resize-handle.right {
+            right: -4px;
+            top: 10px;
+            bottom: 10px;
+            width: 8px;
+            cursor: ew-resize;
+        }
+
+        .resize-handle.top-left {
+            top: -4px;
+            left: -4px;
+            width: 14px;
+            height: 14px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle.top-right {
+            top: -4px;
+            right: -4px;
+            width: 14px;
+            height: 14px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.bottom-left {
+            bottom: -4px;
+            left: -4px;
+            width: 14px;
+            height: 14px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.bottom-right {
+            bottom: -4px;
+            right: -4px;
+            width: 14px;
+            height: 14px;
+            cursor: nwse-resize;
         }
 
         /* Form Elements */
@@ -463,6 +475,11 @@
             font-weight: 500;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
         }
 
         .form-input, .form-select, .form-textarea {
@@ -492,20 +509,27 @@
             gap: 1rem;
         }
 
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Tag Selector */
         .tag-selector {
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 0.75rem;
-            max-height: 200px;
+            padding: 0.5rem;
+            max-height: 180px;
             overflow-y: auto;
+            background: var(--bg-secondary);
         }
 
         .tag-option {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem;
+            padding: 0.5rem 0.625rem;
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.15s;
@@ -515,8 +539,12 @@
             background: var(--bg-hover);
         }
 
-        .tag-option input {
+        .tag-option input[type="checkbox"] {
             margin: 0;
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            accent-color: var(--primary);
         }
 
         .tag-option-label {
@@ -524,6 +552,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.9rem;
         }
 
         /* Tabs */
@@ -627,6 +656,9 @@
                         <i data-lucide="plus"></i>
                         New Role
                     </button>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
                 </div>
             </div>
 
@@ -696,9 +728,19 @@
     </div>
 
     <!-- Create/Edit Role Modal -->
-    <div class="modal-overlay" id="role-modal">
-        <div class="modal">
-            <div class="modal-header">
+    <div class="modal-overlay" id="role-modal" onclick="handleOverlayClick(event)">
+        <div class="modal" id="role-modal-dialog">
+            <!-- Resize handles -->
+            <div class="resize-handle top" data-resize="top"></div>
+            <div class="resize-handle bottom" data-resize="bottom"></div>
+            <div class="resize-handle left" data-resize="left"></div>
+            <div class="resize-handle right" data-resize="right"></div>
+            <div class="resize-handle top-left" data-resize="top-left"></div>
+            <div class="resize-handle top-right" data-resize="top-right"></div>
+            <div class="resize-handle bottom-left" data-resize="bottom-left"></div>
+            <div class="resize-handle bottom-right" data-resize="bottom-right"></div>
+
+            <div class="modal-header" id="role-modal-header">
                 <h3 class="modal-title" id="modal-title">Create New Role</h3>
                 <button class="modal-close" onclick="closeModal()">
                     <i data-lucide="x"></i>
@@ -803,7 +845,7 @@
         </div>
     </div>
 
-    <script src="js/navigation.js"></script>
+    <script src="/js/help-modal.js"></script>
     <script>
         // State
         let allRoles = [];
@@ -816,6 +858,13 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Initialize help modal
+            HelpModal.init({
+                helpFile: '/api/docs/roles-user-guide.md',
+                title: 'Role Management Guide'
+            });
+
             await Promise.all([
                 loadRoles(),
                 loadTags(),
@@ -948,7 +997,7 @@
             const levelFilter = document.getElementById('level-filter').value;
 
             let filteredRoles = allRoles.filter(role => {
-                const matchesSearch = role.title.toLowerCase().includes(searchTerm) ||
+                const matchesSearch = role.name.toLowerCase().includes(searchTerm) ||
                                      (role.description && role.description.toLowerCase().includes(searchTerm));
                 const matchesDept = !deptFilter || role.department_id === deptFilter;
                 const matchesLevel = !levelFilter || role.role_level === levelFilter;
@@ -971,7 +1020,7 @@
                 <div class="role-card">
                     <div class="role-card-header">
                         <div class="role-info">
-                            <div class="role-title">${escapeHtml(role.title)}</div>
+                            <div class="role-title">${escapeHtml(role.name)}</div>
                             <div class="role-department">
                                 <i data-lucide="building-2"></i>
                                 ${getDepartmentName(role.department_id)}
@@ -1017,7 +1066,7 @@
                             <i data-lucide="pencil"></i>
                             Edit
                         </button>
-                        <button class="icon-btn danger" onclick="deleteRole('${role.id}', '${escapeHtml(role.title)}')">
+                        <button class="icon-btn danger" onclick="deleteRole('${role.id}', '${escapeHtml(role.name)}')">
                             <i data-lucide="trash-2"></i>
                         </button>
                     </div>
@@ -1112,7 +1161,7 @@
             document.getElementById('modal-title').textContent = 'Edit Role';
             document.getElementById('save-btn').textContent = 'Save Changes';
             document.getElementById('role-id').value = id;
-            document.getElementById('role-title').value = role.title;
+            document.getElementById('role-title').value = role.name;
             document.getElementById('role-level').value = role.role_level;
             document.getElementById('role-department').value = role.department_id;
             document.getElementById('role-description').value = role.description || '';
@@ -1299,6 +1348,199 @@
         function showError(message) {
             alert(message);
         }
+
+        // Handle overlay click to close modal
+        function handleOverlayClick(event) {
+            if (event.target === event.currentTarget) {
+                closeModal();
+            }
+        }
+
+        // ==========================================
+        // Modal Drag and Resize Functionality
+        // ==========================================
+
+        const modalManager = {
+            modal: null,
+            header: null,
+            isDragging: false,
+            isResizing: false,
+            resizeDirection: null,
+            startX: 0,
+            startY: 0,
+            startWidth: 0,
+            startHeight: 0,
+            startLeft: 0,
+            startTop: 0,
+
+            init(modalId, headerId) {
+                this.modal = document.getElementById(modalId);
+                this.header = document.getElementById(headerId);
+
+                if (!this.modal || !this.header) return;
+
+                // Drag handlers
+                this.header.addEventListener('mousedown', this.startDrag.bind(this));
+
+                // Resize handlers
+                this.modal.querySelectorAll('.resize-handle').forEach(handle => {
+                    handle.addEventListener('mousedown', this.startResize.bind(this));
+                });
+
+                // Global mouse events
+                document.addEventListener('mousemove', this.onMouseMove.bind(this));
+                document.addEventListener('mouseup', this.onMouseUp.bind(this));
+            },
+
+            centerModal() {
+                if (!this.modal) return;
+
+                const overlay = this.modal.parentElement;
+                const overlayRect = overlay.getBoundingClientRect();
+                const modalRect = this.modal.getBoundingClientRect();
+
+                const left = (overlayRect.width - modalRect.width) / 2;
+                const top = (overlayRect.height - modalRect.height) / 2;
+
+                this.modal.style.left = `${Math.max(0, left)}px`;
+                this.modal.style.top = `${Math.max(0, top)}px`;
+            },
+
+            startDrag(e) {
+                // Don't drag if clicking the close button
+                if (e.target.closest('.modal-close')) return;
+
+                this.isDragging = true;
+                this.startX = e.clientX;
+                this.startY = e.clientY;
+
+                const rect = this.modal.getBoundingClientRect();
+                const overlayRect = this.modal.parentElement.getBoundingClientRect();
+
+                this.startLeft = rect.left - overlayRect.left;
+                this.startTop = rect.top - overlayRect.top;
+
+                this.modal.style.transition = 'none';
+                document.body.style.userSelect = 'none';
+            },
+
+            startResize(e) {
+                e.stopPropagation();
+                this.isResizing = true;
+                this.resizeDirection = e.target.dataset.resize;
+                this.startX = e.clientX;
+                this.startY = e.clientY;
+
+                const rect = this.modal.getBoundingClientRect();
+                const overlayRect = this.modal.parentElement.getBoundingClientRect();
+
+                this.startWidth = rect.width;
+                this.startHeight = rect.height;
+                this.startLeft = rect.left - overlayRect.left;
+                this.startTop = rect.top - overlayRect.top;
+
+                this.modal.style.transition = 'none';
+                document.body.style.userSelect = 'none';
+            },
+
+            onMouseMove(e) {
+                if (this.isDragging) {
+                    const deltaX = e.clientX - this.startX;
+                    const deltaY = e.clientY - this.startY;
+
+                    const newLeft = this.startLeft + deltaX;
+                    const newTop = this.startTop + deltaY;
+
+                    // Keep modal within viewport
+                    const overlay = this.modal.parentElement;
+                    const maxLeft = overlay.clientWidth - 100;
+                    const maxTop = overlay.clientHeight - 50;
+
+                    this.modal.style.left = `${Math.max(-100, Math.min(maxLeft, newLeft))}px`;
+                    this.modal.style.top = `${Math.max(0, Math.min(maxTop, newTop))}px`;
+                }
+
+                if (this.isResizing) {
+                    const deltaX = e.clientX - this.startX;
+                    const deltaY = e.clientY - this.startY;
+                    const dir = this.resizeDirection;
+                    const minWidth = 400;
+                    const minHeight = 300;
+
+                    let newWidth = this.startWidth;
+                    let newHeight = this.startHeight;
+                    let newLeft = this.startLeft;
+                    let newTop = this.startTop;
+
+                    // Handle horizontal resize
+                    if (dir.includes('right')) {
+                        newWidth = Math.max(minWidth, this.startWidth + deltaX);
+                    }
+                    if (dir.includes('left')) {
+                        const potentialWidth = this.startWidth - deltaX;
+                        if (potentialWidth >= minWidth) {
+                            newWidth = potentialWidth;
+                            newLeft = this.startLeft + deltaX;
+                        }
+                    }
+
+                    // Handle vertical resize
+                    if (dir.includes('bottom')) {
+                        newHeight = Math.max(minHeight, this.startHeight + deltaY);
+                    }
+                    if (dir.includes('top')) {
+                        const potentialHeight = this.startHeight - deltaY;
+                        if (potentialHeight >= minHeight) {
+                            newHeight = potentialHeight;
+                            newTop = this.startTop + deltaY;
+                        }
+                    }
+
+                    this.modal.style.width = `${newWidth}px`;
+                    this.modal.style.height = `${newHeight}px`;
+                    this.modal.style.left = `${newLeft}px`;
+                    this.modal.style.top = `${newTop}px`;
+                    this.modal.style.maxHeight = 'none';
+                }
+            },
+
+            onMouseUp() {
+                this.isDragging = false;
+                this.isResizing = false;
+                this.resizeDirection = null;
+                document.body.style.userSelect = '';
+                if (this.modal) {
+                    this.modal.style.transition = '';
+                }
+            },
+
+            reset() {
+                if (!this.modal) return;
+                this.modal.style.width = '560px';
+                this.modal.style.height = '';
+                this.modal.style.maxHeight = '85vh';
+                this.centerModal();
+            }
+        };
+
+        // Initialize modal manager after DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            modalManager.init('role-modal-dialog', 'role-modal-header');
+        });
+
+        // Override openCreateRoleModal to center modal
+        const originalOpenCreateRoleModal = openCreateRoleModal;
+        openCreateRoleModal = function() {
+            originalOpenCreateRoleModal();
+            setTimeout(() => modalManager.centerModal(), 10);
+        };
+
+        // Override editRole to center modal
+        const originalEditRole = editRole;
+        editRole = async function(id) {
+            await originalEditRole(id);
+            setTimeout(() => modalManager.centerModal(), 10);
+        };
     </script>
 </body>
 </html>
