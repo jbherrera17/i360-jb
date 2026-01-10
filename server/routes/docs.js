@@ -32,7 +32,17 @@ const ALLOWED_DOCS = [
     'company-user-guide.md',
     'align120-user-guide.md',
     'strategy120-user-guide.md',
-    'how-to-use-insight-360.md'
+    'execute120-user-guide.md',
+    'workflow-user-guide.md',
+    'profile-user-guide.md',
+    'how-to-use-insight-360.md',
+    // v3.0 SynergiNexus guides
+    'synerginexus-user-guide.md',
+    'synerginexus-technical-guide.md',
+    'tags-user-guide.md',
+    'tags-technical-guide.md',
+    'roles-user-guide.md',
+    'roles-technical-guide.md'
 ];
 
 /**
