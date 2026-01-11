@@ -12,6 +12,8 @@
 
 const express = require('express');
 const agentService = require('../services/agentService');
+const integrationService = require('../services/align120IntegrationService');
+const webScraperService = require('../services/webScraperService');
 const { getUserId } = require('../utils/auth');
 
 /**
@@ -602,6 +604,188 @@ Format your response as a structured analysis with clear sections and actionable
             });
         } catch (error) {
             console.error('Error completing session:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // INTEGRATION & SYNC ENDPOINTS
+    // ============================================================================
+
+    /**
+     * POST /api/align120/sessions/:id/sync-module
+     * Sync module outputs to downstream systems (DIGM, Strategy, Parthenon, Integrity)
+     */
+    router.post('/sessions/:id/sync-module', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { moduleNum, outputs } = req.body;
+            const userId = getUserId(req);
+
+            if (!moduleNum || moduleNum < 1 || moduleNum > 5) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Valid module number (1-5) is required'
+                });
+            }
+
+            const syncResults = await integrationService.syncModule(moduleNum, id, outputs, userId);
+
+            res.json({
+                success: true,
+                data: {
+                    module: moduleNum,
+                    sync_results: syncResults
+                }
+            });
+        } catch (error) {
+            console.error('Error syncing module:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/align120/sessions/:id/generate-brief
+     * Generate the consolidated Alignment Brief
+     */
+    router.post('/sessions/:id/generate-brief', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const brief = await integrationService.generateAlignmentBrief(id);
+
+            res.json({
+                success: true,
+                data: brief
+            });
+        } catch (error) {
+            console.error('Error generating alignment brief:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/align120/sessions/:id/brief
+     * Get the Alignment Brief for a session
+     */
+    router.get('/sessions/:id/brief', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data, error } = await supabase
+                .from('alignment_briefs')
+                .select('*')
+                .eq('session_id', id)
+                .single();
+
+            if (error) {
+                // If no brief exists, generate one
+                if (error.code === 'PGRST116') {
+                    const brief = await integrationService.generateAlignmentBrief(id);
+                    return res.json({ success: true, data: brief });
+                }
+                throw error;
+            }
+
+            res.json({ success: true, data: data.brief_data });
+        } catch (error) {
+            console.error('Error getting alignment brief:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // WEB SCRAPER ENDPOINTS (Module 4 - Brand Analysis)
+    // ============================================================================
+
+    /**
+     * POST /api/align120/analyze-website
+     * Scrape and analyze a company website for brand information
+     */
+    router.post('/analyze-website', async (req, res) => {
+        try {
+            const { url, maxPages = 5, includeRawContent = false } = req.body;
+            const userId = getUserId(req);
+
+            if (!url) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Website URL is required'
+                });
+            }
+
+            const analysis = await webScraperService.analyzeWebsite(url, {
+                maxPages,
+                userId,
+                includeRawContent
+            });
+
+            res.json({
+                success: true,
+                data: analysis
+            });
+        } catch (error) {
+            console.error('Error analyzing website:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/align120/sessions/:id/analyze-website
+     * Analyze website and store results for a session
+     */
+    router.post('/sessions/:id/analyze-website', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { url, maxPages = 5 } = req.body;
+            const userId = getUserId(req);
+
+            if (!url) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Website URL is required'
+                });
+            }
+
+            // Analyze website
+            const analysis = await webScraperService.analyzeWebsite(url, {
+                maxPages,
+                userId,
+                includeRawContent: false
+            });
+
+            // Store in session
+            const { data: session } = await supabase
+                .from('align120_sessions')
+                .select('module_results')
+                .eq('id', id)
+                .single();
+
+            const moduleResults = session?.module_results || {};
+            moduleResults.website_analysis = {
+                url,
+                analyzed_at: new Date().toISOString(),
+                pages_analyzed: analysis.pages_analyzed,
+                analysis: analysis.analysis
+            };
+
+            await supabase
+                .from('align120_sessions')
+                .update({
+                    module_results: moduleResults,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id);
+
+            res.json({
+                success: true,
+                data: {
+                    session_id: id,
+                    analysis
+                }
+            });
+        } catch (error) {
+            console.error('Error analyzing website for session:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });

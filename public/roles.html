@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Role Management | Insight 360</title>
+    <title>Title Management | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
@@ -632,6 +632,120 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* 3-Column Modal Layout */
+        .modal-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            gap: 1.5rem;
+            min-height: 400px;
+        }
+
+        .modal-column {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .column-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Inline Add Form */
+        .inline-add-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .inline-add-form .form-input {
+            flex: 1;
+        }
+
+        .inline-add-form .btn {
+            flex-shrink: 0;
+            padding: 0.5rem;
+        }
+
+        /* Selector List with Checkbox + Description on Same Line */
+        .selector-list {
+            flex: 1;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            max-height: 300px;
+        }
+
+        .selector-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.625rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .selector-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .selector-item input[type="checkbox"] {
+            margin: 0;
+            margin-top: 2px;
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            accent-color: var(--primary);
+        }
+
+        .selector-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .selector-item-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .selector-item-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.125rem;
+            line-height: 1.3;
+        }
+
+        /* Expand modal width for 3 columns */
+        #role-modal-dialog.three-column {
+            width: 950px;
+            max-width: 95vw;
+        }
+
+        @media (max-width: 1024px) {
+            .modal-content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #role-modal-dialog.three-column {
+                width: 560px;
+            }
+        }
+
+        /* Responsibility Modal */
+        .responsibility-modal .modal {
+            width: 500px;
+        }
     </style>
 </head>
 <body>
@@ -644,8 +758,8 @@
             <!-- Page Header -->
             <div class="page-header">
                 <div class="header-content">
-                    <h1>Role Management</h1>
-                    <p class="header-subtitle">Define department roles and their responsibilities</p>
+                    <h1>Title Management</h1>
+                    <p class="header-subtitle">Define job titles and their responsibilities</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-secondary" onclick="openTemplatesModal()">
@@ -654,7 +768,7 @@
                     </button>
                     <button class="btn btn-primary" onclick="openCreateRoleModal()">
                         <i data-lucide="plus"></i>
-                        New Role
+                        New Title
                     </button>
                     <button class="help-btn" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
@@ -666,7 +780,7 @@
             <div class="stats-grid" id="stats-grid">
                 <div class="stat-card roles">
                     <div class="stat-value" id="total-roles">0</div>
-                    <div class="stat-label">Total Roles</div>
+                    <div class="stat-label">Total Titles</div>
                 </div>
                 <div class="stat-card responsibilities">
                     <div class="stat-value" id="total-responsibilities">0</div>
@@ -686,7 +800,7 @@
             <div class="controls-bar">
                 <div class="search-box">
                     <i data-lucide="search"></i>
-                    <input type="text" id="search-input" placeholder="Search roles..." oninput="filterRoles()">
+                    <input type="text" id="search-input" placeholder="Search titles..." oninput="filterRoles()">
                 </div>
                 <select class="filter-select" id="department-filter" onchange="filterRoles()">
                     <option value="">All Departments</option>
@@ -703,7 +817,7 @@
 
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('roles', this)">Department Roles</button>
+                <button class="tab-btn active" onclick="switchTab('roles', this)">Department Titles</button>
                 <button class="tab-btn" onclick="switchTab('responsibilities', this)">Responsibilities</button>
             </div>
 
@@ -727,9 +841,9 @@
         </main>
     </div>
 
-    <!-- Create/Edit Role Modal -->
+    <!-- Create/Edit Title Modal -->
     <div class="modal-overlay" id="role-modal" onclick="handleOverlayClick(event)">
-        <div class="modal" id="role-modal-dialog">
+        <div class="modal three-column" id="role-modal-dialog">
             <!-- Resize handles -->
             <div class="resize-handle top" data-resize="top"></div>
             <div class="resize-handle bottom" data-resize="bottom"></div>
@@ -741,7 +855,7 @@
             <div class="resize-handle bottom-right" data-resize="bottom-right"></div>
 
             <div class="modal-header" id="role-modal-header">
-                <h3 class="modal-title" id="modal-title">Create New Role</h3>
+                <h3 class="modal-title" id="modal-title">Create New Title</h3>
                 <button class="modal-close" onclick="closeModal()">
                     <i data-lucide="x"></i>
                 </button>
@@ -750,54 +864,72 @@
                 <form id="role-form" onsubmit="saveRole(event)">
                     <input type="hidden" id="role-id">
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Role Title *</label>
-                            <input type="text" class="form-input" id="role-title" required placeholder="e.g., Senior Analyst">
+                    <div class="modal-content-grid">
+                        <!-- COLUMN 1: Basic Info -->
+                        <div class="modal-column">
+                            <h4 class="column-title">Basic Information</h4>
+
+                            <div class="form-group">
+                                <label class="form-label">Department *</label>
+                                <select class="form-select" id="role-department" required>
+                                    <option value="">Select department...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Level *</label>
+                                <select class="form-select" id="role-level" required>
+                                    <option value="">Select level...</option>
+                                    <option value="ic">Individual Contributor</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="director">Director</option>
+                                    <option value="vp">Vice President</option>
+                                    <option value="c-level">C-Level Executive</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Title Name *</label>
+                                <input type="text" class="form-input" id="role-title" required placeholder="e.g., Marketing Manager">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-textarea" id="role-description" placeholder="What this title is responsible for..."></textarea>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Role Level *</label>
-                            <select class="form-select" id="role-level" required>
-                                <option value="">Select level...</option>
-                                <option value="executive">Executive</option>
-                                <option value="director">Director</option>
-                                <option value="manager">Manager</option>
-                                <option value="supervisor">Supervisor</option>
-                                <option value="ic">Individual Contributor</option>
-                            </select>
+
+                        <!-- COLUMN 2: Responsibilities -->
+                        <div class="modal-column">
+                            <h4 class="column-title">Responsibilities</h4>
+
+                            <!-- Inline add -->
+                            <div class="inline-add-form">
+                                <input type="text" class="form-input" id="new-responsibility-name" placeholder="Add new responsibility...">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="addResponsibilityInline()" title="Add Responsibility">
+                                    <i data-lucide="plus"></i>
+                                </button>
+                            </div>
+
+                            <div class="selector-list" id="responsibility-selector">
+                                <!-- Responsibilities loaded dynamically -->
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Department *</label>
-                        <select class="form-select" id="role-department" required>
-                            <option value="">Select department...</option>
-                        </select>
-                    </div>
+                        <!-- COLUMN 3: Associated Tags -->
+                        <div class="modal-column">
+                            <h4 class="column-title">Associated Tags</h4>
 
-                    <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-textarea" id="role-description" placeholder="Brief description of this role..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Associated Tags</label>
-                        <div class="tag-selector" id="tag-selector">
-                            <!-- Tags loaded dynamically -->
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Responsibilities</label>
-                        <div class="tag-selector" id="responsibility-selector">
-                            <!-- Responsibilities loaded dynamically -->
+                            <div class="selector-list" id="tag-selector">
+                                <!-- Tags loaded dynamically -->
+                            </div>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" form="role-form" id="save-btn">Create Role</button>
+                <button type="submit" class="btn btn-primary" form="role-form" id="save-btn">Create Title</button>
             </div>
         </div>
     </div>
@@ -829,7 +961,7 @@
     <div class="modal-overlay" id="delete-modal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Delete Role</h3>
+                <h3 class="modal-title">Delete Title</h3>
                 <button class="modal-close" onclick="closeDeleteModal()">
                     <i data-lucide="x"></i>
                 </button>
@@ -845,6 +977,64 @@
         </div>
     </div>
 
+    <!-- Responsibility CRUD Modal -->
+    <div class="modal-overlay responsibility-modal" id="responsibility-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="responsibility-modal-title">Add Responsibility</h3>
+                <button class="modal-close" onclick="closeResponsibilityModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="responsibility-form" onsubmit="saveResponsibility(event)">
+                    <input type="hidden" id="responsibility-id">
+
+                    <div class="form-group">
+                        <label class="form-label">Name *</label>
+                        <input type="text" class="form-input" id="responsibility-name" required placeholder="e.g., Budget planning">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="responsibility-description" placeholder="Brief description of this responsibility..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Parent Responsibility (Optional)</label>
+                        <select class="form-select" id="responsibility-parent">
+                            <option value="">None (Top-level)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeResponsibilityModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="responsibility-form" id="responsibility-save-btn">Add Responsibility</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Responsibility Confirmation Modal -->
+    <div class="modal-overlay" id="delete-responsibility-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Responsibility</h3>
+                <button class="modal-close" onclick="closeDeleteResponsibilityModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-responsibility-name"></strong>?</p>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteResponsibilityModal()">Cancel</button>
+                <button type="button" class="btn" onclick="confirmDeleteResponsibility()" style="background: var(--danger); color: white;">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/help-modal.js"></script>
     <script>
         // State
@@ -854,6 +1044,8 @@
         let departments = [];
         let editingRoleId = null;
         let deletingRoleId = null;
+        let editingResponsibilityId = null;
+        let deletingResponsibilityId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -862,7 +1054,7 @@
             // Initialize help modal
             HelpModal.init({
                 helpFile: '/api/docs/roles-user-guide.md',
-                title: 'Role Management Guide'
+                title: 'Title Management Guide'
             });
 
             await Promise.all([
@@ -955,38 +1147,71 @@
             });
         }
 
-        // Populate tag selector in form
+        // Populate tag selector in form (with checkbox + description on same line)
         function populateTagSelector() {
             const selector = document.getElementById('tag-selector');
             if (allTags.length === 0) {
-                selector.innerHTML = '<p style="color: var(--text-muted);">No tags available</p>';
+                selector.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">No tags available</p>';
                 return;
             }
 
-            selector.innerHTML = allTags.map(tag => `
-                <label class="tag-option">
-                    <input type="checkbox" name="tags" value="${tag.id}">
-                    <span class="tag-option-label">
-                        <span class="tag-chip ${tag.category}">${tag.name}</span>
-                    </span>
-                </label>
-            `).join('');
+            // Group tags by category
+            const grouped = { skill: [], domain: [], function: [] };
+            allTags.forEach(tag => {
+                if (grouped[tag.category]) {
+                    grouped[tag.category].push(tag);
+                }
+            });
+
+            let html = '';
+            Object.entries(grouped).forEach(([category, tags]) => {
+                if (tags.length > 0) {
+                    html += `<div style="margin-bottom: 0.75rem;">
+                        <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; padding: 0 0.5rem;">${category}s</div>`;
+                    html += tags.map(tag => `
+                        <label class="selector-item">
+                            <input type="checkbox" name="tags" value="${tag.id}">
+                            <div class="selector-item-content">
+                                <div class="selector-item-name">${escapeHtml(tag.name)}</div>
+                                ${tag.description ? `<div class="selector-item-desc">${escapeHtml(tag.description)}</div>` : ''}
+                            </div>
+                        </label>
+                    `).join('');
+                    html += '</div>';
+                }
+            });
+
+            selector.innerHTML = html;
         }
 
-        // Populate responsibility selector in form
+        // Populate responsibility selector in form (with checkbox + description on same line)
         function populateResponsibilitySelector() {
             const selector = document.getElementById('responsibility-selector');
             if (allResponsibilities.length === 0) {
-                selector.innerHTML = '<p style="color: var(--text-muted);">No responsibilities available</p>';
+                selector.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">No responsibilities available. Add one above.</p>';
                 return;
             }
 
             selector.innerHTML = allResponsibilities.map(resp => `
-                <label class="tag-option">
+                <label class="selector-item">
                     <input type="checkbox" name="responsibilities" value="${resp.id}">
-                    <span class="tag-option-label">${resp.name}</span>
+                    <div class="selector-item-content">
+                        <div class="selector-item-name">${escapeHtml(resp.name)}</div>
+                        ${resp.description ? `<div class="selector-item-desc">${escapeHtml(resp.description)}</div>` : ''}
+                    </div>
                 </label>
             `).join('');
+        }
+
+        // Populate responsibility parent dropdown
+        function populateResponsibilityParentSelect() {
+            const parentSelect = document.getElementById('responsibility-parent');
+            if (!parentSelect) return;
+
+            parentSelect.innerHTML = '<option value="">None (Top-level)</option>';
+            allResponsibilities.forEach(resp => {
+                parentSelect.innerHTML += `<option value="${resp.id}">${resp.name}</option>`;
+            });
         }
 
         // Render roles grid
@@ -1102,7 +1327,10 @@
                     <div class="empty-state">
                         <i data-lucide="clipboard-list"></i>
                         <h3>No responsibilities defined</h3>
-                        <p>Responsibilities help define what each role is accountable for</p>
+                        <p>Responsibilities help define what each title is accountable for</p>
+                        <button class="btn btn-primary" onclick="openResponsibilityModal()" style="margin-top: 1rem;">
+                            <i data-lucide="plus"></i> Add Responsibility
+                        </button>
                     </div>
                 `;
                 lucide.createIcons();
@@ -1110,13 +1338,19 @@
             }
 
             container.innerHTML = `
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                    <button class="btn btn-primary" onclick="openResponsibilityModal()">
+                        <i data-lucide="plus"></i> Add Responsibility
+                    </button>
+                </div>
                 <div class="table-container" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border);">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: var(--bg-tertiary);">
                                 <th style="text-align: left; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Name</th>
                                 <th style="text-align: left; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Description</th>
-                                <th style="text-align: left; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Roles Using</th>
+                                <th style="text-align: center; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Titles Using</th>
+                                <th style="text-align: right; padding: 0.875rem 1.25rem; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1128,8 +1362,16 @@
                                     <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary);">
                                         ${resp.description ? escapeHtml(resp.description) : '-'}
                                     </td>
-                                    <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light);">
+                                    <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light); text-align: center;">
                                         ${resp.role_count || 0}
+                                    </td>
+                                    <td style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light); text-align: right;">
+                                        <button class="icon-btn" onclick="editResponsibility('${resp.id}')" title="Edit">
+                                            <i data-lucide="pencil"></i>
+                                        </button>
+                                        <button class="icon-btn danger" onclick="deleteResponsibility('${resp.id}', '${escapeHtml(resp.name).replace(/'/g, "\\'")}')" title="Delete">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -1137,13 +1379,168 @@
                     </table>
                 </div>
             `;
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // Responsibility CRUD Functions
+        // ==========================================
+
+        // Open responsibility modal for create
+        function openResponsibilityModal() {
+            editingResponsibilityId = null;
+            document.getElementById('responsibility-modal-title').textContent = 'Add Responsibility';
+            document.getElementById('responsibility-save-btn').textContent = 'Add Responsibility';
+            document.getElementById('responsibility-form').reset();
+            populateResponsibilityParentSelect();
+            document.getElementById('responsibility-modal').classList.add('active');
+        }
+
+        // Open responsibility modal for edit
+        async function editResponsibility(id) {
+            const resp = allResponsibilities.find(r => r.id === id);
+            if (!resp) return;
+
+            editingResponsibilityId = id;
+            document.getElementById('responsibility-modal-title').textContent = 'Edit Responsibility';
+            document.getElementById('responsibility-save-btn').textContent = 'Save Changes';
+            document.getElementById('responsibility-id').value = id;
+            document.getElementById('responsibility-name').value = resp.name;
+            document.getElementById('responsibility-description').value = resp.description || '';
+            populateResponsibilityParentSelect();
+            document.getElementById('responsibility-parent').value = resp.parent_id || '';
+            document.getElementById('responsibility-modal').classList.add('active');
+        }
+
+        // Close responsibility modal
+        function closeResponsibilityModal() {
+            document.getElementById('responsibility-modal').classList.remove('active');
+            editingResponsibilityId = null;
+        }
+
+        // Save responsibility (create or update)
+        async function saveResponsibility(event) {
+            event.preventDefault();
+
+            const respData = {
+                name: document.getElementById('responsibility-name').value.trim(),
+                description: document.getElementById('responsibility-description').value.trim() || null,
+                parent_id: document.getElementById('responsibility-parent').value || null
+            };
+
+            try {
+                const url = editingResponsibilityId
+                    ? `/api/roles/responsibilities/${editingResponsibilityId}`
+                    : '/api/roles/responsibilities';
+                const method = editingResponsibilityId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(respData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeResponsibilityModal();
+                    await loadResponsibilities();
+                    populateResponsibilitySelector();
+                    renderResponsibilities();
+                    showSuccess(editingResponsibilityId ? 'Responsibility updated' : 'Responsibility added');
+                } else {
+                    showError(data.error || 'Failed to save responsibility');
+                }
+            } catch (error) {
+                console.error('Error saving responsibility:', error);
+                showError('Failed to save responsibility');
+            }
+        }
+
+        // Delete responsibility - open confirmation modal
+        function deleteResponsibility(id, name) {
+            deletingResponsibilityId = id;
+            document.getElementById('delete-responsibility-name').textContent = name;
+            document.getElementById('delete-responsibility-modal').classList.add('active');
+        }
+
+        // Close delete responsibility modal
+        function closeDeleteResponsibilityModal() {
+            document.getElementById('delete-responsibility-modal').classList.remove('active');
+            deletingResponsibilityId = null;
+        }
+
+        // Confirm delete responsibility
+        async function confirmDeleteResponsibility() {
+            if (!deletingResponsibilityId) return;
+
+            try {
+                const response = await fetch(`/api/roles/responsibilities/${deletingResponsibilityId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeDeleteResponsibilityModal();
+                    await loadResponsibilities();
+                    populateResponsibilitySelector();
+                    renderResponsibilities();
+                    showSuccess('Responsibility deleted');
+                } else {
+                    showError(data.error || 'Failed to delete responsibility');
+                }
+            } catch (error) {
+                console.error('Error deleting responsibility:', error);
+                showError('Failed to delete responsibility');
+            }
+        }
+
+        // Inline add responsibility from modal
+        async function addResponsibilityInline() {
+            const input = document.getElementById('new-responsibility-name');
+            const name = input.value.trim();
+
+            if (!name) {
+                input.focus();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/roles/responsibilities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description: null })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    input.value = '';
+                    await loadResponsibilities();
+                    populateResponsibilitySelector();
+
+                    // Auto-check the newly added responsibility
+                    const newCheckbox = document.querySelector(`#responsibility-selector input[value="${data.data.id}"]`);
+                    if (newCheckbox) {
+                        newCheckbox.checked = true;
+                    }
+
+                    showSuccess('Responsibility added');
+                } else {
+                    showError(data.error || 'Failed to add responsibility');
+                }
+            } catch (error) {
+                console.error('Error adding responsibility:', error);
+                showError('Failed to add responsibility');
+            }
         }
 
         // Modal handlers
         function openCreateRoleModal() {
             editingRoleId = null;
-            document.getElementById('modal-title').textContent = 'Create New Role';
-            document.getElementById('save-btn').textContent = 'Create Role';
+            document.getElementById('modal-title').textContent = 'Create New Title';
+            document.getElementById('save-btn').textContent = 'Create Title';
             document.getElementById('role-form').reset();
 
             // Clear checkboxes
@@ -1158,7 +1555,7 @@
             if (!role) return;
 
             editingRoleId = id;
-            document.getElementById('modal-title').textContent = 'Edit Role';
+            document.getElementById('modal-title').textContent = 'Edit Title';
             document.getElementById('save-btn').textContent = 'Save Changes';
             document.getElementById('role-id').value = id;
             document.getElementById('role-title').value = role.name;
@@ -1273,13 +1670,13 @@
                 if (data.success) {
                     closeModal();
                     await loadRoles();
-                    showSuccess(editingRoleId ? 'Role updated successfully' : 'Role created successfully');
+                    showSuccess(editingRoleId ? 'Title updated successfully' : 'Title created successfully');
                 } else {
-                    showError(data.error || 'Failed to save role');
+                    showError(data.error || 'Failed to save title');
                 }
             } catch (error) {
-                console.error('Error saving role:', error);
-                showError('Failed to save role');
+                console.error('Error saving title:', error);
+                showError('Failed to save title');
             }
         }
 
@@ -1308,13 +1705,13 @@
                 if (data.success) {
                     closeDeleteModal();
                     await loadRoles();
-                    showSuccess('Role deleted successfully');
+                    showSuccess('Title deleted successfully');
                 } else {
-                    showError(data.error || 'Failed to delete role');
+                    showError(data.error || 'Failed to delete title');
                 }
             } catch (error) {
-                console.error('Error deleting role:', error);
-                showError('Failed to delete role');
+                console.error('Error deleting title:', error);
+                showError('Failed to delete title');
             }
         }
 

@@ -748,6 +748,9 @@ const OnboardingWizard = (function() {
             <option value="${d.id}" ${user.department_id === d.id ? 'selected' : ''}>${d.name}</option>
         `).join('');
 
+        // Get company name from settings or default
+        const companyName = window.companySettings?.name || 'your company';
+
         return `
             <div class="profile-form">
                 <div class="profile-avatar-section">
@@ -770,11 +773,20 @@ const OnboardingWizard = (function() {
                            value="${user.display_name || ''}" placeholder="Enter your name">
                 </div>
                 <div class="profile-field">
-                    <label class="profile-label">Department</label>
-                    <select class="profile-select" id="wizardDepartment">
-                        <option value="">Select a department...</option>
+                    <label class="profile-label">Department <span style="color: var(--danger);">*</span></label>
+                    <select class="profile-select" id="wizardDepartment" required>
+                        <option value="">Select your department...</option>
                         ${deptOptions}
                     </select>
+                </div>
+                <div class="profile-field">
+                    <label class="profile-label">What's your role at ${companyName}?</label>
+                    <input type="text" class="profile-input" id="wizardTitle"
+                           value="" placeholder="e.g., Marketing Manager, Sales Rep, Analyst">
+                    <p class="profile-help-text" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        Your title helps us recommend the right AI agents and workflows for your work.
+                        <br><span style="font-size: 0.8rem; color: var(--text-muted);">Leave blank to access all resources for your department.</span>
+                    </p>
                 </div>
             </div>
         `;
@@ -903,6 +915,7 @@ const OnboardingWizard = (function() {
         const displayName = document.getElementById('wizardDisplayName')?.value;
         const department = document.getElementById('wizardDepartment')?.value;
         const selectedAvatar = document.querySelector('.profile-avatar-option.selected')?.textContent;
+        const titleInput = document.getElementById('wizardTitle')?.value?.trim();
 
         if (displayName || department || selectedAvatar) {
             try {
@@ -926,11 +939,71 @@ const OnboardingWizard = (function() {
                 Object.assign(user, updates);
                 localStorage.setItem('insight360_user', JSON.stringify(user));
 
+                // Assign title (role) to user if department is selected
+                if (department) {
+                    await assignUserTitle(user.id, department, titleInput, token);
+                }
+
                 // Mark profile as completed
                 await updateState({ profile_completed: true });
             } catch (error) {
                 console.error('Error saving profile:', error);
             }
+        }
+    }
+
+    // Assign title (department role) to user
+    async function assignUserTitle(userId, departmentId, titleInput, token) {
+        try {
+            // Fetch available titles for this department
+            const rolesRes = await fetch(`/api/roles?department_id=${departmentId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const rolesData = await rolesRes.json();
+
+            if (!rolesData.success || !rolesData.data?.length) {
+                console.log('No titles found for department');
+                return;
+            }
+
+            const departmentRoles = rolesData.data;
+            let roleToAssign = null;
+
+            if (titleInput) {
+                // Try to find a matching title (case-insensitive partial match)
+                roleToAssign = departmentRoles.find(r =>
+                    r.name.toLowerCase() === titleInput.toLowerCase() ||
+                    r.name.toLowerCase().includes(titleInput.toLowerCase())
+                );
+            }
+
+            // If no match or no input, use the system "All [Department]" title
+            if (!roleToAssign) {
+                roleToAssign = departmentRoles.find(r => r.is_system_title === true);
+            }
+
+            // Fallback to any available title if no system title exists
+            if (!roleToAssign && departmentRoles.length > 0) {
+                roleToAssign = departmentRoles[0];
+            }
+
+            if (roleToAssign) {
+                // Assign the role to the user
+                await fetch(`/api/user-profile/${userId}/roles`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        role_id: roleToAssign.id,
+                        is_primary: true
+                    })
+                });
+                console.log(`Assigned title "${roleToAssign.name}" to user`);
+            }
+        } catch (error) {
+            console.error('Error assigning title to user:', error);
         }
     }
 

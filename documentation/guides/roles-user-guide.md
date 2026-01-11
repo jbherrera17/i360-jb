@@ -1,28 +1,28 @@
-# Role Management User Guide
+# Title Management User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 9, 2026
+**Last Updated:** January 11, 2026
 
 ---
 
-## What Are Roles?
+## What Are Titles?
 
-Roles define job functions within your organization. Each role belongs to a department and has a level (like Individual Contributor or Manager). Roles determine what AI agents and workflows you can access.
+Titles define job functions within your organization. Each title belongs to a department and has a level (like Individual Contributor or Manager). Titles determine what AI agents and workflows you can access.
 
-**Key Concept:** You don't directly choose your AI tools - your role's tags automatically match you with relevant content.
+**Key Concept:** You don't directly choose your AI tools - your title's tags automatically match you with relevant content.
 
 ---
 
-## Role Components
+## Title Components
 
 ### Department
-The organizational unit the role belongs to:
+The organizational unit the title belongs to:
 - Marketing, Sales, Finance
 - HR, Operations, Executive
 - Engineering (if configured)
 
 ### Level
-Career level of the role:
+Career level of the title:
 
 | Level | Code | Typical Positions |
 |-------|------|-------------------|
@@ -32,16 +32,32 @@ Career level of the role:
 | Vice President | VP | VP, SVP |
 | C-Level | C | CEO, CFO, CMO, etc. |
 
+### Responsibilities
+Specific duties and responsibilities associated with the title. Responsibilities help define what the title involves.
+
 ### Tags
-Skills, domains, and functions associated with the role. Tags determine content matching.
+Skills, domains, and functions associated with the title. Tags determine content matching.
 
 ---
 
-## Accessing Role Management
+## System Titles
+
+Each department has a special "All [Department]" title (e.g., "All Marketing", "All Sales") that provides access to all agents and workflows tagged for that department.
+
+**When is this used?**
+- When a user doesn't specify a specific title during onboarding
+- When a user's job doesn't match any predefined title
+- For users who need broad departmental access
+
+System titles are automatically tagged with all domain-related tags for their department.
+
+---
+
+## Accessing Title Management
 
 1. Log into Insight 360
 2. In the sidebar, find **SynergiNexus** section
-3. Click **Role Management**
+3. Click **Title Management**
 
 ---
 
@@ -50,53 +66,59 @@ Skills, domains, and functions associated with the role. Tags determine content 
 ### Overview Cards
 
 Summary statistics at the top:
-- **Total Roles**: All roles in the system
+- **Total Titles**: All titles in the system
 - **Departments**: Number of departments covered
-- **Levels**: Role levels in use
-- **With Tags**: Roles that have tags assigned
+- **Levels**: Title levels in use
+- **With Tags**: Titles that have tags assigned
+
+### Tabs
+
+- **Department Titles**: View and manage titles by department
+- **Responsibilities**: Manage responsibilities that can be assigned to titles
 
 ### Department Filter
 
-Filter roles by department:
+Filter titles by department:
 - Click a department name
 - Or select "All Departments"
 
 ### Search
 
-Type to filter roles by name.
+Type to filter titles by name.
 
 ---
 
-## Viewing Roles
+## Viewing Titles
 
-### Role Cards
+### Title Cards
 
-Each role card shows:
+Each title card shows:
 - **Department badge** (colored)
-- **Role name**
+- **Title name**
 - **Level badge** (IC, Manager, etc.)
 - **Description**
 - **Tag count**
+- **System Title badge** (if applicable)
 
-### Role Details
+### Title Details
 
-Click a role to see:
+Click a title to see:
 - Full description
 - All assigned tags (by category)
 - Associated responsibilities
-- Users in this role
+- Users with this title
 
 ---
 
-## Understanding Your Role
+## Understanding Your Title
 
-### Finding Your Roles
+### Finding Your Title
 
 1. Go to your **Profile** page
-2. See **My Roles** section
-3. Your primary role is highlighted
+2. See **My Titles** section
+3. Your primary title is highlighted
 
-### What Your Role Determines
+### What Your Title Determines
 
 | Aspect | How It's Affected |
 |--------|-------------------|
@@ -105,65 +127,94 @@ Click a role to see:
 | **OKRs** | See department/level appropriate goals |
 | **Content** | Personalized to your domain |
 
-### Multiple Roles
+### Multiple Titles
 
-You can have multiple roles:
-- One **primary role** (main job function)
-- Additional roles (cross-functional work)
-- Tags from all roles are combined
+You can have multiple titles:
+- One **primary title** (main job function)
+- Additional titles (cross-functional work)
+- Tags from all titles are combined
 
 ---
 
 ## For Administrators
 
-### Creating a Role
+### Creating a Title
 
-1. Click **Add Role** button
-2. Fill in the form:
+1. Click **New Title** button
+2. The 3-column Edit modal opens:
+
+   **Column 1 - Basic Information:**
    - **Department**: Select from list
-   - **Name**: Role title
-   - **Description**: What this role does
    - **Level**: IC, Manager, Director, VP, or C-Level
-3. Click **Create**
-4. Assign tags (next step)
+   - **Title Name**: The job title
+   - **Description**: What this title does
 
-### Assigning Tags to a Role
+   **Column 2 - Responsibilities:**
+   - Check responsibilities that apply
+   - Use inline "Add" to create new responsibilities
 
-1. Find the role card
-2. Click the tag icon or **Manage Tags**
-3. Select tags from each category:
+   **Column 3 - Associated Tags:**
+   - Select tags from each category
    - Skills (what they do)
    - Domains (what area)
    - Functions (what activities)
+
+3. Click **Save Title**
+
+**Tip:** Assign 3-8 tags per title for best matching.
+
+### Managing Responsibilities
+
+Responsibilities are reusable descriptions of duties that can be assigned to multiple titles.
+
+**Creating a Responsibility:**
+1. Go to the **Responsibilities** tab
+2. Click **Add Responsibility**
+3. Enter name and description
 4. Click **Save**
 
-**Tip:** Assign 3-8 tags per role for best matching.
-
-### Editing a Role
-
-1. Find the role card
-2. Click the edit icon (pencil)
+**Editing a Responsibility:**
+1. Find the responsibility in the list
+2. Click the pencil icon
 3. Update fields
 4. Click **Save**
 
-### Deactivating a Role
+**Deleting a Responsibility:**
+1. Click the trash icon
+2. Confirm deletion
+3. Note: Cannot delete if assigned to titles
 
-1. Edit the role
+**Inline Creation:**
+- While editing a title, type a new responsibility name
+- Click the "+" button to create it immediately
+- It's automatically assigned to the current title
+
+### Editing a Title
+
+1. Find the title card
+2. Click the edit icon (pencil)
+3. Update fields in the 3-column modal
+4. Click **Save Title**
+
+### Deactivating a Title
+
+1. Edit the title
 2. Toggle "Active" to off
 3. Save
 
-**Warning:** Deactivated roles:
+**Warning:** Deactivated titles:
 - No longer appear in assignment lists
-- Users keep role until reassigned
+- Users keep title until reassigned
 - Can be reactivated later
 
 ---
 
-## Role Templates
+## Title Templates
 
-System templates are pre-defined roles for common positions:
+System templates are pre-defined titles for common positions:
 
 ### Marketing Department
+- All Marketing (System Title)
 - Content Strategist (IC)
 - Content Creator (IC)
 - Marketing Analyst (IC)
@@ -173,6 +224,7 @@ System templates are pre-defined roles for common positions:
 - CMO (C-Level)
 
 ### Sales Department
+- All Sales (System Title)
 - Sales Development Rep (IC)
 - Account Executive (IC)
 - Sales Manager (Manager)
@@ -181,6 +233,7 @@ System templates are pre-defined roles for common positions:
 - CRO (C-Level)
 
 ### Finance Department
+- All Finance (System Title)
 - Financial Analyst (IC)
 - Accountant (IC)
 - Finance Manager (Manager)
@@ -196,25 +249,36 @@ Templates can be customized or used as-is.
 
 ### For Administrators
 
-**Role Design:**
-- Match roles to actual job functions
+**Title Design:**
+- Match titles to actual job functions
 - Use clear, recognizable names
 - Write descriptions that explain responsibilities
 - Assign appropriate level
+- Add relevant responsibilities
 
 **Tag Assignment:**
 - Be specific but not excessive
 - Include domain + skills + functions
-- Review assignments when roles change
+- Review assignments when titles change
 - Audit quarterly
+
+**Responsibility Management:**
+- Create reusable responsibilities
+- Keep descriptions concise but clear
+- Group related responsibilities logically
 
 ### For Users
 
 **Understanding Your Access:**
 - Your tags determine your content
-- Request role updates through HR/Admin
-- Multiple roles = more tag coverage
-- Primary role affects dashboard defaults
+- Request title updates through HR/Admin
+- Multiple titles = more tag coverage
+- Primary title affects dashboard defaults
+
+**During Onboarding:**
+- Enter your job title when prompted
+- This helps personalize your experience
+- Leave blank to get broad department access
 
 ---
 
@@ -222,22 +286,22 @@ Templates can be customized or used as-is.
 
 **Can't see an agent I need**
 - Check if agent has matching tags
-- Verify your role has necessary tags
+- Verify your title has necessary tags
 - Contact admin about tag assignments
 
 **Wrong content appearing**
-- Check your role assignments
-- Verify tags on your roles
+- Check your title assignments
+- Verify tags on your titles
 - Clear browser cache and refresh
 
-**Role not in the list**
+**Title not in the list**
 - May need admin to create it
 - Check department filter
 - Search by partial name
 
-**Can't edit roles**
+**Can't edit titles**
 - Verify you have admin permissions
-- System templates may have restrictions
+- System titles have some restrictions
 - Contact super admin
 
 ---
@@ -246,13 +310,14 @@ Templates can be customized or used as-is.
 
 | Action | User | Dept Admin | System Admin | Super Admin |
 |--------|------|------------|--------------|-------------|
-| View all roles | ✓ | ✓ | ✓ | ✓ |
-| View role details | ✓ | ✓ | ✓ | ✓ |
-| Create roles | - | Dept only | ✓ | ✓ |
-| Edit roles | - | Dept only | ✓ | ✓ |
-| Delete roles | - | - | - | ✓ |
+| View all titles | ✓ | ✓ | ✓ | ✓ |
+| View title details | ✓ | ✓ | ✓ | ✓ |
+| Create titles | - | Dept only | ✓ | ✓ |
+| Edit titles | - | Dept only | ✓ | ✓ |
+| Delete titles | - | - | - | ✓ |
 | Assign tags | - | Dept only | ✓ | ✓ |
 | Assign users | - | Dept only | ✓ | ✓ |
+| Manage responsibilities | - | ✓ | ✓ | ✓ |
 
 ---
 
@@ -271,9 +336,11 @@ Templates can be customized or used as-is.
 
 | Term | Definition |
 |------|------------|
-| **Role** | Job function with department, level, and tags |
+| **Title** | Job function with department, level, responsibilities, and tags |
 | **Level** | Career tier (IC, Manager, Director, VP, C-Level) |
-| **Primary Role** | Main role for a user (affects defaults) |
-| **Template** | Pre-defined role that can be customized |
-| **Tag Inheritance** | Users get tags from all their roles |
+| **Primary Title** | Main title for a user (affects defaults) |
+| **System Title** | Auto-generated "All [Department]" title for broad access |
+| **Responsibility** | Specific duty that can be assigned to titles |
+| **Template** | Pre-defined title that can be customized |
+| **Tag Inheritance** | Users get tags from all their titles |
 | **Content Matching** | System connecting users to relevant agents/workflows |

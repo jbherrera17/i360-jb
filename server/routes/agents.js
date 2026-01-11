@@ -260,6 +260,151 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/agents/categories/all
+     * List ALL agent categories (including inactive) - for admin
+     */
+    router.get('/categories/all', async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('agent_categories')
+                .select('*')
+                .order('sort_order');
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data: data || []
+            });
+
+        } catch (error) {
+            console.error('Error listing all categories:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/agents/categories
+     * Create a new agent category
+     */
+    router.post('/categories', async (req, res) => {
+        try {
+            const { key, display_name, description, icon, color, sort_order } = req.body;
+
+            if (!key || !display_name) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Key and display_name are required'
+                });
+            }
+
+            const { data, error } = await supabase
+                .from('agent_categories')
+                .insert({
+                    key: key.toLowerCase().replace(/\s+/g, '_'),
+                    display_name,
+                    description: description || '',
+                    icon: icon || '📁',
+                    color: color || '#6366f1',
+                    sort_order: sort_order || 99,
+                    is_active: true
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data
+            });
+
+        } catch (error) {
+            console.error('Error creating category:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * PUT /api/agents/categories/:id
+     * Update an agent category
+     */
+    router.put('/categories/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { key, display_name, description, icon, color, sort_order, is_active } = req.body;
+
+            const updateData = {};
+            if (key !== undefined) updateData.key = key.toLowerCase().replace(/\s+/g, '_');
+            if (display_name !== undefined) updateData.display_name = display_name;
+            if (description !== undefined) updateData.description = description;
+            if (icon !== undefined) updateData.icon = icon;
+            if (color !== undefined) updateData.color = color;
+            if (sort_order !== undefined) updateData.sort_order = sort_order;
+            if (is_active !== undefined) updateData.is_active = is_active;
+
+            const { data, error } = await supabase
+                .from('agent_categories')
+                .update(updateData)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data
+            });
+
+        } catch (error) {
+            console.error('Error updating category:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * DELETE /api/agents/categories/:id
+     * Delete an agent category (soft delete - sets is_active to false)
+     */
+    router.delete('/categories/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            // Soft delete - set is_active to false
+            const { data, error } = await supabase
+                .from('agent_categories')
+                .update({ is_active: false })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                message: 'Category deactivated'
+            });
+
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * GET /api/agents/departments
      * List departments for agent assignment
      */

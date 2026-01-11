@@ -1,7 +1,7 @@
 # Tag Management User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 9, 2026
+**Last Updated:** January 11, 2026
 
 ---
 
@@ -10,8 +10,8 @@
 Tags are labels that categorize skills, expertise areas, and work functions. They connect people to the right AI agents and workflows.
 
 **How It Works:**
-1. Tags are assigned to roles
-2. Users are assigned to roles
+1. Tags are assigned to titles
+2. Users are assigned to titles
 3. Users automatically see agents/workflows matching their tags
 
 ---
@@ -90,7 +90,7 @@ Filter tags by category:
 - Category (skill, domain, function)
 - Parent tag (if hierarchical)
 - Description
-- Usage count (how many roles use it)
+- Usage count (how many titles use it)
 
 ### Understanding Tag Hierarchy
 
@@ -183,20 +183,20 @@ marketing (domain)
 
 ## Tag Assignment
 
-Tags are assigned to roles, not directly to users. See [Role Management Guide](./roles-user-guide.md) for details.
+Tags are assigned to titles, not directly to users. See [Title Management Guide](./roles-user-guide.md) for details.
 
 ### How Assignment Works
 
-1. Admin creates a role (e.g., "Marketing Manager")
-2. Admin assigns tags to role (e.g., `marketing`, `leadership`, `analytics`)
-3. Users assigned to that role inherit those tags
+1. Admin creates a title (e.g., "Marketing Manager")
+2. Admin assigns tags to title (e.g., `marketing`, `leadership`, `analytics`)
+3. Users assigned to that title inherit those tags
 4. System matches users to agents/workflows by tag overlap
 
 ### Checking Your Tags
 
 1. Go to your **Profile** page
-2. View **My Roles** section
-3. See inherited tags from all your roles
+2. View **My Titles** section
+3. See inherited tags from all your titles
 
 ---
 
@@ -233,9 +233,9 @@ Tags are assigned to roles, not directly to users. See [Role Management Guide](.
 - Contact admin to create new tag
 
 **Tag not showing correct content**
-- Tags are assigned to roles, not users
-- Check which roles you have
-- Contact admin about role-tag assignments
+- Tags are assigned to titles, not users
+- Check which titles you have
+- Contact admin about title-tag assignments
 
 **Created tag not appearing**
 - Refresh the page
@@ -246,7 +246,7 @@ Tags are assigned to roles, not directly to users. See [Role Management Guide](.
 
 ## Permissions
 
-| Role | View | Create | Edit | Delete |
+| Title | View | Create | Edit | Delete |
 |------|------|--------|------|--------|
 | User | ✓ | - | - | - |
 | Dept Admin | ✓ | - | - | - |
@@ -259,7 +259,7 @@ Tags are assigned to roles, not directly to users. See [Role Management Guide](.
 
 | Guide | Topic |
 |-------|-------|
-| [Role Management Guide](./roles-user-guide.md) | Managing department roles |
+| [Title Management Guide](./roles-user-guide.md) | Managing department titles |
 | [SynergiNexus Guide](./synerginexus-user-guide.md) | AI governance |
 | [Execute 120 Guide](./execute120-user-guide.md) | Personalized execution hub |
 
@@ -273,4 +273,4 @@ Tags are assigned to roles, not directly to users. See [Role Management Guide](.
 | **Category** | Type of tag (skill, domain, function) |
 | **Hierarchy** | Parent-child relationship between tags |
 | **Tag Matching** | System that connects users to content via shared tags |
-| **Effective Tags** | All tags a user has through their roles |
+| **Effective Tags** | All tags a user has through their titles |

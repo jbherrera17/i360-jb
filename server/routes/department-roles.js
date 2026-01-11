@@ -596,5 +596,146 @@ module.exports = function(supabase) {
         }
     });
 
+    /**
+     * GET /api/roles/responsibilities/:id
+     * Get a single responsibility by ID
+     */
+    router.get('/responsibilities/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data, error } = await supabase
+                .from('responsibilities')
+                .select('*, parent:parent_id(id, name)')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+
+            if (!data) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Responsibility not found'
+                });
+            }
+
+            // Get role usage count
+            const { count: roleCount } = await supabase
+                .from('role_responsibilities')
+                .select('*', { count: 'exact', head: true })
+                .eq('responsibility_id', id);
+
+            res.json({
+                success: true,
+                data: {
+                    ...data,
+                    role_count: roleCount || 0
+                }
+            });
+        } catch (error) {
+            console.error('Error getting responsibility:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * PUT /api/roles/responsibilities/:id
+     * Update an existing responsibility
+     */
+    router.put('/responsibilities/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { name, description, parent_id } = req.body;
+
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Name is required'
+                });
+            }
+
+            // Prevent circular reference
+            if (parent_id === id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'A responsibility cannot be its own parent'
+                });
+            }
+
+            const updates = {
+                name,
+                description: description || null,
+                parent_id: parent_id || null,
+                updated_at: new Date().toISOString()
+            };
+
+            const { data, error } = await supabase
+                .from('responsibilities')
+                .update(updates)
+                .eq('id', id)
+                .select('*, parent:parent_id(id, name)')
+                .single();
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error updating responsibility:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/roles/responsibilities/:id
+     * Delete a responsibility (soft delete by default)
+     */
+    router.delete('/responsibilities/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { hard = 'false' } = req.query;
+
+            // Check if responsibility is used by any roles
+            const { count: roleCount } = await supabase
+                .from('role_responsibilities')
+                .select('*', { count: 'exact', head: true })
+                .eq('responsibility_id', id);
+
+            if (hard === 'true') {
+                if (roleCount > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Cannot delete responsibility that is assigned to ${roleCount} title(s). Remove from titles first.`
+                    });
+                }
+
+                // Delete related records first
+                await supabase.from('responsibility_tags').delete().eq('responsibility_id', id);
+                await supabase.from('user_responsibilities').delete().eq('responsibility_id', id);
+
+                const { error } = await supabase
+                    .from('responsibilities')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from('responsibilities')
+                    .update({ is_active: false, updated_at: new Date().toISOString() })
+                    .eq('id', id);
+
+                if (error) throw error;
+            }
+
+            res.json({
+                success: true,
+                message: hard === 'true' ? 'Responsibility permanently deleted' : 'Responsibility deactivated'
+            });
+        } catch (error) {
+            console.error('Error deleting responsibility:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     return router;
 };
