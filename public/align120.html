@@ -9,7 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/agent-dialog.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/agent-dialog-service.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Align 120 Page Styles */
@@ -1480,8 +1482,89 @@
             });
         }
 
-        // Run module agents
+        // Initialize Agent Dialog Service
+        let agentDialog = null;
+
+        function getAgentDialogService() {
+            if (!agentDialog) {
+                agentDialog = new AgentDialogService({
+                    allowClose: false,
+                    onClose: () => {
+                        console.log('Agent dialog closed');
+                    }
+                });
+            }
+            return agentDialog;
+        }
+
+        // Run module agents using Modal Dialog Service
         async function runModuleAgents(moduleNum) {
+            if (!currentSession) {
+                alert('Please start or resume a session first');
+                return;
+            }
+
+            const moduleName = modules[moduleNum].name;
+            const dialog = getAgentDialogService();
+
+            try {
+                // Run the module using the Modal Dialog Service
+                const result = await dialog.runAgent(
+                    `align120-module-${moduleNum}`, // Agent ID pattern
+                    {
+                        sessionId: currentSession.id,
+                        moduleNum: moduleNum,
+                        companyName: currentSession.company_name,
+                        companyContext: `Company: ${currentSession.company_name}`
+                    },
+                    {
+                        title: `Module ${moduleNum}: ${moduleName}`,
+                        subtitle: 'AI agents are analyzing your company data...',
+                        endpoint: `/api/align120/sessions/${currentSession.id}/run-module-stream`,
+                        stream: true,
+                        onAccept: async (data) => {
+                            // Mark module as complete
+                            moduleProgress[moduleNum] = true;
+                            updateProgressRing();
+                            updateStepperState();
+
+                            // Update output checkmarks and show results
+                            updateModuleOutputs(moduleNum, data?.outputs || {});
+                            displayAgentResults(moduleNum, data?.results || []);
+
+                            // Enable next button
+                            const nextBtn = document.getElementById(`module${moduleNum}Next`);
+                            if (nextBtn) nextBtn.disabled = false;
+
+                            // Save progress
+                            await saveSessionProgress();
+                        },
+                        onEdit: (data) => {
+                            // Open edit modal for results
+                            console.log('Edit results:', data);
+                            // TODO: Implement results editor
+                        },
+                        onRegenerate: () => {
+                            // Re-run the module
+                            runModuleAgents(moduleNum);
+                        }
+                    }
+                );
+
+                // If dialog was cancelled, result is null
+                if (result === null) {
+                    console.log('Module execution cancelled');
+                    return;
+                }
+
+            } catch (error) {
+                console.error('Error running module:', error);
+                // Error is already displayed in the dialog
+            }
+        }
+
+        // Legacy function for non-streaming execution (fallback)
+        async function runModuleAgentsLegacy(moduleNum) {
             if (!currentSession) {
                 alert('Please start or resume a session first');
                 return;

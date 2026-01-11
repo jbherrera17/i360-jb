@@ -314,6 +314,212 @@ Format your response as a structured analysis with clear sections and actionable
     });
 
     /**
+     * POST /api/align120/sessions/:id/run-module-stream
+     * Run AI agents for a specific module with SSE streaming
+     * Used by the Modal Dialog Service for live progress updates
+     */
+    router.post('/sessions/:id/run-module-stream', async (req, res) => {
+        // Set headers for SSE
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+
+        // Helper to send SSE events
+        const sendEvent = (data) => {
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+
+        try {
+            const { id } = req.params;
+            const { agentId, context } = req.body;
+            const moduleNum = context?.moduleNum || parseInt(agentId?.split('-').pop()) || 1;
+            const userId = getUserId(req);
+
+            if (!moduleNum || moduleNum < 1 || moduleNum > 5) {
+                sendEvent({ type: 'error', error: 'Valid module number (1-5) is required' });
+                res.end();
+                return;
+            }
+
+            sendEvent({ type: 'progress', percent: 0, status: 'Loading session...' });
+
+            // Get the session
+            const { data: session, error: sessionError } = await supabase
+                .from('align120_sessions')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (sessionError) throw sessionError;
+
+            sendEvent({ type: 'progress', percent: 5, status: 'Loading agents...' });
+
+            // Get agents for this module
+            const categoryMap = {
+                1: 'assessment',
+                2: 'strategy',
+                3: 'productivity',
+                4: 'content',
+                5: 'corporate'
+            };
+
+            const moduleNames = {
+                1: 'AI Maturity Assessment',
+                2: 'Business Fundamentals',
+                3: 'Team Readiness',
+                4: 'Brand Alignment',
+                5: 'Corporate Alignment'
+            };
+
+            const { data: agents, error: agentError } = await supabase
+                .from('agents')
+                .select('*')
+                .eq('suite', 'align')
+                .eq('category', categoryMap[moduleNum])
+                .eq('is_active', true);
+
+            if (agentError) throw agentError;
+
+            const agentList = agents || [];
+            const totalAgents = agentList.length || 1;
+
+            sendEvent({
+                type: 'progress',
+                percent: 10,
+                status: `Found ${totalAgents} agent(s) for module ${moduleNum}`
+            });
+
+            // Build context message for agents
+            const contextMessage = `
+You are running an Align 120 assessment for ${session.company_name}.
+Module: ${moduleNum} - ${moduleNames[moduleNum]}
+
+${context?.companyContext ? `Company Context:\n${context.companyContext}\n\n` : ''}
+Please provide a comprehensive assessment based on the available information.
+Format your response as a structured analysis with clear sections and actionable insights.
+`;
+
+            // Execute each agent and stream results
+            const agentResults = [];
+            const outputs = {};
+            let fullResponse = '';
+
+            for (let i = 0; i < agentList.length; i++) {
+                const agent = agentList[i];
+                const agentProgress = 10 + ((i / totalAgents) * 80);
+
+                sendEvent({
+                    type: 'progress',
+                    percent: agentProgress,
+                    status: `Running ${agent.name}...`
+                });
+
+                try {
+                    // Stream the agent execution
+                    await new Promise((resolve, reject) => {
+                        agentService.streamAgent(agent.id, {
+                            userMessage: contextMessage,
+                            userId: userId,
+                            conversationHistory: [],
+                            onToken: (token) => {
+                                fullResponse += token;
+                                sendEvent({ type: 'content', content: token });
+                            },
+                            onComplete: (meta) => {
+                                agentResults.push({
+                                    agent_id: agent.id,
+                                    agent_name: agent.name,
+                                    response: fullResponse,
+                                    execution_id: meta.execution_id,
+                                    usage: meta.usage,
+                                    duration_ms: meta.duration_ms
+                                });
+
+                                outputs[agent.name.toLowerCase().replace(/\s+/g, '_')] = {
+                                    completed: true,
+                                    response: fullResponse,
+                                    execution_id: meta.execution_id
+                                };
+
+                                fullResponse = ''; // Reset for next agent
+                                resolve();
+                            },
+                            onError: (error) => {
+                                agentResults.push({
+                                    agent_id: agent.id,
+                                    agent_name: agent.name,
+                                    error: error.message
+                                });
+                                outputs[agent.name.toLowerCase().replace(/\s+/g, '_')] = {
+                                    completed: false,
+                                    error: error.message
+                                };
+                                resolve(); // Continue to next agent
+                            }
+                        });
+                    });
+
+                    // Add separator between agents
+                    if (i < agentList.length - 1) {
+                        sendEvent({ type: 'content', content: '\n\n---\n\n' });
+                    }
+
+                } catch (agentError) {
+                    console.error(`Error running agent ${agent.name}:`, agentError);
+                    sendEvent({
+                        type: 'content',
+                        content: `\n\n[Error running ${agent.name}: ${agentError.message}]\n\n`
+                    });
+                }
+            }
+
+            sendEvent({ type: 'progress', percent: 95, status: 'Saving results...' });
+
+            // Store module results in session
+            const moduleResults = session.module_results || {};
+            moduleResults[moduleNum] = {
+                completed_at: new Date().toISOString(),
+                agents_run: agentResults.length,
+                results: agentResults
+            };
+
+            // Update session progress
+            const moduleProgress = session.module_progress || {};
+            moduleProgress[moduleNum] = true;
+
+            await supabase
+                .from('align120_sessions')
+                .update({
+                    module_progress: moduleProgress,
+                    module_results: moduleResults,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id);
+
+            sendEvent({ type: 'progress', percent: 100, status: 'Complete' });
+
+            // Send completion event with result data
+            sendEvent({
+                type: 'complete',
+                result: {
+                    module: moduleNum,
+                    module_name: moduleNames[moduleNum],
+                    agents_run: agentResults.length,
+                    results: agentResults,
+                    outputs
+                }
+            });
+
+        } catch (error) {
+            console.error('Error running module (stream):', error);
+            sendEvent({ type: 'error', error: error.message });
+        } finally {
+            res.end();
+        }
+    });
+
+    /**
      * POST /api/align120/sessions/:id/complete
      * Complete a session and generate company profile
      */
