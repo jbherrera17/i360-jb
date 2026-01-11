@@ -301,17 +301,24 @@ async function getCurrentFoundationWithHierarchy(userId) {
  * @returns {Object} - Updated foundation
  */
 async function setCurrentFoundation(userId, foundationId) {
-    // Unset any existing current foundation
+    // Unset any existing current foundation for this user
     await supabase
         .from('strategic_foundations')
         .update({ is_current: false })
+        .eq('user_id', userId)
         .eq('is_current', true);
+
+    // If no foundationId provided, just unset existing (used before creating new)
+    if (!foundationId) {
+        return null;
+    }
 
     // Set the new foundation as current
     const { data, error } = await supabase
         .from('strategic_foundations')
         .update({ is_current: true })
         .eq('id', foundationId)
+        .eq('user_id', userId)
         .select()
         .single();
 

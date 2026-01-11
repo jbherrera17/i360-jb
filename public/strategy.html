@@ -94,20 +94,23 @@
 
         /* Step Content Panels */
         .step-panel {
-            display: none;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
+            max-height: calc(100vh - 300px);
+            flex-direction: column;
+            display: none;
         }
 
         .step-panel.active {
-            display: block;
+            display: flex;
         }
 
         .panel-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .panel-header h2 {
@@ -127,6 +130,9 @@
 
         .panel-body {
             padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         .panel-footer {
@@ -135,6 +141,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
+            background: var(--bg-secondary);
+            position: relative;
+            z-index: 10;
         }
 
         /* Form Styling */
@@ -507,7 +517,8 @@
         }
 
         .btn-primary:hover {
-            background: var(--primary-hover);
+            background: var(--primary-dark, #4f46e5);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {

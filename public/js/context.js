@@ -75,16 +75,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Show empty state on initial load (no asset selected)
     showEmptyState();
-    
-    // Make plain text editor read-only
+
+    // Make plain text editor editable for non-technical users
     const plainTextEditor = document.getElementById('plainTextEditor');
     if (plainTextEditor) {
-        plainTextEditor.readOnly = true;
-        plainTextEditor.style.backgroundColor = 'var(--bg-tertiary)';
-        plainTextEditor.style.cursor = 'not-allowed';
-        plainTextEditor.placeholder = 'Auto-generated from JSON content (read-only)';
+        plainTextEditor.readOnly = false;
+        plainTextEditor.style.backgroundColor = 'var(--bg-primary)';
+        plainTextEditor.style.cursor = 'text';
+        plainTextEditor.placeholder = 'Edit your content in markdown format here...';
     }
-    
+
     console.log('Context Admin ready');
 });
 
@@ -311,7 +311,7 @@ function loadAssetIntoEditor(asset) {
     const tagsInput = document.getElementById('assetTags');
     const jsonEditor = document.getElementById('jsonEditor');
     const plainTextEditor = document.getElementById('plainTextEditor');
-    
+
     if (nameInput) nameInput.value = asset.name || '';
     if (descInput) descInput.value = asset.description || '';
     if (typeSelect) typeSelect.value = asset.asset_type || '';
@@ -320,23 +320,28 @@ function loadAssetIntoEditor(asset) {
     // Set department
     const deptSelect = document.getElementById('assetDepartment');
     if (deptSelect) deptSelect.value = asset.department_id || '';
-    
+
     // Load JSON content
     if (jsonEditor) {
         const jsonContent = asset.content_json || {};
         jsonEditor.value = JSON.stringify(jsonContent, null, 2);
     }
-    
-    // Generate and display plain text (read-only)
+
+    // Generate and display plain text - make it EDITABLE
     if (plainTextEditor) {
         const plainText = generatePlainText(asset.content_json || {});
         plainTextEditor.value = plainText;
+        // Make plain text editor editable for non-technical users
+        plainTextEditor.readOnly = false;
+        plainTextEditor.style.backgroundColor = 'var(--bg-primary)';
+        plainTextEditor.style.cursor = 'text';
+        plainTextEditor.placeholder = 'Edit your content in markdown format here...';
     }
-    
+
     // Update preview
     updatePreview();
     updateTokenCount();
-    
+
     // Update editor header
     const editorTitle = document.getElementById('editorTitle');
     if (editorTitle) {
@@ -605,11 +610,58 @@ function handleJsonPaste(e) {
 }
 
 // ============================================
-// PLAIN TEXT GENERATION
+// MARKDOWN/PLAIN TEXT HANDLING
 // ============================================
+
+/**
+ * Handle changes to the markdown/plain text editor
+ * This allows non-technical users to edit content directly
+ */
+function handleMarkdownChange() {
+    const plainTextEditor = document.getElementById('plainTextEditor');
+    const jsonEditor = document.getElementById('jsonEditor');
+
+    if (!plainTextEditor || !jsonEditor) return;
+
+    state.isDirty = true;
+    updateSaveButtonState();
+
+    // Store the markdown content directly in JSON
+    // We'll store it in a simple format that preserves the user's edits
+    try {
+        const markdownContent = plainTextEditor.value;
+        const contentJson = {
+            content: markdownContent,
+            format: 'markdown',
+            edited_at: new Date().toISOString()
+        };
+
+        // Update JSON editor to reflect the change
+        jsonEditor.value = JSON.stringify(contentJson, null, 2);
+
+        // Update preview
+        updatePreview();
+        updateTokenCount();
+
+        // Mark as valid
+        const validationStatus = document.getElementById('validationStatus');
+        if (validationStatus) {
+            validationStatus.innerHTML = '<span class="valid">✓ Content updated</span>';
+        }
+    } catch (e) {
+        console.error('Error updating content:', e);
+    }
+}
 
 function generatePlainText(json) {
     if (!json || typeof json !== 'object') return '';
+
+    // If content was stored in markdown format, return it directly
+    if (json.format === 'markdown' && json.content) {
+        return json.content;
+    }
+
+    // Otherwise, extract text from JSON structure
     return extractTextFromJson(json, '', 0);
 }
 
@@ -867,6 +919,16 @@ function setupEventListeners() {
         jsonEditor.addEventListener('paste', handleJsonPaste);
     }
 
+    // Plain text editor (markdown editor for non-technical users)
+    const plainTextEditor = document.getElementById('plainTextEditor');
+    if (plainTextEditor) {
+        let markdownTimeout;
+        plainTextEditor.addEventListener('input', () => {
+            clearTimeout(markdownTimeout);
+            markdownTimeout = setTimeout(handleMarkdownChange, 300);
+        });
+    }
+
     // Form field change listeners to enable Save button
     const formFields = ['assetName', 'assetDescription', 'assetType', 'assetTags'];
     formFields.forEach(fieldId => {
@@ -940,12 +1002,19 @@ function setupEventListeners() {
 
     // Setup generate modal listeners
     setupGenerateModalListeners();
+
+    // Setup JSON toggle button
+    setupJsonToggle();
+
+    // Setup preview modal
+    setupPreviewModal();
 }
 
 function updateSaveButtonState() {
     const saveBtn = document.getElementById('saveBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const deleteBtn = document.getElementById('deleteBtn');
+    const previewModalBtn = document.getElementById('previewModalBtn');
     const editorContent = document.getElementById('editorContent');
 
     // Check if editor is visible (i.e., we're in editing/creating mode)
@@ -964,6 +1033,11 @@ function updateSaveButtonState() {
     // Show delete button only when editing an existing asset
     if (deleteBtn) {
         deleteBtn.style.display = state.selectedAsset ? 'flex' : 'none';
+    }
+
+    // Show preview modal button when editor is visible
+    if (previewModalBtn) {
+        previewModalBtn.style.display = isEditorVisible ? 'flex' : 'none';
     }
 }
 
@@ -1855,5 +1929,122 @@ async function importContentWithAI() {
             cancelBtn.innerHTML = 'Cancel';
             cancelBtn.classList.remove('btn-danger');
         }
+    }
+}
+
+// ============================================
+// JSON TOGGLE
+// ============================================
+
+/**
+ * Setup JSON editor toggle functionality
+ */
+function setupJsonToggle() {
+    const toggleBtn = document.getElementById('toggleJsonBtn');
+    const jsonContainer = document.getElementById('jsonEditorContainer');
+
+    if (toggleBtn && jsonContainer) {
+        toggleBtn.addEventListener('click', () => {
+            const isVisible = jsonContainer.style.display !== 'none';
+            jsonContainer.style.display = isVisible ? 'none' : 'block';
+
+            // Update icon
+            const icon = toggleBtn.querySelector('i');
+            if (icon) {
+                icon.setAttribute('data-lucide', isVisible ? 'chevron-down' : 'chevron-up');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        });
+    }
+}
+
+// ============================================
+// PREVIEW MODAL
+// ============================================
+
+let previewModalManager = null;
+
+/**
+ * Setup preview modal functionality
+ */
+function setupPreviewModal() {
+    const previewBtn = document.getElementById('previewModalBtn');
+    const closeBtn = document.getElementById('closePreviewModalBtn');
+    const modalCloseBtn = document.getElementById('previewModalClose');
+
+    if (previewBtn) {
+        previewBtn.addEventListener('click', openPreviewModal);
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closePreviewModal);
+    }
+
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closePreviewModal);
+    }
+
+    // Close on overlay click
+    const modal = document.getElementById('previewModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closePreviewModal();
+            }
+        });
+    }
+
+    // Escape key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('previewModal');
+            if (modal && modal.classList.contains('active')) {
+                closePreviewModal();
+            }
+        }
+    });
+}
+
+/**
+ * Open the preview modal
+ */
+function openPreviewModal() {
+    // Initialize modal manager if not done yet
+    if (!previewModalManager && typeof ModalManager !== 'undefined') {
+        previewModalManager = new ModalManager({ minWidth: 500, minHeight: 400, defaultWidth: 700 });
+        previewModalManager.init('preview-modal-dialog', 'preview-modal-header', 'previewModal');
+    }
+
+    // Copy preview content to modal
+    const previewContent = document.getElementById('previewContent');
+    const modalContent = document.getElementById('previewModalContent');
+
+    if (previewContent && modalContent) {
+        modalContent.innerHTML = previewContent.innerHTML;
+    }
+
+    if (previewModalManager) {
+        previewModalManager.open();
+    } else {
+        // Fallback if modal manager not available
+        const modal = document.getElementById('previewModal');
+        if (modal) modal.classList.add('active');
+    }
+
+    // Refresh icons in modal
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Close the preview modal
+ */
+function closePreviewModal() {
+    if (previewModalManager) {
+        previewModalManager.close();
+    } else {
+        const modal = document.getElementById('previewModal');
+        if (modal) modal.classList.remove('active');
     }
 }

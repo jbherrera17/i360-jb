@@ -515,11 +515,11 @@
             color: var(--danger);
         }
 
-        /* Right Panel - Preview */
-        .preview-panel {
-            width: 380px;
-            min-width: 250px;
-            max-width: 800px;
+        /* Right Panel - Markdown Editor */
+        .markdown-panel {
+            width: 480px;
+            min-width: 300px;
+            max-width: 900px;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border);
             display: flex;
@@ -527,6 +527,115 @@
             overflow: hidden;
             position: relative;
             flex-shrink: 0;
+        }
+
+        .resize-handle-left {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        .resize-handle-left:hover,
+        .resize-handle-left.active {
+            background: var(--primary);
+        }
+
+        .markdown-editor-wrapper {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .markdown-editor-wrapper textarea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: none;
+            resize: none;
+        }
+
+        .markdown-editor-wrapper textarea:focus {
+            outline: none;
+        }
+
+        /* JSON Section (Collapsible) */
+        .json-section {
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .section-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .json-editor-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .json-editor-container textarea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 40px;
+            width: 100%;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            background: var(--bg-code, #0d0d14);
+            color: var(--text-primary);
+            border: none;
+            resize: none;
+        }
+
+        /* Preview Section at Bottom */
+        .preview-section-bottom {
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-content-bottom {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
         }
 
         .preview-content {
@@ -1147,7 +1256,7 @@
                     <div class="resize-handle" id="assetListResizeHandle"></div>
                 </div>
 
-                <!-- Center Panel - Editor -->
+                <!-- Center Panel - Form & JSON Editor & Preview -->
                 <div class="editor-panel">
                     <div class="editor-header">
                         <div class="editor-header-left">
@@ -1161,6 +1270,9 @@
                             </div>
                         </div>
                         <div class="editor-actions">
+                            <button id="previewModalBtn" class="btn-secondary" style="display: none;">
+                                <i data-lucide="maximize-2"></i> Preview
+                            </button>
                             <button id="deleteBtn" class="btn-secondary btn-danger" style="display: none;">
                                 <i data-lucide="trash-2"></i> Delete
                             </button>
@@ -1185,64 +1297,72 @@
 
                     <!-- Editor Content (hidden when empty state shown) -->
                     <div id="editorContent">
-                    <div class="editor-form">
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" id="assetName" placeholder="Asset name...">
+                        <div class="editor-form">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" id="assetName" placeholder="Asset name...">
+                            </div>
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select id="assetType">
+                                    <option value="">Select type...</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Description</label>
+                                <input type="text" id="assetDescription" placeholder="Brief description...">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Tags (comma-separated)</label>
+                                <input type="text" id="assetTags" placeholder="brand, voice, core...">
+                            </div>
+                            <div class="form-group">
+                                <label>Department</label>
+                                <select id="assetDepartment">
+                                    <option value="">No Department (Available to all)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Type</label>
-                            <select id="assetType">
-                                <option value="">Select type...</option>
-                            </select>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Description</label>
-                            <input type="text" id="assetDescription" placeholder="Brief description...">
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Tags (comma-separated)</label>
-                            <input type="text" id="assetTags" placeholder="brand, voice, core...">
-                        </div>
-                        <div class="form-group">
-                            <label>Department</label>
-                            <select id="assetDepartment">
-                                <option value="">No Department (Available to all)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="editor-tabs">
-                        <button class="tab-btn active" data-tab="json">JSON Editor</button>
-                        <button class="tab-btn" data-tab="plaintext">Plain Text</button>
-                    </div>
-                    
-                    <div id="jsonTab" class="tab-content active">
-                        <textarea id="jsonEditor" placeholder='{\n  "key": "value"\n}'>{
-  
+
+                        <!-- JSON Editor Section -->
+                        <div class="json-section">
+                            <div class="section-header">
+                                <h3><i data-lucide="code"></i> JSON Data (Advanced)</h3>
+                                <button class="btn-icon" id="toggleJsonBtn" title="Toggle JSON Editor">
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                            </div>
+                            <div id="jsonEditorContainer" class="json-editor-container" style="display: none;">
+                                <textarea id="jsonEditor" placeholder='{\n  "key": "value"\n}'>{
+
 }</textarea>
-                    </div>
-                    
-                    <div id="plaintextTab" class="tab-content">
-                        <textarea id="plainTextEditor" placeholder="Auto-generated from JSON..." readonly></textarea>
-                    </div>
-                    
-                    <div class="editor-footer">
-                        <span id="validationStatus"><span class="valid">✓ Valid JSON</span></span>
-                        <span id="tokenCount">~0 tokens</span>
-                    </div>
+                                <div class="editor-footer">
+                                    <span id="validationStatus"><span class="valid">✓ Valid JSON</span></span>
+                                    <span id="tokenCount">~0 tokens</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Section -->
+                        <div class="preview-section-bottom">
+                            <div class="section-header">
+                                <h3><i data-lucide="eye"></i> Preview</h3>
+                            </div>
+                            <div id="previewContent" class="preview-content-bottom">
+                                <p class="preview-placeholder">Enter content to see preview</p>
+                            </div>
+                        </div>
                     </div><!-- End editorContent -->
                 </div>
 
-                <!-- Right Panel - Preview -->
-                <div class="preview-panel">
-                    <!-- Resize Handle for Preview Panel -->
-                    <div class="preview-resize-handle" id="previewResizeHandle"></div>
+                <!-- Right Panel - Markdown Editor -->
+                <div class="markdown-panel">
+                    <div class="resize-handle-left" id="markdownResizeHandle"></div>
                     <div class="panel-header">
-                        <h2><i data-lucide="eye"></i> Preview</h2>
+                        <h2><i data-lucide="edit-3"></i> Markdown Editor</h2>
                     </div>
-                    <div id="previewContent" class="preview-content">
-                        <p class="preview-placeholder">Select or create an asset to see preview</p>
+                    <div class="markdown-editor-wrapper">
+                        <textarea id="plainTextEditor" placeholder="Edit your content in markdown format here..."></textarea>
                     </div>
                 </div>
             </div>
@@ -1365,6 +1485,26 @@ Examples:
         </div>
     </div>
 
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal preview-modal" id="preview-modal-dialog">
+            <div class="modal-header" id="preview-modal-header">
+                <h2><i data-lucide="eye"></i> Content Preview</h2>
+                <button class="modal-close" id="previewModalClose">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div id="previewModalContent" class="preview-content">
+                    <p class="preview-placeholder">No content to preview</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="closePreviewModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Load Supabase client first -->
     <script src="/js/supabase.js"></script>
     <!-- Context Admin JS -->
@@ -1420,52 +1560,52 @@ Examples:
             });
         }
 
-        // Preview Panel Resize (right panel)
-        const previewPanel = document.querySelector('.preview-panel');
-        const previewHandle = document.getElementById('previewResizeHandle');
+        // Markdown Panel Resize (right panel)
+        const markdownPanel = document.querySelector('.markdown-panel');
+        const markdownHandle = document.getElementById('markdownResizeHandle');
 
-        if (previewPanel && previewHandle) {
-            let isResizingPreview = false;
-            let previewStartX = 0;
-            let previewStartWidth = 0;
+        if (markdownPanel && markdownHandle) {
+            let isResizingMarkdown = false;
+            let markdownStartX = 0;
+            let markdownStartWidth = 0;
 
             // Restore saved width
-            const savedPreviewWidth = localStorage.getItem('contextPreviewPanelWidth');
-            if (savedPreviewWidth) {
-                const parsed = parseInt(savedPreviewWidth);
-                if (parsed >= 250 && parsed <= 800) {
-                    previewPanel.style.width = parsed + 'px';
+            const savedMarkdownWidth = localStorage.getItem('contextMarkdownPanelWidth');
+            if (savedMarkdownWidth) {
+                const parsed = parseInt(savedMarkdownWidth);
+                if (parsed >= 300 && parsed <= 900) {
+                    markdownPanel.style.width = parsed + 'px';
                 }
             }
 
-            previewHandle.addEventListener('mousedown', (e) => {
-                isResizingPreview = true;
-                previewStartX = e.clientX;
-                previewStartWidth = previewPanel.offsetWidth;
-                previewHandle.classList.add('active');
+            markdownHandle.addEventListener('mousedown', (e) => {
+                isResizingMarkdown = true;
+                markdownStartX = e.clientX;
+                markdownStartWidth = markdownPanel.offsetWidth;
+                markdownHandle.classList.add('active');
                 document.body.style.cursor = 'col-resize';
                 document.body.style.userSelect = 'none';
                 e.preventDefault();
             });
 
             document.addEventListener('mousemove', (e) => {
-                if (!isResizingPreview) return;
+                if (!isResizingMarkdown) return;
 
-                // Resize handle is on LEFT of preview panel
-                // Drag left = preview wider, drag right = preview narrower
-                const mouseDelta = previewStartX - e.clientX;
-                const newWidth = previewStartWidth + mouseDelta;
-                const clampedWidth = Math.max(250, Math.min(800, newWidth));
-                previewPanel.style.width = clampedWidth + 'px';
+                // Resize handle is on LEFT of markdown panel
+                // Drag left = panel wider, drag right = panel narrower
+                const mouseDelta = markdownStartX - e.clientX;
+                const newWidth = markdownStartWidth + mouseDelta;
+                const clampedWidth = Math.max(300, Math.min(900, newWidth));
+                markdownPanel.style.width = clampedWidth + 'px';
             });
 
             document.addEventListener('mouseup', () => {
-                if (isResizingPreview) {
-                    isResizingPreview = false;
-                    previewHandle.classList.remove('active');
+                if (isResizingMarkdown) {
+                    isResizingMarkdown = false;
+                    markdownHandle.classList.remove('active');
                     document.body.style.cursor = '';
                     document.body.style.userSelect = '';
-                    localStorage.setItem('contextPreviewPanelWidth', previewPanel.offsetWidth);
+                    localStorage.setItem('contextMarkdownPanelWidth', markdownPanel.offsetWidth);
                 }
             });
         }

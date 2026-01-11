@@ -10,15 +10,24 @@
  * Priority:
  * 1. req.userId (set by auth middleware from JWT verification)
  * 2. req.user?.id (Supabase user object if available)
- * 3. null (anonymous/unauthenticated)
- *
- * Note: DEV_USER_ID fallback removed for security - use DEV_AUTH_BYPASS instead
+ * 3. DEFAULT_USER_ID (development fallback - only in dev mode)
+ * 4. null (anonymous/unauthenticated in production)
  *
  * @param {Request} req - Express request object
  * @returns {string|null} User ID or null if not authenticated
  */
 function getUserId(req) {
-    return req.userId || req.user?.id || null;
+    const userId = req.userId || req.user?.id;
+
+    // In development, fall back to DEFAULT_USER_ID to prevent null UUID errors
+    // Check for null, undefined, empty string, or 'anonymous' (which is not a valid UUID)
+    const isValidUserId = userId && userId !== 'anonymous' && userId !== 'null';
+
+    if (!isValidUserId && process.env.NODE_ENV !== 'production') {
+        return process.env.DEFAULT_USER_ID || process.env.DEV_USER_ID || null;
+    }
+
+    return isValidUserId ? userId : null;
 }
 
 /**

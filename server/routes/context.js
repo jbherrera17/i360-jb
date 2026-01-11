@@ -358,61 +358,64 @@ router.put('/assets/:id', async (req, res) => {
         const userId = getUserId(req);
         const currentVersion = current.version || 1;
         const newVersion = currentVersion + 1;
-        
+
         // Check if content actually changed
-        const contentChanged = content_json && 
+        const contentChanged = content_json &&
             JSON.stringify(content_json) !== JSON.stringify(current.content_json);
-        
+
         // Only save to version history if content changed
         if (contentChanged) {
-            // Save CURRENT state to version history BEFORE updating
-            const versionRecord = {
-                id: uuidv4(),
-                asset_id: id,
-                version: currentVersion, // Save as the CURRENT version number
-                content_json: current.content_json,
-                content_text: current.content_text,
-                change_summary: change_summary || `Updated to version ${newVersion}`,
-                created_at: new Date().toISOString(),
-                created_by: userId
-            };
-            
-            // Check if this version already exists in history
+            // Check if this version already exists in history FIRST
             const { data: existingVersion } = await supabase
                 .from('context_asset_versions')
                 .select('id')
                 .eq('asset_id', id)
                 .eq('version', currentVersion)
-                .single();
-            
+                .maybeSingle(); // Use maybeSingle instead of single to avoid error if not found
+
             // Only insert if version doesn't exist yet
             if (!existingVersion) {
+                // Save CURRENT state to version history BEFORE updating
+                const versionRecord = {
+                    id: uuidv4(),
+                    asset_id: id,
+                    version: currentVersion, // Save as the CURRENT version number
+                    content_json: current.content_json,
+                    content_text: current.content_text,
+                    change_summary: change_summary || `Updated to version ${newVersion}`,
+                    created_at: new Date().toISOString(),
+                    created_by: userId
+                };
+
                 const { error: versionError } = await supabase
                     .from('context_asset_versions')
                     .insert(versionRecord);
-                
+
                 if (versionError) {
                     console.error('Version history error:', versionError);
                     // Continue with update even if version history fails
                 }
             }
         }
-        
+
         // Prepare update data
         const updateData = {
             updated_at: new Date().toISOString()
         };
-        
+
         if (name !== undefined) updateData.name = name;
         if (description !== undefined) updateData.description = description;
         if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
         if (visibility !== undefined) updateData.visibility = visibility;
         if (department_id !== undefined) updateData.department_id = department_id || null;
-        
+
         if (content_json !== undefined) {
             updateData.content_json = content_json;
             updateData.content_text = generateContentText(content_json);
-            updateData.version = newVersion; // Only increment version if content changed
+            // Only increment version if content changed
+            if (contentChanged) {
+                updateData.version = newVersion;
+            }
         }
         
         // Update asset
