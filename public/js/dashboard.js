@@ -1,7 +1,7 @@
 /**
  * Dashboard JavaScript - Insight 360
  * Handles system status and available models display
- * Version: 2.3.0
+ * Version: 2.4.0
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeDashboard() {
     await loadSystemStatus();
     await loadAvailableModels();
+    await loadLLMProviderStatus();
 }
 
 /**
@@ -187,4 +188,199 @@ function getTierClass(tier) {
         'reasoning': 'tier-reasoning'
     };
     return tierClasses[tier] || 'tier-default';
+}
+
+/**
+ * Load and display LLM provider availability status
+ */
+async function loadLLMProviderStatus() {
+    const statusEl = document.getElementById('llmProviderStatus');
+    const badgeEl = document.getElementById('llmOverallStatus');
+    const lastCheckedEl = document.getElementById('llmLastChecked');
+    const checkBtnEl = document.getElementById('llmCheckNowBtn');
+
+    if (!statusEl || !badgeEl) return;
+
+    try {
+        // Check if user is admin to show check button
+        const userRole = await getCurrentUserRole();
+        if (userRole === 'admin' && checkBtnEl) {
+            checkBtnEl.style.display = 'inline-flex';
+        }
+
+        const response = await fetch('/api/models/availability');
+        const data = await response.json();
+
+        if (data.success && data.providers) {
+            const providers = data.providers;
+            let html = '';
+
+            // Provider display config
+            const providerConfig = {
+                anthropic: { name: 'Claude (Anthropic)', icon: '🤖' },
+                openai: { name: 'GPT (OpenAI)', icon: '🧠' },
+                perplexity: { name: 'Sonar (Perplexity)', icon: '🔍' }
+            };
+
+            for (const [key, config] of Object.entries(providerConfig)) {
+                const providerData = providers[key];
+
+                if (!providerData) {
+                    html += `
+                        <div class="service-item inactive">
+                            <span class="service-icon">${config.icon}</span>
+                            <span class="service-name">${config.name}</span>
+                            <span class="service-status">○ Not Checked</span>
+                        </div>
+                    `;
+                    continue;
+                }
+
+                const status = providerData.status;
+                const statusDisplay = getProviderStatusDisplay(status);
+
+                html += `
+                    <div class="service-item ${statusDisplay.class}">
+                        <span class="service-icon">${config.icon}</span>
+                        <span class="service-name">${config.name}</span>
+                        <span class="service-status" title="${providerData.error || ''}">${statusDisplay.text}</span>
+                    </div>
+                `;
+            }
+
+            statusEl.innerHTML = html;
+
+            // Update overall status badge
+            const overall = data.overallStatus || 'unknown';
+            if (overall === 'healthy') {
+                badgeEl.textContent = 'All Available';
+                badgeEl.className = 'status-badge status-operational';
+            } else if (overall === 'warning') {
+                badgeEl.textContent = 'Warning';
+                badgeEl.className = 'status-badge status-warning';
+            } else if (overall === 'error') {
+                badgeEl.textContent = 'Issues';
+                badgeEl.className = 'status-badge status-error';
+            } else {
+                badgeEl.textContent = 'Unknown';
+                badgeEl.className = 'status-badge status-partial';
+            }
+
+            // Update last checked time
+            if (lastCheckedEl && data.lastChecked) {
+                const lastChecked = new Date(data.lastChecked);
+                lastCheckedEl.textContent = formatRelativeTime(lastChecked);
+            } else if (lastCheckedEl) {
+                lastCheckedEl.textContent = 'Never';
+            }
+        } else {
+            // No data yet
+            statusEl.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">No availability checks recorded yet.</p>';
+            badgeEl.textContent = 'Not Checked';
+            badgeEl.className = 'status-badge status-partial';
+        }
+    } catch (error) {
+        console.error('Failed to load LLM provider status:', error);
+        statusEl.innerHTML = '<p class="error-message">Unable to fetch provider status</p>';
+        badgeEl.textContent = 'Error';
+        badgeEl.className = 'status-badge status-error';
+    }
+}
+
+/**
+ * Get display properties for provider status
+ */
+function getProviderStatusDisplay(status) {
+    const displays = {
+        'available': { class: 'active', text: '✓ Available' },
+        'deprecated': { class: 'warning', text: '⚠ Deprecated' },
+        'unavailable': { class: 'inactive', text: '✗ Unavailable' },
+        'auth_error': { class: 'inactive', text: '🔒 Auth Error' },
+        'rate_limited': { class: 'warning', text: '⏳ Rate Limited' }
+    };
+    return displays[status] || { class: 'inactive', text: '○ Unknown' };
+}
+
+/**
+ * Format a date as relative time (e.g., "5 minutes ago")
+ */
+function formatRelativeTime(date) {
+    const now = new Date();
+    const diff = now - date;
+
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+
+    return date.toLocaleDateString();
+}
+
+/**
+ * Get current user role (admin check)
+ */
+async function getCurrentUserRole() {
+    try {
+        const response = await fetch('/api/auth/me');
+        const data = await response.json();
+        return data.user?.business_role || data.user?.role || 'user';
+    } catch (error) {
+        console.error('Failed to get user role:', error);
+        return 'user';
+    }
+}
+
+/**
+ * Run an on-demand LLM availability check (admin only)
+ */
+async function runLLMCheck() {
+    const checkBtnEl = document.getElementById('llmCheckNowBtn');
+    const badgeEl = document.getElementById('llmOverallStatus');
+
+    if (checkBtnEl) {
+        checkBtnEl.disabled = true;
+        checkBtnEl.innerHTML = '<i data-lucide="loader-2" style="width: 12px; height: 12px; margin-right: 4px;" class="spin"></i> Checking...';
+    }
+
+    if (badgeEl) {
+        badgeEl.textContent = 'Checking...';
+        badgeEl.className = 'status-badge status-loading';
+    }
+
+    try {
+        const response = await fetch('/api/models/availability/check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Reload the status display
+            await loadLLMProviderStatus();
+        } else {
+            throw new Error(data.error || 'Check failed');
+        }
+    } catch (error) {
+        console.error('Failed to run LLM check:', error);
+        if (badgeEl) {
+            badgeEl.textContent = 'Check Failed';
+            badgeEl.className = 'status-badge status-error';
+        }
+    } finally {
+        if (checkBtnEl) {
+            checkBtnEl.disabled = false;
+            checkBtnEl.innerHTML = '<i data-lucide="refresh-cw" style="width: 12px; height: 12px; margin-right: 4px;"></i> Check Now';
+            // Re-initialize lucide icons for the new icon
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    }
 }

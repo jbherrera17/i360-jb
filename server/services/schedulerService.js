@@ -13,6 +13,7 @@ const cron = require('node-cron');
 const { createClient } = require('@supabase/supabase-js');
 const briefingService = require('./briefingService');
 const s2eService = require('./s2eService');
+const modelAvailabilityService = require('./modelAvailabilityService');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -219,6 +220,15 @@ async function initializeScheduler() {
 
         console.log(`[Scheduler] Successfully scheduled ${scheduled}/${configs.length} briefings`);
         isInitialized = true;
+
+        // Initialize model availability scheduler
+        try {
+            await modelAvailabilityService.initializeScheduler();
+            console.log('[Scheduler] ✅ Model availability scheduler initialized');
+        } catch (modelError) {
+            console.error('[Scheduler] Failed to initialize model availability scheduler:', modelError);
+            // Don't throw - model availability scheduling is not critical
+        }
     } catch (error) {
         console.error('[Scheduler] Failed to initialize:', error);
         initializationError = error;

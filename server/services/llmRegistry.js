@@ -155,12 +155,13 @@ const OPENAI_MODELS = {
 
 // ============================================================================
 // PERPLEXITY (SONAR) MODELS
+// Updated January 2026 - sonar-reasoning deprecated, use sonar-reasoning-pro
 // ============================================================================
 const PERPLEXITY_MODELS = {
     'sonar-pro': {
         name: 'Sonar Pro',
         provider: 'perplexity',
-        description: 'Most capable model with advanced reasoning and search',
+        description: 'Advanced search with grounding - best factuality (F-score 0.858)',
         maxTokens: 8192,
         contextWindow: 200000,
         capabilities: ['search'],
@@ -170,7 +171,7 @@ const PERPLEXITY_MODELS = {
     'sonar': {
         name: 'Sonar',
         provider: 'perplexity',
-        description: 'Balanced performance with web search',
+        description: 'Lightweight, cost-effective search with grounding (Llama 3.3 70B)',
         maxTokens: 8192,
         contextWindow: 128000,
         capabilities: ['search'],
@@ -179,16 +180,7 @@ const PERPLEXITY_MODELS = {
     'sonar-reasoning-pro': {
         name: 'Sonar Reasoning Pro',
         provider: 'perplexity',
-        description: 'Extended thinking for complex analysis with search',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        capabilities: ['search', 'reasoning'],
-        tier: 'reasoning'
-    },
-    'sonar-reasoning': {
-        name: 'Sonar Reasoning',
-        provider: 'perplexity',
-        description: 'Fast reasoning with web search',
+        description: 'Chain of Thought reasoning for complex analytical tasks',
         maxTokens: 8192,
         contextWindow: 128000,
         capabilities: ['search', 'reasoning'],
@@ -197,7 +189,7 @@ const PERPLEXITY_MODELS = {
     'sonar-deep-research': {
         name: 'Sonar Deep Research',
         provider: 'perplexity',
-        description: 'In-depth research with comprehensive web search',
+        description: 'Expert-level research - exhaustive searches, comprehensive reports',
         maxTokens: 8192,
         contextWindow: 128000,
         capabilities: ['search', 'research'],

@@ -8,57 +8,53 @@
 // Perplexity uses OpenAI-compatible API
 const PERPLEXITY_BASE_URL = 'https://api.perplexity.ai';
 
-// Available Perplexity models (January 2025)
+// Available Perplexity models (January 2026)
+// Note: sonar-reasoning was deprecated in late 2025, use sonar-reasoning-pro instead
 const PERPLEXITY_MODELS = {
-    // Sonar Pro - Most capable
+    // Sonar Pro - Most capable, best factuality
     'sonar-pro': {
         name: 'Sonar Pro',
-        description: 'Most capable model with advanced reasoning and search',
+        description: 'Advanced search with grounding - best factuality (F-score 0.858)',
         maxTokens: 8192,
         contextWindow: 200000,
         search: true,
         tier: 'pro',
         default: true
     },
-    // Sonar - Standard
+    // Sonar - Standard, cost-effective
     'sonar': {
         name: 'Sonar',
-        description: 'Balanced performance with web search',
+        description: 'Lightweight, cost-effective search with grounding (Llama 3.3 70B)',
         maxTokens: 8192,
         contextWindow: 128000,
         search: true,
         tier: 'standard'
     },
-    // Sonar Reasoning Pro - Deep analysis
+    // Sonar Reasoning Pro - Chain of Thought
     'sonar-reasoning-pro': {
         name: 'Sonar Reasoning Pro',
-        description: 'Extended thinking for complex analysis with search',
+        description: 'Chain of Thought reasoning for complex analytical tasks',
         maxTokens: 8192,
         contextWindow: 128000,
         search: true,
         reasoning: true,
         tier: 'reasoning'
     },
-    // Sonar Reasoning - Fast reasoning
-    'sonar-reasoning': {
-        name: 'Sonar Reasoning',
-        description: 'Fast reasoning with web search',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        search: true,
-        reasoning: true,
-        tier: 'reasoning'
-    },
-    // Sonar Deep Research - Research mode
+    // Sonar Deep Research - Expert-level research
     'sonar-deep-research': {
         name: 'Sonar Deep Research',
-        description: 'In-depth research with comprehensive web search',
+        description: 'Expert-level research - exhaustive searches, comprehensive reports',
         maxTokens: 8192,
         contextWindow: 128000,
         search: true,
         research: true,
         tier: 'research'
     }
+};
+
+// Deprecated models - map to replacement
+const DEPRECATED_MODELS = {
+    'sonar-reasoning': 'sonar-reasoning-pro'  // Deprecated late 2025
 };
 
 // Model aliases
@@ -89,13 +85,20 @@ function initialize(key) {
 
 /**
  * Resolve model alias to actual model ID
+ * Handles deprecated models by mapping to replacements
  */
 function resolveModel(modelInput) {
     if (!modelInput) return 'sonar-pro';
 
     const normalized = modelInput.toLowerCase();
 
-    // Check aliases first
+    // Check for deprecated models first - map to replacement
+    if (DEPRECATED_MODELS[normalized]) {
+        console.warn(`Perplexity model '${modelInput}' is deprecated, using '${DEPRECATED_MODELS[normalized]}' instead`);
+        return DEPRECATED_MODELS[normalized];
+    }
+
+    // Check aliases
     if (MODEL_ALIASES[normalized]) {
         return MODEL_ALIASES[normalized];
     }

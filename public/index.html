@@ -96,6 +96,28 @@
                     </div>
                 </div>
 
+                <!-- LLM Provider Status -->
+                <div class="dashboard-card llm-status-card" id="llmStatusCard">
+                    <div class="card-header">
+                        <h2><i data-lucide="cloud" class="card-icon"></i> LLM Provider Status</h2>
+                        <span id="llmOverallStatus" class="status-badge status-loading">Checking...</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="llmProviderStatus" class="service-list">
+                            <!-- Populated by dashboard.js -->
+                        </div>
+                        <div class="card-footer" id="llmCheckFooter" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                            <span class="text-muted" style="font-size: 0.75rem;">
+                                Last checked: <span id="llmLastChecked">--</span>
+                            </span>
+                            <button class="btn btn-sm" id="llmCheckNowBtn" style="display: none; font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick="runLLMCheck()">
+                                <i data-lucide="refresh-cw" style="width: 12px; height: 12px; margin-right: 4px;"></i>
+                                Check Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Quick Actions -->
                 <div class="dashboard-card">
                     <div class="card-header">
