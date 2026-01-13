@@ -625,6 +625,9 @@
                     <p class="page-subtitle">Build your authority and create consistent, impactful content</p>
                 </div>
                 <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="info"></i>
+                    </button>
                     <button class="btn btn-secondary" onclick="window.location.href='/chat.html?agent=tl-strategy-architect'">
                         <i data-lucide="message-circle"></i>
                         Strategy Chat
@@ -854,12 +857,29 @@
         let calendarEntries = [];
 
         // API Helpers
+        function getUserId() {
+            try {
+                const userData = localStorage.getItem('insight360_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    return user.id;
+                }
+            } catch (e) {
+                console.warn('Could not get user ID from localStorage');
+            }
+            return null;
+        }
+
         async function fetchAPI(endpoint, options = {}) {
+            const userId = getUserId();
+            if (!userId) {
+                console.warn('No user ID found - user may need to log in');
+            }
             const response = await fetch(`/api/thought-leadership${endpoint}`, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': localStorage.getItem('userId') || 'default-user',
+                    'x-user-id': userId || '',
                     ...options.headers
                 }
             });
@@ -1066,11 +1086,11 @@
 
         // Actions
         function startNicheDiscovery() {
-            window.location.href = '/workflow-run.html?workflow=tl-niche-discovery';
+            window.location.href = '/workflow-run.html?id=tl-niche-discovery';
         }
 
         function startWeeklyPipeline() {
-            window.location.href = '/workflow-run.html?workflow=tl-weekly-pipeline';
+            window.location.href = '/workflow-run.html?id=tl-weekly-pipeline';
         }
 
         function editPosition() {
@@ -1123,6 +1143,14 @@
                 }
             }
         }
+    </script>
+    <script src="/js/help-modal.js"></script>
+    <script>
+        // Initialize Help Modal
+        HelpModal.init({
+            helpFile: '/documentation/guides/thought-leadership-user-guide.md',
+            title: 'Thought Leadership Guide'
+        });
     </script>
 </body>
 </html>

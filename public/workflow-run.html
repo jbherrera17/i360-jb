@@ -692,7 +692,8 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    workflow = result.data.workflow;
+                    // Workflow data is directly in result.data, steps are nested
+                    workflow = result.data;
                     steps = result.data.steps || [];
 
                     renderWorkflowInfo();
@@ -795,6 +796,9 @@
                 case 'user_input':
                     content = renderUserInputStep(step);
                     break;
+                case 'human_gate':
+                    content = renderHumanGateStep(step);
+                    break;
                 case 'agent_chat':
                     content = renderAgentChatStep(step);
                     break;
@@ -803,6 +807,9 @@
                     break;
                 case 'output':
                     content = renderOutputStep(step);
+                    break;
+                case 'artifact_generation':
+                    content = renderArtifactGenerationStep(step);
                     break;
                 default:
                     content = renderGenericStep(step);
@@ -875,6 +882,170 @@
                     }).join('')}
                 </div>
             `;
+        }
+
+        // Render human gate step (checkpoint with optional input fields)
+        function renderHumanGateStep(step) {
+            const fields = step.input_fields || [];
+            const savedData = stepOutputs[step.step_number] || {};
+            const gateMessage = step.gate_message || '';
+
+            let html = '';
+
+            // Show gate message if present
+            if (gateMessage) {
+                html += `
+                    <div class="gate-message" style="background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem;">
+                        ${marked.parse(gateMessage)}
+                    </div>
+                `;
+            }
+
+            // Render input fields if any
+            if (fields.length > 0) {
+                html += `
+                    <div class="input-fields">
+                        ${fields.map(field => {
+                            const value = savedData[field.name] !== undefined ? savedData[field.name] : (field.default !== undefined ? field.default : '');
+                            const required = field.required ? '<span class="required" style="color: var(--danger);">*</span>' : '';
+
+                            if (field.type === 'boolean') {
+                                return `
+                                    <div class="field-group" style="margin-bottom: 1rem;">
+                                        <label class="field-label" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                                            <input type="checkbox" id="field_${field.name}"
+                                                   ${value === true || value === 'true' ? 'checked' : ''}
+                                                   style="width: 18px; height: 18px; accent-color: var(--primary);">
+                                            <span>${escapeHtml(field.label)} ${required}</span>
+                                        </label>
+                                    </div>
+                                `;
+                            } else if (field.type === 'textarea') {
+                                return `
+                                    <div class="field-group" style="margin-bottom: 1rem;">
+                                        <label class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${escapeHtml(field.label)} ${required}</label>
+                                        <textarea class="field-textarea" id="field_${field.name}"
+                                                  placeholder="${escapeHtml(field.placeholder || '')}"
+                                                  style="width: 100%; min-height: 100px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); resize: vertical;"
+                                                  ${field.required ? 'required' : ''}>${escapeHtml(value)}</textarea>
+                                    </div>
+                                `;
+                            } else if (field.type === 'select') {
+                                const options = field.options || [];
+                                return `
+                                    <div class="field-group" style="margin-bottom: 1rem;">
+                                        <label class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${escapeHtml(field.label)} ${required}</label>
+                                        <select class="field-select" id="field_${field.name}"
+                                                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);"
+                                                ${field.required ? 'required' : ''}>
+                                            <option value="">Select...</option>
+                                            ${options.map(opt => `
+                                                <option value="${escapeHtml(opt)}" ${value === opt ? 'selected' : ''}>
+                                                    ${escapeHtml(opt)}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                `;
+                            } else if (field.type === 'number') {
+                                return `
+                                    <div class="field-group" style="margin-bottom: 1rem;">
+                                        <label class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${escapeHtml(field.label)} ${required}</label>
+                                        <input type="number" class="field-input" id="field_${field.name}"
+                                               value="${escapeHtml(String(value))}"
+                                               placeholder="${escapeHtml(field.placeholder || '')}"
+                                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);"
+                                               ${field.required ? 'required' : ''}>
+                                    </div>
+                                `;
+                            } else {
+                                return `
+                                    <div class="field-group" style="margin-bottom: 1rem;">
+                                        <label class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${escapeHtml(field.label)} ${required}</label>
+                                        <input type="${field.type || 'text'}" class="field-input" id="field_${field.name}"
+                                               value="${escapeHtml(String(value))}"
+                                               placeholder="${escapeHtml(field.placeholder || '')}"
+                                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);"
+                                               ${field.required ? 'required' : ''}>
+                                    </div>
+                                `;
+                            }
+                        }).join('')}
+                    </div>
+                `;
+            } else {
+                // No input fields - just a confirmation gate
+                html += `
+                    <div style="text-align: center; padding: 1rem;">
+                        <p style="color: var(--text-muted);">Review the information above and click Next to continue.</p>
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        // Render artifact generation step
+        function renderArtifactGenerationStep(step) {
+            const fields = step.input_fields || [];
+            const savedData = stepOutputs[step.step_number] || {};
+
+            let html = `
+                <div class="artifact-step">
+                    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <i data-lucide="package" style="color: var(--success);"></i>
+                            <h4 style="margin: 0; color: var(--success);">Artifact Generation</h4>
+                        </div>
+                        <p style="margin: 0; color: var(--text-secondary);">This step will create and save artifacts based on the workflow outputs.</p>
+                    </div>
+            `;
+
+            // Render input fields if any
+            if (fields.length > 0) {
+                html += `<div class="input-fields">`;
+                fields.forEach(field => {
+                    const value = savedData[field.name] !== undefined ? savedData[field.name] : (field.default !== undefined ? field.default : '');
+                    const required = field.required ? '<span class="required" style="color: var(--danger);">*</span>' : '';
+
+                    if (field.type === 'boolean') {
+                        html += `
+                            <div class="field-group" style="margin-bottom: 1rem;">
+                                <label class="field-label" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                                    <input type="checkbox" id="field_${field.name}"
+                                           ${value === true || value === 'true' ? 'checked' : ''}
+                                           style="width: 18px; height: 18px; accent-color: var(--primary);">
+                                    <span>${escapeHtml(field.label)} ${required}</span>
+                                </label>
+                            </div>
+                        `;
+                    } else if (field.type === 'number') {
+                        html += `
+                            <div class="field-group" style="margin-bottom: 1rem;">
+                                <label class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${escapeHtml(field.label)} ${required}</label>
+                                <input type="number" class="field-input" id="field_${field.name}"
+                                       value="${escapeHtml(String(value))}"
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);"
+                                       ${field.required ? 'required' : ''}>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="field-group" style="margin-bottom: 1rem;">
+                                <label class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">${escapeHtml(field.label)} ${required}</label>
+                                <input type="text" class="field-input" id="field_${field.name}"
+                                       value="${escapeHtml(String(value))}"
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);"
+                                       ${field.required ? 'required' : ''}>
+                            </div>
+                        `;
+                    }
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            return html;
         }
 
         // Render agent chat step

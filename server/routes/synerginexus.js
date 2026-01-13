@@ -7,7 +7,7 @@
  */
 
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 module.exports = function(supabase) {
     const router = express.Router();
@@ -148,7 +148,7 @@ module.exports = function(supabase) {
             const { data, error } = await supabase
                 .from('digm_config')
                 .insert({
-                    id: uuidv4(),
+                    id: crypto.randomUUID(),
                     layer,
                     config_key,
                     config_value,
@@ -322,7 +322,7 @@ module.exports = function(supabase) {
             const { data, error } = await supabase
                 .from('governance_values')
                 .insert({
-                    id: uuidv4(),
+                    id: crypto.randomUUID(),
                     name,
                     plain_meaning,
                     why_it_matters,
@@ -458,7 +458,7 @@ module.exports = function(supabase) {
             const { data, error } = await supabase
                 .from('governance_principles')
                 .insert({
-                    id: uuidv4(),
+                    id: crypto.randomUUID(),
                     value_id,
                     statement,
                     constraint_type,
@@ -709,7 +709,7 @@ module.exports = function(supabase) {
             const { data, error } = await supabase
                 .from('governance_conflicts')
                 .insert({
-                    id: uuidv4(),
+                    id: crypto.randomUUID(),
                     conversation_id: conversation_id || null,
                     agent_id: agent_id || null,
                     conflict_description,

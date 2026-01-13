@@ -305,22 +305,52 @@ module.exports = function(supabase) {
     /**
      * GET /api/execute120/workflows/:id
      * Get workflow with all steps
+     * Accepts UUID or workflow name (from template)
      */
     router.get('/workflows/:id', async (req, res) => {
         try {
             const { id } = req.params;
 
-            // Get workflow
-            const { data: workflow, error: workflowError } = await supabase
-                .from('workflows')
-                .select(`
-                    *,
-                    department:departments(id, name, icon, color)
-                `)
-                .eq('id', id)
-                .single();
+            // Check if id is a UUID or a name
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+            // Get workflow - by UUID or by looking up template name
+            let workflow, workflowError;
+            if (isUUID) {
+                ({ data: workflow, error: workflowError } = await supabase
+                    .from('workflows')
+                    .select(`
+                        *,
+                        department:departments(id, name, icon, color)
+                    `)
+                    .eq('id', id)
+                    .single());
+            } else {
+                // Look up by template name first
+                const { data: template } = await supabase
+                    .from('workflow_templates')
+                    .select('id')
+                    .eq('name', id)
+                    .single();
+
+                if (template) {
+                    // Find workflow using this template
+                    ({ data: workflow, error: workflowError } = await supabase
+                        .from('workflows')
+                        .select(`
+                            *,
+                            department:departments(id, name, icon, color)
+                        `)
+                        .eq('template_id', template.id)
+                        .single());
+                } else {
+                    workflowError = { message: `No workflow found with name: ${id}` };
+                }
+            }
 
             if (workflowError) throw workflowError;
+
+            const workflowId = workflow.id;
 
             // Get steps
             const { data: steps, error: stepsError } = await supabase
@@ -329,7 +359,7 @@ module.exports = function(supabase) {
                     *,
                     agent:agents(id, name, description, icon)
                 `)
-                .eq('workflow_id', id)
+                .eq('workflow_id', workflowId)
                 .order('step_number', { ascending: true });
 
             if (stepsError) throw stepsError;

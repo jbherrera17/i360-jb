@@ -7,7 +7,7 @@
  */
 
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 module.exports = function(supabase) {
     const router = express.Router();

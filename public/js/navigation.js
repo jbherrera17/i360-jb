@@ -201,6 +201,48 @@ async function handleLogout() {
 }
 
 /**
+ * Get sidebar collapsed state from localStorage
+ */
+function getSidebarCollapsed() {
+    try {
+        return localStorage.getItem('insight360_sidebar_collapsed') === 'true';
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Save sidebar collapsed state to localStorage
+ */
+function saveSidebarCollapsed(collapsed) {
+    try {
+        localStorage.setItem('insight360_sidebar_collapsed', collapsed.toString());
+    } catch (e) {
+        console.warn('Could not save sidebar state');
+    }
+}
+
+/**
+ * Toggle sidebar collapsed state
+ */
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+    saveSidebarCollapsed(isCollapsed);
+
+    // Update toggle button icon
+    const toggleBtn = sidebar.querySelector('.sidebar-toggle-btn i');
+    if (toggleBtn) {
+        toggleBtn.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+}
+
+/**
  * Get collapsed state from localStorage
  */
 function getCollapsedGroups() {
@@ -387,12 +429,16 @@ function setupUserMenuClose() {
  * Generate full sidebar HTML
  */
 function generateSidebarHTML() {
+    const isCollapsed = getSidebarCollapsed();
     return `
         <div class="sidebar-header">
             <a href="/" class="logo">
                 <img src="/assets/I360-180T.png" alt="Insight 360" class="logo-image" onerror="this.style.display='none'">
                 <span class="logo-text">Insight 360</span>
             </a>
+            <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="${isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}">
+                <i data-lucide="${isCollapsed ? 'panel-left-open' : 'panel-left-close'}"></i>
+            </button>
         </div>
         <nav class="sidebar-nav">
             ${generateNavHTML()}
@@ -428,6 +474,11 @@ function initNavigation() {
 
     // Inject navigation
     sidebar.innerHTML = generateSidebarHTML();
+
+    // Apply saved collapsed state
+    if (getSidebarCollapsed()) {
+        sidebar.classList.add('sidebar-collapsed');
+    }
 
     // Re-initialize Lucide icons if available
     if (typeof lucide !== 'undefined') {
@@ -592,6 +643,7 @@ function toggleTheme() {
 
 // Make functions available globally
 window.toggleNavGroup = toggleNavGroup;
+window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;
 window.updateThemeToggleIcon = updateThemeToggleIcon;
 window.toggleUserMenu = toggleUserMenu;

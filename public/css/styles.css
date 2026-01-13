@@ -176,6 +176,7 @@ select {
     bottom: 0;
     z-index: 100;
     overflow: hidden;
+    transition: width var(--transition-base);
 }
 
 .sidebar-header {
@@ -545,6 +546,113 @@ select {
     margin-bottom: var(--spacing-sm);
 }
 
+/* Sidebar Toggle Button */
+.sidebar-toggle-btn {
+    position: absolute;
+    right: var(--spacing-md);
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    opacity: 0;
+}
+
+.sidebar:hover .sidebar-toggle-btn,
+.sidebar-collapsed .sidebar-toggle-btn {
+    opacity: 1;
+}
+
+.sidebar-toggle-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.sidebar-toggle-btn i {
+    width: 18px;
+    height: 18px;
+}
+
+.sidebar-header {
+    position: relative;
+}
+
+/* Sidebar Collapsed State */
+.sidebar.sidebar-collapsed {
+    width: 60px;
+}
+
+.sidebar.sidebar-collapsed .logo-text {
+    display: none;
+}
+
+.sidebar.sidebar-collapsed .nav-item span,
+.sidebar.sidebar-collapsed .group-label,
+.sidebar.sidebar-collapsed .group-chevron {
+    display: none;
+}
+
+.sidebar.sidebar-collapsed .nav-group-header {
+    justify-content: center;
+    padding: var(--spacing-xs);
+}
+
+.sidebar.sidebar-collapsed .nav-item {
+    justify-content: center;
+    padding: var(--spacing-sm);
+}
+
+.sidebar.sidebar-collapsed .nav-group-items {
+    padding-left: 0;
+}
+
+.sidebar.sidebar-collapsed .user-profile {
+    flex-direction: column;
+    padding: var(--spacing-xs);
+}
+
+.sidebar.sidebar-collapsed .user-profile .user-info,
+.sidebar.sidebar-collapsed .user-profile .user-menu-btn {
+    display: none;
+}
+
+.sidebar.sidebar-collapsed .theme-toggle span {
+    display: none;
+}
+
+.sidebar.sidebar-collapsed .theme-toggle {
+    justify-content: center;
+}
+
+.sidebar.sidebar-collapsed .sidebar-toggle-btn {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+}
+
+.sidebar.sidebar-collapsed .sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.sidebar.sidebar-collapsed .logo {
+    display: none;
+}
+
+/* Adjust main content when sidebar is collapsed */
+.app-container:has(.sidebar-collapsed) .main-content {
+    margin-left: 60px;
+}
+
 .version-info {
     display: flex;
     justify-content: space-between;
@@ -570,6 +678,7 @@ select {
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
+    transition: margin-left var(--transition-base);
 }
 
 .main-container {

@@ -7,7 +7,7 @@
  */
 
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 module.exports = function(supabase) {
     const router = express.Router();
@@ -281,7 +281,7 @@ module.exports = function(supabase) {
             }
 
             // Create role
-            const roleId = uuidv4();
+            const roleId = crypto.randomUUID();
             const roleData = {
                 id: roleId,
                 department_id,
@@ -562,7 +562,7 @@ module.exports = function(supabase) {
                 });
             }
 
-            const respId = uuidv4();
+            const respId = crypto.randomUUID();
             const respData = {
                 id: respId,
                 name,
