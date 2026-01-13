@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thought Leadership | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Thought Leadership Page Styles */
+        .tl-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Profile Overview Section */
+        .profile-overview {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .profile-overview {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Main Profile Card */
+        .profile-card {
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .profile-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .profile-title h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            margin: 0;
+        }
+
+        .profile-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .setup-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .setup-progress.complete {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .setup-progress.incomplete {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        /* Thesis Section */
+        .thesis-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .thesis-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .thesis-text.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Atomic Claim */
+        .atomic-claim {
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+            border-left: 3px solid #8b5cf6;
+            border-radius: 0 8px 8px 0;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .atomic-claim.empty {
+            background: var(--bg-tertiary);
+            border-left-color: var(--border);
+            color: var(--text-muted);
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        /* Visibility Card */
+        .visibility-card {
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .visibility-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .visibility-header h3 {
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .visibility-score {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--primary) var(--score-percent, 0%),
+                var(--bg-tertiary) var(--score-percent, 0%)
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            position: relative;
+        }
+
+        .score-inner {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .visibility-last-check {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .btn-check-visibility {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        /* Content Pillars Grid */
+        .pillars-section {
+            margin-top: 1.5rem;
+        }
+
+        .pillars-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .pillars-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .pillar-card {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pillar-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .pillar-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .pillar-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .pillar-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .add-pillar-card {
+            border-style: dashed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            min-height: 100px;
+        }
+
+        .add-pillar-card:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Calendar Section */
+        .calendar-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .calendar-title h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .calendar-nav button {
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .calendar-nav button:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calendar-current {
+            font-weight: 600;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .calendar-day {
+            min-height: 80px;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calendar-day:hover {
+            border-color: var(--primary);
+        }
+
+        .calendar-day.today {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.4;
+        }
+
+        .day-number {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .day-entry {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .day-entry.draft {
+            background: var(--warning);
+        }
+
+        .day-entry.ready {
+            background: var(--success);
+        }
+
+        .day-entry.published {
+            background: var(--info);
+        }
+
+        /* Weekly Pipeline Section */
+        .pipeline-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .pipeline-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .pipeline-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pipeline-title h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .pipeline-week {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .pipeline-steps {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .pipeline-step.active {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .pipeline-step.completed {
+            border-color: var(--success);
+        }
+
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .pipeline-step.active .step-icon {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pipeline-step.completed .step-icon {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-card {
+            flex: 1;
+            padding: 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .action-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .action-text h4 {
+            font-size: 0.95rem;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .action-text p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            margin: 0 0 1.5rem 0;
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="header-content">
+                    <h1 class="page-title">Thought Leadership</h1>
+                    <p class="page-subtitle">Build your authority and create consistent, impactful content</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="window.location.href='/chat.html?agent=tl-strategy-architect'">
+                        <i data-lucide="message-circle"></i>
+                        Strategy Chat
+                    </button>
+                    <button class="btn btn-primary" onclick="startWeeklyPipeline()">
+                        <i data-lucide="play"></i>
+                        Start Weekly Pipeline
+                    </button>
+                </div>
+            </header>
+
+            <div class="tl-layout">
+                <!-- Profile Overview -->
+                <section class="profile-overview">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-title">
+                                <div class="profile-icon">
+                                    <i data-lucide="compass"></i>
+                                </div>
+                                <div>
+                                    <h2>Your Position</h2>
+                                    <span class="profile-subtitle">Core thesis and atomic claim</span>
+                                </div>
+                            </div>
+                            <div id="setup-status" class="setup-progress incomplete">
+                                <i data-lucide="alert-circle"></i>
+                                <span>Setup incomplete</span>
+                            </div>
+                        </div>
+
+                        <div class="thesis-section">
+                            <div class="section-label">Core Thesis</div>
+                            <p id="core-thesis" class="thesis-text empty">
+                                No thesis defined yet. Run Niche Discovery to establish your thought leadership position.
+                            </p>
+                        </div>
+
+                        <div class="thesis-section">
+                            <div class="section-label">Atomic Claim</div>
+                            <div id="atomic-claim" class="atomic-claim empty">
+                                Your single-sentence claim will appear here
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem;">
+                            <button class="btn btn-secondary btn-sm" onclick="startNicheDiscovery()">
+                                <i data-lucide="compass"></i>
+                                Run Niche Discovery
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="editPosition()">
+                                <i data-lucide="edit-3"></i>
+                                Edit Position
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="visibility-card">
+                        <div class="visibility-header">
+                            <i data-lucide="eye"></i>
+                            <h3>AI Visibility Score</h3>
+                        </div>
+                        <div class="visibility-score">
+                            <div class="score-circle" style="--score-percent: 0%;">
+                                <div class="score-inner">
+                                    <span id="visibility-score" class="score-value">--</span>
+                                    <span class="score-label">/ 100</span>
+                                </div>
+                            </div>
+                            <div id="visibility-date" class="visibility-last-check">
+                                Not yet tested
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-check-visibility" onclick="checkVisibility()">
+                            <i data-lucide="search"></i>
+                            Check Visibility
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Content Pillars -->
+                <section class="pillars-section">
+                    <div class="pillars-header">
+                        <h3>Content Pillars</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="managePillars()">
+                            <i data-lucide="settings"></i>
+                            Manage Pillars
+                        </button>
+                    </div>
+                    <div id="pillars-grid" class="pillars-grid">
+                        <!-- Pillars loaded dynamically -->
+                        <div class="pillar-card add-pillar-card" onclick="addPillar()">
+                            <i data-lucide="plus"></i>
+                            <span>Add Pillar</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Content Calendar -->
+                <section class="calendar-section">
+                    <div class="calendar-header">
+                        <div class="calendar-title">
+                            <i data-lucide="calendar"></i>
+                            <h3>Content Calendar</h3>
+                        </div>
+                        <div class="calendar-nav">
+                            <button onclick="prevMonth()"><i data-lucide="chevron-left"></i></button>
+                            <span id="calendar-month" class="calendar-current">January 2026</span>
+                            <button onclick="nextMonth()"><i data-lucide="chevron-right"></i></button>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="syncCalendar()">
+                                <i data-lucide="refresh-cw"></i>
+                                Sync Notion
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="addCalendarEntry()">
+                                <i data-lucide="plus"></i>
+                                Add Entry
+                            </button>
+                        </div>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- Calendar rendered dynamically -->
+                    </div>
+                </section>
+
+                <!-- Weekly Pipeline -->
+                <section class="pipeline-section">
+                    <div class="pipeline-header">
+                        <div class="pipeline-title">
+                            <i data-lucide="git-branch"></i>
+                            <h3>Weekly Pipeline</h3>
+                        </div>
+                        <span class="pipeline-week">Week of January 13, 2026</span>
+                    </div>
+                    <div id="pipeline-steps" class="pipeline-steps">
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i data-lucide="file-text"></i></div>
+                            <div class="step-name">Select Topic</div>
+                            <div class="step-status">Not started</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i data-lucide="search"></i></div>
+                            <div class="step-name">Research</div>
+                            <div class="step-status">Pending</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i data-lucide="edit-3"></i></div>
+                            <div class="step-name">Write Article</div>
+                            <div class="step-status">Pending</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i data-lucide="check-circle"></i></div>
+                            <div class="step-name">Review</div>
+                            <div class="step-status">Pending</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i data-lucide="linkedin"></i></div>
+                            <div class="step-name">LinkedIn Posts</div>
+                            <div class="step-status">Pending</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i data-lucide="upload"></i></div>
+                            <div class="step-name">Publish</div>
+                            <div class="step-status">Pending</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Quick Actions -->
+                <section class="quick-actions">
+                    <div class="action-card" onclick="window.location.href='/chat.html?agent=tl-article-writer'">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                            <i data-lucide="file-text"></i>
+                        </div>
+                        <div class="action-text">
+                            <h4>Write Article</h4>
+                            <p>Start a new thought leadership article</p>
+                        </div>
+                    </div>
+                    <div class="action-card" onclick="window.location.href='/chat.html?agent=tl-linkedin-generator'">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #0077b5, #004182);">
+                            <i data-lucide="linkedin"></i>
+                        </div>
+                        <div class="action-text">
+                            <h4>Generate LinkedIn</h4>
+                            <p>Create a week of LinkedIn posts</p>
+                        </div>
+                    </div>
+                    <div class="action-card" onclick="window.location.href='/chat.html?agent=ai-visibility-researcher'">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i data-lucide="eye"></i>
+                        </div>
+                        <div class="action-text">
+                            <h4>Visibility Research</h4>
+                            <p>Check AI visibility for you or competitors</p>
+                        </div>
+                    </div>
+                    <div class="action-card" onclick="window.location.href='/chat.html?agent=content-pillar-designer'">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i data-lucide="columns"></i>
+                        </div>
+                        <div class="action-text">
+                            <h4>Design Pillars</h4>
+                            <p>Create or refine content pillars</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    </div><!-- /app-container -->
+
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadProfile();
+            loadPillars();
+            renderCalendar();
+        });
+
+        // State
+        let currentMonth = new Date();
+        let profile = null;
+        let pillars = [];
+        let calendarEntries = [];
+
+        // API Helpers
+        async function fetchAPI(endpoint, options = {}) {
+            const response = await fetch(`/api/thought-leadership${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': localStorage.getItem('userId') || 'default-user',
+                    ...options.headers
+                }
+            });
+            return response.json();
+        }
+
+        // Load Profile
+        async function loadProfile() {
+            try {
+                const result = await fetchAPI('/profile');
+                profile = result.data;
+
+                if (profile) {
+                    // Update thesis
+                    const thesisEl = document.getElementById('core-thesis');
+                    if (profile.core_thesis) {
+                        thesisEl.textContent = profile.core_thesis;
+                        thesisEl.classList.remove('empty');
+                    }
+
+                    // Update atomic claim
+                    const claimEl = document.getElementById('atomic-claim');
+                    if (profile.atomic_claim) {
+                        claimEl.textContent = profile.atomic_claim;
+                        claimEl.classList.remove('empty');
+                    }
+
+                    // Update setup status
+                    const statusEl = document.getElementById('setup-status');
+                    if (profile.setup_completed) {
+                        statusEl.classList.remove('incomplete');
+                        statusEl.classList.add('complete');
+                        statusEl.innerHTML = '<i data-lucide="check-circle"></i><span>Setup complete</span>';
+                    }
+
+                    lucide.createIcons();
+                }
+
+                // Load visibility
+                loadVisibility();
+            } catch (err) {
+                console.error('Error loading profile:', err);
+            }
+        }
+
+        // Load Visibility
+        async function loadVisibility() {
+            try {
+                const result = await fetchAPI('/visibility/latest');
+
+                if (result.personal) {
+                    const score = result.personal.visibility_score || 0;
+                    document.getElementById('visibility-score').textContent = score;
+                    document.querySelector('.score-circle').style.setProperty('--score-percent', `${score}%`);
+
+                    const date = new Date(result.personal.created_at);
+                    document.getElementById('visibility-date').textContent =
+                        `Last checked: ${date.toLocaleDateString()}`;
+                }
+            } catch (err) {
+                console.error('Error loading visibility:', err);
+            }
+        }
+
+        // Load Pillars
+        async function loadPillars() {
+            try {
+                const result = await fetchAPI('/pillars');
+                pillars = result.data || [];
+
+                const grid = document.getElementById('pillars-grid');
+                const addCard = grid.querySelector('.add-pillar-card');
+
+                // Clear existing pillars
+                Array.from(grid.children).forEach(child => {
+                    if (!child.classList.contains('add-pillar-card')) {
+                        child.remove();
+                    }
+                });
+
+                // Add pillar cards
+                pillars.forEach(pillar => {
+                    const card = document.createElement('div');
+                    card.className = 'pillar-card';
+                    card.onclick = () => viewPillar(pillar.id);
+                    card.innerHTML = `
+                        <div class="pillar-icon" style="background: ${pillar.color || '#3b82f6'}">
+                            <i data-lucide="${pillar.icon || 'bookmark'}"></i>
+                        </div>
+                        <div class="pillar-name">${pillar.name}</div>
+                        <div class="pillar-count">0 articles</div>
+                    `;
+                    grid.insertBefore(card, addCard);
+                });
+
+                lucide.createIcons();
+            } catch (err) {
+                console.error('Error loading pillars:', err);
+            }
+        }
+
+        // Render Calendar
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            // Day headers
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            // Get month details
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startPadding = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+
+            // Update month display
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('calendar-month').textContent = `${monthNames[month]} ${year}`;
+
+            // Previous month days
+            const prevMonth = new Date(year, month, 0);
+            for (let i = startPadding - 1; i >= 0; i--) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day other-month';
+                day.innerHTML = `<div class="day-number">${prevMonth.getDate() - i}</div>`;
+                grid.appendChild(day);
+            }
+
+            // Current month days
+            const today = new Date();
+            for (let i = 1; i <= totalDays; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day';
+
+                if (year === today.getFullYear() && month === today.getMonth() && i === today.getDate()) {
+                    day.classList.add('today');
+                }
+
+                day.innerHTML = `<div class="day-number">${i}</div>`;
+                day.onclick = () => selectDay(year, month + 1, i);
+                grid.appendChild(day);
+            }
+
+            // Next month days
+            const endPadding = 42 - (startPadding + totalDays);
+            for (let i = 1; i <= endPadding; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day other-month';
+                day.innerHTML = `<div class="day-number">${i}</div>`;
+                grid.appendChild(day);
+            }
+
+            // Load calendar entries
+            loadCalendarEntries();
+        }
+
+        async function loadCalendarEntries() {
+            try {
+                const year = currentMonth.getFullYear();
+                const month = currentMonth.getMonth();
+                const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+                const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+
+                const result = await fetchAPI(`/calendar?start_date=${startDate}&end_date=${endDate}`);
+                calendarEntries = result.data || [];
+
+                // Add entries to calendar days
+                calendarEntries.forEach(entry => {
+                    const date = new Date(entry.scheduled_date);
+                    const dayNum = date.getDate();
+                    const days = document.querySelectorAll('.calendar-day:not(.other-month)');
+
+                    if (days[dayNum - 1]) {
+                        const entryEl = document.createElement('div');
+                        entryEl.className = `day-entry ${entry.status || ''}`;
+                        entryEl.textContent = entry.title;
+                        days[dayNum - 1].appendChild(entryEl);
+                    }
+                });
+            } catch (err) {
+                console.error('Error loading calendar entries:', err);
+            }
+        }
+
+        // Navigation
+        function prevMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // Actions
+        function startNicheDiscovery() {
+            window.location.href = '/workflow-run.html?workflow=tl-niche-discovery';
+        }
+
+        function startWeeklyPipeline() {
+            window.location.href = '/workflow-run.html?workflow=tl-weekly-pipeline';
+        }
+
+        function editPosition() {
+            window.location.href = '/chat.html?agent=tl-strategy-architect&context=edit';
+        }
+
+        function checkVisibility() {
+            window.location.href = '/chat.html?agent=ai-visibility-researcher';
+        }
+
+        function managePillars() {
+            // Open pillar management modal or page
+            alert('Pillar management coming soon');
+        }
+
+        function addPillar() {
+            window.location.href = '/chat.html?agent=content-pillar-designer';
+        }
+
+        function viewPillar(id) {
+            // Open pillar detail view
+            alert('Pillar detail view coming soon');
+        }
+
+        function syncCalendar() {
+            fetchAPI('/calendar/sync-all', { method: 'POST' })
+                .then(() => {
+                    loadCalendarEntries();
+                    alert('Calendar synced successfully');
+                })
+                .catch(err => alert('Sync failed: ' + err.message));
+        }
+
+        function addCalendarEntry() {
+            window.location.href = '/chat.html?agent=tl-strategy-architect&context=calendar';
+        }
+
+        function selectDay(year, month, day) {
+            // Show entries for this day or create new
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const entries = calendarEntries.filter(e => e.scheduled_date === dateStr);
+
+            if (entries.length > 0) {
+                // Show existing entries
+                alert(`Entries for ${dateStr}:\n${entries.map(e => e.title).join('\n')}`);
+            } else {
+                // Offer to create new
+                if (confirm(`No entries for ${dateStr}. Create new entry?`)) {
+                    addCalendarEntry();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

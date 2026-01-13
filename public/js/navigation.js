@@ -73,6 +73,7 @@ const navConfig = {
             icon: 'wrench',
             items: [
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
+                { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
                 { href: '/guides.html', icon: 'book-open', label: 'Guides' }
             ]
         },

@@ -48,6 +48,7 @@ const tagsRoutes = require('./routes/tags');
 const departmentRolesRoutes = require('./routes/department-roles');
 const userProfileRoutes = require('./routes/user-profile');
 const synerginexusRoutes = require('./routes/synerginexus');
+const thoughtLeadershipRoutes = require('./routes/thought-leadership');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -335,6 +336,7 @@ function initializeServices() {
         app.use('/api/roles', departmentRolesRoutes(supabase));
         app.use('/api/user-profile', userProfileRoutes(supabase));
         app.use('/api/synerginexus', synerginexusRoutes(supabase));
+        app.use('/api/thought-leadership', thoughtLeadershipRoutes(supabase));
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Auth routes registered');
         console.log('  ✅ Onboarding routes registered');
