@@ -1,55 +1,93 @@
-# Multi-LLM Chat User Guide
+# Higgins User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** January 13, 2026
 
 ---
 
-## Why Chat Is Important
+## Meet Higgins
 
-The Chat interface is the primary way you interact with AI in Insight 360. Unlike single-model chat applications, Insight 360's chat gives you:
+Higgins is your AI guide to Insight 360. Named after the patient teacher from "My Fair Lady," Higgins is designed to be warm, knowledgeable, and helpful—whether you're asking about i360 features or need assistance with any other task.
 
-- **Model flexibility**: Switch between Claude and GPT models mid-conversation
+**What makes Higgins special:**
+- **i360 Expertise**: Higgins knows the system inside and out and can guide you through features
+- **Model flexibility**: Switch between Claude, GPT, and Perplexity models mid-conversation
 - **Real-time information**: Enable web search for current data
 - **Voice interaction**: Speak naturally and hear responses
 - **File analysis**: Upload documents, images, and PDFs for AI review
-- **Conversation history**: Never lose important discussions
-
-This multi-modal approach means you always have the right tool for your task.
+- **Consistent voice**: Higgins responds with a warm, values-driven personality regardless of which model you select
 
 ---
 
-## What It Does
+## What Higgins Can Do
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-Model Chat** | Choose from Claude (Opus, Sonnet, Haiku) and GPT (GPT-4, GPT-4o, o3, o4) |
+| **i360 Help** | Ask how to use any feature, module, or workflow |
+| **Multi-Model Chat** | Choose from Claude (Opus, Sonnet, Haiku), GPT, and Perplexity |
 | **Web Search** | Query the internet for real-time information |
 | **Voice I/O** | Speak messages and hear AI responses |
 | **File Upload** | Analyze images, PDFs, and documents |
 | **Conversations** | Save, organize, and revisit past chats |
-| **Streaming** | See responses as they're generated |
+| **Streaming** | See responses as they're generated in real-time |
+| **Smart Scrolling** | Messages stay visible as content grows |
+
+---
+
+## Chat Interface Features
+
+### Real-Time Token Streaming
+
+Higgins streams responses token-by-token so you can read as the AI writes. This provides:
+- **Immediate feedback**: See the first words within seconds
+- **Natural reading flow**: Content appears at a comfortable pace
+- **Early cancellation**: Stop if the response isn't what you need
+
+### Smart Scroll Behavior
+
+The chat interface intelligently manages scrolling:
+- **User message at top**: When you send a message, it scrolls to show your message at the top of the viewport
+- **Auto-follow tokens**: As Higgins responds, new content stays visible
+- **Scroll-to-bottom button**: If you scroll up to read earlier content, a down-arrow button appears to jump back to the latest response
+- **Respect user scroll**: If you scroll up during streaming, auto-scroll pauses so you can read
+
+### Links Open in New Tabs
+
+All links in Higgins responses (including those in tables and markdown) automatically open in a new browser tab, keeping your chat session intact.
 
 ---
 
 ## Step by Step Use
 
-### Starting a New Chat
+### Starting a Chat with Higgins
 
-1. Click **Multi-LLM Chat** in the sidebar (or use Dashboard Quick Action)
-2. You'll see the chat interface with a welcome message
+1. Click **Higgins** in the sidebar (or use Dashboard Quick Action)
+2. You'll see the welcome message with quick action buttons
 3. Type your message in the input box at the bottom
 4. Press **Enter** or click the send button
+
+### Getting i360 Help
+
+Ask Higgins anything about Insight 360:
+- "How do I create a context asset?"
+- "What are the three pillars of i360?"
+- "Where can I find the Agent Library?"
+- "How do I map context to an agent?"
+
+Higgins will provide clear, step-by-step guidance.
 
 ### Choosing a Model
 
 1. Click the **Model Selector** dropdown (top of chat)
 2. Browse available models:
    - **Claude Models**: Opus 4.5 (most capable), Sonnet 4.5 (balanced), Haiku 4.5 (fast)
-   - **GPT Models**: GPT-4, GPT-4o, o3, o4
+   - **GPT Models**: GPT-4o, GPT-5.2, o1 (reasoning)
+   - **Perplexity**: Sonar Pro (with built-in web search)
 3. Click to select
 4. Your next message will use the selected model
 5. You can switch models anytime—the conversation continues seamlessly
+
+**Note:** Higgins maintains the same helpful personality regardless of which model you choose.
 
 ### Using Web Search
 
@@ -88,7 +126,7 @@ This multi-modal approach means you always have the right tool for your task.
    - **Data**: CSV, JSON
 3. The file appears as a preview
 4. Type your question about the file
-5. Send—the AI analyzes the content
+5. Send—Higgins analyzes the content
 
 **Example prompts for files:**
 - "Summarize this document"
@@ -125,10 +163,17 @@ This multi-modal approach means you always have the right tool for your task.
 
 | Task | Recommended Model |
 |------|-------------------|
-| Complex reasoning, analysis | Claude Opus 4.5 or GPT-4 |
-| General conversation, writing | Claude Sonnet 4.5 or GPT-4o |
+| Complex reasoning, strategy | Claude Opus 4.5 |
+| General conversation, writing | Claude Sonnet 4.5 (default) |
 | Quick questions, brainstorming | Claude Haiku 4.5 |
-| Code generation | Claude Sonnet 4.5 or GPT-4 |
+| Code generation | Claude Sonnet 4.5 or GPT-4o |
+| Research with citations | Perplexity Sonar Pro |
+
+### Asking Higgins for Help
+
+- Be specific: "How do I map a context asset to an agent?" vs. "Help me with context"
+- Ask follow-up questions if you need more detail
+- Higgins can explain concepts, guide you through workflows, or help troubleshoot
 
 ### Web Search Tips
 - Be specific: "Latest iPhone 16 reviews" vs. "iPhone news"

@@ -204,7 +204,7 @@ async function loadLLMProviderStatus() {
     try {
         // Check if user is admin to show check button
         const userRole = await getCurrentUserRole();
-        if (userRole === 'admin' && checkBtnEl) {
+        if (checkBtnEl && (userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'owner')) {
             checkBtnEl.style.display = 'inline-flex';
         }
 
@@ -325,7 +325,9 @@ function formatRelativeTime(date) {
  */
 async function getCurrentUserRole() {
     try {
-        const response = await fetch('/api/auth/me');
+        const token = localStorage.getItem('insight360_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const response = await fetch('/api/auth/me', { headers });
         const data = await response.json();
         return data.user?.business_role || data.user?.role || 'user';
     } catch (error) {
@@ -340,6 +342,8 @@ async function getCurrentUserRole() {
 async function runLLMCheck() {
     const checkBtnEl = document.getElementById('llmCheckNowBtn');
     const badgeEl = document.getElementById('llmOverallStatus');
+    const statusEl = document.getElementById('llmProviderStatus');
+    const lastCheckedEl = document.getElementById('llmLastChecked');
 
     if (checkBtnEl) {
         checkBtnEl.disabled = true;
@@ -352,18 +356,87 @@ async function runLLMCheck() {
     }
 
     try {
+        const token = localStorage.getItem('insight360_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        };
+
         const response = await fetch('/api/models/availability/check', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers
         });
 
         const data = await response.json();
 
         if (data.success) {
-            // Reload the status display
-            await loadLLMProviderStatus();
+            // Use the results directly from the check response
+            // The POST response includes: providers, overallStatus, checkedAt
+            const providers = data.providers || {};
+
+            // Provider display config
+            const providerConfig = {
+                anthropic: { name: 'Claude (Anthropic)', icon: '🤖' },
+                openai: { name: 'GPT (OpenAI)', icon: '🧠' },
+                perplexity: { name: 'Sonar (Perplexity)', icon: '🔍' }
+            };
+
+            let html = '';
+            for (const [key, config] of Object.entries(providerConfig)) {
+                const providerData = providers[key];
+
+                if (!providerData) {
+                    html += `
+                        <div class="service-item inactive">
+                            <span class="service-icon">${config.icon}</span>
+                            <span class="service-name">${config.name}</span>
+                            <span class="service-status">○ Not Checked</span>
+                        </div>
+                    `;
+                    continue;
+                }
+
+                const status = providerData.status;
+                const statusDisplay = getProviderStatusDisplay(status);
+
+                html += `
+                    <div class="service-item ${statusDisplay.class}">
+                        <span class="service-icon">${config.icon}</span>
+                        <span class="service-name">${config.name}</span>
+                        <span class="service-status" title="${providerData.error || ''}">${statusDisplay.text}</span>
+                    </div>
+                `;
+            }
+
+            if (statusEl) {
+                statusEl.innerHTML = html;
+            }
+
+            // Update overall status badge
+            const overall = data.overallStatus || 'unknown';
+            if (badgeEl) {
+                if (overall === 'healthy') {
+                    badgeEl.textContent = 'All Available';
+                    badgeEl.className = 'status-badge status-operational';
+                } else if (overall === 'warning') {
+                    badgeEl.textContent = 'Warning';
+                    badgeEl.className = 'status-badge status-warning';
+                } else if (overall === 'error') {
+                    badgeEl.textContent = 'Issues';
+                    badgeEl.className = 'status-badge status-error';
+                } else {
+                    badgeEl.textContent = 'Unknown';
+                    badgeEl.className = 'status-badge status-partial';
+                }
+            }
+
+            // Update last checked time using checkedAt from response
+            if (lastCheckedEl && data.checkedAt) {
+                const lastChecked = new Date(data.checkedAt);
+                lastCheckedEl.textContent = formatRelativeTime(lastChecked);
+            } else if (lastCheckedEl) {
+                lastCheckedEl.textContent = 'Just now';
+            }
         } else {
             throw new Error(data.error || 'Check failed');
         }

@@ -25,7 +25,7 @@ const HelpRegistry = {
         },
         '/chat': {
             file: '/api/docs/chat-user-guide.md',
-            title: 'Multi-LLM Chat Help'
+            title: 'Higgins Help'
         },
         '/agents': {
             file: '/api/docs/agents-user-guide.md',

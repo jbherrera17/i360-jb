@@ -1116,6 +1116,8 @@
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
+            position: relative;
+            z-index: 1;
         }
 
         /* Form Styles */
@@ -1160,19 +1162,7 @@
             line-height: 1.5;
         }
 
-        /* Modal resize indicator */
-        .modal::after {
-            content: '';
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            width: 12px;
-            height: 12px;
-            background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%);
-            opacity: 0.3;
-            pointer-events: none;
-            border-radius: 0 0 4px 0;
-        }
+        /* Modal resize indicator - now handled by modal-manager.js corner handles */
 
         .form-select {
             appearance: none;
@@ -2427,6 +2417,9 @@
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Modal Manager must load before inline scripts that use it -->
+    <script src="/js/modal-manager.js"></script>
 
     <script>
         // Initialize Lucide icons
@@ -4065,7 +4058,6 @@
 
         init();
     </script>
-    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

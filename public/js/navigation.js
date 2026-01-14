@@ -19,7 +19,7 @@ const navConfig = {
     // Primary items - always visible at top level
     primary: [
         { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
-        { href: '/chat.html', icon: 'message-square', label: 'Multi-LLM Chat' },
+        { href: '/chat.html', icon: 'graduation-cap', label: 'Higgins' },
         { href: '/agents.html', icon: 'bot', label: 'Agent Library' }
     ],
 

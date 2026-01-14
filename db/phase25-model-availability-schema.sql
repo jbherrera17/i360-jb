@@ -38,22 +38,28 @@ ON CONFLICT (id) DO NOTHING;
 ALTER TABLE model_availability_checks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE model_check_config ENABLE ROW LEVEL SECURITY;
 
+-- RLS Policies - Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Anyone can read model availability checks" ON model_availability_checks;
+DROP POLICY IF EXISTS "Service role can manage model checks" ON model_availability_checks;
+DROP POLICY IF EXISTS "Anyone can read model check config" ON model_check_config;
+DROP POLICY IF EXISTS "Service role can manage model check config" ON model_check_config;
+
 -- RLS Policies - Allow all authenticated users to read check results
-CREATE POLICY IF NOT EXISTS "Anyone can read model availability checks"
+CREATE POLICY "Anyone can read model availability checks"
     ON model_availability_checks FOR SELECT
     USING (true);
 
 -- Only service role can insert/update checks (backend only)
-CREATE POLICY IF NOT EXISTS "Service role can manage model checks"
+CREATE POLICY "Service role can manage model checks"
     ON model_availability_checks FOR ALL
     USING (auth.role() = 'service_role');
 
 -- Anyone can read config, but only service role can update
-CREATE POLICY IF NOT EXISTS "Anyone can read model check config"
+CREATE POLICY "Anyone can read model check config"
     ON model_check_config FOR SELECT
     USING (true);
 
-CREATE POLICY IF NOT EXISTS "Service role can manage model check config"
+CREATE POLICY "Service role can manage model check config"
     ON model_check_config FOR ALL
     USING (auth.role() = 'service_role');
 

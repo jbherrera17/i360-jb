@@ -365,11 +365,49 @@
             height: 16px;
         }
 
+        /* Provider Status Badges */
+        .provider-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .provider-status.available {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .provider-status.warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .provider-status.unavailable {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .provider-status.unknown {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--text-muted);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .page-container {
             margin-left: var(--sidebar-width);
             max-width: 1400px;
             padding: 2rem;
             flex: 1;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         /* Header */
@@ -1082,6 +1120,275 @@
                 </div>
             </div>
         </div>
+
+        <!-- Supported LLM Models Section -->
+        <div id="llmModels" class="llm-models-section" style="margin-top: 2rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+                <span style="font-weight: 600; font-size: 1.1rem;">Supported LLM Models</span>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="checkLLMBtn" onclick="runLLMCheck()" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
+                        <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i>
+                        Check Now
+                    </button>
+                    <span id="llmLastChecked" style="font-size: 0.75rem; color: var(--text-muted);">Last checked: Never</span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">20 models across 3 providers</span>
+                </div>
+            </div>
+            <div style="padding: 1.5rem;">
+                <!-- Anthropic (Claude) Models -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #d97706, #f59e0b); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="brain" style="width: 18px; height: 18px; color: white;"></i>
+                        </div>
+                        <span style="font-weight: 600; font-size: 1rem;">Anthropic (Claude)</span>
+                        <span id="anthropicStatus" style="margin-left: 0.5rem;"></span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">6 models</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+                        <!-- Claude 4.5 Opus -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Claude Opus 4.5</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Most intelligent - maximum capability</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, PDF, Tools</div>
+                        </div>
+                        <!-- Claude 4.5 Sonnet (Default) -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--success);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Claude Sonnet 4.5</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 4px;">DEFAULT</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Best for complex agents and coding</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, PDF, Tools</div>
+                        </div>
+                        <!-- Claude 4.5 Haiku -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #3b82f6;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Claude Haiku 4.5</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(59, 130, 246, 0.2); color: #3b82f6; border-radius: 4px;">FAST</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Fastest model - lowest cost</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, PDF, Tools</div>
+                        </div>
+                        <!-- Claude 4.1 Opus -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Claude Opus 4.1</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Deep reasoning for complex tasks</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, PDF, Tools</div>
+                        </div>
+                        <!-- Claude 4 Sonnet -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Claude Sonnet 4</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">STANDARD</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Balanced performance and speed</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, PDF, Tools</div>
+                        </div>
+                        <!-- Claude 4 Opus -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Claude Opus 4</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Powerful reasoning and analysis</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, PDF, Tools</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OpenAI (GPT) Models -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #10a37f, #1a7f64); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="sparkles" style="width: 18px; height: 18px; color: white;"></i>
+                        </div>
+                        <span style="font-weight: 600; font-size: 1rem;">OpenAI (GPT)</span>
+                        <span id="openaiStatus" style="margin-left: 0.5rem;"></span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">9 chat + 3 image models</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+                        <!-- GPT-5.2 Thinking (Default) -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--success);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-5.2 Thinking</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 4px;">DEFAULT</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Best for structured work & coding</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">400K context | Vision, Reasoning</div>
+                        </div>
+                        <!-- GPT-5.2 Instant -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #3b82f6;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-5.2 Instant</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(59, 130, 246, 0.2); color: #3b82f6; border-radius: 4px;">FLAGSHIP</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Fast writing & information seeking</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">400K context | Vision, Images</div>
+                        </div>
+                        <!-- GPT-5.2 Pro -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-5.2 Pro</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Most accurate for difficult questions</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">400K context | Vision, Reasoning</div>
+                        </div>
+                        <!-- GPT-4o -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-4o</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">STANDARD</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Multimodal with text, vision, audio</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Vision, Audio</div>
+                        </div>
+                        <!-- GPT-4o Mini -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #22c55e;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-4o Mini</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(34, 197, 94, 0.2); color: #22c55e; border-radius: 4px;">EFFICIENT</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Affordable for simple tasks</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Vision</div>
+                        </div>
+                        <!-- o1 -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #8b5cf6;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">o1</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">REASONING</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Advanced reasoning - complex analysis</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Vision, Reasoning</div>
+                        </div>
+                        <!-- o1-mini -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #8b5cf6;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">o1-mini</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">REASONING</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Fast reasoning - math & coding</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Reasoning</div>
+                        </div>
+                        <!-- GPT-4 Turbo -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted); opacity: 0.8;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-4 Turbo</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">LEGACY</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Previous flagship with vision</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Vision</div>
+                        </div>
+                        <!-- GPT-4o Audio -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #ec4899;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">GPT-4o Audio</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(236, 72, 153, 0.2); color: #ec4899; border-radius: 4px;">AUDIO</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Audio input/output - voice chat</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Vision, Audio</div>
+                        </div>
+                    </div>
+                    <!-- Image Generation Models -->
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                        <div style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.75rem;">Image Generation</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+                            <!-- GPT Image 1.5 -->
+                            <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--success);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600; font-size: 0.9rem;">GPT Image 1.5</span>
+                                    <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 4px;">DEFAULT</span>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Latest - better instruction-following</div>
+                            </div>
+                            <!-- DALL-E 3 -->
+                            <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600; font-size: 0.9rem;">DALL-E 3</span>
+                                    <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">High quality with detailed prompts</div>
+                            </div>
+                            <!-- DALL-E 2 -->
+                            <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600; font-size: 0.9rem;">DALL-E 2</span>
+                                    <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">STANDARD</span>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Fast - supports variations & edits</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Perplexity (Sonar) Models -->
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="search" style="width: 18px; height: 18px; color: white;"></i>
+                        </div>
+                        <span style="font-weight: 600; font-size: 1rem;">Perplexity (Sonar)</span>
+                        <span id="perplexityStatus" style="margin-left: 0.5rem;"></span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">4 models</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+                        <!-- Sonar Pro (Default) -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--success);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Sonar Pro</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 4px;">DEFAULT</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Advanced search - best factuality (F-score 0.858)</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">200K context | Search</div>
+                        </div>
+                        <!-- Sonar -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Sonar</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">STANDARD</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Lightweight, cost-effective (Llama 3.3 70B)</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Search</div>
+                        </div>
+                        <!-- Sonar Reasoning Pro -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #8b5cf6;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Sonar Reasoning Pro</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">REASONING</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Chain of Thought for complex analysis</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Search, Reasoning</div>
+                        </div>
+                        <!-- Sonar Deep Research -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #0ea5e9;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Sonar Deep Research</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(14, 165, 233, 0.2); color: #0ea5e9; border-radius: 4px;">RESEARCH</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Expert-level exhaustive research</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Search, Research</div>
+                        </div>
+                    </div>
+                    <!-- Deprecated Models -->
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--error);"></i>
+                            <span style="font-weight: 600; font-size: 0.85rem; color: var(--error);">Deprecated Models</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                            <strong>sonar-reasoning</strong> - Deprecated late 2025. Use <strong>sonar-reasoning-pro</strong> instead.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div> <!-- Close page-container -->
     </div> <!-- Close app-layout -->
 
@@ -1092,6 +1399,7 @@
         let healthData = null;
         let alertsData = [];
         let incidentsData = [];
+        let modelAvailabilityData = null;
 
         // ============================================================================
         // API Functions
@@ -1138,6 +1446,24 @@
                 return incidentsData;
             }
             throw new Error(data.error);
+        }
+
+        async function fetchModelAvailability() {
+            try {
+                const response = await fetch('/api/models/availability', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    modelAvailabilityData = data;
+                    return modelAvailabilityData;
+                }
+                throw new Error(data.error || 'Failed to fetch model availability');
+            } catch (error) {
+                console.warn('Model availability check failed:', error.message);
+                modelAvailabilityData = { providers: {}, overallStatus: 'unknown' };
+                return modelAvailabilityData;
+            }
         }
 
         async function acknowledgeAlert(alertId) {
@@ -1376,6 +1702,53 @@
             lucide.createIcons();
         }
 
+        function renderModelAvailability() {
+            if (!modelAvailabilityData) return;
+
+            const providers = modelAvailabilityData.providers || {};
+            const providerMap = {
+                'anthropic': 'anthropicStatus',
+                'openai': 'openaiStatus',
+                'perplexity': 'perplexityStatus'
+            };
+
+            for (const [provider, elementId] of Object.entries(providerMap)) {
+                const el = document.getElementById(elementId);
+                if (!el) continue;
+
+                const data = providers[provider];
+                if (!data) {
+                    el.innerHTML = `<span class="provider-status unknown"><i data-lucide="help-circle" style="width:14px;height:14px;"></i> Unknown</span>`;
+                    continue;
+                }
+
+                const statusClass = data.status === 'available' ? 'available' :
+                                   data.status === 'rate_limited' ? 'warning' : 'unavailable';
+                const statusIcon = data.status === 'available' ? 'check-circle' :
+                                  data.status === 'rate_limited' ? 'alert-circle' : 'x-circle';
+                const statusLabel = data.status === 'available' ? 'Online' :
+                                   data.status === 'rate_limited' ? 'Rate Limited' :
+                                   data.status === 'auth_error' ? 'Auth Error' :
+                                   data.status === 'deprecated' ? 'Deprecated' : 'Offline';
+                const responseTime = data.responseTime ? ` (${data.responseTime}ms)` : '';
+
+                el.innerHTML = `<span class="provider-status ${statusClass}" title="${statusLabel}${responseTime}"><i data-lucide="${statusIcon}" style="width:14px;height:14px;"></i> ${statusLabel}</span>`;
+            }
+
+            // Update last checked time
+            const lastCheckedEl = document.getElementById('llmLastChecked');
+            if (lastCheckedEl && modelAvailabilityData.lastChecked) {
+                const checkDate = new Date(modelAvailabilityData.lastChecked);
+                const dateStr = checkDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const timeStr = checkDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                lastCheckedEl.textContent = `Last checked: ${dateStr} at ${timeStr}`;
+            } else if (lastCheckedEl) {
+                lastCheckedEl.textContent = 'Last checked: Never';
+            }
+
+            lucide.createIcons();
+        }
+
         // ============================================================================
         // Event Handlers
         // ============================================================================
@@ -1410,6 +1783,47 @@
             document.getElementById(`${tabName}Tab`).classList.add('active');
         }
 
+        async function runLLMCheck() {
+            const btn = document.getElementById('checkLLMBtn');
+            const originalContent = btn.innerHTML;
+
+            // Update button to show loading
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width: 12px; height: 12px; animation: spin 1s linear infinite;"></i> Checking...';
+            lucide.createIcons();
+
+            try {
+                const response = await fetch('/api/models/availability/check', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('LLM availability check completed');
+                    // Use the results directly from the check response
+                    // The POST response includes: providers, overallStatus, checkedAt
+                    modelAvailabilityData = {
+                        success: true,
+                        providers: data.providers || {},
+                        overallStatus: data.overallStatus || 'unknown',
+                        lastChecked: data.checkedAt || new Date().toISOString()
+                    };
+                    renderModelAvailability();
+                } else {
+                    showToast(data.error || 'Check failed', 'error');
+                }
+            } catch (error) {
+                console.error('LLM check failed:', error);
+                showToast('Failed to run availability check', 'error');
+            } finally {
+                // Restore button
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                lucide.createIcons();
+            }
+        }
+
         // ============================================================================
         // Data Loading
         // ============================================================================
@@ -1442,11 +1856,21 @@
             }
         }
 
+        async function loadModelAvailability() {
+            try {
+                await fetchModelAvailability();
+                renderModelAvailability();
+            } catch (error) {
+                console.error('Error loading model availability:', error);
+            }
+        }
+
         async function loadAll() {
             await Promise.all([
                 loadHealth(),
                 loadAlerts(),
-                loadIncidents()
+                loadIncidents(),
+                loadModelAvailability()
             ]);
         }
 

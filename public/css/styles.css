@@ -1382,10 +1382,22 @@ select {
     max-height: 85vh;
     min-width: 400px;
     min-height: 300px;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+/* Modal body handles its own overflow */
+.modal-overlay .modal > .modal-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Allow inline styles to override max-height when resizing */
+.modal-overlay .modal[style*="height"] {
+    max-height: none !important;
 }
 
 .modal-content {
@@ -1402,6 +1414,11 @@ select {
     position: relative;
 }
 
+/* Allow inline styles to override max-height when resizing */
+.modal-content[style*="height"] {
+    max-height: none !important;
+}
+
 /* Large modal variant */
 .modal-content.modal-lg {
     max-width: 800px;
@@ -1412,23 +1429,7 @@ select {
     width: 95%;
 }
 
-/* Resize handle indicator */
-.modal-content::after {
-    content: '';
-    position: absolute;
-    right: 4px;
-    bottom: 4px;
-    width: 12px;
-    height: 12px;
-    background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%, var(--text-muted) 60%, transparent 60%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 80%, transparent 80%);
-    opacity: 0.5;
-    pointer-events: none;
-    border-radius: 0 0 var(--radius-md) 0;
-}
-
-.modal-content:hover::after {
-    opacity: 0.8;
-}
+/* Resize handle indicator - now handled by modal-manager.js corner handles */
 
 /* Voice Modal */
 .voice-modal {
