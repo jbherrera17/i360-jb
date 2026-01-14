@@ -56,7 +56,8 @@ class ModalManager {
         this.header.addEventListener('mousedown', this.startDrag.bind(this));
 
         // Resize handlers
-        this.modal.querySelectorAll('.resize-handle').forEach(handle => {
+        const handles = this.modal.querySelectorAll('.resize-handle');
+        handles.forEach(handle => {
             handle.addEventListener('mousedown', this.startResize.bind(this));
         });
 
@@ -64,9 +65,14 @@ class ModalManager {
         document.addEventListener('mousemove', this.onMouseMove);
         document.addEventListener('mouseup', this.onMouseUp);
 
-        // Overlay click to close
+        // Overlay click to close - but not during/after resize or drag
         if (this.overlay && this.options.closeOnOverlayClick) {
             this.overlay.addEventListener('click', (e) => {
+                // Don't close if we just finished resizing or dragging
+                if (this.justFinishedInteraction) {
+                    this.justFinishedInteraction = false;
+                    return;
+                }
                 if (e.target === this.overlay) {
                     this.close();
                 }
@@ -75,12 +81,17 @@ class ModalManager {
     }
 
     /**
-     * Add resize handles to the modal if not already present
+     * Add resize handles to the modal, removing any existing ones first
      */
     addResizeHandles() {
-        if (this.modal.querySelector('.resize-handle')) return;
+        // Remove any existing resize handles to ensure we have the correct set
+        this.modal.querySelectorAll('.resize-handle').forEach(h => h.remove());
 
-        const handles = ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
+        // Edge handles and all four corner handles
+        const handles = [
+            'top', 'bottom', 'left', 'right',
+            'top-left', 'top-right', 'bottom-left', 'bottom-right'
+        ];
         handles.forEach(dir => {
             const handle = document.createElement('div');
             handle.className = `resize-handle ${dir}`;
@@ -157,6 +168,7 @@ class ModalManager {
 
     startResize(e) {
         e.stopPropagation();
+        e.preventDefault();
         this.isResizing = true;
         this.resizeDirection = e.target.dataset.resize;
         this.startX = e.clientX;
@@ -170,9 +182,12 @@ class ModalManager {
         this.startLeft = rect.left - overlayRect.left;
         this.startTop = rect.top - overlayRect.top;
 
+        // Store the modal's initial bottom and right edges for anchoring
+        this.startBottom = this.startTop + this.startHeight;
+        this.startRight = this.startLeft + this.startWidth;
+
         this.modal.style.transition = 'none';
         document.body.style.userSelect = 'none';
-        e.preventDefault();
     }
 
     onMouseMove(e) {
@@ -203,27 +218,37 @@ class ModalManager {
             let newLeft = this.startLeft;
             let newTop = this.startTop;
 
-            // Handle horizontal resize
+            // Handle right edge - width increases with positive deltaX
             if (dir.includes('right')) {
                 newWidth = Math.max(minWidth, this.startWidth + deltaX);
             }
+
+            // Handle left edge - width increases with negative deltaX, left moves with cursor
             if (dir.includes('left')) {
                 const potentialWidth = this.startWidth - deltaX;
                 if (potentialWidth >= minWidth) {
                     newWidth = potentialWidth;
                     newLeft = this.startLeft + deltaX;
+                } else {
+                    newWidth = minWidth;
+                    newLeft = this.startRight - minWidth;
                 }
             }
 
-            // Handle vertical resize
+            // Handle bottom edge - height increases with positive deltaY
             if (dir.includes('bottom')) {
                 newHeight = Math.max(minHeight, this.startHeight + deltaY);
             }
+
+            // Handle top edge - height increases with negative deltaY, top moves with cursor
             if (dir.includes('top')) {
                 const potentialHeight = this.startHeight - deltaY;
                 if (potentialHeight >= minHeight) {
                     newHeight = potentialHeight;
                     newTop = this.startTop + deltaY;
+                } else {
+                    newHeight = minHeight;
+                    newTop = this.startBottom - minHeight;
                 }
             }
 
@@ -236,6 +261,10 @@ class ModalManager {
     }
 
     onMouseUp() {
+        // Track if we were interacting to prevent overlay click from closing
+        if (this.isDragging || this.isResizing) {
+            this.justFinishedInteraction = true;
+        }
         this.isDragging = false;
         this.isResizing = false;
         this.resizeDirection = null;
@@ -284,11 +313,25 @@ const modalManagerStyles = `
     min-height: 300px;
     width: 560px;
     max-height: 85vh;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border);
+}
+
+/* Modal body needs to handle its own overflow */
+.modal > .modal-body,
+.modal-content > .modal-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Allow inline styles to override max-height when resizing */
+.modal[style*="height"],
+.modal-content[style*="height"] {
+    max-height: none !important;
 }
 
 .modal-header {
@@ -301,6 +344,8 @@ const modalManagerStyles = `
     flex-shrink: 0;
     cursor: move;
     user-select: none;
+    position: relative;
+    z-index: 1;
 }
 
 .modal-title {
@@ -341,86 +386,135 @@ const modalManagerStyles = `
     border-top: 1px solid var(--border);
     background: var(--bg-secondary);
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
 }
 
-/* Resize handles */
+/* Resize handles - invisible edge handles */
 .resize-handle {
     position: absolute;
     z-index: 10;
 }
 
 .resize-handle.top {
-    top: -4px;
-    left: 10px;
-    right: 10px;
-    height: 8px;
-    cursor: ns-resize;
+    top: -4px !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: auto !important;
+    height: 8px !important;
+    width: auto !important;
+    cursor: ns-resize !important;
 }
 
 .resize-handle.bottom {
-    bottom: -4px;
-    left: 10px;
-    right: 10px;
-    height: 8px;
-    cursor: ns-resize;
+    bottom: -4px !important;
+    left: 16px !important;
+    right: 16px !important;
+    top: auto !important;
+    height: 8px !important;
+    width: auto !important;
+    cursor: ns-resize !important;
 }
 
 .resize-handle.left {
-    left: -4px;
-    top: 10px;
-    bottom: 10px;
-    width: 8px;
-    cursor: ew-resize;
+    left: -4px !important;
+    top: 16px !important;
+    bottom: 16px !important;
+    right: auto !important;
+    width: 8px !important;
+    height: auto !important;
+    cursor: ew-resize !important;
 }
 
 .resize-handle.right {
-    right: -4px;
-    top: 10px;
-    bottom: 10px;
-    width: 8px;
-    cursor: ew-resize;
+    right: -4px !important;
+    top: 16px !important;
+    bottom: 16px !important;
+    left: auto !important;
+    width: 8px !important;
+    height: auto !important;
+    cursor: ew-resize !important;
+}
+
+/* Corner resize handles - positioned outside modal boundary */
+/* Using !important to override page-specific .resize-handle styles */
+.resize-handle.top-left,
+.resize-handle.top-right,
+.resize-handle.bottom-left,
+.resize-handle.bottom-right {
+    width: 16px !important;
+    height: 16px !important;
+    z-index: 2000 !important;
+    pointer-events: auto !important;
 }
 
 .resize-handle.top-left {
-    top: -4px;
-    left: -4px;
-    width: 14px;
-    height: 14px;
-    cursor: nwse-resize;
+    top: -8px !important;
+    left: -8px !important;
+    right: auto !important;
+    bottom: auto !important;
+    cursor: nwse-resize !important;
 }
 
 .resize-handle.top-right {
-    top: -4px;
-    right: -4px;
-    width: 14px;
-    height: 14px;
-    cursor: nesw-resize;
+    top: -8px !important;
+    right: -8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    cursor: nesw-resize !important;
 }
 
 .resize-handle.bottom-left {
-    bottom: -4px;
-    left: -4px;
-    width: 14px;
-    height: 14px;
-    cursor: nesw-resize;
+    bottom: -8px !important;
+    left: -8px !important;
+    top: auto !important;
+    right: auto !important;
+    cursor: nesw-resize !important;
 }
 
 .resize-handle.bottom-right {
-    bottom: -4px;
-    right: -4px;
-    width: 14px;
-    height: 14px;
-    cursor: nwse-resize;
+    bottom: -8px !important;
+    right: -8px !important;
+    top: auto !important;
+    left: auto !important;
+    cursor: nwse-resize !important;
 }
+
+/* Visual indicator for bottom-right corner */
+.resize-handle.bottom-right::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(315deg, var(--text-muted, #888) 50%, transparent 50%);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    border-radius: 0 0 8px 0;
+    pointer-events: none;
+}
+
+.resize-handle.bottom-right:hover::after {
+    opacity: 0.8;
+}
+
+.resize-handle.bottom-right:active::after {
+    opacity: 1;
+}
+
 `;
 
-// Inject styles if not already present
-if (!document.getElementById('modal-manager-styles')) {
-    const styleEl = document.createElement('style');
-    styleEl.id = 'modal-manager-styles';
+// Inject styles - always update to ensure latest styles are applied
+(function injectModalStyles() {
+    let styleEl = document.getElementById('modal-manager-styles');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'modal-manager-styles';
+        document.head.appendChild(styleEl);
+    }
     styleEl.textContent = modalManagerStyles;
-    document.head.appendChild(styleEl);
-}
+})();
 
 // Export for use
 if (typeof module !== 'undefined' && module.exports) {
