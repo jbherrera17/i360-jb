@@ -1103,29 +1103,23 @@
                     </div>
                 </div>
 
-                <!-- Bug Summary -->
-                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                    <div style="font-weight: 600; margin-bottom: 0.75rem;">Bug Tracker Summary</div>
-                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <!-- Bug Summary (Live from Notion) -->
+                <div id="bugTrackerSummary" style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <div style="font-weight: 600;">Bug Tracker Summary</div>
+                        <button id="refreshBugsBtn" onclick="loadBugSummary()" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.5rem; font-size: 0.7rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">
+                            <i data-lucide="refresh-cw" style="width: 10px; height: 10px;"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="bugSeverityStats" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
-                            <span style="font-size: 0.9rem;">3/3 Critical - Fixed</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
-                            <span style="font-size: 0.9rem;">5/5 High - Fixed</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
-                            <span style="font-size: 0.9rem;">4/4 Medium - Fixed</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="width: 8px; height: 8px; background: var(--info); border-radius: 50%;"></span>
-                            <span style="font-size: 0.9rem;">2/3 Low</span>
+                            <span style="width: 8px; height: 8px; background: var(--text-muted); border-radius: 50%;"></span>
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">Loading...</span>
                         </div>
                     </div>
-                    <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">
-                        14/15 bugs fixed - 626+ tests passing - Last updated: Jan 14, 2026
+                    <div id="bugSummaryFooter" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">
+                        Fetching from Notion...
                     </div>
                 </div>
             </div>
@@ -1875,12 +1869,98 @@
             }
         }
 
+        // ============================================================================
+        // Bug Tracker (Notion Integration)
+        // ============================================================================
+        async function loadBugSummary() {
+            const statsEl = document.getElementById('bugSeverityStats');
+            const footerEl = document.getElementById('bugSummaryFooter');
+            const refreshBtn = document.getElementById('refreshBugsBtn');
+
+            if (!statsEl || !footerEl) return;
+
+            // Show loading state
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.innerHTML = '<i data-lucide="loader" style="width: 10px; height: 10px; animation: spin 1s linear infinite;"></i> Loading';
+                lucide.createIcons();
+            }
+
+            try {
+                const response = await fetch('/api/bugs/summary', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    renderBugSummary(data);
+                } else {
+                    statsEl.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="width: 8px; height: 8px; background: var(--warning); border-radius: 50%;"></span>
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">Unable to load bug data</span>
+                        </div>
+                    `;
+                    footerEl.textContent = data.message || 'Notion API unavailable';
+                }
+            } catch (error) {
+                console.error('Error loading bug summary:', error);
+                statsEl.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="width: 8px; height: 8px; background: var(--error); border-radius: 50%;"></span>
+                        <span style="font-size: 0.9rem; color: var(--text-muted);">Error loading bugs</span>
+                    </div>
+                `;
+                footerEl.textContent = 'Check console for details';
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = '<i data-lucide="refresh-cw" style="width: 10px; height: 10px;"></i> Refresh';
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function renderBugSummary(data) {
+            const statsEl = document.getElementById('bugSeverityStats');
+            const footerEl = document.getElementById('bugSummaryFooter');
+
+            if (!statsEl || !footerEl) return;
+
+            // Render severity breakdown
+            const severityOrder = ['Critical', 'High', 'Medium', 'Low', 'Trivial'];
+            const severityHtml = data.bySeverity
+                .sort((a, b) => severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity))
+                .map(s => {
+                    const isComplete = s.open === 0;
+                    const statusColor = isComplete ? 'var(--success)' :
+                                       s.severity === 'Critical' ? 'var(--error)' :
+                                       s.severity === 'High' ? 'var(--warning)' : 'var(--info)';
+                    const label = isComplete ? `${s.total}/${s.total} ${s.severity} - Fixed` :
+                                              `${s.fixed}/${s.total} ${s.severity}`;
+                    return `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%;"></span>
+                            <span style="font-size: 0.9rem;">${label}</span>
+                        </div>
+                    `;
+                }).join('');
+
+            statsEl.innerHTML = severityHtml || '<span style="color: var(--text-muted);">No bugs tracked</span>';
+
+            // Render footer
+            const lastUpdated = new Date(data.lastUpdated);
+            const dateStr = lastUpdated.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            footerEl.innerHTML = `${data.fixed}/${data.total} bugs fixed &bull; <a href="https://notion.so" target="_blank" style="color: var(--primary); text-decoration: none;">View in Notion</a> &bull; Updated: ${dateStr}`;
+        }
+
         async function loadAll() {
             await Promise.all([
                 loadHealth(),
                 loadAlerts(),
                 loadIncidents(),
-                loadModelAvailability()
+                loadModelAvailability(),
+                loadBugSummary()
             ]);
         }
 

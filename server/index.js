@@ -420,6 +420,10 @@ try {
 const healthRoutes = require('./routes/health');
 app.use('/api/health', healthRoutes);
 
+// Bug tracker route (Notion integration)
+const bugsRoutes = require('./routes/bugs');
+app.use('/api/bugs', bugsRoutes);
+
 // Prometheus metrics endpoint (Phase 14)
 app.get('/metrics', async (req, res) => {
     try {
