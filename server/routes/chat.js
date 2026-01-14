@@ -1,7 +1,7 @@
 /**
  * Chat Routes - Insight 360
  * Multi-LLM chat endpoints (Claude + OpenAI + Perplexity)
- * Version: 2.3.0 - Using centralized LLM registry
+ * Version: 2.4.0 - Added Higgins persona with JB Brand Voice DNA
  */
 
 const express = require('express');
@@ -12,6 +12,9 @@ const anthropic = require('../services/anthropic');
 const openai = require('../services/openai');
 const perplexity = require('../services/perplexity');
 const llmRegistry = require('../services/llmRegistry');
+
+// Import Higgins service for persona and knowledge injection
+const higginsService = require('../services/higginsService');
 
 // Initialize services with API keys
 if (process.env.ANTHROPIC_API_KEY) {
@@ -229,10 +232,11 @@ router.post('/', async (req, res) => {
 /**
  * POST /api/chat/message
  * Send a message and get a response (non-streaming, supports multimodal)
+ * Automatically injects Higgins persona with JB Brand Voice DNA
  */
 router.post('/message', async (req, res) => {
     try {
-        const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt } = req.body;
+        const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt, skipHiggins = false } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return res.status(400).json({
@@ -252,13 +256,37 @@ router.post('/message', async (req, res) => {
         const allMedia = [...images, ...documents];
         const normalizedHistory = normalizeHistoryMessages(history);
 
+        // Build Higgins-enhanced system prompt (unless explicitly skipped)
+        let finalSystemPrompt = systemPrompt;
+        if (!skipHiggins) {
+            try {
+                const modelName = higginsService.getModelDisplayName(model);
+                const supabase = req.supabase || null;
+                const isAdmin = req.user?.role === 'admin' || false;
+
+                finalSystemPrompt = await higginsService.getHigginsSystemPrompt(supabase, {
+                    isAdmin,
+                    modelName,
+                    userSystemPrompt: systemPrompt,
+                    skipDatabaseFetch: !supabase
+                });
+            } catch (higginsError) {
+                console.warn('Higgins prompt injection failed, using fallback:', higginsError.message);
+                const modelName = higginsService.getModelDisplayName(model);
+                finalSystemPrompt = higginsService.buildHigginsPrompt({
+                    modelName,
+                    userSystemPrompt: systemPrompt
+                });
+            }
+        }
+
         let response;
 
         if (provider === 'anthropic') {
             response = await anthropic.chat({
                 message: text,
                 model,
-                systemPrompt,
+                systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia
             });
@@ -266,7 +294,7 @@ router.post('/message', async (req, res) => {
             response = await openai.chat({
                 message: text,
                 model,
-                systemPrompt,
+                systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia
             });
@@ -274,7 +302,7 @@ router.post('/message', async (req, res) => {
             response = await perplexity.chat({
                 message: text,
                 model,
-                systemPrompt,
+                systemPrompt: finalSystemPrompt,
                 history: normalizedHistory
             });
         } else {
@@ -302,10 +330,11 @@ router.post('/message', async (req, res) => {
 /**
  * POST /api/chat/stream
  * Send a message and stream the response (supports multimodal content)
+ * Automatically injects Higgins persona with JB Brand Voice DNA
  */
 router.post('/stream', async (req, res) => {
     try {
-        const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt } = req.body;
+        const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt, skipHiggins = false } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return res.status(400).json({
@@ -329,11 +358,41 @@ router.post('/stream', async (req, res) => {
         // Normalize history (convert multimodal to text-only for simplicity)
         const normalizedHistory = normalizeHistoryMessages(history);
 
+        // Build Higgins-enhanced system prompt (unless explicitly skipped)
+        let finalSystemPrompt = systemPrompt;
+        if (!skipHiggins) {
+            try {
+                const modelName = higginsService.getModelDisplayName(model);
+                // Check if we have supabase access for knowledge injection
+                const supabase = req.supabase || null;
+                // TODO: Get isAdmin from user context when auth is fully implemented
+                const isAdmin = req.user?.role === 'admin' || false;
+
+                finalSystemPrompt = await higginsService.getHigginsSystemPrompt(supabase, {
+                    isAdmin,
+                    modelName,
+                    userSystemPrompt: systemPrompt,
+                    skipDatabaseFetch: !supabase
+                });
+            } catch (higginsError) {
+                console.warn('Higgins prompt injection failed, using fallback:', higginsError.message);
+                // Fall back to base persona without database knowledge
+                const modelName = higginsService.getModelDisplayName(model);
+                finalSystemPrompt = higginsService.buildHigginsPrompt({
+                    modelName,
+                    userSystemPrompt: systemPrompt
+                });
+            }
+        }
+
         // Set up SSE headers
         res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('X-Accel-Buffering', 'no');
+
+        // Flush headers immediately to establish SSE connection
+        res.flushHeaders();
 
         let stream;
 
@@ -341,7 +400,7 @@ router.post('/stream', async (req, res) => {
             stream = anthropic.streamChat({
                 message: text,
                 model,
-                systemPrompt,
+                systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia
             });
@@ -351,7 +410,7 @@ router.post('/stream', async (req, res) => {
                 stream = openai.streamChat({
                     message: text,
                     model,
-                    systemPrompt,
+                    systemPrompt: finalSystemPrompt,
                     history: normalizedHistory,
                     images: allMedia
                 });
@@ -359,7 +418,7 @@ router.post('/stream', async (req, res) => {
                 stream = openai.stream({
                     message: text,
                     model,
-                    systemPrompt,
+                    systemPrompt: finalSystemPrompt,
                     history: normalizedHistory,
                     images: allMedia
                 });
@@ -370,7 +429,7 @@ router.post('/stream', async (req, res) => {
             stream = perplexity.streamChat({
                 message: text,
                 model,
-                systemPrompt,
+                systemPrompt: finalSystemPrompt,
                 history: normalizedHistory
             });
         } else {

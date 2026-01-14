@@ -145,6 +145,12 @@ function setupEventListeners() {
         });
     }
 
+    // Scroll event to update scroll-to-bottom button visibility
+    if (chatMessages) {
+        chatMessages.addEventListener('scroll', function() {
+            updateScrollToBottomButton();
+        });
+    }
 }
 
 /**
@@ -230,10 +236,13 @@ async function sendMessage() {
     const displayMessage = processedFiles.length > 0
         ? `${message}\n\n📎 ${processedFiles.map(f => f.name).join(', ')}`
         : message;
-    const userMessageDiv = addMessage('user', displayMessage);
+    // Add message without auto-scroll, then scroll to show user message at top
+    const userMessageDiv = addMessage('user', displayMessage, false, false);
 
-    // Scroll user message to top of viewport
-    scrollMessageToTop(userMessageDiv);
+    // Scroll user message to top of viewport (use requestAnimationFrame to ensure DOM is updated)
+    requestAnimationFrame(() => {
+        scrollMessageToTop(userMessageDiv);
+    });
 
     // Clear input and files
     if (chatInput) {
@@ -343,6 +352,10 @@ async function sendMessage() {
                                 fullResponse += parsed.text;
                                 if (contentDiv) {
                                     contentDiv.innerHTML = formatMessage(fullResponse);
+                                    // Auto-scroll to keep new tokens visible (if user is near bottom)
+                                    autoScrollIfNearBottom();
+                                    // Check if content overflows and show scroll button
+                                    updateScrollToBottomButton();
                                 }
                             } else if (parsed.type === 'error') {
                                 stopLoadingMessages();
@@ -381,6 +394,8 @@ async function sendMessage() {
         isStreaming = false;
         // Ensure loading messages are stopped
         stopLoadingMessages();
+        // Final check for scroll button visibility
+        updateScrollToBottomButton();
     }
 }
 
@@ -468,11 +483,23 @@ function formatMessage(content) {
     if (!content) return '';
 
     // Use marked for full markdown rendering
-    // Configure marked for safe rendering
+    // Configure marked for safe rendering with links opening in new tabs
     if (typeof marked !== 'undefined') {
+        // Create a custom renderer to make links open in new tabs
+        const renderer = new marked.Renderer();
+        renderer.link = function(href, title, text) {
+            // Handle both old and new marked API
+            const linkHref = typeof href === 'object' ? href.href : href;
+            const linkTitle = typeof href === 'object' ? href.title : title;
+            const linkText = typeof href === 'object' ? href.text : text;
+            const titleAttr = linkTitle ? ` title="${linkTitle}"` : '';
+            return `<a href="${linkHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${linkText}</a>`;
+        };
+
         marked.setOptions({
             breaks: true,  // Convert \n to <br>
-            gfm: true      // GitHub Flavored Markdown
+            gfm: true,     // GitHub Flavored Markdown
+            renderer: renderer
         });
         return marked.parse(content);
     }
@@ -488,7 +515,7 @@ function formatMessage(content) {
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
     formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" target="_blank">$1</a>');
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     formatted = formatted.replace(/\n/g, '<br>');
     return formatted;
 }
@@ -508,9 +535,96 @@ function setStatus(text) {
  */
 function scrollMessageToTop(messageEl) {
     if (!messageEl || !chatMessages) return;
-    // Scroll so the message is at the top with a small offset
-    const offsetTop = messageEl.offsetTop - 16;
-    chatMessages.scrollTo({ top: offsetTop, behavior: 'smooth' });
+    // Use scrollIntoView for reliable positioning at top of container
+    messageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Check if chat messages container has content below the viewport
+ * @returns {boolean} - True if there's content below the visible area
+ */
+function hasContentBelow() {
+    if (!chatMessages) return false;
+    // Calculate how much content is below the current scroll position
+    const scrollTop = chatMessages.scrollTop;
+    const clientHeight = chatMessages.clientHeight;
+    const scrollHeight = chatMessages.scrollHeight;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+    // Show button if there's more than 100px of content below
+    return distanceToBottom > 100;
+}
+
+/**
+ * Check if user is near the bottom of the chat (within threshold)
+ * Used to determine if we should auto-scroll during streaming
+ * @returns {boolean} - True if user is near bottom
+ */
+function isNearBottom() {
+    if (!chatMessages) return true;
+    const scrollTop = chatMessages.scrollTop;
+    const clientHeight = chatMessages.clientHeight;
+    const scrollHeight = chatMessages.scrollHeight;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+    // Consider "near bottom" if within 150px of the bottom
+    return distanceToBottom < 150;
+}
+
+/**
+ * Auto-scroll to bottom during streaming if user is near bottom
+ * This keeps new tokens visible without interrupting users who scrolled up
+ */
+function autoScrollIfNearBottom() {
+    if (isNearBottom()) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+/**
+ * Show or hide the scroll-to-bottom button based on content overflow
+ */
+function updateScrollToBottomButton() {
+    let scrollBtn = document.getElementById('scrollToBottomBtn');
+
+    if (hasContentBelow()) {
+        if (!scrollBtn) {
+            scrollBtn = createScrollToBottomButton();
+        }
+        scrollBtn.classList.add('visible');
+    } else if (scrollBtn) {
+        scrollBtn.classList.remove('visible');
+    }
+}
+
+/**
+ * Create the scroll-to-bottom button element
+ * @returns {HTMLElement} - The button element
+ */
+function createScrollToBottomButton() {
+    const btn = document.createElement('button');
+    btn.id = 'scrollToBottomBtn';
+    btn.className = 'scroll-to-bottom-btn';
+    btn.title = 'Scroll to bottom';
+    btn.innerHTML = '<i data-lucide="chevron-down"></i>';
+    btn.onclick = scrollToBottom;
+
+    // Insert the button as a sibling to chatMessages, inside chat-main-content
+    // This allows proper absolute positioning relative to the chat area
+    chatMessages.insertAdjacentElement('afterend', btn);
+
+    // Initialize the icon
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    return btn;
+}
+
+/**
+ * Scroll to the bottom of the chat messages
+ */
+function scrollToBottom() {
+    if (!chatMessages) return;
+    chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
 }
 
 /**
@@ -956,14 +1070,14 @@ function showWelcomeMessage() {
         chatMessages.innerHTML = `
             <div class="welcome-message">
                 <div class="welcome-icon">
-                    <i data-lucide="sparkles"></i>
+                    <i data-lucide="graduation-cap"></i>
                 </div>
-                <h2>Welcome to Multi-LLM Chat</h2>
-                <p>Choose a model and start chatting. Your conversations are automatically saved.</p>
+                <h2>Welcome to Higgins</h2>
+                <p>I'm your AI guide to Insight 360, powered by the model you select above. Ask me anything about the system, or let me help with any other task.</p>
                 <div class="quick-actions">
-                    <button onclick="insertPrompt('Explain a complex topic simply:')" class="quick-action">
-                        <i data-lucide="lightbulb"></i>
-                        Explain simply
+                    <button onclick="insertPrompt('How do I create a context asset?')" class="quick-action">
+                        <i data-lucide="help-circle"></i>
+                        i360 Help
                     </button>
                     <button onclick="insertPrompt('Help me write code for')" class="quick-action">
                         <i data-lucide="code"></i>
@@ -1387,6 +1501,52 @@ messageStyles.textContent = `
 
     .model-name {
         font-weight: 500;
+    }
+
+    /* Scroll to bottom button - positioned above the chat input */
+    .scroll-to-bottom-btn {
+        position: fixed;
+        bottom: 140px;
+        left: calc(var(--sidebar-width, 260px) + (100vw - var(--sidebar-width, 260px) - var(--right-panel-width, 400px)) / 2);
+        transform: translateX(-50%) translateY(20px);
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s, transform 0.2s, background 0.2s;
+        z-index: 1000;
+    }
+
+    .scroll-to-bottom-btn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .scroll-to-bottom-btn:hover {
+        background: var(--primary-hover, var(--primary));
+        transform: translateX(-50%) scale(1.1);
+    }
+
+    .scroll-to-bottom-btn i {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Responsive: adjust position when right panel is hidden */
+    @media (max-width: 1024px) {
+        .scroll-to-bottom-btn {
+            left: calc(var(--sidebar-width, 260px) + (100vw - var(--sidebar-width, 260px)) / 2);
+        }
     }
 `;
 document.head.appendChild(messageStyles);

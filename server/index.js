@@ -97,7 +97,20 @@ app.use(helmet({
 // COMPRESSION & CORS
 // ============================================
 
-app.use(compression());
+// Skip compression for SSE streaming endpoints to allow real-time token delivery
+app.use(compression({
+    filter: (req, res) => {
+        // Don't compress SSE streams (they need to be unbuffered)
+        if (req.headers.accept === 'text/event-stream') {
+            return false;
+        }
+        if (req.path === '/api/chat/stream') {
+            return false;
+        }
+        // Use default compression for everything else
+        return compression.filter(req, res);
+    }
+}));
 
 app.use(cors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
