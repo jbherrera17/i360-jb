@@ -1497,7 +1497,7 @@
             return agentDialog;
         }
 
-        // Run module agents using Modal Dialog Service
+        // Run module agents using Interactive Chat Dialog
         async function runModuleAgents(moduleNum) {
             if (!currentSession) {
                 alert('Please start or resume a session first');
@@ -1507,10 +1507,79 @@
             const moduleName = modules[moduleNum].name;
             const dialog = getAgentDialogService();
 
+            // Build system prompt for this module
+            const modulePrompts = {
+                1: `You are an AI Assessment specialist conducting Module 1: AI Audit & Assessment for ${currentSession.company_name}.
+
+Your role is to evaluate the company's current AI landscape, maturity level, risks, and opportunities through a conversational assessment.
+
+Guide the user through these key areas:
+1. **Current AI Usage** - What AI tools/systems are currently in use?
+2. **AI Maturity Level** - How mature is their AI adoption (Exploring, Experimenting, Scaling, Transforming)?
+3. **Risks & Concerns** - What concerns do they have about AI implementation?
+4. **Opportunities** - Where do they see the biggest opportunities for AI?
+
+Ask ONE question at a time. Be conversational and supportive. After gathering sufficient information (at least 4-5 exchanges), provide a summary assessment with:
+- Current maturity score (1-5)
+- Key strengths identified
+- Areas for improvement
+- Recommended next steps
+
+Start by introducing yourself and asking about their current AI usage.`,
+
+                2: `You are a Business Fundamentals specialist conducting Module 2 for ${currentSession.company_name}.
+
+Your role is to help define and document their core business foundations through conversation.
+
+Guide the user through:
+1. **Core Values** - What principles guide decision-making?
+2. **Vision** - What is the long-term vision (3-5 years)?
+3. **Mission** - What is the company's purpose and how do they serve customers?
+4. **Key Processes** - What are the most important business processes?
+
+Ask ONE question at a time. After gathering information, summarize the business fundamentals documented.`,
+
+                3: `You are a Team Readiness specialist conducting Module 3: Team UpSkilling for ${currentSession.company_name}.
+
+Your role is to assess team readiness for AI adoption.
+
+Guide the user through:
+1. **Team Composition** - Key roles and departments
+2. **Current Skills** - Existing technical capabilities
+3. **Skills Gaps** - Areas needing development for AI adoption
+4. **Change Readiness** - How open is the team to new ways of working?
+
+Ask ONE question at a time. Provide a skills assessment summary at the end.`,
+
+                4: `You are a Brand Alignment specialist conducting Module 4 for ${currentSession.company_name}.
+
+Your role is to help establish brand voice and messaging guidelines for AI communications.
+
+Guide the user through:
+1. **Brand Voice** - How should AI communications sound?
+2. **Trust Messaging** - How to build trust with AI-assisted interactions
+3. **Competitive Position** - How AI differentiates them from competitors
+4. **Sentiment Goals** - Target perception and sentiment
+
+Ask ONE question at a time. Summarize brand guidelines at the end.`,
+
+                5: `You are a Corporate Alignment specialist conducting Module 5 for ${currentSession.company_name}.
+
+Your role is to help establish governance and stakeholder alignment for AI initiatives.
+
+Guide the user through:
+1. **Key Stakeholders** - Who needs to be involved in AI decisions?
+2. **Governance Structure** - How will AI initiatives be governed?
+3. **Policy Requirements** - What policies need to be established?
+4. **Portfolio Priorities** - How to prioritize AI investments?
+
+Ask ONE question at a time. Provide governance recommendations at the end.`
+            };
+
             try {
-                // Run the module using the Modal Dialog Service
+                // Run the interactive chat session
                 const result = await dialog.runAgent(
-                    `align120-module-${moduleNum}`, // Agent ID pattern
+                    `align120-module-${moduleNum}`,
                     {
                         sessionId: currentSession.id,
                         moduleNum: moduleNum,
@@ -1519,18 +1588,17 @@
                     },
                     {
                         title: `Module ${moduleNum}: ${moduleName}`,
-                        subtitle: 'AI agents are analyzing your company data...',
-                        endpoint: `/api/align120/sessions/${currentSession.id}/run-module-stream`,
-                        stream: true,
+                        subtitle: 'Interactive AI Assessment',
+                        endpoint: '/api/chat/stream',
+                        systemPrompt: modulePrompts[moduleNum],
                         onAccept: async (data) => {
                             // Mark module as complete
                             moduleProgress[moduleNum] = true;
                             updateProgressRing();
                             updateStepperState();
 
-                            // Update output checkmarks and show results
-                            updateModuleOutputs(moduleNum, data?.outputs || {});
-                            displayAgentResults(moduleNum, data?.results || []);
+                            // Save conversation to session
+                            await saveModuleResults(moduleNum, data);
 
                             // Enable next button
                             const nextBtn = document.getElementById(`module${moduleNum}Next`);
@@ -1539,27 +1607,51 @@
                             // Save progress
                             await saveSessionProgress();
                         },
-                        onEdit: (data) => {
-                            // Open edit modal for results
-                            console.log('Edit results:', data);
-                            // TODO: Implement results editor
-                        },
                         onRegenerate: () => {
-                            // Re-run the module
                             runModuleAgents(moduleNum);
                         }
                     }
                 );
 
-                // If dialog was cancelled, result is null
                 if (result === null) {
-                    console.log('Module execution cancelled');
-                    return;
+                    console.log('Module assessment cancelled');
                 }
 
             } catch (error) {
                 console.error('Error running module:', error);
-                // Error is already displayed in the dialog
+            }
+        }
+
+        // Save module conversation results to session
+        async function saveModuleResults(moduleNum, data) {
+            if (!currentSession || !data) return;
+
+            // Save to localStorage for final report generation
+            localStorage.setItem(`align120_module_${moduleNum}_${currentSession.id}`, JSON.stringify({
+                conversationHistory: data.conversationHistory,
+                outputs: data.outputs,
+                completedAt: data.completedAt,
+                moduleName: modules[moduleNum]?.name
+            }));
+
+            try {
+                const response = await fetch(`/api/align120/sessions/${currentSession.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        [`module_${moduleNum}_results`]: {
+                            conversationHistory: data.conversationHistory,
+                            outputs: data.outputs,
+                            completedAt: data.completedAt
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to save module results');
+                }
+            } catch (error) {
+                console.error('Error saving module results:', error);
             }
         }
 
@@ -1716,26 +1808,133 @@
         async function completeSession() {
             if (!currentSession) return;
 
-            showLoading('Completing Session', 'Generating your Company Profile...');
+            showLoading('Completing Session', 'Generating your AI Readiness Report...');
 
             try {
+                // First complete the session in the backend
                 const response = await fetch(`/api/align120/sessions/${currentSession.id}/complete`, {
                     method: 'POST'
                 });
 
                 const data = await response.json();
 
-                if (data.success) {
-                    alert('Session completed successfully! Your Company Profile has been generated.');
-                    window.location.href = '/company-dashboard.html';
-                } else {
+                if (!data.success) {
                     alert('Failed to complete session: ' + (data.error || 'Unknown error'));
+                    return;
                 }
+
+                hideLoading();
+
+                // Now generate and display the final report using the agent dialog
+                await generateFinalReport();
+
             } catch (error) {
                 console.error('Error completing session:', error);
                 alert('Error completing session');
-            } finally {
                 hideLoading();
+            }
+        }
+
+        // Generate final AI Readiness Report
+        async function generateFinalReport() {
+            const dialog = new AgentDialogService();
+
+            // Build context from all module conversations
+            const moduleData = {
+                companyName: currentSession.company_name,
+                modules: {}
+            };
+
+            // Gather saved conversation data from each module
+            for (let i = 1; i <= 5; i++) {
+                const savedData = localStorage.getItem(`align120_module_${i}_${currentSession.id}`);
+                if (savedData) {
+                    moduleData.modules[i] = JSON.parse(savedData);
+                }
+            }
+
+            const reportSystemPrompt = `You are an AI Readiness Report Generator for InsightDriven.Business Align 120 assessment.
+
+You have just completed a comprehensive 5-module AI readiness assessment for ${currentSession.company_name || 'the company'}.
+
+Based on all the conversations and insights gathered across all modules, generate a comprehensive AI Readiness Report.
+
+## Report Structure
+
+### Executive Summary
+Provide a 2-3 sentence overview of the company's overall AI readiness.
+
+### AI Readiness Scorecard
+Rate each category using: Ready (green check), Needs Work (yellow warning), Not Ready (red X)
+
+| Category | Status | Key Finding |
+|----------|--------|-------------|
+| Module 1: AI Audit & Current State | [status] | [one-line finding] |
+| Module 2: Business Fundamentals | [status] | [one-line finding] |
+| Module 3: Team & Culture Readiness | [status] | [one-line finding] |
+| Module 4: Brand & Messaging Alignment | [status] | [one-line finding] |
+| Module 5: Corporate Governance | [status] | [one-line finding] |
+
+### Overall AI Readiness Level
+Classify as one of: **Nascent** | **Emerging** | **Developing** | **Advanced** | **Leading**
+
+### Top 3 Strengths
+List the company's strongest areas for AI adoption.
+
+### Top 3 Priority Actions
+List the most critical next steps to improve AI readiness.
+
+### Recommended Quick Wins
+Suggest 2-3 immediate, low-effort improvements.
+
+### 90-Day Roadmap Preview
+Outline key milestones for the next 90 days.
+
+### Next Steps
+- Would you like a detailed implementation plan?
+- Would you like to schedule a strategy session with InsightDriven.Business?
+- Would you like to explore specific AI use cases for your industry?
+
+Be encouraging but honest. Focus on actionable insights.`;
+
+            const result = await dialog.runAgent(
+                'align120-final-report',
+                {
+                    sessionId: currentSession.id,
+                    companyName: currentSession.company_name,
+                    moduleData: moduleData
+                },
+                {
+                    title: 'AI Readiness Report',
+                    subtitle: `${currentSession.company_name || 'Your Company'}`,
+                    endpoint: '/api/chat/stream',
+                    systemPrompt: reportSystemPrompt,
+                    onAccept: async (reportData) => {
+                        // Save the report
+                        try {
+                            await fetch(`/api/align120/sessions/${currentSession.id}/save-report`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    report: reportData.outputs?.fullResponse,
+                                    conversationHistory: reportData.conversationHistory
+                                })
+                            });
+                        } catch (e) {
+                            console.error('Error saving report:', e);
+                        }
+
+                        // Redirect to dashboard
+                        window.location.href = '/company-dashboard.html';
+                    }
+                }
+            );
+
+            // If user cancelled without saving
+            if (!result) {
+                if (confirm('Your session is complete. Would you like to go to the Company Dashboard?')) {
+                    window.location.href = '/company-dashboard.html';
+                }
             }
         }
 

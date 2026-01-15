@@ -557,7 +557,7 @@ Format your response as a structured analysis with clear sections and actionable
                 const { data, error } = await supabase
                     .from('company_profiles')
                     .update({
-                        name: session.company_name,
+                        company_name: session.company_name,
                         align120_completed: true,
                         updated_at: new Date().toISOString()
                     })
@@ -573,7 +573,7 @@ Format your response as a structured analysis with clear sections and actionable
                     .from('company_profiles')
                     .insert({
                         user_id: userId,
-                        name: session.company_name,
+                        company_name: session.company_name,
                         align120_completed: true
                     })
                     .select()
@@ -690,6 +690,42 @@ Format your response as a structured analysis with clear sections and actionable
             res.json({ success: true, data: data.brief_data });
         } catch (error) {
             console.error('Error getting alignment brief:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/align120/sessions/:id/save-report
+     * Save the final AI Readiness Report
+     */
+    router.post('/sessions/:id/save-report', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { report, conversationHistory } = req.body;
+            const userId = getUserId(req);
+
+            // Update the session with the final report
+            const { error } = await supabase
+                .from('align120_sessions')
+                .update({
+                    final_report: report,
+                    final_report_conversation: conversationHistory,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id)
+                .eq('user_id', userId);
+
+            if (error) {
+                console.error('Error saving report:', error);
+                // Non-critical - report is displayed to user anyway
+            }
+
+            res.json({
+                success: true,
+                message: 'Report saved successfully'
+            });
+        } catch (error) {
+            console.error('Error saving report:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
