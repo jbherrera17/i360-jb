@@ -81,6 +81,23 @@ function createTestApp(options = {}) {
     app.use('/api/health', healthRoutes);
   }
 
+  if (routes.includes('skills')) {
+    const skillsRoutes = require('../../server/routes/skills');
+    app.use('/api/skills', skillsRoutes(mockSupabase));
+  }
+
+  if (routes.includes('workflows')) {
+    // Workflows routes use module.exports = router pattern (no factory)
+    const workflowsRoutes = require('../../server/routes/workflows');
+    app.use('/api/workflows', workflowsRoutes);
+  }
+
+  if (routes.includes('bugs')) {
+    // Bugs routes use module.exports = router pattern (no factory)
+    const bugsRoutes = require('../../server/routes/bugs');
+    app.use('/api/bugs', bugsRoutes);
+  }
+
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Test app error:', err);
