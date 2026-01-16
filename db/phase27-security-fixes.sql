@@ -542,6 +542,67 @@ GRANT ALL ON public.align_integrity_metrics TO service_role;
 GRANT ALL ON public.alignment_briefs TO service_role;
 
 -- ============================================================
+-- AGENT CONTEXT MAPPINGS (CRITICAL FIX)
+-- This table has RLS enabled but was missing INSERT/UPDATE/DELETE policies
+-- ============================================================
+DROP POLICY IF EXISTS "Users can view own mappings" ON public.agent_context_mappings;
+DROP POLICY IF EXISTS "Users can insert own mappings" ON public.agent_context_mappings;
+DROP POLICY IF EXISTS "Users can update own mappings" ON public.agent_context_mappings;
+DROP POLICY IF EXISTS "Users can delete own mappings" ON public.agent_context_mappings;
+DROP POLICY IF EXISTS "Service role full access to mappings" ON public.agent_context_mappings;
+
+-- Policy: Users can view mappings for their own agents
+CREATE POLICY "Users can view own mappings" ON public.agent_context_mappings
+    FOR SELECT TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM agents
+            WHERE agents.id = agent_context_mappings.agent_id
+            AND agents.user_id = auth.uid()
+        )
+    );
+
+-- Policy: Users can insert mappings for their own agents
+CREATE POLICY "Users can insert own mappings" ON public.agent_context_mappings
+    FOR INSERT TO authenticated
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM agents
+            WHERE agents.id = agent_context_mappings.agent_id
+            AND agents.user_id = auth.uid()
+        )
+    );
+
+-- Policy: Users can update mappings for their own agents
+CREATE POLICY "Users can update own mappings" ON public.agent_context_mappings
+    FOR UPDATE TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM agents
+            WHERE agents.id = agent_context_mappings.agent_id
+            AND agents.user_id = auth.uid()
+        )
+    );
+
+-- Policy: Users can delete mappings for their own agents
+CREATE POLICY "Users can delete own mappings" ON public.agent_context_mappings
+    FOR DELETE TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM agents
+            WHERE agents.id = agent_context_mappings.agent_id
+            AND agents.user_id = auth.uid()
+        )
+    );
+
+-- Policy: Service role has full access (for admin operations)
+CREATE POLICY "Service role full access to mappings" ON public.agent_context_mappings
+    FOR ALL USING (auth.jwt()->>'role' = 'service_role');
+
+-- Grant service role access
+GRANT ALL ON public.agent_context_mappings TO service_role;
+
+-- ============================================================
 -- VERIFICATION
 -- ============================================================
 DO $$
