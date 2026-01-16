@@ -12,6 +12,7 @@ const OpenAI = require('openai');
 const { randomUUID: uuidv4 } = require('crypto');
 const { assembleContext, estimateTokens } = require('./contextInjection');
 const mindstudioService = require('./mindstudioService');
+const gemini = require('./gemini');
 
 // Initialize clients
 const supabase = createClient(
@@ -32,6 +33,11 @@ const perplexity = new OpenAI({
     apiKey: process.env.PERPLEXITY_API_KEY,
     baseURL: 'https://api.perplexity.ai'
 });
+
+// Initialize Gemini
+if (process.env.GOOGLE_API_KEY) {
+    gemini.initialize(process.env.GOOGLE_API_KEY);
+}
 
 // Valid Claude model mappings for legacy model names
 const CLAUDE_MODEL_ALIASES = {
@@ -279,6 +285,49 @@ async function executeWithPerplexity(agent, systemPrompt, messages) {
 }
 
 /**
+ * Execute agent with Google Gemini
+ * @param {object} agent - Agent configuration
+ * @param {string} systemPrompt - Complete system prompt
+ * @param {array} messages - Conversation messages
+ * @returns {object} - Response with metadata
+ */
+async function executeWithGemini(agent, systemPrompt, messages) {
+    const startTime = Date.now();
+
+    // Convert messages to history format for Gemini
+    const history = messages.slice(0, -1).map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        content: msg.content
+    }));
+
+    const userMessage = messages[messages.length - 1]?.content || '';
+
+    const response = await gemini.chat({
+        message: userMessage,
+        model: agent.llm_model,
+        systemPrompt: systemPrompt,
+        history: history,
+        maxTokens: agent.max_tokens || 8192,
+        temperature: agent.temperature || 0.7
+    });
+
+    const duration = Date.now() - startTime;
+
+    return {
+        content: response.content,
+        model: response.model || agent.llm_model,
+        provider: 'google',
+        usage: {
+            prompt_tokens: response.usage?.promptTokens || 0,
+            completion_tokens: response.usage?.completionTokens || 0,
+            total_tokens: response.usage?.totalTokens || 0
+        },
+        duration_ms: duration,
+        stop_reason: response.finishReason || 'stop'
+    };
+}
+
+/**
  * Stream agent response with Anthropic Claude
  * @param {object} agent - Agent configuration
  * @param {string} systemPrompt - Complete system prompt
@@ -438,6 +487,69 @@ async function streamWithPerplexity(agent, systemPrompt, messages, onToken) {
 }
 
 /**
+ * Stream agent response with Google Gemini
+ * @param {object} agent - Agent configuration
+ * @param {string} systemPrompt - Complete system prompt
+ * @param {array} messages - Conversation messages
+ * @param {function} onToken - Callback for each token
+ * @returns {object} - Final response metadata
+ */
+async function streamWithGemini(agent, systemPrompt, messages, onToken) {
+    const startTime = Date.now();
+    let fullContent = '';
+    let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+
+    // Convert messages to history format for Gemini
+    const history = messages.slice(0, -1).map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        content: msg.content
+    }));
+
+    const userMessage = messages[messages.length - 1]?.content || '';
+
+    const stream = gemini.streamChat({
+        message: userMessage,
+        model: agent.llm_model,
+        systemPrompt: systemPrompt,
+        history: history,
+        maxTokens: agent.max_tokens || 8192,
+        temperature: agent.temperature || 0.7
+    });
+
+    for await (const chunk of stream) {
+        if (chunk.type === 'text' && chunk.content) {
+            fullContent += chunk.content;
+            onToken(chunk.content);
+        }
+        if (chunk.type === 'done' && chunk.usage) {
+            usage.prompt_tokens = chunk.usage.promptTokens || 0;
+            usage.completion_tokens = chunk.usage.completionTokens || 0;
+            usage.total_tokens = chunk.usage.totalTokens || 0;
+        }
+        if (chunk.type === 'error') {
+            throw new Error(chunk.error);
+        }
+    }
+
+    const duration = Date.now() - startTime;
+
+    // If no usage from stream, estimate
+    if (usage.total_tokens === 0) {
+        usage.prompt_tokens = estimateTokens(systemPrompt + messages.map(m => m.content).join(' '));
+        usage.completion_tokens = estimateTokens(fullContent);
+        usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+    }
+
+    return {
+        content: fullContent,
+        model: agent.llm_model,
+        provider: 'google',
+        usage,
+        duration_ms: duration
+    };
+}
+
+/**
  * Log execution to database
  * @param {string} agentId - Agent UUID
  * @param {string} userId - User UUID
@@ -540,6 +652,9 @@ async function executeAgent(agentId, options = {}) {
                 case 'perplexity':
                     result = await executeWithPerplexity(agent, systemPrompt, messages);
                     break;
+                case 'google':
+                    result = await executeWithGemini(agent, systemPrompt, messages);
+                    break;
                 default:
                     throw new Error(`Unsupported provider: ${agent.llm_provider}`);
             }
@@ -615,6 +730,10 @@ async function streamAgent(agentId, options = {}) {
                 effectiveProvider = 'anthropic';
             } else if (modelOverride.startsWith('gpt') || modelOverride.startsWith('o3') || modelOverride.startsWith('o4')) {
                 effectiveProvider = 'openai';
+            } else if (modelOverride.startsWith('gemini') || modelOverride.startsWith('nano-banana')) {
+                effectiveProvider = 'google';
+            } else if (modelOverride.startsWith('sonar')) {
+                effectiveProvider = 'perplexity';
             }
         }
 
@@ -680,6 +799,9 @@ async function streamAgent(agentId, options = {}) {
                     break;
                 case 'perplexity':
                     result = await streamWithPerplexity(effectiveAgent, systemPrompt, messages, onToken);
+                    break;
+                case 'google':
+                    result = await streamWithGemini(effectiveAgent, systemPrompt, messages, onToken);
                     break;
                 default:
                     throw new Error(`Unsupported provider: ${effectiveProvider}`);
