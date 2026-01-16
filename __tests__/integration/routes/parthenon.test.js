@@ -812,7 +812,9 @@ describe('Parthenon Routes Integration', () => {
         }));
         mockSupabase.from.mockImplementation(() => ({
           insert: jest.fn().mockReturnThis(),
-          select: jest.fn().mockResolvedValue({ data: seededDepts, error: null })
+          select: jest.fn().mockReturnThis(),
+          in: jest.fn().mockResolvedValue({ data: [], error: null }), // No existing depts
+          then: (resolve) => resolve({ data: seededDepts, error: null })
         }));
       });
 

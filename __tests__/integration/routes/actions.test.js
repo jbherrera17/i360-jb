@@ -336,7 +336,12 @@ describe('Actions Routes Integration', () => {
 
     describe('PUT /api/actions/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({ id: 'action-001', name: 'Updated' }));
+        // Mock returns action owned by test user (user_id matches test-user-001)
+        mockSupabase.from.mockImplementation(() => createChainable({
+          id: 'action-001',
+          name: 'Updated',
+          user_id: 'test-user-001'  // Must match authenticated user
+        }));
       });
 
       it('should update action', async () => {
@@ -351,10 +356,17 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/:id', () => {
       beforeEach(() => {
+        // Mock needs to handle both ownership check (single) and the update/delete
         mockSupabase.from.mockImplementation(() => ({
+          select: jest.fn().mockReturnThis(),
           update: jest.fn().mockReturnThis(),
           delete: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ error: null })
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({
+            data: { user_id: 'test-user-001' },  // Must match authenticated user
+            error: null
+          }),
+          then: (resolve) => resolve({ error: null })  // For update/delete chain
         }));
       });
 

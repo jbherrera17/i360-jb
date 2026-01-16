@@ -254,7 +254,7 @@ describe('Agent Routes Integration Tests', () => {
         .get('/api/agents?sort=created_at&order=desc')
         .expect(200);
 
-      expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false, nullsFirst: false });
     });
 
     it('should apply pagination', async () => {
