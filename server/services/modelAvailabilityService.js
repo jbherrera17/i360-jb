@@ -23,6 +23,7 @@ const supabase = createClient(
 let anthropicClient = null;
 let openaiClient = null;
 let perplexityApiKey = null;
+let googleApiKey = null;
 
 // Cron job reference
 let scheduledJob = null;
@@ -63,6 +64,11 @@ function initializeClients() {
     // Perplexity (just store the key)
     if (process.env.PERPLEXITY_API_KEY) {
         perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+    }
+
+    // Google Gemini (just store the key)
+    if (process.env.GOOGLE_API_KEY) {
+        googleApiKey = process.env.GOOGLE_API_KEY;
     }
 }
 
@@ -241,6 +247,75 @@ async function checkPerplexityAvailability() {
 }
 
 /**
+ * Check Google Gemini API availability using minimal tokens
+ * Uses gemini-2.0-flash-lite (cheapest model)
+ */
+async function checkGoogleAvailability() {
+    if (!googleApiKey) {
+        return {
+            provider: 'google',
+            status: 'unavailable',
+            error_message: 'API key not configured',
+            response_time_ms: 0
+        };
+    }
+
+    const startTime = Date.now();
+    const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+
+    try {
+        const response = await fetch(`${GEMINI_BASE_URL}/models/gemini-2.0-flash-lite:generateContent?key=${googleApiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: 'hi' }] }],
+                generationConfig: { maxOutputTokens: 1 }
+            })
+        });
+
+        const responseTime = Date.now() - startTime;
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
+
+            // Determine status based on error
+            let status = 'unavailable';
+            if (errorMessage.includes('deprecated')) {
+                status = 'deprecated';
+            } else if (response.status === 401 || response.status === 403) {
+                status = 'auth_error';
+            } else if (response.status === 429) {
+                status = 'rate_limited';
+            }
+
+            return {
+                provider: 'google',
+                status,
+                error_message: errorMessage,
+                response_time_ms: responseTime
+            };
+        }
+
+        return {
+            provider: 'google',
+            status: 'available',
+            error_message: null,
+            response_time_ms: responseTime
+        };
+    } catch (error) {
+        return {
+            provider: 'google',
+            status: 'unavailable',
+            error_message: error.message || 'Unknown error',
+            response_time_ms: Date.now() - startTime
+        };
+    }
+}
+
+/**
  * Check all providers and store results
  */
 async function checkAllProviders() {
@@ -249,6 +324,7 @@ async function checkAllProviders() {
     const results = await Promise.all([
         checkAnthropicAvailability(),
         checkOpenAIAvailability(),
+        checkGoogleAvailability(),
         checkPerplexityAvailability()
     ]);
 

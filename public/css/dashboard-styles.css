@@ -168,6 +168,11 @@
     color: #ec4899;
 }
 
+.tier-experimental {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
 .count-badge {
     background: var(--primary);
     color: white;

@@ -267,7 +267,7 @@ async function chat(options) {
         systemPrompt,
         history = [],
         images = [],
-        maxTokens = 4096,
+        maxTokens = 16384,
         enableSearch = false,
         reasoningEffort = null
     } = options;
@@ -404,7 +404,7 @@ async function* streamChat(options) {
         systemPrompt,
         history = [],
         images = [],
-        maxTokens = 4096,
+        maxTokens = 16384,
         enableSearch = false
     } = options;
     

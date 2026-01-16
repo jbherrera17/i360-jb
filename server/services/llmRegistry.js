@@ -198,6 +198,80 @@ const PERPLEXITY_MODELS = {
 };
 
 // ============================================================================
+// GOOGLE (GEMINI) MODELS
+// ============================================================================
+const GEMINI_MODELS = {
+    // Gemini 3 Family (Preview)
+    'gemini-3-pro-preview': {
+        name: 'Gemini 3 Pro Preview',
+        provider: 'google',
+        description: 'State-of-the-art reasoning and multimodal',
+        maxTokens: 16384,
+        contextWindow: 2000000,
+        capabilities: ['vision', 'audio', 'video', 'tool_use', 'reasoning', 'agentic'],
+        tier: 'premium'
+    },
+    'gemini-3-flash-preview': {
+        name: 'Gemini 3 Flash Preview',
+        provider: 'google',
+        description: 'Pro-grade reasoning at Flash-level speed',
+        maxTokens: 16384,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'audio', 'tool_use', 'reasoning'],
+        tier: 'default',
+        default: true
+    },
+    // Gemini 2.5 Family
+    'gemini-2.5-pro': {
+        name: 'Gemini 2.5 Pro',
+        provider: 'google',
+        description: 'Most capable model for complex reasoning',
+        maxTokens: 16384,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'audio', 'video', 'tool_use', 'reasoning'],
+        tier: 'premium'
+    },
+    'gemini-2.5-flash': {
+        name: 'Gemini 2.5 Flash',
+        provider: 'google',
+        description: 'Fast and efficient with great performance',
+        maxTokens: 16384,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'audio', 'tool_use'],
+        tier: 'standard'
+    },
+    // Gemini 2.0 Family
+    'gemini-2.0-flash': {
+        name: 'Gemini 2.0 Flash',
+        provider: 'google',
+        description: 'Fast multimodal model with native tool use',
+        maxTokens: 8192,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'audio', 'tool_use'],
+        tier: 'standard'
+    },
+    'gemini-2.0-flash-lite': {
+        name: 'Gemini 2.0 Flash Lite',
+        provider: 'google',
+        description: 'Lightweight and cost-effective',
+        maxTokens: 8192,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'tool_use'],
+        tier: 'fast'
+    },
+    // Experimental
+    'nano-banana-pro-preview': {
+        name: 'Nano Banana Pro Preview',
+        provider: 'google',
+        description: 'Experimental lightweight model',
+        maxTokens: 8192,
+        contextWindow: 128000,
+        capabilities: ['vision'],
+        tier: 'experimental'
+    }
+};
+
+// ============================================================================
 // IMAGE GENERATION MODELS
 // ============================================================================
 const IMAGE_MODELS = {
@@ -237,7 +311,8 @@ const IMAGE_MODELS = {
 const ALL_MODELS = {
     ...ANTHROPIC_MODELS,
     ...OPENAI_MODELS,
-    ...PERPLEXITY_MODELS
+    ...PERPLEXITY_MODELS,
+    ...GEMINI_MODELS
 };
 
 // ============================================================================
@@ -255,6 +330,8 @@ function getModelsByProvider(provider) {
             return OPENAI_MODELS;
         case 'perplexity':
             return PERPLEXITY_MODELS;
+        case 'google':
+            return GEMINI_MODELS;
         default:
             return {};
     }
@@ -275,6 +352,7 @@ function getProvider(modelId) {
     if (modelId.startsWith('claude')) return 'anthropic';
     if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('dall-e')) return 'openai';
     if (modelId.startsWith('sonar') || modelId.startsWith('pplx') || modelId.startsWith('perplexity')) return 'perplexity';
+    if (modelId.startsWith('gemini')) return 'google';
     return ALL_MODELS[modelId]?.provider || 'anthropic';
 }
 
@@ -342,6 +420,19 @@ function getAvailableModels(apiKeys = {}) {
         }));
     }
 
+    if (apiKeys.google) {
+        available.google = Object.entries(GEMINI_MODELS).map(([id, model]) => ({
+            id,
+            name: model.name,
+            description: model.description,
+            tier: model.tier,
+            vision: model.capabilities?.includes('vision'),
+            audio: model.capabilities?.includes('audio'),
+            video: model.capabilities?.includes('video'),
+            reasoning: model.capabilities?.includes('reasoning')
+        }));
+    }
+
     return available;
 }
 
@@ -400,6 +491,22 @@ function getAllChatModels(apiKeys = {}) {
         });
     }
 
+    if (apiKeys.google !== false) {
+        Object.entries(GEMINI_MODELS).forEach(([id, model]) => {
+            models.push({
+                id,
+                name: model.name,
+                provider: 'google',
+                providerName: 'Google',
+                description: model.description,
+                tier: model.tier,
+                capabilities: model.capabilities,
+                maxTokens: model.maxTokens,
+                contextWindow: model.contextWindow
+            });
+        });
+    }
+
     return models;
 }
 
@@ -435,6 +542,7 @@ module.exports = {
     ANTHROPIC_MODELS,
     OPENAI_MODELS,
     PERPLEXITY_MODELS,
+    GEMINI_MODELS,
     IMAGE_MODELS,
     ALL_MODELS,
 

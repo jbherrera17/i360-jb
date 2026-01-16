@@ -60,6 +60,7 @@ async function loadModels() {
         if (data.success && data.models) {
             const claudeGroup = document.getElementById('claudeModels');
             const gptGroup = document.getElementById('gptModels');
+            const geminiGroup = document.getElementById('geminiModels');
             const perplexityGroup = document.getElementById('perplexityModels');
 
             // Build capabilities map and populate dropdowns
@@ -80,6 +81,17 @@ async function loadModels() {
                 });
                 if (gptGroup) {
                     gptGroup.innerHTML = data.models.openai.map(m =>
+                        `<option value="${m.id}">${m.name}</option>`
+                    ).join('');
+                }
+            }
+
+            if (data.models.google) {
+                data.models.google.forEach(m => {
+                    modelCapabilities[m.id] = m;
+                });
+                if (geminiGroup) {
+                    geminiGroup.innerHTML = data.models.google.map(m =>
                         `<option value="${m.id}">${m.name}</option>`
                     ).join('');
                 }
@@ -425,15 +437,21 @@ function addMessage(role, content, isLoading = false, autoScroll = true) {
 
     const messageContent = isLoading ? loadingSpinner : formatMessage(content);
 
+    const artifactButton = role === 'assistant' ? `
+                <button class="message-action" onclick="openArtifactModal(this)" title="Create artifact">
+                    <i data-lucide="package-plus"></i>
+                </button>` : '';
+
     messageDiv.innerHTML = `
         <div class="message-avatar">${avatar}</div>
         <div class="message-body">
             <div class="message-header">
                 <span class="message-author">${label}</span>
                 <span class="message-time">${new Date().toLocaleTimeString()}</span>
-                <button class="message-copy" onclick="copyMessage(this)" title="Copy message">
+                <button class="message-action" onclick="copyMessage(this)" title="Copy message">
                     <i data-lucide="copy"></i>
                 </button>
+                ${artifactButton}
             </div>
             <div class="message-content">${messageContent}</div>
         </div>
@@ -1351,29 +1369,32 @@ messageStyles.textContent = `
         color: var(--danger);
     }
 
-    /* Copy message button */
-    .message-copy {
+    /* Message action buttons (copy, artifact) */
+    .message-action {
         opacity: 0;
         background: none;
         border: none;
         color: var(--text-muted);
         cursor: pointer;
         padding: 0.25rem;
-        margin-left: auto;
         border-radius: var(--radius-sm);
         transition: opacity 0.2s, color 0.2s, background 0.2s;
     }
 
-    .message-copy:hover {
+    .message-action:first-of-type {
+        margin-left: auto;
+    }
+
+    .message-action:hover {
         color: var(--text-primary);
         background: var(--bg-tertiary);
     }
 
-    .message-copy.copied {
+    .message-action.copied {
         color: var(--success);
     }
 
-    .message:hover .message-copy {
+    .message:hover .message-action {
         opacity: 1;
     }
 
@@ -1384,9 +1405,116 @@ messageStyles.textContent = `
         margin-bottom: var(--spacing-xs);
     }
 
-    .message-copy i {
+    .message-action i {
         width: 14px;
         height: 14px;
+    }
+
+    /* Artifact Modal */
+    .artifact-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .artifact-modal.active {
+        display: flex;
+    }
+
+    .artifact-modal-content {
+        background: var(--bg-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .artifact-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .artifact-modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+
+    .artifact-modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .artifact-modal-close:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+    }
+
+    .artifact-options {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .artifact-option {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        padding: var(--spacing-md);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .artifact-option:hover {
+        border-color: var(--primary);
+        background: var(--bg-tertiary);
+    }
+
+    .artifact-option-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-subtle);
+        border-radius: var(--radius-md);
+        color: var(--primary);
+    }
+
+    .artifact-option-content {
+        flex: 1;
+    }
+
+    .artifact-option-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .artifact-option-desc {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .artifact-option-arrow {
+        color: var(--text-muted);
     }
 
     /* Conversation actions */
@@ -1550,3 +1678,310 @@ messageStyles.textContent = `
     }
 `;
 document.head.appendChild(messageStyles);
+
+// ============================================
+// ARTIFACT CREATION SYSTEM
+// ============================================
+
+// Create and append artifact modal to body
+const artifactModalHtml = `
+<div id="artifactModal" class="artifact-modal">
+    <div class="artifact-modal-content">
+        <div class="artifact-modal-header">
+            <h3>Create Artifact</h3>
+            <button class="artifact-modal-close" onclick="closeArtifactModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="artifact-options">
+            <div class="artifact-option" onclick="exportAsDocument('markdown')">
+                <div class="artifact-option-icon">
+                    <i data-lucide="file-text"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Export as Markdown</div>
+                    <div class="artifact-option-desc">Download as .md file for docs or notes</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="exportAsDocument('pdf')">
+                <div class="artifact-option-icon">
+                    <i data-lucide="file-type"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Export as PDF</div>
+                    <div class="artifact-option-desc">Download as formatted PDF document</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="exportAsDocument('docx')">
+                <div class="artifact-option-icon">
+                    <i data-lucide="file-text"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Export as Word</div>
+                    <div class="artifact-option-desc">Download as .docx for Microsoft Word</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="saveAsContextAsset()">
+                <div class="artifact-option-icon">
+                    <i data-lucide="database"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Save as Context Asset</div>
+                    <div class="artifact-option-desc">Store for reuse in future conversations</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="saveAsSnippet()">
+                <div class="artifact-option-icon">
+                    <i data-lucide="bookmark"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Save as Snippet</div>
+                    <div class="artifact-option-desc">Save as a reusable prompt template</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+`;
+
+// Inject modal into DOM when script loads
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.insertAdjacentHTML('beforeend', artifactModalHtml);
+    lucide.createIcons();
+});
+
+// Store reference to current artifact content
+let currentArtifactContent = '';
+let currentArtifactMessageEl = null;
+
+/**
+ * Open artifact modal for a message
+ */
+function openArtifactModal(button) {
+    const messageDiv = button.closest('.message');
+    const contentDiv = messageDiv.querySelector('.message-content');
+
+    if (!contentDiv) return;
+
+    currentArtifactContent = contentDiv.innerText;
+    currentArtifactMessageEl = messageDiv;
+
+    const modal = document.getElementById('artifactModal');
+    if (modal) {
+        modal.classList.add('active');
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Close artifact modal
+ */
+function closeArtifactModal() {
+    const modal = document.getElementById('artifactModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    currentArtifactContent = '';
+    currentArtifactMessageEl = null;
+}
+
+// Close modal on outside click
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('artifactModal');
+    if (modal && e.target === modal) {
+        closeArtifactModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeArtifactModal();
+    }
+});
+
+/**
+ * Export message as document
+ */
+async function exportAsDocument(format) {
+    if (!currentArtifactContent) {
+        alert('No content to export');
+        return;
+    }
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `higgins-response-${timestamp}`;
+
+    try {
+        if (format === 'markdown') {
+            // Download as Markdown
+            const blob = new Blob([currentArtifactContent], { type: 'text/markdown' });
+            downloadBlob(blob, `${filename}.md`);
+        } else if (format === 'pdf') {
+            // For PDF, we'll use the browser's print functionality or a backend service
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Higgins Response</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                               padding: 40px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+                        pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow-x: auto; }
+                        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+                        h1, h2, h3 { margin-top: 1.5em; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Higgins Response</h1>
+                    <p><small>Generated: ${new Date().toLocaleString()}</small></p>
+                    <hr>
+                    <div>${formatContentForPrint(currentArtifactContent)}</div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        } else if (format === 'docx') {
+            // For DOCX, create a simple HTML-based download that Word can open
+            const htmlContent = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
+                <head><meta charset='utf-8'><title>Higgins Response</title></head>
+                <body style="font-family: Calibri, sans-serif; font-size: 11pt; line-height: 1.5;">
+                <h1>Higgins Response</h1>
+                <p><small>Generated: ${new Date().toLocaleString()}</small></p>
+                <hr>
+                ${formatContentForPrint(currentArtifactContent)}
+                </body></html>
+            `;
+            const blob = new Blob([htmlContent], { type: 'application/msword' });
+            downloadBlob(blob, `${filename}.doc`);
+        }
+
+        closeArtifactModal();
+        setStatus(`Exported as ${format.toUpperCase()}`);
+    } catch (error) {
+        console.error('Export failed:', error);
+        alert('Failed to export: ' + error.message);
+    }
+}
+
+/**
+ * Format content for print/export
+ */
+function formatContentForPrint(text) {
+    // Convert markdown-ish content to HTML
+    return text
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+}
+
+/**
+ * Helper to download a blob
+ */
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Save as Context Asset
+ */
+async function saveAsContextAsset() {
+    if (!currentArtifactContent) {
+        alert('No content to save');
+        return;
+    }
+
+    const name = prompt('Enter a name for this Context Asset:', 'AI Response - ' + new Date().toLocaleDateString());
+    if (!name) return;
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/context', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                name: name,
+                type: 'knowledge',
+                content: currentArtifactContent,
+                description: 'Saved from Higgins conversation',
+                is_active: true
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            closeArtifactModal();
+            setStatus('Saved as Context Asset');
+            alert('Context Asset created successfully!');
+        } else {
+            throw new Error(data.error || 'Failed to save');
+        }
+    } catch (error) {
+        console.error('Save as Context Asset failed:', error);
+        alert('Failed to save: ' + error.message);
+    }
+}
+
+/**
+ * Save as Snippet/Template
+ */
+async function saveAsSnippet() {
+    if (!currentArtifactContent) {
+        alert('No content to save');
+        return;
+    }
+
+    const name = prompt('Enter a name for this snippet:', 'Saved Response - ' + new Date().toLocaleDateString());
+    if (!name) return;
+
+    try {
+        // Save to localStorage as a simple snippet store
+        const snippets = JSON.parse(localStorage.getItem('chat_snippets') || '[]');
+        snippets.push({
+            id: Date.now(),
+            name: name,
+            content: currentArtifactContent,
+            createdAt: new Date().toISOString()
+        });
+        localStorage.setItem('chat_snippets', JSON.stringify(snippets));
+
+        closeArtifactModal();
+        setStatus('Snippet saved');
+        alert('Snippet saved! You can access it from the snippets menu.');
+    } catch (error) {
+        console.error('Save as snippet failed:', error);
+        alert('Failed to save: ' + error.message);
+    }
+}

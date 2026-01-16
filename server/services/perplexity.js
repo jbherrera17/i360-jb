@@ -156,7 +156,7 @@ async function chat(options) {
         model = 'sonar-pro',
         systemPrompt,
         history = [],
-        maxTokens = 4096,
+        maxTokens = 8192,
         temperature = 0.7,
         returnCitations = true,
         returnImages = false
@@ -226,7 +226,7 @@ async function* streamChat(options) {
         model = 'sonar-pro',
         systemPrompt,
         history = [],
-        maxTokens = 4096,
+        maxTokens = 8192,
         temperature = 0.7
     } = options;
 

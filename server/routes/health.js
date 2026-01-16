@@ -66,6 +66,7 @@ router.get('/', async (req, res) => {
   const services = {
     anthropic: false,
     openai: false,
+    gemini: false,
     mindstudio: false,
     voice: false,
     search: false,
@@ -81,6 +82,11 @@ router.get('/', async (req, res) => {
   if (process.env.OPENAI_API_KEY) {
     services.openai = true;
     services.voice = true; // Voice uses OpenAI
+  }
+
+  // Check Google Gemini
+  if (process.env.GOOGLE_API_KEY) {
+    services.gemini = true;
   }
 
   // Check MindStudio
@@ -218,6 +224,7 @@ router.get('/detailed', async (req, res) => {
   health.externalApis = {
     anthropic: !!process.env.ANTHROPIC_API_KEY,
     openai: !!process.env.OPENAI_API_KEY,
+    gemini: !!process.env.GOOGLE_API_KEY,
     mindstudio: !!process.env.MINDSTUDIO_API_KEY,
     brave: !!process.env.BRAVE_SEARCH_API_KEY || !!process.env.BRAVE_API_KEY,
     tavily: !!process.env.TAVILY_API_KEY,
