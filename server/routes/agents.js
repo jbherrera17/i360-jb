@@ -1075,10 +1075,7 @@ module.exports = function(supabase) {
                 asset_id,
                 injection_mode = 'always',
                 priority = 50,
-                trigger_keywords = [],
-                trigger_regex = null,
-                max_tokens = null,
-                truncation_strategy = 'end'
+                max_tokens = null
             } = req.body;
 
             if (!asset_id) {
@@ -1094,10 +1091,7 @@ module.exports = function(supabase) {
                 asset_id,
                 injection_mode,
                 priority: parseInt(priority),
-                trigger_keywords,
-                trigger_regex,
                 max_tokens: max_tokens ? parseInt(max_tokens) : null,
-                truncation_strategy,
                 is_active: true
             };
 

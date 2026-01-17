@@ -1,7 +1,7 @@
 /**
  * Chat Routes - Insight 360
- * Multi-LLM chat endpoints (Claude + OpenAI + Perplexity)
- * Version: 2.4.0 - Added Higgins persona with JB Brand Voice DNA
+ * Multi-LLM chat endpoints (Claude + OpenAI + Perplexity + Gemini)
+ * Version: 2.5.0 - Added Google Gemini support
  */
 
 const express = require('express');
@@ -11,6 +11,7 @@ const router = express.Router();
 const anthropic = require('../services/anthropic');
 const openai = require('../services/openai');
 const perplexity = require('../services/perplexity');
+const gemini = require('../services/gemini');
 const llmRegistry = require('../services/llmRegistry');
 
 // Import Higgins service for persona and knowledge injection
@@ -25,6 +26,9 @@ if (process.env.OPENAI_API_KEY && openai.initialize) {
 }
 if (process.env.PERPLEXITY_API_KEY) {
     perplexity.initialize(process.env.PERPLEXITY_API_KEY);
+}
+if (process.env.GOOGLE_API_KEY) {
+    gemini.initialize(process.env.GOOGLE_API_KEY);
 }
 
 // Use centralized registry for provider detection
@@ -97,7 +101,8 @@ router.get('/models', (_req, res) => {
     const apiKeys = {
         anthropic: !!process.env.ANTHROPIC_API_KEY,
         openai: !!process.env.OPENAI_API_KEY,
-        perplexity: !!process.env.PERPLEXITY_API_KEY
+        perplexity: !!process.env.PERPLEXITY_API_KEY,
+        google: !!process.env.GOOGLE_API_KEY
     };
 
     const available = llmRegistry.getAvailableModels(apiKeys);
@@ -117,7 +122,8 @@ router.get('/models/all', (_req, res) => {
     const apiKeys = {
         anthropic: !!process.env.ANTHROPIC_API_KEY,
         openai: !!process.env.OPENAI_API_KEY,
-        perplexity: !!process.env.PERPLEXITY_API_KEY
+        perplexity: !!process.env.PERPLEXITY_API_KEY,
+        google: !!process.env.GOOGLE_API_KEY
     };
 
     const models = llmRegistry.getAllChatModels(apiKeys);
@@ -202,6 +208,13 @@ router.post('/', async (req, res) => {
             });
         } else if (provider === 'perplexity') {
             response = await perplexity.chat({
+                message,
+                model: selectedModel,
+                systemPrompt: fullSystemPrompt,
+                history: []
+            });
+        } else if (provider === 'google') {
+            response = await gemini.chat({
                 message,
                 model: selectedModel,
                 systemPrompt: fullSystemPrompt,
@@ -304,6 +317,14 @@ router.post('/message', async (req, res) => {
                 model,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory
+            });
+        } else if (provider === 'google') {
+            response = await gemini.chat({
+                message: text,
+                model,
+                systemPrompt: finalSystemPrompt,
+                history: normalizedHistory,
+                images: allMedia
             });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
@@ -432,6 +453,14 @@ router.post('/stream', async (req, res) => {
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory
             });
+        } else if (provider === 'google') {
+            stream = gemini.streamChat({
+                message: text,
+                model,
+                systemPrompt: finalSystemPrompt,
+                history: normalizedHistory,
+                images: allMedia
+            });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }
@@ -554,6 +583,14 @@ router.post('/with-search', async (req, res) => {
             if (response.citations) {
                 searchResults = response.citations;
             }
+        } else if (provider === 'google') {
+            response = await gemini.chat({
+                message: text,
+                model,
+                systemPrompt: augmentedSystemPrompt,
+                history: normalizedHistory,
+                images: allMedia
+            });
         } else {
             throw new Error(`Unknown provider: ${provider}`);
         }

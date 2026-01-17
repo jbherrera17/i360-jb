@@ -239,40 +239,131 @@
             100% { transform: rotate(360deg); }
         }
 
-        .user-info {
-            text-align: center;
+        .user-card-content {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: var(--spacing-md);
             padding: var(--spacing-lg);
+            align-items: start;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--spacing-sm);
+            border-right: 1px solid var(--border);
         }
 
         .user-avatar {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             background: var(--gradient-primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto var(--spacing-md);
-            font-size: 1.5rem;
+            margin-bottom: var(--spacing-xs);
+            font-size: 1.25rem;
             font-weight: 600;
             color: white;
         }
 
         .user-name {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: var(--spacing-xs);
+            text-align: center;
         }
 
         .user-role {
             color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             text-transform: capitalize;
-            margin-bottom: var(--spacing-lg);
         }
 
         .user-role.admin {
             color: var(--warning);
+        }
+
+        .user-actions {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            padding-top: var(--spacing-sm);
+        }
+
+        .user-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-nav {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: var(--spacing-sm);
+            padding: 0.6rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            text-decoration: none;
+        }
+
+        .btn-nav:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-nav i {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .btn-nav span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: var(--spacing-sm);
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-md);
+            color: var(--danger);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-logout i {
+            width: 16px;
+            height: 16px;
         }
 
         .btn-outline {
@@ -292,15 +383,6 @@
         .btn-outline:hover {
             background: var(--bg-hover);
             border-color: var(--primary);
-        }
-
-        .btn-logout {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .btn-logout:hover {
-            background: rgba(239, 68, 68, 0.1);
         }
     </style>
 </head>
@@ -393,27 +475,74 @@
         </div>
 
         <!-- Logged In Card -->
-        <div class="login-card" id="userCard" style="display: none;">
-            <div class="user-info">
-                <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-name" id="userName">User</div>
-                <div class="user-role" id="userRole">user</div>
+        <div class="login-card" id="userCard" style="display: none; max-width: 520px;">
+            <div class="user-card-content">
+                <!-- Left Column: Avatar & Name -->
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-name" id="userName">User</div>
+                    <div class="user-role" id="userRole">user</div>
+                </div>
+
+                <!-- Right Column: Role-based Navigation -->
+                <div class="user-actions">
+                    <!-- Admin Navigation (hidden by default) -->
+                    <div class="user-actions-grid" id="adminNav" style="display: none;">
+                        <a href="/parthenon.html" class="btn-nav">
+                            <i data-lucide="landmark"></i>
+                            <span>Parthenon</span>
+                        </a>
+                        <a href="/admin.html" class="btn-nav">
+                            <i data-lucide="users"></i>
+                            <span>User Mgmt</span>
+                        </a>
+                        <a href="/system-health.html" class="btn-nav">
+                            <i data-lucide="activity"></i>
+                            <span>System Health</span>
+                        </a>
+                        <a href="/synerginexus.html" class="btn-nav">
+                            <i data-lucide="brain-circuit"></i>
+                            <span>SynergiNexus</span>
+                        </a>
+                        <a href="/tags.html" class="btn-nav">
+                            <i data-lucide="tags"></i>
+                            <span>Tags</span>
+                        </a>
+                        <a href="/roles.html" class="btn-nav">
+                            <i data-lucide="user-cog"></i>
+                            <span>Titles</span>
+                        </a>
+                    </div>
+
+                    <!-- Standard User Navigation (hidden by default) -->
+                    <div class="user-actions-grid" id="userNav" style="display: none;">
+                        <a href="/chat.html" class="btn-nav">
+                            <i data-lucide="message-square"></i>
+                            <span>Chat</span>
+                        </a>
+                        <a href="/execute120.html" class="btn-nav">
+                            <i data-lucide="play-circle"></i>
+                            <span>Execute 120</span>
+                        </a>
+                        <a href="/agents.html" class="btn-nav">
+                            <i data-lucide="bot"></i>
+                            <span>Agent Library</span>
+                        </a>
+                        <a href="/" class="btn-nav">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </div>
+
+                    <!-- Logout Button (bottom right) -->
+                    <div class="logout-container">
+                        <button class="btn-logout" id="logoutBtn">
+                            <i data-lucide="log-out"></i>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            <a href="/" class="btn-primary">
-                <i data-lucide="layout-dashboard"></i>
-                <span>Go to Dashboard</span>
-            </a>
-
-            <a href="/agents.html" class="btn-outline" style="display: flex; align-items: center; justify-content: center; text-decoration: none;">
-                <i data-lucide="bot" style="width: 18px; height: 18px; margin-right: 0.5rem;"></i>
-                <span>Manage Agents</span>
-            </a>
-
-            <button class="btn-outline btn-logout" id="logoutBtn">
-                <i data-lucide="log-out" style="width: 18px; height: 18px; margin-right: 0.5rem;"></i>
-                Sign Out
-            </button>
         </div>
     </div>
 
@@ -499,11 +628,22 @@
             const avatar = document.getElementById('userAvatar');
             const name = document.getElementById('userName');
             const role = document.getElementById('userRole');
+            const adminNav = document.getElementById('adminNav');
+            const userNav = document.getElementById('userNav');
 
             avatar.textContent = (user.display_name || user.email)[0].toUpperCase();
             name.textContent = user.display_name || user.email.split('@')[0];
             role.textContent = user.role || 'user';
             role.className = 'user-role' + (user.role === 'admin' ? ' admin' : '');
+
+            // Show appropriate navigation based on role
+            if (user.role === 'admin') {
+                adminNav.style.display = 'grid';
+                userNav.style.display = 'none';
+            } else {
+                adminNav.style.display = 'none';
+                userNav.style.display = 'grid';
+            }
 
             lucide.createIcons();
         }

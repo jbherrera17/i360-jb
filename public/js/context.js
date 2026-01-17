@@ -1321,9 +1321,9 @@ function formatFullDate(dateString) {
 // ============================================
 
 /**
- * Generate modal manager instance
+ * Generate modal instance (using ModalService)
  */
-let generateModalManager = null;
+let generateModal = null;
 
 /**
  * Open the generate modal
@@ -1331,19 +1331,9 @@ let generateModalManager = null;
 function openGenerateModal() {
     console.log('Opening generate modal...');
 
-    // Initialize modal manager if not done yet
-    if (!generateModalManager && typeof ModalManager !== 'undefined') {
-        generateModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 600 });
-        generateModalManager.init('generate-modal-dialog', 'generate-modal-header', 'generateModal');
-    }
-
-    if (generateModalManager) {
-        generateModalManager.open();
-    } else {
-        // Fallback if modal manager not available
-        const modal = document.getElementById('generateModal');
-        if (modal) modal.classList.add('active');
-    }
+    // Show the modal overlay (inline modal in HTML)
+    const modal = document.getElementById('generateModal');
+    if (modal) modal.classList.add('active');
 
     // Populate asset type dropdown
     populateGenerateTypeSelect();
@@ -1358,12 +1348,8 @@ function openGenerateModal() {
  * Close the generate modal
  */
 function closeGenerateModal() {
-    if (generateModalManager) {
-        generateModalManager.close();
-    } else {
-        const modal = document.getElementById('generateModal');
-        if (modal) modal.classList.remove('active');
-    }
+    const modal = document.getElementById('generateModal');
+    if (modal) modal.classList.remove('active');
     // Reset form
     resetGenerateForm();
 }
@@ -1962,8 +1948,6 @@ function setupJsonToggle() {
 // PREVIEW MODAL
 // ============================================
 
-let previewModalManager = null;
-
 /**
  * Setup preview modal functionality
  */
@@ -2009,12 +1993,6 @@ function setupPreviewModal() {
  * Open the preview modal
  */
 function openPreviewModal() {
-    // Initialize modal manager if not done yet
-    if (!previewModalManager && typeof ModalManager !== 'undefined') {
-        previewModalManager = new ModalManager({ minWidth: 500, minHeight: 400, defaultWidth: 700 });
-        previewModalManager.init('preview-modal-dialog', 'preview-modal-header', 'previewModal');
-    }
-
     // Copy preview content to modal
     const previewContent = document.getElementById('previewContent');
     const modalContent = document.getElementById('previewModalContent');
@@ -2023,13 +2001,9 @@ function openPreviewModal() {
         modalContent.innerHTML = previewContent.innerHTML;
     }
 
-    if (previewModalManager) {
-        previewModalManager.open();
-    } else {
-        // Fallback if modal manager not available
-        const modal = document.getElementById('previewModal');
-        if (modal) modal.classList.add('active');
-    }
+    // Show the modal overlay
+    const modal = document.getElementById('previewModal');
+    if (modal) modal.classList.add('active');
 
     // Refresh icons in modal
     if (typeof lucide !== 'undefined') {
@@ -2041,10 +2015,6 @@ function openPreviewModal() {
  * Close the preview modal
  */
 function closePreviewModal() {
-    if (previewModalManager) {
-        previewModalManager.close();
-    } else {
-        const modal = document.getElementById('previewModal');
-        if (modal) modal.classList.remove('active');
-    }
+    const modal = document.getElementById('previewModal');
+    if (modal) modal.classList.remove('active');
 }

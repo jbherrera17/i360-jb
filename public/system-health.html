@@ -1332,6 +1332,83 @@
                     </div>
                 </div>
 
+                <!-- Google Gemini Models -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #4285f4, #34a853); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="star" style="width: 18px; height: 18px; color: white;"></i>
+                        </div>
+                        <span style="font-weight: 600; font-size: 1rem;">Google (Gemini)</span>
+                        <span id="geminiStatus" style="margin-left: 0.5rem;"></span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">7 models</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+                        <!-- Gemini 3 Pro Preview -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Gemini 3 Pro Preview</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">State-of-the-art reasoning and multimodal</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">2M context | Vision, Audio, Video, Tools, Reasoning, Agentic</div>
+                        </div>
+                        <!-- Gemini 3 Flash Preview -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--success);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Gemini 3 Flash Preview</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 4px;">DEFAULT</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Pro-grade reasoning at Flash-level speed</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">1M context | Vision, Audio, Tools, Reasoning</div>
+                        </div>
+                        <!-- Gemini 2.5 Pro -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Gemini 2.5 Pro</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px;">PREMIUM</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Most capable model for complex reasoning</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">1M context | Vision, Audio, Video, Tools, Reasoning</div>
+                        </div>
+                        <!-- Gemini 2.5 Flash -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Gemini 2.5 Flash</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">STANDARD</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Fast and efficient with great performance</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">1M context | Vision, Audio, Tools</div>
+                        </div>
+                        <!-- Gemini 2.0 Flash -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid var(--text-muted);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Gemini 2.0 Flash</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(107, 114, 128, 0.2); color: var(--text-muted); border-radius: 4px;">STANDARD</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Fast multimodal with native tool use</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">1M context | Vision, Audio, Tools</div>
+                        </div>
+                        <!-- Gemini 2.0 Flash Lite -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #22c55e;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Gemini 2.0 Flash Lite</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(34, 197, 94, 0.2); color: #22c55e; border-radius: 4px;">EFFICIENT</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Lightweight and cost-effective</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">1M context | Vision, Tools</div>
+                        </div>
+                        <!-- Nano Banana Pro Preview -->
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; border-left: 3px solid #ec4899;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">Nano Banana Pro Preview</span>
+                                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(236, 72, 153, 0.2); color: #ec4899; border-radius: 4px;">EXPERIMENTAL</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Experimental lightweight model</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">128K context | Vision</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Perplexity (Sonar) Models -->
                 <div>
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
@@ -1713,6 +1790,7 @@
             const providerMap = {
                 'anthropic': 'anthropicStatus',
                 'openai': 'openaiStatus',
+                'google': 'geminiStatus',
                 'perplexity': 'perplexityStatus'
             };
 

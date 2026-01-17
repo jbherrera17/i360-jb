@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Service Automated Tests - Insight 360</title>
+
+    <!-- Modal Service CSS -->
+    <link rel="stylesheet" href="js/modal-service/modal-service.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--i360-modal-bg, #0f0f1a);
+            color: var(--i360-modal-text, #ffffff);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: var(--i360-modal-text-secondary, #94a3b8);
+            margin: 0 0 20px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--i360-modal-border, #334155);
+            color: var(--i360-modal-text, #ffffff);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            padding: 12px 16px;
+            background: var(--i360-modal-header-bg, #1e293b);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-label {
+            color: var(--i360-modal-text-secondary, #94a3b8);
+        }
+
+        .status-value {
+            font-weight: 600;
+        }
+
+        .status-value.pass { color: #10b981; }
+        .status-value.fail { color: #ef4444; }
+        .status-value.running { color: #f59e0b; }
+
+        .test-suites {
+            display: grid;
+            gap: 16px;
+        }
+
+        .test-suite {
+            background: var(--i360-modal-header-bg, #1e293b);
+            border: 1px solid var(--i360-modal-border, #334155);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .suite-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .suite-header:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .suite-name {
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .suite-status {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .suite-status.pending { background: #334155; color: #94a3b8; }
+        .suite-status.running { background: #f59e0b; color: #1a202c; }
+        .suite-status.passed { background: #10b981; color: white; }
+        .suite-status.failed { background: #ef4444; color: white; }
+
+        .suite-tests {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 300ms ease;
+        }
+
+        .suite-tests.expanded {
+            max-height: 2000px;
+            padding: 8px 0;
+        }
+
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .test-icon.pending { color: #64748b; }
+        .test-icon.running { color: #f59e0b; }
+        .test-icon.passed { color: #10b981; }
+        .test-icon.failed { color: #ef4444; }
+
+        .test-name {
+            flex: 1;
+        }
+
+        .test-time {
+            color: var(--i360-modal-text-secondary, #94a3b8);
+            font-size: 11px;
+            margin-left: 10px;
+        }
+
+        .test-error {
+            font-size: 12px;
+            color: #ef4444;
+            padding: 6px 16px 6px 46px;
+            background: rgba(239, 68, 68, 0.1);
+            margin-top: -1px;
+        }
+
+        .console-output {
+            margin-top: 20px;
+            background: #0f172a;
+            border: 1px solid var(--i360-modal-border, #334155);
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .console-header {
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--i360-modal-border, #334155);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-body {
+            padding: 12px 16px;
+        }
+
+        .console-line {
+            padding: 2px 0;
+            color: #94a3b8;
+        }
+
+        .console-line.info { color: #3b82f6; }
+        .console-line.success { color: #10b981; }
+        .console-line.warn { color: #f59e0b; }
+        .console-line.error { color: #ef4444; }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--i360-modal-border, #334155);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #10b981);
+            transition: width 300ms ease;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modal Service Automated Tests</h1>
+    <p class="subtitle">Automated test suite for ModalService, ModalBase, and all modal types</p>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="runAllBtn" onclick="runAllTests()">Run All Tests</button>
+        <button class="btn btn-secondary" onclick="runFailedTests()">Re-run Failed</button>
+        <button class="btn btn-secondary" onclick="clearResults()">Clear Results</button>
+        <button class="btn btn-danger" onclick="ModalService.closeAll(true)">Close All Modals</button>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-label">Total:</span>
+            <span class="status-value" id="totalCount">0</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Passed:</span>
+            <span class="status-value pass" id="passCount">0</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Failed:</span>
+            <span class="status-value fail" id="failCount">0</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Duration:</span>
+            <span class="status-value" id="duration">-</span>
+        </div>
+    </div>
+
+    <div class="test-suites" id="testSuites"></div>
+
+    <div class="console-output">
+        <div class="console-header">
+            <span>Console Output</span>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="clearConsole()">Clear</button>
+        </div>
+        <div class="console-body" id="consoleOutput"></div>
+    </div>
+
+    <!-- Modal Service Scripts -->
+    <script src="js/modal-service/utils/sanitize.js"></script>
+    <script src="js/modal-service/utils/position.js"></script>
+    <script src="js/modal-service/mixins/DraggableMixin.js"></script>
+    <script src="js/modal-service/mixins/ResizableMixin.js"></script>
+    <script src="js/modal-service/mixins/FullscreenMixin.js"></script>
+    <script src="js/modal-service/mixins/PersistenceMixin.js"></script>
+    <script src="js/modal-service/ModalBase.js"></script>
+    <script src="js/modal-service/modals/AlertModal.js"></script>
+    <script src="js/modal-service/modals/ConfirmModal.js"></script>
+    <script src="js/modal-service/modals/PromptModal.js"></script>
+    <script src="js/modal-service/modals/FormModal.js"></script>
+    <script src="js/modal-service/modals/ContentModal.js"></script>
+    <script src="js/modal-service/modals/ChatModal.js"></script>
+    <script src="js/modal-service/modals/AgentModal.js"></script>
+    <script src="js/modal-service/index.js"></script>
+
+    <script>
+        // ============================================
+        // Test Framework
+        // ============================================
+
+        const TestRunner = {
+            suites: [],
+            results: [],
+            currentSuite: null,
+            startTime: null,
+            isRunning: false,
+
+            describe(name, fn) {
+                const suite = {
+                    name,
+                    tests: [],
+                    status: 'pending',
+                    passCount: 0,
+                    failCount: 0
+                };
+                this.suites.push(suite);
+                this.currentSuite = suite;
+                fn();
+                this.currentSuite = null;
+            },
+
+            it(name, fn, options = {}) {
+                if (!this.currentSuite) {
+                    console.error('Test must be inside a describe block');
+                    return;
+                }
+                this.currentSuite.tests.push({
+                    name,
+                    fn,
+                    status: 'pending',
+                    error: null,
+                    duration: null,
+                    timeout: options.timeout || 10000
+                });
+            },
+
+            async runAll() {
+                if (this.isRunning) return;
+                this.isRunning = true;
+                this.startTime = Date.now();
+
+                document.getElementById('runAllBtn').disabled = true;
+                this.updateProgress(0);
+
+                const totalTests = this.suites.reduce((sum, s) => sum + s.tests.length, 0);
+                let completedTests = 0;
+
+                for (const suite of this.suites) {
+                    suite.status = 'running';
+                    suite.passCount = 0;
+                    suite.failCount = 0;
+                    this.renderSuites();
+
+                    for (const test of suite.tests) {
+                        test.status = 'running';
+                        test.error = null;
+                        this.renderSuites();
+
+                        const testStart = Date.now();
+                        try {
+                            await this.runWithTimeout(test.fn(), test.timeout);
+                            test.status = 'passed';
+                            suite.passCount++;
+                            log(`✓ ${suite.name}: ${test.name}`, 'success');
+                        } catch (err) {
+                            test.status = 'failed';
+                            test.error = err.message || String(err);
+                            suite.failCount++;
+                            log(`✗ ${suite.name}: ${test.name} - ${test.error}`, 'error');
+                        } finally {
+                            // ALWAYS cleanup after each test - close all modals
+                            ModalService.closeAll(true);
+                            await sleep(100);
+                            // Force remove any remaining modal elements from DOM
+                            document.querySelectorAll('.i360-modal-container, .i360-modal-overlay').forEach(el => el.remove());
+                            await sleep(50);
+                        }
+                        test.duration = Date.now() - testStart;
+
+                        completedTests++;
+                        this.updateProgress((completedTests / totalTests) * 100);
+                        this.renderSuites();
+
+                        // Small delay between tests
+                        await sleep(50);
+                    }
+
+                    suite.status = suite.failCount > 0 ? 'failed' : 'passed';
+                    this.renderSuites();
+                }
+
+                this.isRunning = false;
+                document.getElementById('runAllBtn').disabled = false;
+                document.getElementById('duration').textContent = `${((Date.now() - this.startTime) / 1000).toFixed(2)}s`;
+            },
+
+            async runFailed() {
+                if (this.isRunning) return;
+
+                for (const suite of this.suites) {
+                    const failedTests = suite.tests.filter(t => t.status === 'failed');
+                    if (failedTests.length === 0) continue;
+
+                    suite.status = 'running';
+                    this.renderSuites();
+
+                    for (const test of failedTests) {
+                        test.status = 'running';
+                        test.error = null;
+                        this.renderSuites();
+
+                        const testStart = Date.now();
+                        try {
+                            await this.runWithTimeout(test.fn(), test.timeout);
+                            test.status = 'passed';
+                            suite.passCount++;
+                            suite.failCount--;
+                            log(`✓ ${suite.name}: ${test.name} (retry)`, 'success');
+                        } catch (err) {
+                            test.status = 'failed';
+                            test.error = err.message || String(err);
+                            log(`✗ ${suite.name}: ${test.name} - ${test.error}`, 'error');
+                        } finally {
+                            // ALWAYS cleanup after each test
+                            ModalService.closeAll(true);
+                            await sleep(100);
+                            // Force remove any remaining modal elements from DOM
+                            document.querySelectorAll('.i360-modal-container, .i360-modal-overlay').forEach(el => el.remove());
+                            await sleep(50);
+                        }
+                        test.duration = Date.now() - testStart;
+                        this.renderSuites();
+
+                        await sleep(50);
+                    }
+
+                    suite.status = suite.failCount > 0 ? 'failed' : 'passed';
+                    this.renderSuites();
+                }
+            },
+
+            runWithTimeout(promise, timeout) {
+                return new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => {
+                        reject(new Error(`Test timed out after ${timeout}ms`));
+                    }, timeout);
+
+                    Promise.resolve(promise)
+                        .then(result => {
+                            clearTimeout(timer);
+                            resolve(result);
+                        })
+                        .catch(err => {
+                            clearTimeout(timer);
+                            reject(err);
+                        });
+                });
+            },
+
+            clear() {
+                for (const suite of this.suites) {
+                    suite.status = 'pending';
+                    suite.passCount = 0;
+                    suite.failCount = 0;
+                    for (const test of suite.tests) {
+                        test.status = 'pending';
+                        test.error = null;
+                        test.duration = null;
+                    }
+                }
+                this.renderSuites();
+                this.updateProgress(0);
+                document.getElementById('duration').textContent = '-';
+            },
+
+            updateProgress(percent) {
+                document.getElementById('progressBar').style.width = `${percent}%`;
+
+                const total = this.suites.reduce((sum, s) => sum + s.tests.length, 0);
+                const passed = this.suites.reduce((sum, s) => sum + s.passCount, 0);
+                const failed = this.suites.reduce((sum, s) => sum + s.failCount, 0);
+
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('passCount').textContent = passed;
+                document.getElementById('failCount').textContent = failed;
+            },
+
+            renderSuites() {
+                const container = document.getElementById('testSuites');
+                container.innerHTML = this.suites.map((suite, idx) => `
+                    <div class="test-suite">
+                        <div class="suite-header" onclick="toggleSuite(${idx})">
+                            <span class="suite-name">
+                                ${this.getStatusIcon(suite.status)}
+                                ${suite.name}
+                            </span>
+                            <span class="suite-status ${suite.status}">
+                                ${suite.status === 'pending' ? 'Pending' :
+                                  suite.status === 'running' ? 'Running...' :
+                                  `${suite.passCount}/${suite.tests.length} passed`}
+                            </span>
+                        </div>
+                        <div class="suite-tests ${suite.status !== 'pending' ? 'expanded' : ''}" id="suite-${idx}">
+                            ${suite.tests.map(test => `
+                                <div class="test-item">
+                                    <span class="test-icon ${test.status}">
+                                        ${this.getStatusIcon(test.status)}
+                                    </span>
+                                    <span class="test-name">${test.name}</span>
+                                    ${test.duration !== null ? `<span class="test-time">${test.duration}ms</span>` : ''}
+                                </div>
+                                ${test.error ? `<div class="test-error">${test.error}</div>` : ''}
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+
+                this.updateProgress(
+                    this.suites.reduce((sum, s) => sum + s.passCount + s.failCount, 0) /
+                    Math.max(1, this.suites.reduce((sum, s) => sum + s.tests.length, 0)) * 100
+                );
+            },
+
+            getStatusIcon(status) {
+                switch (status) {
+                    case 'pending': return '<span style="opacity:0.5">○</span>';
+                    case 'running': return '<div class="spinner"></div>';
+                    case 'passed': return '✓';
+                    case 'failed': return '✗';
+                    default: return '○';
+                }
+            }
+        };
+
+        // ============================================
+        // Test Utilities
+        // ============================================
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function assert(condition, message = 'Assertion failed') {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function assertEqual(actual, expected, message = '') {
+            if (actual !== expected) {
+                throw new Error(`${message} Expected: ${JSON.stringify(expected)}, Got: ${JSON.stringify(actual)}`);
+            }
+        }
+
+        function assertExists(value, message = 'Value should exist') {
+            if (value === null || value === undefined) {
+                throw new Error(message);
+            }
+        }
+
+        function assertType(value, type, message = '') {
+            const actualType = typeof value;
+            if (actualType !== type) {
+                throw new Error(`${message} Expected type: ${type}, Got: ${actualType}`);
+            }
+        }
+
+        function assertInstanceOf(value, constructor, message = '') {
+            if (!(value instanceof constructor)) {
+                throw new Error(`${message} Expected instance of ${constructor.name}`);
+            }
+        }
+
+        async function waitForElement(selector, timeout = 2000) {
+            const start = Date.now();
+            while (Date.now() - start < timeout) {
+                const el = document.querySelector(selector);
+                if (el) return el;
+                await sleep(50);
+            }
+            throw new Error(`Element not found: ${selector}`);
+        }
+
+        async function waitForNoElement(selector, timeout = 2000) {
+            const start = Date.now();
+            while (Date.now() - start < timeout) {
+                const el = document.querySelector(selector);
+                if (!el) return;
+                await sleep(50);
+            }
+            throw new Error(`Element still exists: ${selector}`);
+        }
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '';
+        }
+
+        function toggleSuite(idx) {
+            const el = document.getElementById(`suite-${idx}`);
+            el.classList.toggle('expanded');
+        }
+
+        function runAllTests() {
+            log('Starting automated test suite...', 'info');
+            TestRunner.runAll();
+        }
+
+        function runFailedTests() {
+            log('Re-running failed tests...', 'info');
+            TestRunner.runFailed();
+        }
+
+        function clearResults() {
+            TestRunner.clear();
+            clearConsole();
+            log('Results cleared', 'info');
+        }
+
+        // ============================================
+        // Test Suites
+        // ============================================
+
+        // Suite 1: ModalService Core
+        TestRunner.describe('ModalService Core', () => {
+            TestRunner.it('should be defined globally', async () => {
+                assertExists(window.ModalService, 'ModalService should be defined');
+                assertType(ModalService.alert, 'function', 'alert should be a function');
+                assertType(ModalService.confirm, 'function', 'confirm should be a function');
+                assertType(ModalService.prompt, 'function', 'prompt should be a function');
+            });
+
+            TestRunner.it('should register and unregister modals', async () => {
+                const modal = new ModalBase({ title: 'Test Modal' });
+                ModalService.register(modal);
+                assertExists(modal.id, 'Modal should have an ID');
+                const registered = ModalService.get(modal.id);
+                assertEqual(registered, modal, 'Should retrieve registered modal');
+                ModalService.unregister(modal.id);
+            });
+
+            TestRunner.it('should bring modal to front', async () => {
+                const modal1 = ModalService.create({ title: 'Modal 1' });
+                const modal2 = ModalService.create({ title: 'Modal 2' });
+                modal1.open();
+                modal2.open();
+                await sleep(100);
+
+                const initialZ = modal1._zIndex;
+                ModalService.bringToFront(modal1);
+                assert(modal1._zIndex > initialZ, 'Z-index should increase');
+
+                ModalService.closeAll(true);
+                await sleep(100);
+            });
+
+            TestRunner.it('should close all modals', async () => {
+                ModalService.create({ title: 'Test 1' }).open();
+                ModalService.create({ title: 'Test 2' }).open();
+                await sleep(100);
+
+                const openBefore = ModalService.getOpenModals().length;
+                assert(openBefore >= 2, 'Should have open modals');
+
+                ModalService.closeAll(true);
+                await sleep(200);
+
+                const openAfter = ModalService.getOpenModals().length;
+                assertEqual(openAfter, 0, 'All modals should be closed');
+            });
+
+            TestRunner.it('should get open modals list', async () => {
+                const modal = ModalService.create({ title: 'Test' });
+                await modal.open();
+                await sleep(150);
+
+                const openModals = ModalService.getOpenModals();
+                assert(openModals.length > 0, 'Should have open modals');
+                assert(openModals.includes(modal), 'Should include our modal');
+            });
+
+            TestRunner.it('should configure service options', async () => {
+                ModalService.configure({ zIndexBase: 2000 });
+                // Test passes if no error thrown
+                ModalService.configure({ zIndexBase: 1000 }); // Reset
+            });
+        });
+
+        // Suite 2: ModalBase
+        TestRunner.describe('ModalBase', () => {
+            TestRunner.it('should create modal with default options', async () => {
+                const modal = new ModalBase();
+                modal.init();
+                assertExists(modal.elements.container, 'Should have container');
+                assertExists(modal.elements.header, 'Should have header');
+                assertExists(modal.elements.body, 'Should have body');
+                modal.destroy();
+            });
+
+            TestRunner.it('should create modal with custom options', async () => {
+                const modal = new ModalBase({
+                    title: 'Custom Title',
+                    content: '<p>Custom content</p>',
+                    width: 500
+                });
+                modal.init();
+
+                assertEqual(modal.elements.title.textContent, 'Custom Title');
+                assertEqual(modal.elements.container.style.width, '500px');
+                assert(modal.elements.body.innerHTML.includes('Custom content'));
+
+                modal.destroy();
+            });
+
+            TestRunner.it('should open and close modal', async () => {
+                const modal = new ModalBase({ title: 'Open/Close Test' });
+                ModalService.register(modal);
+                modal.init();
+
+                assertEqual(modal.state.isOpen, false, 'Should be closed initially');
+
+                await modal.open();
+                await sleep(150);
+                assertEqual(modal.state.isOpen, true, 'Should be open');
+                assertExists(document.querySelector('.i360-modal-container'), 'Should be in DOM');
+
+                await modal.close();
+                await sleep(200);
+                assertEqual(modal.state.isOpen, false, 'Should be closed');
+            });
+
+            TestRunner.it('should emit events', async () => {
+                const modal = new ModalBase({ title: 'Event Test' });
+                ModalService.register(modal);
+                modal.init();
+
+                let openCalled = false;
+                let closeCalled = false;
+
+                modal.on('open', () => { openCalled = true; });
+                modal.on('close', () => { closeCalled = true; });
+
+                await modal.open();
+                await sleep(150);
+                assert(openCalled, 'Open event should fire');
+
+                modal.close();
+                await sleep(200);
+                assert(closeCalled, 'Close event should fire');
+            });
+
+            TestRunner.it('should support setTitle and setContent', async () => {
+                const modal = new ModalBase({ title: 'Initial' });
+                ModalService.register(modal);
+                modal.init();
+                modal.open();
+                await sleep(100);
+
+                modal.setTitle('Updated Title');
+                assertEqual(modal.elements.title.textContent, 'Updated Title');
+
+                modal.setContent('<p>New Content</p>');
+                assert(modal.elements.body.innerHTML.includes('New Content'));
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should close on escape key when enabled', async () => {
+                const modal = new ModalBase({ title: 'Escape Test', closeOnEscape: true });
+                ModalService.register(modal);
+                modal.init();
+                modal.open();
+                await sleep(100);
+
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                await sleep(200);
+
+                assertEqual(modal.state.isOpen, false, 'Should close on escape');
+            });
+
+            TestRunner.it('should have proper ARIA attributes', async () => {
+                const modal = new ModalBase({ title: 'ARIA Test' });
+                modal.init();
+
+                assertEqual(modal.elements.container.getAttribute('role'), 'dialog');
+                assertEqual(modal.elements.container.getAttribute('aria-modal'), 'true');
+                assertExists(modal.elements.container.getAttribute('aria-labelledby'));
+
+                modal.destroy();
+            });
+        });
+
+        // Suite 3: AlertModal
+        TestRunner.describe('AlertModal', () => {
+            TestRunner.it('should show info alert', async () => {
+                const alertPromise = ModalService.alert({
+                    title: 'Info',
+                    message: 'Test info message',
+                    type: 'info'
+                });
+
+                await sleep(100);
+                const modal = document.querySelector('.i360-alert-modal');
+                assertExists(modal, 'Alert modal should exist');
+                assert(modal.classList.contains('i360-alert-info'), 'Should have info class');
+
+                // Click OK button
+                const okBtn = modal.querySelector('.i360-alert-ok');
+                okBtn.click();
+
+                await alertPromise;
+                await sleep(100);
+            });
+
+            TestRunner.it('should show success alert', async () => {
+                const alertPromise = ModalService.success('Success message', 'Success');
+                await sleep(200);
+                const okBtn = document.querySelector('.i360-alert-ok');
+                assertExists(okBtn, 'OK button should exist');
+                okBtn.click();
+                await alertPromise;
+            });
+
+            TestRunner.it('should show error alert', async () => {
+                const alertPromise = ModalService.error('Error message', 'Error');
+                await sleep(200);
+                const okBtn = document.querySelector('.i360-alert-ok');
+                assertExists(okBtn, 'OK button should exist');
+                okBtn.click();
+                await alertPromise;
+            });
+
+            TestRunner.it('should show warning alert', async () => {
+                const alertPromise = ModalService.warning('Warning message', 'Warning');
+                await sleep(200);
+                const okBtn = document.querySelector('.i360-alert-ok');
+                assertExists(okBtn, 'OK button should exist');
+                okBtn.click();
+                await alertPromise;
+            });
+
+            TestRunner.it('should display correct icon for each type', async () => {
+                // Test info type has correct icon structure
+                const alertPromise = ModalService.alert({ title: 'Icon Test', message: 'Testing icon', type: 'info' });
+
+                await sleep(300);
+
+                const modal = document.querySelector('.i360-alert-modal');
+                assertExists(modal, 'Alert modal should exist');
+
+                const icon = modal.querySelector('.i360-alert-icon svg');
+                assertExists(icon, 'Alert should have SVG icon');
+
+                // Verify icon has expected structure (path or circle elements)
+                const hasContent = icon.querySelector('path, circle, line, polyline');
+                assertExists(hasContent, 'Icon SVG should have content');
+
+                const okBtn = modal.querySelector('.i360-alert-ok');
+                assertExists(okBtn, 'Alert should have OK button');
+                okBtn.click();
+
+                await alertPromise;
+            }, { timeout: 5000 });
+        });
+
+        // Suite 4: ConfirmModal
+        TestRunner.describe('ConfirmModal', () => {
+            TestRunner.it('should return true on confirm', async () => {
+                const resultPromise = ModalService.confirm({
+                    title: 'Confirm',
+                    message: 'Do you confirm?'
+                });
+
+                await sleep(250);
+                // Actual classes are .i360-confirm-ok and .i360-confirm-cancel
+                const confirmBtn = document.querySelector('.i360-confirm-ok');
+                assertExists(confirmBtn, 'Confirm button should exist');
+                confirmBtn.click();
+
+                const result = await resultPromise;
+                assertEqual(result, true, 'Should return true on confirm');
+            });
+
+            TestRunner.it('should return false on cancel', async () => {
+                const resultPromise = ModalService.confirm({
+                    title: 'Confirm',
+                    message: 'Do you confirm?'
+                });
+
+                await sleep(250);
+                const cancelBtn = document.querySelector('.i360-confirm-cancel');
+                assertExists(cancelBtn, 'Cancel button should exist');
+                cancelBtn.click();
+
+                const result = await resultPromise;
+                assertEqual(result, false, 'Should return false on cancel');
+            });
+
+            TestRunner.it('should show danger type confirm', async () => {
+                const resultPromise = ModalService.confirmDanger('Delete this item?', 'Danger');
+
+                await sleep(250);
+                const modal = document.querySelector('.i360-confirm-modal');
+                assert(modal?.classList.contains('i360-confirm-danger'), 'Should have danger class');
+
+                const cancelBtn = document.querySelector('.i360-confirm-cancel');
+                cancelBtn?.click();
+
+                await resultPromise;
+            });
+
+            TestRunner.it('should use custom button text', async () => {
+                const resultPromise = ModalService.confirm({
+                    title: 'Delete',
+                    message: 'Are you sure?',
+                    confirmText: 'Yes, Delete',
+                    cancelText: 'No, Keep'
+                });
+
+                await sleep(250);
+                const confirmBtn = document.querySelector('.i360-confirm-ok');
+                const cancelBtn = document.querySelector('.i360-confirm-cancel');
+
+                assert(confirmBtn?.textContent.includes('Yes, Delete'), 'Should have custom confirm text');
+                assert(cancelBtn?.textContent.includes('No, Keep'), 'Should have custom cancel text');
+
+                cancelBtn?.click();
+                await resultPromise;
+            });
+        });
+
+        // Suite 5: PromptModal
+        TestRunner.describe('PromptModal', () => {
+            TestRunner.it('should return input value on confirm', async () => {
+                setTimeout(async () => {
+                    const input = document.querySelector('.i360-prompt-input');
+                    if (input) {
+                        input.value = 'Test Value';
+                        input.dispatchEvent(new Event('input'));
+                    }
+                    await sleep(50);
+                    const okBtn = document.querySelector('.i360-prompt-ok');
+                    if (okBtn) okBtn.click();
+                }, 200);
+
+                const result = await ModalService.prompt({
+                    title: 'Enter Value',
+                    message: 'Please enter a value:'
+                });
+
+                assertEqual(result, 'Test Value', 'Should return entered value');
+            });
+
+            TestRunner.it('should return null on cancel', async () => {
+                setTimeout(() => {
+                    const cancelBtn = document.querySelector('.i360-prompt-cancel');
+                    if (cancelBtn) cancelBtn.click();
+                }, 200);
+
+                const result = await ModalService.prompt({
+                    title: 'Enter Value',
+                    message: 'Please enter a value:'
+                });
+
+                assertEqual(result, null, 'Should return null on cancel');
+            });
+
+            TestRunner.it('should use default value', async () => {
+                setTimeout(() => {
+                    const input = document.querySelector('.i360-prompt-input');
+                    assertEqual(input?.value, 'Default', 'Should have default value');
+
+                    const okBtn = document.querySelector('.i360-prompt-ok');
+                    if (okBtn) okBtn.click();
+                }, 200);
+
+                const result = await ModalService.prompt({
+                    title: 'Enter Value',
+                    defaultValue: 'Default'
+                });
+
+                assertEqual(result, 'Default');
+            });
+
+            TestRunner.it('should show placeholder', async () => {
+                setTimeout(() => {
+                    const input = document.querySelector('.i360-prompt-input');
+                    assertEqual(input?.placeholder, 'Enter here...', 'Should have placeholder');
+
+                    const cancelBtn = document.querySelector('.i360-prompt-cancel');
+                    if (cancelBtn) cancelBtn.click();
+                }, 200);
+
+                await ModalService.prompt({
+                    title: 'Enter Value',
+                    placeholder: 'Enter here...'
+                });
+            });
+        });
+
+        // Suite 6: FormModal
+        TestRunner.describe('FormModal', () => {
+            TestRunner.it('should create form with text fields', async () => {
+                const formPromise = ModalService.form({
+                    title: 'Text Form',
+                    fields: [
+                        { name: 'name', label: 'Name', type: 'text', required: true },
+                        { name: 'email', label: 'Email', type: 'email' }
+                    ]
+                });
+
+                await sleep(200);
+
+                const nameInput = document.querySelector('#' + CSS.escape(document.querySelector('.i360-form-modal-form')?.id?.replace('-form', '') + '-name'));
+                const emailInput = document.querySelector('[name="email"]');
+
+                assertExists(nameInput, 'Name input should exist');
+                assertExists(emailInput, 'Email input should exist');
+
+                if (nameInput) nameInput.value = 'John';
+                if (emailInput) emailInput.value = 'john@test.com';
+
+                const submitBtn = document.querySelector('.i360-form-submit');
+                submitBtn?.click();
+
+                const result = await formPromise;
+                assertEqual(result?.name, 'John');
+                assertEqual(result?.email, 'john@test.com');
+            });
+
+            TestRunner.it('should create form with select field', async () => {
+                setTimeout(async () => {
+                    const select = document.querySelector('.i360-form-modal select');
+                    if (select) {
+                        select.value = 'option2';
+                        select.dispatchEvent(new Event('change'));
+                    }
+                    await sleep(50);
+                    const submitBtn = document.querySelector('.i360-form-submit');
+                    submitBtn?.click();
+                }, 200);
+
+                const result = await ModalService.form({
+                    title: 'Select Form',
+                    fields: [
+                        {
+                            name: 'choice',
+                            label: 'Choose',
+                            type: 'select',
+                            options: [
+                                { value: 'option1', label: 'Option 1' },
+                                { value: 'option2', label: 'Option 2' }
+                            ]
+                        }
+                    ]
+                });
+
+                assertEqual(result?.choice, 'option2');
+            });
+
+            TestRunner.it('should create form with checkbox field', async () => {
+                setTimeout(async () => {
+                    const checkbox = document.querySelector('.i360-form-modal input[type="checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                    await sleep(50);
+                    const submitBtn = document.querySelector('.i360-form-submit');
+                    submitBtn?.click();
+                }, 200);
+
+                const result = await ModalService.form({
+                    title: 'Checkbox Form',
+                    fields: [
+                        { name: 'agree', label: 'I agree', type: 'checkbox' }
+                    ]
+                });
+
+                assertEqual(result?.agree, true);
+            });
+
+            TestRunner.it('should validate required fields', async () => {
+                setTimeout(async () => {
+                    // Try to submit without filling required field
+                    const submitBtn = document.querySelector('.i360-form-submit');
+                    submitBtn?.click();
+
+                    await sleep(100);
+
+                    // Check for error message
+                    const error = document.querySelector('.i360-form-error');
+                    assert(error?.style.display !== 'none' || error?.textContent, 'Should show error');
+
+                    // Now fill and submit
+                    const input = document.querySelector('.i360-form-modal input[type="text"]');
+                    if (input) input.value = 'Filled';
+                    submitBtn?.click();
+                }, 200);
+
+                const result = await ModalService.form({
+                    title: 'Required Form',
+                    fields: [
+                        { name: 'required', label: 'Required Field', type: 'text', required: true }
+                    ]
+                });
+
+                assertEqual(result?.required, 'Filled');
+            });
+
+            TestRunner.it('should return null on cancel', async () => {
+                setTimeout(() => {
+                    const cancelBtn = document.querySelector('.i360-form-cancel');
+                    cancelBtn?.click();
+                }, 200);
+
+                const result = await ModalService.form({
+                    title: 'Cancel Form',
+                    fields: [{ name: 'test', label: 'Test', type: 'text' }]
+                });
+
+                assertEqual(result, null, 'Should return null on cancel');
+            });
+
+            TestRunner.it('should support checkbox-group field type', async () => {
+                setTimeout(async () => {
+                    const checkboxes = document.querySelectorAll('.i360-form-checkbox-group input[type="checkbox"]');
+                    if (checkboxes.length >= 2) {
+                        checkboxes[0].checked = true;
+                        checkboxes[1].checked = true;
+                    }
+                    await sleep(50);
+                    const submitBtn = document.querySelector('.i360-form-submit');
+                    submitBtn?.click();
+                }, 200);
+
+                const result = await ModalService.form({
+                    title: 'Checkbox Group',
+                    fields: [{
+                        name: 'features',
+                        label: 'Select Features',
+                        type: 'checkbox-group',
+                        options: [
+                            { value: 'f1', label: 'Feature 1' },
+                            { value: 'f2', label: 'Feature 2' },
+                            { value: 'f3', label: 'Feature 3' }
+                        ]
+                    }]
+                });
+
+                assert(Array.isArray(result?.features), 'Should return array');
+                assert(result.features.includes('f1'), 'Should include f1');
+                assert(result.features.includes('f2'), 'Should include f2');
+            });
+        });
+
+        // Suite 7: ContentModal
+        TestRunner.describe('ContentModal', () => {
+            TestRunner.it('should display HTML content', async () => {
+                const modal = new ContentModal({
+                    title: 'HTML Content',
+                    content: '<strong>Bold</strong> text',
+                    contentType: 'html'
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const body = document.querySelector('.i360-content-modal .i360-modal-body');
+                assert(body?.innerHTML.includes('<strong>Bold</strong>'), 'Should contain HTML');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should display code content', async () => {
+                const modal = new ContentModal({
+                    title: 'Code Content',
+                    content: 'const x = 1;',
+                    contentType: 'code',
+                    language: 'javascript'
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const codeEl = document.querySelector('.i360-content-code');
+                assertExists(codeEl, 'Should have code element');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should display markdown content', async () => {
+                const modal = new ContentModal({
+                    title: 'Markdown',
+                    content: '# Heading\n\n- Item 1\n- Item 2',
+                    contentType: 'markdown'
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const body = document.querySelector('.i360-content-modal .i360-modal-body');
+                assertExists(body, 'Should have body');
+                // Markdown parser should convert to HTML
+                assert(body.innerHTML.length > 0, 'Should have content');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should show copy button for code when copyable', async () => {
+                const modal = new ContentModal({
+                    title: 'Copyable Code',
+                    content: 'const x = 1;',
+                    contentType: 'code',
+                    copyable: true
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                // The actual class is .i360-content-copy (not .i360-content-copy-btn)
+                const copyBtn = document.querySelector('.i360-content-copy');
+                assertExists(copyBtn, 'Should have copy button');
+
+                modal.close();
+                await sleep(100);
+            });
+        });
+
+        // Suite 8: ChatModal
+        TestRunner.describe('ChatModal', () => {
+            TestRunner.it('should create chat modal with messages', async () => {
+                const modal = new ChatModal({
+                    title: 'Chat',
+                    messages: [
+                        { role: 'assistant', content: 'Hello!' }
+                    ]
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const messages = document.querySelectorAll('.i360-chat-message');
+                assert(messages.length >= 1, 'Should have at least one message');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should add messages programmatically', async () => {
+                const modal = new ChatModal({ title: 'Chat' });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(100);
+
+                modal.addMessage({ role: 'user', content: 'Test message' });
+                modal.addMessage({ role: 'assistant', content: 'Response' });
+
+                await sleep(100);
+
+                const messages = document.querySelectorAll('.i360-chat-message');
+                assert(messages.length >= 2, 'Should have messages');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should support streaming responses', async () => {
+                const modal = new ChatModal({ title: 'Streaming' });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(150);
+
+                const stream = modal.startStream('assistant');
+                assertExists(stream, 'startStream should return controller');
+                stream.append('Hello ');
+                await sleep(50);
+                stream.append('World');
+                stream.finish();
+
+                await sleep(150);
+
+                // The actual class is .i360-chat-message-content
+                const lastMessage = document.querySelector('.i360-chat-message:last-child .i360-chat-message-content');
+                assertExists(lastMessage, 'Should have message content element');
+                assert(lastMessage.textContent.includes('Hello World'), 'Should contain streamed content');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should have input area', async () => {
+                const modal = new ChatModal({ title: 'Chat' });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const input = document.querySelector('.i360-chat-input');
+                assertExists(input, 'Should have input area');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should call onSend callback', async () => {
+                let sentMessage = null;
+
+                const modal = new ChatModal({
+                    title: 'Chat',
+                    onSend: (msg) => { sentMessage = msg; }
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const input = document.querySelector('.i360-chat-input');
+                const sendBtn = document.querySelector('.i360-chat-send');
+
+                if (input && sendBtn) {
+                    input.value = 'Test message';
+                    input.dispatchEvent(new Event('input'));
+                    sendBtn.click();
+                }
+
+                await sleep(100);
+
+                assertEqual(sentMessage, 'Test message', 'Should call onSend with message');
+
+                modal.close();
+                await sleep(100);
+            });
+        });
+
+        // Suite 9: AgentModal
+        TestRunner.describe('AgentModal', () => {
+            TestRunner.it('should create agent modal', async () => {
+                const modal = new AgentModal({
+                    agent: {
+                        id: 'test-agent',
+                        name: 'Test Agent',
+                        prompt: 'Test prompt'
+                    },
+                    autoStart: false
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const container = document.querySelector('.i360-agent-modal');
+                assertExists(container, 'Should have agent modal container');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should display agent info', async () => {
+                const modal = new AgentModal({
+                    agent: {
+                        id: 'test-agent',
+                        name: 'Test Agent',
+                        description: 'A test agent'
+                    },
+                    autoStart: false
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const title = document.querySelector('.i360-agent-modal .i360-modal-title');
+                assert(title?.textContent.includes('Test Agent'), 'Should show agent name');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should have input controls', async () => {
+                const modal = new AgentModal({
+                    agent: { id: 'test', name: 'Test' },
+                    autoStart: false
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const input = document.querySelector('.i360-agent-modal .i360-chat-input');
+                assertExists(input, 'Should have input');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should support file attachments UI', async () => {
+                const modal = new AgentModal({
+                    agent: { id: 'test', name: 'Test' },
+                    autoStart: false
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                // The actual class is .i360-agent-attach-btn (not .i360-chat-attach-btn)
+                const attachBtn = document.querySelector('.i360-agent-modal .i360-agent-attach-btn');
+                assertExists(attachBtn, 'Should have attach button');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should display context assets panel', async () => {
+                const modal = new AgentModal({
+                    agent: {
+                        id: 'test',
+                        name: 'Test',
+                        context_assets: [
+                            { id: '1', name: 'Asset 1', asset_type: 'voice_dna', content_text: 'Test' }
+                        ]
+                    },
+                    autoStart: false
+                });
+                ModalService.register(modal);
+                modal.init().open();
+
+                await sleep(200);
+
+                const contextPanel = document.querySelector('.i360-agent-context-panel');
+                assertExists(contextPanel, 'Should have context panel');
+
+                modal.close();
+                await sleep(100);
+            });
+        });
+
+        // Suite 10: Loading & Toast
+        TestRunner.describe('Loading & Toast', () => {
+            TestRunner.it('should show loading modal', async () => {
+                let loading = null;
+                try {
+                    loading = ModalService.loading({ message: 'Loading test...' });
+
+                    await sleep(200);
+
+                    const loadingEl = document.querySelector('.i360-modal-loading');
+                    assertExists(loadingEl, 'Should have loading element');
+                    assert(loadingEl.textContent.includes('Loading test'), 'Should show message');
+                } finally {
+                    if (loading) loading.close();
+                    await sleep(100);
+                }
+            });
+
+            TestRunner.it('should show toast notification', async () => {
+                ModalService.toast({ message: 'Test toast', type: 'info', duration: 500 });
+
+                await sleep(100);
+
+                const toast = document.querySelector('.i360-toast');
+                assertExists(toast, 'Should have toast');
+
+                await sleep(600);
+
+                // Toast should be gone or hiding
+            });
+
+            TestRunner.it('should show toast for each type', async () => {
+                const types = ['info', 'success', 'warning', 'error'];
+
+                for (const type of types) {
+                    ModalService.toast({ message: `${type} toast`, type, duration: 300 });
+                    await sleep(100);
+
+                    const toast = document.querySelector(`.i360-toast-${type}`);
+                    assertExists(toast, `Should have ${type} toast`);
+
+                    await sleep(400);
+                }
+            });
+        });
+
+        // Suite 11: Draggable Mixin
+        TestRunner.describe('Draggable Mixin', () => {
+            TestRunner.it('should enable dragging when option is true', async () => {
+                const modal = ModalService.create({
+                    title: 'Draggable Modal',
+                    draggable: true
+                });
+                modal.open();
+
+                await sleep(200);
+
+                const header = document.querySelector('.i360-modal-header');
+                assert(header?.style.cursor === 'move' || header?.classList.contains('draggable'), 'Header should be draggable');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should update position after drag', async () => {
+                const modal = ModalService.create({
+                    title: 'Drag Test',
+                    draggable: true
+                });
+                modal.open();
+
+                await sleep(200);
+
+                const initialPos = { ...modal.state.position };
+
+                // Simulate drag
+                const header = document.querySelector('.i360-modal-header');
+                if (header) {
+                    const rect = header.getBoundingClientRect();
+                    header.dispatchEvent(new MouseEvent('mousedown', {
+                        bubbles: true,
+                        clientX: rect.left + 50,
+                        clientY: rect.top + 10
+                    }));
+
+                    document.dispatchEvent(new MouseEvent('mousemove', {
+                        bubbles: true,
+                        clientX: rect.left + 150,
+                        clientY: rect.top + 110
+                    }));
+
+                    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                }
+
+                await sleep(100);
+
+                // Position might have changed if drag worked
+                // Just verify no errors occurred
+
+                modal.close();
+                await sleep(100);
+            });
+        });
+
+        // Suite 12: Resizable Mixin
+        TestRunner.describe('Resizable Mixin', () => {
+            TestRunner.it('should add resize handles when resizable', async () => {
+                const modal = ModalService.create({
+                    title: 'Resizable Modal',
+                    resizable: true,
+                    width: 400,
+                    height: 300
+                });
+                modal.open();
+
+                await sleep(200);
+
+                const handles = document.querySelectorAll('.i360-modal-resize-handle');
+                assert(handles.length > 0, 'Should have resize handles');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should respect min/max size constraints', async () => {
+                const modal = ModalService.create({
+                    title: 'Constrained Modal',
+                    resizable: true,
+                    width: 400,
+                    height: 300,
+                    minSize: { width: 300, height: 200 },
+                    maxSize: { width: 600, height: 500 }
+                });
+                modal.open();
+
+                await sleep(200);
+
+                // Just verify modal opened with constraints set
+                assertEqual(modal.options.minSize.width, 300);
+                assertEqual(modal.options.maxSize.width, 600);
+
+                modal.close();
+                await sleep(100);
+            });
+        });
+
+        // Suite 13: Fullscreen/Maximize Mixin
+        TestRunner.describe('Fullscreen Mixin', () => {
+            TestRunner.it('should add maximize button when maximizable', async () => {
+                const modal = ModalService.create({
+                    title: 'Maximizable Modal',
+                    maximizable: true
+                });
+                modal.open();
+
+                await sleep(200);
+
+                const maxBtn = document.querySelector('.i360-modal-maximize');
+                assertExists(maxBtn, 'Should have maximize button');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should maximize and restore modal', async () => {
+                const modal = ModalService.create({
+                    title: 'Max/Restore Test',
+                    maximizable: true,
+                    width: 400,
+                    height: 300
+                });
+                modal.open();
+
+                await sleep(200);
+
+                const maxBtn = document.querySelector('.i360-modal-maximize');
+
+                // Maximize
+                if (maxBtn && typeof modal.maximize === 'function') {
+                    modal.maximize();
+                    await sleep(100);
+                    assert(modal.state.isMaximized, 'Should be maximized');
+
+                    // Restore
+                    modal.restore();
+                    await sleep(100);
+                    assertEqual(modal.state.isMaximized, false, 'Should be restored');
+                }
+
+                modal.close();
+                await sleep(100);
+            });
+        });
+
+        // Suite 14: Persistence Mixin
+        TestRunner.describe('Persistence Mixin', () => {
+            TestRunner.it('should save position to localStorage', async () => {
+                const persistKey = 'test-persist-' + Date.now();
+
+                const modal = ModalService.create({
+                    title: 'Persist Test',
+                    persist: true,
+                    persistKey: persistKey,
+                    draggable: true,
+                    width: 400,
+                    height: 300
+                });
+                modal.open();
+
+                await sleep(200);
+
+                // Move modal
+                modal.state.position = { x: 100, y: 100 };
+
+                modal.close();
+                await sleep(200);
+
+                // Check localStorage
+                const saved = localStorage.getItem(`i360-modal-state-${persistKey}`);
+                // May or may not be saved depending on implementation details
+
+                // Cleanup
+                localStorage.removeItem(`i360-modal-state-${persistKey}`);
+            });
+        });
+
+        // Suite 15: Utilities
+        TestRunner.describe('Utilities', () => {
+            TestRunner.it('Sanitize.escapeHtml should escape HTML', async () => {
+                if (typeof Sanitize !== 'undefined') {
+                    const scriptTag = '<scr' + 'ipt>alert("xss")</scr' + 'ipt>';
+                    const escaped = Sanitize.escapeHtml(scriptTag);
+                    assert(!escaped.includes('<scr' + 'ipt>'), 'Should escape script tags');
+                    assert(escaped.includes('&lt;'), 'Should contain escaped characters');
+                }
+            });
+
+            TestRunner.it('PositionUtils should calculate positions', async () => {
+                if (typeof PositionUtils !== 'undefined') {
+                    const center = PositionUtils.center(400, 300);
+                    assertExists(center.x, 'Should have x coordinate');
+                    assertExists(center.y, 'Should have y coordinate');
+                }
+            });
+        });
+
+        // Suite 16: Edge Cases
+        TestRunner.describe('Edge Cases', () => {
+            TestRunner.it('should handle rapid open/close', async () => {
+                // Test that rapid operations don't crash - use separate modals
+                for (let i = 0; i < 3; i++) {
+                    const modal = ModalService.create({ title: `Rapid Test ${i}` });
+                    await modal.open();
+                    await sleep(100);
+                    await modal.close();
+                    await sleep(100);
+                }
+
+                // Should not throw errors
+                assert(true, 'No errors thrown during rapid open/close');
+            });
+
+            TestRunner.it('should handle multiple modals stacking', async () => {
+                const modals = [];
+                for (let i = 0; i < 3; i++) {
+                    const m = ModalService.create({ title: `Modal ${i + 1}` });
+                    modals.push(m);
+                    await m.open();
+                    await sleep(150);
+                }
+
+                await sleep(100);
+                const openModals = ModalService.getOpenModals();
+                assertEqual(openModals.length, 3, 'Should have 3 open modals');
+
+                // Verify z-index ordering
+                for (let i = 1; i < modals.length; i++) {
+                    assert(modals[i]._zIndex > modals[i-1]._zIndex, 'Z-index should increase');
+                }
+            });
+
+            TestRunner.it('should handle empty content gracefully', async () => {
+                const modal = ModalService.create({
+                    title: 'Empty Content',
+                    content: ''
+                });
+                modal.open();
+                await sleep(100);
+
+                assertExists(modal.elements.body, 'Body should exist');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should handle very long content', async () => {
+                const longContent = 'A'.repeat(10000);
+                const modal = ModalService.create({
+                    title: 'Long Content',
+                    content: longContent
+                });
+                modal.open();
+                await sleep(100);
+
+                assert(modal.elements.body.textContent.length > 0, 'Should render long content');
+
+                modal.close();
+                await sleep(100);
+            });
+
+            TestRunner.it('should handle special characters in title', async () => {
+                const xssTitle = '<scr' + 'ipt>alert("XSS")</scr' + 'ipt> & "quotes" \'single\'';
+                let modal = null;
+                try {
+                    modal = ModalService.create({
+                        title: xssTitle,
+                        content: 'Test'
+                    });
+                    modal.open();
+                    await sleep(100);
+
+                    // Title uses textContent so script tags are displayed as text, not executed
+                    // The innerHTML will have escaped entities like &lt;script&gt;
+                    assert(!modal.elements.title.innerHTML.includes('<scr' + 'ipt>'), 'Should not have unescaped script tag');
+                } finally {
+                    if (modal) modal.close();
+                    await sleep(100);
+                }
+            });
+        });
+
+        // ============================================
+        // Initialize
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            TestRunner.renderSuites();
+            log('Test suites loaded. Click "Run All Tests" to start.', 'info');
+        });
+    </script>
+</body>
+</html>

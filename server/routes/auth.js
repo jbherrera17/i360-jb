@@ -15,6 +15,7 @@
  */
 
 const express = require('express');
+const cache = require('../services/cacheService');
 
 /**
  * Auth Routes Factory
@@ -150,6 +151,20 @@ module.exports = function(supabase) {
                 console.log('Login profile loaded:', { email, role: profile?.role, hasProfile: !!profile });
             }
 
+            const userResponse = {
+                id: data.user.id,
+                email: data.user.email,
+                display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
+                role: profile?.role || 'user',
+                preferences: profile?.preferences || {}
+            };
+
+            // Cache the profile for subsequent requests
+            cache.cacheProfile(data.user.id, userResponse);
+
+            // Cache token validation result
+            cache.cacheTokenValidation(data.session.access_token, { user: data.user });
+
             res.json({
                 success: true,
                 session: {
@@ -157,13 +172,7 @@ module.exports = function(supabase) {
                     refresh_token: data.session.refresh_token,
                     expires_at: data.session.expires_at
                 },
-                user: {
-                    id: data.user.id,
-                    email: data.user.email,
-                    display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
-                    role: profile?.role || 'user',
-                    preferences: profile?.preferences || {}
-                }
+                user: userResponse
             });
 
         } catch (error) {
@@ -324,6 +333,13 @@ module.exports = function(supabase) {
             const authHeader = req.headers.authorization;
             if (authHeader && authHeader.startsWith('Bearer ')) {
                 const token = authHeader.substring(7);
+
+                // Get user ID to invalidate cache
+                const cachedValidation = cache.getCachedTokenValidation(token);
+                if (cachedValidation?.user?.id) {
+                    cache.invalidateUser(cachedValidation.user.id, token);
+                }
+
                 // Set the auth token for the request
                 const { error } = await supabase.auth.signOut();
                 if (error) {
@@ -362,17 +378,42 @@ module.exports = function(supabase) {
 
             const token = authHeader.substring(7);
 
-            // Verify token with Supabase
-            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+            // Check token validation cache first
+            let user = null;
+            const cachedValidation = cache.getCachedTokenValidation(token);
 
-            if (authError || !user) {
-                return res.status(401).json({
-                    success: false,
-                    error: 'Invalid or expired token'
+            if (cachedValidation) {
+                user = cachedValidation.user;
+            } else {
+                // Verify token with Supabase
+                const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+
+                if (authError || !authUser) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid or expired token'
+                    });
+                }
+
+                user = authUser;
+                // Cache the validation result
+                cache.cacheTokenValidation(token, { user });
+            }
+
+            // Check profile cache
+            let cachedProfile = cache.getCachedProfile(user.id);
+
+            if (cachedProfile) {
+                return res.json({
+                    success: true,
+                    user: {
+                        ...cachedProfile,
+                        is_admin: cachedProfile.role === 'admin'
+                    }
                 });
             }
 
-            // Get user profile with role
+            // Get user profile with role from database
             const { data: profile, error: profileError } = await supabase
                 .from('users')
                 .select('id, email, display_name, role, preferences, created_at')
@@ -383,16 +424,23 @@ module.exports = function(supabase) {
                 console.error('Profile fetch error:', profileError);
             }
 
+            const userResponse = {
+                id: user.id,
+                email: user.email,
+                display_name: profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0],
+                role: profile?.role || 'user',
+                preferences: profile?.preferences || {},
+                created_at: profile?.created_at || user.created_at
+            };
+
+            // Cache the profile
+            cache.cacheProfile(user.id, userResponse);
+
             res.json({
                 success: true,
                 user: {
-                    id: user.id,
-                    email: user.email,
-                    display_name: profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0],
-                    role: profile?.role || 'user',
-                    preferences: profile?.preferences || {},
-                    created_at: profile?.created_at || user.created_at,
-                    is_admin: profile?.role === 'admin'
+                    ...userResponse,
+                    is_admin: userResponse.role === 'admin'
                 }
             });
 
@@ -525,6 +573,9 @@ module.exports = function(supabase) {
                 .single();
 
             if (error) throw error;
+
+            // Invalidate cached profile since role changed
+            cache.invalidateProfile(id);
 
             res.json({
                 success: true,
@@ -901,6 +952,25 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/auth/cache-stats
+     * Admin: Get cache statistics
+     */
+    router.get('/cache-stats', requireAdmin, async (req, res) => {
+        try {
+            res.json({
+                success: true,
+                data: cache.getCacheStats()
+            });
+        } catch (error) {
+            console.error('Cache stats error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * GET /api/auth/roles-summary
      * Admin: Get roles summary
      */
@@ -996,6 +1066,9 @@ module.exports = function(supabase) {
                 .single();
 
             if (error) throw error;
+
+            // Invalidate cached profile since it was updated
+            cache.invalidateProfile(user.id);
 
             res.json({
                 success: true,

@@ -1,0 +1,1799 @@
+/**
+ * Modal Service Styles
+ * Unified styling for all Insight 360 modal dialogs
+ * @version 1.0.0
+ */
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+
+/* Dark Theme (Default - matches Insight 360) */
+:root {
+    /* Modal colors */
+    --i360-modal-bg: #1a1a2e;
+    --i360-modal-header-bg: #0f0f1a;
+    --i360-modal-border: #2a2a40;
+    --i360-modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --i360-modal-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Text colors */
+    --i360-modal-text: #ffffff;
+    --i360-modal-text-secondary: #a0a0b0;
+
+    /* Type colors - use Insight 360 palette */
+    --i360-modal-info: #3b82f6;
+    --i360-modal-success: #10b981;
+    --i360-modal-warning: #f59e0b;
+    --i360-modal-error: #ef4444;
+    --i360-modal-danger: #ef4444;
+    --i360-modal-primary: #6366f1;
+
+    /* Sizing */
+    --i360-modal-radius: 12px;
+    --i360-modal-header-height: 56px;
+    --i360-modal-padding: 20px;
+    --i360-modal-resize-handle: 8px;
+
+    /* Animation */
+    --i360-modal-animation-duration: 200ms;
+    --i360-modal-animation-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Light Theme - matches html[data-theme="light"] */
+html[data-theme="light"] {
+    --i360-modal-bg: #ffffff;
+    --i360-modal-header-bg: #f8f9fa;
+    --i360-modal-border: #dee2e6;
+    --i360-modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --i360-modal-overlay: rgba(0, 0, 0, 0.5);
+    --i360-modal-text: #1a1a2e;
+    --i360-modal-text-secondary: #4a4a5a;
+}
+
+/* ============================================
+   Overlay
+   ============================================ */
+.i360-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--i360-modal-overlay);
+    opacity: 0;
+    transition: opacity var(--i360-modal-animation-duration) ease;
+    pointer-events: none;
+}
+
+.i360-modal-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.i360-modal-overlay.is-closing {
+    opacity: 0;
+}
+
+/* ============================================
+   Container
+   ============================================ */
+.i360-modal-container {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    background: var(--i360-modal-bg);
+    border-radius: var(--i360-modal-radius);
+    box-shadow: var(--i360-modal-shadow);
+    border: 1px solid var(--i360-modal-border);
+    min-width: 300px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 40px);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+    transition: opacity var(--i360-modal-animation-duration) var(--i360-modal-animation-ease),
+                transform var(--i360-modal-animation-duration) var(--i360-modal-animation-ease);
+    outline: none;
+}
+
+.i360-modal-container.is-open {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.i360-modal-container.is-closing {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* When dragged (transform removed) */
+.i360-modal-container.is-dragging,
+.i360-modal-container.is-resizing {
+    transition: none;
+    user-select: none;
+}
+
+/* Maximized state */
+.i360-modal-container.is-maximized {
+    border-radius: 0;
+    transform: none !important;
+}
+
+.i360-modal-container.is-maximized.is-open {
+    transform: none !important;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+.i360-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--i360-modal-header-height);
+    padding: 0 var(--i360-modal-padding);
+    background: var(--i360-modal-header-bg);
+    border-bottom: 1px solid var(--i360-modal-border);
+    border-radius: var(--i360-modal-radius) var(--i360-modal-radius) 0 0;
+    flex-shrink: 0;
+}
+
+.i360-modal-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--i360-modal-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.i360-modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 16px;
+}
+
+/* ============================================
+   Header Buttons
+   ============================================ */
+.i360-modal-close,
+.i360-modal-maximize {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.i360-modal-close:hover,
+.i360-modal-maximize:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--i360-modal-text);
+}
+
+.i360-modal-close:focus,
+.i360-modal-maximize:focus {
+    outline: 2px solid var(--i360-modal-info);
+    outline-offset: 2px;
+}
+
+/* ============================================
+   Body
+   ============================================ */
+.i360-modal-body {
+    flex: 1;
+    padding: var(--i360-modal-padding);
+    overflow: auto;
+    color: var(--i360-modal-text);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+.i360-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px var(--i360-modal-padding);
+    border-top: 1px solid var(--i360-modal-border);
+    border-radius: 0 0 var(--i360-modal-radius) var(--i360-modal-radius);
+    flex-shrink: 0;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.i360-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease;
+}
+
+.i360-btn:active {
+    transform: scale(0.98);
+}
+
+.i360-btn:focus {
+    outline: 2px solid var(--i360-modal-info);
+    outline-offset: 2px;
+}
+
+.i360-btn-primary {
+    background: var(--i360-modal-info);
+    color: #ffffff;
+}
+
+.i360-btn-primary:hover {
+    background: #2563eb;
+}
+
+.i360-btn-secondary {
+    background: #e2e8f0;
+    color: #1a1a2e; /* Dark text for light grey background */
+}
+
+.i360-btn-secondary:hover {
+    background: #cbd5e1;
+    color: #1a1a2e;
+}
+
+.i360-btn-danger {
+    background: var(--i360-modal-danger);
+    color: #ffffff;
+}
+
+.i360-btn-danger:hover {
+    background: #dc2626;
+}
+
+/* ============================================
+   Resize Handles
+   ============================================ */
+.i360-modal-resize-handle {
+    position: absolute;
+    background: transparent;
+}
+
+.i360-modal-resize-n,
+.i360-modal-resize-s {
+    left: var(--i360-modal-resize-handle);
+    right: var(--i360-modal-resize-handle);
+    height: var(--i360-modal-resize-handle);
+    cursor: ns-resize;
+}
+
+.i360-modal-resize-n { top: 0; }
+.i360-modal-resize-s { bottom: 0; }
+
+.i360-modal-resize-e,
+.i360-modal-resize-w {
+    top: var(--i360-modal-resize-handle);
+    bottom: var(--i360-modal-resize-handle);
+    width: var(--i360-modal-resize-handle);
+    cursor: ew-resize;
+}
+
+.i360-modal-resize-e { right: 0; }
+.i360-modal-resize-w { left: 0; }
+
+.i360-modal-resize-ne,
+.i360-modal-resize-nw,
+.i360-modal-resize-se,
+.i360-modal-resize-sw {
+    width: var(--i360-modal-resize-handle);
+    height: var(--i360-modal-resize-handle);
+}
+
+.i360-modal-resize-ne { top: 0; right: 0; cursor: nesw-resize; }
+.i360-modal-resize-nw { top: 0; left: 0; cursor: nwse-resize; }
+.i360-modal-resize-se { bottom: 0; right: 0; cursor: nwse-resize; }
+.i360-modal-resize-sw { bottom: 0; left: 0; cursor: nesw-resize; }
+
+/* Hide resize handles when maximized */
+.i360-modal-container.is-maximized .i360-modal-resize-handle {
+    display: none !important;
+}
+
+/* ============================================
+   Alert Modal
+   ============================================ */
+.i360-alert-modal {
+    width: 400px;
+}
+
+.i360-alert-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+
+.i360-alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+}
+
+.i360-alert-info .i360-alert-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--i360-modal-info);
+}
+
+.i360-alert-success .i360-alert-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--i360-modal-success);
+}
+
+.i360-alert-warning .i360-alert-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--i360-modal-warning);
+}
+
+.i360-alert-error .i360-alert-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--i360-modal-error);
+}
+
+.i360-alert-message {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--i360-modal-text-secondary);
+}
+
+/* ============================================
+   Confirm Modal
+   ============================================ */
+.i360-confirm-modal {
+    width: 400px;
+}
+
+.i360-confirm-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+
+.i360-confirm-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+}
+
+.i360-confirm-info .i360-confirm-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--i360-modal-info);
+}
+
+.i360-confirm-warning .i360-confirm-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--i360-modal-warning);
+}
+
+.i360-confirm-danger .i360-confirm-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--i360-modal-danger);
+}
+
+.i360-confirm-message {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--i360-modal-text-secondary);
+}
+
+/* ============================================
+   Prompt Modal
+   ============================================ */
+.i360-prompt-modal {
+    width: 400px;
+}
+
+.i360-prompt-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.i360-prompt-message {
+    font-size: 14px;
+    color: var(--i360-modal-text-secondary);
+    margin-bottom: 4px;
+}
+
+.i360-prompt-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 8px;
+    background: var(--i360-modal-bg);
+    color: var(--i360-modal-text);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.i360-prompt-input:focus {
+    outline: none;
+    border-color: var(--i360-modal-info);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.i360-prompt-input.has-error {
+    border-color: var(--i360-modal-error);
+}
+
+.i360-prompt-input.has-error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.i360-prompt-error {
+    font-size: 13px;
+    color: var(--i360-modal-error);
+}
+
+/* ============================================
+   Loading Modal
+   ============================================ */
+.i360-modal-loading-container {
+    text-align: center;
+}
+
+.i360-modal-loading-container .i360-modal-header {
+    display: none;
+}
+
+.i360-modal-loading-container .i360-modal-body {
+    padding: 30px;
+}
+
+.i360-modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.i360-modal-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--i360-modal-border);
+    border-top-color: var(--i360-modal-info);
+    border-radius: 50%;
+    animation: i360-spin 0.8s linear infinite;
+}
+
+.i360-modal-spinner-svg {
+    width: 60px;
+    height: 60px;
+}
+
+@keyframes i360-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+.i360-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.i360-toast {
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: transform 300ms var(--i360-modal-animation-ease),
+                opacity 300ms ease;
+    pointer-events: auto;
+}
+
+.i360-toast.is-visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.i360-toast.is-hiding {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.i360-toast-info {
+    background: var(--i360-modal-info);
+    color: #ffffff;
+}
+
+.i360-toast-success {
+    background: var(--i360-modal-success);
+    color: #ffffff;
+}
+
+.i360-toast-warning {
+    background: var(--i360-modal-warning);
+    color: #000000;
+}
+
+.i360-toast-error {
+    background: var(--i360-modal-error);
+    color: #ffffff;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 480px) {
+    .i360-modal-container {
+        left: 10px !important;
+        right: 10px !important;
+        top: 50% !important;
+        width: auto !important;
+        max-width: none !important;
+        transform: translateY(-50%) !important;
+    }
+
+    .i360-modal-container.is-open {
+        transform: translateY(-50%) !important;
+    }
+
+    .i360-alert-modal,
+    .i360-confirm-modal,
+    .i360-prompt-modal {
+        width: auto;
+    }
+
+    .i360-modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .i360-modal-footer .i360-btn {
+        width: 100%;
+    }
+
+    /* Disable drag and resize on mobile */
+    .i360-modal-header {
+        cursor: default !important;
+    }
+
+    .i360-modal-resize-handle {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .i360-modal-overlay,
+    .i360-modal-container,
+    .i360-toast {
+        transition: none;
+    }
+
+    .i360-modal-spinner {
+        animation: none;
+    }
+}
+
+/* Focus visible for keyboard navigation */
+.i360-btn:focus-visible,
+.i360-modal-close:focus-visible,
+.i360-modal-maximize:focus-visible,
+.i360-prompt-input:focus-visible {
+    outline: 2px solid var(--i360-modal-info);
+    outline-offset: 2px;
+}
+
+/* ============================================
+   Phase 2: Form Modal
+   ============================================ */
+.i360-form-modal {
+    min-width: 400px;
+}
+
+.i360-form-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.i360-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.i360-form-field-inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.i360-form-field-inline .i360-form-label {
+    order: 2;
+    margin: 0;
+}
+
+.i360-form-field-inline .i360-form-input {
+    order: 1;
+    width: auto;
+}
+
+.i360-form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--i360-modal-text);
+}
+
+.i360-form-required {
+    color: var(--i360-modal-error);
+}
+
+.i360-form-input {
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 8px;
+    background: var(--i360-modal-bg);
+    color: var(--i360-modal-text);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.i360-form-input:focus {
+    outline: none;
+    border-color: var(--i360-modal-info);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.i360-form-input.has-error {
+    border-color: var(--i360-modal-error);
+}
+
+.i360-form-input.has-error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+textarea.i360-form-input {
+    resize: vertical;
+    min-height: 80px;
+}
+
+select.i360-form-input {
+    cursor: pointer;
+}
+
+.i360-form-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.i360-form-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.i360-form-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.i360-form-checkbox-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    transition: background 150ms ease;
+}
+
+html[data-theme="light"] .i360-form-checkbox-option {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.i360-form-checkbox-option:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.i360-form-checkbox-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--i360-modal-primary);
+    flex-shrink: 0;
+}
+
+.i360-form-checkbox-label-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.i360-form-checkbox-label {
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.i360-form-checkbox-description {
+    font-size: 12px;
+    color: var(--i360-modal-text-secondary);
+    line-height: 1.4;
+}
+
+.i360-form-help {
+    font-size: 12px;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-form-error {
+    font-size: 12px;
+    color: var(--i360-modal-error);
+}
+
+/* ============================================
+   Phase 2: Content Modal
+   ============================================ */
+.i360-content-modal {
+    min-width: 400px;
+}
+
+.i360-content-html,
+.i360-content-markdown {
+    line-height: 1.6;
+    color: var(--i360-modal-text);
+}
+
+.i360-content-markdown h1,
+.i360-content-markdown h2,
+.i360-content-markdown h3 {
+    margin: 1em 0 0.5em;
+}
+
+.i360-content-markdown h1:first-child,
+.i360-content-markdown h2:first-child,
+.i360-content-markdown h3:first-child {
+    margin-top: 0;
+}
+
+.i360-content-markdown code {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 0.9em;
+}
+
+.i360-content-markdown pre {
+    background: #1e293b;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.i360-content-markdown pre code {
+    background: none;
+    padding: 0;
+    color: #e2e8f0;
+}
+
+.i360-content-markdown ul,
+.i360-content-markdown ol {
+    padding-left: 24px;
+}
+
+.i360-content-markdown a {
+    color: var(--i360-modal-info);
+    text-decoration: none;
+}
+
+.i360-content-markdown a:hover {
+    text-decoration: underline;
+}
+
+/* Code content */
+.i360-content-code-wrapper {
+    position: relative;
+}
+
+.i360-content-copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.i360-content-copy:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.i360-content-copy.is-copied {
+    color: var(--i360-modal-success);
+}
+
+.i360-content-code {
+    margin: 0;
+    padding: 20px;
+    background: #0f172a;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+/* Image content */
+.i360-content-image-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.i360-content-image {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+}
+
+.i360-content-image-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px;
+    color: var(--i360-modal-text-secondary);
+}
+
+/* Video content */
+.i360-content-video-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.i360-content-video {
+    max-width: 100%;
+    max-height: 70vh;
+    display: block;
+}
+
+/* YouTube/Vimeo embeds */
+.i360-content-video-youtube,
+.i360-content-video-vimeo {
+    width: 100%;
+    height: 100%;
+}
+
+.i360-content-video-iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    border: none;
+    border-radius: 8px;
+}
+
+/* Constrain video wrapper within modal body */
+.i360-content-modal .i360-modal-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.i360-content-modal .i360-content-video-wrapper {
+    flex: 1;
+    min-height: 0;
+}
+
+.i360-content-video-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-content-video-error svg {
+    opacity: 0.5;
+}
+
+.i360-content-video-error p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* ============================================
+   Phase 2: Chat Modal
+   ============================================ */
+.i360-chat-modal .i360-modal-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.i360-chat-modal-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.i360-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.i360-chat-message {
+    display: flex;
+    gap: 12px;
+    max-width: 85%;
+}
+
+.i360-chat-message-user {
+    margin-left: auto;
+    flex-direction: row-reverse;
+}
+
+.i360-chat-message-user .i360-chat-message-content {
+    background: var(--i360-modal-info);
+    color: #ffffff;
+    border-radius: 16px 16px 4px 16px;
+}
+
+.i360-chat-message-assistant .i360-chat-message-content {
+    background: var(--i360-modal-header-bg);
+    color: var(--i360-modal-text);
+    border-radius: 16px 16px 16px 4px;
+}
+
+.i360-chat-message-content {
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.i360-chat-message-content code {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.i360-chat-message-content pre {
+    background: #1e293b;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.i360-chat-message-content pre code {
+    background: none;
+    padding: 0;
+    color: #e2e8f0;
+}
+
+.i360-chat-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.i360-chat-avatar-custom {
+    background: transparent;
+}
+
+.i360-chat-avatar-custom img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.i360-chat-avatar-user {
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+}
+
+.i360-chat-timestamp {
+    font-size: 11px;
+    color: var(--i360-modal-text-secondary);
+    margin-top: 4px;
+    align-self: flex-end;
+}
+
+.i360-chat-system-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin: 8px 16px;
+}
+
+.i360-chat-system-avatar {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.i360-chat-system-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.i360-chat-system-content {
+    flex: 1;
+    text-align: center;
+}
+
+.i360-chat-system-info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--i360-modal-info);
+}
+
+.i360-chat-system-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--i360-modal-warning);
+}
+
+.i360-chat-system-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--i360-modal-error);
+}
+
+.i360-chat-error {
+    color: var(--i360-modal-error);
+}
+
+/* Typing indicator */
+.i360-chat-typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.i360-chat-typing-indicator span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--i360-modal-text-secondary);
+    animation: i360-typing 1.4s infinite ease-in-out both;
+}
+
+.i360-chat-typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.i360-chat-typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+.i360-chat-typing-indicator span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes i360-typing {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+.i360-chat-message.is-streaming .i360-chat-message-content {
+    border-left: 3px solid var(--i360-modal-info);
+}
+
+/* Chat input area */
+.i360-chat-input-area {
+    position: relative;
+    padding: 12px 16px;
+    border-top: 1px solid var(--i360-modal-border);
+    background: var(--i360-modal-bg);
+}
+
+.i360-chat-input-area.is-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.i360-chat-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--i360-modal-header-bg);
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+
+.i360-chat-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    resize: none;
+    max-height: 120px;
+    color: var(--i360-modal-text);
+    outline: none;
+}
+
+.i360-chat-input::placeholder {
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-chat-send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: var(--i360-modal-info);
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease;
+}
+
+.i360-chat-send:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.i360-chat-send:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.i360-chat-send:disabled {
+    background: var(--i360-modal-border);
+    cursor: not-allowed;
+}
+
+/* ============================================
+   Phase 2: Agent Modal
+   ============================================ */
+.i360-agent-modal .i360-modal-header {
+    padding: 12px 20px;
+}
+
+/* Header info wrapper (avatar + title section) */
+.i360-agent-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.i360-agent-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.i360-agent-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.i360-agent-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.i360-agent-modal .i360-modal-title {
+    margin: 0;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.i360-agent-subtitle {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--i360-modal-text-secondary);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.i360-agent-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--i360-modal-success);
+    flex-shrink: 0;
+}
+
+.i360-agent-status.is-working {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--i360-modal-info);
+}
+
+.i360-agent-status.is-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--i360-modal-error);
+}
+
+.i360-agent-status.is-complete {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--i360-modal-success);
+}
+
+.i360-agent-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.i360-agent-model-select {
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 6px;
+    background: var(--i360-modal-bg);
+    color: var(--i360-modal-text);
+    cursor: pointer;
+}
+
+.i360-agent-stop-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    background: var(--i360-modal-error);
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.i360-agent-stop-btn:hover {
+    background: #dc2626;
+}
+
+.i360-agent-footer {
+    border-top: 1px solid var(--i360-modal-border);
+}
+
+.i360-agent-result-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.i360-agent-result-actions .i360-btn {
+    flex: 1;
+}
+
+.i360-agent-result-actions .i360-agent-accept {
+    flex: 2;
+}
+
+/* ============================================
+   Agent Modal Context Assets Panel
+   ============================================ */
+.i360-agent-context-panel {
+    border-top: 1px solid var(--i360-modal-border);
+    background: var(--i360-modal-header-bg);
+}
+
+.i360-agent-context-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--i360-modal-text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background 150ms ease;
+}
+
+.i360-agent-context-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.i360-agent-context-chevron {
+    transition: transform 200ms ease;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-agent-context-panel.is-collapsed .i360-agent-context-chevron {
+    transform: rotate(-90deg);
+}
+
+.i360-agent-context-title {
+    flex: 1;
+}
+
+.i360-agent-context-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--i360-modal-primary);
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+.i360-agent-context-count:empty,
+.i360-agent-context-panel .i360-agent-context-count[data-count="0"] {
+    background: var(--i360-modal-border);
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-agent-context-content {
+    max-height: 200px;
+    overflow-y: auto;
+    transition: max-height 200ms ease, padding 200ms ease;
+}
+
+.i360-agent-context-panel.is-collapsed .i360-agent-context-content {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+.i360-agent-context-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 8px 8px;
+}
+
+.i360-agent-context-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--i360-modal-bg);
+    border-radius: 6px;
+    transition: background 150ms ease;
+}
+
+.i360-agent-context-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.i360-agent-context-icon {
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.i360-agent-context-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.i360-agent-context-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--i360-modal-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.i360-agent-context-type {
+    font-size: 11px;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-agent-context-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.i360-agent-context-item:hover .i360-agent-context-view {
+    opacity: 1;
+}
+
+.i360-agent-context-view:hover {
+    background: var(--i360-modal-primary);
+    color: #ffffff;
+}
+
+.i360-agent-context-empty {
+    padding: 16px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--i360-modal-text-secondary);
+}
+
+/* ============================================
+   Agent Modal File Attachments
+   ============================================ */
+.i360-agent-attach-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+    flex-shrink: 0;
+}
+
+.i360-agent-attach-btn:hover {
+    background: var(--i360-modal-header-bg);
+    color: var(--i360-modal-primary);
+}
+
+.i360-agent-attach-btn.has-attachments {
+    color: var(--i360-modal-primary);
+    position: relative;
+}
+
+.i360-agent-attach-btn.has-attachments::after {
+    content: attr(data-count);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    background: var(--i360-modal-primary);
+    color: #ffffff;
+    border-radius: 50%;
+}
+
+.i360-agent-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--i360-modal-border);
+}
+
+.i360-agent-attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--i360-modal-header-bg);
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 8px;
+    max-width: 200px;
+}
+
+.i360-agent-attachment-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.i360-agent-attachment-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.i360-agent-attachment-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--i360-modal-text-secondary);
+    flex-shrink: 0;
+}
+
+.i360-agent-attachment-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+}
+
+.i360-agent-attachment-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--i360-modal-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.i360-agent-attachment-size {
+    font-size: 10px;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-agent-attachment-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.i360-agent-attachment-remove:hover {
+    background: var(--i360-modal-error);
+    color: #ffffff;
+}
+
+/* Drag and drop highlight */
+.i360-chat-input-area.is-drag-over {
+    background: rgba(var(--i360-modal-primary-rgb, 59, 130, 246), 0.1);
+    border-color: var(--i360-modal-primary);
+}
+
+.i360-chat-input-area.is-drag-over::before {
+    content: 'Drop files here';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--i360-modal-primary);
+    pointer-events: none;
+}
+
+/* Message attachment previews */
+.i360-chat-message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.i360-chat-attachment-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background: var(--i360-modal-header-bg);
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 8px;
+    max-width: 120px;
+}
+
+.i360-chat-attachment-preview.i360-chat-attachment-image img {
+    max-width: 100px;
+    max-height: 80px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+.i360-chat-attachment-preview.i360-chat-attachment-file {
+    padding: 12px;
+}
+
+.i360-chat-attachment-preview.i360-chat-attachment-file svg {
+    width: 32px;
+    height: 32px;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-chat-attachment-label {
+    font-size: 10px;
+    color: var(--i360-modal-text-secondary);
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
+}
+
+/* ============================================
+   Phase 3: Avatar Field in FormModal
+   ============================================ */
+.i360-form-avatar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.i360-form-avatar-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--i360-modal-header-bg);
+    border: 2px dashed var(--i360-modal-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.i360-form-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.i360-form-avatar-placeholder {
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-form-avatar-remove {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: var(--i360-modal-error);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 150ms ease;
+}
+
+.i360-form-avatar-remove:hover {
+    transform: scale(1.1);
+}
+
+.i360-form-avatar-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.i360-form-avatar-upload-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.i360-form-avatar-file-input {
+    display: none;
+}
+
+.i360-form-avatar-divider {
+    font-size: 12px;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-form-avatar-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.i360-form-avatar-option {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.i360-form-avatar-option:hover {
+    border-color: var(--i360-modal-text-secondary);
+    transform: scale(1.1);
+}
+
+.i360-form-avatar-option.is-selected {
+    border-color: var(--i360-modal-info);
+}
+
+.i360-form-avatar-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

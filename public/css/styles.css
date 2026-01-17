@@ -2191,3 +2191,142 @@ select {
         align-items: flex-start;
     }
 }
+
+
+/* ============================================
+   RADAR CHART VISUALIZATIONS
+   ============================================ */
+
+.radar-chart-container {
+    max-width: 500px;
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.radar-chart-container canvas {
+    max-width: 100%;
+    height: auto !important;
+}
+
+.inline-radar-chart {
+    display: inline-block;
+    vertical-align: top;
+    margin: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.chart-error {
+    color: var(--danger);
+    text-align: center;
+    padding: var(--spacing-lg);
+    font-style: italic;
+}
+
+/* Tech Radar Specific Styles */
+.tech-radar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.tech-radar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.radar-position-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.radar-position-badge.adopt {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.radar-position-badge.trial {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary);
+}
+
+.radar-position-badge.assess {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.radar-position-badge.hold {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.quadrant-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Assessment Matrix Table */
+.assessment-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--spacing-md) 0;
+}
+
+.assessment-matrix th,
+.assessment-matrix td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.assessment-matrix th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.assessment-matrix .score-visual {
+    font-family: var(--font-mono);
+    letter-spacing: 2px;
+}
+
+/* Score indicators */
+.score-filled {
+    color: var(--primary);
+}
+
+.score-empty {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .radar-chart-container {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .inline-radar-chart {
+    background: var(--bg-secondary);
+}

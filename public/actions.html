@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
-    <script src="/js/modal-manager.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Actions Specific Styles */
@@ -491,10 +491,8 @@
         }
 
         /* Execute Modal Styles */
-        .execute-modal {
-            width: 85vw;
-            max-width: 1000px;
-            min-height: 500px;
+        .execute-modal .i360-modal-body {
+            min-height: 400px;
         }
 
         .execute-header-info {
@@ -517,6 +515,77 @@
         .execute-icon.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
         .execute-icon.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
         .execute-icon.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        /* Modal form styles for ModalService */
+        .i360-modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .i360-modal .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .i360-modal .form-input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .i360-modal .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Template option styles for create modal */
+        .i360-modal .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .i360-modal .template-option {
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .i360-modal .template-option:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .i360-modal .template-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .i360-modal .template-option-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .i360-modal .template-option-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .i360-modal .template-option-suite {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
 
         .input-label {
             display: flex;
@@ -740,152 +809,6 @@
         </main>
     </div>
 
-    <!-- Create Action Modal -->
-    <div class="modal-overlay" id="createModal">
-        <div class="modal" id="create-modal-dialog">
-            <div class="modal-header" id="create-modal-header">
-                <h2><i data-lucide="zap"></i> Create Action</h2>
-                <button class="modal-close" onclick="closeCreateModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Choose a template to get started:</p>
-                <div id="templateOptions" class="templates-grid">
-                    <!-- Populated by JS -->
-                </div>
-
-                <!-- Department Selection -->
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                    <label for="createActionDepartment" style="display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                        Assign to Department (optional)
-                    </label>
-                    <select id="createActionDepartment" style="width: 100%; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem;">
-                        <option value="">No Department (Available to all)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
-                <button class="btn-primary" id="createFromTemplateBtn" onclick="createFromTemplate()" disabled>
-                    <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Action
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Execute Action Modal -->
-    <div class="modal-overlay" id="executeModal">
-        <div class="modal execute-modal" id="execute-modal-dialog">
-            <div class="modal-header" id="execute-modal-header">
-                <div class="execute-header-info">
-                    <div class="execute-icon" id="executeActionIcon">
-                        <i data-lucide="zap"></i>
-                    </div>
-                    <div>
-                        <h2 id="executeActionName">Action Name</h2>
-                        <span class="action-suite execute" id="executeActionSuite">execute</span>
-                    </div>
-                </div>
-                <button class="modal-close" onclick="closeExecuteModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="action-description" id="executeActionDescription" style="margin-bottom: 1.5rem;"></p>
-
-                <!-- Input Section -->
-                <div id="executeInputSection">
-                    <label class="input-label">
-                        <i data-lucide="message-square" style="width:14px;height:14px;"></i>
-                        Your Input
-                    </label>
-                    <textarea
-                        id="executeInput"
-                        class="execute-textarea"
-                        placeholder="What would you like this action to help you with?"
-                        rows="4"
-                    ></textarea>
-                </div>
-
-                <!-- Loading State -->
-                <div id="executeLoading" class="execute-loading" style="display: none;">
-                    <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner">
-                    <span id="executeLoadingText" class="loading-text">Executing action...</span>
-                </div>
-
-                <!-- Results Section -->
-                <div id="executeResults" class="execute-results" style="display: none;">
-                    <label class="input-label">
-                        <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
-                        Results
-                    </label>
-                    <div id="executeOutput" class="execute-output"></div>
-                    <div id="executeMetadata" class="execute-metadata"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeExecuteModal()">Close</button>
-                <button class="btn-primary" id="executeBtn" onclick="runAction()">
-                    <i data-lucide="play" style="width:16px;height:16px;"></i> Run Action
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Action Modal -->
-    <div class="modal-overlay" id="editModal">
-        <div class="modal" id="edit-modal-dialog">
-            <div class="modal-header" id="edit-modal-header">
-                <h2><i data-lucide="edit"></i> Edit Action</h2>
-                <button class="modal-close" onclick="closeEditModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="editActionId">
-                <div class="form-group">
-                    <label for="editName">Name</label>
-                    <input type="text" id="editName" class="form-input" placeholder="Action name">
-                </div>
-                <div class="form-group">
-                    <label for="editDescription">Description</label>
-                    <textarea id="editDescription" class="form-input" rows="3" placeholder="Action description"></textarea>
-                </div>
-                <div class="form-row" style="display: flex; gap: 1rem;">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="editSuite">Suite</label>
-                        <select id="editSuite" class="form-input">
-                            <option value="align">Align</option>
-                            <option value="strategy">Strategy</option>
-                            <option value="execute">Execute</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="editStatus">Status</label>
-                        <select id="editStatus" class="form-input">
-                            <option value="active">Active</option>
-                            <option value="draft">Draft</option>
-                            <option value="archived">Archived</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="editDepartment">Department</label>
-                    <select id="editDepartment" class="form-input">
-                        <option value="">No Department (Available to all)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveAction()">
-                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save Changes
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Supabase client -->
     <script src="/js/supabase.js"></script>
 
@@ -899,22 +822,10 @@
         let currentDepartment = '';
         let currentUserId = null;
 
-        // Modal managers
-        let createModalManager = null;
-        let executeModalManager = null;
-        let editModalManager = null;
-
-        // Initialize modal managers
-        if (typeof ModalManager !== 'undefined') {
-            createModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 700 });
-            createModalManager.init('create-modal-dialog', 'create-modal-header', 'createModal');
-
-            executeModalManager = new ModalManager({ minWidth: 500, minHeight: 400, defaultWidth: 900 });
-            executeModalManager.init('execute-modal-dialog', 'execute-modal-header', 'executeModal');
-
-            editModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 600 });
-            editModalManager.init('edit-modal-dialog', 'edit-modal-header', 'editModal');
-        }
+        // Modal instances (created dynamically via ModalService)
+        let createModal = null;
+        let executeModal = null;
+        let editModal = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1177,12 +1088,14 @@
         // Modal functions
         function showCreateModal() {
             selectedTemplate = null;
-            document.getElementById('createFromTemplateBtn').disabled = true;
 
-            // Populate template options
-            const container = document.getElementById('templateOptions');
-            container.innerHTML = templates.map(t => `
-                <div class="template-option" data-slug="${t.slug}" onclick="selectTemplate('${t.slug}')">
+            // Build department options
+            const deptOptions = '<option value="">No Department (Available to all)</option>' +
+                departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+
+            // Build template options HTML
+            const templateOptionsHtml = templates.map(t => `
+                <div class="template-option" data-slug="${t.slug}">
                     <div class="template-option-icon">
                         <i data-lucide="${t.icon || 'layout-template'}" style="width:32px;height:32px;"></i>
                     </div>
@@ -1191,19 +1104,47 @@
                 </div>
             `).join('');
 
-            lucide.createIcons();
-            if (createModalManager) {
-                createModalManager.open();
-            } else {
-                document.getElementById('createModal').classList.add('active');
-            }
+            // Create modal using ModalService
+            createModal = ModalService.create({
+                title: 'Create Action',
+                content: `
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Choose a template to get started:</p>
+                    <div id="templateOptions" class="templates-grid">${templateOptionsHtml}</div>
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                        <label for="createActionDepartment" style="display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Assign to Department (optional)
+                        </label>
+                        <select id="createActionDepartment" style="width: 100%; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem;">
+                            ${deptOptions}
+                        </select>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="createFromTemplateBtn" disabled>
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Action
+                    </button>
+                `,
+                width: 700,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    // Bind template selection
+                    document.querySelectorAll('#templateOptions .template-option').forEach(opt => {
+                        opt.addEventListener('click', () => selectTemplate(opt.dataset.slug));
+                    });
+                    // Bind create button
+                    document.getElementById('createFromTemplateBtn').addEventListener('click', createFromTemplate);
+                }
+            });
+            createModal.open();
         }
 
         function closeCreateModal() {
-            if (createModalManager) {
-                createModalManager.close();
-            } else {
-                document.getElementById('createModal').classList.remove('active');
+            if (createModal) {
+                createModal.close();
+                createModal = null;
             }
         }
 
@@ -1212,7 +1153,8 @@
             document.querySelectorAll('.template-option').forEach(opt => {
                 opt.classList.toggle('selected', opt.dataset.slug === slug);
             });
-            document.getElementById('createFromTemplateBtn').disabled = false;
+            const btn = document.getElementById('createFromTemplateBtn');
+            if (btn) btn.disabled = false;
         }
 
         async function createFromTemplate() {
@@ -1232,14 +1174,13 @@
                     closeCreateModal();
                     await loadActions();
                     await loadStats();
-                    // Could open the new action here
-                    alert(`Action "${result.data.name}" created!`);
+                    ModalService.success(`Action "${result.data.name}" created!`);
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error(result.error);
                 }
             } catch (error) {
                 console.error('Error creating action:', error);
-                alert('Error creating action');
+                ModalService.error('Error creating action');
             }
         }
 
@@ -1269,39 +1210,83 @@
         // EDIT ACTION MODAL
         // ============================================
 
+        let currentEditActionId = null;
+
         function openEditModal(actionId) {
             const action = actions.find(a => a.id === actionId);
             if (!action) {
-                alert('Action not found');
+                ModalService.error('Action not found');
                 return;
             }
 
-            // Populate form fields
-            document.getElementById('editActionId').value = action.id;
-            document.getElementById('editName').value = action.name || '';
-            document.getElementById('editDescription').value = action.description || '';
-            document.getElementById('editSuite').value = action.suite || 'execute';
-            document.getElementById('editStatus').value = action.status || 'active';
-            document.getElementById('editDepartment').value = action.department_id || '';
+            currentEditActionId = actionId;
 
-            lucide.createIcons();
-            if (editModalManager) {
-                editModalManager.open();
-            } else {
-                document.getElementById('editModal').classList.add('active');
-            }
+            // Build department options
+            const deptOptions = `<option value="">No Department (Available to all)</option>` +
+                departments.map(d => `<option value="${d.id}" ${action.department_id === d.id ? 'selected' : ''}>${d.name}</option>`).join('');
+
+            editModal = ModalService.create({
+                title: 'Edit Action',
+                content: `
+                    <div class="form-group">
+                        <label for="editName">Name</label>
+                        <input type="text" id="editName" class="form-input" placeholder="Action name" value="${action.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescription">Description</label>
+                        <textarea id="editDescription" class="form-input" rows="3" placeholder="Action description">${action.description || ''}</textarea>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 1rem;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="editSuite">Suite</label>
+                            <select id="editSuite" class="form-input">
+                                <option value="align" ${action.suite === 'align' ? 'selected' : ''}>Align</option>
+                                <option value="strategy" ${action.suite === 'strategy' ? 'selected' : ''}>Strategy</option>
+                                <option value="execute" ${action.suite === 'execute' ? 'selected' : ''}>Execute</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="editStatus">Status</label>
+                            <select id="editStatus" class="form-input">
+                                <option value="active" ${action.status === 'active' ? 'selected' : ''}>Active</option>
+                                <option value="draft" ${action.status === 'draft' ? 'selected' : ''}>Draft</option>
+                                <option value="archived" ${action.status === 'archived' ? 'selected' : ''}>Archived</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDepartment">Department</label>
+                        <select id="editDepartment" class="form-input">${deptOptions}</select>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveActionBtn">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i> Save Changes
+                    </button>
+                `,
+                width: 600,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveActionBtn').addEventListener('click', saveAction);
+                }
+            });
+            editModal.open();
         }
 
         function closeEditModal() {
-            if (editModalManager) {
-                editModalManager.close();
-            } else {
-                document.getElementById('editModal').classList.remove('active');
+            if (editModal) {
+                editModal.close();
+                editModal = null;
             }
+            currentEditActionId = null;
         }
 
         async function saveAction() {
-            const actionId = document.getElementById('editActionId').value;
+            if (!currentEditActionId) return;
+
             const updates = {
                 name: document.getElementById('editName').value,
                 description: document.getElementById('editDescription').value,
@@ -1309,11 +1294,8 @@
                 status: document.getElementById('editStatus').value
             };
 
-            // Department would require updating junction table - skip for now
-            // department_id: document.getElementById('editDepartment').value || null
-
             try {
-                const res = await fetch(`/api/actions/${actionId}`, {
+                const res = await fetch(`/api/actions/${currentEditActionId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updates)
@@ -1324,20 +1306,26 @@
                     closeEditModal();
                     await loadActions();
                     await loadStats();
-                    alert('Action updated successfully!');
+                    ModalService.success('Action updated successfully!');
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error(result.error);
                 }
             } catch (error) {
                 console.error('Error updating action:', error);
-                alert('Error updating action');
+                ModalService.error('Error updating action');
             }
         }
 
         async function deleteAction(actionId) {
-            if (!confirm('Are you sure you want to delete this action? This action will be archived.')) {
-                return;
-            }
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Action',
+                message: 'Are you sure you want to delete this action? This action will be archived.',
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
+
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/api/actions/${actionId}`, {
@@ -1348,13 +1336,13 @@
                 if (result.success) {
                     await loadActions();
                     await loadStats();
-                    alert('Action deleted successfully!');
+                    ModalService.success('Action deleted successfully!');
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error(result.error);
                 }
             } catch (error) {
                 console.error('Error deleting action:', error);
-                alert('Error deleting action');
+                ModalService.error('Error deleting action');
             }
         }
 
@@ -1382,47 +1370,85 @@
             // Find the action by slug
             const action = actions.find(a => a.slug === slug);
             if (!action) {
-                alert('Action not found');
+                ModalService.error('Action not found');
                 return;
             }
 
             currentAction = action;
 
-            // Update modal header
-            document.getElementById('executeActionName').textContent = action.name;
-            document.getElementById('executeActionDescription').textContent = action.description || '';
+            executeModal = ModalService.create({
+                title: action.name,
+                content: `
+                    <div class="execute-header-info" style="margin-bottom: 1rem;">
+                        <div class="execute-icon ${action.suite}" style="display: inline-flex; width: 40px; height: 40px; border-radius: 10px; align-items: center; justify-content: center; margin-right: 0.75rem;">
+                            <i data-lucide="${action.icon || 'zap'}"></i>
+                        </div>
+                        <span class="action-suite ${action.suite}">${action.suite}</span>
+                    </div>
+                    <p class="action-description" style="margin-bottom: 1.5rem;">${action.description || ''}</p>
 
-            // Update suite badge
-            const suiteBadge = document.getElementById('executeActionSuite');
-            suiteBadge.textContent = action.suite;
-            suiteBadge.className = `action-suite ${action.suite}`;
+                    <!-- Input Section -->
+                    <div id="executeInputSection">
+                        <label class="input-label" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem;">
+                            <i data-lucide="message-square" style="width:14px;height:14px;"></i>
+                            Your Input
+                        </label>
+                        <textarea
+                            id="executeInput"
+                            class="execute-textarea"
+                            placeholder="What would you like this action to help you with?"
+                            rows="4"
+                            style="width: 100%; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-family: inherit; font-size: 0.95rem; resize: vertical; min-height: 100px;"
+                        ></textarea>
+                    </div>
 
-            // Update icon
-            const iconContainer = document.getElementById('executeActionIcon');
-            iconContainer.className = `execute-icon ${action.suite}`;
-            iconContainer.innerHTML = `<i data-lucide="${action.icon || 'zap'}"></i>`;
+                    <!-- Loading State -->
+                    <div id="executeLoading" class="execute-loading" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; gap: 1rem;">
+                        <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner" style="width: 48px; height: 48px;">
+                        <span id="executeLoadingText" class="loading-text">Executing action...</span>
+                    </div>
 
-            // Reset modal state
-            document.getElementById('executeInput').value = '';
-            document.getElementById('executeInputSection').style.display = 'block';
-            document.getElementById('executeLoading').style.display = 'none';
-            document.getElementById('executeResults').style.display = 'none';
-            document.getElementById('executeBtn').disabled = false;
-            document.getElementById('executeBtn').innerHTML = '<i data-lucide="play" style="width:16px;height:16px;"></i> Run Action';
-
-            lucide.createIcons();
-            if (executeModalManager) {
-                executeModalManager.open();
-            } else {
-                document.getElementById('executeModal').classList.add('active');
-            }
+                    <!-- Results Section -->
+                    <div id="executeResults" class="execute-results" style="display: none; margin-top: 1.5rem;">
+                        <label class="input-label" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem;">
+                            <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+                            Results
+                        </label>
+                        <div id="executeOutput" class="execute-output" style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; min-height: 150px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;"></div>
+                        <div id="executeMetadata" class="execute-metadata" style="display: flex; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted);"></div>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Close</button>
+                    <button class="i360-btn i360-btn-primary" id="executeBtn">
+                        <i data-lucide="play" style="width:16px;height:16px;"></i> Run Action
+                    </button>
+                `,
+                width: 900,
+                height: 600,
+                draggable: true,
+                resizable: true,
+                maximizable: true,
+                className: 'execute-modal',
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('executeBtn').addEventListener('click', runAction);
+                },
+                onClose: () => {
+                    currentAction = null;
+                    if (loadingController) {
+                        loadingController.stop();
+                        loadingController = null;
+                    }
+                }
+            });
+            executeModal.open();
         }
 
         function closeExecuteModal() {
-            if (executeModalManager) {
-                executeModalManager.close();
-            } else {
-                document.getElementById('executeModal').classList.remove('active');
+            if (executeModal) {
+                executeModal.close();
+                executeModal = null;
             }
             currentAction = null;
         }
@@ -1443,10 +1469,12 @@
 
             // Start rotating loading messages
             const loadingTextEl = document.getElementById('executeLoadingText');
-            loadingController = LoadingMessages.start(loadingTextEl, {
-                messages: ACTION_LOADING_MESSAGES,
-                interval: 2500
-            });
+            if (typeof LoadingMessages !== 'undefined') {
+                loadingController = LoadingMessages.start(loadingTextEl, {
+                    messages: ACTION_LOADING_MESSAGES,
+                    interval: 2500
+                });
+            }
 
             try {
                 const res = await fetch(`/api/actions/${currentAction.id}/execute`, {
@@ -1478,9 +1506,9 @@
                     const duration = result.data.duration_ms ? `${(result.data.duration_ms / 1000).toFixed(1)}s` : 'N/A';
                     const model = result.data.model_used || 'claude';
                     metadata.innerHTML = `
-                        <span><i data-lucide="clock" style="width:14px;height:14px;"></i> ${duration}</span>
-                        <span><i data-lucide="cpu" style="width:14px;height:14px;"></i> ${model}</span>
-                        <span><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Completed</span>
+                        <span style="display: flex; align-items: center; gap: 0.35rem;"><i data-lucide="clock" style="width:14px;height:14px;"></i> ${duration}</span>
+                        <span style="display: flex; align-items: center; gap: 0.35rem;"><i data-lucide="cpu" style="width:14px;height:14px;"></i> ${model}</span>
+                        <span style="display: flex; align-items: center; gap: 0.35rem;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Completed</span>
                     `;
 
                     document.getElementById('executeResults').style.display = 'block';

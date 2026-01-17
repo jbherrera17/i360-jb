@@ -1096,35 +1096,14 @@
             font-size: 0.85rem;
         }
 
-        /* Modal styles handled by modal-manager.js */
-        /* Agent-specific modal overrides */
-        .modal-header h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-            flex: 1;
-            min-height: 0;
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Form Styles */
+        /* Modal styles handled by ModalService */
+        /* Agent-specific form styles for ModalService modals */
+        .i360-modal .form-group,
         .form-group {
             margin-bottom: 1.25rem;
         }
 
+        .i360-modal .form-label,
         .form-label {
             display: block;
             font-size: 0.85rem;
@@ -1133,6 +1112,7 @@
             margin-bottom: 0.5rem;
         }
 
+        .i360-modal .form-input,
         .form-input {
             width: 100%;
             padding: 0.625rem 0.875rem;
@@ -1144,17 +1124,20 @@
             font-family: inherit;
         }
 
+        .i360-modal .form-input:focus,
         .form-input:focus {
             outline: none;
             border-color: var(--primary);
         }
 
+        .i360-modal .form-textarea,
         .form-textarea {
             min-height: 100px;
             resize: vertical;
         }
 
         /* System prompt textarea - larger and more visible */
+        .i360-modal .form-textarea.system-prompt-textarea,
         .form-textarea.system-prompt-textarea {
             min-height: 200px;
             font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
@@ -1162,8 +1145,9 @@
             line-height: 1.5;
         }
 
-        /* Modal resize indicator - now handled by modal-manager.js corner handles */
+        /* Modal resize handled by ModalService */
 
+        .i360-modal .form-select,
         .form-select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
@@ -1172,18 +1156,21 @@
             padding-right: 2.5rem;
         }
 
+        .i360-modal .form-row,
         .form-row {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
         }
 
+        .i360-modal .form-hint,
         .form-hint {
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-top: 0.25rem;
         }
 
+        .i360-modal .form-hint-box,
         .form-hint-box {
             margin-top: 0.5rem;
             padding: 0.75rem;
@@ -1194,6 +1181,7 @@
             line-height: 1.5;
         }
 
+        .i360-modal .form-hint-box strong,
         .form-hint-box strong {
             color: var(--text-primary);
         }
@@ -1299,43 +1287,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .toast {
-            padding: 0.875rem 1.25rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            animation: slideIn 0.3s ease;
-        }
-
-        .toast.success { border-left: 3px solid var(--success); }
-        .toast.error { border-left: 3px solid var(--danger); }
-        .toast.warning { border-left: 3px solid var(--warning); }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+        /* Toast Notifications handled by ModalService */
 
         /* Responsive - hide details panel on smaller screens */
         @media (max-width: 1200px) {
@@ -1946,9 +1898,9 @@
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Suite</label>
+                    <label class="filter-label">i360 System</label>
                     <select class="filter-select" id="filterSuite">
-                        <option value="">All Suites</option>
+                        <option value="">All i360 Systems</option>
                         <option value="align">Align 120</option>
                         <option value="strategy">Strategy 120</option>
                         <option value="execute">Execute 120</option>
@@ -2085,7 +2037,7 @@
                             <div class="sidebar-title">Overview</div>
                             <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
                                 <div class="info-item">
-                                    <div class="info-label">Suite</div>
+                                    <div class="info-label">i360 System</div>
                                     <div class="info-value" id="detailSuite">—</div>
                                 </div>
                                 <div class="info-item">
@@ -2145,218 +2097,6 @@
         </main> <!-- Close main-content -->
     </div> <!-- Close app-container -->
 
-    <!-- Create/Edit Agent Modal -->
-    <div class="modal-overlay" id="agentModal">
-        <div class="modal" id="agent-modal-dialog">
-            <div class="modal-header" id="agent-modal-header">
-                <h2 id="modalTitle">New Agent</h2>
-                <button class="modal-close" id="modalClose">
-                    <i data-lucide="x" style="width:20px;height:20px;"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="agentForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Name *</label>
-                            <input type="text" class="form-input" id="formName" required placeholder="e.g., Content Writer Pro">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Icon</label>
-                            <input type="text" class="form-input" id="formIcon" placeholder="🤖" maxlength="2">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Suite *</label>
-                            <select class="form-input form-select" id="formSuite" required>
-                                <option value="">Select suite...</option>
-                                <option value="execute">Execute 120</option>
-                                <option value="align">Align 120</option>
-                                <option value="strategy">Strategy 120</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Category *</label>
-                            <select class="form-input form-select" id="formCategory" required>
-                                <option value="">Select category...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-input form-textarea" id="formDescription" placeholder="What does this agent do?"></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Platform *</label>
-                            <select class="form-input form-select" id="formPlatform" required>
-                                <option value="custom">Custom (Native)</option>
-                                <option value="mindstudio">MindStudio</option>
-                                <option value="llm">LLM Direct</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            <select class="form-input form-select" id="formStatus">
-                                <option value="draft">Draft</option>
-                                <option value="active">Active</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Department</label>
-                        <select class="form-input form-select" id="formDepartment">
-                            <option value="">No Department (Available to all)</option>
-                        </select>
-                        <div class="form-hint">Assign this agent to a specific department</div>
-                    </div>
-
-                    <!-- Platform-specific fields (MindStudio) -->
-                    <div class="platform-fields" id="platformFieldsEmbed">
-                        <div class="platform-fields-title">
-                            <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
-                            MindStudio Configuration
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">App ID *</label>
-                            <input type="text" class="form-input" id="formExternalId" placeholder="e.g., 46f2e54b-f2fv-4055-bbf4-h55555a7c3b6">
-                            <div class="form-hint">The MindStudio App ID from your app settings</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Workflow Name</label>
-                            <input type="text" class="form-input" id="formWorkflowName" placeholder="Optional: specific workflow to run">
-                            <div class="form-hint">Leave empty to use the default entry workflow</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Execution Mode</label>
-                            <select class="form-input form-select" id="formExecutionMode">
-                                <option value="api">API (Backend)</option>
-                                <option value="embed">Embed (Iframe)</option>
-                            </select>
-                            <div class="form-hint">API mode streams through backend; Embed mode opens MindStudio UI</div>
-                        </div>
-                        <div class="form-group" id="embedUrlGroup" style="display: none;">
-                            <label class="form-label">Embed URL</label>
-                            <input type="text" class="form-input" id="formEmbedUrl" placeholder="https://app.mindstudio.ai/embed/...">
-                            <div class="form-hint">The iframe embed URL from MindStudio</div>
-                        </div>
-                    </div>
-
-                    <div class="platform-fields" id="platformFieldsNative" style="display: none;">
-                        <div class="platform-fields-title">
-                            <i data-lucide="terminal" style="width:14px;height:14px;"></i>
-                            Native Configuration
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">System Prompt</label>
-                            <textarea class="form-input form-textarea system-prompt-textarea" id="formSystemPrompt" placeholder="You are a helpful assistant that..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Introduction Message</label>
-                            <textarea class="form-input form-textarea" id="formIntroduction" rows="3" placeholder="Hello! I'm your AI assistant. I'm here to help you with..."></textarea>
-                            <div class="form-hint">This message is automatically shown at the start of every new chat with this agent.</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Model</label>
-                                <select class="form-input form-select" id="formModel">
-                                    <option value="">Loading models...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Temperature</label>
-                                <input type="number" class="form-input" id="formTemperature" min="0" max="2" step="0.1" value="0.7">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Conversation Starters</label>
-                            <textarea class="form-input form-textarea" id="formConversationStarters" placeholder="Enter conversation starters, one per line. These are shown to users when they start a chat with this agent."></textarea>
-                            <div class="form-hint">One starter per line. Example: "Help me write a blog post about..."</div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="btnCancel">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="btnSave">
-                    <i data-lucide="save" style="width:16px;height:16px;"></i>
-                    Save Agent
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Context Modal -->
-    <div class="modal-overlay" id="contextModal">
-        <div class="modal" id="context-modal-dialog">
-            <div class="modal-header" id="context-modal-header">
-                <h2>Add Context Asset</h2>
-                <button class="modal-close" id="contextModalClose">
-                    <i data-lucide="x" style="width:20px;height:20px;"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Asset Type Filter -->
-                <div class="form-group">
-                    <label class="form-label">Asset Type</label>
-                    <select class="form-input form-select" id="contextTypeFilter">
-                        <option value="">All Types</option>
-                    </select>
-                    <p class="form-hint">Filter assets by type to find what you need faster.</p>
-                </div>
-
-                <!-- Asset Selection -->
-                <div class="form-group">
-                    <label class="form-label">Select Context Asset</label>
-                    <select class="form-input form-select" id="contextAssetSelect">
-                        <option value="">Choose an asset...</option>
-                    </select>
-                </div>
-
-                <hr style="border: none; border-top: 1px solid var(--border); margin: 1.25rem 0;">
-
-                <!-- Injection Mode -->
-                <div class="form-group">
-                    <label class="form-label">Injection Mode</label>
-                    <select class="form-input form-select" id="contextInjectionMode">
-                        <option value="always">Always</option>
-                        <option value="on_demand">On Demand</option>
-                        <option value="conditional">Conditional</option>
-                    </select>
-                    <div class="form-hint-box" id="injectionModeHint">
-                        <strong>Always:</strong> This asset is included in every conversation with this agent. Use for core context like company values, voice guidelines, or brand identity.
-                    </div>
-                </div>
-
-                <!-- Priority -->
-                <div class="form-group">
-                    <label class="form-label">Priority</label>
-                    <input type="number" class="form-input" id="contextPriority" value="50" min="0" max="100">
-                    <div class="form-hint-box">
-                        <strong>Priority (0-100):</strong> Higher values are injected first into the prompt. Use higher priority for critical context (values, guardrails) and lower for supplementary info.
-                        <div class="priority-examples">
-                            <span><strong>90-100:</strong> Core values, bright lines</span>
-                            <span><strong>70-89:</strong> Voice DNA, ICP</span>
-                            <span><strong>50-69:</strong> Products, processes</span>
-                            <span><strong>0-49:</strong> Reference materials</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="btnContextCancel">Cancel</button>
-                <button type="button" class="btn btn-primary" id="btnContextAdd">
-                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                    Add Mapping
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Agent Launcher Panel (Slide-in Drawer) -->
     <div class="launcher-overlay" id="launcherOverlay">
@@ -2415,11 +2155,8 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Modal Manager must load before inline scripts that use it -->
-    <script src="/js/modal-manager.js"></script>
+    <!-- ModalService must load before inline scripts that use it -->
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
 
     <script>
         // Initialize Lucide icons
@@ -2442,21 +2179,10 @@
         const agentList = document.getElementById('agentList');
         const agentDetail = document.getElementById('agentDetail');
         const emptyState = document.getElementById('emptyState');
-        const agentModal = document.getElementById('agentModal');
-        const contextModal = document.getElementById('contextModal');
 
-        // Modal managers
-        let agentModalManager = null;
-        let contextModalManager = null;
-
-        // Initialize modal managers when DOM ready
-        if (typeof ModalManager !== 'undefined') {
-            agentModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 700 });
-            agentModalManager.init('agent-modal-dialog', 'agent-modal-header', 'agentModal');
-
-            contextModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 550 });
-            contextModalManager.init('context-modal-dialog', 'context-modal-header', 'contextModal');
-        }
+        // Modal instances (ModalService)
+        let agentModal = null;
+        let contextMappingModal = null;
 
         // =========================================================================
         // API Functions
@@ -2559,8 +2285,7 @@
                 const data = await response.json();
                 if (data.success) {
                     contextAssets = data.data;
-                    populateContextTypeFilter();
-                    populateContextAssetSelect();
+                    // Note: context modal selects are now built dynamically when modal opens
                 }
             } catch (error) {
                 console.error('Error fetching context assets:', error);
@@ -2959,88 +2684,331 @@
         // Modal Functions
         // =========================================================================
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function buildCategoryOptions(selected = '') {
+            let html = '<option value="">Select category...</option>';
+            categories.forEach(cat => {
+                html += `<option value="${cat.key}" ${cat.key === selected ? 'selected' : ''}>${iconToEmoji(cat.icon)} ${escapeHtml(cat.display_name || cat.name)}</option>`;
+            });
+            return html;
+        }
+
+        function buildModelOptions(selected = '') {
+            let html = '<option value="">Select model...</option>';
+            availableModels.forEach(model => {
+                const isSelected = model.id === selected || model.name === selected;
+                html += `<option value="${model.id}" ${isSelected ? 'selected' : ''}>${escapeHtml(model.name)}</option>`;
+            });
+            return html;
+        }
+
+        function buildAgentFormContent(agent = null) {
+            const isEdit = !!agent;
+            const platform = isEdit ? (agent.type || 'custom') : 'custom';
+            const showEmbed = platform === 'mindstudio';
+            const showNative = !showEmbed;
+            const execMode = isEdit ? (agent.config?.execution_mode || 'api') : 'api';
+            const starters = agent?.conversation_starters || [];
+            const startersText = Array.isArray(starters) ? starters.join('\n') : '';
+
+            return `
+                <form id="agentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Name *</label>
+                            <input type="text" class="form-input" id="formName" required placeholder="e.g., Content Writer Pro" value="${escapeHtml(agent?.name || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Icon</label>
+                            <input type="text" class="form-input" id="formIcon" placeholder="🤖" maxlength="2" value="${escapeHtml(agent?.icon || '🤖')}">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">i360 System *</label>
+                            <select class="form-input form-select" id="formSuite" required>
+                                <option value="">Select i360 system...</option>
+                                <option value="execute" ${agent?.suite === 'execute' ? 'selected' : ''}>Execute 120</option>
+                                <option value="align" ${agent?.suite === 'align' ? 'selected' : ''}>Align 120</option>
+                                <option value="strategy" ${agent?.suite === 'strategy' ? 'selected' : ''}>Strategy 120</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <select class="form-input form-select" id="formCategory" required>
+                                ${buildCategoryOptions(agent?.category || '')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input form-textarea" id="formDescription" placeholder="What does this agent do?">${escapeHtml(agent?.description || '')}</textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Platform *</label>
+                            <select class="form-input form-select" id="formPlatform" required>
+                                <option value="custom" ${platform === 'custom' ? 'selected' : ''}>Custom (Native)</option>
+                                <option value="mindstudio" ${platform === 'mindstudio' ? 'selected' : ''}>MindStudio</option>
+                                <option value="llm" ${platform === 'llm' ? 'selected' : ''}>LLM Direct</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-input form-select" id="formStatus">
+                                <option value="draft" ${!agent?.is_active ? 'selected' : ''}>Draft</option>
+                                <option value="active" ${agent?.is_active ? 'selected' : ''}>Active</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select class="form-input form-select" id="formDepartment">
+                            ${buildDepartmentOptionsForAgent(agent?.department_id || '')}
+                        </select>
+                        <div class="form-hint">Assign this agent to a specific department</div>
+                    </div>
+
+                    <!-- Platform-specific fields (MindStudio) -->
+                    <div class="platform-fields" id="platformFieldsEmbed" style="display: ${showEmbed ? 'block' : 'none'};">
+                        <div class="platform-fields-title">
+                            <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+                            MindStudio Configuration
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">App ID *</label>
+                            <input type="text" class="form-input" id="formExternalId" placeholder="e.g., 46f2e54b-f2fv-4055-bbf4-h55555a7c3b6" value="${escapeHtml(agent?.mindstudio_workflow_id || agent?.config?.mindstudio_app_id || '')}">
+                            <div class="form-hint">The MindStudio App ID from your app settings</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Workflow Name</label>
+                            <input type="text" class="form-input" id="formWorkflowName" placeholder="Optional: specific workflow to run" value="${escapeHtml(agent?.config?.mindstudio_workflow || '')}">
+                            <div class="form-hint">Leave empty to use the default entry workflow</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Execution Mode</label>
+                            <select class="form-input form-select" id="formExecutionMode">
+                                <option value="api" ${execMode === 'api' ? 'selected' : ''}>API (Backend)</option>
+                                <option value="embed" ${execMode === 'embed' ? 'selected' : ''}>Embed (Iframe)</option>
+                            </select>
+                            <div class="form-hint">API mode streams through backend; Embed mode opens MindStudio UI</div>
+                        </div>
+                        <div class="form-group" id="embedUrlGroup" style="display: ${execMode === 'embed' ? 'block' : 'none'};">
+                            <label class="form-label">Embed URL</label>
+                            <input type="text" class="form-input" id="formEmbedUrl" placeholder="https://app.mindstudio.ai/embed/..." value="${escapeHtml(agent?.config?.embed_url || '')}">
+                            <div class="form-hint">The iframe embed URL from MindStudio</div>
+                        </div>
+                    </div>
+
+                    <div class="platform-fields" id="platformFieldsNative" style="display: ${showNative ? 'block' : 'none'};">
+                        <div class="platform-fields-title">
+                            <i data-lucide="terminal" style="width:14px;height:14px;"></i>
+                            Native Configuration
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">System Prompt</label>
+                            <textarea class="form-input form-textarea system-prompt-textarea" id="formSystemPrompt" placeholder="You are a helpful assistant that...">${escapeHtml(agent?.system_prompt || '')}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Introduction Message</label>
+                            <textarea class="form-input form-textarea" id="formIntroduction" rows="3" placeholder="Hello! I'm your AI assistant. I'm here to help you with...">${escapeHtml(agent?.introduction || '')}</textarea>
+                            <div class="form-hint">This message is automatically shown at the start of every new chat with this agent.</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Model</label>
+                                <select class="form-input form-select" id="formModel">
+                                    ${buildModelOptions(resolveModelName(agent?.llm_model || agent?.model || ''))}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Temperature</label>
+                                <input type="number" class="form-input" id="formTemperature" min="0" max="2" step="0.1" value="${agent?.temperature || 0.7}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Conversation Starters</label>
+                            <textarea class="form-input form-textarea" id="formConversationStarters" placeholder="Enter conversation starters, one per line. These are shown to users when they start a chat with this agent.">${escapeHtml(startersText)}</textarea>
+                            <div class="form-hint">One starter per line. Example: "Help me write a blog post about..."</div>
+                        </div>
+                    </div>
+                </form>
+            `;
+        }
+
+        function buildDepartmentOptionsForAgent(selectedId = '') {
+            let html = '<option value="">No Department (Available to all)</option>';
+            // Get departments from the filter dropdown which is already populated
+            const filterSelect = document.getElementById('filterDepartment');
+            if (filterSelect) {
+                Array.from(filterSelect.options).forEach(opt => {
+                    if (opt.value) {
+                        html += `<option value="${opt.value}" ${opt.value === selectedId ? 'selected' : ''}>${escapeHtml(opt.textContent)}</option>`;
+                    }
+                });
+            }
+            return html;
+        }
+
         function openModal(agent = null) {
             editingAgent = agent;
-            document.getElementById('modalTitle').textContent = agent ? 'Edit Agent' : 'New Agent';
 
-            if (agent) {
-                document.getElementById('formName').value = agent.name || '';
-                document.getElementById('formIcon').value = agent.icon || '🤖';
-                document.getElementById('formDescription').value = agent.description || '';
-                document.getElementById('formPlatform').value = agent.type || 'custom';
-                document.getElementById('formStatus').value = agent.is_active ? 'active' : 'draft';
-                document.getElementById('formSuite').value = agent.suite || 'execute';
-                document.getElementById('formCategory').value = agent.category || '';
-
-                // MindStudio fields
-                document.getElementById('formExternalId').value = agent.mindstudio_workflow_id || agent.config?.mindstudio_app_id || '';
-                document.getElementById('formWorkflowName').value = agent.config?.mindstudio_workflow || '';
-                document.getElementById('formExecutionMode').value = agent.config?.execution_mode || 'api';
-                document.getElementById('formEmbedUrl').value = agent.config?.embed_url || '';
-
-                // Native LLM fields
-                document.getElementById('formSystemPrompt').value = agent.system_prompt || '';
-                document.getElementById('formIntroduction').value = agent.introduction || '';
-                document.getElementById('formModel').value = resolveModelName(agent.llm_model || agent.model);
-                document.getElementById('formTemperature').value = agent.temperature || 0.7;
-                // Conversation starters - convert array to newline-separated text
-                const starters = agent.conversation_starters || [];
-                document.getElementById('formConversationStarters').value = Array.isArray(starters) ? starters.join('\n') : '';
-
-                // Department assignment
-                document.getElementById('formDepartment').value = agent.department_id || '';
-            } else {
-                document.getElementById('agentForm').reset();
-                document.getElementById('formIcon').value = '🤖';
-                document.getElementById('formExecutionMode').value = 'api';
-                document.getElementById('formDepartment').value = '';
-            }
-
-            updatePlatformFields();
-            updateExecutionModeFields();
-            if (agentModalManager) {
-                agentModalManager.open();
-            } else {
-                agentModal.classList.add('active');
-            }
+            agentModal = ModalService.create({
+                title: agent ? 'Edit Agent' : 'New Agent',
+                content: buildAgentFormContent(agent),
+                footer: `
+                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button type="submit" class="i360-btn i360-btn-primary" id="btnSave">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i>
+                        Save Agent
+                    </button>
+                `,
+                width: 700,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    // Attach event listeners
+                    document.getElementById('formPlatform').addEventListener('change', updatePlatformFields);
+                    document.getElementById('formExecutionMode').addEventListener('change', updateExecutionModeFields);
+                    document.getElementById('btnSave').addEventListener('click', handleAgentSave);
+                }
+            });
+            agentModal.open();
         }
 
         function closeModal() {
-            if (agentModalManager) {
-                agentModalManager.close();
-            } else {
-                agentModal.classList.remove('active');
+            if (agentModal) {
+                agentModal.close();
+                agentModal = null;
             }
             editingAgent = null;
         }
 
+        function buildContextMappingFormContent() {
+            // Build type filter options
+            const types = [...new Set(contextAssets.filter(a => !a.is_template && !a.asset_type?.toLowerCase().includes('template')).map(a => a.asset_type).filter(Boolean))];
+            let typeOptions = '<option value="">All Types</option>';
+            types.forEach(type => {
+                typeOptions += `<option value="${type}">${escapeHtml(type)}</option>`;
+            });
+
+            // Build asset options
+            const filteredAssets = contextAssets.filter(a => !a.is_template && !a.asset_type?.toLowerCase().includes('template'));
+            let assetOptions = '<option value="">Choose an asset...</option>';
+            filteredAssets.forEach(asset => {
+                assetOptions += `<option value="${asset.id}" data-type="${asset.asset_type || ''}">${asset.icon || '📄'} ${escapeHtml(asset.name)}</option>`;
+            });
+
+            return `
+                <!-- Asset Type Filter -->
+                <div class="form-group">
+                    <label class="form-label">Asset Type</label>
+                    <select class="form-input form-select" id="contextTypeFilter">
+                        ${typeOptions}
+                    </select>
+                    <p class="form-hint">Filter assets by type to find what you need faster.</p>
+                </div>
+
+                <!-- Asset Selection -->
+                <div class="form-group">
+                    <label class="form-label">Select Context Asset</label>
+                    <select class="form-input form-select" id="contextAssetSelect">
+                        ${assetOptions}
+                    </select>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 1.25rem 0;">
+
+                <!-- Injection Mode -->
+                <div class="form-group">
+                    <label class="form-label">Injection Mode</label>
+                    <select class="form-input form-select" id="contextInjectionMode">
+                        <option value="always">Always</option>
+                        <option value="on_demand">On Demand</option>
+                        <option value="conditional">Conditional</option>
+                    </select>
+                    <div class="form-hint-box" id="injectionModeHint">
+                        <strong>Always:</strong> This asset is included in every conversation with this agent. Use for core context like company values, voice guidelines, or brand identity.
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <input type="number" class="form-input" id="contextPriority" value="50" min="0" max="100">
+                    <div class="form-hint-box">
+                        <strong>Priority (0-100):</strong> Higher values are injected first into the prompt. Use higher priority for critical context (values, guardrails) and lower for supplementary info.
+                        <div class="priority-examples">
+                            <span><strong>90-100:</strong> Core values, bright lines</span>
+                            <span><strong>70-89:</strong> Voice DNA, ICP</span>
+                            <span><strong>50-69:</strong> Products, processes</span>
+                            <span><strong>0-49:</strong> Reference materials</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function openContextModal() {
             if (!selectedAgent) return;
-            // Reset form fields
-            document.getElementById('contextTypeFilter').value = '';
-            document.getElementById('contextInjectionMode').value = 'always';
-            document.getElementById('contextPriority').value = '50';
-            // Populate dropdowns
-            populateContextTypeFilter();
-            populateContextAssetSelect('');
-            updateInjectionModeHint();
-            if (contextModalManager) {
-                contextModalManager.open();
-            } else {
-                contextModal.classList.add('active');
-            }
+
+            contextMappingModal = ModalService.create({
+                title: 'Add Context Asset',
+                content: buildContextMappingFormContent(),
+                footer: `
+                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button type="button" class="i360-btn i360-btn-primary" id="btnContextAdd">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                        Add Mapping
+                    </button>
+                `,
+                width: 550,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    // Attach event listeners
+                    document.getElementById('contextTypeFilter').addEventListener('change', handleContextTypeFilterChange);
+                    document.getElementById('contextInjectionMode').addEventListener('change', updateInjectionModeHint);
+                    document.getElementById('btnContextAdd').addEventListener('click', handleAddContextMapping);
+                }
+            });
+            contextMappingModal.open();
+        }
+
+        function handleContextTypeFilterChange() {
+            const filterType = document.getElementById('contextTypeFilter').value;
+            const select = document.getElementById('contextAssetSelect');
+            const filteredAssets = contextAssets.filter(a => {
+                if (a.is_template || a.asset_type?.toLowerCase().includes('template')) return false;
+                if (filterType && a.asset_type !== filterType) return false;
+                return true;
+            });
+
+            select.innerHTML = '<option value="">Choose an asset...</option>';
+            filteredAssets.forEach(asset => {
+                const option = document.createElement('option');
+                option.value = asset.id;
+                option.textContent = `${asset.icon || '📄'} ${asset.name}`;
+                option.dataset.type = asset.asset_type || '';
+                select.appendChild(option);
+            });
         }
 
         function closeContextModal() {
-            if (contextModalManager) {
-                contextModalManager.close();
-            } else {
-                contextModal.classList.remove('active');
+            if (contextMappingModal) {
+                contextMappingModal.close();
+                contextMappingModal = null;
             }
-            document.getElementById('contextTypeFilter').value = '';
-            document.getElementById('contextAssetSelect').value = '';
-            document.getElementById('contextInjectionMode').value = 'always';
-            document.getElementById('contextPriority').value = '50';
         }
 
         function updatePlatformFields() {
@@ -3069,6 +3037,93 @@
             }
         }
 
+        function handleAgentSave(e) {
+            e.preventDefault();
+
+            const platform = document.getElementById('formPlatform').value;
+            const departmentValue = document.getElementById('formDepartment')?.value;
+
+            const agentData = {
+                name: document.getElementById('formName').value,
+                icon: document.getElementById('formIcon').value || '🤖',
+                description: document.getElementById('formDescription').value,
+                type: platform,
+                is_active: document.getElementById('formStatus').value === 'active',
+                category: document.getElementById('formCategory').value || null,
+                suite: document.getElementById('formSuite')?.value || 'execute',
+                department_id: departmentValue || null
+            };
+
+            // 'custom' and 'llm' are native types with LLM configuration
+            if (platform === 'custom' || platform === 'llm') {
+                agentData.system_prompt = document.getElementById('formSystemPrompt').value;
+                agentData.introduction = document.getElementById('formIntroduction').value.trim() || null;
+                agentData.llm_model = document.getElementById('formModel').value;
+                agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
+                // Parse conversation starters from newline-separated text to array
+                const startersText = document.getElementById('formConversationStarters').value.trim();
+                agentData.conversation_starters = startersText ? startersText.split('\n').map(s => s.trim()).filter(s => s) : [];
+                // Get provider from loaded models, fallback to detection logic
+                const selectedModel = availableModels.find(m => m.id === agentData.llm_model);
+                if (selectedModel) {
+                    agentData.llm_provider = selectedModel.provider;
+                } else if (agentData.llm_model?.startsWith('gpt') || agentData.llm_model?.startsWith('o1')) {
+                    agentData.llm_provider = 'openai';
+                } else if (agentData.llm_model?.startsWith('sonar')) {
+                    agentData.llm_provider = 'perplexity';
+                } else {
+                    agentData.llm_provider = 'anthropic';
+                }
+            } else {
+                // MindStudio agents - store config for API or embed execution
+                const executionMode = document.getElementById('formExecutionMode').value;
+                agentData.mindstudio_workflow_id = document.getElementById('formExternalId').value;
+                agentData.config = {
+                    execution_mode: executionMode,
+                    mindstudio_app_id: document.getElementById('formExternalId').value,
+                    mindstudio_workflow: document.getElementById('formWorkflowName').value || null,
+                    embed_url: document.getElementById('formEmbedUrl').value || null,
+                    theme: document.documentElement.getAttribute('data-theme') || 'dark'
+                };
+
+                // Validate App ID for MindStudio
+                if (!agentData.mindstudio_workflow_id) {
+                    showToast('MindStudio App ID is required', 'error');
+                    return;
+                }
+            }
+
+            if (!agentData.name) {
+                showToast('Name is required', 'error');
+                return;
+            }
+
+            if (!agentData.suite) {
+                showToast('i360 System is required', 'error');
+                return;
+            }
+
+            if (!agentData.category) {
+                showToast('Category is required', 'error');
+                return;
+            }
+
+            saveAgent(agentData);
+        }
+
+        function handleAddContextMapping() {
+            const assetId = document.getElementById('contextAssetSelect').value;
+            const mode = document.getElementById('contextInjectionMode').value;
+            const priority = document.getElementById('contextPriority').value;
+
+            if (!assetId) {
+                showToast('Please select a context asset', 'error');
+                return;
+            }
+
+            addContextMapping(selectedAgent.id, assetId, mode, priority);
+        }
+
         // =========================================================================
         // Tags
         // =========================================================================
@@ -3076,25 +3131,19 @@
         // =========================================================================
 
         function populateCategorySelects() {
-            const selects = [
-                document.getElementById('filterCategory'),
-                document.getElementById('formCategory')
-            ];
-
-            selects.forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = '<option value="">All Categories</option>';
-                if (select.id === 'formCategory') {
-                    select.innerHTML = '<option value="">Select category...</option>';
-                }
+            // Only populate the filter dropdown - form dropdown is built dynamically
+            const filterSelect = document.getElementById('filterCategory');
+            if (filterSelect) {
+                const currentValue = filterSelect.value;
+                filterSelect.innerHTML = '<option value="">All Categories</option>';
                 categories.forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat.key;
                     option.textContent = `${iconToEmoji(cat.icon)} ${cat.display_name || cat.name}`;
-                    select.appendChild(option);
+                    filterSelect.appendChild(option);
                 });
-                select.value = currentValue;
-            });
+                filterSelect.value = currentValue;
+            }
         }
 
         function populateContextAssetSelect(filterType = '') {
@@ -3169,19 +3218,7 @@
         // =========================================================================
 
         function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" style="width:18px;height:18px;"></i>
-                <span>${message}</span>
-            `;
-            container.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
+            ModalService.toast({ message, type });
         }
 
         // =========================================================================
@@ -3739,8 +3776,7 @@
         // Theme toggle is now handled by the sidebar navigation (sidebarThemeToggle)
         document.getElementById('btnNewAgent').addEventListener('click', () => openModal());
         document.getElementById('btnNewAgentEmpty').addEventListener('click', () => openModal());
-        document.getElementById('modalClose').addEventListener('click', closeModal);
-        document.getElementById('btnCancel').addEventListener('click', closeModal);
+        // Modal close buttons are now handled by ModalService (data-action="close")
 
         document.getElementById('btnEdit').addEventListener('click', () => {
             if (selectedAgent) openModal(selectedAgent);
@@ -3786,106 +3822,6 @@
         });
 
         document.getElementById('btnAddContext').addEventListener('click', openContextModal);
-        document.getElementById('contextModalClose').addEventListener('click', closeContextModal);
-        document.getElementById('btnContextCancel').addEventListener('click', closeContextModal);
-
-        // Type filter change - update asset list
-        document.getElementById('contextTypeFilter').addEventListener('change', (e) => {
-            populateContextAssetSelect(e.target.value);
-        });
-
-        // Injection mode change - update hint
-        document.getElementById('contextInjectionMode').addEventListener('change', updateInjectionModeHint);
-
-        document.getElementById('btnContextAdd').addEventListener('click', () => {
-            const assetId = document.getElementById('contextAssetSelect').value;
-            const mode = document.getElementById('contextInjectionMode').value;
-            const priority = document.getElementById('contextPriority').value;
-
-            if (!assetId) {
-                showToast('Please select a context asset', 'error');
-                return;
-            }
-
-            addContextMapping(selectedAgent.id, assetId, mode, priority);
-        });
-
-        document.getElementById('formPlatform').addEventListener('change', updatePlatformFields);
-        document.getElementById('formExecutionMode').addEventListener('change', updateExecutionModeFields);
-
-        document.getElementById('btnSave').addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            const platform = document.getElementById('formPlatform').value;
-            
-            const departmentValue = document.getElementById('formDepartment')?.value;
-            const agentData = {
-                name: document.getElementById('formName').value,
-                icon: document.getElementById('formIcon').value || '🤖',
-                description: document.getElementById('formDescription').value,
-                type: platform,
-                is_active: document.getElementById('formStatus').value === 'active',
-                category: document.getElementById('formCategory').value || null,
-                suite: document.getElementById('formSuite')?.value || 'execute',
-                department_id: departmentValue || null
-            };
-
-            // 'custom' and 'llm' are native types with LLM configuration
-            if (platform === 'custom' || platform === 'llm') {
-                agentData.system_prompt = document.getElementById('formSystemPrompt').value;
-                agentData.introduction = document.getElementById('formIntroduction').value.trim() || null;
-                agentData.llm_model = document.getElementById('formModel').value;
-                agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
-                // Parse conversation starters from newline-separated text to array
-                const startersText = document.getElementById('formConversationStarters').value.trim();
-                agentData.conversation_starters = startersText ? startersText.split('\n').map(s => s.trim()).filter(s => s) : [];
-                // Get provider from loaded models, fallback to detection logic
-                const selectedModel = availableModels.find(m => m.id === agentData.llm_model);
-                if (selectedModel) {
-                    agentData.llm_provider = selectedModel.provider;
-                } else if (agentData.llm_model?.startsWith('gpt') || agentData.llm_model?.startsWith('o1')) {
-                    agentData.llm_provider = 'openai';
-                } else if (agentData.llm_model?.startsWith('sonar')) {
-                    agentData.llm_provider = 'perplexity';
-                } else {
-                    agentData.llm_provider = 'anthropic';
-                }
-            } else {
-                // MindStudio agents - store config for API or embed execution
-                const executionMode = document.getElementById('formExecutionMode').value;
-                agentData.mindstudio_workflow_id = document.getElementById('formExternalId').value;
-                agentData.config = {
-                    execution_mode: executionMode,
-                    mindstudio_app_id: document.getElementById('formExternalId').value,
-                    mindstudio_workflow: document.getElementById('formWorkflowName').value || null,
-                    embed_url: document.getElementById('formEmbedUrl').value || null,
-                    theme: document.documentElement.getAttribute('data-theme') || 'dark'
-                };
-
-                // Validate App ID for MindStudio
-                if (!agentData.mindstudio_workflow_id) {
-                    showToast('MindStudio App ID is required', 'error');
-                    return;
-                }
-            }
-
-            if (!agentData.name) {
-                showToast('Name is required', 'error');
-                return;
-            }
-
-            if (!agentData.suite) {
-                showToast('Suite is required', 'error');
-                return;
-            }
-
-            if (!agentData.category) {
-                showToast('Category is required', 'error');
-                return;
-            }
-
-            saveAgent(agentData);
-        });
 
         // Filters
         ['filterDepartment', 'filterSuite', 'filterStatus', 'filterCategory', 'filterPlatform'].forEach(id => {

@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- ModalService -->
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <style>
         :root {
             /* Color Palette */
@@ -1784,42 +1786,105 @@
         }
 
         // =====================================================================
-        // ADD CONTEXT MODAL
+        // ADD CONTEXT MODAL (Using ModalService)
         // =====================================================================
 
+        let addContextModalInstance = null;
+
         async function openAddContextModal() {
-            const modal = document.getElementById('addContextModal');
-            modal.classList.add('active');
-            selectedAssetsToAdd.clear();
-
-            // Load available assets
-            const listEl = document.getElementById('availableAssetsList');
-            listEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading assets...</p>';
-
+            // Load available assets first
             try {
                 const response = await fetch('/api/context/assets?limit=100');
                 const data = await response.json();
 
                 if (data.success && data.data) {
                     availableAssets = data.data;
-                    renderAvailableAssets();
                 } else {
-                    listEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No assets available</p>';
+                    availableAssets = [];
                 }
             } catch (error) {
                 console.error('Failed to load assets:', error);
-                listEl.innerHTML = '<p style="color: var(--danger); text-align: center; padding: 1rem;">Failed to load assets</p>';
+                availableAssets = [];
             }
 
-            lucide.createIcons();
+            // Filter out already mapped assets
+            const mappedAssetIds = new Set(contextMappings.map(m => (m.context_assets || m).id));
+            const unmappedAssets = availableAssets.filter(a => !mappedAssetIds.has(a.id));
+
+            if (unmappedAssets.length === 0) {
+                // Use ModalService alert if available, fallback to native alert
+                if (typeof ModalService !== 'undefined') {
+                    await ModalService.info('All available context assets are already mapped to this agent. Create new assets in the Context Library.', 'No Assets Available');
+                } else {
+                    alert('All available context assets are already mapped to this agent.');
+                }
+                return;
+            }
+
+            // Build checkbox options from available assets
+            const assetOptions = unmappedAssets.map(asset => ({
+                value: asset.id,
+                label: `${getAssetIcon(asset.asset_type)} ${asset.name}`,
+                description: asset.asset_type
+            }));
+
+            // Use ModalService.form for asset selection
+            if (typeof ModalService !== 'undefined' && typeof FormModal !== 'undefined') {
+                const result = await ModalService.form({
+                    title: 'Add Context Assets',
+                    width: 500,
+                    fields: [
+                        {
+                            type: 'select',
+                            name: 'injection_mode',
+                            label: 'Injection Mode',
+                            options: [
+                                { value: 'on_demand', label: 'On Demand (toggle per message)' },
+                                { value: 'always', label: 'Always (include in all messages)' }
+                            ],
+                            value: 'on_demand'
+                        },
+                        {
+                            type: 'checkbox-group',
+                            name: 'selected_assets',
+                            label: 'Select Assets to Add',
+                            options: assetOptions
+                        }
+                    ],
+                    submitText: 'Add Selected',
+                    cancelText: 'Cancel'
+                });
+
+                if (result && result.selected_assets && result.selected_assets.length > 0) {
+                    await addContextAssetsToAgent(result.selected_assets, result.injection_mode);
+                }
+            } else {
+                // Fallback to legacy modal if ModalService not loaded
+                openAddContextModalLegacy();
+            }
+        }
+
+        // Legacy modal functions (kept for fallback)
+        function openAddContextModalLegacy() {
+            const modal = document.getElementById('addContextModal');
+            if (modal) {
+                modal.classList.add('active');
+                selectedAssetsToAdd.clear();
+                renderAvailableAssetsLegacy();
+            }
         }
 
         function closeAddContextModal() {
-            document.getElementById('addContextModal').classList.remove('active');
+            const modal = document.getElementById('addContextModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
         }
 
-        function renderAvailableAssets() {
+        function renderAvailableAssetsLegacy() {
             const listEl = document.getElementById('availableAssetsList');
+            if (!listEl) return;
+
             const mappedAssetIds = new Set(contextMappings.map(m => (m.context_assets || m).id));
 
             if (availableAssets.length === 0) {
@@ -1857,7 +1922,7 @@
             } else {
                 selectedAssetsToAdd.add(assetId);
             }
-            renderAvailableAssets();
+            renderAvailableAssetsLegacy();
         }
 
         async function addSelectedContextAssets() {
@@ -1866,11 +1931,17 @@
                 return;
             }
 
-            const injectionMode = document.getElementById('contextInjectionMode').value;
+            const injectionModeEl = document.getElementById('contextInjectionMode');
+            const injectionMode = injectionModeEl ? injectionModeEl.value : 'on_demand';
 
+            await addContextAssetsToAgent(Array.from(selectedAssetsToAdd), injectionMode);
+            closeAddContextModal();
+        }
+
+        async function addContextAssetsToAgent(assetIds, injectionMode) {
             try {
                 // Add mappings for each selected asset
-                for (const assetId of selectedAssetsToAdd) {
+                for (const assetId of assetIds) {
                     await fetch(`/api/agents/${currentAgent.id}/context/mappings`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1882,8 +1953,7 @@
                     });
                 }
 
-                showToast(`Added ${selectedAssetsToAdd.size} context asset(s)`, 'success');
-                closeAddContextModal();
+                showToast(`Added ${assetIds.length} context asset(s)`, 'success');
 
                 // Reload context preview
                 await loadContextPreview(currentAgent.id);

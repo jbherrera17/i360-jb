@@ -50,6 +50,7 @@ const userProfileRoutes = require('./routes/user-profile');
 const synerginexusRoutes = require('./routes/synerginexus');
 const thoughtLeadershipRoutes = require('./routes/thought-leadership');
 const modelAvailabilityRoutes = require('./routes/model-availability');
+const visualizationsRoutes = require('./routes/visualizations');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -75,7 +76,7 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "blob:", "https:"],
-            mediaSrc: ["'self'", "blob:"],
+            mediaSrc: ["'self'", "blob:", "https:"],
             connectSrc: [
                 "'self'",
                 "https://api.anthropic.com",
@@ -87,7 +88,11 @@ app.use(helmet({
             frameSrc: [
                 "'self'",
                 "https://app.mindstudio.ai",
-                "https://*.mindstudio.ai"
+                "https://*.mindstudio.ai",
+                "https://www.youtube.com",
+                "https://youtube.com",
+                "https://player.vimeo.com",
+                "https://vimeo.com"
             ]
         }
     }
@@ -352,7 +357,9 @@ function initializeServices() {
         app.use('/api/synerginexus', synerginexusRoutes(supabase));
         app.use('/api/thought-leadership', thoughtLeadershipRoutes(supabase));
         app.use('/api/models', modelAvailabilityRoutes);
+        app.use('/api/visualizations', visualizationsRoutes);
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Visualizations routes registered');
         console.log('  ✅ Model Availability routes registered');
         console.log('  ✅ Auth routes registered');
         console.log('  ✅ Onboarding routes registered');

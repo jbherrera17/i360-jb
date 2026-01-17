@@ -55,6 +55,7 @@ async function loadSystemStatus() {
             const serviceConfig = {
                 anthropic: { name: 'Claude (Anthropic)', icon: '🤖' },
                 openai: { name: 'GPT (OpenAI)', icon: '🧠' },
+                gemini: { name: 'Gemini (Google)', icon: '✨' },
                 voice: { name: 'Voice (TTS/STT)', icon: '🎤' },
                 search: { name: 'Web Search', icon: '🔍' },
                 supabase: { name: 'Database', icon: '💾' }
@@ -116,7 +117,8 @@ async function loadAvailableModels() {
             // Provider configurations
             const providerConfig = {
                 anthropic: { name: 'Claude (Anthropic)', icon: '🤖', color: '#6366f1' },
-                openai: { name: 'GPT (OpenAI)', icon: '🧠', color: '#10b981' }
+                openai: { name: 'GPT (OpenAI)', icon: '🧠', color: '#10b981' },
+                google: { name: 'Gemini (Google)', icon: '✨', color: '#4285f4' }
             };
             
             // Iterate through providers
@@ -185,7 +187,8 @@ function getTierClass(tier) {
         'standard': 'tier-standard',
         'efficient': 'tier-efficient',
         'fast': 'tier-fast',
-        'reasoning': 'tier-reasoning'
+        'reasoning': 'tier-reasoning',
+        'experimental': 'tier-experimental'
     };
     return tierClasses[tier] || 'tier-default';
 }
@@ -219,6 +222,7 @@ async function loadLLMProviderStatus() {
             const providerConfig = {
                 anthropic: { name: 'Claude (Anthropic)', icon: '🤖' },
                 openai: { name: 'GPT (OpenAI)', icon: '🧠' },
+                google: { name: 'Gemini (Google)', icon: '✨' },
                 perplexity: { name: 'Sonar (Perplexity)', icon: '🔍' }
             };
 
@@ -378,6 +382,7 @@ async function runLLMCheck() {
             const providerConfig = {
                 anthropic: { name: 'Claude (Anthropic)', icon: '🤖' },
                 openai: { name: 'GPT (OpenAI)', icon: '🧠' },
+                google: { name: 'Gemini (Google)', icon: '✨' },
                 perplexity: { name: 'Sonar (Perplexity)', icon: '🔍' }
             };
 

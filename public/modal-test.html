@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Service Test - Insight 360</title>
+
+    <!-- Modal Service CSS -->
+    <link rel="stylesheet" href="js/modal-service/modal-service.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: var(--i360-modal-bg, #0f0f1a);
+            color: var(--i360-modal-text, #ffffff);
+            transition: background 200ms ease, color 200ms ease;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: var(--i360-modal-text-secondary);
+            margin: 0 0 30px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: var(--i360-modal-header-bg);
+            border: 1px solid var(--i360-modal-border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--i360-modal-text);
+        }
+
+        .theme-toggle:hover {
+            background: var(--i360-modal-border);
+        }
+
+        .test-section {
+            background: var(--i360-modal-header-bg);
+            border: 1px solid var(--i360-modal-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .test-section h2 {
+            margin: 0 0 16px;
+            font-size: 18px;
+            color: var(--i360-modal-text);
+        }
+
+        .test-section h3 {
+            margin: 20px 0 12px;
+            font-size: 14px;
+            color: var(--i360-modal-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .test-section h3:first-of-type {
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .test-btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .test-btn-info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .test-btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .test-btn-warning {
+            background: #f59e0b;
+            color: #1a202c;
+        }
+
+        .test-btn-error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .test-btn-neutral {
+            background: var(--i360-modal-border);
+            color: var(--i360-modal-text);
+        }
+
+        .test-btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .output-log {
+            margin-top: 24px;
+            padding: 16px;
+            background: #0f172a;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: #94a3b8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .output-log .entry {
+            padding: 4px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .output-log .entry:last-child {
+            border-bottom: none;
+        }
+
+        .output-log .timestamp {
+            color: #64748b;
+        }
+
+        .output-log .message {
+            color: #e2e8f0;
+        }
+
+        .output-log .result {
+            color: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-row">
+        <div>
+            <h1>Modal Service Test Page</h1>
+            <p class="subtitle">Test all modal types and functionality (Phase 1, 2 & 3)</p>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">🌙</span>
+            <span id="theme-label">Dark</span>
+        </button>
+    </div>
+
+    <!-- Phase 1: Basic Modals -->
+    <div class="test-section">
+        <h2>Phase 1: Alert Modals</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-info" onclick="testAlert('info')">Info Alert</button>
+            <button class="test-btn test-btn-success" onclick="testAlert('success')">Success Alert</button>
+            <button class="test-btn test-btn-warning" onclick="testAlert('warning')">Warning Alert</button>
+            <button class="test-btn test-btn-error" onclick="testAlert('error')">Error Alert</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 1: Confirm Modals</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-info" onclick="testConfirm('info')">Info Confirm</button>
+            <button class="test-btn test-btn-warning" onclick="testConfirm('warning')">Warning Confirm</button>
+            <button class="test-btn test-btn-error" onclick="testConfirm('danger')">Danger Confirm</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 1: Prompt Modals</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-info" onclick="testPrompt()">Text Prompt</button>
+            <button class="test-btn test-btn-neutral" onclick="testPromptValidation()">Prompt with Validation</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 1: Custom Modals</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-neutral" onclick="testCustomModal()">Basic Custom Modal</button>
+            <button class="test-btn test-btn-neutral" onclick="testDraggableModal()">Draggable Modal</button>
+            <button class="test-btn test-btn-neutral" onclick="testResizableModal()">Resizable Modal</button>
+            <button class="test-btn test-btn-neutral" onclick="testFullFeaturedModal()">Full Featured Modal</button>
+            <button class="test-btn test-btn-error" onclick="clearPersistedStates()">Clear Saved Positions</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 1: Utilities</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-neutral" onclick="testLoading()">Loading Modal (3s)</button>
+            <button class="test-btn test-btn-info" onclick="testToast('info')">Info Toast</button>
+            <button class="test-btn test-btn-success" onclick="testToast('success')">Success Toast</button>
+            <button class="test-btn test-btn-warning" onclick="testToast('warning')">Warning Toast</button>
+            <button class="test-btn test-btn-error" onclick="testToast('error')">Error Toast</button>
+        </div>
+    </div>
+
+    <!-- Phase 2: Specialized Modals -->
+    <div class="test-section">
+        <h2>Phase 2: Form Modal</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-primary" onclick="testFormModal()">User Profile Form</button>
+            <button class="test-btn test-btn-neutral" onclick="testFormModalValidation()">Form with Validation</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 2: Content Modal</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-neutral" onclick="testContentMarkdown()">Markdown Content</button>
+            <button class="test-btn test-btn-neutral" onclick="testContentCode()">Code with Copy</button>
+            <button class="test-btn test-btn-neutral" onclick="testContentImage()">Image Content</button>
+            <button class="test-btn test-btn-neutral" onclick="testContentVideo()">Video Content</button>
+            <button class="test-btn test-btn-neutral" onclick="testContentYouTube()">YouTube Embed</button>
+            <button class="test-btn test-btn-primary" onclick="testContentVimeo()">Vimeo Embed</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 2: Chat Modal</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-primary" onclick="testChatModal()">Chat Interface</button>
+            <button class="test-btn test-btn-neutral" onclick="testChatWithStreaming()">Chat with Simulated Streaming</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 2: Agent Modal</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-primary" onclick="testAgentModal()">Run Sample Agent</button>
+            <button class="test-btn test-btn-neutral" onclick="testAgentWithAttachments()">Agent with File Attachments</button>
+            <button class="test-btn test-btn-neutral" onclick="testAgentWithContext()">Agent with Context Assets</button>
+        </div>
+    </div>
+
+    <!-- Phase 3: New Features -->
+    <div class="test-section">
+        <h2>Phase 3: Avatar & Photo Upload</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-primary" onclick="testAvatarFormModal()">Profile Form with Avatar</button>
+            <button class="test-btn test-btn-neutral" onclick="testChatWithCustomAvatars()">Chat with Custom Avatars</button>
+            <button class="test-btn test-btn-neutral" onclick="testSystemMessageAvatar()">System Message with Avatar</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 3: Enhanced Agent Modal</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-primary" onclick="testAgentWithPromptModal()">Agent with Input Prompts</button>
+            <button class="test-btn test-btn-neutral" onclick="testAgentWithFormPrompt()">Agent with Form Prompt</button>
+            <button class="test-btn test-btn-neutral" onclick="testAgentWithSelection()">Single Selection Dialog</button>
+            <button class="test-btn test-btn-neutral" onclick="testAgentWithMultiSelection()">Multi-Selection Dialog</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Phase 3: Checkbox Group & Integration</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-primary" onclick="testCheckboxGroup()">Checkbox Group Form</button>
+            <button class="test-btn test-btn-neutral" onclick="testContextAssetModal()">Context Asset Selector</button>
+        </div>
+    </div>
+
+    <!-- Stack Tests -->
+    <div class="test-section">
+        <h2>Modal Stacking (Fixed: Click to bring to front)</h2>
+        <div class="button-group">
+            <button class="test-btn test-btn-neutral" onclick="testMultipleModals()">Open 3 Cascading Modals</button>
+            <button class="test-btn test-btn-error" onclick="ModalService.closeAll()">Close All Modals</button>
+        </div>
+    </div>
+
+    <!-- Output Log -->
+    <div class="test-section">
+        <h2>Event Log</h2>
+        <div id="output-log" class="output-log">
+            <div class="entry">
+                <span class="timestamp">[Ready]</span>
+                <span class="message">Modal Service loaded. Click buttons to test.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Service Scripts (load order matters) -->
+    <script src="js/modal-service/utils/sanitize.js"></script>
+    <script src="js/modal-service/utils/position.js"></script>
+    <script src="js/modal-service/mixins/DraggableMixin.js"></script>
+    <script src="js/modal-service/mixins/ResizableMixin.js"></script>
+    <script src="js/modal-service/mixins/FullscreenMixin.js"></script>
+    <script src="js/modal-service/mixins/PersistenceMixin.js"></script>
+    <script src="js/modal-service/ModalBase.js"></script>
+    <script src="js/modal-service/modals/AlertModal.js"></script>
+    <script src="js/modal-service/modals/ConfirmModal.js"></script>
+    <script src="js/modal-service/modals/PromptModal.js"></script>
+    <script src="js/modal-service/modals/FormModal.js"></script>
+    <script src="js/modal-service/modals/ContentModal.js"></script>
+    <script src="js/modal-service/modals/ChatModal.js"></script>
+    <script src="js/modal-service/modals/AgentModal.js"></script>
+    <script src="js/modal-service/index.js"></script>
+
+    <script>
+        // Theme toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.getAttribute('data-theme') === 'light';
+
+            if (isLight) {
+                html.removeAttribute('data-theme');
+                document.getElementById('theme-icon').textContent = '🌙';
+                document.getElementById('theme-label').textContent = 'Dark';
+            } else {
+                html.setAttribute('data-theme', 'light');
+                document.getElementById('theme-icon').textContent = '☀️';
+                document.getElementById('theme-label').textContent = 'Light';
+            }
+
+            log(`Theme changed to ${isLight ? 'dark' : 'light'}`);
+        }
+
+        // Helper to log events
+        function log(message, result = null) {
+            const logEl = document.getElementById('output-log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'entry';
+            entry.innerHTML = `
+                <span class="timestamp">[${time}]</span>
+                <span class="message">${message}</span>
+                ${result !== null ? `<span class="result"> → ${result}</span>` : ''}
+            `;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // ============================================
+        // Phase 1 Tests
+        // ============================================
+
+        async function testAlert(type) {
+            log(`Opening ${type} alert...`);
+            await ModalService.alert({
+                title: type.charAt(0).toUpperCase() + type.slice(1),
+                message: `This is a ${type} alert message. Click OK to dismiss.`,
+                type: type
+            });
+            log(`${type} alert closed`);
+        }
+
+        async function testConfirm(type) {
+            log(`Opening ${type} confirmation...`);
+            const result = await ModalService.confirm({
+                title: 'Confirm Action',
+                message: `Are you sure you want to proceed with this ${type} action?`,
+                type: type,
+                confirmText: type === 'danger' ? 'Delete' : 'Proceed',
+                cancelText: 'Cancel'
+            });
+            log(`Confirmation result`, result ? 'Confirmed' : 'Cancelled');
+        }
+
+        async function testPrompt() {
+            log('Opening text prompt...');
+            const value = await ModalService.prompt({
+                title: 'Enter Your Name',
+                message: 'Please enter your name:',
+                placeholder: 'John Doe',
+                defaultValue: ''
+            });
+            log('Prompt result', value || '(cancelled)');
+        }
+
+        async function testPromptValidation() {
+            log('Opening prompt with validation...');
+            const value = await ModalService.prompt({
+                title: 'Enter Email',
+                message: 'Please enter a valid email address:',
+                placeholder: 'user@example.com',
+                inputType: 'email',
+                validate: (val) => {
+                    if (!val) return 'Email is required';
+                    if (!val.includes('@')) return 'Please enter a valid email';
+                    return true;
+                }
+            });
+            log('Validated prompt result', value || '(cancelled)');
+        }
+
+        function testCustomModal() {
+            log('Opening custom modal...');
+            const modal = ModalService.create({
+                title: 'Custom Modal',
+                content: '<p>This is a basic custom modal with default settings.</p><p>It can contain any HTML content.</p>',
+                width: 450
+            });
+            modal.on('close', () => log('Custom modal closed'));
+            modal.open();
+        }
+
+        function testDraggableModal() {
+            log('Opening draggable modal...');
+            const modal = ModalService.create({
+                title: 'Draggable Modal',
+                content: '<p>Drag me by the header!</p><p>I can be moved around the viewport.</p>',
+                draggable: true,
+                width: 400
+            });
+            modal.on('dragEnd', (e) => log(`Dragged to (${Math.round(e.x)}, ${Math.round(e.y)})`));
+            modal.on('close', () => log('Draggable modal closed'));
+            modal.open();
+        }
+
+        function testResizableModal() {
+            log('Opening resizable modal...');
+            const modal = ModalService.create({
+                title: 'Resizable Modal',
+                content: '<p>Resize me by dragging the edges or corners!</p><p>I have minimum and maximum size constraints.</p>',
+                draggable: true,
+                resizable: true,
+                width: 400,
+                height: 300,
+                minSize: { width: 300, height: 200 },
+                maxSize: { width: 800, height: 600 }
+            });
+            modal.on('resizeEnd', (e) => log(`Resized to ${Math.round(e.width)}x${Math.round(e.height)}`));
+            modal.on('close', () => log('Resizable modal closed'));
+            modal.open();
+        }
+
+        function testFullFeaturedModal() {
+            // Check for saved state before opening
+            const savedState = localStorage.getItem('i360-modal-state-test-full-featured');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                log(`Found saved state: pos(${Math.round(state.position?.x)}, ${Math.round(state.position?.y)}), size(${Math.round(state.size?.width)}x${Math.round(state.size?.height)})`);
+            } else {
+                log('No saved state found, will use defaults');
+            }
+
+            const modal = ModalService.create({
+                title: 'Full Featured Modal',
+                content: `
+                    <p>This modal has all features enabled:</p>
+                    <ul>
+                        <li>✓ Draggable (grab the header)</li>
+                        <li>✓ Resizable (drag edges/corners)</li>
+                        <li>✓ Maximizable (double-click header or click button)</li>
+                        <li>✓ Position persistence (remembered on reload)</li>
+                    </ul>
+                    <p style="margin-top: 12px; font-size: 12px; color: var(--i360-modal-text-secondary);">
+                        Move or resize this modal, then close it. Re-open to see the saved position.
+                    </p>
+                `,
+                draggable: true,
+                resizable: true,
+                maximizable: true,
+                persist: true,
+                persistKey: 'test-full-featured',
+                width: 450,
+                height: 350
+            });
+            modal.on('maximize', () => log('Modal maximized'));
+            modal.on('restore', () => log('Modal restored'));
+            modal.on('close', () => {
+                log('Full featured modal closed');
+                // Log what was saved
+                const saved = localStorage.getItem('i360-modal-state-test-full-featured');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    log(`Saved state: pos(${Math.round(state.position?.x)}, ${Math.round(state.position?.y)}), size(${Math.round(state.size?.width)}x${Math.round(state.size?.height)})`);
+                }
+            });
+            modal.open();
+        }
+
+        function clearPersistedStates() {
+            // Clear all modal persistence states from localStorage
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('i360-modal-state-'));
+            keys.forEach(key => localStorage.removeItem(key));
+            log(`Cleared ${keys.length} saved modal position(s)`);
+        }
+
+        function testLoading() {
+            log('Showing loading modal for 3 seconds...');
+            const loading = ModalService.loading({
+                message: 'Processing...'
+            });
+            setTimeout(() => {
+                loading.close();
+                log('Loading complete');
+            }, 3000);
+        }
+
+        function testToast(type) {
+            log(`Showing ${type} toast...`);
+            ModalService.toast({
+                message: `This is a ${type} toast notification!`,
+                type: type,
+                duration: 3000
+            });
+        }
+
+        function testMultipleModals() {
+            log('Opening 3 cascading modals...');
+
+            const modal1 = ModalService.create({
+                title: 'Modal 1',
+                content: '<p>I am the first modal.</p>',
+                position: 'cascade',
+                draggable: true,
+                width: 350
+            });
+            modal1.on('close', () => log('Modal 1 closed'));
+            modal1.open();
+
+            setTimeout(() => {
+                const modal2 = ModalService.create({
+                    title: 'Modal 2',
+                    content: '<p>I am the second modal, opened on top.</p>',
+                    position: 'cascade',
+                    draggable: true,
+                    width: 350
+                });
+                modal2.on('close', () => log('Modal 2 closed'));
+                modal2.open();
+            }, 300);
+
+            setTimeout(() => {
+                const modal3 = ModalService.create({
+                    title: 'Modal 3',
+                    content: '<p>I am the third modal. Click any modal to bring it to front!</p>',
+                    position: 'cascade',
+                    draggable: true,
+                    width: 350
+                });
+                modal3.on('close', () => log('Modal 3 closed'));
+                modal3.open();
+            }, 600);
+        }
+
+        // ============================================
+        // Phase 2 Tests
+        // ============================================
+
+        function testFormModal() {
+            log('Opening form modal...');
+            const modal = new FormModal({
+                title: 'Edit Profile',
+                fields: [
+                    { name: 'name', label: 'Full Name', type: 'text', required: true, placeholder: 'Enter your name' },
+                    { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'you@example.com' },
+                    { name: 'role', label: 'Role', type: 'select', options: ['Developer', 'Designer', 'Manager', 'Other'] },
+                    { name: 'bio', label: 'Bio', type: 'textarea', placeholder: 'Tell us about yourself...', rows: 3 },
+                    { name: 'newsletter', label: 'Subscribe to newsletter', type: 'checkbox' }
+                ],
+                values: {
+                    name: 'John Doe',
+                    email: 'john@example.com',
+                    role: 'Developer',
+                    newsletter: true
+                },
+                width: 500,
+                onSubmit: (values) => {
+                    log('Form submitted', JSON.stringify(values));
+                },
+                onCancel: () => {
+                    log('Form cancelled');
+                }
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testFormModalValidation() {
+            log('Opening form with validation...');
+            const modal = new FormModal({
+                title: 'Registration',
+                fields: [
+                    {
+                        name: 'username',
+                        label: 'Username',
+                        type: 'text',
+                        required: true,
+                        validate: (val) => {
+                            if (val.length < 3) return 'Username must be at least 3 characters';
+                            if (!/^[a-z0-9_]+$/.test(val)) return 'Only lowercase letters, numbers, and underscores';
+                            return true;
+                        }
+                    },
+                    {
+                        name: 'password',
+                        label: 'Password',
+                        type: 'password',
+                        required: true,
+                        validate: (val) => {
+                            if (val.length < 8) return 'Password must be at least 8 characters';
+                            return true;
+                        }
+                    },
+                    {
+                        name: 'age',
+                        label: 'Age',
+                        type: 'number',
+                        min: 18,
+                        max: 120,
+                        help: 'Must be 18 or older'
+                    }
+                ],
+                validate: (values) => {
+                    if (values.age && values.age < 18) {
+                        return { age: 'You must be 18 or older to register' };
+                    }
+                    return true;
+                },
+                width: 450,
+                onSubmit: (values) => {
+                    log('Registration submitted', JSON.stringify(values));
+                }
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testContentMarkdown() {
+            log('Opening markdown content modal...');
+            const markdownContent = `# Welcome to Insight 360
+
+## Features
+
+- **Multi-LLM Support** - Claude, GPT, Gemini, Perplexity
+- **Agent Framework** - Build and run AI agents
+- **Context Injection** - Smart context management
+- **Streaming Responses** - Real-time AI responses
+
+## Code Example
+
+\`\`\`javascript
+const agent = await ModalService.create({
+    title: 'My Agent',
+    content: 'Hello World'
+});
+agent.open();
+\`\`\`
+
+## Learn More
+
+Visit the [documentation](https://example.com) for more info.`;
+
+            const modal = new ContentModal({
+                title: 'Documentation',
+                content: markdownContent,
+                contentType: 'markdown',
+                width: 600,
+                height: 500,
+                resizable: true
+            });
+            ModalService.register(modal);
+            modal.init().open();
+            log('Markdown modal opened');
+        }
+
+        function testContentCode() {
+            log('Opening code content modal...');
+            const codeContent = `// Agent Modal Usage Example
+const result = await AgentModal.run({
+    id: 'tech-analyst',
+    name: 'Technology Analyst',
+    prompt: 'Analyze the following technology...'
+}, {
+    context: {
+        companyName: 'Acme Corp',
+        industry: 'Technology'
+    },
+    model: 'claude-sonnet-4-5-20250929',
+    onComplete: (result) => {
+        console.log('Agent completed:', result);
+    }
+});`;
+
+            const modal = new ContentModal({
+                title: 'Code Example',
+                content: codeContent,
+                contentType: 'code',
+                language: 'javascript',
+                copyable: true,
+                width: 650,
+                height: 400
+            });
+            ModalService.register(modal);
+            modal.init().open();
+            log('Code modal opened');
+        }
+
+        function testContentImage() {
+            log('Opening image content modal...');
+            const modal = new ContentModal({
+                title: 'Image Preview',
+                content: 'https://picsum.photos/800/600',
+                contentType: 'image',
+                imageAlt: 'Random image from Picsum',
+                width: 'auto',
+                height: 'auto',
+                resizable: true
+            });
+            ModalService.register(modal);
+            modal.on('imageLoad', (e) => log(`Image loaded: ${e.width}x${e.height}`));
+            modal.on('imageError', () => log('Image failed to load'));
+            modal.init().open();
+        }
+
+        function testContentVideo() {
+            log('Opening video content modal...');
+            log('Note: External videos blocked by CSP - showing placeholder. YouTube embeds work.');
+
+            // External videos are blocked by CSP (media-src 'self' blob:)
+            // In production, use local video files or blob URLs
+            // For this test, we show a placeholder explaining the CSP restriction
+            const modal = new ContentModal({
+                title: 'Video Player',
+                content: `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;background:#1e293b;border-radius:8px;color:#e2e8f0;">
+                        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;margin-bottom:16px;">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                        <p style="margin:0;font-size:18px;font-weight:600;">Native Video Support</p>
+                        <p style="margin:8px 0 0;font-size:14px;opacity:0.7;text-align:center;max-width:400px;">
+                            External videos blocked by CSP.<br>
+                            Use local files: <code style="background:#334155;padding:2px 6px;border-radius:4px;">/videos/demo.mp4</code><br>
+                            Or try the <strong>YouTube Embed</strong> button!
+                        </p>
+                    </div>
+                `,
+                contentType: 'html',
+                width: 600,
+                height: 400,
+                resizable: true
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testContentYouTube() {
+            log('Opening YouTube embed modal...');
+            log('Note: YouTube may block embeds from localhost. Try Vimeo instead.');
+            // YouTube often blocks embeds from localhost - use Vimeo for testing
+            const modal = new ContentModal({
+                title: 'YouTube Video',
+                content: 'https://www.youtube.com/watch?v=jNQXAC9IVRw',
+                contentType: 'video',
+                autoplay: false,
+                width: 800,
+                height: 500,
+                resizable: true
+            });
+            ModalService.register(modal);
+            modal.on('videoLoad', (e) => log(`YouTube video loaded: ${e.type}, ID: ${e.videoId}`));
+            modal.init().open();
+        }
+
+        function testContentVimeo() {
+            log('Opening Vimeo embed modal...');
+            // Vimeo Staff Picks - reliable for embedding
+            const modal = new ContentModal({
+                title: 'Vimeo Video',
+                content: 'https://vimeo.com/347119375',
+                contentType: 'video',
+                autoplay: false,
+                width: 800,
+                height: 500,
+                resizable: true
+            });
+            ModalService.register(modal);
+            modal.on('videoLoad', (e) => log(`Vimeo video loaded: ${e.type}, ID: ${e.videoId}`));
+            modal.init().open();
+        }
+
+        function testChatModal() {
+            log('Opening chat modal...');
+            const modal = new ChatModal({
+                title: 'Chat Assistant',
+                placeholder: 'Ask me anything...',
+                messages: [
+                    { role: 'assistant', content: 'Hello! I\'m your AI assistant. How can I help you today?' }
+                ],
+                showTimestamps: true,
+                onSend: (message) => {
+                    log(`Message sent: ${message.substring(0, 30)}...`);
+
+                    // Simulate response after delay
+                    setTimeout(() => {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: `You said: "${message}"\n\nThis is a simulated response. In a real implementation, this would connect to an LLM API.`
+                        });
+                    }, 1000);
+                }
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testChatWithStreaming() {
+            log('Opening chat with streaming simulation...');
+            const modal = new ChatModal({
+                title: 'Streaming Chat',
+                placeholder: 'Type a message to see streaming...',
+                onSend: (message) => {
+                    log('Simulating streaming response...');
+
+                    // Simulate streaming
+                    const stream = modal.startStream('assistant');
+                    const responseWords = `I received your message: "${message}". This response is being streamed word by word to demonstrate the streaming capability of the ChatModal component.`.split(' ');
+
+                    let index = 0;
+                    const interval = setInterval(() => {
+                        if (index < responseWords.length) {
+                            stream.append(responseWords[index] + ' ');
+                            index++;
+                        } else {
+                            clearInterval(interval);
+                            stream.finish();
+                            log('Streaming complete');
+                        }
+                    }, 100);
+                }
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testAgentModal() {
+            log('Opening agent modal...');
+
+            // Note: This is a demo - in real use, it would connect to the actual agent API
+            const modal = new AgentModal({
+                agent: {
+                    id: 'demo-agent',
+                    name: 'Demo Assistant',
+                    description: 'A demonstration agent for testing the AgentModal component',
+                    prompt: 'You are a helpful assistant. Greet the user and ask how you can help them today.'
+                },
+                context: {
+                    userName: 'Test User'
+                },
+                autoStart: false, // Don't auto-start for demo
+                showControls: true,
+                onComplete: (result) => {
+                    log('Agent completed', result.result?.substring(0, 50) + '...');
+                },
+                onError: (error) => {
+                    log('Agent error', error.message);
+                }
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            // Add a demo message instead of connecting to API
+            modal.on('open', () => {
+                modal.addSystemMessage('Demo mode: This agent is not connected to an LLM API. Messages will be echoed back.', 'info');
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'Hello! I\'m a demo agent. In a real implementation, I would be powered by Claude, GPT, or another LLM. Try sending me a message!'
+                });
+                modal.setInputEnabled(true);
+            });
+
+            // Override send to echo messages for demo
+            modal._handleSend = function() {
+                const content = this.elements.input.value.trim();
+                if (!content) return;
+
+                this.addMessage({ role: 'user', content });
+                this.elements.input.value = '';
+
+                // Simulate response
+                setTimeout(() => {
+                    const stream = this.startStream('assistant');
+                    const response = `You said: "${content}"\n\nIn a production environment, this would be a real AI response. The AgentModal supports:\n\n• Streaming responses\n• Multiple LLM models\n• Context injection\n• Conversation history\n• Result acceptance workflow`;
+
+                    let i = 0;
+                    const interval = setInterval(() => {
+                        if (i < response.length) {
+                            stream.append(response[i]);
+                            i++;
+                        } else {
+                            clearInterval(interval);
+                            stream.finish();
+                        }
+                    }, 20);
+                }, 500);
+            };
+
+            modal.open();
+        }
+
+        function testAgentWithAttachments() {
+            log('Opening agent modal with file attachment support...');
+
+            const modal = new AgentModal({
+                agent: {
+                    id: 'file-agent',
+                    name: 'File Analyzer',
+                    description: 'An agent that can process attached files',
+                    prompt: 'You are a helpful file analyzer. You can process text files, images, and documents that users attach.'
+                },
+                autoStart: false,
+                showControls: true,
+                maxFileSize: 5 * 1024 * 1024, // 5MB for demo
+                onComplete: (result) => {
+                    log('Agent completed', result);
+                }
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            modal.on('open', () => {
+                modal.addSystemMessage('Demo mode: Try attaching files using the paperclip button or drag and drop.', 'info');
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'Hello! I\'m a file analyzer agent. You can:\n\n• Click the **📎 paperclip button** to attach files\n• **Drag and drop** files onto the input area\n• Attach multiple files at once\n\nSupported files: Images, text files, JSON, CSV, Markdown, and more. Try it out!'
+                });
+                modal.setInputEnabled(true);
+            });
+
+            // Override send to show attachments in demo
+            const originalHandleSend = modal._handleSend.bind(modal);
+            modal._handleSend = async function() {
+                const content = this.elements.input.value.trim();
+                const attachments = this.getAttachments();
+
+                if (!content && attachments.length === 0) return;
+
+                // Process and display
+                let messageContent = content || '';
+                const attachmentData = [];
+
+                for (const file of attachments) {
+                    const data = { name: file.name, type: file.type, size: file.size };
+
+                    if (file.type.startsWith('image/')) {
+                        data.dataUrl = await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = e => resolve(e.target.result);
+                            reader.readAsDataURL(file);
+                        });
+                    }
+
+                    if (file.type.startsWith('text/') || file.type === 'application/json') {
+                        data.textContent = await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = e => resolve(e.target.result);
+                            reader.readAsText(file);
+                        });
+                    }
+
+                    attachmentData.push(data);
+                }
+
+                // Render user message with attachments
+                this._renderUserMessageWithAttachments({
+                    role: 'user',
+                    content: messageContent || (attachmentData.length > 0 ? '[Files attached]' : ''),
+                    timestamp: new Date(),
+                    attachments: attachmentData
+                });
+
+                // Clear input and attachments
+                this.elements.input.value = '';
+                this._autoResizeInput();
+                this.clearAttachments();
+
+                // Simulate response
+                setTimeout(() => {
+                    const stream = this.startStream('assistant');
+                    let response = '';
+
+                    if (attachmentData.length > 0) {
+                        response = `I received ${attachmentData.length} file(s):\n\n`;
+                        attachmentData.forEach((att, i) => {
+                            response += `**${i + 1}. ${att.name}**\n`;
+                            response += `   • Type: ${att.type || 'unknown'}\n`;
+                            response += `   • Size: ${(att.size / 1024).toFixed(1)} KB\n`;
+                            if (att.textContent) {
+                                response += `   • Preview: "${att.textContent.substring(0, 100)}..."\n`;
+                            }
+                            response += '\n';
+                        });
+                        if (messageContent) {
+                            response += `Your message: "${messageContent}"`;
+                        }
+                    } else {
+                        response = `You said: "${messageContent}"\n\nTry attaching a file to see the attachment feature in action!`;
+                    }
+
+                    let i = 0;
+                    const interval = setInterval(() => {
+                        if (i < response.length) {
+                            stream.append(response[i]);
+                            i++;
+                        } else {
+                            clearInterval(interval);
+                            stream.finish();
+                        }
+                    }, 15);
+                }, 500);
+            };
+
+            modal.open();
+            log('File attachment feature: Use the paperclip button or drag & drop files');
+        }
+
+        function testAgentWithContext() {
+            log('Opening agent modal with context assets...');
+
+            // Sample context assets (simulating what would come from the database)
+            const sampleContextAssets = [
+                {
+                    id: 'ctx-1',
+                    asset_type: 'voice_dna',
+                    name: 'Brand Voice Guidelines',
+                    description: 'Our brand voice is professional yet approachable.',
+                    content_text: 'Our brand voice is professional yet approachable. We use clear, concise language and avoid jargon. Key traits: Confident, Helpful, Innovative, Human.',
+                    content_json: {
+                        tone: 'Professional yet approachable',
+                        traits: ['Confident', 'Helpful', 'Innovative', 'Human'],
+                        avoid: ['Jargon', 'Overly formal language', 'Buzzwords']
+                    }
+                },
+                {
+                    id: 'ctx-2',
+                    asset_type: 'icp',
+                    name: 'Enterprise Decision Maker',
+                    description: 'VP or Director level in mid-to-large enterprises',
+                    content_text: 'Title: VP/Director of Operations or IT. Company size: 500-5000 employees. Pain points: Manual processes, lack of visibility, scaling challenges.',
+                    content_json: {
+                        title: 'VP/Director of Operations or IT',
+                        company_size: '500-5000 employees',
+                        pain_points: ['Manual processes', 'Lack of visibility', 'Scaling challenges']
+                    }
+                },
+                {
+                    id: 'ctx-3',
+                    asset_type: 'products',
+                    name: 'Insight 360 Platform',
+                    description: 'AI-powered command center for values-based operations',
+                    content_text: 'Insight 360 is an AI command center that orchestrates multiple LLMs with context injection. Key features: Multi-agent workflows, Context management, Integrity metrics.',
+                    content_json: {
+                        name: 'Insight 360',
+                        tagline: 'AI-powered command center',
+                        features: ['Multi-agent workflows', 'Context management', 'Integrity metrics', 'Parthenon governance']
+                    }
+                },
+                {
+                    id: 'ctx-4',
+                    asset_type: 'company_description',
+                    name: 'About Our Company',
+                    description: 'Company mission and overview',
+                    content_text: 'We build AI systems that amplify human values and capabilities. Founded in 2024, we believe AI should serve humanity while maintaining ethical standards.',
+                }
+            ];
+
+            const modal = new AgentModal({
+                agent: {
+                    id: 'context-demo-agent',
+                    name: 'Context-Aware Assistant',
+                    description: 'An agent with applied context assets',
+                    prompt: 'You are a helpful assistant with access to company context.',
+                    context_assets: sampleContextAssets
+                },
+                autoStart: false,
+                showControls: true,
+                onComplete: (result) => {
+                    log('Agent completed', result);
+                }
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            modal.on('open', () => {
+                modal.addSystemMessage('Demo mode: This agent has 4 context assets applied. Click the eye icon to view each asset\'s content.', 'info');
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'Hello! I\'m a context-aware assistant. I have access to:\n\n• **Brand Voice Guidelines** - How to communicate\n• **Enterprise Decision Maker ICP** - Who we\'re talking to\n• **Insight 360 Platform** - What we offer\n• **Company Description** - Who we are\n\nExpand the "Context Assets" panel below the chat to see the applied context. Click the 👁️ icon on any asset to view its full content.'
+                });
+                modal.setInputEnabled(true);
+            });
+
+            // Override send for demo
+            modal._handleSend = async function() {
+                const content = this.elements.input.value.trim();
+                if (!content) return;
+
+                this.addMessage({ role: 'user', content });
+                this.elements.input.value = '';
+
+                setTimeout(() => {
+                    const stream = this.startStream('assistant');
+                    const response = `Based on my context, I can help you with questions about:\n\n**Our Voice**: ${sampleContextAssets[0].content_json.traits.join(', ')}\n\n**Our Product**: ${sampleContextAssets[2].content_json.features.join(', ')}\n\nYou said: "${content}"\n\nIn production, this response would incorporate the full context from all applied assets.`;
+
+                    let i = 0;
+                    const interval = setInterval(() => {
+                        if (i < response.length) {
+                            stream.append(response[i]);
+                            i++;
+                        } else {
+                            clearInterval(interval);
+                            stream.finish();
+                        }
+                    }, 15);
+                }, 500);
+            };
+
+            modal.open();
+            log('Context assets panel shows applied context - click eye icon to view details');
+        }
+
+        // ============================================
+        // Phase 3 Tests
+        // ============================================
+
+        function testAvatarFormModal() {
+            log('Opening form with avatar field...');
+            const modal = new FormModal({
+                title: 'Edit Profile',
+                fields: [
+                    {
+                        name: 'avatar',
+                        label: 'Profile Picture',
+                        type: 'avatar',
+                        avatars: [
+                            { name: 'Higgins', url: '/assets/Higgins02.svg' },
+                            { name: 'Robot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=1' },
+                            { name: 'Pixel', url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=1' },
+                            { name: 'Avatar 4', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1' }
+                        ]
+                    },
+                    { name: 'name', label: 'Full Name', type: 'text', required: true, placeholder: 'Enter your name' },
+                    { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'you@example.com' },
+                    { name: 'bio', label: 'Bio', type: 'textarea', placeholder: 'Tell us about yourself...', rows: 3 }
+                ],
+                values: {
+                    name: 'John Doe',
+                    email: 'john@example.com'
+                },
+                width: 550,
+                onSubmit: (values) => {
+                    log('Profile form submitted', `Avatar: ${values.avatar ? 'Set' : 'None'}, Name: ${values.name}`);
+                },
+                onCancel: () => {
+                    log('Profile form cancelled');
+                }
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testChatWithCustomAvatars() {
+            log('Opening chat with custom avatars...');
+            const modal = new ChatModal({
+                title: 'Chat with Custom Avatars',
+                placeholder: 'Type a message...',
+                assistantAvatar: '/assets/Higgins02.svg',
+                userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
+                showUserAvatar: true,
+                messages: [
+                    { role: 'assistant', content: 'Hello! Notice that both user and assistant messages now have custom avatars!' }
+                ],
+                showTimestamps: true,
+                onSend: (message) => {
+                    log(`Chat message sent: ${message.substring(0, 30)}...`);
+                    setTimeout(() => {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: `You said: "${message}"\n\nThis chat uses custom avatars for both user and assistant.`
+                        });
+                    }, 1000);
+                }
+            });
+            ModalService.register(modal);
+            modal.init().open();
+        }
+
+        function testSystemMessageAvatar() {
+            log('Testing system message with Higgins avatar...');
+            const modal = new ChatModal({
+                title: 'System Messages Demo',
+                placeholder: 'Type a message...',
+                systemAvatar: '/assets/Higgins02.svg',
+                messages: [
+                    { role: 'assistant', content: 'This chat demonstrates system messages with the Higgins avatar.' }
+                ]
+            });
+            ModalService.register(modal);
+            modal.init();
+            modal.on('open', () => {
+                modal.addSystemMessage('This is an info system message with Higgins avatar!', 'info');
+                setTimeout(() => modal.addSystemMessage('This is a warning message.', 'warning'), 500);
+                setTimeout(() => modal.addSystemMessage('This is an error message.', 'error'), 1000);
+            });
+            modal.open();
+        }
+
+        function testAgentWithPromptModal() {
+            log('Opening agent that will request input via PromptModal...');
+            const modal = new AgentModal({
+                agent: {
+                    id: 'input-agent',
+                    name: 'Input Collection Agent',
+                    description: 'Demonstrates using PromptModal for additional input'
+                },
+                autoStart: false,
+                showControls: true
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            modal.on('open', async () => {
+                modal.addSystemMessage('This agent will demonstrate input prompts.', 'info');
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'I need to collect some information. Let me show you the PromptModal in action...'
+                });
+
+                // Use PromptModal to collect input
+                setTimeout(async () => {
+                    const name = await modal.showInputPrompt({
+                        title: 'What is your name?',
+                        message: 'Please enter your name so I can personalize the experience:',
+                        placeholder: 'Your name'
+                    });
+
+                    if (name) {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: `Nice to meet you, ${name}! The PromptModal allows agents to request specific input from users during execution.`
+                        });
+                        log('PromptModal collected input', name);
+                    } else {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: 'No problem! The prompt was cancelled.'
+                        });
+                    }
+                    modal.setInputEnabled(true);
+                }, 1000);
+            });
+
+            modal.open();
+        }
+
+        function testAgentWithFormPrompt() {
+            log('Opening agent with form prompt...');
+            const modal = new AgentModal({
+                agent: {
+                    id: 'form-agent',
+                    name: 'Data Collection Agent',
+                    description: 'Demonstrates using FormModal for complex input'
+                },
+                autoStart: false,
+                showControls: true
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            modal.on('open', async () => {
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'I need to collect some structured data. Let me open a form for you...'
+                });
+
+                setTimeout(async () => {
+                    const data = await modal.showFormPrompt({
+                        title: 'Project Details',
+                        fields: [
+                            { name: 'projectName', label: 'Project Name', type: 'text', required: true },
+                            { name: 'priority', label: 'Priority', type: 'select', options: ['Low', 'Medium', 'High', 'Critical'] },
+                            { name: 'deadline', label: 'Deadline', type: 'date' },
+                            { name: 'notes', label: 'Additional Notes', type: 'textarea', rows: 2 }
+                        ],
+                        submitText: 'Submit Details',
+                        showInChat: true
+                    });
+
+                    if (data) {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: `Great! I've received the project details for "${data.projectName}" with ${data.priority || 'no'} priority.`
+                        });
+                        log('FormPrompt collected data', JSON.stringify(data));
+                    } else {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: 'The form was cancelled. Let me know if you want to try again.'
+                        });
+                    }
+                    modal.setInputEnabled(true);
+                }, 1000);
+            });
+
+            modal.open();
+        }
+
+        function testAgentWithSelection() {
+            log('Opening agent with selection dialog...');
+            const modal = new AgentModal({
+                agent: {
+                    id: 'selection-agent',
+                    name: 'Choice Agent',
+                    description: 'Demonstrates using selection dialogs'
+                },
+                autoStart: false,
+                showControls: true
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            modal.on('open', async () => {
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'I can help you choose from several options. Let me present a selection dialog...'
+                });
+
+                setTimeout(async () => {
+                    const choice = await modal.showSelection({
+                        title: 'Choose Your Preference',
+                        message: 'Which AI model would you like me to use?',
+                        options: [
+                            { value: 'claude', label: 'Claude Sonnet' },
+                            { value: 'gpt4', label: 'GPT-4o' },
+                            { value: 'gemini', label: 'Gemini Pro' },
+                            { value: 'perplexity', label: 'Perplexity' }
+                        ],
+                        submitText: 'Select Model',
+                        showInChat: true
+                    });
+
+                    if (choice) {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: `You selected "${choice}". In a real implementation, I would now switch to that model!`
+                        });
+                        log('Selection made', choice);
+                    } else {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: 'Selection was cancelled. I\'ll continue with the default model.'
+                        });
+                    }
+                    modal.setInputEnabled(true);
+                }, 1000);
+            });
+
+            modal.open();
+        }
+
+        function testAgentWithMultiSelection() {
+            log('Opening agent with multi-selection dialog...');
+            const modal = new AgentModal({
+                agent: {
+                    id: 'multi-selection-agent',
+                    name: 'Feature Selector Agent',
+                    description: 'Demonstrates using multi-selection dialogs'
+                },
+                autoStart: false,
+                showControls: true
+            });
+
+            ModalService.register(modal);
+            modal.init();
+
+            modal.on('open', async () => {
+                modal.addMessage({
+                    role: 'assistant',
+                    content: 'I can help you select multiple options at once. Let me show you a multi-selection dialog...'
+                });
+
+                setTimeout(async () => {
+                    // First, show a multi-selection with min/max constraints
+                    const features = await modal.showSelection({
+                        title: 'Select Features',
+                        message: 'Choose the features you want to enable (select 2-4):',
+                        multiple: true,
+                        minSelect: 2,
+                        maxSelect: 4,
+                        options: [
+                            { value: 'auth', label: 'Authentication', description: 'User login and signup' },
+                            { value: 'api', label: 'REST API', description: 'External API access' },
+                            { value: 'analytics', label: 'Analytics', description: 'Usage tracking' },
+                            { value: 'notifications', label: 'Notifications', description: 'Email & push alerts' },
+                            { value: 'export', label: 'Data Export', description: 'CSV and PDF exports' },
+                            { value: 'integrations', label: 'Integrations', description: 'Third-party connections' }
+                        ],
+                        submitText: 'Enable Features',
+                        showInChat: true
+                    });
+
+                    if (features && features.length > 0) {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: `You enabled ${features.length} feature(s). Now let me ask about your preferences...`
+                        });
+                        log('Multi-selection made', JSON.stringify(features));
+
+                        // Follow up with another multi-selection using the convenience method
+                        setTimeout(async () => {
+                            const integrations = await modal.showMultiSelection({
+                                title: 'Connect Integrations',
+                                message: 'Which services should we integrate with?',
+                                options: [
+                                    { value: 'slack', label: 'Slack' },
+                                    { value: 'teams', label: 'Microsoft Teams' },
+                                    { value: 'discord', label: 'Discord' },
+                                    { value: 'email', label: 'Email (SMTP)' }
+                                ],
+                                submitText: 'Connect',
+                                showInChat: true
+                            });
+
+                            if (integrations && integrations.length > 0) {
+                                modal.addMessage({
+                                    role: 'assistant',
+                                    content: `Perfect! I'll set up connections to: ${integrations.join(', ')}. Your configuration is complete!`
+                                });
+                                log('Integrations selected', JSON.stringify(integrations));
+                            } else {
+                                modal.addMessage({
+                                    role: 'assistant',
+                                    content: 'No integrations selected. You can always add them later.'
+                                });
+                            }
+                            modal.setInputEnabled(true);
+                        }, 1500);
+                    } else {
+                        modal.addMessage({
+                            role: 'assistant',
+                            content: 'Multi-selection was cancelled. Let me know if you want to try again.'
+                        });
+                        modal.setInputEnabled(true);
+                    }
+                }, 1000);
+            });
+
+            modal.open();
+        }
+
+        // ============================================
+        // Checkbox Group Tests
+        // ============================================
+
+        async function testCheckboxGroup() {
+            log('Opening checkbox group form...');
+
+            const result = await ModalService.form({
+                title: 'Feature Selection',
+                fields: [
+                    {
+                        type: 'text',
+                        name: 'projectName',
+                        label: 'Project Name',
+                        required: true,
+                        placeholder: 'My Awesome Project'
+                    },
+                    {
+                        type: 'checkbox-group',
+                        name: 'features',
+                        label: 'Select Features to Enable',
+                        options: [
+                            { value: 'auth', label: 'Authentication', description: 'User login and registration' },
+                            { value: 'api', label: 'REST API', description: 'Expose data via REST endpoints' },
+                            { value: 'admin', label: 'Admin Dashboard', description: 'Management interface for admins' },
+                            { value: 'analytics', label: 'Analytics', description: 'Track user behavior and metrics' },
+                            { value: 'notifications', label: 'Notifications', description: 'Email and push notifications' }
+                        ]
+                    },
+                    {
+                        type: 'select',
+                        name: 'priority',
+                        label: 'Priority',
+                        options: [
+                            { value: 'low', label: 'Low' },
+                            { value: 'medium', label: 'Medium' },
+                            { value: 'high', label: 'High' }
+                        ]
+                    }
+                ],
+                values: {
+                    features: ['auth', 'api']  // Pre-select some options
+                },
+                width: 500,
+                submitText: 'Create Project',
+                cancelText: 'Cancel'
+            });
+
+            if (result) {
+                const featuresSelected = result.features?.length || 0;
+                log('Checkbox group form submitted', `Project: ${result.projectName}, Features: ${featuresSelected} selected`);
+                console.log('Form result:', result);
+            } else {
+                log('Checkbox group form cancelled');
+            }
+        }
+
+        async function testContextAssetModal() {
+            log('Opening context asset selector (simulated)...');
+
+            // Simulate available assets like in agent-runner.html
+            const mockAssets = [
+                { id: 'asset-1', name: 'Company Description', type: 'company_description' },
+                { id: 'asset-2', name: 'Product Catalog', type: 'products' },
+                { id: 'asset-3', name: 'Brand Voice Guide', type: 'voice_dna' },
+                { id: 'asset-4', name: 'Target Customer Profile', type: 'icp' },
+                { id: 'asset-5', name: 'Competitor Analysis', type: 'competitors' },
+                { id: 'asset-6', name: 'FAQ Document', type: 'faqs' }
+            ];
+
+            const getAssetIcon = (type) => {
+                const icons = {
+                    'company_description': '🏢',
+                    'products': '📦',
+                    'voice_dna': '🎤',
+                    'icp': '👤',
+                    'competitors': '⚔️',
+                    'faqs': '❓'
+                };
+                return icons[type] || '📄';
+            };
+
+            const result = await ModalService.form({
+                title: 'Add Context Assets',
+                width: 500,
+                fields: [
+                    {
+                        type: 'select',
+                        name: 'injection_mode',
+                        label: 'Injection Mode',
+                        options: [
+                            { value: 'on_demand', label: 'On Demand (toggle per message)' },
+                            { value: 'always', label: 'Always (include in all messages)' }
+                        ],
+                        value: 'on_demand'
+                    },
+                    {
+                        type: 'checkbox-group',
+                        name: 'selected_assets',
+                        label: 'Select Assets to Add',
+                        options: mockAssets.map(asset => ({
+                            value: asset.id,
+                            label: `${getAssetIcon(asset.type)} ${asset.name}`,
+                            description: asset.type.replace('_', ' ')
+                        }))
+                    }
+                ],
+                submitText: 'Add Selected',
+                cancelText: 'Cancel'
+            });
+
+            if (result && result.selected_assets && result.selected_assets.length > 0) {
+                log('Context assets selected', `${result.selected_assets.length} assets with mode: ${result.injection_mode}`);
+                console.log('Selected assets:', result);
+            } else {
+                log('Context asset selection cancelled or empty');
+            }
+        }
+    </script>
+</body>
+</html>
