@@ -162,6 +162,16 @@ function setupEventListeners() {
         chatMessages.addEventListener('scroll', function() {
             updateScrollToBottomButton();
         });
+
+        // Event delegation for copy buttons (more reliable than inline onclick)
+        chatMessages.addEventListener('click', function(e) {
+            const copyBtn = e.target.closest('.message-action[title="Copy message"]');
+            if (copyBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                copyMessage(copyBtn);
+            }
+        });
     }
 }
 
@@ -448,7 +458,7 @@ function addMessage(role, content, isLoading = false, autoScroll = true) {
             <div class="message-header">
                 <span class="message-author">${label}</span>
                 <span class="message-time">${new Date().toLocaleTimeString()}</span>
-                <button class="message-action" onclick="copyMessage(this)" title="Copy message">
+                <button class="message-action" title="Copy message">
                     <i data-lucide="copy"></i>
                 </button>
                 ${artifactButton}
@@ -1034,16 +1044,23 @@ async function copyMessage(button) {
         await navigator.clipboard.writeText(text);
 
         // Visual feedback - change icon temporarily
-        const icon = button.querySelector('i');
-        icon.setAttribute('data-lucide', 'check');
-        lucide.createIcons();
+        // Lucide replaces <i> with <svg>, so we need to handle both cases
+        const icon = button.querySelector('i, svg');
+        if (icon) {
+            // Replace the icon with a check mark
+            button.innerHTML = '<i data-lucide="check"></i>';
+            lucide.createIcons({ nodes: [button] });
+        }
         button.classList.add('copied');
 
         setTimeout(() => {
-            icon.setAttribute('data-lucide', 'copy');
-            lucide.createIcons();
+            // Restore original copy icon
+            button.innerHTML = '<i data-lucide="copy"></i>';
+            lucide.createIcons({ nodes: [button] });
             button.classList.remove('copied');
         }, 2000);
+
+        setStatus('Copied to clipboard');
     } catch (error) {
         console.error('Failed to copy:', error);
         setStatus('Failed to copy to clipboard');
@@ -1379,6 +1396,9 @@ messageStyles.textContent = `
         padding: 0.25rem;
         border-radius: var(--radius-sm);
         transition: opacity 0.2s, color 0.2s, background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .message-action:first-of-type {
@@ -1405,9 +1425,11 @@ messageStyles.textContent = `
         margin-bottom: var(--spacing-xs);
     }
 
-    .message-action i {
+    .message-action i,
+    .message-action svg {
         width: 14px;
         height: 14px;
+        pointer-events: none;
     }
 
     /* Artifact Modal */
@@ -1767,6 +1789,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Store reference to current artifact content
 let currentArtifactContent = '';
+let currentArtifactHtmlContent = ''; // HTML content for PDF export
 let currentArtifactMessageEl = null;
 
 /**
@@ -1779,6 +1802,7 @@ function openArtifactModal(button) {
     if (!contentDiv) return;
 
     currentArtifactContent = contentDiv.innerText;
+    currentArtifactHtmlContent = contentDiv.innerHTML; // Store HTML for PDF export
     currentArtifactMessageEl = messageDiv;
 
     const modal = document.getElementById('artifactModal');
@@ -1797,6 +1821,7 @@ function closeArtifactModal() {
         modal.classList.remove('active');
     }
     currentArtifactContent = '';
+    currentArtifactHtmlContent = '';
     currentArtifactMessageEl = null;
 }
 
@@ -1833,31 +1858,282 @@ async function exportAsDocument(format) {
             const blob = new Blob([currentArtifactContent], { type: 'text/markdown' });
             downloadBlob(blob, `${filename}.md`);
         } else if (format === 'pdf') {
-            // For PDF, we'll use the browser's print functionality or a backend service
+            // For PDF, use professional HTML template with print styles
             const printWindow = window.open('', '_blank');
+            // Use HTML content directly (preserves tables, formatting) or fallback to markdown parsing
+            const formattedContent = currentArtifactHtmlContent
+                ? cleanHtmlForPrint(currentArtifactHtmlContent)
+                : formatContentForPrint(currentArtifactContent);
+            const dateStr = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Higgins Response</title>
+                    <meta charset="utf-8">
+                    <title>Insight 360 - AI Response</title>
                     <style>
-                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                               padding: 40px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-                        pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow-x: auto; }
-                        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
-                        h1, h2, h3 { margin-top: 1.5em; }
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+                        * {
+                            box-sizing: border-box;
+                        }
+
+                        @page {
+                            size: letter;
+                            margin: 1in 0.75in;
+                        }
+
+                        body {
+                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            font-size: 11pt;
+                            line-height: 1.7;
+                            color: #1a1a2e;
+                            max-width: 100%;
+                            margin: 0;
+                            padding: 0;
+                            background: #fff;
+                        }
+
+                        .document {
+                            max-width: 7.5in;
+                            margin: 0 auto;
+                            padding: 0;
+                        }
+
+                        /* Header */
+                        .document-header {
+                            border-bottom: 3px solid #6366f1;
+                            padding-bottom: 20px;
+                            margin-bottom: 30px;
+                        }
+
+                        .document-header h1 {
+                            font-size: 24pt;
+                            font-weight: 700;
+                            color: #1a1a2e;
+                            margin: 0 0 8px 0;
+                            letter-spacing: -0.5px;
+                        }
+
+                        .document-meta {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            color: #64748b;
+                            font-size: 9pt;
+                        }
+
+                        .document-meta .brand {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-weight: 500;
+                        }
+
+                        .document-meta .brand-icon {
+                            width: 20px;
+                            height: 20px;
+                            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                            border-radius: 4px;
+                        }
+
+                        /* Content Styling */
+                        .document-content {
+                            font-size: 11pt;
+                        }
+
+                        .document-content p {
+                            margin: 0 0 14px 0;
+                            text-align: justify;
+                        }
+
+                        .document-content h1 {
+                            font-size: 18pt;
+                            font-weight: 700;
+                            color: #1a1a2e;
+                            margin: 28px 0 14px 0;
+                            padding-bottom: 8px;
+                            border-bottom: 2px solid #e2e8f0;
+                        }
+
+                        .document-content h2 {
+                            font-size: 14pt;
+                            font-weight: 600;
+                            color: #334155;
+                            margin: 24px 0 12px 0;
+                        }
+
+                        .document-content h3 {
+                            font-size: 12pt;
+                            font-weight: 600;
+                            color: #475569;
+                            margin: 20px 0 10px 0;
+                        }
+
+                        .document-content h4 {
+                            font-size: 11pt;
+                            font-weight: 600;
+                            color: #64748b;
+                            margin: 16px 0 8px 0;
+                        }
+
+                        /* Lists */
+                        .document-content ul,
+                        .document-content ol {
+                            margin: 12px 0;
+                            padding-left: 24px;
+                        }
+
+                        .document-content li {
+                            margin: 6px 0;
+                        }
+
+                        /* Code Blocks */
+                        .document-content pre {
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-left: 4px solid #6366f1;
+                            border-radius: 6px;
+                            padding: 16px;
+                            margin: 16px 0;
+                            overflow-x: auto;
+                            font-family: 'JetBrains Mono', 'Consolas', monospace;
+                            font-size: 9pt;
+                            line-height: 1.5;
+                        }
+
+                        .document-content code {
+                            font-family: 'JetBrains Mono', 'Consolas', monospace;
+                            background: #f1f5f9;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            font-size: 9pt;
+                            color: #6366f1;
+                        }
+
+                        .document-content pre code {
+                            background: transparent;
+                            padding: 0;
+                            color: inherit;
+                        }
+
+                        /* Blockquotes */
+                        .document-content blockquote {
+                            border-left: 4px solid #6366f1;
+                            background: #f8fafc;
+                            margin: 16px 0;
+                            padding: 12px 16px;
+                            font-style: italic;
+                            color: #475569;
+                        }
+
+                        /* Tables */
+                        .document-content table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 16px 0;
+                            font-size: 10pt;
+                        }
+
+                        .document-content th,
+                        .document-content td {
+                            border: 1px solid #e2e8f0;
+                            padding: 10px 12px;
+                            text-align: left;
+                        }
+
+                        .document-content th {
+                            background: #f8fafc;
+                            font-weight: 600;
+                            color: #334155;
+                        }
+
+                        .document-content tr:nth-child(even) td {
+                            background: #fafafa;
+                        }
+
+                        /* Horizontal Rule */
+                        .document-content hr {
+                            border: none;
+                            border-top: 1px solid #e2e8f0;
+                            margin: 24px 0;
+                        }
+
+                        /* Strong/Bold */
+                        .document-content strong {
+                            font-weight: 600;
+                            color: #1a1a2e;
+                        }
+
+                        /* Footer */
+                        .document-footer {
+                            margin-top: 40px;
+                            padding-top: 16px;
+                            border-top: 1px solid #e2e8f0;
+                            font-size: 8pt;
+                            color: #94a3b8;
+                            text-align: center;
+                        }
+
+                        /* Print-specific */
+                        @media print {
+                            body {
+                                -webkit-print-color-adjust: exact;
+                                print-color-adjust: exact;
+                            }
+
+                            .document-header {
+                                page-break-after: avoid;
+                            }
+
+                            .document-content h1,
+                            .document-content h2,
+                            .document-content h3 {
+                                page-break-after: avoid;
+                            }
+
+                            .document-content pre,
+                            .document-content table {
+                                page-break-inside: avoid;
+                            }
+                        }
                     </style>
                 </head>
                 <body>
-                    <h1>Higgins Response</h1>
-                    <p><small>Generated: ${new Date().toLocaleString()}</small></p>
-                    <hr>
-                    <div>${formatContentForPrint(currentArtifactContent)}</div>
+                    <div class="document">
+                        <div class="document-header">
+                            <h1>AI-Generated Response</h1>
+                            <div class="document-meta">
+                                <div class="brand">
+                                    <div class="brand-icon"></div>
+                                    <span>Insight 360 | Higgins AI Assistant</span>
+                                </div>
+                                <div class="date">${dateStr}</div>
+                            </div>
+                        </div>
+                        <div class="document-content">
+                            ${formattedContent}
+                        </div>
+                        <div class="document-footer">
+                            Generated by Insight 360 &bull; Powered by AI &bull; For internal use
+                        </div>
+                    </div>
                 </body>
                 </html>
             `);
             printWindow.document.close();
-            printWindow.print();
+
+            // Wait for fonts to load before printing
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
         } else if (format === 'docx') {
             // For DOCX, create a simple HTML-based download that Word can open
             const htmlContent = `
@@ -1884,16 +2160,178 @@ async function exportAsDocument(format) {
 
 /**
  * Format content for print/export
+ * Converts markdown-style content to properly formatted HTML
  */
 function formatContentForPrint(text) {
-    // Convert markdown-ish content to HTML
-    return text
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>')
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    // First, handle code blocks to protect them from other transformations
+    const codeBlocks = [];
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+        const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+        codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${escapeHtml(code.trim())}</code></pre>`);
+        return placeholder;
+    });
+
+    // Handle markdown tables
+    const tables = [];
+    text = text.replace(/^(\|.+\|)\n(\|[\s:-]+\|)\n((?:\|.+\|\n?)+)/gm, (match, headerRow, separatorRow, bodyRows) => {
+        const placeholder = `__TABLE_${tables.length}__`;
+
+        // Parse header
+        const headers = headerRow.split('|').filter(cell => cell.trim() !== '').map(cell => cell.trim());
+
+        // Parse alignment from separator row
+        const alignments = separatorRow.split('|').filter(cell => cell.trim() !== '').map(cell => {
+            const trimmed = cell.trim();
+            if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center';
+            if (trimmed.endsWith(':')) return 'right';
+            return 'left';
+        });
+
+        // Parse body rows
+        const rows = bodyRows.trim().split('\n').map(row =>
+            row.split('|').filter(cell => cell.trim() !== '').map(cell => cell.trim())
+        );
+
+        // Build HTML table
+        let tableHtml = '<table>\n<thead>\n<tr>\n';
+        headers.forEach((header, i) => {
+            const align = alignments[i] || 'left';
+            tableHtml += `<th style="text-align: ${align}">${header}</th>\n`;
+        });
+        tableHtml += '</tr>\n</thead>\n<tbody>\n';
+
+        rows.forEach(row => {
+            tableHtml += '<tr>\n';
+            row.forEach((cell, i) => {
+                const align = alignments[i] || 'left';
+                tableHtml += `<td style="text-align: ${align}">${cell}</td>\n`;
+            });
+            tableHtml += '</tr>\n';
+        });
+
+        tableHtml += '</tbody>\n</table>';
+        tables.push(tableHtml);
+        return placeholder;
+    });
+
+    // Handle inline code
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Handle headers (must be at start of line)
+    text = text.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+    text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+    // Handle horizontal rules (but not table separators which we've already processed)
+    text = text.replace(/^---+$/gm, '<hr>');
+    text = text.replace(/^\*\*\*+$/gm, '<hr>');
+
+    // Handle bold and italic
+    text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    text = text.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+    text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+    // Handle unordered lists (detect contiguous list items)
+    text = text.replace(/^[\s]*[-*+] (.+)$/gm, '<li>$1</li>');
+
+    // Handle numbered lists
+    text = text.replace(/^[\s]*\d+\. (.+)$/gm, '<li>$1</li>');
+
+    // Wrap consecutive <li> items in <ul> or <ol>
+    text = text.replace(/(<li>.*?<\/li>\n?)+/gs, (match) => {
+        return '<ul>' + match + '</ul>';
+    });
+
+    // Handle blockquotes
+    text = text.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    // Merge consecutive blockquotes
+    text = text.replace(/<\/blockquote>\n<blockquote>/g, '<br>');
+
+    // Handle paragraphs - split by double newlines
+    const paragraphs = text.split(/\n\n+/);
+    text = paragraphs.map(p => {
+        p = p.trim();
+        // Don't wrap if already wrapped in block element or is a placeholder
+        if (p.startsWith('<h') || p.startsWith('<ul') || p.startsWith('<ol') ||
+            p.startsWith('<pre') || p.startsWith('<blockquote') || p.startsWith('<hr') ||
+            p.startsWith('__CODE_BLOCK_') || p.startsWith('__TABLE_')) {
+            return p;
+        }
+        // Convert single newlines to <br> within paragraphs
+        p = p.replace(/\n/g, '<br>');
+        return `<p>${p}</p>`;
+    }).join('\n');
+
+    // Restore code blocks
+    codeBlocks.forEach((block, i) => {
+        text = text.replace(`__CODE_BLOCK_${i}__`, block);
+    });
+
+    // Restore tables
+    tables.forEach((table, i) => {
+        text = text.replace(`__TABLE_${i}__`, table);
+    });
+
+    // Clean up any empty paragraphs
+    text = text.replace(/<p>\s*<\/p>/g, '');
+    text = text.replace(/<p>(<h[1-4]>)/g, '$1');
+    text = text.replace(/(<\/h[1-4]>)<\/p>/g, '$1');
+    text = text.replace(/<p>(<table>)/g, '$1');
+    text = text.replace(/(<\/table>)<\/p>/g, '$1');
+
+    return text;
+}
+
+/**
+ * Clean HTML content for print/PDF export
+ * Removes interactive elements and normalizes styles for print
+ */
+function cleanHtmlForPrint(html) {
+    // Create a temporary container to parse and clean the HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // Remove any interactive elements (buttons, inputs, etc.)
+    temp.querySelectorAll('button, input, select, .message-action, .copy-button').forEach(el => el.remove());
+
+    // Remove any script tags
+    temp.querySelectorAll('script').forEach(el => el.remove());
+
+    // Remove any data attributes and event handlers by cloning
+    const cleanNode = (node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            // Remove onclick and other event attributes
+            const attrs = Array.from(node.attributes);
+            attrs.forEach(attr => {
+                if (attr.name.startsWith('on') || attr.name.startsWith('data-')) {
+                    node.removeAttribute(attr.name);
+                }
+            });
+        }
+    };
+
+    temp.querySelectorAll('*').forEach(cleanNode);
+
+    // Ensure tables have proper styling classes
+    temp.querySelectorAll('table').forEach(table => {
+        if (!table.classList.contains('print-table')) {
+            table.classList.add('print-table');
+        }
+    });
+
+    return temp.innerHTML;
+}
+
+/**
+ * Escape HTML special characters
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**

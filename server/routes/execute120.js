@@ -933,5 +933,393 @@ module.exports = function(supabase) {
         }
     });
 
+    // ============================================
+    // STRATEGY 120 INTEGRATION (Phase 32)
+    // ============================================
+
+    /**
+     * GET /api/execute120/departments/:id/initiatives
+     * Get strategic initiatives assigned to a department
+     */
+    router.get('/departments/:id/initiatives', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { status } = req.query;
+
+            let query = supabase
+                .from('department_initiative_assignments')
+                .select(`
+                    id,
+                    assignment_type,
+                    responsibility_weight,
+                    notes,
+                    initiative:strategy_initiatives(
+                        id,
+                        name,
+                        description,
+                        perspective_type,
+                        ai_investment_type,
+                        status,
+                        priority,
+                        current_progress,
+                        timeline
+                    )
+                `)
+                .eq('department_id', id)
+                .eq('is_active', true);
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            // Filter by initiative status if provided
+            let initiatives = (data || []).map(d => ({
+                ...d.initiative,
+                assignment_type: d.assignment_type,
+                responsibility_weight: d.responsibility_weight
+            }));
+
+            if (status) {
+                initiatives = initiatives.filter(i => i.status === status);
+            }
+
+            res.json({ success: true, data: initiatives });
+        } catch (error) {
+            console.error('Error fetching department initiatives:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/execute120/departments/:id/initiatives
+     * Assign an initiative to a department
+     */
+    router.post('/departments/:id/initiatives', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const { id: department_id } = req.params;
+            const { initiative_id, assignment_type, responsibility_weight, notes } = req.body;
+
+            if (!initiative_id) {
+                return res.status(400).json({ success: false, error: 'initiative_id is required' });
+            }
+
+            const { data, error } = await supabase
+                .from('department_initiative_assignments')
+                .insert({
+                    user_id: userId,
+                    department_id,
+                    initiative_id,
+                    assignment_type: assignment_type || 'contributor',
+                    responsibility_weight: responsibility_weight || 25,
+                    notes
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error assigning initiative:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/execute120/departments/:deptId/initiatives/:initId
+     * Remove initiative assignment from department
+     */
+    router.delete('/departments/:deptId/initiatives/:initId', async (req, res) => {
+        try {
+            const { deptId, initId } = req.params;
+
+            const { error } = await supabase
+                .from('department_initiative_assignments')
+                .delete()
+                .eq('department_id', deptId)
+                .eq('initiative_id', initId);
+
+            if (error) throw error;
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error removing initiative assignment:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/execute120/workflows/by-initiative/:initiativeId
+     * Get workflows linked to a specific initiative
+     */
+    router.get('/workflows/by-initiative/:initiativeId', async (req, res) => {
+        try {
+            const { initiativeId } = req.params;
+
+            const { data, error } = await supabase
+                .from('workflow_initiative_mappings')
+                .select(`
+                    id,
+                    contribution_type,
+                    contribution_weight,
+                    workflow:workflows(
+                        id,
+                        name,
+                        description,
+                        icon,
+                        color,
+                        category,
+                        usage_count
+                    )
+                `)
+                .eq('initiative_id', initiativeId)
+                .eq('is_active', true);
+
+            if (error) throw error;
+
+            const workflows = (data || []).map(d => ({
+                ...d.workflow,
+                contribution_type: d.contribution_type,
+                contribution_weight: d.contribution_weight
+            }));
+
+            res.json({ success: true, data: workflows });
+        } catch (error) {
+            console.error('Error fetching workflows by initiative:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/execute120/workflow-initiative-link
+     * Link a workflow to an initiative
+     */
+    router.post('/workflow-initiative-link', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const { workflow_id, initiative_id, contribution_type, contribution_weight, description } = req.body;
+
+            if (!workflow_id || !initiative_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'workflow_id and initiative_id are required'
+                });
+            }
+
+            const { data, error } = await supabase
+                .from('workflow_initiative_mappings')
+                .insert({
+                    user_id: userId,
+                    workflow_id,
+                    initiative_id,
+                    contribution_type: contribution_type || 'supports',
+                    contribution_weight: contribution_weight || 10,
+                    description
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error linking workflow to initiative:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/execute120/workflow-initiative-link/:id
+     * Remove workflow-initiative link
+     */
+    router.delete('/workflow-initiative-link/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { error } = await supabase
+                .from('workflow_initiative_mappings')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error removing workflow-initiative link:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * POST /api/execute120/initiative-progress
+     * Record progress update for an initiative
+     */
+    router.post('/initiative-progress', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const {
+                initiative_id,
+                source_type,
+                workflow_execution_id,
+                progress_increment,
+                description,
+                business_impact
+            } = req.body;
+
+            if (!initiative_id) {
+                return res.status(400).json({ success: false, error: 'initiative_id is required' });
+            }
+
+            // Get current initiative progress
+            const { data: initiative, error: initError } = await supabase
+                .from('strategy_initiatives')
+                .select('current_progress')
+                .eq('id', initiative_id)
+                .single();
+
+            if (initError) throw initError;
+
+            const previousProgress = initiative?.current_progress || 0;
+            const increment = parseFloat(progress_increment) || 0;
+            const newProgress = Math.min(100, previousProgress + increment);
+
+            // Record progress entry
+            const { data: entry, error: entryError } = await supabase
+                .from('initiative_progress_entries')
+                .insert({
+                    user_id: userId,
+                    initiative_id,
+                    source_type: source_type || 'manual',
+                    workflow_execution_id,
+                    progress_increment: increment,
+                    previous_progress: previousProgress,
+                    new_progress: newProgress,
+                    description,
+                    business_impact: business_impact || {}
+                })
+                .select()
+                .single();
+
+            if (entryError) throw entryError;
+
+            // Update initiative progress
+            const { error: updateError } = await supabase
+                .from('strategy_initiatives')
+                .update({
+                    current_progress: newProgress,
+                    progress_updated_at: new Date().toISOString()
+                })
+                .eq('id', initiative_id);
+
+            if (updateError) throw updateError;
+
+            res.json({
+                success: true,
+                data: {
+                    entry,
+                    previous_progress: previousProgress,
+                    new_progress: newProgress
+                }
+            });
+        } catch (error) {
+            console.error('Error recording initiative progress:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/execute120/initiative-progress/:initiativeId
+     * Get progress history for an initiative
+     */
+    router.get('/initiative-progress/:initiativeId', async (req, res) => {
+        try {
+            const { initiativeId } = req.params;
+            const { limit = 20 } = req.query;
+
+            const { data, error } = await supabase
+                .from('initiative_progress_entries')
+                .select(`
+                    id,
+                    source_type,
+                    progress_increment,
+                    previous_progress,
+                    new_progress,
+                    description,
+                    business_impact,
+                    recorded_at,
+                    workflow_execution:workflow_executions(
+                        id,
+                        workflow:workflows(id, name)
+                    )
+                `)
+                .eq('initiative_id', initiativeId)
+                .order('recorded_at', { ascending: false })
+                .limit(parseInt(limit));
+
+            if (error) throw error;
+
+            res.json({ success: true, data: data || [] });
+        } catch (error) {
+            console.error('Error fetching initiative progress:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/execute120/strategic-overview
+     * Get department strategic overview (initiatives + workflows summary)
+     */
+    router.get('/strategic-overview', async (req, res) => {
+        try {
+            // Get all departments with their initiative counts
+            const { data: departments, error: deptError } = await supabase
+                .from('departments')
+                .select('id, name, slug, icon, color')
+                .eq('is_active', true)
+                .order('sort_order');
+
+            if (deptError) throw deptError;
+
+            // Get initiative assignments per department
+            const { data: assignments, error: assignError } = await supabase
+                .from('department_initiative_assignments')
+                .select(`
+                    department_id,
+                    initiative:strategy_initiatives(
+                        id,
+                        status,
+                        current_progress,
+                        priority
+                    )
+                `)
+                .eq('is_active', true);
+
+            if (assignError) throw assignError;
+
+            // Aggregate stats per department
+            const overview = departments.map(dept => {
+                const deptAssignments = (assignments || []).filter(a => a.department_id === dept.id);
+                const initiatives = deptAssignments.map(a => a.initiative).filter(Boolean);
+
+                return {
+                    ...dept,
+                    initiative_count: initiatives.length,
+                    active_initiatives: initiatives.filter(i => i.status === 'in_progress').length,
+                    avg_progress: initiatives.length > 0
+                        ? Math.round(initiatives.reduce((sum, i) => sum + (i.current_progress || 0), 0) / initiatives.length)
+                        : 0,
+                    top_priority: initiatives.length > 0
+                        ? Math.max(...initiatives.map(i => i.priority || 0))
+                        : 0
+                };
+            });
+
+            res.json({ success: true, data: overview });
+        } catch (error) {
+            console.error('Error fetching strategic overview:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     return router;
 };
