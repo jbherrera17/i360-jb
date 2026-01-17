@@ -510,6 +510,9 @@ class WorkflowEngine {
                 })
                 .eq('id', executionId);
 
+            // Track initiative progress if workflow is linked to initiatives
+            await this.recordInitiativeProgress(executionId, execution);
+
             return { completed: true };
         }
 
@@ -520,6 +523,79 @@ class WorkflowEngine {
             .eq('id', executionId);
 
         return { completed: false, nextStep };
+    }
+
+    /**
+     * Record initiative progress when a workflow execution completes
+     * This creates closed-loop tracking between Execute 120 and Strategy 120
+     */
+    async recordInitiativeProgress(executionId, execution) {
+        try {
+            // Get workflow-initiative mappings for this workflow
+            const { data: mappings, error: mappingError } = await this.supabase
+                .from('workflow_initiative_mappings')
+                .select(`
+                    *,
+                    initiative:strategy_initiatives(*)
+                `)
+                .eq('workflow_id', execution.workflow_id)
+                .eq('is_active', true);
+
+            if (mappingError || !mappings || mappings.length === 0) {
+                // No initiatives linked to this workflow
+                return;
+            }
+
+            // For each linked initiative, record progress
+            for (const mapping of mappings) {
+                const initiative = mapping.initiative;
+                if (!initiative) continue;
+
+                // Calculate progress increment based on contribution weight
+                // Default: 1% progress per execution, scaled by weight
+                const baseIncrement = 1;
+                const weightedIncrement = (baseIncrement * mapping.contribution_weight) / 100;
+                const progressIncrement = Math.min(weightedIncrement, 100 - (initiative.current_progress || 0));
+
+                const newProgress = Math.min((initiative.current_progress || 0) + progressIncrement, 100);
+
+                // Record the progress entry
+                await this.supabase
+                    .from('initiative_progress_entries')
+                    .insert({
+                        user_id: execution.user_id,
+                        initiative_id: initiative.id,
+                        source_type: 'workflow_execution',
+                        workflow_execution_id: executionId,
+                        progress_increment: progressIncrement,
+                        previous_progress: initiative.current_progress || 0,
+                        new_progress: newProgress,
+                        description: `Workflow "${execution.workflow?.name || 'Unnamed'}" completed successfully`,
+                        business_impact: {
+                            workflow_id: execution.workflow_id,
+                            workflow_name: execution.workflow?.name,
+                            contribution_type: mapping.contribution_type,
+                            contribution_weight: mapping.contribution_weight,
+                            execution_id: executionId,
+                            completed_at: new Date().toISOString()
+                        }
+                    });
+
+                // Update the initiative's current progress
+                await this.supabase
+                    .from('strategy_initiatives')
+                    .update({
+                        current_progress: newProgress,
+                        progress_updated_at: new Date().toISOString()
+                    })
+                    .eq('id', initiative.id);
+
+                console.log(`[WorkflowEngine] Recorded progress for initiative "${initiative.name}": ${initiative.current_progress || 0}% -> ${newProgress}%`);
+            }
+        } catch (error) {
+            // Log but don't fail the workflow completion
+            console.error('[WorkflowEngine] Error recording initiative progress:', error);
+        }
     }
 }
 

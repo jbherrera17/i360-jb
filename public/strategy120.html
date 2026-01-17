@@ -639,6 +639,10 @@
                             <i data-lucide="bot" style="width:16px;height:16px;"></i>
                             Agents
                         </div>
+                        <div class="panel-tab" data-tab="portfolio" onclick="switchTab('portfolio')">
+                            <i data-lucide="pie-chart" style="width:16px;height:16px;"></i>
+                            Portfolio
+                        </div>
                         <div class="panel-tab" data-tab="initiatives" onclick="switchTab('initiatives')">
                             <i data-lucide="rocket" style="width:16px;height:16px;"></i>
                             Initiatives
@@ -658,6 +662,70 @@
                         <div class="tab-pane active" id="agentsTab">
                             <div class="agents-container" id="agentsContainer">
                                 <!-- Agents populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Portfolio Tab -->
+                        <div class="tab-pane" id="portfolioTab">
+                            <!-- Align 120 Import Section -->
+                            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                                        <div style="width:40px;height:40px;border-radius:10px;background:#3b82f120;color:#3b82f6;display:flex;align-items:center;justify-content:center;">
+                                            <i data-lucide="import" style="width:20px;height:20px;"></i>
+                                        </div>
+                                        <div>
+                                            <h3 style="margin:0;font-size:1rem;">Align 120 Integration</h3>
+                                            <p style="margin:0;font-size:0.85rem;color:var(--text-muted);">Import insights from completed Align 120 sessions</p>
+                                        </div>
+                                    </div>
+                                    <button class="btn-primary" onclick="showAlign120ImportModal()">
+                                        <i data-lucide="download" style="width:16px;height:16px;"></i>
+                                        Import Insights
+                                    </button>
+                                </div>
+                                <div id="align120Status" style="font-size:0.85rem;color:var(--text-muted);">
+                                    Loading Align 120 session data...
+                                </div>
+                            </div>
+
+                            <!-- BSC Perspective Scores -->
+                            <div style="margin-bottom:1.5rem;">
+                                <h3 style="margin:0 0 1rem 0;font-size:1rem;">BSC Perspective Performance</h3>
+                                <div id="perspectiveScores" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;">
+                                    <!-- Scores populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Portfolio Summary -->
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+                                <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:#10b981;" id="portfolioInitCount">0</div>
+                                    <div style="font-size:0.85rem;color:var(--text-muted);">Active Initiatives</div>
+                                </div>
+                                <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:#6366f1;" id="portfolioDecCount">0</div>
+                                    <div style="font-size:0.85rem;color:var(--text-muted);">Decisions Logged</div>
+                                </div>
+                                <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:#f97316;" id="portfolioIntelCount">0</div>
+                                    <div style="font-size:0.85rem;color:var(--text-muted);">Intel Briefs</div>
+                                </div>
+                                <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+                                    <div style="font-size:2rem;font-weight:700;color:#8b5cf6;" id="portfolioOkrCount">0</div>
+                                    <div style="font-size:0.85rem;color:var(--text-muted);">Linked OKRs</div>
+                                </div>
+                            </div>
+
+                            <!-- Initiative Status Breakdown -->
+                            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+                                <h3 style="margin:0 0 1rem 0;font-size:1rem;">Initiative Pipeline</h3>
+                                <div id="initiativePipeline" style="display:flex;gap:0.5rem;height:24px;border-radius:6px;overflow:hidden;background:var(--bg-tertiary);">
+                                    <!-- Pipeline bars populated dynamically -->
+                                </div>
+                                <div id="pipelineLegend" style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:0.75rem;font-size:0.8rem;">
+                                    <!-- Legend populated dynamically -->
+                                </div>
                             </div>
                         </div>
 
@@ -760,6 +828,315 @@
         </div>
     </div>
 
+    <!-- Initiative Modal -->
+    <div class="chat-modal" id="initiativeModal">
+        <div class="chat-container" style="max-width:600px;max-height:90vh;">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <div class="chat-agent-icon" style="background:#10b98120;color:#10b981;">
+                        <i data-lucide="rocket" style="width:22px;height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;" id="initiativeModalTitle">New Initiative</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">Strategic initiative planning</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="closeInitiativeModal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div style="padding:1.25rem;overflow-y:auto;max-height:calc(90vh - 140px);">
+                <form id="initiativeForm" onsubmit="saveInitiative(event)">
+                    <input type="hidden" id="initiativeId">
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Name *</label>
+                        <input type="text" id="initiativeName" required placeholder="e.g., AI Customer Service Enhancement"
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Description</label>
+                        <textarea id="initiativeDesc" rows="3" placeholder="Describe the initiative objectives and expected outcomes..."
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">BSC Perspective</label>
+                            <select id="initiativePerspective" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="">Select perspective</option>
+                                <option value="financial">Financial</option>
+                                <option value="customer">Customer</option>
+                                <option value="internal_process">Internal Process</option>
+                                <option value="learning_growth">Learning & Growth</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">AI Investment Type</label>
+                            <select id="initiativeType" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="">Select type</option>
+                                <option value="automation">Automation</option>
+                                <option value="augmentation">Augmentation</option>
+                                <option value="analytics">Analytics & Insights</option>
+                                <option value="platform">Platform & Infrastructure</option>
+                                <option value="training">Training & Upskilling</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Priority (0-100)</label>
+                            <input type="number" id="initiativePriority" min="0" max="100" value="50"
+                                style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Status</label>
+                            <select id="initiativeStatus" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="ideation">Ideation</option>
+                                <option value="planning">Planning</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="on_hold">On Hold</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Strategic Theme</label>
+                        <select id="initiativeTheme" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                            <option value="">Select theme</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Linked OKRs</label>
+                        <select id="initiativeOkrs" multiple style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;min-height:80px;">
+                        </select>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Hold Ctrl/Cmd to select multiple</div>
+                    </div>
+
+                    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                        <button type="button" class="btn-secondary" style="flex:1;" onclick="closeInitiativeModal()">Cancel</button>
+                        <button type="submit" class="btn-primary" style="flex:1;">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i>
+                            Save Initiative
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decision Modal -->
+    <div class="chat-modal" id="decisionModal">
+        <div class="chat-container" style="max-width:600px;max-height:90vh;">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <div class="chat-agent-icon" style="background:#ec489920;color:#ec4899;">
+                        <i data-lucide="scale" style="width:22px;height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;" id="decisionModalTitle">Log Decision</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">Document strategic decisions</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="closeDecisionModal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div style="padding:1.25rem;overflow-y:auto;max-height:calc(90vh - 140px);">
+                <form id="decisionForm" onsubmit="saveDecision(event)">
+                    <input type="hidden" id="decisionId">
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Decision Title *</label>
+                        <input type="text" id="decisionTitle" required placeholder="e.g., Adopt Claude for customer support"
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Description</label>
+                        <textarea id="decisionDescription" rows="2" placeholder="Brief description of the decision..."
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Category</label>
+                            <select id="decisionCategory" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="strategic">Strategic</option>
+                                <option value="tactical">Tactical</option>
+                                <option value="operational">Operational</option>
+                                <option value="technology">Technology</option>
+                                <option value="investment">Investment</option>
+                                <option value="governance">Governance</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Status</label>
+                            <select id="decisionStatus" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="pending">Pending</option>
+                                <option value="decided">Decided</option>
+                                <option value="implemented">Implemented</option>
+                                <option value="reviewed">Reviewed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Decision Rationale *</label>
+                        <textarea id="decisionRationale" rows="3" required placeholder="Why was this decision made? What factors were considered?"
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Options Considered</label>
+                        <textarea id="decisionOptions" rows="2" placeholder="What alternatives were evaluated? (one per line)"
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Related Initiative</label>
+                        <select id="decisionInitiative" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                        <button type="button" class="btn-secondary" style="flex:1;" onclick="closeDecisionModal()">Cancel</button>
+                        <button type="submit" class="btn-primary" style="flex:1;">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i>
+                            Log Decision
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Align 120 Import Modal -->
+    <div class="chat-modal" id="align120Modal">
+        <div class="chat-container" style="max-width:650px;max-height:90vh;">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <div class="chat-agent-icon" style="background:#3b82f120;color:#3b82f6;">
+                        <i data-lucide="import" style="width:22px;height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;">Import from Align 120</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">Select a completed session to import insights</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="closeAlign120Modal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div style="padding:1.25rem;overflow-y:auto;max-height:calc(90vh - 140px);">
+                <div id="align120SessionsList" style="display:flex;flex-direction:column;gap:0.75rem;">
+                    <!-- Sessions populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Intelligence Brief Modal -->
+    <div class="chat-modal" id="intelModal">
+        <div class="chat-container" style="max-width:600px;max-height:90vh;">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <div class="chat-agent-icon" style="background:#f9731620;color:#f97316;">
+                        <i data-lucide="radar" style="width:22px;height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;" id="intelModalTitle">New Intelligence Brief</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">Market & competitive intelligence</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="closeIntelModal()">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div style="padding:1.25rem;overflow-y:auto;max-height:calc(90vh - 140px);">
+                <form id="intelForm" onsubmit="saveIntelBrief(event)">
+                    <input type="hidden" id="intelId">
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Title *</label>
+                        <input type="text" id="intelTitle" required placeholder="e.g., Competitor AI Product Launch Analysis"
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Brief Type</label>
+                            <select id="intelType" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="market_trends">Market Trends</option>
+                                <option value="competitive_analysis">Competitive Analysis</option>
+                                <option value="technology_radar">Technology Radar</option>
+                                <option value="regulatory">Regulatory Update</option>
+                                <option value="customer_insights">Customer Insights</option>
+                                <option value="industry_news">Industry News</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Strategic Impact</label>
+                            <select id="intelImpact" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="informational">Informational</option>
+                                <option value="significant_opportunity">Significant Opportunity</option>
+                                <option value="potential_threat">Potential Threat</option>
+                                <option value="critical_threat">Critical Threat</option>
+                                <option value="requires_action">Requires Action</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Summary *</label>
+                        <textarea id="intelSummary" rows="2" required placeholder="Brief executive summary..."
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Full Content</label>
+                        <textarea id="intelContent" rows="4" placeholder="Detailed analysis and findings..."
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Relevance Score (0-100)</label>
+                            <input type="number" id="intelRelevance" min="0" max="100" value="70"
+                                style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Status</label>
+                            <select id="intelStatus" style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;">
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:0.35rem;">Sources (one per line)</label>
+                        <textarea id="intelSources" rows="2" placeholder="https://example.com/article&#10;Industry Report Q4 2025"
+                            style="width:100%;padding:0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+
+                    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                        <button type="button" class="btn-secondary" style="flex:1;" onclick="closeIntelModal()">Cancel</button>
+                        <button type="submit" class="btn-primary" style="flex:1;">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i>
+                            Save Brief
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:10000;display:flex;flex-direction:column;gap:0.5rem;"></div>
 
@@ -782,6 +1159,8 @@
         let themes = [];
         let perspectives = [];
         let okrs = [];
+        let align120Sessions = [];
+        let perspectiveScores = [];
 
         // Get model display info from llm_model string
         function getModelInfo(llmModel) {
@@ -914,6 +1293,32 @@
                     intelligence = intelData.data || [];
                     renderIntelligence();
                 }
+
+                // Load Align 120 sessions
+                try {
+                    const sessRes = await fetch('/api/align120/sessions');
+                    const sessData = await sessRes.json();
+                    if (sessData.success) {
+                        align120Sessions = (sessData.data || []).filter(s => s.status === 'completed');
+                        updateAlign120Status();
+                    }
+                } catch (e) {
+                    console.log('Align 120 sessions not available');
+                }
+
+                // Load BSC perspective scores
+                try {
+                    const scoresRes = await fetch('/api/strategy120/perspective-scores/latest');
+                    const scoresData = await scoresRes.json();
+                    if (scoresData.success) {
+                        perspectiveScores = scoresData.data || [];
+                    }
+                } catch (e) {
+                    console.log('Perspective scores not available');
+                }
+
+                // Update portfolio dashboard
+                renderPortfolio();
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -1086,13 +1491,21 @@
                     <div class="initiative-card">
                         <div class="initiative-priority ${priorityClass}">${init.priority}</div>
                         <div class="initiative-info">
-                            <div class="initiative-name">${init.name}</div>
+                            <div class="initiative-name">${escapeHtml(init.name)}</div>
                             <div class="initiative-meta">
                                 <span>${init.perspective_type || 'General'}</span>
                                 <span>${init.ai_investment_type || 'Not specified'}</span>
                             </div>
                         </div>
                         <div class="initiative-status ${statusClass}">${init.status.replace('_', ' ')}</div>
+                        <div style="display:flex;gap:0.5rem;margin-left:0.75rem;">
+                            <button class="btn-secondary" style="padding:0.4rem;" onclick="editInitiative('${init.id}')" title="Edit">
+                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                            </button>
+                            <button class="btn-secondary" style="padding:0.4rem;color:#ef4444;" onclick="deleteInitiative('${init.id}')" title="Delete">
+                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1118,10 +1531,18 @@
             container.innerHTML = decisions.map(dec => `
                 <div class="decision-card">
                     <div class="decision-header">
-                        <div class="decision-title">${dec.title}</div>
-                        <div class="decision-date">${new Date(dec.decision_date).toLocaleDateString()}</div>
+                        <div class="decision-title">${escapeHtml(dec.title)}</div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div class="decision-date">${new Date(dec.decision_date).toLocaleDateString()}</div>
+                            <button class="btn-secondary" style="padding:0.3rem;" onclick="editDecision('${dec.id}')" title="Edit">
+                                <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                            </button>
+                            <button class="btn-secondary" style="padding:0.3rem;color:#ef4444;" onclick="deleteDecision('${dec.id}')" title="Delete">
+                                <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+                            </button>
+                        </div>
                     </div>
-                    ${dec.decision_rationale ? `<div class="decision-rationale">${dec.decision_rationale}</div>` : ''}
+                    ${dec.decision_rationale ? `<div class="decision-rationale">${escapeHtml(dec.decision_rationale)}</div>` : ''}
                     <div style="font-size:0.8rem;color:var(--text-muted);">
                         Status: ${dec.decision_status} | Category: ${dec.decision_category || 'General'}
                     </div>
@@ -1148,9 +1569,19 @@
 
             container.innerHTML = intelligence.map(intel => `
                 <div class="intel-card">
-                    <div class="intel-type ${intel.brief_type}">${intel.brief_type}</div>
-                    <div class="intel-title">${intel.title}</div>
-                    <div class="intel-summary">${intel.summary}</div>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
+                        <div class="intel-type ${intel.brief_type}">${intel.brief_type.replace('_', ' ')}</div>
+                        <div style="display:flex;gap:0.35rem;">
+                            <button class="btn-secondary" style="padding:0.25rem;" onclick="editIntelBrief('${intel.id}')" title="Edit">
+                                <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                            </button>
+                            <button class="btn-secondary" style="padding:0.25rem;color:#ef4444;" onclick="deleteIntelBrief('${intel.id}')" title="Delete">
+                                <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="intel-title">${escapeHtml(intel.title)}</div>
+                    <div class="intel-summary">${escapeHtml(intel.summary)}</div>
                     <div class="intel-relevance">
                         <span>Relevance:</span>
                         <div class="relevance-bar">
@@ -1441,17 +1872,570 @@
             window.location.href = `/agents.html?edit=${agentId}`;
         }
 
-        // Placeholder functions for create modals
-        function showCreateInitiativeModal() {
-            alert('Create Initiative modal - Coming soon!\n\nUse the Business Case Builder agent to help structure your initiative.');
+        // ============================================================================
+        // INITIATIVE MODAL FUNCTIONS
+        // ============================================================================
+
+        function showCreateInitiativeModal(initData = null) {
+            document.getElementById('initiativeModalTitle').textContent = initData ? 'Edit Initiative' : 'New Initiative';
+            document.getElementById('initiativeForm').reset();
+            document.getElementById('initiativeId').value = initData?.id || '';
+
+            // Populate theme dropdown
+            const themeSelect = document.getElementById('initiativeTheme');
+            themeSelect.innerHTML = '<option value="">Select theme</option>';
+            themes.forEach(t => {
+                themeSelect.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
+            });
+
+            // Populate OKR dropdown
+            const okrSelect = document.getElementById('initiativeOkrs');
+            okrSelect.innerHTML = '';
+            okrs.forEach(o => {
+                okrSelect.innerHTML += `<option value="${o.id}">${escapeHtml(o.title || o.objective)}</option>`;
+            });
+
+            // Fill form if editing
+            if (initData) {
+                document.getElementById('initiativeName').value = initData.name || '';
+                document.getElementById('initiativeDesc').value = initData.description || '';
+                document.getElementById('initiativePerspective').value = initData.perspective_type || '';
+                document.getElementById('initiativeType').value = initData.ai_investment_type || '';
+                document.getElementById('initiativePriority').value = initData.priority || 50;
+                document.getElementById('initiativeStatus').value = initData.status || 'ideation';
+                document.getElementById('initiativeTheme').value = initData.strategic_theme_id || '';
+
+                // Select linked OKRs
+                if (initData.related_okr_ids && Array.isArray(initData.related_okr_ids)) {
+                    Array.from(okrSelect.options).forEach(opt => {
+                        opt.selected = initData.related_okr_ids.includes(opt.value);
+                    });
+                }
+            }
+
+            document.getElementById('initiativeModal').classList.add('active');
+            lucide.createIcons();
         }
 
-        function showCreateDecisionModal() {
-            alert('Log Decision modal - Coming soon!\n\nUse the Decision Framer agent to help structure your decision.');
+        function closeInitiativeModal() {
+            document.getElementById('initiativeModal').classList.remove('active');
         }
 
-        function showCreateIntelModal() {
-            alert('Create Intelligence Brief modal - Coming soon!\n\nUse the Market Intelligence Scout agent to gather insights.');
+        async function saveInitiative(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('initiativeId').value;
+            const okrSelect = document.getElementById('initiativeOkrs');
+            const selectedOkrs = Array.from(okrSelect.selectedOptions).map(o => o.value);
+
+            const payload = {
+                foundation_id: foundation?.id,
+                name: document.getElementById('initiativeName').value,
+                description: document.getElementById('initiativeDesc').value,
+                perspective_type: document.getElementById('initiativePerspective').value || null,
+                ai_investment_type: document.getElementById('initiativeType').value || null,
+                priority: parseInt(document.getElementById('initiativePriority').value) || 50,
+                status: document.getElementById('initiativeStatus').value,
+                strategic_theme_id: document.getElementById('initiativeTheme').value || null,
+                related_okr_ids: selectedOkrs
+            };
+
+            try {
+                const url = id ? `/api/strategy120/initiatives/${id}` : '/api/strategy120/initiatives';
+                const method = id ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                showToast(id ? 'Initiative updated' : 'Initiative created', 'success');
+                closeInitiativeModal();
+                await loadAllData();
+            } catch (error) {
+                console.error('Error saving initiative:', error);
+                showToast(`Failed to save: ${error.message}`, 'error');
+            }
+        }
+
+        function editInitiative(id) {
+            const init = initiatives.find(i => i.id === id);
+            if (init) showCreateInitiativeModal(init);
+        }
+
+        async function deleteInitiative(id) {
+            if (!confirm('Delete this initiative? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`/api/strategy120/initiatives/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                showToast('Initiative deleted', 'success');
+                await loadAllData();
+            } catch (error) {
+                console.error('Error deleting initiative:', error);
+                showToast(`Failed to delete: ${error.message}`, 'error');
+            }
+        }
+
+        // ============================================================================
+        // DECISION MODAL FUNCTIONS
+        // ============================================================================
+
+        function showCreateDecisionModal(decData = null) {
+            document.getElementById('decisionModalTitle').textContent = decData ? 'Edit Decision' : 'Log Decision';
+            document.getElementById('decisionForm').reset();
+            document.getElementById('decisionId').value = decData?.id || '';
+
+            // Populate initiative dropdown
+            const initSelect = document.getElementById('decisionInitiative');
+            initSelect.innerHTML = '<option value="">None</option>';
+            initiatives.forEach(i => {
+                initSelect.innerHTML += `<option value="${i.id}">${escapeHtml(i.name)}</option>`;
+            });
+
+            // Fill form if editing
+            if (decData) {
+                document.getElementById('decisionTitle').value = decData.title || '';
+                document.getElementById('decisionDescription').value = decData.description || '';
+                document.getElementById('decisionCategory').value = decData.decision_category || 'strategic';
+                document.getElementById('decisionStatus').value = decData.decision_status || 'pending';
+                document.getElementById('decisionRationale').value = decData.decision_rationale || '';
+                document.getElementById('decisionOptions').value = (decData.options_considered || []).join('\n');
+                document.getElementById('decisionInitiative').value = decData.related_initiative_id || '';
+            }
+
+            document.getElementById('decisionModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeDecisionModal() {
+            document.getElementById('decisionModal').classList.remove('active');
+        }
+
+        async function saveDecision(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('decisionId').value;
+            const optionsText = document.getElementById('decisionOptions').value;
+            const optionsArray = optionsText.split('\n').map(o => o.trim()).filter(o => o);
+
+            const payload = {
+                foundation_id: foundation?.id,
+                title: document.getElementById('decisionTitle').value,
+                description: document.getElementById('decisionDescription').value,
+                decision_category: document.getElementById('decisionCategory').value,
+                decision_status: document.getElementById('decisionStatus').value,
+                decision_rationale: document.getElementById('decisionRationale').value,
+                options_considered: optionsArray,
+                related_initiative_id: document.getElementById('decisionInitiative').value || null,
+                decision_date: new Date().toISOString()
+            };
+
+            try {
+                const url = id ? `/api/strategy120/decisions/${id}` : '/api/strategy120/decisions';
+                const method = id ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                showToast(id ? 'Decision updated' : 'Decision logged', 'success');
+                closeDecisionModal();
+                await loadAllData();
+            } catch (error) {
+                console.error('Error saving decision:', error);
+                showToast(`Failed to save: ${error.message}`, 'error');
+            }
+        }
+
+        function editDecision(id) {
+            const dec = decisions.find(d => d.id === id);
+            if (dec) showCreateDecisionModal(dec);
+        }
+
+        async function deleteDecision(id) {
+            if (!confirm('Delete this decision? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`/api/strategy120/decisions/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                showToast('Decision deleted', 'success');
+                await loadAllData();
+            } catch (error) {
+                console.error('Error deleting decision:', error);
+                showToast(`Failed to delete: ${error.message}`, 'error');
+            }
+        }
+
+        // ============================================================================
+        // INTELLIGENCE BRIEF MODAL FUNCTIONS
+        // ============================================================================
+
+        function showCreateIntelModal(intelData = null) {
+            document.getElementById('intelModalTitle').textContent = intelData ? 'Edit Intelligence Brief' : 'New Intelligence Brief';
+            document.getElementById('intelForm').reset();
+            document.getElementById('intelId').value = intelData?.id || '';
+
+            // Fill form if editing
+            if (intelData) {
+                document.getElementById('intelTitle').value = intelData.title || '';
+                document.getElementById('intelType').value = intelData.brief_type || 'market_trends';
+                document.getElementById('intelImpact').value = intelData.impact_on_strategy || 'informational';
+                document.getElementById('intelSummary').value = intelData.summary || '';
+                document.getElementById('intelContent').value = intelData.content || '';
+                document.getElementById('intelRelevance').value = intelData.relevance_score || 70;
+                document.getElementById('intelStatus').value = intelData.status || 'draft';
+                document.getElementById('intelSources').value = (intelData.sources || []).join('\n');
+            }
+
+            document.getElementById('intelModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeIntelModal() {
+            document.getElementById('intelModal').classList.remove('active');
+        }
+
+        async function saveIntelBrief(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('intelId').value;
+            const sourcesText = document.getElementById('intelSources').value;
+            const sourcesArray = sourcesText.split('\n').map(s => s.trim()).filter(s => s);
+
+            const payload = {
+                foundation_id: foundation?.id,
+                title: document.getElementById('intelTitle').value,
+                brief_type: document.getElementById('intelType').value,
+                impact_on_strategy: document.getElementById('intelImpact').value,
+                summary: document.getElementById('intelSummary').value,
+                content: document.getElementById('intelContent').value,
+                relevance_score: parseInt(document.getElementById('intelRelevance').value) || 70,
+                status: document.getElementById('intelStatus').value,
+                sources: sourcesArray
+            };
+
+            try {
+                const url = id ? `/api/strategy120/intelligence/${id}` : '/api/strategy120/intelligence';
+                const method = id ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                showToast(id ? 'Brief updated' : 'Brief created', 'success');
+                closeIntelModal();
+                await loadAllData();
+            } catch (error) {
+                console.error('Error saving brief:', error);
+                showToast(`Failed to save: ${error.message}`, 'error');
+            }
+        }
+
+        function editIntelBrief(id) {
+            const intel = intelligence.find(i => i.id === id);
+            if (intel) showCreateIntelModal(intel);
+        }
+
+        async function deleteIntelBrief(id) {
+            if (!confirm('Delete this intelligence brief? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`/api/strategy120/intelligence/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                showToast('Brief deleted', 'success');
+                await loadAllData();
+            } catch (error) {
+                console.error('Error deleting brief:', error);
+                showToast(`Failed to delete: ${error.message}`, 'error');
+            }
+        }
+
+        // ============================================================================
+        // PORTFOLIO DASHBOARD FUNCTIONS
+        // ============================================================================
+
+        function renderPortfolio() {
+            // Update counts
+            document.getElementById('portfolioInitCount').textContent = initiatives.filter(i => i.status !== 'completed').length;
+            document.getElementById('portfolioDecCount').textContent = decisions.length;
+            document.getElementById('portfolioIntelCount').textContent = intelligence.length;
+
+            // Count unique OKRs linked to initiatives
+            const linkedOkrs = new Set();
+            initiatives.forEach(i => {
+                if (i.related_okr_ids) i.related_okr_ids.forEach(id => linkedOkrs.add(id));
+            });
+            document.getElementById('portfolioOkrCount').textContent = linkedOkrs.size;
+
+            // Render BSC perspective scores
+            renderPerspectiveScores();
+
+            // Render initiative pipeline
+            renderInitiativePipeline();
+        }
+
+        function renderPerspectiveScores() {
+            const container = document.getElementById('perspectiveScores');
+            const bscPerspectives = [
+                { key: 'financial', label: 'Financial', icon: 'dollar-sign', color: '#10b981' },
+                { key: 'customer', label: 'Customer', icon: 'users', color: '#3b82f6' },
+                { key: 'internal_process', label: 'Internal Process', icon: 'settings', color: '#f59e0b' },
+                { key: 'learning_growth', label: 'Learning & Growth', icon: 'graduation-cap', color: '#8b5cf6' }
+            ];
+
+            container.innerHTML = bscPerspectives.map(p => {
+                const score = perspectiveScores.find(s => s.perspective_type === p.key);
+                const value = score?.overall_score || 0;
+                const trend = score?.score_trend || 'stable';
+                const trendIcon = trend === 'improving' ? 'trending-up' : trend === 'declining' ? 'trending-down' : 'minus';
+                const trendColor = trend === 'improving' ? '#10b981' : trend === 'declining' ? '#ef4444' : '#6b7280';
+
+                return `
+                    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                            <div style="width:32px;height:32px;border-radius:8px;background:${p.color}20;color:${p.color};display:flex;align-items:center;justify-content:center;">
+                                <i data-lucide="${p.icon}" style="width:16px;height:16px;"></i>
+                            </div>
+                            <span style="font-size:0.9rem;font-weight:500;">${p.label}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <div style="font-size:1.75rem;font-weight:700;">${value}%</div>
+                            <div style="display:flex;align-items:center;gap:0.25rem;color:${trendColor};">
+                                <i data-lucide="${trendIcon}" style="width:16px;height:16px;"></i>
+                                <span style="font-size:0.8rem;">${trend}</span>
+                            </div>
+                        </div>
+                        <div style="width:100%;height:6px;background:var(--bg-tertiary);border-radius:3px;margin-top:0.5rem;overflow:hidden;">
+                            <div style="width:${value}%;height:100%;background:${p.color};border-radius:3px;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderInitiativePipeline() {
+            const pipeline = document.getElementById('initiativePipeline');
+            const legend = document.getElementById('pipelineLegend');
+
+            const statuses = [
+                { key: 'ideation', label: 'Ideation', color: '#6b7280' },
+                { key: 'planning', label: 'Planning', color: '#3b82f6' },
+                { key: 'in_progress', label: 'In Progress', color: '#f59e0b' },
+                { key: 'completed', label: 'Completed', color: '#10b981' },
+                { key: 'on_hold', label: 'On Hold', color: '#ef4444' }
+            ];
+
+            const total = initiatives.length || 1;
+            const counts = {};
+            statuses.forEach(s => counts[s.key] = initiatives.filter(i => i.status === s.key).length);
+
+            pipeline.innerHTML = statuses.map(s => {
+                const pct = (counts[s.key] / total) * 100;
+                if (pct === 0) return '';
+                return `<div style="flex:${pct};background:${s.color};" title="${s.label}: ${counts[s.key]}"></div>`;
+            }).join('');
+
+            legend.innerHTML = statuses.map(s => `
+                <div style="display:flex;align-items:center;gap:0.35rem;">
+                    <div style="width:12px;height:12px;border-radius:3px;background:${s.color};"></div>
+                    <span>${s.label}: ${counts[s.key]}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateAlign120Status() {
+            const container = document.getElementById('align120Status');
+            if (align120Sessions.length === 0) {
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:0.5rem;color:var(--text-muted);">
+                        <i data-lucide="info" style="width:16px;height:16px;"></i>
+                        No completed Align 120 sessions found. <a href="/align120.html" style="color:var(--primary);">Start an assessment</a>
+                    </div>
+                `;
+            } else {
+                const latest = align120Sessions[0];
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:0.5rem;color:#10b981;">
+                        <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
+                        ${align120Sessions.length} completed session${align120Sessions.length > 1 ? 's' : ''} available.
+                        Latest: ${escapeHtml(latest.company_profiles?.company_name || 'Unknown')} (${new Date(latest.updated_at).toLocaleDateString()})
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // ============================================================================
+        // ALIGN 120 IMPORT FUNCTIONS
+        // ============================================================================
+
+        function showAlign120ImportModal() {
+            const container = document.getElementById('align120SessionsList');
+
+            if (align120Sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="clipboard-list" style="width:48px;height:48px;"></i>
+                        <p>No completed Align 120 sessions available.</p>
+                        <a href="/align120.html" class="btn-primary" style="margin-top:1rem;">Start Assessment</a>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = align120Sessions.map(session => `
+                    <div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all 0.2s;"
+                         onmouseover="this.style.borderColor='var(--primary)'"
+                         onmouseout="this.style.borderColor='var(--border)'"
+                         onclick="importAlign120Session('${session.id}')">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
+                            <div style="font-weight:600;">${escapeHtml(session.company_profiles?.company_name || 'Unnamed Company')}</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted);">${new Date(session.updated_at).toLocaleDateString()}</div>
+                        </div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">
+                            Modules completed: ${session.modules_completed || 0}/5
+                        </div>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                            ${session.ai_readiness_score ? `<span style="background:#10b98120;color:#10b981;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;">AI Readiness: ${session.ai_readiness_score}%</span>` : ''}
+                            ${session.alignment_score ? `<span style="background:#3b82f620;color:#3b82f6;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;">Alignment: ${session.alignment_score}%</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('align120Modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeAlign120Modal() {
+            document.getElementById('align120Modal').classList.remove('active');
+        }
+
+        async function importAlign120Session(sessionId) {
+            try {
+                showToast('Importing Align 120 insights...', 'success');
+
+                // Fetch full session data with module results
+                const res = await fetch(`/api/align120/sessions/${sessionId}`);
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.error);
+
+                const session = data.data;
+                const moduleResults = session.module_results || {};
+                const companyProfile = session.company_profiles || {};
+
+                // Create intelligence briefs from module insights
+                const briefs = [];
+
+                // Module 1: AI Maturity insights
+                if (moduleResults.module1) {
+                    briefs.push({
+                        title: `AI Maturity Assessment - ${companyProfile.company_name || 'Company'}`,
+                        brief_type: 'technology_radar',
+                        impact_on_strategy: 'requires_action',
+                        summary: `AI maturity level: ${moduleResults.module1.maturity_level || 'Unknown'}. Key gaps identified in AI readiness assessment.`,
+                        content: JSON.stringify(moduleResults.module1, null, 2),
+                        relevance_score: 90,
+                        status: 'published'
+                    });
+                }
+
+                // Module 2: Business Fundamentals
+                if (moduleResults.module2) {
+                    briefs.push({
+                        title: `Business Fundamentals Analysis - ${companyProfile.company_name || 'Company'}`,
+                        brief_type: 'market_trends',
+                        impact_on_strategy: 'informational',
+                        summary: `Business model and process analysis from Align 120 assessment.`,
+                        content: JSON.stringify(moduleResults.module2, null, 2),
+                        relevance_score: 85,
+                        status: 'published'
+                    });
+                }
+
+                // Module 3: Team Readiness
+                if (moduleResults.module3) {
+                    briefs.push({
+                        title: `Team AI Readiness - ${companyProfile.company_name || 'Company'}`,
+                        brief_type: 'customer_insights',
+                        impact_on_strategy: 'significant_opportunity',
+                        summary: `Team readiness and skills gap analysis for AI adoption.`,
+                        content: JSON.stringify(moduleResults.module3, null, 2),
+                        relevance_score: 80,
+                        status: 'published'
+                    });
+                }
+
+                // Create the briefs
+                let created = 0;
+                for (const brief of briefs) {
+                    try {
+                        const createRes = await fetch('/api/strategy120/intelligence', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...brief, foundation_id: foundation?.id })
+                        });
+                        const createData = await createRes.json();
+                        if (createData.success) created++;
+                    } catch (e) {
+                        console.error('Failed to create brief:', e);
+                    }
+                }
+
+                // Create a strategic initiative based on AI readiness
+                if (session.ai_readiness_score) {
+                    const initPayload = {
+                        foundation_id: foundation?.id,
+                        name: `AI Transformation Initiative - ${companyProfile.company_name || 'Company'}`,
+                        description: `Strategic initiative based on Align 120 assessment. AI Readiness Score: ${session.ai_readiness_score}%. Focus areas identified through comprehensive assessment.`,
+                        perspective_type: 'learning_growth',
+                        ai_investment_type: 'platform',
+                        priority: Math.round(session.ai_readiness_score * 0.8),
+                        status: 'ideation'
+                    };
+
+                    try {
+                        await fetch('/api/strategy120/initiatives', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(initPayload)
+                        });
+                        created++;
+                    } catch (e) {
+                        console.error('Failed to create initiative:', e);
+                    }
+                }
+
+                closeAlign120Modal();
+                showToast(`Imported ${created} items from Align 120`, 'success');
+                await loadAllData();
+
+            } catch (error) {
+                console.error('Error importing Align 120 session:', error);
+                showToast(`Import failed: ${error.message}`, 'error');
+            }
         }
 
         // Utilities
