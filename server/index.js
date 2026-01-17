@@ -50,6 +50,7 @@ const userProfileRoutes = require('./routes/user-profile');
 const synerginexusRoutes = require('./routes/synerginexus');
 const thoughtLeadershipRoutes = require('./routes/thought-leadership');
 const modelAvailabilityRoutes = require('./routes/model-availability');
+const visualizationsRoutes = require('./routes/visualizations');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -352,7 +353,9 @@ function initializeServices() {
         app.use('/api/synerginexus', synerginexusRoutes(supabase));
         app.use('/api/thought-leadership', thoughtLeadershipRoutes(supabase));
         app.use('/api/models', modelAvailabilityRoutes);
+        app.use('/api/visualizations', visualizationsRoutes);
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Visualizations routes registered');
         console.log('  ✅ Model Availability routes registered');
         console.log('  ✅ Auth routes registered');
         console.log('  ✅ Onboarding routes registered');
