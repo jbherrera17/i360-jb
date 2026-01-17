@@ -297,10 +297,17 @@ router.post('/assets', async (req, res) => {
             .from('context_assets')
             .insert(newAsset)
             .select()
-            .single();
-        
+            .maybeSingle();
+
         if (error) throw error;
-        
+
+        if (!data) {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to create asset'
+            });
+        }
+
         // NOTE: We do NOT create a version history record on initial creation
         // Version history is only created when the asset is UPDATED
         // This prevents the duplicate key issue
@@ -424,9 +431,16 @@ router.put('/assets/:id', async (req, res) => {
             .update(updateData)
             .eq('id', id)
             .select()
-            .single();
-        
+            .maybeSingle();
+
         if (error) throw error;
+
+        if (!data) {
+            return res.status(404).json({
+                success: false,
+                error: 'Asset not found or update failed'
+            });
+        }
         
         res.json({
             success: true,

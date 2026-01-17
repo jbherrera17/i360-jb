@@ -835,49 +835,6 @@
             border-color: var(--primary);
         }
 
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .toast {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            min-width: 300px;
-            animation: slideIn 0.3s ease;
-        }
-
-        .toast.success {
-            border-left: 4px solid var(--success);
-        }
-
-        .toast.error {
-            border-left: 4px solid var(--danger);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
         /* Loading State */
         .loading {
             display: flex;
@@ -940,93 +897,6 @@
         .access-denied p {
             color: var(--text-secondary);
             margin-bottom: 1.5rem;
-        }
-
-        /* Confirm Modal */
-        .confirm-message {
-            text-align: center;
-            padding: 1rem 0;
-        }
-
-        .confirm-icon {
-            width: 48px;
-            height: 48px;
-            color: var(--danger);
-            margin-bottom: 1rem;
-        }
-
-        .confirm-text {
-            color: var(--text-secondary);
-        }
-
-        .confirm-user {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        /* Roadmap Modal Styles */
-        .roadmap-modal {
-            width: 80%;
-            max-width: 1000px;
-            height: 80vh;
-            max-height: 800px;
-            min-width: 400px;
-            min-height: 300px;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            resize: both;
-            overflow: hidden;
-        }
-
-        .roadmap-modal.fullscreen {
-            width: 100% !important;
-            height: 100% !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            border-radius: 0;
-        }
-
-        .roadmap-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            cursor: move;
-            flex-shrink: 0;
-        }
-
-        .roadmap-modal-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-            background: var(--bg-primary);
-        }
-
-        .roadmap-modal-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            border-top: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-
-        /* Resize handle */
-        .resize-handle {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            bottom: 0;
-            right: 0;
-            cursor: se-resize;
-            background: linear-gradient(135deg, transparent 50%, var(--border) 50%);
-            border-radius: 0 0 16px 0;
-        }
-
-        .roadmap-modal.fullscreen .resize-handle {
-            display: none;
         }
 
         /* Markdown Content Styles */
@@ -1168,6 +1038,50 @@
         .markdown-content ul ul {
             margin: 0.25rem 0 0.5rem 1rem;
         }
+
+        /* ModalService Form Styles */
+        .i360-modal .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .i360-modal .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .i360-modal .form-input {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .i360-modal .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .i360-modal .form-select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .i360-modal .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -1298,193 +1212,6 @@
     </div>
     </div> <!-- Close app-layout -->
 
-    <!-- Add/Edit User Modal -->
-    <div class="modal-overlay" id="userModal">
-        <div class="modal" id="user-modal-dialog">
-            <div class="modal-header" id="user-modal-header">
-                <h3 class="modal-title" id="modalTitle">Add User</h3>
-                <button class="modal-close" id="modalClose">
-                    <i data-lucide="x" style="width:20px;height:20px;"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="userForm">
-                    <input type="hidden" id="userId">
-
-                    <div class="form-group">
-                        <label class="form-label" for="userEmail">Email</label>
-                        <input type="email" id="userEmail" class="form-input" placeholder="user@example.com" required>
-                    </div>
-
-                    <div class="form-group" id="passwordGroup">
-                        <label class="form-label" for="userPassword">Password</label>
-                        <input type="password" id="userPassword" class="form-input" placeholder="Minimum 6 characters" minlength="6">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="userDisplayName">Display Name</label>
-                        <input type="text" id="userDisplayName" class="form-input" placeholder="John Doe">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="userRole">System Role</label>
-                        <select id="userRole" class="form-select">
-                            <option value="user">User - Can create and manage own agents</option>
-                            <option value="viewer">Viewer - Read-only access</option>
-                            <option value="admin">Admin - Full access to all features</option>
-                        </select>
-                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls platform-level access</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="userBusinessRole">Business Role</label>
-                        <select id="userBusinessRole" class="form-select">
-                            <option value="ic">Individual Contributor</option>
-                            <option value="supervisor">Supervisor</option>
-                            <option value="manager">Manager</option>
-                            <option value="director">Director</option>
-                            <option value="executive">Executive</option>
-                        </select>
-                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls department and strategy access</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="userDepartment">Department</label>
-                        <select id="userDepartment" class="form-select">
-                            <option value="">-- Select Department --</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="modalCancel">Cancel</button>
-                <button class="btn btn-primary" id="modalSave">Save User</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal-overlay" id="deleteModal">
-        <div class="modal" id="delete-modal-dialog">
-            <div class="modal-header" id="delete-modal-header">
-                <h3 class="modal-title">Delete User</h3>
-                <button class="modal-close" id="deleteModalClose">
-                    <i data-lucide="x" style="width:20px;height:20px;"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="confirm-message">
-                    <i data-lucide="alert-triangle" class="confirm-icon"></i>
-                    <p class="confirm-text">Are you sure you want to delete this user?</p>
-                    <p class="confirm-user" id="deleteUserName"></p>
-                    <p class="confirm-text" style="margin-top: 1rem; font-size: 0.9rem;">This action cannot be undone.</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="deleteCancel">Cancel</button>
-                <button class="btn btn-danger" id="deleteConfirm">Delete User</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add/Edit Category Modal -->
-    <div class="modal-overlay" id="categoryModal">
-        <div class="modal" id="category-modal-dialog">
-            <div class="modal-header" id="category-modal-header">
-                <h3 class="modal-title" id="categoryModalTitle">Add Category</h3>
-                <button class="modal-close" onclick="closeCategoryModal()">
-                    <i data-lucide="x" style="width:20px;height:20px;"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="categoryForm">
-                    <input type="hidden" id="categoryId">
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="categoryKey">Key *</label>
-                            <input type="text" id="categoryKey" class="form-input" placeholder="e.g., assessment" required>
-                            <small style="color: var(--text-muted); font-size: 0.8rem;">Lowercase, no spaces (used internally)</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="categoryDisplayName">Display Name *</label>
-                            <input type="text" id="categoryDisplayName" class="form-input" placeholder="e.g., Assessment" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="categoryDescription">Description</label>
-                        <input type="text" id="categoryDescription" class="form-input" placeholder="Brief description of this category">
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="categoryIcon">Icon (Emoji)</label>
-                            <input type="text" id="categoryIcon" class="form-input" placeholder="📋" maxlength="4">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="categoryColor">Color</label>
-                            <input type="color" id="categoryColor" class="form-input" value="#6366f1" style="height: 42px; padding: 4px;">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="categorySortOrder">Sort Order</label>
-                            <input type="number" id="categorySortOrder" class="form-input" placeholder="1" min="1" max="99">
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="categoryActiveGroup" style="display: none;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="categoryIsActive" checked>
-                            <span>Active</span>
-                        </label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="handleSaveCategory()">Save Category</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Roadmap Modal -->
-    <div class="modal-overlay" id="roadmapModal">
-        <div class="modal roadmap-modal" id="roadmap-modal-dialog">
-            <div class="modal-header roadmap-modal-header" id="roadmap-modal-header">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i data-lucide="map" style="width: 20px; height: 20px; color: var(--primary);"></i>
-                    <h3 class="modal-title">I360 Roadmap</h3>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <button class="icon-btn" onclick="toggleRoadmapFullscreen()" title="Toggle Fullscreen" id="roadmapFullscreenBtn">
-                        <i data-lucide="maximize-2" style="width: 18px; height: 18px;"></i>
-                    </button>
-                    <button class="modal-close" onclick="closeRoadmapModal()">
-                        <i data-lucide="x" style="width: 20px; height: 20px;"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body roadmap-modal-body" id="roadmapContent">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Loading roadmap...
-                </div>
-            </div>
-            <div class="modal-footer roadmap-modal-footer">
-                <span id="roadmapLastUpdated" style="font-size: 0.8rem; color: var(--text-muted);"></span>
-                <button class="btn btn-secondary" onclick="closeRoadmapModal()">Close</button>
-            </div>
-            <!-- Resize handle -->
-            <div class="resize-handle resize-handle-se" id="roadmapResizeHandle"></div>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
     <script>
         // ============================================================================
         // State Management
@@ -1499,11 +1226,10 @@
         let agentCategories = [];
         let editingCategoryId = null;
 
-        // Modal managers
-        let userModalManager = null;
-        let deleteModalManager = null;
-        let roadmapModalManager = null;
-        let categoryModalManager = null;
+        // Modal instances (ModalService)
+        let userModal = null;
+        let categoryModal = null;
+        let roadmapModal = null;
 
         // ============================================================================
         // API Functions
@@ -1672,21 +1398,7 @@
         // UI Functions
         // ============================================================================
         function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" style="width:20px;height:20px;"></i>
-                <span>${message}</span>
-            `;
-            container.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            ModalService.toast({ message, type });
         }
 
         function getInitials(name, email) {
@@ -1972,18 +1684,75 @@
             lucide.createIcons();
         }
 
+        function buildCategoryFormContent(category = null) {
+            const isEdit = !!category;
+            return `
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId" value="${isEdit ? category.id : ''}">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="categoryKey">Key *</label>
+                            <input type="text" id="categoryKey" class="form-input" placeholder="e.g., assessment" value="${isEdit ? (category.key || '') : ''}" required>
+                            <small style="color: var(--text-muted); font-size: 0.8rem;">Lowercase, no spaces (used internally)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="categoryDisplayName">Display Name *</label>
+                            <input type="text" id="categoryDisplayName" class="form-input" placeholder="e.g., Assessment" value="${isEdit ? (category.display_name || '') : ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="categoryDescription">Description</label>
+                        <input type="text" id="categoryDescription" class="form-input" placeholder="Brief description of this category" value="${isEdit ? (category.description || '') : ''}">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="categoryIcon">Icon (Emoji)</label>
+                            <input type="text" id="categoryIcon" class="form-input" placeholder="📋" maxlength="4" value="${isEdit ? (category.icon || '') : ''}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="categoryColor">Color</label>
+                            <input type="color" id="categoryColor" class="form-input" value="${isEdit ? (category.color || '#6366f1') : '#6366f1'}" style="height: 42px; padding: 4px;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="categorySortOrder">Sort Order</label>
+                            <input type="number" id="categorySortOrder" class="form-input" placeholder="1" min="1" max="99" value="${isEdit ? (category.sort_order || '') : ''}">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="categoryActiveGroup" style="display: ${isEdit ? 'block' : 'none'};">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="categoryIsActive" ${!isEdit || category.is_active ? 'checked' : ''}>
+                            <span>Active</span>
+                        </label>
+                    </div>
+                </form>
+            `;
+        }
+
         function openAddCategoryModal() {
             editingCategoryId = null;
-            document.getElementById('categoryModalTitle').textContent = 'Add Category';
-            document.getElementById('categoryForm').reset();
-            document.getElementById('categoryColor').value = '#6366f1';
-            document.getElementById('categoryActiveGroup').style.display = 'none';
-            if (categoryModalManager) {
-                categoryModalManager.open();
-            } else {
-                document.getElementById('categoryModal').classList.add('active');
-            }
-            lucide.createIcons();
+            categoryModal = ModalService.create({
+                title: 'Add Category',
+                content: buildCategoryFormContent(),
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveCategoryBtn">Save Category</button>
+                `,
+                width: 520,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
+                }
+            });
+            categoryModal.open();
         }
 
         function openEditCategoryModal(categoryId) {
@@ -1991,30 +1760,28 @@
             if (!category) return;
 
             editingCategoryId = categoryId;
-            document.getElementById('categoryModalTitle').textContent = 'Edit Category';
-            document.getElementById('categoryId').value = category.id;
-            document.getElementById('categoryKey').value = category.key;
-            document.getElementById('categoryDisplayName').value = category.display_name;
-            document.getElementById('categoryDescription').value = category.description || '';
-            document.getElementById('categoryIcon').value = category.icon || '';
-            document.getElementById('categoryColor').value = category.color || '#6366f1';
-            document.getElementById('categorySortOrder').value = category.sort_order || '';
-            document.getElementById('categoryIsActive').checked = category.is_active;
-            document.getElementById('categoryActiveGroup').style.display = 'block';
-
-            if (categoryModalManager) {
-                categoryModalManager.open();
-            } else {
-                document.getElementById('categoryModal').classList.add('active');
-            }
-            lucide.createIcons();
+            categoryModal = ModalService.create({
+                title: 'Edit Category',
+                content: buildCategoryFormContent(category),
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveCategoryBtn">Save Category</button>
+                `,
+                width: 520,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
+                }
+            });
+            categoryModal.open();
         }
 
         function closeCategoryModal() {
-            if (categoryModalManager) {
-                categoryModalManager.close();
-            } else {
-                document.getElementById('categoryModal').classList.remove('active');
+            if (categoryModal) {
+                categoryModal.close();
+                categoryModal = null;
             }
             editingCategoryId = null;
         }
@@ -2026,10 +1793,10 @@
             const icon = document.getElementById('categoryIcon').value.trim();
             const color = document.getElementById('categoryColor').value;
             const sortOrder = parseInt(document.getElementById('categorySortOrder').value) || 99;
-            const isActive = document.getElementById('categoryIsActive').checked;
+            const isActive = document.getElementById('categoryIsActive')?.checked ?? true;
 
             if (!key || !displayName) {
-                showToast('Key and Display Name are required', 'error');
+                ModalService.error('Key and Display Name are required');
                 return;
             }
 
@@ -2066,22 +1833,28 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    showToast(editingCategoryId ? 'Category updated' : 'Category created');
+                    ModalService.toast({ message: editingCategoryId ? 'Category updated' : 'Category created', type: 'success' });
                     closeCategoryModal();
                     await loadAgentCategories();
                 } else {
-                    showToast(data.error || 'Failed to save category', 'error');
+                    ModalService.error(data.error || 'Failed to save category');
                 }
             } catch (error) {
                 console.error('Error saving category:', error);
-                showToast('Failed to save category', 'error');
+                ModalService.error('Failed to save category');
             }
         }
 
         async function handleDeleteCategory(categoryId) {
-            if (!confirm('Are you sure you want to deactivate this category? Agents using it will still work but the category won\'t appear in dropdowns.')) {
-                return;
-            }
+            const confirmed = await ModalService.confirm({
+                title: 'Deactivate Category',
+                message: 'Are you sure you want to deactivate this category? Agents using it will still work but the category won\'t appear in dropdowns.',
+                type: 'warning',
+                confirmText: 'Deactivate',
+                cancelText: 'Cancel'
+            });
+
+            if (!confirmed) return;
 
             try {
                 const response = await fetch(`/api/agents/categories/${categoryId}`, {
@@ -2091,14 +1864,14 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    showToast('Category deactivated');
+                    ModalService.toast({ message: 'Category deactivated', type: 'success' });
                     await loadAgentCategories();
                 } else {
-                    showToast(data.error || 'Failed to deactivate category', 'error');
+                    ModalService.error(data.error || 'Failed to deactivate category');
                 }
             } catch (error) {
                 console.error('Error deleting category:', error);
-                showToast('Failed to deactivate category', 'error');
+                ModalService.error('Failed to deactivate category');
             }
         }
 
@@ -2116,17 +1889,90 @@
         // ============================================================================
         // Modal Functions
         // ============================================================================
+        function buildDepartmentOptions(selectedId = '') {
+            let html = '<option value="">-- Select Department --</option>';
+            departments.forEach(dept => {
+                html += `<option value="${dept.id}" ${dept.id === selectedId ? 'selected' : ''}>${escapeHtml(dept.name)}</option>`;
+            });
+            return html;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function buildUserFormContent(user = null) {
+            const isEdit = !!user;
+            return `
+                <form id="userForm">
+                    <input type="hidden" id="userId" value="${isEdit ? user.id : ''}">
+
+                    <div class="form-group">
+                        <label class="form-label" for="userEmail">Email</label>
+                        <input type="email" id="userEmail" class="form-input" placeholder="user@example.com" value="${isEdit ? escapeHtml(user.email) : ''}" required>
+                    </div>
+
+                    <div class="form-group" id="passwordGroup" style="display: ${isEdit ? 'none' : 'block'};">
+                        <label class="form-label" for="userPassword">Password</label>
+                        <input type="password" id="userPassword" class="form-input" placeholder="Minimum 6 characters" minlength="6" ${isEdit ? '' : 'required'}>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userDisplayName">Display Name</label>
+                        <input type="text" id="userDisplayName" class="form-input" placeholder="John Doe" value="${isEdit ? escapeHtml(user.display_name || '') : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userRole">System Role</label>
+                        <select id="userRole" class="form-select">
+                            <option value="user" ${isEdit && user.role === 'user' ? 'selected' : ''}>User - Can create and manage own agents</option>
+                            <option value="viewer" ${isEdit && user.role === 'viewer' ? 'selected' : ''}>Viewer - Read-only access</option>
+                            <option value="admin" ${isEdit && user.role === 'admin' ? 'selected' : ''}>Admin - Full access to all features</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls platform-level access</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userBusinessRole">Business Role</label>
+                        <select id="userBusinessRole" class="form-select">
+                            <option value="ic" ${isEdit && (user.business_role === 'ic' || !user.business_role) ? 'selected' : ''}>Individual Contributor</option>
+                            <option value="supervisor" ${isEdit && user.business_role === 'supervisor' ? 'selected' : ''}>Supervisor</option>
+                            <option value="manager" ${isEdit && user.business_role === 'manager' ? 'selected' : ''}>Manager</option>
+                            <option value="director" ${isEdit && user.business_role === 'director' ? 'selected' : ''}>Director</option>
+                            <option value="executive" ${isEdit && user.business_role === 'executive' ? 'selected' : ''}>Executive</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls department and strategy access</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userDepartment">Department</label>
+                        <select id="userDepartment" class="form-select">
+                            ${buildDepartmentOptions(isEdit ? user.department_id : '')}
+                        </select>
+                    </div>
+                </form>
+            `;
+        }
+
         function openAddModal() {
             editingUserId = null;
-            document.getElementById('modalTitle').textContent = 'Add User';
-            document.getElementById('userForm').reset();
-            document.getElementById('passwordGroup').style.display = 'block';
-            document.getElementById('userPassword').required = true;
-            if (userModalManager) {
-                userModalManager.open();
-            } else {
-                document.getElementById('userModal').classList.add('active');
-            }
+            userModal = ModalService.create({
+                title: 'Add User',
+                content: buildUserFormContent(),
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveUserBtn">Save User</button>
+                `,
+                width: 480,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveUserBtn').addEventListener('click', handleSaveUser);
+                }
+            });
+            userModal.open();
         }
 
         function openEditModal(userId) {
@@ -2134,56 +1980,57 @@
             if (!user) return;
 
             editingUserId = userId;
-            document.getElementById('modalTitle').textContent = 'Edit User';
-            document.getElementById('userId').value = user.id;
-            document.getElementById('userEmail').value = user.email;
-            document.getElementById('userDisplayName').value = user.display_name || '';
-            document.getElementById('userRole').value = user.role;
-            document.getElementById('userBusinessRole').value = user.business_role || 'ic';
-            document.getElementById('userDepartment').value = user.department_id || '';
-            document.getElementById('passwordGroup').style.display = 'none';
-            document.getElementById('userPassword').required = false;
-            if (userModalManager) {
-                userModalManager.open();
-            } else {
-                document.getElementById('userModal').classList.add('active');
-            }
+            userModal = ModalService.create({
+                title: 'Edit User',
+                content: buildUserFormContent(user),
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveUserBtn">Save User</button>
+                `,
+                width: 480,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveUserBtn').addEventListener('click', handleSaveUser);
+                }
+            });
+            userModal.open();
         }
 
         function closeUserModal() {
-            if (userModalManager) {
-                userModalManager.close();
-            } else {
-                document.getElementById('userModal').classList.remove('active');
+            if (userModal) {
+                userModal.close();
+                userModal = null;
             }
             editingUserId = null;
         }
 
-        function openDeleteModal(userId) {
+        async function openDeleteModal(userId) {
             const user = users.find(u => u.id === userId);
             if (!user || user.id === currentUser?.id) return;
 
-            deletingUserId = userId;
-            document.getElementById('deleteUserName').textContent = user.email;
-            if (deleteModalManager) {
-                deleteModalManager.open();
-            } else {
-                document.getElementById('deleteModal').classList.add('active');
+            const confirmed = await ModalService.confirm({
+                title: 'Delete User',
+                message: `Are you sure you want to delete this user?\n\n${user.email}\n\nThis action cannot be undone.`,
+                type: 'danger',
+                confirmText: 'Delete User',
+                cancelText: 'Cancel'
+            });
+
+            if (confirmed) {
+                deletingUserId = userId;
+                await handleDeleteUser();
             }
         }
 
         function closeDeleteModal() {
-            if (deleteModalManager) {
-                deleteModalManager.close();
-            } else {
-                document.getElementById('deleteModal').classList.remove('active');
-            }
             deletingUserId = null;
         }
 
         async function handleSaveUser() {
             const email = document.getElementById('userEmail').value;
-            const password = document.getElementById('userPassword').value;
+            const password = document.getElementById('userPassword')?.value || '';
             const displayName = document.getElementById('userDisplayName').value;
             const role = document.getElementById('userRole').value;
             const businessRole = document.getElementById('userBusinessRole').value;
@@ -2199,7 +2046,7 @@
                     });
                     // Update business role separately
                     await updateUserBusinessRole(editingUserId, businessRole);
-                    showToast('User updated successfully');
+                    ModalService.toast({ message: 'User updated successfully', type: 'success' });
                 } else {
                     await createUser({
                         email,
@@ -2209,13 +2056,13 @@
                         business_role: businessRole,
                         department_id: departmentId
                     });
-                    showToast('User created successfully');
+                    ModalService.toast({ message: 'User created successfully', type: 'success' });
                 }
 
                 closeUserModal();
                 await loadData();
             } catch (error) {
-                showToast(error.message, 'error');
+                ModalService.error(error.message);
             }
         }
 
@@ -2224,11 +2071,11 @@
 
             try {
                 await deleteUser(deletingUserId);
-                showToast('User deleted successfully');
+                ModalService.toast({ message: 'User deleted successfully', type: 'success' });
                 closeDeleteModal();
                 await loadData();
             } catch (error) {
-                showToast(error.message, 'error');
+                ModalService.error(error.message);
             }
         }
 
@@ -2328,21 +2175,6 @@
             initTheme();
             lucide.createIcons();
 
-            // Initialize modal managers if ModalManager is available
-            if (typeof ModalManager !== 'undefined') {
-                userModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 480 });
-                userModalManager.init('user-modal-dialog', 'user-modal-header', 'userModal');
-
-                deleteModalManager = new ModalManager({ minWidth: 350, minHeight: 200, defaultWidth: 400 });
-                deleteModalManager.init('delete-modal-dialog', 'delete-modal-header', 'deleteModal');
-
-                roadmapModalManager = new ModalManager({ minWidth: 600, minHeight: 400, defaultWidth: 1000, closeOnOverlayClick: true });
-                roadmapModalManager.init('roadmap-modal-dialog', 'roadmap-modal-header', 'roadmapModal');
-
-                categoryModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 520 });
-                categoryModalManager.init('category-modal-dialog', 'category-modal-header', 'categoryModal');
-            }
-
             // Check authentication
             const token = localStorage.getItem('insight360_token');
             if (!token) {
@@ -2372,109 +2204,75 @@
             // Event Listeners
             document.getElementById('syncUsersBtn').addEventListener('click', handleSyncUsers);
             document.getElementById('addUserBtn').addEventListener('click', openAddModal);
-            document.getElementById('modalClose').addEventListener('click', closeUserModal);
-            document.getElementById('modalCancel').addEventListener('click', closeUserModal);
-            document.getElementById('modalSave').addEventListener('click', handleSaveUser);
-            document.getElementById('deleteModalClose').addEventListener('click', closeDeleteModal);
-            document.getElementById('deleteCancel').addEventListener('click', closeDeleteModal);
-            document.getElementById('deleteConfirm').addEventListener('click', handleDeleteUser);
 
             // Tab switching
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => switchTab(btn.dataset.tab));
             });
-
-            // Close modals on overlay click
-            document.getElementById('userModal').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) closeUserModal();
-            });
-            document.getElementById('deleteModal').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) closeDeleteModal();
-            });
-            document.getElementById('roadmapModal').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) closeRoadmapModal();
-            });
-            document.getElementById('categoryModal').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) closeCategoryModal();
-            });
-
-            // Initialize resize functionality for roadmap modal
-            initRoadmapResize();
         }
 
         // ============================================================================
         // Roadmap Modal Functions
         // ============================================================================
         let roadmapLoaded = false;
-        let isRoadmapFullscreen = false;
+        let roadmapContent = '';
+        let roadmapLastUpdated = '';
 
         async function openRoadmapModal() {
-            if (roadmapModalManager) {
-                roadmapModalManager.open();
-            } else {
-                document.getElementById('roadmapModal').classList.add('active');
-            }
-            lucide.createIcons();
-
+            // Load content if not already loaded
             if (!roadmapLoaded) {
                 await loadRoadmapContent();
             }
+
+            roadmapModal = ModalService.create({
+                title: 'I360 Roadmap',
+                content: `<div class="markdown-content">${roadmapContent}</div>`,
+                footer: `
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">${roadmapLastUpdated}</span>
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Close</button>
+                `,
+                width: 1000,
+                height: 700,
+                draggable: true,
+                resizable: true,
+                maximizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                }
+            });
+            roadmapModal.open();
         }
 
         function closeRoadmapModal() {
-            if (roadmapModalManager) {
-                roadmapModalManager.close();
-            } else {
-                document.getElementById('roadmapModal').classList.remove('active');
+            if (roadmapModal) {
+                roadmapModal.close();
+                roadmapModal = null;
             }
-        }
-
-        function toggleRoadmapFullscreen() {
-            const modal = document.getElementById('roadmap-modal-dialog');
-            const btn = document.getElementById('roadmapFullscreenBtn');
-            isRoadmapFullscreen = !isRoadmapFullscreen;
-
-            if (isRoadmapFullscreen) {
-                modal.classList.add('fullscreen');
-                btn.innerHTML = '<i data-lucide="minimize-2" style="width: 18px; height: 18px;"></i>';
-            } else {
-                modal.classList.remove('fullscreen');
-                btn.innerHTML = '<i data-lucide="maximize-2" style="width: 18px; height: 18px;"></i>';
-            }
-            lucide.createIcons();
         }
 
         async function loadRoadmapContent() {
-            const contentEl = document.getElementById('roadmapContent');
-            const lastUpdatedEl = document.getElementById('roadmapLastUpdated');
-
             try {
                 const response = await fetch('/documentation/I360-ROADMAP.md');
                 if (!response.ok) throw new Error('Failed to load roadmap');
 
                 const markdown = await response.text();
-                const html = parseMarkdown(markdown);
-
-                contentEl.innerHTML = `<div class="markdown-content">${html}</div>`;
+                roadmapContent = parseMarkdown(markdown);
                 roadmapLoaded = true;
 
                 // Extract last updated date from content
                 const dateMatch = markdown.match(/Last Updated:\s*([^\n*]+)/);
                 if (dateMatch) {
-                    lastUpdatedEl.textContent = `Last Updated: ${dateMatch[1].trim()}`;
+                    roadmapLastUpdated = `Last Updated: ${dateMatch[1].trim()}`;
                 }
-
-                lucide.createIcons();
             } catch (error) {
                 console.error('Error loading roadmap:', error);
-                contentEl.innerHTML = `
+                roadmapContent = `
                     <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
                         <i data-lucide="alert-circle" style="width: 48px; height: 48px; color: var(--danger); margin-bottom: 1rem;"></i>
                         <p>Failed to load roadmap document.</p>
-                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">${error.message}</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">${escapeHtml(error.message)}</p>
                     </div>
                 `;
-                lucide.createIcons();
             }
         }
 
@@ -2592,53 +2390,9 @@
             return html;
         }
 
-        // Resize functionality
-        function initRoadmapResize() {
-            const modal = document.getElementById('roadmap-modal-dialog');
-            const handle = document.getElementById('roadmapResizeHandle');
-            let isResizing = false;
-            let startX, startY, startWidth, startHeight;
-
-            handle.addEventListener('mousedown', (e) => {
-                if (isRoadmapFullscreen) return;
-                isResizing = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startWidth = modal.offsetWidth;
-                startHeight = modal.offsetHeight;
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isResizing) return;
-                const newWidth = startWidth + (e.clientX - startX);
-                const newHeight = startHeight + (e.clientY - startY);
-
-                if (newWidth >= 400) {
-                    modal.style.width = newWidth + 'px';
-                    modal.style.maxWidth = newWidth + 'px';
-                }
-                if (newHeight >= 300) {
-                    modal.style.height = newHeight + 'px';
-                    modal.style.maxHeight = newHeight + 'px';
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                isResizing = false;
-            });
-
-            // Keyboard shortcut to close modal
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && document.getElementById('roadmapModal').classList.contains('active')) {
-                    closeRoadmapModal();
-                }
-            });
-        }
-
         // Start the app
         document.addEventListener('DOMContentLoaded', init);
     </script>
-    <script src="/js/modal-manager.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
 </body>
 </html>

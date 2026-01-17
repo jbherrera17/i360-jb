@@ -76,7 +76,7 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "blob:", "https:"],
-            mediaSrc: ["'self'", "blob:"],
+            mediaSrc: ["'self'", "blob:", "https:"],
             connectSrc: [
                 "'self'",
                 "https://api.anthropic.com",
@@ -88,7 +88,11 @@ app.use(helmet({
             frameSrc: [
                 "'self'",
                 "https://app.mindstudio.ai",
-                "https://*.mindstudio.ai"
+                "https://*.mindstudio.ai",
+                "https://www.youtube.com",
+                "https://youtube.com",
+                "https://player.vimeo.com",
+                "https://vimeo.com"
             ]
         }
     }

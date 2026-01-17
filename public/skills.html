@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <style>
         /* Skills Specific Styles */
         .skills-layout {
@@ -712,68 +713,7 @@
         </main>
     </div>
 
-    <!-- Skill Detail Modal -->
-    <div class="modal-overlay" id="detailModal">
-        <div class="modal-content modal" id="detail-modal-dialog">
-            <div class="modal-header" id="detail-modal-header">
-                <h2 id="modalTitle"><i data-lucide="wand-2"></i> Skill Details</h2>
-                <button class="modal-close" onclick="closeDetailModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Populated by JS -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="exportSkill()">
-                    <i data-lucide="download" style="width:16px;height:16px;"></i> Export
-                </button>
-                <button class="btn-secondary" onclick="editSkill()">
-                    <i data-lucide="edit" style="width:16px;height:16px;"></i> Edit
-                </button>
-                <button class="btn-primary" onclick="testSkill()">
-                    <i data-lucide="play" style="width:16px;height:16px;"></i> Test Skill
-                </button>
-            </div>
-        </div><!-- end modal-content -->
-    </div>
-
-    <!-- Import Modal -->
-    <div class="modal-overlay" id="importModal">
-        <div class="modal-content modal" id="import-modal-dialog">
-            <div class="modal-header" id="import-modal-header">
-                <h2><i data-lucide="upload"></i> Import Skill</h2>
-                <button class="modal-close" onclick="closeImportModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                    Paste SKILL.md content below to import a skill:
-                </p>
-                <textarea id="importContent" style="width:100%;height:300px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--text-primary);resize:vertical;" placeholder="---
-name: my-skill
-description: &quot;Skill description&quot;
-version: 1.0.0
-category: content
-suite: execute
-required_context: [&quot;voice_dna&quot;]
----
-
-# My Skill
-
-## Instructions
-
-Your skill instructions here..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeImportModal()">Cancel</button>
-                <button class="btn-primary" onclick="importSkill()">
-                    <i data-lucide="upload" style="width:16px;height:16px;"></i> Import Skill
-                </button>
-            </div>
-        </div><!-- end modal-content -->
-    </div>
+    <!-- Modals are now created dynamically via ModalService -->
 
     <script>
         // State
@@ -785,22 +725,9 @@ Your skill instructions here..."></textarea>
         let currentDepartment = '';
         let selectedSkill = null;
 
-        // Modal managers
-        let detailModalManager = null;
-        let importModalManager = null;
-
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-
-            // Initialize modal managers
-            if (typeof ModalManager !== 'undefined') {
-                detailModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 700 });
-                detailModalManager.init('detail-modal-dialog', 'detail-modal-header', 'detailModal');
-
-                importModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 550 });
-                importModalManager.init('import-modal-dialog', 'import-modal-header', 'importModal');
-            }
 
             await fetchDepartments();
             await loadCategories();
@@ -1017,16 +944,14 @@ Your skill instructions here..."></textarea>
             document.getElementById('executeCount').textContent = skills.filter(s => s.suite === 'execute').length;
         }
 
-        // Skill detail modal
+        // Skill detail modal - using ModalService
+        let detailModal = null;
+
         function showSkillDetail(id) {
             selectedSkill = skills.find(s => s.id === id);
             if (!selectedSkill) return;
 
-            document.getElementById('modalTitle').innerHTML = `
-                <i data-lucide="${selectedSkill.icon || 'wand-2'}"></i> ${selectedSkill.display_name}
-            `;
-
-            document.getElementById('modalBody').innerHTML = `
+            const content = `
                 <div class="skill-detail-header">
                     <div class="skill-detail-icon ${selectedSkill.suite}" style="background:${selectedSkill.color ? `${selectedSkill.color}20` : ''};color:${selectedSkill.color || ''};">
                         <i data-lucide="${selectedSkill.icon || 'wand-2'}"></i>
@@ -1035,9 +960,9 @@ Your skill instructions here..."></textarea>
                         <h2>${selectedSkill.display_name}</h2>
                         <p>${selectedSkill.description || 'No description'}</p>
                         <div class="skill-badges" style="margin-top:0.5rem;">
-                            <span class="skill-suite ${selectedSkill.suite}">${selectedSkill.suite}</span>
+                            <span class="skill-suite ${selectedSkill.suite}">${selectedSkill.suite.toUpperCase()}</span>
                             <span class="skill-version">v${selectedSkill.version || '1.0.0'}</span>
-                            <span class="skill-status ${selectedSkill.status}">${selectedSkill.status}</span>
+                            <span class="skill-status ${selectedSkill.status}">${selectedSkill.status.toUpperCase()}</span>
                         </div>
                     </div>
                 </div>
@@ -1077,19 +1002,40 @@ Your skill instructions here..."></textarea>
                 </div>
             `;
 
-            lucide.createIcons();
-            if (detailModalManager) {
-                detailModalManager.open();
-            } else {
-                document.getElementById('detailModal').classList.add('active');
-            }
+            const footer = `
+                <button type="button" class="i360-btn i360-btn-secondary" id="btnExportSkill">
+                    <i data-lucide="download" style="width:16px;height:16px;"></i> Export
+                </button>
+                <button type="button" class="i360-btn i360-btn-secondary" id="btnEditSkill">
+                    <i data-lucide="edit" style="width:16px;height:16px;"></i> Edit
+                </button>
+                <button type="button" class="i360-btn i360-btn-primary" id="btnTestSkill">
+                    <i data-lucide="play" style="width:16px;height:16px;"></i> Test Skill
+                </button>
+            `;
+
+            detailModal = ModalService.create({
+                title: `${selectedSkill.display_name}`,
+                content: content,
+                footer: footer,
+                width: 600,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('btnExportSkill')?.addEventListener('click', exportSkill);
+                    document.getElementById('btnEditSkill')?.addEventListener('click', editSkill);
+                    document.getElementById('btnTestSkill')?.addEventListener('click', testSkill);
+                }
+            });
+
+            detailModal.open();
         }
 
         function closeDetailModal() {
-            if (detailModalManager) {
-                detailModalManager.close();
-            } else {
-                document.getElementById('detailModal').classList.remove('active');
+            if (detailModal) {
+                detailModal.close();
+                detailModal = null;
             }
             selectedSkill = null;
         }
@@ -1111,10 +1057,13 @@ Your skill instructions here..."></textarea>
                     a.download = data.data.filename;
                     a.click();
                     URL.revokeObjectURL(url);
+                    ModalService.success(`Exported ${data.data.filename}`, 'Export Complete');
+                } else {
+                    ModalService.error(data.error || 'Export failed', 'Export Error');
                 }
             } catch (error) {
                 console.error('Error exporting skill:', error);
-                alert('Error exporting skill');
+                ModalService.error('Error exporting skill', 'Export Error');
             }
         }
 
@@ -1128,8 +1077,16 @@ Your skill instructions here..."></textarea>
         async function testSkill() {
             if (!selectedSkill) return;
 
-            const message = prompt('Enter a test message for this skill:');
+            const message = await ModalService.prompt({
+                title: 'Test Skill',
+                message: 'Enter a test message for this skill:',
+                placeholder: 'Type your message here...'
+            });
+
             if (!message) return;
+
+            // Show loading
+            const loading = ModalService.loading({ message: 'Testing skill...' });
 
             try {
                 const res = await fetch(`/api/skills/${selectedSkill.id}/test`, {
@@ -1139,40 +1096,83 @@ Your skill instructions here..."></textarea>
                 });
 
                 const data = await res.json();
+                loading.close();
 
                 if (data.success) {
-                    alert(`Skill Response:\n\n${data.data.content}`);
+                    // Show response in a content modal
+                    ModalService.content({
+                        title: 'Skill Response',
+                        content: data.data.content,
+                        contentType: 'markdown',
+                        width: 600
+                    }).open();
                 } else {
-                    alert('Error: ' + data.error);
+                    ModalService.error(data.error, 'Test Error');
                 }
             } catch (error) {
+                loading.close();
                 console.error('Error testing skill:', error);
-                alert('Error testing skill');
+                ModalService.error('Error testing skill', 'Test Error');
             }
         }
 
-        // Import modal
+        // Import modal - using ModalService
+        let importModal = null;
+
         function showImportModal() {
-            if (importModalManager) {
-                importModalManager.open();
-            } else {
-                document.getElementById('importModal').classList.add('active');
-            }
+            const content = `
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Paste SKILL.md content below to import a skill:
+                </p>
+                <textarea id="importContent" style="width:100%;height:300px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--text-primary);resize:vertical;" placeholder="---
+name: my-skill
+description: &quot;Skill description&quot;
+version: 1.0.0
+category: content
+suite: execute
+required_context: [&quot;voice_dna&quot;]
+---
+
+# My Skill
+
+## Instructions
+
+Your skill instructions here..."></textarea>
+            `;
+
+            const footer = `
+                <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                <button type="button" class="i360-btn i360-btn-primary" id="btnImportSkill">
+                    <i data-lucide="upload" style="width:16px;height:16px;"></i> Import Skill
+                </button>
+            `;
+
+            importModal = ModalService.create({
+                title: 'Import Skill',
+                content: content,
+                footer: footer,
+                width: 600,
+                draggable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('btnImportSkill')?.addEventListener('click', importSkill);
+                }
+            });
+
+            importModal.open();
         }
 
         function closeImportModal() {
-            if (importModalManager) {
-                importModalManager.close();
-            } else {
-                document.getElementById('importModal').classList.remove('active');
+            if (importModal) {
+                importModal.close();
+                importModal = null;
             }
-            document.getElementById('importContent').value = '';
         }
 
         async function importSkill() {
-            const content = document.getElementById('importContent').value.trim();
+            const content = document.getElementById('importContent')?.value?.trim();
             if (!content) {
-                alert('Please paste SKILL.md content');
+                ModalService.warning('Please paste SKILL.md content', 'Missing Content');
                 return;
             }
 
@@ -1188,13 +1188,13 @@ Your skill instructions here..."></textarea>
                 if (data.success) {
                     closeImportModal();
                     await loadSkills();
-                    alert(`Skill "${data.data.display_name}" imported successfully!`);
+                    ModalService.success(`Skill "${data.data.display_name}" imported successfully!`, 'Import Complete');
                 } else {
-                    alert('Error: ' + data.error);
+                    ModalService.error(data.error, 'Import Error');
                 }
             } catch (error) {
                 console.error('Error importing skill:', error);
-                alert('Error importing skill');
+                ModalService.error('Error importing skill', 'Import Error');
             }
         }
 
@@ -1203,7 +1203,6 @@ Your skill instructions here..."></textarea>
             window.location.href = '/skill-creator.html';
         }
     </script>
-    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>
