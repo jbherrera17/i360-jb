@@ -20,6 +20,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            padding-bottom: 2rem;
         }
 
         /* Profile Overview Section */
@@ -361,13 +362,16 @@
         }
 
         .calendar-day {
-            min-height: 80px;
+            min-height: 100px;
+            max-height: 120px;
             padding: 0.5rem;
             background: var(--bg-tertiary);
             border-radius: 8px;
             border: 1px solid transparent;
             cursor: pointer;
             transition: all 0.2s;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .calendar-day:hover {
@@ -390,15 +394,19 @@
         }
 
         .day-entry {
-            font-size: 0.7rem;
-            padding: 0.25rem 0.5rem;
+            font-size: 0.6rem;
+            padding: 0.15rem 0.3rem;
             background: var(--primary);
             color: white;
-            border-radius: 4px;
-            margin-bottom: 0.25rem;
+            border-radius: 3px;
+            margin-bottom: 0.15rem;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.25;
+            word-break: break-word;
+            cursor: pointer;
         }
 
         .day-entry.draft {
@@ -411,6 +419,59 @@
 
         .day-entry.published {
             background: var(--info);
+        }
+
+        /* Calendar Entry Card in Modal */
+        .calendar-entry-card:hover {
+            background: var(--bg-tertiary) !important;
+        }
+
+        /* Badge styles */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 12px;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+        .badge-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .notion-content h1 { margin: 24px 0 12px; font-size: 22px; font-weight: 700; }
+        .notion-content h2 { margin: 20px 0 10px; font-size: 18px; font-weight: 600; }
+        .notion-content h3 { margin: 16px 0 8px; font-size: 16px; font-weight: 600; }
+        .notion-content p { margin: 12px 0; }
+        .notion-content ul, .notion-content ol { margin: 12px 0; padding-left: 24px; }
+        .notion-content li { margin: 4px 0; }
+        .notion-content blockquote {
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+            margin: 12px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .notion-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+        .notion-content code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
         }
 
         /* Weekly Pipeline Section */
@@ -510,6 +571,7 @@
             display: flex;
             gap: 1rem;
             margin-top: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .action-card {
@@ -1046,7 +1108,7 @@
                     <button class="btn btn-secondary" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="info"></i>
                     </button>
-                    <button class="btn btn-secondary" onclick="window.location.href='/chat.html?agent=tl-strategy-architect'">
+                    <button class="btn btn-secondary" onclick="openStrategyChat()">
                         <i data-lucide="message-circle"></i>
                         Strategy Chat
                     </button>
@@ -1445,7 +1507,7 @@
 
                 <!-- Quick Actions -->
                 <section class="quick-actions">
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=tl-article-writer'">
+                    <div class="action-card" onclick="writeArticle()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
                             <i data-lucide="file-text"></i>
                         </div>
@@ -1454,7 +1516,7 @@
                             <p>Start a new thought leadership article</p>
                         </div>
                     </div>
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=tl-linkedin-generator'">
+                    <div class="action-card" onclick="generateLinkedIn()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #0077b5, #004182);">
                             <i data-lucide="linkedin"></i>
                         </div>
@@ -1463,7 +1525,7 @@
                             <p>Create a week of LinkedIn posts</p>
                         </div>
                     </div>
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=ai-visibility-researcher'">
+                    <div class="action-card" onclick="checkVisibility()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
                             <i data-lucide="eye"></i>
                         </div>
@@ -1472,7 +1534,7 @@
                             <p>Check AI visibility for you or competitors</p>
                         </div>
                     </div>
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=content-pillar-designer'">
+                    <div class="action-card" onclick="addPillar()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
                             <i data-lucide="columns"></i>
                         </div>
@@ -1915,7 +1977,11 @@ Start by asking about their current online presence and platforms.`
 
             } catch (error) {
                 console.error('Error completing setup:', error);
-                alert('Error completing setup. Please try again.');
+                if (window.ModalService) {
+                    ModalService.error('Error completing setup. Please try again.', 'Setup Error');
+                } else {
+                    alert('Error completing setup. Please try again.');
+                }
             }
         }
 
@@ -2125,20 +2191,28 @@ Start by asking about their current online presence and platforms.`
                 const startDate = new Date(year, month, 1).toISOString().split('T')[0];
                 const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
-                const result = await fetchAPI(`/calendar?start_date=${startDate}&end_date=${endDate}`);
+                // Fetch from Notion (with automatic fallback to local DB if Notion fails)
+                const result = await fetchAPI(`/calendar?source=notion&start_date=${startDate}&end_date=${endDate}`);
                 calendarEntries = result.data || [];
 
                 // Add entries to calendar days
                 calendarEntries.forEach(entry => {
-                    const date = new Date(entry.scheduled_date);
-                    const dayNum = date.getDate();
-                    const days = document.querySelectorAll('.calendar-day:not(.other-month)');
+                    // Parse date string directly to avoid timezone issues
+                    // scheduled_date format: "2026-01-05" or "2026-01-05T00:00:00.000Z"
+                    const dateStr = entry.scheduled_date.split('T')[0];
+                    const [year, month, day] = dateStr.split('-').map(Number);
 
-                    if (days[dayNum - 1]) {
-                        const entryEl = document.createElement('div');
-                        entryEl.className = `day-entry ${entry.status || ''}`;
-                        entryEl.textContent = entry.title;
-                        days[dayNum - 1].appendChild(entryEl);
+                    // Only show entries for the current displayed month
+                    if (year === currentMonth.getFullYear() && month === currentMonth.getMonth() + 1) {
+                        const days = document.querySelectorAll('.calendar-day:not(.other-month)');
+
+                        if (days[day - 1]) {
+                            const entryEl = document.createElement('div');
+                            entryEl.className = `day-entry ${entry.status || ''}`;
+                            entryEl.textContent = entry.title;
+                            entryEl.title = entry.title; // Tooltip for full title
+                            days[day - 1].appendChild(entryEl);
+                        }
                     }
                 });
             } catch (err) {
@@ -2157,64 +2231,351 @@ Start by asking about their current online presence and platforms.`
             renderCalendar();
         }
 
-        // Actions
-        function startNicheDiscovery() {
-            window.location.href = '/workflow-run.html?id=tl-niche-discovery';
+        // Actions - Use AgentDialogService for agent interactions
+        async function openStrategyChat() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Strategy Chat',
+                subtitle: 'Discuss your thought leadership strategy',
+                initialMessage: 'I want to discuss my thought leadership strategy with you.'
+            });
         }
 
-        function startWeeklyPipeline() {
-            window.location.href = '/workflow-run.html?id=tl-weekly-pipeline';
+        async function startNicheDiscovery() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Niche Discovery',
+                subtitle: 'Define your expertise and positioning',
+                initialMessage: 'I want to discover my thought leadership niche and define my expertise.'
+            });
         }
 
-        function editPosition() {
-            window.location.href = '/chat.html?agent=tl-strategy-architect&context=edit';
+        async function startWeeklyPipeline() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000304', // TL Article Writer
+                title: 'Weekly Content Pipeline',
+                subtitle: 'Generate this week\'s content',
+                initialMessage: 'Help me create my weekly thought leadership content package.'
+            });
         }
 
-        function checkVisibility() {
-            window.location.href = '/chat.html?agent=ai-visibility-researcher';
+        async function editPosition() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Edit Positioning',
+                subtitle: 'Refine your thesis and atomic claim',
+                initialMessage: `I want to refine my positioning. My current atomic claim is: "${profile?.atomic_claim || 'Not set yet'}". Help me improve it.`
+            });
+        }
+
+        async function checkVisibility() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000302', // AI Visibility Researcher
+                title: 'AI Visibility Check',
+                subtitle: 'See how AI perceives your brand',
+                initialMessage: 'Run an AI visibility audit for my thought leadership brand.'
+            });
+        }
+
+        async function writeArticle() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000304', // TL Article Writer
+                title: 'Write Article',
+                subtitle: 'Create thought leadership content',
+                initialMessage: 'I want to write a new thought leadership article. Help me develop and write it.'
+            });
+        }
+
+        async function generateLinkedIn() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000305', // TL LinkedIn Generator
+                title: 'Generate LinkedIn Posts',
+                subtitle: 'Create engaging LinkedIn content',
+                initialMessage: 'Help me create a week of LinkedIn posts for thought leadership.'
+            });
         }
 
         function managePillars() {
-            // Open pillar management modal or page
-            alert('Pillar management coming soon');
+            // Open pillar management modal
+            showPillarManagementModal();
         }
 
-        function addPillar() {
-            window.location.href = '/chat.html?agent=content-pillar-designer';
+        async function addPillar() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000303', // Content Pillar Designer
+                title: 'Design New Pillar',
+                subtitle: 'Create a strategic content pillar',
+                initialMessage: 'Help me design a new content pillar for my thought leadership program.'
+            });
         }
 
         function viewPillar(id) {
-            // Open pillar detail view
-            alert('Pillar detail view coming soon');
+            // Open pillar detail modal
+            const pillar = pillars.find(p => p.id === id);
+            if (pillar) {
+                showPillarDetailModal(pillar);
+            }
         }
 
-        function syncCalendar() {
-            fetchAPI('/calendar/sync-all', { method: 'POST' })
-                .then(() => {
-                    loadCalendarEntries();
-                    alert('Calendar synced successfully');
-                })
-                .catch(err => alert('Sync failed: ' + err.message));
+        async function syncCalendar() {
+            const loading = ModalService.loading({ message: 'Syncing with Notion...' });
+            try {
+                await fetchAPI('/calendar/sync-all', { method: 'POST' });
+                await loadCalendarEntries();
+                loading.close();
+                ModalService.toast({ message: 'Calendar synced successfully', type: 'success' });
+            } catch (err) {
+                loading.close();
+                ModalService.error('Sync failed: ' + err.message, 'Sync Error');
+            }
         }
 
-        function addCalendarEntry() {
-            window.location.href = '/chat.html?agent=tl-strategy-architect&context=calendar';
+        async function addCalendarEntry() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Add Calendar Entry',
+                subtitle: 'Plan new content',
+                initialMessage: 'Help me plan a new content calendar entry.'
+            });
         }
 
         function selectDay(year, month, day) {
-            // Show entries for this day or create new
+            // Show entries for this day using a modal
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const entries = calendarEntries.filter(e => e.scheduled_date === dateStr);
+            // Normalize entry dates (handle both "2026-01-17" and "2026-01-17T00:00:00.000Z" formats)
+            const dayEntries = calendarEntries.filter(e => {
+                const entryDate = e.scheduled_date?.split('T')[0];
+                return entryDate === dateStr;
+            });
+            showCalendarDayModal(dateStr, dayEntries);
+        }
 
-            if (entries.length > 0) {
-                // Show existing entries
-                alert(`Entries for ${dateStr}:\n${entries.map(e => e.title).join('\n')}`);
-            } else {
-                // Offer to create new
-                if (confirm(`No entries for ${dateStr}. Create new entry?`)) {
-                    addCalendarEntry();
+        // Pillar Management Modal
+        function showPillarManagementModal() {
+            const pillarHtml = pillars.map(p => `
+                <div class="pillar-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${p.color};"></div>
+                        <div>
+                            <div style="font-weight: 600;">${p.name}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">${p.description?.substring(0, 60) || ''}...</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="viewPillar('${p.id}')">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            const modal = ModalService.create({
+                title: 'Content Pillars',
+                size: 'medium',
+                content: `
+                    <div style="margin-bottom: 16px;">
+                        ${pillarHtml || '<p style="color: var(--text-secondary);">No pillars defined yet.</p>'}
+                    </div>
+                `,
+                buttons: [
+                    { label: 'Add Pillar', variant: 'primary', onClick: () => { modal.close(); addPillar(); } },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+            setTimeout(() => lucide.createIcons(), 100);
+        }
+
+        // Pillar Detail Modal
+        function showPillarDetailModal(pillar) {
+            const themes = pillar.monthly_themes ? Object.entries(JSON.parse(pillar.monthly_themes || '{}')).map(([month, theme]) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="font-weight: 500;">${month}</span>
+                    <span style="color: var(--text-secondary);">${theme}</span>
+                </div>
+            `).join('') : '<p style="color: var(--text-secondary);">No monthly themes defined.</p>';
+
+            const modal = ModalService.create({
+                title: pillar.name,
+                size: 'medium',
+                content: `
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; background: ${pillar.color};"></div>
+                            <span style="font-size: 14px; color: var(--text-secondary);">${pillar.quarterly_focus?.join(', ') || 'All quarters'}</span>
+                        </div>
+                        <p style="margin-bottom: 16px;">${pillar.description || 'No description'}</p>
+                        <h4 style="margin-bottom: 8px;">Monthly Themes</h4>
+                        ${themes}
+                    </div>
+                `,
+                buttons: [
+                    { label: 'Edit with AI', variant: 'primary', onClick: () => { modal.close(); editPillarWithAI(pillar); } },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+        }
+
+        async function editPillarWithAI(pillar) {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000303', // Content Pillar Designer
+                title: `Edit: ${pillar.name}`,
+                subtitle: 'Refine this content pillar',
+                initialMessage: `I want to refine my "${pillar.name}" content pillar. Current description: "${pillar.description}". Help me improve it.`
+            });
+        }
+
+        // Calendar Day Modal
+        function showCalendarDayModal(dateStr, entries) {
+            const formattedDate = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const entriesHtml = entries.length > 0 ? entries.map(e => {
+                const pillar = pillars.find(p => p.id === e.pillar_id);
+                const hasNotionPage = e.notion_page_id || e.notion_url;
+                return `
+                    <div class="calendar-entry-card" data-entry-id="${e.id || ''}" data-notion-page-id="${e.notion_page_id || ''}" data-notion-url="${e.notion_url || ''}" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; cursor: ${hasNotionPage ? 'pointer' : 'default'}; transition: background 0.2s;" ${hasNotionPage ? 'onclick="showEntryDetail(this)"' : ''}>
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${e.title}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${e.description?.substring(0, 80) || ''}${e.description?.length > 80 ? '...' : ''}</div>
+                            </div>
+                            <span class="badge ${e.status === 'published' ? 'badge-success' : e.status === 'drafted' ? 'badge-warning' : 'badge-secondary'}">${e.status || 'scheduled'}</span>
+                        </div>
+                        ${pillar ? `<div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${pillar.color};"></div>
+                            <span style="font-size: 11px; color: var(--text-secondary);">${pillar.name}</span>
+                        </div>` : ''}
+                        ${hasNotionPage ? `<div style="margin-top: 8px; font-size: 11px; color: var(--primary);"><i class="fas fa-external-link-alt"></i> Click to view content</div>` : ''}
+                    </div>
+                `;
+            }).join('') : '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No entries scheduled for this day.</p>';
+
+            const modal = ModalService.create({
+                title: formattedDate,
+                size: 'medium',
+                content: `<div>${entriesHtml}</div>`,
+                buttons: [
+                    { label: 'Add Entry', variant: 'primary', onClick: () => { modal.close(); addCalendarEntry(); } },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+        }
+
+        // Show Entry Detail with Notion Content (exposed globally for onclick)
+        window.showEntryDetail = async function(cardEl) {
+            const pageId = cardEl.dataset.notionPageId;
+            const notionUrl = cardEl.dataset.notionUrl;
+            const title = cardEl.querySelector('div[style*="font-weight: 600"]')?.textContent || 'Entry';
+
+            // Show loading modal
+            const modal = ModalService.create({
+                title: title,
+                size: 'large',
+                content: `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p style="margin-top: 12px; color: var(--text-secondary);">Loading content from Notion...</p>
+                    </div>
+                `,
+                buttons: [
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+
+            try {
+                // Fetch content from Notion (fetchAPI already prepends /api/thought-leadership)
+                const response = await fetchAPI(`/calendar/entry/${pageId}/content`);
+
+                if (response.success && response.markdown) {
+                    // Render markdown content
+                    const contentHtml = renderMarkdown(response.markdown);
+
+                    modal.setContent(`
+                        <div style="max-height: 60vh; overflow-y: auto;">
+                            <div class="notion-content" style="line-height: 1.7; font-size: 14px;">
+                                ${contentHtml}
+                            </div>
+                            ${notionUrl ? `
+                                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <a href="${notionUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-external-link-alt"></i> Open in Notion
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `);
+                } else {
+                    modal.setContent(`
+                        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-file-alt fa-2x" style="opacity: 0.5;"></i>
+                            <p style="margin-top: 12px;">No content available yet.</p>
+                            ${notionUrl ? `
+                                <a href="${notionUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                                    <i class="fas fa-external-link-alt"></i> Open in Notion to add content
+                                </a>
+                            ` : ''}
+                        </div>
+                    `);
                 }
+            } catch (err) {
+                console.error('Error fetching entry content:', err);
+                modal.setContent(`
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <i class="fas fa-exclamation-triangle fa-2x" style="color: var(--warning);"></i>
+                        <p style="margin-top: 12px;">Could not load content: ${err.message}</p>
+                        ${notionUrl ? `
+                            <a href="${notionUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                                <i class="fas fa-external-link-alt"></i> View in Notion
+                            </a>
+                        ` : ''}
+                    </div>
+                `);
             }
+        }
+
+        // Simple Markdown Renderer
+        function renderMarkdown(md) {
+            if (!md) return '';
+            return md
+                // Headers
+                .replace(/^### (.+)$/gm, '<h3 style="margin: 16px 0 8px; font-size: 16px;">$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2 style="margin: 20px 0 10px; font-size: 18px;">$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1 style="margin: 24px 0 12px; font-size: 22px;">$1</h1>')
+                // Bold and italic
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // Code
+                .replace(/`([^`]+)`/g, '<code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px;">$1</code>')
+                // Links
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color: var(--primary);">$1</a>')
+                // Bullet lists
+                .replace(/^- (.+)$/gm, '<li style="margin-left: 20px;">$1</li>')
+                // Numbered lists
+                .replace(/^\d+\. (.+)$/gm, '<li style="margin-left: 20px; list-style-type: decimal;">$1</li>')
+                // Blockquotes
+                .replace(/^> (.+)$/gm, '<blockquote style="border-left: 3px solid var(--primary); padding-left: 12px; margin: 12px 0; color: var(--text-secondary); font-style: italic;">$1</blockquote>')
+                // Paragraphs (double newline)
+                .replace(/\n\n/g, '</p><p style="margin: 12px 0;">')
+                // Single newlines to br
+                .replace(/\n/g, '<br>')
+                // Wrap in paragraph
+                .replace(/^(.+)$/, '<p style="margin: 12px 0;">$1</p>');
         }
     </script>
     <script src="/js/help-modal.js"></script>

@@ -30,7 +30,7 @@ INSERT INTO thought_leadership_profiles (
 )
 VALUES (
     'b0000001-0000-4000-b000-000000000001',
-    NULL, -- Set to actual user_id when available
+    '71fb8dfe-7469-4540-9a58-b96caa638da4', -- JB's user ID
 
     -- Core Thesis (full paragraph)
     'To effectively, safely and ethically use AI, applications need to implement an analog and digital alignment strategy to ensure artificial intelligence and human decision-making and hybrid AI/human actions are consistent. That consistency will benefit the organization because human resources will know what and how to act, and customers will know the brand promise of the company. This knowledge creates a self-selecting ability for the customer — when the prospect or customer knows the core values and brand promise and how the company will react under normal circumstances and under stress, they can make informed decisions about products and services. Values-Driven AI Ecosystem Design for SMEs is an emerging discipline focused on designing interconnected AI systems grounded in a company''s core values, mission, and ethical principles — ensuring that automation, intelligence, and human workflows reinforce integrity, trust, and long-term growth.',
@@ -134,7 +134,7 @@ INSERT INTO content_pillars (
 )
 VALUES (
     'c0000001-0000-4000-c000-000000000001',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'Human-Aligned Intelligence',
     'Systems designed to elevate human performance, not replace it. AI assistants that coach, support, and upskill employees.',
@@ -179,7 +179,7 @@ INSERT INTO content_pillars (
 )
 VALUES (
     'c0000001-0000-4000-c000-000000000002',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'Ethical Architecture',
     'Business guardrails defined by moral principles and brand values. Built-in fairness, data integrity, transparency, and accountability.',
@@ -223,7 +223,7 @@ INSERT INTO content_pillars (
 )
 VALUES (
     'c0000001-0000-4000-c000-000000000003',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'Ecosystem Intelligence',
     'Connected AI agents working across functions with shared governance. Marketing, Sales, and Operations AIs exchanging contextual data.',
@@ -266,7 +266,7 @@ INSERT INTO content_pillars (
 )
 VALUES (
     'c0000001-0000-4000-c000-000000000004',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'Values as Strategy',
     'Scalable, affordable, and operationally relevant frameworks. Modular AI agents customized to business maturity and resources.',
@@ -310,7 +310,7 @@ INSERT INTO content_pillars (
 )
 VALUES (
     'c0000001-0000-4000-c000-000000000005',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'Sustainable Growth',
     'Technology decisions rooted in human flourishing and community impact. Balanced KPIs — profit, people, and purpose.',
@@ -358,7 +358,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000001',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'Before We Talk About AI, We Must Talk About What It Means to Be Human',
@@ -384,7 +384,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000002',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'The Judgment Gap: What AI Cannot Replicate',
@@ -410,7 +410,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000003',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'Wisdom vs. Intelligence: Why SMEs Need Both',
@@ -436,7 +436,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000004',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'The Five Human Capabilities AI Will Never Replace',
@@ -462,7 +462,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000005',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'AI Alignment Manifesto',
@@ -488,7 +488,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000006',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'The Two Operating Systems: Analog Values, Digital Execution',
@@ -514,7 +514,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000007',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'Stated Values vs. Stress Values: The Gap That Kills Companies',
@@ -540,7 +540,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000008',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'The Alignment Audit: 10 Questions Every CEO Should Ask',
@@ -566,7 +566,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000009',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'AI in Service of Humanity: Returning Technology to Its Proper Place',
@@ -592,7 +592,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000010',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'The Human-in-the-Loop Imperative: When to Pause the Algorithm',
@@ -618,7 +618,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000011',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'Building Trust Between Teams and Their AI Tools',
@@ -644,7 +644,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000012',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000001',
     'The Hierarchy of AI Assistance: From Tool to Partner',

@@ -508,33 +508,39 @@ module.exports = function(supabase) {
             const userId = req.headers['x-user-id'];
             const { source = 'notion', status, pillar, start_date, end_date } = req.query;
 
+            // Try Notion first if configured, with fallback to local database
             if (source === 'notion' && notionService.isCalendarConfigured()) {
-                // Fetch from Notion
-                const filters = {};
-                if (status) filters.status = status;
-                if (pillar) filters.pillar = pillar;
-                if (start_date) filters.startDate = new Date(start_date);
-                if (end_date) filters.endDate = new Date(end_date);
+                try {
+                    // Attempt to fetch from Notion
+                    const filters = {};
+                    if (status) filters.status = status;
+                    if (pillar) filters.pillar = pillar;
+                    if (start_date) filters.startDate = new Date(start_date);
+                    if (end_date) filters.endDate = new Date(end_date);
 
-                const entries = await notionService.getContentCalendarEntries(filters);
-                res.json({ source: 'notion', data: entries });
-            } else {
-                // Fetch from local database
-                let query = supabase
-                    .from('content_calendar_entries')
-                    .select('*')
-                    .order('scheduled_date', { ascending: true });
-
-                if (userId) query = query.eq('user_id', userId);
-                if (status) query = query.eq('status', status);
-                if (start_date) query = query.gte('scheduled_date', start_date);
-                if (end_date) query = query.lte('scheduled_date', end_date);
-
-                const { data, error } = await query;
-                if (error) throw error;
-
-                res.json({ source: 'local', data: data || [] });
+                    const entries = await notionService.getContentCalendarEntries(filters);
+                    return res.json({ source: 'notion', data: entries });
+                } catch (notionErr) {
+                    // If Notion fails (e.g., access denied), fall back to local database
+                    console.warn('[TL Calendar] Notion fetch failed, falling back to local:', notionErr.message);
+                }
             }
+
+            // Fetch from local database (default or fallback)
+            let query = supabase
+                .from('content_calendar_entries')
+                .select('*')
+                .order('scheduled_date', { ascending: true });
+
+            if (userId) query = query.eq('user_id', userId);
+            if (status) query = query.eq('status', status);
+            if (start_date) query = query.gte('scheduled_date', start_date);
+            if (end_date) query = query.lte('scheduled_date', end_date);
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            res.json({ source: 'local', data: data || [] });
         } catch (err) {
             console.error('Error fetching calendar:', err);
             res.status(500).json({ error: err.message });
@@ -831,6 +837,66 @@ module.exports = function(supabase) {
             res.json({ success: true, results });
         } catch (err) {
             console.error('Error syncing all entries:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/calendar/schema
+     * Get Notion database schema to check property names
+     */
+    router.get('/calendar/schema', async (req, res) => {
+        try {
+            if (!notionService.isCalendarConfigured()) {
+                return res.status(400).json({ error: 'Notion not configured' });
+            }
+
+            const schema = await notionService.getCalendarSchema();
+            res.json({ success: true, schema });
+        } catch (err) {
+            console.error('Error fetching schema:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/calendar/entry/:pageId/content
+     * Get the content (body text) of a Notion page as markdown
+     */
+    router.get('/calendar/entry/:pageId/content', async (req, res) => {
+        try {
+            const { pageId } = req.params;
+
+            if (!pageId) {
+                return res.status(400).json({ error: 'Page ID required' });
+            }
+
+            if (!notionService.client) {
+                return res.status(400).json({ error: 'Notion not configured' });
+            }
+
+            const content = await notionService.getPageContent(pageId);
+            res.json({ success: true, ...content });
+        } catch (err) {
+            console.error('Error fetching page content:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Debug endpoint to check raw Notion properties
+    router.get('/calendar/entry/:pageId/debug', async (req, res) => {
+        try {
+            const { pageId } = req.params;
+            if (!notionService.client) {
+                return res.status(400).json({ error: 'Notion not configured' });
+            }
+            const page = await notionService.client.pages.retrieve({ page_id: pageId });
+            res.json({
+                success: true,
+                properties: page.properties,
+                status_property: page.properties['Status']
+            });
+        } catch (err) {
             res.status(500).json({ error: err.message });
         }
     });

@@ -24,7 +24,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000013',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002', -- Ethical Architecture
     'Why Misaligned AI Creates Organizational Drift',
@@ -50,7 +50,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000014',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'The Invisible Erosion: How Small Compromises Compound',
@@ -76,7 +76,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000015',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'The CEO''s Blind Spot: Owning What You Can''t See',
@@ -102,7 +102,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000016',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'Five Warning Signs Your AI Is Drifting From Your Values',
@@ -132,7 +132,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000017',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'The Hidden Cost of Misalignment',
@@ -158,7 +158,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000018',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'The Integrity Yield: A New Metric for AI-Era Leadership',
@@ -184,7 +184,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000019',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'Trust Velocity: Is Your Reputation Compounding or Eroding?',
@@ -210,7 +210,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000020',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'The Close Call Log: Documenting the Crises That Didn''t Happen',
@@ -240,7 +240,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000021',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'Bright Lines: The Ethical Boundaries That Cannot Bend',
@@ -266,7 +266,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000022',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'Ethics as Code: Embedding Values in AI Architecture',
@@ -292,7 +292,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000023',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'The Veto Power: When Humans Must Override the Algorithm',
@@ -318,7 +318,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000024',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000002',
     'Building Your Integrity Dashboard: A Step-by-Step Guide',
@@ -353,7 +353,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000025',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004', -- Values as Strategy
     'Master Your Minutes, Master Your Life',
@@ -379,7 +379,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000026',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'The Leader''s Daily Alignment Practice',
@@ -405,7 +405,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000027',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'Decision Fatigue and the Aligned Mind',
@@ -431,7 +431,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000028',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'Time Integrity: Where Your Calendar Reveals Your Values',
@@ -461,7 +461,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000029',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'Integrity-as-Strategy: Your Competitive Advantage',
@@ -487,7 +487,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000030',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'The Trust Premium: Why Aligned Companies Command Higher Prices',
@@ -513,7 +513,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000031',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'The Self-Selecting Customer: When Values Attract the Right Clients',
@@ -539,7 +539,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000032',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000004',
     'Calculating Your Return on Integrity',
@@ -569,7 +569,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000033',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000003', -- Ecosystem Intelligence
     'The Aligned Ecosystem: When All Your AI Agents Share Values',
@@ -595,7 +595,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000034',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000003',
     'Context Is Everything: How Values Flow Through Multi-Agent Systems',
@@ -621,7 +621,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000035',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000003',
     'The Governance Layer: Who Watches the Watchers?',
@@ -647,7 +647,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000036',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000003',
     'Building Your First Values-Driven AI Agent',
@@ -682,7 +682,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000037',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005', -- Sustainable Growth
     'The Triple Bottom Line of AI: Profit, People, and Purpose',
@@ -708,7 +708,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000038',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'Leading Indicators: Your Early Warning System for Values Drift',
@@ -734,7 +734,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000039',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'The Counterfactual Question: What Didn''t Happen Because You Did Right?',
@@ -760,7 +760,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000040',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'Building Your Integrity Scorecard',
@@ -790,7 +790,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000041',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'The Rhythm of Alignment: Daily, Weekly, Quarterly Practices',
@@ -816,7 +816,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000042',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'The Values Clarification Session: A Facilitation Guide',
@@ -842,7 +842,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000043',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'Training Your Team for Judgment, Not Just Compliance',
@@ -868,7 +868,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000044',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'The Annual Integrity Audit: A Comprehensive Checklist',
@@ -898,7 +898,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000045',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'The Alignment Operating System: A Year in Review',
@@ -924,7 +924,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000046',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'Case Study: Building a Values-Driven AI Ecosystem',
@@ -950,7 +950,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000047',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'The Future of Aligned Intelligence: What Comes Next',
@@ -976,7 +976,7 @@ INSERT INTO content_calendar_entries (
 )
 VALUES (
     'd0000001-0000-4000-d000-000000000048',
-    NULL,
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'b0000001-0000-4000-b000-000000000001',
     'c0000001-0000-4000-c000-000000000005',
     'Your 2027 Alignment Roadmap: Planning the Year Ahead',

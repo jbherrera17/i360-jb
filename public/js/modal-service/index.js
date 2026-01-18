@@ -474,7 +474,8 @@ const ModalService = (function() {
                 closeOnOverlayClick: false,
                 draggable: false,
                 className: 'i360-modal-loading-container',
-                width: 220
+                width: 220,
+                animate: false // Disable animation so open() is synchronous
             });
 
             this.register(modal);

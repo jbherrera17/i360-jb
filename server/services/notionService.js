@@ -8,14 +8,43 @@ const { Client } = require('@notionhq/client');
 class NotionService {
     constructor() {
         this.client = null;
-        this.pageId = process.env.NOTION_PAGE_ID;
-        this.contentCalendarDbId = process.env.NOTION_CONTENT_CALENDAR_DB_ID || 'e5228731-3073-4081-a379-c09beb2a9412';
+        this.pageId = this.extractNotionId(process.env.NOTION_PAGE_ID);
+        this.contentCalendarDbId = this.extractNotionId(process.env.NOTION_CONTENT_CALENDAR_DB_ID) || 'e5228731-3073-4081-a379-c09beb2a9412';
 
         if (process.env.NOTION_API_KEY) {
             this.client = new Client({
                 auth: process.env.NOTION_API_KEY
             });
         }
+
+        console.log('[NotionService] Initialized with calendar DB:', this.contentCalendarDbId);
+    }
+
+    /**
+     * Extract Notion ID from URL or return as-is if already an ID
+     * Handles: full URLs, URLs with view params, or plain IDs
+     */
+    extractNotionId(input) {
+        if (!input) return null;
+
+        // If it's a full URL, extract the ID
+        if (input.includes('notion.so') || input.includes('notion.site')) {
+            // Match the 32-char hex ID (with or without dashes)
+            const match = input.match(/([a-f0-9]{32}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+            if (match) {
+                // Return with dashes (Notion API format)
+                const id = match[1].replace(/-/g, '');
+                return `${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}`;
+            }
+        }
+
+        // Already an ID (with or without dashes)
+        const cleaned = input.replace(/-/g, '');
+        if (/^[a-f0-9]{32}$/i.test(cleaned)) {
+            return `${cleaned.slice(0,8)}-${cleaned.slice(8,12)}-${cleaned.slice(12,16)}-${cleaned.slice(16,20)}-${cleaned.slice(20)}`;
+        }
+
+        return input; // Return as-is if we can't parse it
     }
 
     isConfigured() {
@@ -23,10 +52,53 @@ class NotionService {
     }
 
     isCalendarConfigured() {
-        // Check that client is properly initialized with databases.query method
-        return this.client !== null &&
+        // Check that client is properly initialized
+        // Note: In Notion SDK v5.x, query moved from databases to dataSources
+        const configured = this.client !== null &&
                this.contentCalendarDbId &&
-               typeof this.client.databases?.query === 'function';
+               (typeof this.client.databases?.query === 'function' ||
+                typeof this.client.dataSources?.query === 'function');
+
+        if (!configured) {
+            console.log('[NotionService] Calendar not configured:', {
+                hasClient: this.client !== null,
+                hasDbId: !!this.contentCalendarDbId,
+                hasDbQuery: typeof this.client?.databases?.query === 'function',
+                hasDsQuery: typeof this.client?.dataSources?.query === 'function'
+            });
+        }
+        return configured;
+    }
+
+    /**
+     * Helper to query database (handles SDK version differences)
+     */
+    async queryDatabase(params) {
+        // Notion SDK v5.x moved query to dataSources
+        if (typeof this.client.dataSources?.query === 'function') {
+            // v5.x: use dataSources.query with data_source_id
+            const { database_id, ...rest } = params;
+            return this.client.dataSources.query({ data_source_id: database_id, ...rest });
+        } else if (typeof this.client.databases?.query === 'function') {
+            // v2.x: use databases.query
+            return this.client.databases.query(params);
+        } else {
+            throw new Error('Notion SDK query method not found');
+        }
+    }
+
+    /**
+     * Helper to retrieve database schema
+     */
+    async retrieveDatabase(databaseId) {
+        // Notion SDK v5.x moved retrieve to dataSources
+        if (typeof this.client.dataSources?.retrieve === 'function') {
+            return this.client.dataSources.retrieve({ data_source_id: databaseId });
+        } else if (typeof this.client.databases?.retrieve === 'function') {
+            return this.client.databases.retrieve({ database_id: databaseId });
+        } else {
+            throw new Error('Notion SDK retrieve method not found');
+        }
     }
 
     // ============================================
@@ -93,7 +165,7 @@ class NotionService {
                 : { and: filterConditions };
         }
 
-        const response = await this.client.databases.query(queryParams);
+        const response = await this.queryDatabase(queryParams);
 
         return response.results.map(page => this.parseCalendarPage(page));
     }
@@ -108,6 +180,117 @@ class NotionService {
 
         const page = await this.client.pages.retrieve({ page_id: pageId });
         return this.parseCalendarPage(page);
+    }
+
+    /**
+     * Get page content (block children) as markdown
+     * @param {string} pageId - Notion page ID
+     * @returns {object} - { markdown, blocks }
+     */
+    async getPageContent(pageId) {
+        if (!this.client) {
+            throw new Error('Notion client is not configured.');
+        }
+
+        const blocks = [];
+        let cursor = undefined;
+
+        // Fetch all blocks (handles pagination)
+        do {
+            const response = await this.client.blocks.children.list({
+                block_id: pageId,
+                start_cursor: cursor,
+                page_size: 100
+            });
+
+            blocks.push(...response.results);
+            cursor = response.has_more ? response.next_cursor : undefined;
+        } while (cursor);
+
+        // Convert blocks to markdown
+        const markdown = this.blocksToMarkdown(blocks);
+
+        return {
+            markdown,
+            blocks,
+            blockCount: blocks.length
+        };
+    }
+
+    /**
+     * Convert Notion blocks to markdown
+     */
+    blocksToMarkdown(blocks) {
+        return blocks.map(block => {
+            const type = block.type;
+            const content = block[type];
+
+            switch (type) {
+                case 'paragraph':
+                    return this.richTextToMarkdown(content?.rich_text) + '\n';
+
+                case 'heading_1':
+                    return `# ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'heading_2':
+                    return `## ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'heading_3':
+                    return `### ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'bulleted_list_item':
+                    return `- ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'numbered_list_item':
+                    return `1. ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'quote':
+                    return `> ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'code':
+                    const lang = content?.language || '';
+                    return `\`\`\`${lang}\n${this.richTextToMarkdown(content?.rich_text)}\n\`\`\`\n`;
+
+                case 'divider':
+                    return '---\n';
+
+                case 'callout':
+                    const icon = content?.icon?.emoji || '';
+                    return `> ${icon} ${this.richTextToMarkdown(content?.rich_text)}\n`;
+
+                case 'toggle':
+                    return `<details>\n<summary>${this.richTextToMarkdown(content?.rich_text)}</summary>\n</details>\n`;
+
+                case 'image':
+                    const url = content?.file?.url || content?.external?.url || '';
+                    const caption = content?.caption?.[0]?.plain_text || 'image';
+                    return url ? `![${caption}](${url})\n` : '';
+
+                default:
+                    return '';
+            }
+        }).join('\n');
+    }
+
+    /**
+     * Convert Notion rich text array to markdown
+     */
+    richTextToMarkdown(richText) {
+        if (!richText || !Array.isArray(richText)) return '';
+
+        return richText.map(text => {
+            let content = text.plain_text || '';
+            const annotations = text.annotations || {};
+
+            if (annotations.bold) content = `**${content}**`;
+            if (annotations.italic) content = `*${content}*`;
+            if (annotations.strikethrough) content = `~~${content}~~`;
+            if (annotations.code) content = `\`${content}\``;
+
+            if (text.href) content = `[${content}](${text.href})`;
+
+            return content;
+        }).join('');
     }
 
     /**
@@ -215,6 +398,7 @@ class NotionService {
         const getTitle = (prop) => prop?.title?.[0]?.plain_text || '';
         const getRichText = (prop) => prop?.rich_text?.[0]?.plain_text || '';
         const getSelect = (prop) => prop?.select?.name || null;
+        const getStatus = (prop) => prop?.status?.name || null; // Notion status type (different from select)
         const getDate = (prop) => prop?.date?.start || null;
         const getCheckbox = (prop) => prop?.checkbox || false;
         const getNumber = (prop) => prop?.number || null;
@@ -229,7 +413,7 @@ class NotionService {
             scheduled_date: getDate(props['Date']),
             pillar: getSelect(props['Pillar']),
             event_type: getSelect(props['Event Type']),
-            status: getSelect(props['Status']),
+            status: getStatus(props['Status']),
             goal: getRichText(props['Goal']),
             monthly_topic: getRichText(props['Monthly Topic']),
 
@@ -357,9 +541,7 @@ class NotionService {
             throw new Error('Content Calendar is not configured.');
         }
 
-        const database = await this.client.databases.retrieve({
-            database_id: this.contentCalendarDbId
-        });
+        const database = await this.retrieveDatabase(this.contentCalendarDbId);
 
         return {
             id: database.id,
