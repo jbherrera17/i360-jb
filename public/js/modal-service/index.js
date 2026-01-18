@@ -313,12 +313,18 @@ const ModalService = (function() {
                     confirmText: options.confirmText || 'Confirm',
                     cancelText: options.cancelText || 'Cancel',
                     type: options.type || 'info',
+                    zIndex: options.zIndex,
                     onConfirm: () => resolve(true),
                     onCancel: () => resolve(false)
                 });
 
                 this.register(modal);
-                modal.init().open();
+                modal.init();
+                // If custom zIndex provided, set it after init (when elements exist)
+                if (options.zIndex) {
+                    modal.setZIndex(options.zIndex);
+                }
+                modal.open();
             });
         },
 
@@ -468,7 +474,8 @@ const ModalService = (function() {
                 closeOnOverlayClick: false,
                 draggable: false,
                 className: 'i360-modal-loading-container',
-                width: 220
+                width: 220,
+                animate: false // Disable animation so open() is synchronous
             });
 
             this.register(modal);

@@ -90,6 +90,9 @@ class AgentDialogService {
         this.bindEvents();
         this.addResizeHandles();
         this.bindDragResizeEvents();
+
+        // Set global reference for inline onclick handlers
+        window.agentDialogInstance = this;
     }
 
     /**
@@ -137,7 +140,7 @@ class AgentDialogService {
                             </div>
                         </div>
                         <button class="agent-dialog-close" aria-label="Close dialog">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none;">
                                 <path d="M18 6L6 18M6 6l12 12"/>
                             </svg>
                         </button>
@@ -182,8 +185,10 @@ class AgentDialogService {
      * Bind event handlers
      */
     bindEvents() {
-        // Close button
-        this.elements.closeBtn.addEventListener('click', () => {
+        // Close button (X in header)
+        this.elements.closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (!this.state.isStreaming || this.options.allowClose) {
                 this.confirmClose();
             }
@@ -235,8 +240,10 @@ class AgentDialogService {
             this.acceptResults();
         });
 
-        // Cancel button
-        this.elements.cancelBtn.addEventListener('click', () => {
+        // Cancel button (in footer)
+        this.elements.cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             this.confirmClose();
         });
     }
@@ -555,15 +562,14 @@ class AgentDialogService {
         this.elements.title.textContent = title || 'AI Agent';
         this.elements.subtitle.textContent = subtitle || 'Ready to assist';
 
-        // Reset and center modal
+        // Reset modal - flexbox centering will handle positioning
         this.resetModalSize();
 
         this.elements.overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Focus input and center after DOM update
+        // Focus input after DOM update (no centering needed - flexbox handles it)
         setTimeout(() => {
-            this.centerModal();
             this.elements.input.focus();
         }, 50);
     }
@@ -571,10 +577,33 @@ class AgentDialogService {
     /**
      * Confirm before closing if there's conversation history
      */
-    confirmClose() {
-        if (this.state.conversationHistory.length > 1) {
-            const confirmed = confirm('You have an active conversation. Are you sure you want to close without saving?');
-            if (!confirmed) return;
+    async confirmClose() {
+        // Always show confirmation when dialog is open
+        if (this.state.isOpen) {
+            // Wait for ModalService to be loaded if loader exists
+            if (window.ModalServiceLoader && !window.ModalServiceLoader.isLoaded()) {
+                try {
+                    await window.ModalServiceLoader.load();
+                } catch (e) {
+                    console.warn('[AgentDialog] Failed to load ModalService:', e);
+                }
+            }
+
+            // Use ModalService if available, otherwise fall back to native confirm
+            if (window.ModalService && typeof window.ModalService.confirm === 'function') {
+                const confirmed = await ModalService.confirm({
+                    title: 'Close Conversation?',
+                    message: 'Are you sure you want to close this conversation?',
+                    confirmText: 'Close',
+                    cancelText: 'Keep Open',
+                    type: 'warning',
+                    zIndex: 10100  // Higher than agent-dialog overlay (10000)
+                });
+                if (!confirmed) return;
+            } else {
+                const confirmed = confirm('Are you sure you want to close this conversation?');
+                if (!confirmed) return;
+            }
         }
         this.close();
     }
@@ -732,7 +761,10 @@ class AgentDialogService {
         this.elements.dialog.style.width = `${this.options.defaultWidth}px`;
         this.elements.dialog.style.height = '';
         this.elements.dialog.style.maxHeight = '80vh';
-        this.centerModal();
+        this.elements.dialog.style.left = '';
+        this.elements.dialog.style.top = '';
+        // Remove positioned class so flexbox centering works
+        this.elements.dialog.classList.remove('positioned');
     }
 
     /**
@@ -754,6 +786,11 @@ class AgentDialogService {
 
         this.dragState.startLeft = rect.left - overlayRect.left;
         this.dragState.startTop = rect.top - overlayRect.top;
+
+        // Switch to absolute positioning when dragging
+        this.elements.dialog.classList.add('positioned');
+        this.elements.dialog.style.left = `${this.dragState.startLeft}px`;
+        this.elements.dialog.style.top = `${this.dragState.startTop}px`;
 
         this.elements.dialog.style.transition = 'none';
         document.body.style.userSelect = 'none';
@@ -783,6 +820,11 @@ class AgentDialogService {
         // Store initial edges for anchoring
         this.dragState.startBottom = this.dragState.startTop + this.dragState.startHeight;
         this.dragState.startRight = this.dragState.startLeft + this.dragState.startWidth;
+
+        // Switch to absolute positioning when resizing
+        this.elements.dialog.classList.add('positioned');
+        this.elements.dialog.style.left = `${this.dragState.startLeft}px`;
+        this.elements.dialog.style.top = `${this.dragState.startTop}px`;
 
         this.elements.dialog.style.transition = 'none';
         document.body.style.userSelect = 'none';

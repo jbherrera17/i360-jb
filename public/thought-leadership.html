@@ -9,7 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/agent-dialog.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/agent-dialog-service.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Thought Leadership Page Styles */
@@ -17,6 +20,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            padding-bottom: 2rem;
         }
 
         /* Profile Overview Section */
@@ -358,13 +362,16 @@
         }
 
         .calendar-day {
-            min-height: 80px;
+            min-height: 100px;
+            max-height: 120px;
             padding: 0.5rem;
             background: var(--bg-tertiary);
             border-radius: 8px;
             border: 1px solid transparent;
             cursor: pointer;
             transition: all 0.2s;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .calendar-day:hover {
@@ -387,15 +394,19 @@
         }
 
         .day-entry {
-            font-size: 0.7rem;
-            padding: 0.25rem 0.5rem;
+            font-size: 0.6rem;
+            padding: 0.15rem 0.3rem;
             background: var(--primary);
             color: white;
-            border-radius: 4px;
-            margin-bottom: 0.25rem;
+            border-radius: 3px;
+            margin-bottom: 0.15rem;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.25;
+            word-break: break-word;
+            cursor: pointer;
         }
 
         .day-entry.draft {
@@ -408,6 +419,59 @@
 
         .day-entry.published {
             background: var(--info);
+        }
+
+        /* Calendar Entry Card in Modal */
+        .calendar-entry-card:hover {
+            background: var(--bg-tertiary) !important;
+        }
+
+        /* Badge styles */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 12px;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+        .badge-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .notion-content h1 { margin: 24px 0 12px; font-size: 22px; font-weight: 700; }
+        .notion-content h2 { margin: 20px 0 10px; font-size: 18px; font-weight: 600; }
+        .notion-content h3 { margin: 16px 0 8px; font-size: 16px; font-weight: 600; }
+        .notion-content p { margin: 12px 0; }
+        .notion-content ul, .notion-content ol { margin: 12px 0; padding-left: 24px; }
+        .notion-content li { margin: 4px 0; }
+        .notion-content blockquote {
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+            margin: 12px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .notion-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+        .notion-content code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
         }
 
         /* Weekly Pipeline Section */
@@ -507,6 +571,7 @@
             display: flex;
             gap: 1rem;
             margin-top: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .action-card {
@@ -608,6 +673,421 @@
             padding: 0.5rem 1rem;
             font-size: 0.85rem;
         }
+
+        /* ============================================
+           Setup Flow Styles (Phase 34 - Catalyst)
+           ============================================ */
+
+        /* User Identity Header */
+        .setup-user-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.05));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .setup-user-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .setup-user-info {
+            flex: 1;
+        }
+
+        .setup-user-greeting {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .setup-user-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .setup-user-tagline {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .setup-user-progress {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .setup-progress-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .setup-progress-bar {
+            width: 120px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .setup-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #6366f1);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .setup-progress-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Setup Stepper */
+        .setup-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .setup-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .setup-step:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .setup-step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .setup-step-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setup-step-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .setup-step-sublabel {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        .setup-step.active {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: #8b5cf6;
+        }
+
+        .setup-step.active .setup-step-number {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+        }
+
+        .setup-step.active .setup-step-label {
+            color: var(--text-primary);
+        }
+
+        .setup-step.completed .setup-step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .setup-step.completed .setup-step-label {
+            color: var(--text-primary);
+        }
+
+        .step-connector {
+            width: 24px;
+            height: 2px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-connector.completed {
+            background: #10b981;
+        }
+
+        /* Setup Module Panel */
+        .setup-module-panel {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .setup-module-panel.active {
+            display: block;
+        }
+
+        .setup-panel-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .setup-panel-header-content {
+            flex: 1;
+        }
+
+        .setup-panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .setup-panel-header h2 i {
+            color: #8b5cf6;
+        }
+
+        .setup-panel-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .setup-panel-body {
+            padding: 1.5rem;
+        }
+
+        .setup-panel-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-tertiary);
+        }
+
+        /* Agent Launch Card */
+        .agent-launch-card {
+            background: var(--bg-primary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .agent-launch-card:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .agent-launch-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: #8b5cf6;
+        }
+
+        .agent-launch-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .agent-launch-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0 0 1rem 0;
+        }
+
+        /* Step Results Display */
+        .step-results {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .step-results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .step-results-header h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .step-results-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .step-results-content pre {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+        }
+
+        /* Button Styles for Setup Flow */
+        .btn-ai {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-ai:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Hide dashboard when in setup mode */
+        .tl-layout.setup-mode .dashboard-content {
+            display: none;
+        }
+
+        .tl-layout.dashboard-mode .setup-content {
+            display: none;
+        }
+
+        /* Completion Celebration */
+        .setup-complete-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+            border: 1px solid #10b981;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .setup-complete-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #10b981;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .setup-complete-card p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .setup-stepper {
+                gap: 0.5rem;
+            }
+            .step-connector {
+                display: none;
+            }
+            .setup-step-sublabel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .setup-step-content {
+                display: none;
+            }
+            .setup-panel-footer {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .btn-group {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -628,7 +1108,7 @@
                     <button class="btn btn-secondary" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="info"></i>
                     </button>
-                    <button class="btn btn-secondary" onclick="window.location.href='/chat.html?agent=tl-strategy-architect'">
+                    <button class="btn btn-secondary" onclick="openStrategyChat()">
                         <i data-lucide="message-circle"></i>
                         Strategy Chat
                     </button>
@@ -639,7 +1119,235 @@
                 </div>
             </header>
 
-            <div class="tl-layout">
+            <div class="tl-layout" id="tl-layout">
+                <!-- ============================================
+                     Setup Flow Content (Shows for new users)
+                     ============================================ -->
+                <div class="setup-content" id="setup-content">
+                    <!-- User Identity Header -->
+                    <div class="setup-user-header" id="setup-user-header">
+                        <div class="setup-user-avatar" id="user-avatar">?</div>
+                        <div class="setup-user-info">
+                            <div class="setup-user-greeting">Welcome to your Thought Leadership journey</div>
+                            <div class="setup-user-name" id="user-display-name">Loading...</div>
+                            <div class="setup-user-tagline">Let's build your authority and visibility</div>
+                        </div>
+                        <div class="setup-user-progress">
+                            <span class="setup-progress-label">Setup Progress</span>
+                            <div class="setup-progress-bar">
+                                <div class="setup-progress-fill" id="setup-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="setup-progress-text" id="setup-progress-text">0 / 4</span>
+                        </div>
+                    </div>
+
+                    <!-- Setup Stepper -->
+                    <div class="setup-stepper" id="setup-stepper">
+                        <div class="setup-step active" data-step="1">
+                            <div class="setup-step-number">1</div>
+                            <div class="setup-step-content">
+                                <span class="setup-step-label">Niche Discovery</span>
+                                <span class="setup-step-sublabel">Define expertise</span>
+                            </div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="setup-step" data-step="2">
+                            <div class="setup-step-number">2</div>
+                            <div class="setup-step-content">
+                                <span class="setup-step-label">Core Positioning</span>
+                                <span class="setup-step-sublabel">Thesis & claim</span>
+                            </div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="setup-step" data-step="3">
+                            <div class="setup-step-number">3</div>
+                            <div class="setup-step-content">
+                                <span class="setup-step-label">Content Pillars</span>
+                                <span class="setup-step-sublabel">3-5 themes</span>
+                            </div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="setup-step" data-step="4">
+                            <div class="setup-step-number">4</div>
+                            <div class="setup-step-content">
+                                <span class="setup-step-label">Visibility Check</span>
+                                <span class="setup-step-sublabel">AI baseline</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Niche Discovery -->
+                    <div class="setup-module-panel active" id="setup-step-1">
+                        <div class="setup-panel-header">
+                            <div class="setup-panel-header-content">
+                                <h2><i data-lucide="compass"></i> Step 1: Niche Discovery</h2>
+                                <p>Define your expertise, target audience, and unique angle. This foundation shapes everything that follows.</p>
+                            </div>
+                        </div>
+                        <div class="setup-panel-body">
+                            <div class="agent-launch-card" onclick="runSetupStep(1)">
+                                <div class="agent-launch-icon">
+                                    <i data-lucide="sparkles" style="width:32px;height:32px;"></i>
+                                </div>
+                                <h3>Start Niche Discovery</h3>
+                                <p>I'll guide you through a conversation to uncover your unique expertise and positioning</p>
+                                <button class="btn-ai">
+                                    <i data-lucide="message-circle"></i>
+                                    Begin Discovery Session
+                                </button>
+                            </div>
+                            <div id="step-1-results" class="step-results" style="display:none;">
+                                <div class="step-results-header">
+                                    <h4><i data-lucide="check-circle" style="width:16px;height:16px;color:#10b981;"></i> Discovery Complete</h4>
+                                    <button class="btn btn-secondary btn-sm" onclick="runSetupStep(1)">
+                                        <i data-lucide="refresh-cw"></i> Redo
+                                    </button>
+                                </div>
+                                <div class="step-results-content"></div>
+                            </div>
+                        </div>
+                        <div class="setup-panel-footer">
+                            <span class="text-muted" style="font-size:0.85rem;">Step 1 of 4</span>
+                            <button class="btn btn-primary" id="step-1-next" onclick="goToSetupStep(2)" disabled>
+                                Continue to Positioning <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Core Positioning -->
+                    <div class="setup-module-panel" id="setup-step-2">
+                        <div class="setup-panel-header">
+                            <div class="setup-panel-header-content">
+                                <h2><i data-lucide="target"></i> Step 2: Core Positioning</h2>
+                                <p>Refine your thesis and create your atomic claim - the single sentence that captures your unique perspective.</p>
+                            </div>
+                        </div>
+                        <div class="setup-panel-body">
+                            <div class="agent-launch-card" onclick="runSetupStep(2)">
+                                <div class="agent-launch-icon">
+                                    <i data-lucide="pen-tool" style="width:32px;height:32px;"></i>
+                                </div>
+                                <h3>Define Your Position</h3>
+                                <p>We'll craft your core thesis and atomic claim based on your niche discovery</p>
+                                <button class="btn-ai">
+                                    <i data-lucide="message-circle"></i>
+                                    Start Positioning Session
+                                </button>
+                            </div>
+                            <div id="step-2-results" class="step-results" style="display:none;">
+                                <div class="step-results-header">
+                                    <h4><i data-lucide="check-circle" style="width:16px;height:16px;color:#10b981;"></i> Positioning Complete</h4>
+                                    <button class="btn btn-secondary btn-sm" onclick="runSetupStep(2)">
+                                        <i data-lucide="refresh-cw"></i> Redo
+                                    </button>
+                                </div>
+                                <div class="step-results-content"></div>
+                            </div>
+                        </div>
+                        <div class="setup-panel-footer">
+                            <button class="btn btn-secondary" onclick="goToSetupStep(1)">
+                                <i data-lucide="arrow-left"></i> Back
+                            </button>
+                            <div class="btn-group">
+                                <span class="text-muted" style="font-size:0.85rem;align-self:center;">Step 2 of 4</span>
+                                <button class="btn btn-primary" id="step-2-next" onclick="goToSetupStep(3)" disabled>
+                                    Continue to Pillars <i data-lucide="arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Content Pillars -->
+                    <div class="setup-module-panel" id="setup-step-3">
+                        <div class="setup-panel-header">
+                            <div class="setup-panel-header-content">
+                                <h2><i data-lucide="columns"></i> Step 3: Content Pillars</h2>
+                                <p>Design 3-5 content pillars that support your positioning and give you endless content ideas.</p>
+                            </div>
+                        </div>
+                        <div class="setup-panel-body">
+                            <div class="agent-launch-card" onclick="runSetupStep(3)">
+                                <div class="agent-launch-icon">
+                                    <i data-lucide="layout-grid" style="width:32px;height:32px;"></i>
+                                </div>
+                                <h3>Design Content Pillars</h3>
+                                <p>Create the thematic pillars that will structure all your content going forward</p>
+                                <button class="btn-ai">
+                                    <i data-lucide="message-circle"></i>
+                                    Start Pillar Design
+                                </button>
+                            </div>
+                            <div id="step-3-results" class="step-results" style="display:none;">
+                                <div class="step-results-header">
+                                    <h4><i data-lucide="check-circle" style="width:16px;height:16px;color:#10b981;"></i> Pillars Created</h4>
+                                    <button class="btn btn-secondary btn-sm" onclick="runSetupStep(3)">
+                                        <i data-lucide="refresh-cw"></i> Redo
+                                    </button>
+                                </div>
+                                <div class="step-results-content"></div>
+                            </div>
+                        </div>
+                        <div class="setup-panel-footer">
+                            <button class="btn btn-secondary" onclick="goToSetupStep(2)">
+                                <i data-lucide="arrow-left"></i> Back
+                            </button>
+                            <div class="btn-group">
+                                <span class="text-muted" style="font-size:0.85rem;align-self:center;">Step 3 of 4</span>
+                                <button class="btn btn-primary" id="step-3-next" onclick="goToSetupStep(4)" disabled>
+                                    Continue to Visibility <i data-lucide="arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Visibility Baseline -->
+                    <div class="setup-module-panel" id="setup-step-4">
+                        <div class="setup-panel-header">
+                            <div class="setup-panel-header-content">
+                                <h2><i data-lucide="eye"></i> Step 4: Visibility Baseline</h2>
+                                <p>Check your current AI visibility to establish a baseline. We'll track progress from here.</p>
+                            </div>
+                        </div>
+                        <div class="setup-panel-body">
+                            <div class="agent-launch-card" onclick="runSetupStep(4)">
+                                <div class="agent-launch-icon">
+                                    <i data-lucide="search" style="width:32px;height:32px;"></i>
+                                </div>
+                                <h3>Check AI Visibility</h3>
+                                <p>Discover how visible you are to AI assistants and where opportunities exist</p>
+                                <button class="btn-ai">
+                                    <i data-lucide="message-circle"></i>
+                                    Run Visibility Check
+                                </button>
+                            </div>
+                            <div id="step-4-results" class="step-results" style="display:none;">
+                                <div class="step-results-header">
+                                    <h4><i data-lucide="check-circle" style="width:16px;height:16px;color:#10b981;"></i> Visibility Check Complete</h4>
+                                    <button class="btn btn-secondary btn-sm" onclick="runSetupStep(4)">
+                                        <i data-lucide="refresh-cw"></i> Redo
+                                    </button>
+                                </div>
+                                <div class="step-results-content"></div>
+                            </div>
+                        </div>
+                        <div class="setup-panel-footer">
+                            <button class="btn btn-secondary" onclick="goToSetupStep(3)">
+                                <i data-lucide="arrow-left"></i> Back
+                            </button>
+                            <div class="btn-group">
+                                <span class="text-muted" style="font-size:0.85rem;align-self:center;">Step 4 of 4</span>
+                                <button class="btn btn-primary" id="step-4-next" onclick="completeSetup()" disabled style="background:#10b981;">
+                                    <i data-lucide="check-circle"></i> Complete Setup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================
+                     Dashboard Content (Shows for completed users)
+                     ============================================ -->
+                <div class="dashboard-content" id="dashboard-content">
                 <!-- Profile Overview -->
                 <section class="profile-overview">
                     <div class="profile-card">
@@ -799,7 +1507,7 @@
 
                 <!-- Quick Actions -->
                 <section class="quick-actions">
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=tl-article-writer'">
+                    <div class="action-card" onclick="writeArticle()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
                             <i data-lucide="file-text"></i>
                         </div>
@@ -808,7 +1516,7 @@
                             <p>Start a new thought leadership article</p>
                         </div>
                     </div>
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=tl-linkedin-generator'">
+                    <div class="action-card" onclick="generateLinkedIn()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #0077b5, #004182);">
                             <i data-lucide="linkedin"></i>
                         </div>
@@ -817,7 +1525,7 @@
                             <p>Create a week of LinkedIn posts</p>
                         </div>
                     </div>
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=ai-visibility-researcher'">
+                    <div class="action-card" onclick="checkVisibility()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
                             <i data-lucide="eye"></i>
                         </div>
@@ -826,7 +1534,7 @@
                             <p>Check AI visibility for you or competitors</p>
                         </div>
                     </div>
-                    <div class="action-card" onclick="window.location.href='/chat.html?agent=content-pillar-designer'">
+                    <div class="action-card" onclick="addPillar()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
                             <i data-lucide="columns"></i>
                         </div>
@@ -836,19 +1544,450 @@
                         </div>
                     </div>
                 </section>
+                </div><!-- /dashboard-content -->
             </div>
         </div>
     </main>
     </div><!-- /app-container -->
 
     <script>
+        // ============================================
+        // Setup Flow State Management (Phase 34)
+        // ============================================
+
+        // Setup State
+        let setupState = {
+            currentStep: 1,
+            completedSteps: {},
+            stepData: {},
+            isSetupMode: true
+        };
+
+        // Agent Dialog Service instance
+        let agentDialog = null;
+
+        function getAgentDialogService() {
+            if (!agentDialog) {
+                agentDialog = new AgentDialogService({
+                    allowClose: true,
+                    onClose: () => {
+                        console.log('Agent dialog closed');
+                    }
+                });
+            }
+            return agentDialog;
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            loadProfile();
+            initPageFlow();
+        });
+
+        // Determine if setup or dashboard mode
+        async function initPageFlow() {
+            await loadProfile();
+
+            if (profile && profile.setup_completed) {
+                // User has completed setup - show dashboard
+                showDashboardMode();
+            } else {
+                // User needs setup - show setup flow
+                setupState.currentStep = profile?.setup_step || 1;
+                setupState.completedSteps = profile?.setup_data?.completedSteps || {};
+                showSetupMode();
+            }
+
+            // Setup stepper click handlers
+            document.querySelectorAll('.setup-step').forEach(step => {
+                step.addEventListener('click', () => {
+                    const stepNum = parseInt(step.dataset.step);
+                    // Only allow clicking on completed steps or current step
+                    if (setupState.completedSteps[stepNum] || stepNum === setupState.currentStep) {
+                        goToSetupStep(stepNum);
+                    }
+                });
+            });
+        }
+
+        // Show setup mode
+        function showSetupMode() {
+            setupState.isSetupMode = true;
+            const layout = document.getElementById('tl-layout');
+            layout.classList.add('setup-mode');
+            layout.classList.remove('dashboard-mode');
+            document.getElementById('setup-content').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'none';
+            goToSetupStep(setupState.currentStep);
+            updateSetupStepper();
+            updateUserHeader();
+            lucide.createIcons();
+        }
+
+        // Show dashboard mode
+        function showDashboardMode() {
+            setupState.isSetupMode = false;
+            const layout = document.getElementById('tl-layout');
+            layout.classList.add('dashboard-mode');
+            layout.classList.remove('setup-mode');
+            document.getElementById('setup-content').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
             loadPillars();
             renderCalendar();
-        });
+            lucide.createIcons();
+        }
+
+        // Navigate to a setup step
+        function goToSetupStep(stepNum) {
+            setupState.currentStep = stepNum;
+
+            // Update panels
+            document.querySelectorAll('.setup-module-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            const targetPanel = document.getElementById(`setup-step-${stepNum}`);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+
+            // Update stepper UI
+            updateSetupStepper();
+
+            // Save progress to profile
+            saveSetupProgress();
+
+            lucide.createIcons();
+        }
+
+        // Update stepper visual state
+        function updateSetupStepper() {
+            document.querySelectorAll('.setup-step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                step.classList.remove('active', 'completed');
+
+                if (stepNum === setupState.currentStep) {
+                    step.classList.add('active');
+                } else if (setupState.completedSteps[stepNum]) {
+                    step.classList.add('completed');
+                }
+            });
+
+            // Update connectors
+            document.querySelectorAll('.step-connector').forEach((conn, i) => {
+                conn.classList.toggle('completed', !!setupState.completedSteps[i + 1]);
+            });
+
+            // Also update progress bar
+            updateProgressBar();
+        }
+
+        // Update user header with current user info
+        function updateUserHeader() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            // Update avatar with initials
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl) {
+                avatarEl.textContent = getUserInitials(user);
+            }
+
+            // Update display name
+            const nameEl = document.getElementById('user-display-name');
+            if (nameEl) {
+                const displayName = user.display_name || user.email?.split('@')[0] || 'User';
+                nameEl.textContent = displayName;
+            }
+        }
+
+        // Update progress bar based on completed steps
+        function updateProgressBar() {
+            const completedCount = Object.values(setupState.completedSteps).filter(Boolean).length;
+            const percentage = (completedCount / 4) * 100;
+
+            const fillEl = document.getElementById('setup-progress-fill');
+            const textEl = document.getElementById('setup-progress-text');
+
+            if (fillEl) {
+                fillEl.style.width = `${percentage}%`;
+            }
+            if (textEl) {
+                textEl.textContent = `${completedCount} / 4`;
+            }
+        }
+
+        // Run a setup step with agent dialog
+        async function runSetupStep(stepNum) {
+            const dialog = getAgentDialogService();
+
+            // Define prompts for each step
+            const stepPrompts = {
+                1: {
+                    title: 'Step 1: Niche Discovery',
+                    subtitle: 'Define your expertise and positioning',
+                    systemPrompt: `You are a Thought Leadership Strategy Architect helping a user discover their niche.
+
+Your role is to guide them through a structured discovery process to uncover:
+1. **Core Expertise** - What they know better than most people
+2. **Target Audience** - Who they want to reach and influence
+3. **Unique Angle** - What makes their perspective different
+4. **Key Problems** - What issues they help their audience solve
+
+IMPORTANT INSTRUCTIONS:
+- Ask ONE question at a time
+- Be conversational and encouraging
+- After 5-6 exchanges, synthesize their answers into a positioning framework
+- End with a clear summary that includes:
+  * Primary expertise area
+  * Target audience description
+  * Unique angle/perspective
+  * 2-3 key problems they address
+
+Start by warmly greeting them and asking about their professional background and what topics they're most passionate about.`
+                },
+                2: {
+                    title: 'Step 2: Core Positioning',
+                    subtitle: 'Create your thesis and atomic claim',
+                    systemPrompt: `You are a Thought Leadership Positioning Expert helping a user craft their core positioning.
+
+CONTEXT FROM STEP 1:
+${JSON.stringify(setupState.stepData[1] || {}, null, 2)}
+
+Your role is to help them create:
+1. **Core Thesis** - A 2-3 sentence statement of their unique perspective and approach
+2. **Atomic Claim** - A single, memorable sentence that captures their essential message
+
+IMPORTANT INSTRUCTIONS:
+- Reference what they shared in Step 1
+- Work collaboratively to refine the thesis
+- The atomic claim should be bold, memorable, and specific
+- After 3-4 exchanges, present the final thesis and atomic claim
+- Ask for their approval before finalizing
+
+Start by summarizing what you learned about their positioning and propose a draft thesis.`
+                },
+                3: {
+                    title: 'Step 3: Content Pillars',
+                    subtitle: 'Design your content structure',
+                    systemPrompt: `You are a Content Pillar Designer helping a user create their thought leadership content pillars.
+
+CONTEXT FROM PREVIOUS STEPS:
+${JSON.stringify(setupState.stepData[1] || {}, null, 2)}
+${JSON.stringify(setupState.stepData[2] || {}, null, 2)}
+
+Your role is to help them design 3-5 content pillars that:
+1. Support their core thesis
+2. Address their audience's key problems
+3. Showcase their unique expertise
+4. Provide endless content ideas
+
+IMPORTANT INSTRUCTIONS:
+- Suggest initial pillar ideas based on their positioning
+- For each pillar, define: name, description, example topics
+- Keep pillars distinct but interconnected
+- After 3-4 exchanges, present the complete pillar system
+- Format each pillar with: Name, Description, 3 Example Topics
+
+Start by proposing 3-4 pillar ideas based on their thesis and audience.`
+                },
+                4: {
+                    title: 'Step 4: Visibility Baseline',
+                    subtitle: 'Check your AI visibility',
+                    systemPrompt: `You are an AI Visibility Researcher helping establish a baseline for the user's thought leadership visibility.
+
+CONTEXT FROM PREVIOUS STEPS:
+${JSON.stringify(setupState.stepData[1] || {}, null, 2)}
+${JSON.stringify(setupState.stepData[2] || {}, null, 2)}
+
+Your role is to:
+1. Understand what visibility means for their niche
+2. Identify where they should be visible (platforms, search queries, AI assistants)
+3. Suggest how to track visibility over time
+4. Provide initial recommendations for improving visibility
+
+IMPORTANT INSTRUCTIONS:
+- Ask about their current online presence
+- Discuss key search queries in their niche
+- Explain how AI assistants find and recommend experts
+- Provide 3-5 actionable visibility improvement tips
+- End with a baseline assessment and tracking plan
+
+Start by asking about their current online presence and platforms.`
+                }
+            };
+
+            const config = stepPrompts[stepNum];
+            if (!config) return;
+
+            try {
+                const result = await dialog.runAgent(
+                    `tl-setup-step-${stepNum}`,
+                    {
+                        stepNum: stepNum,
+                        previousSteps: setupState.stepData
+                    },
+                    {
+                        title: config.title,
+                        subtitle: config.subtitle,
+                        endpoint: '/api/chat/stream',
+                        systemPrompt: config.systemPrompt,
+                        onAccept: async (data) => {
+                            // Mark step as complete
+                            setupState.completedSteps[stepNum] = true;
+                            setupState.stepData[stepNum] = {
+                                conversationHistory: data.conversationHistory,
+                                summary: data.outputs?.fullResponse || '',
+                                completedAt: new Date().toISOString()
+                            };
+
+                            // Show results
+                            showStepResults(stepNum, data);
+
+                            // Enable next button
+                            const nextBtn = document.getElementById(`step-${stepNum}-next`);
+                            if (nextBtn) nextBtn.disabled = false;
+
+                            // Update stepper
+                            updateSetupStepper();
+
+                            // Save to profile
+                            await saveSetupProgress();
+
+                            // Save step-specific data to backend
+                            await saveStepData(stepNum, data);
+                        }
+                    }
+                );
+
+                if (result === null) {
+                    console.log('Step cancelled');
+                }
+
+            } catch (error) {
+                console.error('Error running setup step:', error);
+            }
+        }
+
+        // Display step results
+        function showStepResults(stepNum, data) {
+            const resultsEl = document.getElementById(`step-${stepNum}-results`);
+            if (!resultsEl) return;
+
+            const contentEl = resultsEl.querySelector('.step-results-content');
+            const launchCard = resultsEl.previousElementSibling;
+
+            // Hide launch card, show results
+            if (launchCard && launchCard.classList.contains('agent-launch-card')) {
+                launchCard.style.display = 'none';
+            }
+            resultsEl.style.display = 'block';
+
+            // Format and display summary
+            const summary = data.outputs?.fullResponse || 'Step completed successfully.';
+            contentEl.innerHTML = `<pre>${summary}</pre>`;
+
+            lucide.createIcons();
+        }
+
+        // Save step-specific data to backend
+        async function saveStepData(stepNum, data) {
+            try {
+                if (stepNum === 2 && data.outputs?.fullResponse) {
+                    // Extract thesis and atomic claim from response
+                    const response = data.outputs.fullResponse;
+
+                    // Try to parse thesis and claim (basic extraction)
+                    const thesisMatch = response.match(/(?:Core\s+)?Thesis[:\s]*([^\n]+(?:\n(?![A-Z])[^\n]+)*)/i);
+                    const claimMatch = response.match(/(?:Atomic\s+)?Claim[:\s]*([^\n]+)/i);
+
+                    const updates = {};
+                    if (thesisMatch) updates.core_thesis = thesisMatch[1].trim();
+                    if (claimMatch) updates.atomic_claim = claimMatch[1].trim();
+
+                    if (Object.keys(updates).length > 0) {
+                        await fetchAPI('/profile', {
+                            method: 'POST',
+                            body: JSON.stringify(updates)
+                        });
+                    }
+                }
+
+                if (stepNum === 3 && data.outputs?.fullResponse) {
+                    // Parse pillars from response and save
+                    // This is a simplified extraction - could be enhanced
+                    const response = data.outputs.fullResponse;
+                    const pillarMatches = response.matchAll(/(?:Pillar\s*\d*[:\s]*)?(?:\*\*)?([^*\n:]+)(?:\*\*)?[:\s-]*([^\n]+)/gi);
+
+                    for (const match of pillarMatches) {
+                        if (match[1] && match[2]) {
+                            // Could save individual pillars here
+                            // await fetchAPI('/pillars', { method: 'POST', body: JSON.stringify({ name: match[1], description: match[2] }) });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving step data:', error);
+            }
+        }
+
+        // Save setup progress to profile
+        async function saveSetupProgress() {
+            try {
+                await fetchAPI('/profile/setup-step', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        setup_step: setupState.currentStep,
+                        setup_data: {
+                            completedSteps: setupState.completedSteps,
+                            stepData: setupState.stepData
+                        }
+                    })
+                });
+            } catch (error) {
+                console.error('Error saving setup progress:', error);
+            }
+        }
+
+        // Complete setup and transition to dashboard
+        async function completeSetup() {
+            try {
+                // Mark setup as complete
+                await fetchAPI('/profile', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        setup_completed: true,
+                        setup_step: 4
+                    })
+                });
+
+                // Show celebration toast
+                if (window.ModalService) {
+                    ModalService.toast({
+                        message: 'Setup complete! Welcome to your Thought Leadership dashboard.',
+                        type: 'success',
+                        duration: 4000
+                    });
+                } else {
+                    alert('Setup complete! Welcome to your Thought Leadership dashboard.');
+                }
+
+                // Reload profile and switch to dashboard
+                await loadProfile();
+                showDashboardMode();
+
+            } catch (error) {
+                console.error('Error completing setup:', error);
+                if (window.ModalService) {
+                    ModalService.error('Error completing setup. Please try again.', 'Setup Error');
+                } else {
+                    alert('Error completing setup. Please try again.');
+                }
+            }
+        }
+
+        // ============================================
+        // Original Dashboard Functions
+        // ============================================
 
         // State
         let currentMonth = new Date();
@@ -1052,20 +2191,28 @@
                 const startDate = new Date(year, month, 1).toISOString().split('T')[0];
                 const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
-                const result = await fetchAPI(`/calendar?start_date=${startDate}&end_date=${endDate}`);
+                // Fetch from Notion (with automatic fallback to local DB if Notion fails)
+                const result = await fetchAPI(`/calendar?source=notion&start_date=${startDate}&end_date=${endDate}`);
                 calendarEntries = result.data || [];
 
                 // Add entries to calendar days
                 calendarEntries.forEach(entry => {
-                    const date = new Date(entry.scheduled_date);
-                    const dayNum = date.getDate();
-                    const days = document.querySelectorAll('.calendar-day:not(.other-month)');
+                    // Parse date string directly to avoid timezone issues
+                    // scheduled_date format: "2026-01-05" or "2026-01-05T00:00:00.000Z"
+                    const dateStr = entry.scheduled_date.split('T')[0];
+                    const [year, month, day] = dateStr.split('-').map(Number);
 
-                    if (days[dayNum - 1]) {
-                        const entryEl = document.createElement('div');
-                        entryEl.className = `day-entry ${entry.status || ''}`;
-                        entryEl.textContent = entry.title;
-                        days[dayNum - 1].appendChild(entryEl);
+                    // Only show entries for the current displayed month
+                    if (year === currentMonth.getFullYear() && month === currentMonth.getMonth() + 1) {
+                        const days = document.querySelectorAll('.calendar-day:not(.other-month)');
+
+                        if (days[day - 1]) {
+                            const entryEl = document.createElement('div');
+                            entryEl.className = `day-entry ${entry.status || ''}`;
+                            entryEl.textContent = entry.title;
+                            entryEl.title = entry.title; // Tooltip for full title
+                            days[day - 1].appendChild(entryEl);
+                        }
                     }
                 });
             } catch (err) {
@@ -1084,64 +2231,351 @@
             renderCalendar();
         }
 
-        // Actions
-        function startNicheDiscovery() {
-            window.location.href = '/workflow-run.html?id=tl-niche-discovery';
+        // Actions - Use AgentDialogService for agent interactions
+        async function openStrategyChat() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Strategy Chat',
+                subtitle: 'Discuss your thought leadership strategy',
+                initialMessage: 'I want to discuss my thought leadership strategy with you.'
+            });
         }
 
-        function startWeeklyPipeline() {
-            window.location.href = '/workflow-run.html?id=tl-weekly-pipeline';
+        async function startNicheDiscovery() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Niche Discovery',
+                subtitle: 'Define your expertise and positioning',
+                initialMessage: 'I want to discover my thought leadership niche and define my expertise.'
+            });
         }
 
-        function editPosition() {
-            window.location.href = '/chat.html?agent=tl-strategy-architect&context=edit';
+        async function startWeeklyPipeline() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000304', // TL Article Writer
+                title: 'Weekly Content Pipeline',
+                subtitle: 'Generate this week\'s content',
+                initialMessage: 'Help me create my weekly thought leadership content package.'
+            });
         }
 
-        function checkVisibility() {
-            window.location.href = '/chat.html?agent=ai-visibility-researcher';
+        async function editPosition() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Edit Positioning',
+                subtitle: 'Refine your thesis and atomic claim',
+                initialMessage: `I want to refine my positioning. My current atomic claim is: "${profile?.atomic_claim || 'Not set yet'}". Help me improve it.`
+            });
+        }
+
+        async function checkVisibility() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000302', // AI Visibility Researcher
+                title: 'AI Visibility Check',
+                subtitle: 'See how AI perceives your brand',
+                initialMessage: 'Run an AI visibility audit for my thought leadership brand.'
+            });
+        }
+
+        async function writeArticle() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000304', // TL Article Writer
+                title: 'Write Article',
+                subtitle: 'Create thought leadership content',
+                initialMessage: 'I want to write a new thought leadership article. Help me develop and write it.'
+            });
+        }
+
+        async function generateLinkedIn() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000305', // TL LinkedIn Generator
+                title: 'Generate LinkedIn Posts',
+                subtitle: 'Create engaging LinkedIn content',
+                initialMessage: 'Help me create a week of LinkedIn posts for thought leadership.'
+            });
         }
 
         function managePillars() {
-            // Open pillar management modal or page
-            alert('Pillar management coming soon');
+            // Open pillar management modal
+            showPillarManagementModal();
         }
 
-        function addPillar() {
-            window.location.href = '/chat.html?agent=content-pillar-designer';
+        async function addPillar() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000303', // Content Pillar Designer
+                title: 'Design New Pillar',
+                subtitle: 'Create a strategic content pillar',
+                initialMessage: 'Help me design a new content pillar for my thought leadership program.'
+            });
         }
 
         function viewPillar(id) {
-            // Open pillar detail view
-            alert('Pillar detail view coming soon');
+            // Open pillar detail modal
+            const pillar = pillars.find(p => p.id === id);
+            if (pillar) {
+                showPillarDetailModal(pillar);
+            }
         }
 
-        function syncCalendar() {
-            fetchAPI('/calendar/sync-all', { method: 'POST' })
-                .then(() => {
-                    loadCalendarEntries();
-                    alert('Calendar synced successfully');
-                })
-                .catch(err => alert('Sync failed: ' + err.message));
+        async function syncCalendar() {
+            const loading = ModalService.loading({ message: 'Syncing with Notion...' });
+            try {
+                await fetchAPI('/calendar/sync-all', { method: 'POST' });
+                await loadCalendarEntries();
+                loading.close();
+                ModalService.toast({ message: 'Calendar synced successfully', type: 'success' });
+            } catch (err) {
+                loading.close();
+                ModalService.error('Sync failed: ' + err.message, 'Sync Error');
+            }
         }
 
-        function addCalendarEntry() {
-            window.location.href = '/chat.html?agent=tl-strategy-architect&context=calendar';
+        async function addCalendarEntry() {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000301', // TL Strategy Architect
+                title: 'Add Calendar Entry',
+                subtitle: 'Plan new content',
+                initialMessage: 'Help me plan a new content calendar entry.'
+            });
         }
 
         function selectDay(year, month, day) {
-            // Show entries for this day or create new
+            // Show entries for this day using a modal
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const entries = calendarEntries.filter(e => e.scheduled_date === dateStr);
+            // Normalize entry dates (handle both "2026-01-17" and "2026-01-17T00:00:00.000Z" formats)
+            const dayEntries = calendarEntries.filter(e => {
+                const entryDate = e.scheduled_date?.split('T')[0];
+                return entryDate === dateStr;
+            });
+            showCalendarDayModal(dateStr, dayEntries);
+        }
 
-            if (entries.length > 0) {
-                // Show existing entries
-                alert(`Entries for ${dateStr}:\n${entries.map(e => e.title).join('\n')}`);
-            } else {
-                // Offer to create new
-                if (confirm(`No entries for ${dateStr}. Create new entry?`)) {
-                    addCalendarEntry();
+        // Pillar Management Modal
+        function showPillarManagementModal() {
+            const pillarHtml = pillars.map(p => `
+                <div class="pillar-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${p.color};"></div>
+                        <div>
+                            <div style="font-weight: 600;">${p.name}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">${p.description?.substring(0, 60) || ''}...</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="viewPillar('${p.id}')">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            const modal = ModalService.create({
+                title: 'Content Pillars',
+                size: 'medium',
+                content: `
+                    <div style="margin-bottom: 16px;">
+                        ${pillarHtml || '<p style="color: var(--text-secondary);">No pillars defined yet.</p>'}
+                    </div>
+                `,
+                buttons: [
+                    { label: 'Add Pillar', variant: 'primary', onClick: () => { modal.close(); addPillar(); } },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+            setTimeout(() => lucide.createIcons(), 100);
+        }
+
+        // Pillar Detail Modal
+        function showPillarDetailModal(pillar) {
+            const themes = pillar.monthly_themes ? Object.entries(JSON.parse(pillar.monthly_themes || '{}')).map(([month, theme]) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="font-weight: 500;">${month}</span>
+                    <span style="color: var(--text-secondary);">${theme}</span>
+                </div>
+            `).join('') : '<p style="color: var(--text-secondary);">No monthly themes defined.</p>';
+
+            const modal = ModalService.create({
+                title: pillar.name,
+                size: 'medium',
+                content: `
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; background: ${pillar.color};"></div>
+                            <span style="font-size: 14px; color: var(--text-secondary);">${pillar.quarterly_focus?.join(', ') || 'All quarters'}</span>
+                        </div>
+                        <p style="margin-bottom: 16px;">${pillar.description || 'No description'}</p>
+                        <h4 style="margin-bottom: 8px;">Monthly Themes</h4>
+                        ${themes}
+                    </div>
+                `,
+                buttons: [
+                    { label: 'Edit with AI', variant: 'primary', onClick: () => { modal.close(); editPillarWithAI(pillar); } },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+        }
+
+        async function editPillarWithAI(pillar) {
+            const dialog = getAgentDialogService();
+            await dialog.open({
+                agentId: 'a0000001-0000-4000-a000-000000000303', // Content Pillar Designer
+                title: `Edit: ${pillar.name}`,
+                subtitle: 'Refine this content pillar',
+                initialMessage: `I want to refine my "${pillar.name}" content pillar. Current description: "${pillar.description}". Help me improve it.`
+            });
+        }
+
+        // Calendar Day Modal
+        function showCalendarDayModal(dateStr, entries) {
+            const formattedDate = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const entriesHtml = entries.length > 0 ? entries.map(e => {
+                const pillar = pillars.find(p => p.id === e.pillar_id);
+                const hasNotionPage = e.notion_page_id || e.notion_url;
+                return `
+                    <div class="calendar-entry-card" data-entry-id="${e.id || ''}" data-notion-page-id="${e.notion_page_id || ''}" data-notion-url="${e.notion_url || ''}" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; cursor: ${hasNotionPage ? 'pointer' : 'default'}; transition: background 0.2s;" ${hasNotionPage ? 'onclick="showEntryDetail(this)"' : ''}>
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${e.title}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${e.description?.substring(0, 80) || ''}${e.description?.length > 80 ? '...' : ''}</div>
+                            </div>
+                            <span class="badge ${e.status === 'published' ? 'badge-success' : e.status === 'drafted' ? 'badge-warning' : 'badge-secondary'}">${e.status || 'scheduled'}</span>
+                        </div>
+                        ${pillar ? `<div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${pillar.color};"></div>
+                            <span style="font-size: 11px; color: var(--text-secondary);">${pillar.name}</span>
+                        </div>` : ''}
+                        ${hasNotionPage ? `<div style="margin-top: 8px; font-size: 11px; color: var(--primary);"><i class="fas fa-external-link-alt"></i> Click to view content</div>` : ''}
+                    </div>
+                `;
+            }).join('') : '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No entries scheduled for this day.</p>';
+
+            const modal = ModalService.create({
+                title: formattedDate,
+                size: 'medium',
+                content: `<div>${entriesHtml}</div>`,
+                buttons: [
+                    { label: 'Add Entry', variant: 'primary', onClick: () => { modal.close(); addCalendarEntry(); } },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+        }
+
+        // Show Entry Detail with Notion Content (exposed globally for onclick)
+        window.showEntryDetail = async function(cardEl) {
+            const pageId = cardEl.dataset.notionPageId;
+            const notionUrl = cardEl.dataset.notionUrl;
+            const title = cardEl.querySelector('div[style*="font-weight: 600"]')?.textContent || 'Entry';
+
+            // Show loading modal
+            const modal = ModalService.create({
+                title: title,
+                size: 'large',
+                content: `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p style="margin-top: 12px; color: var(--text-secondary);">Loading content from Notion...</p>
+                    </div>
+                `,
+                buttons: [
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+
+            try {
+                // Fetch content from Notion (fetchAPI already prepends /api/thought-leadership)
+                const response = await fetchAPI(`/calendar/entry/${pageId}/content`);
+
+                if (response.success && response.markdown) {
+                    // Render markdown content
+                    const contentHtml = renderMarkdown(response.markdown);
+
+                    modal.setContent(`
+                        <div style="max-height: 60vh; overflow-y: auto;">
+                            <div class="notion-content" style="line-height: 1.7; font-size: 14px;">
+                                ${contentHtml}
+                            </div>
+                            ${notionUrl ? `
+                                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <a href="${notionUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-external-link-alt"></i> Open in Notion
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `);
+                } else {
+                    modal.setContent(`
+                        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-file-alt fa-2x" style="opacity: 0.5;"></i>
+                            <p style="margin-top: 12px;">No content available yet.</p>
+                            ${notionUrl ? `
+                                <a href="${notionUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                                    <i class="fas fa-external-link-alt"></i> Open in Notion to add content
+                                </a>
+                            ` : ''}
+                        </div>
+                    `);
                 }
+            } catch (err) {
+                console.error('Error fetching entry content:', err);
+                modal.setContent(`
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <i class="fas fa-exclamation-triangle fa-2x" style="color: var(--warning);"></i>
+                        <p style="margin-top: 12px;">Could not load content: ${err.message}</p>
+                        ${notionUrl ? `
+                            <a href="${notionUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                                <i class="fas fa-external-link-alt"></i> View in Notion
+                            </a>
+                        ` : ''}
+                    </div>
+                `);
             }
+        }
+
+        // Simple Markdown Renderer
+        function renderMarkdown(md) {
+            if (!md) return '';
+            return md
+                // Headers
+                .replace(/^### (.+)$/gm, '<h3 style="margin: 16px 0 8px; font-size: 16px;">$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2 style="margin: 20px 0 10px; font-size: 18px;">$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1 style="margin: 24px 0 12px; font-size: 22px;">$1</h1>')
+                // Bold and italic
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // Code
+                .replace(/`([^`]+)`/g, '<code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px;">$1</code>')
+                // Links
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color: var(--primary);">$1</a>')
+                // Bullet lists
+                .replace(/^- (.+)$/gm, '<li style="margin-left: 20px;">$1</li>')
+                // Numbered lists
+                .replace(/^\d+\. (.+)$/gm, '<li style="margin-left: 20px; list-style-type: decimal;">$1</li>')
+                // Blockquotes
+                .replace(/^> (.+)$/gm, '<blockquote style="border-left: 3px solid var(--primary); padding-left: 12px; margin: 12px 0; color: var(--text-secondary); font-style: italic;">$1</blockquote>')
+                // Paragraphs (double newline)
+                .replace(/\n\n/g, '</p><p style="margin: 12px 0;">')
+                // Single newlines to br
+                .replace(/\n/g, '<br>')
+                // Wrap in paragraph
+                .replace(/^(.+)$/, '<p style="margin: 12px 0;">$1</p>');
         }
     </script>
     <script src="/js/help-modal.js"></script>

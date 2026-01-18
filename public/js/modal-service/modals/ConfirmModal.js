@@ -37,6 +37,7 @@ class ConfirmModal extends ModalBase {
         };
 
         this._confirmed = false;
+        this._callbackCalled = false;  // Prevent double callback
     }
 
     /**
@@ -127,18 +128,18 @@ class ConfirmModal extends ModalBase {
      * Handle confirm button click
      * @private
      */
-    _handleConfirm() {
+    async _handleConfirm() {
         this._confirmed = true;
-        this.close(true);
+        await this.close(true);
     }
 
     /**
      * Handle cancel button click
      * @private
      */
-    _handleCancel() {
+    async _handleCancel() {
         this._confirmed = false;
-        this.close(false);
+        await this.close(false);
     }
 
     /**
@@ -147,8 +148,28 @@ class ConfirmModal extends ModalBase {
      * @returns {Promise<void>}
      */
     async close(result) {
+        // Store elements before close (in case they get cleared)
+        const overlay = this.elements.overlay;
+        const container = this.elements.container;
+
+        // Call parent close to remove DOM elements
         await super.close(result);
 
+        // Force remove elements if they still exist in DOM (belt and suspenders)
+        if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+        if (container && container.parentNode) {
+            container.parentNode.removeChild(container);
+        }
+
+        // Prevent multiple callback calls
+        if (this._callbackCalled) {
+            return;
+        }
+
+        // Mark callback as called and call the appropriate callback
+        this._callbackCalled = true;
         if (this._confirmed) {
             if (typeof this.confirmOptions.onConfirm === 'function') {
                 this.confirmOptions.onConfirm();

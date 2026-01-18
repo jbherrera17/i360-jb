@@ -348,22 +348,34 @@ class ModalBase {
      * @returns {Promise<void>}
      */
     async close(result) {
-        if (!this.state.isOpen) return;
+        console.log('[ModalBase] close() called, isOpen:', this.state.isOpen);
+        if (!this.state.isOpen) {
+            console.log('[ModalBase] Already closed, returning early');
+            return;
+        }
 
         // Emit beforeClose event
         const cancelled = !this.emit('beforeClose', { modal: this, result });
-        if (cancelled) return;
+        if (cancelled) {
+            console.log('[ModalBase] Close was cancelled by beforeClose handler');
+            return;
+        }
 
         // Trigger animation
         if (this.options.animate) {
+            console.log('[ModalBase] Starting animation...');
             await this._animateOut();
+            console.log('[ModalBase] Animation complete');
         }
 
         // Remove from DOM
+        console.log('[ModalBase] Removing elements from DOM...');
         if (this.elements.overlay) {
             this.elements.overlay.remove();
+            console.log('[ModalBase] Overlay removed');
         }
         this.elements.container.remove();
+        console.log('[ModalBase] Container removed');
 
         this.state.isOpen = false;
 
@@ -372,6 +384,7 @@ class ModalBase {
             this._previousActiveElement.focus();
         }
 
+        console.log('[ModalBase] Emitting close event');
         this.emit('close', { modal: this, result });
     }
 
@@ -403,6 +416,13 @@ class ModalBase {
      */
     _animateIn() {
         return new Promise(resolve => {
+            // Guard against missing elements
+            if (!this.elements.container) {
+                console.warn('[ModalBase] _animateIn called but container is missing');
+                resolve();
+                return;
+            }
+
             if (this.elements.overlay) {
                 this.elements.overlay.classList.add('is-open');
             }
@@ -411,13 +431,14 @@ class ModalBase {
                 this.elements.container.classList.add('is-open');
 
                 const onEnd = () => {
-                    this.elements.container.removeEventListener('animationend', onEnd);
+                    this.elements.container.removeEventListener('transitionend', onEnd);
                     resolve();
                 };
 
-                this.elements.container.addEventListener('animationend', onEnd);
+                // Use transitionend since we use CSS transitions
+                this.elements.container.addEventListener('transitionend', onEnd);
 
-                // Fallback if no animation
+                // Fallback if no transition
                 setTimeout(resolve, 300);
             });
         });
@@ -430,6 +451,13 @@ class ModalBase {
      */
     _animateOut() {
         return new Promise(resolve => {
+            // Guard against missing elements
+            if (!this.elements.container) {
+                console.warn('[ModalBase] _animateOut called but container is missing');
+                resolve();
+                return;
+            }
+
             this.elements.container.classList.remove('is-open');
             this.elements.container.classList.add('is-closing');
 
@@ -438,8 +466,9 @@ class ModalBase {
                 this.elements.overlay.classList.add('is-closing');
             }
 
+            // Use transitionend instead of animationend since we use CSS transitions
             const onEnd = () => {
-                this.elements.container.removeEventListener('animationend', onEnd);
+                this.elements.container.removeEventListener('transitionend', onEnd);
                 this.elements.container.classList.remove('is-closing');
                 if (this.elements.overlay) {
                     this.elements.overlay.classList.remove('is-closing');
@@ -447,10 +476,10 @@ class ModalBase {
                 resolve();
             };
 
-            this.elements.container.addEventListener('animationend', onEnd);
+            this.elements.container.addEventListener('transitionend', onEnd);
 
-            // Fallback if no animation
-            setTimeout(resolve, 200);
+            // Fallback if no transition or it doesn't fire
+            setTimeout(resolve, 250);
         });
     }
 

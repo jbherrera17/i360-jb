@@ -363,47 +363,38 @@ router.put('/assets/:id', async (req, res) => {
         }
         
         const userId = getUserId(req);
-        const currentVersion = current.version || 1;
-        const newVersion = currentVersion + 1;
 
         // Check if content actually changed
         const contentChanged = content_json &&
             JSON.stringify(content_json) !== JSON.stringify(current.content_json);
 
-        // Only save to version history if content changed
-        if (contentChanged) {
-            // Check if this version already exists in history FIRST
-            const { data: existingVersion } = await supabase
-                .from('context_asset_versions')
-                .select('id')
-                .eq('asset_id', id)
-                .eq('version', currentVersion)
-                .maybeSingle(); // Use maybeSingle instead of single to avoid error if not found
+        // Get the max version from history to avoid trigger conflicts
+        // The DB trigger tries to insert into context_asset_versions on update
+        let currentVersion = current.version || 1;
 
-            // Only insert if version doesn't exist yet
-            if (!existingVersion) {
-                // Save CURRENT state to version history BEFORE updating
-                const versionRecord = {
-                    id: uuidv4(),
-                    asset_id: id,
-                    version: currentVersion, // Save as the CURRENT version number
-                    content_json: current.content_json,
-                    content_text: current.content_text,
-                    change_summary: change_summary || `Updated to version ${newVersion}`,
-                    created_at: new Date().toISOString(),
-                    created_by: userId
-                };
+        // Check what versions exist in history
+        const { data: maxVersionData } = await supabase
+            .from('context_asset_versions')
+            .select('version')
+            .eq('asset_id', id)
+            .order('version', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-                const { error: versionError } = await supabase
-                    .from('context_asset_versions')
-                    .insert(versionRecord);
-
-                if (versionError) {
-                    console.error('Version history error:', versionError);
-                    // Continue with update even if version history fails
-                }
-            }
+        // Ensure current version is higher than any existing version in history
+        if (maxVersionData && maxVersionData.version >= currentVersion) {
+            currentVersion = maxVersionData.version;
         }
+        const newVersion = currentVersion + 1;
+
+        // Delete any existing version entry that would conflict with the trigger
+        // The trigger will try to insert with the current asset version
+        const triggerVersion = current.version || 1;
+        await supabase
+            .from('context_asset_versions')
+            .delete()
+            .eq('asset_id', id)
+            .eq('version', triggerVersion);
 
         // Prepare update data
         const updateData = {
@@ -592,19 +583,28 @@ router.post('/assets/:id/rollback', async (req, res) => {
         const newVersion = (current?.version || 1) + 1;
         
         // Save current state to history before rollback
+        // Use upsert to avoid duplicate key errors
         if (current) {
-            await supabase
-                .from('context_asset_versions')
-                .insert({
-                    id: uuidv4(),
-                    asset_id: id,
-                    version: current.version,
-                    content_json: current.content_json,
-                    content_text: current.content_text,
-                    change_summary: `Before rollback to version ${version}`,
-                    created_at: new Date().toISOString(),
-                    created_by: userId
-                });
+            try {
+                await supabase
+                    .from('context_asset_versions')
+                    .upsert({
+                        id: uuidv4(),
+                        asset_id: id,
+                        version: current.version,
+                        content_json: current.content_json,
+                        content_text: current.content_text,
+                        change_summary: `Before rollback to version ${version}`,
+                        created_at: new Date().toISOString(),
+                        created_by: userId
+                    }, {
+                        onConflict: 'asset_id,version',
+                        ignoreDuplicates: true
+                    });
+            } catch (versionErr) {
+                // Silently ignore version history errors during rollback
+                console.warn('Rollback version history failed (non-blocking):', versionErr.message);
+            }
         }
         
         // Update asset with rolled-back content
