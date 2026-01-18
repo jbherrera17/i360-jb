@@ -33,23 +33,42 @@ const ASSET_TYPES = {
     company_description: { icon: '🏢', display_name: 'Company Description', category: 'core' },
     why_we_win: { icon: '🏆', display_name: 'Why We Win', category: 'core' },
     products: { icon: '📦', display_name: 'Products', category: 'core' },
+    product_suite: { icon: '📦', display_name: 'Product Suite', category: 'core' },
     pain_points: { icon: '🎯', display_name: 'Pain Points We Solve', category: 'core' },
     voice_dna: { icon: '🎤', display_name: 'VoiceDNA', category: 'core' },
     icp: { icon: '👤', display_name: 'ICP', category: 'core' },
     core_values: { icon: '💎', display_name: 'Core Values', category: 'core' },
     custom_processes: { icon: '⚙️', display_name: 'Custom Processes', category: 'core' },
-    
+
     // Extended Asset Types
     competitors: { icon: '⚔️', display_name: 'Competitors', category: 'extended' },
+    competitive_landscape: { icon: '⚔️', display_name: 'Competitive Landscape', category: 'extended' },
     case_studies: { icon: '📖', display_name: 'Case Studies', category: 'extended' },
     faqs: { icon: '❓', display_name: 'FAQs', category: 'extended' },
     team_bios: { icon: '👥', display_name: 'Team Bios', category: 'extended' },
     industry_context: { icon: '🌐', display_name: 'Industry Context', category: 'extended' },
+    industry_baseline: { icon: '🌐', display_name: 'Industry Baseline', category: 'extended' },
     terminology: { icon: '📚', display_name: 'Terminology', category: 'extended' },
     templates: { icon: '📝', display_name: 'Templates', category: 'extended' },
     pricing: { icon: '💰', display_name: 'Pricing', category: 'extended' },
     brand_guidelines: { icon: '🎨', display_name: 'Brand Guidelines', category: 'extended' },
-    personas: { icon: '🎭', display_name: 'Personas', category: 'extended' }
+    personas: { icon: '🎭', display_name: 'Personas', category: 'extended' },
+    positioning: { icon: '📍', display_name: 'Positioning', category: 'extended' },
+    strategic_plan: { icon: '🗺️', display_name: 'Strategic Plan', category: 'extended' },
+
+    // Integrity Asset Types
+    bright_lines: { icon: '🚫', display_name: 'Bright Lines', category: 'extended' },
+    values_map: { icon: '🗺️', display_name: 'Values Map', category: 'extended' },
+    close_call_log: { icon: '📋', display_name: 'Close Call Log', category: 'extended' },
+    intervention_metrics: { icon: '📊', display_name: 'Intervention Metrics', category: 'extended' },
+    trust_velocity_metrics: { icon: '📈', display_name: 'Trust Velocity Metrics', category: 'extended' },
+    integrity_yield: { icon: '✅', display_name: 'Integrity Yield', category: 'extended' },
+
+    // Thought Leadership Asset Types
+    thought_leadership_topics: { icon: '💡', display_name: 'Thought Leadership Topics', category: 'extended' },
+
+    // Knowledge Asset Types
+    i360_knowledge: { icon: '📖', display_name: 'I360 Knowledge', category: 'extended' }
 };
 
 // ============================================
@@ -171,24 +190,30 @@ router.get('/types/:key', async (req, res) => {
         const { key } = req.params;
 
         // Try database first
-        const { data, error } = await supabase
-            .from('context_asset_types')
-            .select('*')
-            .eq('type_key', key)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from('context_asset_types')
+                .select('*')
+                .eq('type_key', key)
+                .maybeSingle();
 
-        if (!error && data) {
-            return res.json({
-                success: true,
-                data: {
-                    type_key: data.type_key,
-                    display_name: data.display_name,
-                    icon: data.icon || '📄',
-                    category: data.category || 'extended',
-                    description: data.description,
-                    json_schema: data.json_schema
-                }
-            });
+            if (!error && data) {
+                return res.json({
+                    success: true,
+                    data: {
+                        type_key: data.type_key,
+                        display_name: data.display_name,
+                        icon: data.icon || '📄',
+                        category: data.category || 'extended',
+                        description: data.description,
+                        json_schema: data.json_schema
+                    },
+                    source: 'database'
+                });
+            }
+        } catch (dbError) {
+            // Database query failed, continue to fallback
+            console.warn('Database type lookup failed:', dbError.message);
         }
 
         // Fallback to hardcoded
@@ -198,7 +223,8 @@ router.get('/types/:key', async (req, res) => {
                 data: {
                     type_key: key,
                     ...ASSET_TYPES[key]
-                }
+                },
+                source: 'hardcoded'
             });
         }
 
@@ -208,6 +234,20 @@ router.get('/types/:key', async (req, res) => {
         });
     } catch (error) {
         console.error('Error getting asset type:', error);
+
+        // Even on error, try hardcoded fallback
+        const { key } = req.params;
+        if (ASSET_TYPES[key]) {
+            return res.json({
+                success: true,
+                data: {
+                    type_key: key,
+                    ...ASSET_TYPES[key]
+                },
+                source: 'hardcoded'
+            });
+        }
+
         res.status(500).json({
             success: false,
             error: error.message
