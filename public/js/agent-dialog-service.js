@@ -7,8 +7,10 @@
  * - Conversation history persistence
  * - Result storage for strategy and integrity
  * - Drag and resize functionality
+ * - Context asset management (brand voice, ICP, etc.)
+ * - Model selector (Claude, GPT, Perplexity for web search)
  *
- * @version 2.1.0
+ * @version 2.2.0
  * @author Insight 360
  */
 
@@ -40,6 +42,15 @@ class AgentDialogService {
             result: null,
             error: null,
             abortController: null
+        };
+
+        // Context and model state
+        this.contextState = {
+            mappings: [],
+            selectedOnDemandAssets: new Set(),
+            loadedModels: [],
+            selectedModelOverride: null,
+            agentDefaultModel: 'claude-sonnet-4-5-20250929'
         };
 
         // Drag and resize state
@@ -90,9 +101,13 @@ class AgentDialogService {
         this.bindEvents();
         this.addResizeHandles();
         this.bindDragResizeEvents();
+        this.initContextAndModelEvents();
 
         // Set global reference for inline onclick handlers
         window.agentDialogInstance = this;
+
+        // Load available models on init
+        this.loadModels();
     }
 
     /**
@@ -114,7 +129,20 @@ class AgentDialogService {
             typingIndicator: container.querySelector('.agent-dialog-typing'),
             actions: container.querySelector('.agent-dialog-actions'),
             acceptBtn: container.querySelector('.agent-dialog-accept'),
-            cancelBtn: container.querySelector('.agent-dialog-cancel')
+            cancelBtn: container.querySelector('.agent-dialog-cancel'),
+            // Context elements
+            contextPreview: container.querySelector('#contextPreview'),
+            contextToggle: container.querySelector('#contextToggle'),
+            contextContent: container.querySelector('#contextContent'),
+            tokenCount: container.querySelector('#tokenCount'),
+            activeContextIndicator: container.querySelector('#activeContextIndicator'),
+            activeContextPills: container.querySelector('#activeContextPills'),
+            // Model selector elements
+            modelSelector: container.querySelector('#modelSelector'),
+            modelSelectorBtn: container.querySelector('#modelSelectorBtn'),
+            modelSelectorMenu: container.querySelector('#modelSelectorMenu'),
+            modelDisplayName: container.querySelector('#modelDisplayName'),
+            dynamicModelOptions: container.querySelector('#dynamicModelOptions')
         };
     }
 
@@ -139,11 +167,64 @@ class AgentDialogService {
                                 <p class="agent-dialog-subtitle">Ready to assist</p>
                             </div>
                         </div>
+
+                        <!-- Model Selector -->
+                        <div class="agent-dialog-model-selector" id="modelSelector">
+                            <button class="agent-dialog-model-btn" id="modelSelectorBtn" title="Click to change model">
+                                <span id="modelDisplayName">Claude Sonnet</span>
+                                <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <div class="agent-dialog-model-menu" id="modelSelectorMenu">
+                                <div class="model-group-label">Use Agent Default</div>
+                                <div class="model-option selected" data-model="default">
+                                    <span>Agent Default</span>
+                                    <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 6L9 17l-5-5"/>
+                                    </svg>
+                                </div>
+                                <div id="dynamicModelOptions">
+                                    <!-- Models loaded dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
                         <button class="agent-dialog-close" aria-label="Close dialog">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events: none;">
                                 <path d="M18 6L6 18M6 6l12 12"/>
                             </svg>
                         </button>
+                    </div>
+
+                    <!-- Context Preview -->
+                    <div class="agent-dialog-context-preview" id="contextPreview" style="display: none;">
+                        <button class="agent-dialog-context-toggle" id="contextToggle">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                            </svg>
+                            <span>Context Assets</span>
+                            <span class="agent-dialog-token-count" id="tokenCount">0 tokens</span>
+                            <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="agent-dialog-context-content" id="contextContent">
+                            <p class="agent-dialog-no-context">No context assets mapped.</p>
+                        </div>
+                    </div>
+
+                    <!-- Active Context Indicator -->
+                    <div class="agent-dialog-active-context" id="activeContextIndicator">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
+                        <span>Active:</span>
+                        <div class="agent-dialog-context-pills" id="activeContextPills"></div>
                     </div>
 
                     <!-- Chat Messages Area -->
@@ -377,19 +458,33 @@ class AgentDialogService {
         try {
             this.state.abortController = new AbortController();
 
+            // Build request body with selected model and context assets
+            const requestBody = {
+                messages: this.state.conversationHistory,
+                model: this.getActiveModel(),
+                systemPrompt: this.state.systemPrompt,
+                context: this.state.context,
+                stream: true
+            };
+
+            // Include context asset IDs if we have any active
+            const activeContextIds = this.getActiveContextAssetIds();
+            if (activeContextIds.length > 0) {
+                requestBody.contextAssetIds = activeContextIds;
+            }
+
+            // Include agent ID for server-side context injection
+            if (this.state.currentAgent) {
+                requestBody.agentId = this.state.currentAgent;
+            }
+
             const response = await fetch(this.state.endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'text/event-stream'
                 },
-                body: JSON.stringify({
-                    messages: this.state.conversationHistory,
-                    model: 'claude-sonnet-4-5-20250929',
-                    systemPrompt: this.state.systemPrompt,
-                    context: this.state.context,
-                    stream: true
-                }),
+                body: JSON.stringify(requestBody),
                 signal: this.state.abortController.signal
             });
 
@@ -547,20 +642,56 @@ class AgentDialogService {
     }
 
     /**
-     * Open the dialog
+     * Open the dialog with options object
+     * @param {Object|string} optionsOrTitle - Options object or title string
+     * @param {string} [subtitle] - Subtitle (only used if first param is string)
      */
-    open(title, subtitle) {
+    async open(optionsOrTitle, subtitle) {
+        // Support both new options object format and legacy (title, subtitle) format
+        let options = {};
+
+        if (typeof optionsOrTitle === 'object' && optionsOrTitle !== null) {
+            // New format: open({ agentId, title, subtitle, initialMessage, systemPrompt })
+            options = optionsOrTitle;
+        } else {
+            // Legacy format: open(title, subtitle)
+            options = {
+                title: optionsOrTitle,
+                subtitle: subtitle
+            };
+        }
+
+        const title = options.title || 'AI Agent';
+        const subtitleText = options.subtitle || 'Ready to assist';
+
         this.state.isOpen = true;
         this.state.error = null;
         this.state.conversationHistory = [];
+
+        // Reset context state for new conversation
+        this.contextState.mappings = [];
+        this.contextState.selectedOnDemandAssets = new Set();
+        this.contextState.selectedModelOverride = null;
+
+        // Hide context preview by default
+        if (this.elements.contextPreview) {
+            this.elements.contextPreview.style.display = 'none';
+            this.elements.contextPreview.classList.remove('expanded');
+        }
+        if (this.elements.activeContextIndicator) {
+            this.elements.activeContextIndicator.classList.remove('visible');
+        }
+
+        // Reset model selector to default
+        this.selectModel('default');
 
         // Clear previous messages and input
         this.elements.messagesContainer.innerHTML = '';
         this.elements.input.value = '';
         this.autoResizeInput();
 
-        this.elements.title.textContent = title || 'AI Agent';
-        this.elements.subtitle.textContent = subtitle || 'Ready to assist';
+        this.elements.title.textContent = title;
+        this.elements.subtitle.textContent = subtitleText;
 
         // Reset modal - flexbox centering will handle positioning
         this.resetModalSize();
@@ -572,6 +703,58 @@ class AgentDialogService {
         setTimeout(() => {
             this.elements.input.focus();
         }, 50);
+
+        // If agentId is provided, fetch agent and start conversation
+        if (options.agentId) {
+            try {
+                // Fetch agent details
+                const response = await fetch(`/api/agents/${options.agentId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load agent: ${response.status}`);
+                }
+                const agentData = await response.json();
+                const agent = agentData.data || agentData;
+
+                // Update title if agent has a name and no custom title was provided
+                if (agent.name && options.title === title) {
+                    this.elements.title.textContent = agent.name;
+                }
+
+                // Store agent context
+                this.state.currentAgent = options.agentId;
+                this.state.systemPrompt = options.systemPrompt || agent.system_prompt || agent.prompt;
+                this.state.endpoint = options.endpoint || '/api/chat/stream';
+                this.state.context = options.context || {};
+
+                // Set agent's default model
+                this.contextState.agentDefaultModel = agent.llm_model || agent.model || 'claude-sonnet-4-5-20250929';
+                if (this.elements.modelDisplayName) {
+                    this.elements.modelDisplayName.textContent = this.getModelDisplayName(this.contextState.agentDefaultModel);
+                }
+
+                // Load context mappings for this agent
+                await this.loadContextMappings(options.agentId);
+
+                // If there's an initial message, add it and get agent response
+                if (options.initialMessage) {
+                    // Add user's initial message to history (not shown in UI)
+                    this.state.conversationHistory.push({
+                        role: 'user',
+                        content: options.initialMessage
+                    });
+
+                    // Get agent's response
+                    await this.streamAgentResponse();
+                }
+            } catch (error) {
+                console.error('Error loading agent:', error);
+                this.addMessage('system', `Error: ${error.message}. Please try again.`);
+            }
+        }
+
+        return new Promise((resolve) => {
+            this.resolvePromise = resolve;
+        });
     }
 
     /**
@@ -924,6 +1107,352 @@ class AgentDialogService {
         if (this.elements.dialog) {
             this.elements.dialog.style.transition = '';
         }
+    }
+
+    // ================================
+    // Context Asset Management
+    // ================================
+
+    /**
+     * Initialize context and model selector events
+     */
+    initContextAndModelEvents() {
+        // Context toggle
+        if (this.elements.contextToggle) {
+            this.elements.contextToggle.addEventListener('click', () => {
+                this.elements.contextPreview.classList.toggle('expanded');
+            });
+        }
+
+        // Model selector toggle
+        if (this.elements.modelSelectorBtn) {
+            this.elements.modelSelectorBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.elements.modelSelector.classList.toggle('open');
+            });
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (this.elements.modelSelector && !this.elements.modelSelector.contains(e.target)) {
+                    this.elements.modelSelector.classList.remove('open');
+                }
+            });
+
+            // Handle model selection
+            this.elements.modelSelectorMenu.addEventListener('click', (e) => {
+                const option = e.target.closest('.model-option');
+                if (option && option.dataset.model) {
+                    this.selectModel(option.dataset.model);
+                    this.elements.modelSelector.classList.remove('open');
+                }
+            });
+        }
+    }
+
+    /**
+     * Load context mappings for an agent
+     */
+    async loadContextMappings(agentId) {
+        if (!agentId) return;
+
+        try {
+            const response = await fetch(`/api/agents/${agentId}/context/mappings`);
+            const data = await response.json();
+
+            if (data.success && data.data) {
+                this.contextState.mappings = data.data;
+                this.renderContextPreview();
+                this.updateActiveContextIndicator();
+
+                // Show context preview if there are mappings
+                if (this.elements.contextPreview && data.data.length > 0) {
+                    this.elements.contextPreview.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load context mappings:', error);
+        }
+    }
+
+    /**
+     * Render context preview panel
+     */
+    renderContextPreview() {
+        const mappings = this.contextState.mappings;
+        const content = this.elements.contextContent;
+        const tokenCount = this.elements.tokenCount;
+
+        if (!content || !mappings || mappings.length === 0) {
+            if (content) {
+                content.innerHTML = '<p class="agent-dialog-no-context">No context assets mapped.</p>';
+            }
+            if (tokenCount) {
+                tokenCount.textContent = '0 tokens';
+            }
+            return;
+        }
+
+        // Calculate total tokens
+        let totalTokens = 0;
+        mappings.forEach(m => {
+            const asset = m.context_assets || m;
+            if (m.injection_mode === 'always' || this.contextState.selectedOnDemandAssets.has(asset.id)) {
+                totalTokens += asset.tokens || this.estimateTokens(asset.content_text || JSON.stringify(asset.content_json || {}));
+            }
+        });
+        tokenCount.textContent = `~${totalTokens} tokens`;
+
+        // Render items
+        content.innerHTML = mappings.map(m => {
+            const asset = m.context_assets || m;
+            const mode = m.injection_mode || 'always';
+            const isOnDemand = mode === 'on_demand';
+            const isActive = mode === 'always' || this.contextState.selectedOnDemandAssets.has(asset.id);
+            const assetTokens = asset.tokens || this.estimateTokens(asset.content_text || JSON.stringify(asset.content_json || {}));
+
+            return `
+                <div class="agent-dialog-context-item ${isOnDemand ? 'on-demand' : ''} ${isActive ? 'active' : ''}" data-asset-id="${asset.id}">
+                    <span class="asset-icon">${this.getAssetIcon(asset.asset_type)}</span>
+                    <div class="asset-info">
+                        <div class="asset-name">
+                            ${this.escapeHtml(asset.name)}
+                            <span class="injection-mode ${mode}">${mode.replace('_', ' ')}</span>
+                        </div>
+                        <div class="asset-type">${asset.asset_type || ''}</div>
+                    </div>
+                    <span class="asset-tokens">~${assetTokens}</span>
+                    ${isOnDemand ? `
+                        <label class="agent-dialog-context-switch">
+                            <input type="checkbox" ${this.contextState.selectedOnDemandAssets.has(asset.id) ? 'checked' : ''}
+                                   onchange="window.agentDialogInstance.toggleOnDemandAsset('${asset.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Toggle on-demand asset selection
+     */
+    toggleOnDemandAsset(assetId, isChecked) {
+        if (isChecked) {
+            this.contextState.selectedOnDemandAssets.add(assetId);
+        } else {
+            this.contextState.selectedOnDemandAssets.delete(assetId);
+        }
+        this.renderContextPreview();
+        this.updateActiveContextIndicator();
+    }
+
+    /**
+     * Update active context indicator
+     */
+    updateActiveContextIndicator() {
+        const indicator = this.elements.activeContextIndicator;
+        const pillsContainer = this.elements.activeContextPills;
+        if (!indicator || !pillsContainer) return;
+
+        const activeAssets = [];
+        this.contextState.mappings.forEach(m => {
+            const asset = m.context_assets || m;
+            const mode = m.injection_mode || 'always';
+
+            if (mode === 'always') {
+                activeAssets.push({ name: asset.name, mode: 'always' });
+            } else if (mode === 'on_demand' && this.contextState.selectedOnDemandAssets.has(asset.id)) {
+                activeAssets.push({ name: asset.name, mode: 'on_demand' });
+            }
+        });
+
+        if (activeAssets.length > 0) {
+            indicator.classList.add('visible');
+            pillsContainer.innerHTML = activeAssets.map(a => `
+                <span class="agent-dialog-context-pill ${a.mode}">${this.escapeHtml(a.name)}</span>
+            `).join('');
+        } else {
+            indicator.classList.remove('visible');
+            pillsContainer.innerHTML = '';
+        }
+    }
+
+    /**
+     * Get active context asset IDs for API requests
+     */
+    getActiveContextAssetIds() {
+        const ids = [];
+        this.contextState.mappings.forEach(m => {
+            const asset = m.context_assets || m;
+            const mode = m.injection_mode || 'always';
+
+            if (mode === 'always' || this.contextState.selectedOnDemandAssets.has(asset.id)) {
+                ids.push(asset.id);
+            }
+        });
+        return ids;
+    }
+
+    /**
+     * Estimate tokens for content
+     */
+    estimateTokens(text) {
+        if (!text) return 0;
+        return Math.ceil(text.length / 4);
+    }
+
+    /**
+     * Get icon for asset type
+     */
+    getAssetIcon(assetType) {
+        const icons = {
+            'company_description': '🏢',
+            'why_we_win': '🏆',
+            'products': '📦',
+            'pain_points': '🎯',
+            'voice_dna': '🎤',
+            'icp': '👤',
+            'core_values': '💎',
+            'custom_processes': '⚙️',
+            'competitors': '⚔️',
+            'case_studies': '📖',
+            'faqs': '❓',
+            'team_bios': '👥',
+            'industry_context': '🌐',
+            'terminology': '📚',
+            'templates': '📝',
+            'pricing': '💰',
+            'brand_guidelines': '🎨',
+            'personas': '🎭'
+        };
+        return icons[assetType] || '📄';
+    }
+
+    // ================================
+    // Model Selector Management
+    // ================================
+
+    /**
+     * Load models from API and populate selector
+     */
+    async loadModels() {
+        const container = this.elements.dynamicModelOptions;
+        if (!container) return;
+
+        try {
+            const response = await fetch('/api/chat/models');
+            const data = await response.json();
+
+            if (data.success && data.models) {
+                this.contextState.loadedModels = data.models;
+
+                // Group models by provider
+                const grouped = {};
+                data.models.forEach(model => {
+                    const provider = model.provider || 'other';
+                    if (!grouped[provider]) grouped[provider] = [];
+                    grouped[provider].push(model);
+                });
+
+                // Provider display names
+                const providerNames = {
+                    'anthropic': 'Anthropic Claude',
+                    'openai': 'OpenAI GPT',
+                    'perplexity': 'Perplexity (Web Search)',
+                    'other': 'Other'
+                };
+
+                // Build HTML
+                let html = '';
+                const providerOrder = ['anthropic', 'openai', 'perplexity', 'other'];
+
+                providerOrder.forEach(provider => {
+                    if (grouped[provider] && grouped[provider].length > 0) {
+                        html += `<div class="model-group-label">${providerNames[provider] || provider}</div>`;
+                        grouped[provider].forEach(model => {
+                            html += `
+                                <div class="model-option" data-model="${model.id}">
+                                    <span class="model-option-name">${model.name}</span>
+                                    <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 6L9 17l-5-5"/>
+                                    </svg>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+
+                container.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            container.innerHTML = '<div class="model-group-label">Failed to load models</div>';
+        }
+    }
+
+    /**
+     * Select a model
+     */
+    selectModel(modelId) {
+        const menu = this.elements.modelSelectorMenu;
+        const btn = this.elements.modelSelectorBtn;
+        const displaySpan = this.elements.modelDisplayName;
+
+        // Clear previous selection
+        menu.querySelectorAll('.model-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+
+        // Set new selection
+        const selectedOption = menu.querySelector(`[data-model="${modelId}"]`);
+        if (selectedOption) {
+            selectedOption.classList.add('selected');
+        }
+
+        if (modelId === 'default') {
+            this.contextState.selectedModelOverride = null;
+            displaySpan.textContent = this.getModelDisplayName(this.contextState.agentDefaultModel);
+            btn.classList.remove('overridden');
+            btn.title = 'Using agent default model. Click to change.';
+        } else {
+            this.contextState.selectedModelOverride = modelId;
+            displaySpan.textContent = this.getModelDisplayName(modelId) + ' ✨';
+            btn.classList.add('overridden');
+            btn.title = `Overriding to ${this.getModelDisplayName(modelId)}. Click to change.`;
+        }
+    }
+
+    /**
+     * Get display name for a model ID
+     */
+    getModelDisplayName(modelId) {
+        const model = this.contextState.loadedModels.find(m => m.id === modelId);
+        if (model) return model.name;
+
+        // Fallback display names
+        const fallbacks = {
+            'claude-sonnet-4-5-20250929': 'Claude Sonnet',
+            'claude-opus-4-5-20250929': 'Claude Opus',
+            'claude-3-5-sonnet-20241022': 'Claude Sonnet 3.5',
+            'gpt-4o': 'GPT-4o',
+            'gpt-4-turbo': 'GPT-4 Turbo',
+            'llama-3.1-sonar-huge-128k-online': 'Perplexity Sonar'
+        };
+        return fallbacks[modelId] || modelId;
+    }
+
+    /**
+     * Get the active model for API requests
+     */
+    getActiveModel() {
+        return this.contextState.selectedModelOverride || this.contextState.agentDefaultModel;
+    }
+
+    /**
+     * Check if model is overridden
+     */
+    isModelOverridden() {
+        return this.contextState.selectedModelOverride !== null;
     }
 
     /**

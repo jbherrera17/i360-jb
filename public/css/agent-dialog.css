@@ -49,9 +49,10 @@
     position: relative;
 }
 
-/* Use absolute positioning only when being dragged/positioned */
+/* When positioned (being dragged/resized), ensure overflow is clipped */
 .agent-dialog.positioned {
     position: absolute;
+    overflow: hidden;
 }
 
 /* Allow inline styles to override max-height when resizing */
@@ -132,21 +133,27 @@
    Chat Messages Area
    ================================ */
 .agent-dialog-body {
-    flex: 1;
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: var(--bg-secondary, #1a1a2e);
     min-height: 0;
+    /* Prevent body from growing beyond container */
+    height: 0;
 }
 
 .agent-dialog-messages {
-    flex: 1;
+    flex: 1 1 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-height: 0;
+    /* Force the container to be scrollable within bounds */
+    height: 0;
 }
 
 /* ================================
@@ -621,4 +628,330 @@
 
 .agent-dialog .resize-handle.bottom-right:active::after {
     opacity: 1;
+}
+
+/* ================================
+   Model Selector (in header)
+   ================================ */
+.agent-dialog-model-selector {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 0.75rem;
+}
+
+.agent-dialog-model-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--bg-tertiary, #252540);
+    border: 1px solid var(--border, #2a2a4a);
+    border-radius: 6px;
+    color: var(--text-secondary, #aaa);
+    font-size: 0.7rem;
+    font-family: 'Fira Code', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.agent-dialog-model-btn:hover {
+    background: var(--bg-secondary, #1a1a2e);
+    border-color: var(--primary, #6366f1);
+    color: var(--text-primary, #ffffff);
+}
+
+.agent-dialog-model-btn.overridden {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.agent-dialog-model-btn .chevron {
+    width: 10px;
+    height: 10px;
+    transition: transform 0.2s;
+}
+
+.agent-dialog-model-selector.open .chevron {
+    transform: rotate(180deg);
+}
+
+.agent-dialog-model-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 220px;
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border, #2a2a4a);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.agent-dialog-model-selector.open .agent-dialog-model-menu {
+    display: block;
+    animation: modelMenuFadeIn 0.15s ease;
+}
+
+@keyframes modelMenuFadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.agent-dialog-model-menu .model-group-label {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #888);
+    background: var(--bg-tertiary, #252540);
+    border-bottom: 1px solid var(--border, #2a2a4a);
+}
+
+.agent-dialog-model-menu .model-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 0.8rem;
+    color: var(--text-primary, #ffffff);
+}
+
+.agent-dialog-model-menu .model-option:hover {
+    background: var(--bg-tertiary, #252540);
+}
+
+.agent-dialog-model-menu .model-option.selected {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.agent-dialog-model-menu .model-option .check-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--primary, #6366f1);
+    opacity: 0;
+}
+
+.agent-dialog-model-menu .model-option.selected .check-icon {
+    opacity: 1;
+}
+
+/* ================================
+   Context Preview Panel
+   ================================ */
+.agent-dialog-context-preview {
+    background: var(--bg-primary, #121220);
+    border-bottom: 1px solid var(--border, #2a2a4a);
+    flex-shrink: 0;
+}
+
+.agent-dialog-context-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary, #aaa);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+
+.agent-dialog-context-toggle:hover {
+    background: var(--bg-tertiary, #252540);
+}
+
+.agent-dialog-context-toggle .toggle-icon {
+    margin-left: auto;
+    transition: transform 0.2s;
+}
+
+.agent-dialog-context-preview.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.agent-dialog-context-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.agent-dialog-context-preview.expanded .agent-dialog-context-content {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.agent-dialog-context-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--border, #2a2a4a);
+}
+
+.agent-dialog-context-item .asset-icon {
+    font-size: 1rem;
+}
+
+.agent-dialog-context-item .asset-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.agent-dialog-context-item .asset-name {
+    font-size: 0.8rem;
+    color: var(--text-primary, #ffffff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.agent-dialog-context-item .asset-type {
+    font-size: 0.7rem;
+    color: var(--text-muted, #888);
+}
+
+.agent-dialog-context-item .asset-tokens {
+    font-size: 0.7rem;
+    color: var(--text-muted, #888);
+    font-family: 'Fira Code', monospace;
+}
+
+.agent-dialog-context-item .injection-mode {
+    font-size: 0.6rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    text-transform: capitalize;
+}
+
+.agent-dialog-context-item .injection-mode.always {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.agent-dialog-context-item .injection-mode.on_demand {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.agent-dialog-context-item.on-demand {
+    opacity: 0.6;
+}
+
+.agent-dialog-context-item.on-demand.active {
+    opacity: 1;
+}
+
+/* Context toggle switch */
+.agent-dialog-context-switch {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.agent-dialog-context-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.agent-dialog-context-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-tertiary, #252540);
+    border-radius: 9px;
+    transition: 0.2s;
+}
+
+.agent-dialog-context-switch .slider::before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.agent-dialog-context-switch input:checked + .slider {
+    background: var(--primary, #6366f1);
+}
+
+.agent-dialog-context-switch input:checked + .slider::before {
+    transform: translateX(14px);
+}
+
+.agent-dialog-token-count {
+    font-size: 0.7rem;
+    color: var(--text-muted, #888);
+    font-family: 'Fira Code', monospace;
+    margin-left: auto;
+    margin-right: 0.5rem;
+}
+
+.agent-dialog-no-context {
+    padding: 0.75rem 1rem;
+    text-align: center;
+    color: var(--text-muted, #888);
+    font-size: 0.8rem;
+}
+
+/* ================================
+   Active Context Indicator
+   ================================ */
+.agent-dialog-active-context {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    background: var(--bg-tertiary, #252540);
+    border-bottom: 1px solid var(--border, #2a2a4a);
+    font-size: 0.75rem;
+    color: var(--text-secondary, #aaa);
+}
+
+.agent-dialog-active-context.visible {
+    display: flex;
+}
+
+.agent-dialog-context-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.agent-dialog-context-pill {
+    padding: 0.15rem 0.4rem;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    color: var(--primary, #6366f1);
+}
+
+.agent-dialog-context-pill.always {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.agent-dialog-context-pill.on_demand {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
 }

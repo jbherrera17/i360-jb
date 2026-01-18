@@ -68,7 +68,24 @@
             min-height: 100vh;
         }
 
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
         .main-content {
+            flex: 1;
             margin-left: var(--sidebar-width);
             padding: 30px;
         }
@@ -134,8 +151,21 @@
         /* Search and Filters */
         .search-filters {
             display: flex;
+            flex-direction: column;
             gap: 16px;
             margin-bottom: 24px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 8px;
             flex-wrap: wrap;
             align-items: center;
         }
@@ -169,11 +199,6 @@
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-        }
-
-        .filter-group {
-            display: flex;
-            gap: 8px;
         }
 
         .filter-btn {
@@ -597,9 +622,11 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar will be injected by navigation.js -->
+    <div class="app-layout">
+        <!-- Sidebar will be injected by navigation.js -->
+        <aside class="sidebar"></aside>
 
-    <main class="main-content">
+        <main class="main-content">
         <div class="page-header">
             <h1>
                 <i data-lucide="shapes" style="width: 32px; height: 32px;"></i>
@@ -635,21 +662,23 @@
 
         <!-- Search and Filters -->
         <div class="search-filters">
-            <div class="search-box">
-                <i data-lucide="search" style="width: 18px; height: 18px;"></i>
-                <input type="text" id="searchInput" placeholder="Search icons by name...">
+            <div class="search-row">
+                <div class="search-box">
+                    <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    <input type="text" id="searchInput" placeholder="Search icons by name...">
+                </div>
+                <div class="size-selector">
+                    <label>Preview size:</label>
+                    <select id="previewSize">
+                        <option value="24">24px</option>
+                        <option value="32">32px</option>
+                        <option value="48" selected>48px</option>
+                        <option value="64">64px</option>
+                    </select>
+                </div>
             </div>
-            <div class="filter-group" id="categoryFilters">
+            <div class="filters-row" id="categoryFilters">
                 <button class="filter-btn active" data-category="all">All</button>
-            </div>
-            <div class="size-selector">
-                <label>Preview size:</label>
-                <select id="previewSize">
-                    <option value="24">24px</option>
-                    <option value="32">32px</option>
-                    <option value="48" selected>48px</option>
-                    <option value="64">64px</option>
-                </select>
             </div>
         </div>
 
@@ -661,6 +690,7 @@
             </div>
         </div>
     </main>
+    </div>
 
     <!-- Icon Detail Panel -->
     <div class="overlay" id="overlay"></div>
@@ -736,27 +766,73 @@
             // Get icons from Lucide library
             allIcons = [];
 
-            // Get all icon names from the categories
-            const categorizedIcons = new Set();
+            // Wait for lucide to be fully loaded
+            await new Promise(resolve => {
+                if (typeof lucide !== 'undefined' && lucide.icons) {
+                    resolve();
+                } else {
+                    // Wait a bit for the library to load
+                    setTimeout(resolve, 500);
+                }
+            });
+
+            // Helper to convert kebab-case to PascalCase for matching
+            function kebabToPascal(str) {
+                return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+            }
+
+            // Helper to convert PascalCase to kebab-case for display (handles numbers)
+            function pascalToKebab(str) {
+                return str
+                    .replace(/([a-z])([A-Z])/g, '$1-$2')  // lowercase followed by uppercase
+                    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')  // uppercase followed by uppercase+lowercase
+                    .replace(/([a-zA-Z])(\d)/g, '$1-$2')  // letter followed by number
+                    .replace(/(\d)([a-zA-Z])/g, '$1-$2')  // number followed by letter
+                    .toLowerCase();
+            }
+
+            // Get all icon names from the categories (as a reference)
+            // Store both PascalCase and kebab-case versions for matching
+            const categorizedIcons = new Map();
             Object.entries(ICON_CATEGORIES).forEach(([category, icons]) => {
                 icons.forEach(icon => {
-                    categorizedIcons.add(icon);
-                    allIcons.push({
-                        name: icon,
-                        category: category
-                    });
+                    // Store kebab-case version
+                    categorizedIcons.set(icon.toLowerCase(), category);
+                    // Also store PascalCase version
+                    categorizedIcons.set(kebabToPascal(icon), category);
                 });
             });
 
-            // Also try to get all icons from lucide if available
+            // Get ALL icons from lucide library
             if (typeof lucide !== 'undefined' && lucide.icons) {
                 Object.keys(lucide.icons).forEach(iconName => {
-                    if (!categorizedIcons.has(iconName)) {
-                        allIcons.push({
-                            name: iconName,
-                            category: 'misc'
-                        });
+                    // Convert PascalCase to kebab-case for display and data-lucide attribute
+                    const kebabName = pascalToKebab(iconName);
+
+                    // Try to find category by kebab-case name
+                    let category = categorizedIcons.get(kebabName);
+                    if (!category) {
+                        // Try PascalCase name
+                        category = categorizedIcons.get(iconName);
                     }
+                    if (!category) {
+                        category = 'misc';
+                    }
+
+                    allIcons.push({
+                        name: kebabName,  // Use kebab-case for data-lucide attribute
+                        category: category
+                    });
+                });
+            } else {
+                // Fallback to categorized icons if lucide.icons not available
+                Object.entries(ICON_CATEGORIES).forEach(([category, icons]) => {
+                    icons.forEach(icon => {
+                        allIcons.push({
+                            name: icon,
+                            category: category
+                        });
+                    });
                 });
             }
 
@@ -769,7 +845,7 @@
             document.getElementById('totalCategories').textContent = Object.keys(ICON_CATEGORIES).length;
             document.getElementById('matchingIcons').textContent = allIcons.length;
 
-            // Build category filters
+            // Build category filters from ICON_CATEGORIES (misc is already included)
             Object.keys(ICON_CATEGORIES).forEach(category => {
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn';

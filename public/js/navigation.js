@@ -88,7 +88,9 @@ const navConfig = {
                 { href: '/system-health.html', icon: 'activity', label: 'System Health' },
                 { href: '/synerginexus.html', icon: 'brain-circuit', label: 'SynergiNexus' },
                 { href: '/tags.html', icon: 'tags', label: 'Tag Management' },
-                { href: '/roles.html', icon: 'user-cog', label: 'Title Management' }
+                { href: '/roles.html', icon: 'user-cog', label: 'Title Management' },
+                { href: '/asset-types.html', icon: 'folder-cog', label: 'Asset Types' },
+                { href: '/admin-icons.html', icon: 'image', label: 'Icon Library' }
             ]
         }
     ]

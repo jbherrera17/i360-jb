@@ -12,6 +12,7 @@
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* Context Admin Specific Styles */
 
@@ -75,6 +76,15 @@
             padding: 1rem;
             border-bottom: 1px solid var(--border);
             background: var(--bg-tertiary);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Row layout variant for simple headers (title + actions on same line) */
+        .panel-header.panel-header-row {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .panel-header-title-row {
@@ -91,6 +101,34 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .panel-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header-actions .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .panel-header-actions .btn-icon:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .panel-header h2 .count {
@@ -110,6 +148,7 @@
 
         .filter-row select {
             flex: 1;
+            min-width: 0;
             padding: 0.5rem;
             background: var(--bg-primary);
             border: 1px solid var(--border);
@@ -117,6 +156,7 @@
             color: var(--text-primary);
             font-size: 0.85rem;
             cursor: pointer;
+            text-overflow: ellipsis;
         }
 
         .filter-row select:hover {
@@ -268,7 +308,7 @@
         /* Center Panel - Editor */
         .editor-panel {
             flex: 1;
-            min-width: 400px;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -279,22 +319,47 @@
             padding: 1rem;
             border-bottom: 1px solid var(--border);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 0.5rem;
             background: var(--bg-secondary);
             flex-shrink: 0;
         }
 
-        .editor-header-left {
+        .editor-header-top {
             display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+            align-items: center;
+            gap: 1rem;
+            min-width: 0;
         }
 
         .editor-header h2 {
             font-family: 'Orbitron', sans-serif;
             font-size: 1rem;
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .editor-title-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .editor-title-icon i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .editor-title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
         }
 
         .editor-meta {
@@ -303,10 +368,19 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .editor-meta .meta-separator {
             opacity: 0.5;
+            flex-shrink: 0;
+        }
+
+        .editor-meta span {
+            flex-shrink: 0;
         }
 
         .editor-empty-state {
@@ -342,6 +416,53 @@
         .editor-actions {
             display: flex;
             gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .editor-actions .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .editor-actions .btn-icon:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .editor-actions .btn-icon.btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .editor-actions .btn-icon.btn-primary:hover {
+            background: #4338ca;
+        }
+
+        .editor-actions .btn-icon.btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .editor-actions .btn-icon.btn-danger {
+            color: var(--danger);
+            border-color: var(--danger);
+            background: transparent;
+        }
+
+        .editor-actions .btn-icon.btn-danger:hover {
+            background: var(--danger);
+            color: white;
         }
 
         .editor-form {
@@ -351,12 +472,14 @@
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
             flex-shrink: 0;
+            overflow: hidden;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
+            min-width: 0;
         }
 
         .form-group.full-width {
@@ -380,6 +503,9 @@
             border-radius: 6px;
             color: var(--text-primary);
             font-size: 0.9rem;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .form-group input:focus,
@@ -1259,7 +1385,8 @@
                 <!-- Center Panel - Form & JSON Editor & Preview -->
                 <div class="editor-panel">
                     <div class="editor-header">
-                        <div class="editor-header-left">
+                        <!-- Line 1: Title + Metadata -->
+                        <div class="editor-header-top">
                             <h2 id="editorTitle">➕ New Asset</h2>
                             <div id="editorMeta" class="editor-meta" style="display: none;">
                                 <span id="editorVersion"></span>
@@ -1269,21 +1396,19 @@
                                 <span id="editorModified"></span>
                             </div>
                         </div>
+                        <!-- Line 2: Actions -->
                         <div class="editor-actions">
-                            <button id="previewModalBtn" class="btn-secondary" style="display: none;">
-                                <i data-lucide="maximize-2"></i> Preview
+                            <button id="deleteBtn" class="btn-icon btn-danger" title="Delete" style="display: none;">
+                                <i data-lucide="trash-2"></i>
                             </button>
-                            <button id="deleteBtn" class="btn-secondary btn-danger" style="display: none;">
-                                <i data-lucide="trash-2"></i> Delete
+                            <button id="cancelBtn" class="btn-icon" title="Cancel" style="display: none;">
+                                <i data-lucide="x"></i>
                             </button>
-                            <button id="cancelBtn" class="btn-secondary" style="display: none;">
-                                <i data-lucide="x"></i> Cancel
-                            </button>
-                            <button id="saveBtn" class="btn-primary" disabled>
-                                <i data-lucide="save"></i> Save
+                            <button id="saveBtn" class="btn-icon btn-primary" title="Save" disabled>
+                                <i data-lucide="save"></i>
                             </button>
                         </div>
-                    </div>
+                    </div><!-- End editor-header -->
 
                     <!-- Empty State (shown when no asset selected) -->
                     <div id="editorEmptyState" class="editor-empty-state">
@@ -1310,13 +1435,13 @@
                             </div>
                             <div class="form-group full-width">
                                 <label>Description</label>
-                                <input type="text" id="assetDescription" placeholder="Brief description...">
+                                <textarea id="assetDescription" placeholder="Brief description..." rows="2"></textarea>
                             </div>
                             <div class="form-group full-width">
                                 <label>Tags (comma-separated)</label>
                                 <input type="text" id="assetTags" placeholder="brand, voice, core...">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group full-width">
                                 <label>Department</label>
                                 <select id="assetDepartment">
                                     <option value="">No Department (Available to all)</option>
@@ -1324,42 +1449,26 @@
                             </div>
                         </div>
 
-                        <!-- JSON Editor Section -->
-                        <div class="json-section">
-                            <div class="section-header">
-                                <h3><i data-lucide="code"></i> JSON Data (Advanced)</h3>
-                                <button class="btn-icon" id="toggleJsonBtn" title="Toggle JSON Editor">
-                                    <i data-lucide="chevron-down"></i>
-                                </button>
-                            </div>
-                            <div id="jsonEditorContainer" class="json-editor-container" style="display: none;">
-                                <textarea id="jsonEditor" placeholder='{\n  "key": "value"\n}'>{
+                        <!-- Hidden JSON Editor (used for internal state, shown in modal) -->
+                        <textarea id="jsonEditor" style="display: none;" placeholder='{\n  "key": "value"\n}'>{
 
 }</textarea>
-                                <div class="editor-footer">
-                                    <span id="validationStatus"><span class="valid">✓ Valid JSON</span></span>
-                                    <span id="tokenCount">~0 tokens</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Preview Section -->
-                        <div class="preview-section-bottom">
-                            <div class="section-header">
-                                <h3><i data-lucide="eye"></i> Preview</h3>
-                            </div>
-                            <div id="previewContent" class="preview-content-bottom">
-                                <p class="preview-placeholder">Enter content to see preview</p>
-                            </div>
-                        </div>
                     </div><!-- End editorContent -->
                 </div>
 
                 <!-- Right Panel - Markdown Editor -->
                 <div class="markdown-panel">
                     <div class="resize-handle-left" id="markdownResizeHandle"></div>
-                    <div class="panel-header">
+                    <div class="panel-header panel-header-row">
                         <h2><i data-lucide="edit-3"></i> Markdown Editor</h2>
+                        <div class="panel-header-actions">
+                            <button id="viewJsonBtn" class="btn-icon" title="View JSON Data" style="display: none;">
+                                <i data-lucide="braces"></i>
+                            </button>
+                            <button id="previewModalBtn" class="btn-icon" title="Preview Content" style="display: none;">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="markdown-editor-wrapper">
                         <textarea id="plainTextEditor" placeholder="Edit your content in markdown format here..."></textarea>
@@ -1369,141 +1478,8 @@
         </main>
     </div>
 
-    <!-- AI Generate Modal -->
-    <div class="modal-overlay" id="generateModal">
-        <div class="modal generate-modal" id="generate-modal-dialog">
-            <div class="modal-header" id="generate-modal-header">
-                <h2><i data-lucide="sparkles"></i> Create Context Asset</h2>
-                <button class="modal-close" id="generateModalClose">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-
-            <!-- Tab Navigation -->
-            <div class="modal-tabs">
-                <button class="modal-tab active" data-tab="generate">
-                    <i data-lucide="wand-2"></i> Generate New
-                </button>
-                <button class="modal-tab" data-tab="import">
-                    <i data-lucide="file-text"></i> Import Content
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <!-- Generate Tab -->
-                <div class="tab-content active" id="generateTabContent">
-                    <p class="modal-description">Select an asset type and describe what you want. AI will generate the content for you.</p>
-
-                    <div class="form-group">
-                        <label>Asset Type</label>
-                        <select id="generateAssetType">
-                            <option value="">Select type...</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Company/Context Name</label>
-                        <input type="text" id="generateCompanyName" placeholder="e.g., Synergi AI, Acme Corp">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Description / Instructions</label>
-                        <textarea id="generatePrompt" rows="4" placeholder="Describe your company, product, or what this asset should contain..."></textarea>
-                    </div>
-                </div>
-
-                <!-- Import Tab -->
-                <div class="tab-content" id="importTabContent" style="display: none;">
-                    <p class="modal-description">Paste any business content (SOPs, processes, product info, etc.) and AI will convert it into a structured context asset.</p>
-
-                    <div class="form-group">
-                        <label>Content Type (Optional)</label>
-                        <select id="importAssetType">
-                            <option value="">Auto-detect best type...</option>
-                        </select>
-                        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
-                            Leave empty to let AI determine the best asset type
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Content Source (Optional)</label>
-                        <input type="text" id="importSource" placeholder="e.g., Sales Playbook, Onboarding Doc, Website Copy">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Paste Your Content</label>
-                        <textarea id="importContent" rows="8" placeholder="Paste your content here...
-
-Examples:
-- An SOP or process document
-- Product/service descriptions
-- Company information
-- Team bios
-- FAQ content
-- Any business document you want to structure"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <span>Or upload a file</span>
-                        </label>
-                        <div class="file-upload-area" id="fileUploadArea">
-                            <input type="file" id="importFileInput" accept=".txt,.md,.json,.csv" style="display: none;">
-                            <div class="file-upload-content">
-                                <i data-lucide="upload-cloud" style="width: 32px; height: 32px; color: var(--text-muted);"></i>
-                                <span>Click or drag to upload</span>
-                                <small>.txt, .md, .json, .csv</small>
-                            </div>
-                            <div class="file-selected" style="display: none;">
-                                <i data-lucide="file-check" style="color: var(--success);"></i>
-                                <span id="selectedFileName"></span>
-                                <button type="button" id="clearFileBtn" class="btn-icon-only" style="padding: 0.25rem;">
-                                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="generate-status" id="generateStatus" style="display: none;">
-                    <div class="generate-spinner">
-                        <img src="/assets/loading-spinner.svg" alt="Processing..." class="loading-spinner">
-                    </div>
-                    <span id="generateStatusText">Processing content...</span>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="generateCancelBtn">Cancel</button>
-                <button class="btn-ai" id="generateSubmitBtn">
-                    <i data-lucide="sparkles"></i> Generate
-                </button>
-                <button class="btn-ai" id="importSubmitBtn" style="display: none;">
-                    <i data-lucide="sparkles"></i> Convert to Asset
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Preview Modal -->
-    <div class="modal-overlay" id="previewModal">
-        <div class="modal preview-modal" id="preview-modal-dialog">
-            <div class="modal-header" id="preview-modal-header">
-                <h2><i data-lucide="eye"></i> Content Preview</h2>
-                <button class="modal-close" id="previewModalClose">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <div id="previewModalContent" class="preview-content">
-                    <p class="preview-placeholder">No content to preview</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="closePreviewModalBtn">Close</button>
-            </div>
-        </div>
-    </div>
+    <!-- Create Asset Modal now uses ModalService.createAsset() - no HTML needed -->
+    <!-- Preview Modal now uses ModalService.content() - no HTML needed -->
 
     <!-- Load Supabase client first -->
     <script src="/js/supabase.js"></script>

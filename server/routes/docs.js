@@ -42,7 +42,9 @@ const ALLOWED_DOCS = [
     'tags-user-guide.md',
     'tags-technical-guide.md',
     'roles-user-guide.md',
-    'roles-technical-guide.md'
+    'roles-technical-guide.md',
+    // Admin guides
+    'asset-types-user-guide.md'
 ];
 
 /**

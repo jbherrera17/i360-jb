@@ -91,13 +91,16 @@ class ContentModal extends ModalBase {
      * @private
      */
     _renderMarkdown(content) {
+        // Pre-process: convert bullet characters (•) to standard markdown list markers
+        let processedContent = content.replace(/^[•●○◦▪▸►] /gm, '- ');
+
         // Check if marked is available
         if (typeof marked !== 'undefined') {
-            const html = marked.parse(content);
+            const html = marked.parse(processedContent);
             this.elements.body.innerHTML = `<div class="i360-content-markdown">${html}</div>`;
         } else {
             // Basic markdown conversion fallback
-            const html = this._basicMarkdown(content);
+            const html = this._basicMarkdown(processedContent);
             this.elements.body.innerHTML = `<div class="i360-content-markdown">${html}</div>`;
         }
     }
@@ -107,38 +110,159 @@ class ContentModal extends ModalBase {
      * @private
      */
     _basicMarkdown(content) {
-        let html = this._escapeHtml(content);
+        if (!content) return '';
 
-        // Headers
-        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+        // Normalize line endings
+        let text = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-        // Bold and italic
-        html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        // Extract and preserve code blocks before any processing
+        const codeBlocks = [];
+        text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+            const idx = codeBlocks.length;
+            codeBlocks.push({ lang: lang || 'plaintext', code: code.trim() });
+            return `\n@@CODEBLOCK${idx}@@\n`;
+        });
 
-        // Code blocks
-        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+        // Extract and preserve inline code before any processing
+        const inlineCodes = [];
+        text = text.replace(/`([^`]+)`/g, (match, code) => {
+            const idx = inlineCodes.length;
+            inlineCodes.push(code);
+            return `@@INLINECODE${idx}@@`;
+        });
 
-        // Inline code
-        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        // Helper to process inline formatting on raw text, then escape
+        const processInline = (text) => {
+            // First restore inline code placeholders (before any escaping)
+            let result = text.replace(/@@INLINECODE(\d+)@@/g, (match, idx) => {
+                return `@@SAFECODE${idx}@@`; // temporary marker
+            });
 
-        // Links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+            // Apply inline formatting to raw text
+            result = result.replace(/\*\*\*(.+?)\*\*\*/g, '@@BOLDITALIC@@$1@@/BOLDITALIC@@');
+            result = result.replace(/\*\*(.+?)\*\*/g, '@@BOLD@@$1@@/BOLD@@');
+            result = result.replace(/\*(.+?)\*/g, '@@ITALIC@@$1@@/ITALIC@@');
+            result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '@@LINK:$2@@$1@@/LINK@@');
 
-        // Lists
-        html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
-        html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+            // Now escape HTML
+            result = this._escapeHtml(result);
 
-        // Numbered lists
-        html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+            // Restore formatting tags
+            result = result.replace(/@@BOLDITALIC@@/g, '<strong><em>');
+            result = result.replace(/@@\/BOLDITALIC@@/g, '</em></strong>');
+            result = result.replace(/@@BOLD@@/g, '<strong>');
+            result = result.replace(/@@\/BOLD@@/g, '</strong>');
+            result = result.replace(/@@ITALIC@@/g, '<em>');
+            result = result.replace(/@@\/ITALIC@@/g, '</em>');
+            result = result.replace(/@@LINK:([^@]+)@@/g, '<a href="$1" target="_blank" rel="noopener">');
+            result = result.replace(/@@\/LINK@@/g, '</a>');
 
-        // Line breaks
-        html = html.replace(/\n\n/g, '</p><p>');
-        html = '<p>' + html + '</p>';
+            // Restore inline code
+            result = result.replace(/@@SAFECODE(\d+)@@/g, (match, idx) => {
+                return `<code>${this._escapeHtml(inlineCodes[parseInt(idx)])}</code>`;
+            });
+
+            return result;
+        };
+
+        // Process by lines for better control
+        const lines = text.split('\n');
+        const result = [];
+        let inList = false;
+        let listType = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Check for code block placeholder
+            const codeBlockMatch = line.match(/^@@CODEBLOCK(\d+)@@$/);
+            if (codeBlockMatch) {
+                if (inList) {
+                    result.push(listType === 'ul' ? '</ul>' : '</ol>');
+                    inList = false;
+                    listType = null;
+                }
+                const idx = parseInt(codeBlockMatch[1]);
+                const block = codeBlocks[idx];
+                result.push(`<pre><code class="language-${block.lang}">${this._escapeHtml(block.code)}</code></pre>`);
+                continue;
+            }
+
+            // Headers (must be at start of line)
+            const headerMatch = line.match(/^(#{1,4}) (.+)$/);
+            if (headerMatch) {
+                if (inList) {
+                    result.push(listType === 'ul' ? '</ul>' : '</ol>');
+                    inList = false;
+                    listType = null;
+                }
+                const level = headerMatch[1].length;
+                const headerContent = processInline(headerMatch[2]);
+                result.push(`<h${level}>${headerContent}</h${level}>`);
+                continue;
+            }
+
+            // Unordered list items (support -, *, and • bullet)
+            const ulMatch = line.match(/^[\-\*•] (.+)$/);
+            if (ulMatch) {
+                if (!inList || listType !== 'ul') {
+                    if (inList) result.push(listType === 'ul' ? '</ul>' : '</ol>');
+                    result.push('<ul>');
+                    inList = true;
+                    listType = 'ul';
+                }
+                result.push(`<li>${processInline(ulMatch[1])}</li>`);
+                continue;
+            }
+
+            // Ordered list items
+            const olMatch = line.match(/^\d+\. (.+)$/);
+            if (olMatch) {
+                if (!inList || listType !== 'ol') {
+                    if (inList) result.push(listType === 'ul' ? '</ul>' : '</ol>');
+                    result.push('<ol>');
+                    inList = true;
+                    listType = 'ol';
+                }
+                result.push(`<li>${processInline(olMatch[1])}</li>`);
+                continue;
+            }
+
+            // Close list if we hit a non-list line with content
+            if (inList && line.trim() !== '') {
+                result.push(listType === 'ul' ? '</ul>' : '</ol>');
+                inList = false;
+                listType = null;
+            }
+
+            // Empty line
+            if (line.trim() === '') {
+                if (inList) {
+                    result.push(listType === 'ul' ? '</ul>' : '</ol>');
+                    inList = false;
+                    listType = null;
+                }
+                result.push('');
+                continue;
+            }
+
+            // Regular paragraph line
+            result.push(`<p>${processInline(line)}</p>`);
+        }
+
+        // Close any open list
+        if (inList) {
+            result.push(listType === 'ul' ? '</ul>' : '</ol>');
+        }
+
+        // Join and clean up
+        let html = result.join('\n');
+
+        // Remove empty paragraphs
         html = html.replace(/<p><\/p>/g, '');
+
+        // Clean up multiple blank lines
+        html = html.replace(/\n{3,}/g, '\n\n');
 
         return html;
     }

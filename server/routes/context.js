@@ -102,19 +102,372 @@ function generateContentText(contentJson) {
 
 // ============================================
 // GET /api/context/types
-// List all asset types
+// List all asset types (from database with fallback to hardcoded)
 // ============================================
-router.get('/types', (req, res) => {
-    const types = Object.entries(ASSET_TYPES).map(([key, value]) => ({
-        type_key: key,
-        ...value
-    }));
-    
-    res.json({
-        success: true,
-        data: types,
-        count: types.length
-    });
+router.get('/types', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+
+        // Try to get from database first
+        const { data, error } = await supabase
+            .from('context_asset_types')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+            // Return database types
+            const types = data.map(type => ({
+                type_key: type.type_key,
+                display_name: type.display_name,
+                icon: type.icon || '📄',
+                category: type.category || 'extended'
+            }));
+
+            return res.json({
+                success: true,
+                data: types,
+                count: types.length,
+                source: 'database'
+            });
+        }
+
+        // Fallback to hardcoded types
+        const types = Object.entries(ASSET_TYPES).map(([key, value]) => ({
+            type_key: key,
+            ...value
+        }));
+
+        res.json({
+            success: true,
+            data: types,
+            count: types.length,
+            source: 'hardcoded'
+        });
+    } catch (error) {
+        // If database fails, return hardcoded types
+        console.warn('Database types fetch failed, using hardcoded:', error.message);
+        const types = Object.entries(ASSET_TYPES).map(([key, value]) => ({
+            type_key: key,
+            ...value
+        }));
+
+        res.json({
+            success: true,
+            data: types,
+            count: types.length,
+            source: 'hardcoded'
+        });
+    }
+});
+
+// ============================================
+// GET /api/context/types/:key
+// Get single asset type by key
+// ============================================
+router.get('/types/:key', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { key } = req.params;
+
+        // Try database first
+        const { data, error } = await supabase
+            .from('context_asset_types')
+            .select('*')
+            .eq('type_key', key)
+            .single();
+
+        if (!error && data) {
+            return res.json({
+                success: true,
+                data: {
+                    type_key: data.type_key,
+                    display_name: data.display_name,
+                    icon: data.icon || '📄',
+                    category: data.category || 'extended',
+                    description: data.description,
+                    json_schema: data.json_schema
+                }
+            });
+        }
+
+        // Fallback to hardcoded
+        if (ASSET_TYPES[key]) {
+            return res.json({
+                success: true,
+                data: {
+                    type_key: key,
+                    ...ASSET_TYPES[key]
+                }
+            });
+        }
+
+        res.status(404).json({
+            success: false,
+            error: 'Asset type not found'
+        });
+    } catch (error) {
+        console.error('Error getting asset type:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// POST /api/context/types
+// Create new asset type
+// ============================================
+router.post('/types', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const {
+            type_key,
+            display_name,
+            icon = '📄',
+            category = 'extended',
+            description = '',
+            json_schema = null,
+            sort_order = 100
+        } = req.body;
+
+        // Validation
+        if (!type_key || !display_name) {
+            return res.status(400).json({
+                success: false,
+                error: 'type_key and display_name are required'
+            });
+        }
+
+        if (!/^[a-z_]+$/.test(type_key)) {
+            return res.status(400).json({
+                success: false,
+                error: 'type_key must contain only lowercase letters and underscores'
+            });
+        }
+
+        // Check if exists
+        const { data: existing } = await supabase
+            .from('context_asset_types')
+            .select('type_key')
+            .eq('type_key', type_key)
+            .maybeSingle();
+
+        if (existing || ASSET_TYPES[type_key]) {
+            return res.status(409).json({
+                success: false,
+                error: 'Asset type with this key already exists'
+            });
+        }
+
+        // Insert
+        const { data, error } = await supabase
+            .from('context_asset_types')
+            .insert({
+                type_key,
+                display_name,
+                icon,
+                category,
+                description,
+                json_schema,
+                sort_order,
+                is_active: true,
+                created_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({
+            success: true,
+            data: {
+                type_key: data.type_key,
+                display_name: data.display_name,
+                icon: data.icon,
+                category: data.category
+            },
+            message: 'Asset type created successfully'
+        });
+
+    } catch (error) {
+        console.error('Error creating asset type:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// PUT /api/context/types/:key
+// Update asset type
+// ============================================
+router.put('/types/:key', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { key } = req.params;
+        const { display_name, icon, category, description, json_schema, sort_order } = req.body;
+
+        // Build update object
+        const updateData = {};
+        if (display_name !== undefined) updateData.display_name = display_name;
+        if (icon !== undefined) updateData.icon = icon;
+        if (category !== undefined) updateData.category = category;
+        if (description !== undefined) updateData.description = description;
+        if (json_schema !== undefined) updateData.json_schema = json_schema;
+        if (sort_order !== undefined) updateData.sort_order = sort_order;
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No fields to update'
+            });
+        }
+
+        // Check if it exists in database first
+        const { data: existing } = await supabase
+            .from('context_asset_types')
+            .select('*')
+            .eq('type_key', key)
+            .maybeSingle();
+
+        if (existing) {
+            // Update existing database record
+            const { data, error } = await supabase
+                .from('context_asset_types')
+                .update(updateData)
+                .eq('type_key', key)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return res.json({
+                success: true,
+                data: {
+                    type_key: data.type_key,
+                    display_name: data.display_name,
+                    icon: data.icon,
+                    category: data.category
+                },
+                message: 'Asset type updated successfully'
+            });
+        }
+
+        // Not in database - check if it's a hardcoded type we can customize
+        if (ASSET_TYPES[key]) {
+            // Create a database entry to override the hardcoded type
+            const { data, error } = await supabase
+                .from('context_asset_types')
+                .insert({
+                    type_key: key,
+                    display_name: display_name || ASSET_TYPES[key].display_name,
+                    icon: icon || ASSET_TYPES[key].icon,
+                    category: category || ASSET_TYPES[key].category,
+                    description: description || '',
+                    json_schema: json_schema || null,
+                    sort_order: sort_order || 0,
+                    is_active: true,
+                    created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return res.json({
+                success: true,
+                data: {
+                    type_key: data.type_key,
+                    display_name: data.display_name,
+                    icon: data.icon,
+                    category: data.category
+                },
+                message: 'Asset type customized successfully'
+            });
+        }
+
+        // Type not found anywhere
+        res.status(404).json({
+            success: false,
+            error: 'Asset type not found'
+        });
+
+    } catch (error) {
+        console.error('Error updating asset type:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// DELETE /api/context/types/:key
+// Delete asset type
+// ============================================
+router.delete('/types/:key', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { key } = req.params;
+        const { hard = 'false' } = req.query;
+
+        // Can't delete hardcoded types
+        if (ASSET_TYPES[key]) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot delete built-in asset type'
+            });
+        }
+
+        // Check if any assets use this type
+        const { count } = await supabase
+            .from('context_assets')
+            .select('*', { count: 'exact', head: true })
+            .eq('asset_type', key);
+
+        if (count > 0 && hard !== 'true') {
+            return res.status(409).json({
+                success: false,
+                error: `Cannot delete: ${count} assets use this type`
+            });
+        }
+
+        if (hard === 'true') {
+            const { error } = await supabase
+                .from('context_asset_types')
+                .delete()
+                .eq('type_key', key);
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                message: 'Asset type permanently deleted'
+            });
+        } else {
+            const { error } = await supabase
+                .from('context_asset_types')
+                .update({ is_active: false })
+                .eq('type_key', key);
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                message: 'Asset type deactivated'
+            });
+        }
+
+    } catch (error) {
+        console.error('Error deleting asset type:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
 });
 
 // ============================================
@@ -444,6 +797,117 @@ router.put('/assets/:id', async (req, res) => {
         
     } catch (error) {
         console.error('Error updating asset:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// GET /api/context/assets/:id/dependencies
+// Get objects that depend on this asset (for delete validation)
+// ============================================
+router.get('/assets/:id/dependencies', async (req, res) => {
+    try {
+        const supabase = getSupabase(req);
+        const { id } = req.params;
+
+        const dependencies = {
+            agents: [],
+            workflows: [],
+            actions: [],
+            hasAny: false
+        };
+
+        // 1. Check agent_context_mappings
+        const { data: agentMappings, error: agentError } = await supabase
+            .from('agent_context_mappings')
+            .select(`
+                agent_id,
+                injection_mode,
+                priority,
+                is_active,
+                agents!inner(id, name, description)
+            `)
+            .eq('asset_id', id)
+            .eq('is_active', true);
+
+        if (!agentError && agentMappings) {
+            dependencies.agents = agentMappings.map(m => ({
+                id: m.agents.id,
+                name: m.agents.name,
+                description: m.agents.description,
+                injection_mode: m.injection_mode,
+                priority: m.priority
+            }));
+        }
+
+        // 2. Check workflow_context_assets
+        const { data: workflowMappings, error: workflowError } = await supabase
+            .from('workflow_context_assets')
+            .select(`
+                workflow_id,
+                is_required,
+                inject_at_steps,
+                workflows!inner(id, name, description)
+            `)
+            .eq('context_asset_id', id);
+
+        if (!workflowError && workflowMappings) {
+            dependencies.workflows = workflowMappings.map(m => ({
+                id: m.workflows.id,
+                name: m.workflows.name,
+                description: m.workflows.description,
+                is_required: m.is_required,
+                inject_at_steps: m.inject_at_steps
+            }));
+        }
+
+        // 3. Check action_context_assets
+        const { data: actionMappings, error: actionError } = await supabase
+            .from('action_context_assets')
+            .select(`
+                action_id,
+                injection_mode,
+                is_required,
+                priority,
+                actions!inner(id, name, description)
+            `)
+            .eq('asset_id', id);
+
+        if (!actionError && actionMappings) {
+            dependencies.actions = actionMappings.map(m => ({
+                id: m.actions.id,
+                name: m.actions.name,
+                description: m.actions.description,
+                injection_mode: m.injection_mode,
+                is_required: m.is_required,
+                priority: m.priority
+            }));
+        }
+
+        // Set hasAny flag
+        dependencies.hasAny =
+            dependencies.agents.length > 0 ||
+            dependencies.workflows.length > 0 ||
+            dependencies.actions.length > 0;
+
+        // Add counts for convenience
+        dependencies.counts = {
+            agents: dependencies.agents.length,
+            workflows: dependencies.workflows.length,
+            actions: dependencies.actions.length,
+            total: dependencies.agents.length + dependencies.workflows.length + dependencies.actions.length
+        };
+
+        res.json({
+            success: true,
+            data: dependencies
+        });
+
+    } catch (error) {
+        console.error('Error fetching asset dependencies:', error);
         res.status(500).json({
             success: false,
             error: error.message

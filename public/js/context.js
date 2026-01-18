@@ -54,6 +54,30 @@ async function apiCall(endpoint, options = {}) {
 }
 
 // ============================================
+// ICON RENDERING HELPER
+// ============================================
+
+/**
+ * Render icon - handles both Lucide icons and legacy emojis
+ * @param {string} icon - Icon name or emoji
+ * @returns {string} - HTML string for the icon
+ */
+function renderTypeIcon(icon) {
+    if (!icon) return '<i data-lucide="file" width="20" height="20"></i>';
+
+    // Check if it's a valid Lucide icon name (lowercase letters, numbers, and hyphens only)
+    const isValidLucideIcon = /^[a-z0-9-]+$/.test(icon);
+
+    if (isValidLucideIcon) {
+        // It's a Lucide icon name
+        return `<i data-lucide="${escapeHtml(icon)}" width="20" height="20"></i>`;
+    }
+
+    // It's an emoji or other character - render as text
+    return `<span style="font-size: 1.25rem;">${escapeHtml(icon)}</span>`;
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -257,13 +281,13 @@ function renderAssetList() {
     
     container.innerHTML = state.assets.map(asset => {
         const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
-                        { icon: '📄', display_name: asset.asset_type };
+                        { icon: 'file', display_name: asset.asset_type };
         const updatedDate = asset.updated_at ? formatRelativeDate(asset.updated_at) : '';
 
         return `
             <div class="asset-item ${state.selectedAsset?.id === asset.id ? 'selected' : ''}"
                  onclick="selectAsset('${asset.id}')">
-                <div class="asset-icon">${typeInfo.icon}</div>
+                <div class="asset-icon">${renderTypeIcon(typeInfo.icon)}</div>
                 <div class="asset-info">
                     <div class="asset-name">${escapeHtml(asset.name)}</div>
                     <div class="asset-meta">
@@ -342,12 +366,14 @@ function loadAssetIntoEditor(asset) {
     updatePreview();
     updateTokenCount();
 
-    // Update editor header
+    // Update editor header with proper icon rendering
     const editorTitle = document.getElementById('editorTitle');
     if (editorTitle) {
         const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
-                        { icon: '📄', display_name: 'Asset' };
-        editorTitle.textContent = `${typeInfo.icon} ${asset.name}`;
+                        { icon: 'file', display_name: 'Asset' };
+        editorTitle.innerHTML = `<span class="editor-title-icon">${renderTypeIcon(typeInfo.icon)}</span><span class="editor-title-text">${escapeHtml(asset.name)}</span>`;
+        // Re-render Lucide icons
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Update editor metadata
@@ -519,25 +545,167 @@ async function saveAsset() {
 }
 
 async function deleteAsset(id) {
-    if (!confirm('Are you sure you want to delete this asset?')) return;
+    const asset = state.assets.find(a => a.id === id);
+    if (!asset) return;
 
+    // First, check for dependencies
     try {
+        showNotification('Checking dependencies...', 'info');
+        const response = await apiCall(`/api/context/assets/${id}/dependencies`);
+        const deps = response.data;
+
+        // Build confirmation message with dependencies
+        const confirmed = await showDeleteConfirmation(asset, deps);
+        if (!confirmed) return;
+
+        // Proceed with deletion
         await apiCall(`/api/context/assets/${id}?hard=true`, {
             method: 'DELETE'
         });
-        
+
         showNotification('Asset deleted', 'success');
-        
+
         if (state.selectedAsset?.id === id) {
             state.selectedAsset = null;
             showCreateModal();
         }
-        
+
         await loadAssets();
-        
+
     } catch (error) {
         showNotification('Failed to delete: ' + error.message, 'error');
     }
+}
+
+/**
+ * Show delete confirmation modal with dependency information using ModalService
+ * @param {Object} asset - The asset being deleted
+ * @param {Object} deps - Dependencies object from API
+ * @returns {Promise<boolean>} - Whether user confirmed deletion
+ */
+async function showDeleteConfirmation(asset, deps) {
+    // If no dependencies, use simple confirmDanger
+    if (!deps.hasAny) {
+        return ModalService.confirm({
+            title: 'Delete Asset',
+            message: `Are you sure you want to delete "${asset.name}"? This action cannot be undone.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            type: 'danger'
+        });
+    }
+
+    // Build dependency list HTML for content modal
+    let depsHtml = `
+        <div class="delete-confirm-content">
+            <p style="margin-bottom: 16px;">Are you sure you want to delete <strong>${escapeHtml(asset.name)}</strong>?</p>
+
+            <div style="background: var(--bg-tertiary, #f5f5f7); border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #f59e0b;">
+                <div style="font-weight: 600; color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    This asset is used by ${deps.counts.total} object${deps.counts.total !== 1 ? 's' : ''}
+                </div>
+    `;
+
+    if (deps.agents.length > 0) {
+        depsHtml += `
+            <div style="margin-bottom: 10px;">
+                <strong style="color: var(--text-secondary, #6e6e73);">Agents (${deps.agents.length}):</strong>
+                <ul style="margin: 4px 0 0 20px; color: var(--text-primary, #1d1d1f);">
+                    ${deps.agents.map(a => `<li>${escapeHtml(a.name)}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    if (deps.workflows.length > 0) {
+        depsHtml += `
+            <div style="margin-bottom: 10px;">
+                <strong style="color: var(--text-secondary, #6e6e73);">Workflows (${deps.workflows.length}):</strong>
+                <ul style="margin: 4px 0 0 20px; color: var(--text-primary, #1d1d1f);">
+                    ${deps.workflows.map(w => `<li>${escapeHtml(w.name)}${w.is_required ? ' <span style="color: #ef4444;">(required)</span>' : ''}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    if (deps.actions.length > 0) {
+        depsHtml += `
+            <div style="margin-bottom: 10px;">
+                <strong style="color: var(--text-secondary, #6e6e73);">Actions (${deps.actions.length}):</strong>
+                <ul style="margin: 4px 0 0 20px; color: var(--text-primary, #1d1d1f);">
+                    ${deps.actions.map(a => `<li>${escapeHtml(a.name)}${a.is_required ? ' <span style="color: #ef4444;">(required)</span>' : ''}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    depsHtml += `
+                <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary, #6e6e73);">
+                    Deleting this asset will remove it from these objects. They may not function correctly without it.
+                </p>
+            </div>
+
+            <p style="color: var(--text-secondary, #6e6e73); font-size: 0.9rem;">
+                This action cannot be undone.
+            </p>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border, #d2d2d7);">
+                <button class="i360-btn i360-btn-secondary" id="deleteConfirmCancel" style="padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border, #d2d2d7); background: var(--bg-secondary, #f5f5f7); cursor: pointer;">
+                    Cancel
+                </button>
+                <button class="i360-btn i360-btn-danger" id="deleteConfirmOk" style="padding: 10px 20px; border-radius: 8px; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Delete Anyway
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Use content modal with custom buttons
+    return new Promise((resolve) => {
+        const modal = ModalService.content({
+            title: 'Delete Asset',
+            content: depsHtml,
+            contentType: 'html',
+            width: 500,
+            resizable: false
+        });
+
+        // Add click handlers after modal renders
+        setTimeout(() => {
+            const cancelBtn = document.getElementById('deleteConfirmCancel');
+            const okBtn = document.getElementById('deleteConfirmOk');
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    modal.close();
+                    resolve(false);
+                });
+            }
+
+            if (okBtn) {
+                okBtn.addEventListener('click', () => {
+                    modal.close();
+                    resolve(true);
+                });
+            }
+        }, 100);
+
+        // Also resolve false if modal is closed via X button
+        modal.on('close', () => {
+            resolve(false);
+        });
+    });
 }
 
 // ============================================
@@ -1015,6 +1183,7 @@ function updateSaveButtonState() {
     const cancelBtn = document.getElementById('cancelBtn');
     const deleteBtn = document.getElementById('deleteBtn');
     const previewModalBtn = document.getElementById('previewModalBtn');
+    const viewJsonBtn = document.getElementById('viewJsonBtn');
     const editorContent = document.getElementById('editorContent');
 
     // Check if editor is visible (i.e., we're in editing/creating mode)
@@ -1035,9 +1204,12 @@ function updateSaveButtonState() {
         deleteBtn.style.display = state.selectedAsset ? 'flex' : 'none';
     }
 
-    // Show preview modal button when editor is visible
+    // Show preview and JSON modal buttons when editor is visible
     if (previewModalBtn) {
         previewModalBtn.style.display = isEditorVisible ? 'flex' : 'none';
+    }
+    if (viewJsonBtn) {
+        viewJsonBtn.style.display = isEditorVisible ? 'flex' : 'none';
     }
 }
 
@@ -1074,9 +1246,18 @@ function hideEmptyState() {
 /**
  * Cancel current changes and reset the editor
  */
-function cancelChanges() {
+async function cancelChanges() {
     if (state.isDirty) {
-        if (!confirm('Discard unsaved changes?')) {
+        // Use ModalService for styled confirmation
+        const confirmed = await ModalService.confirm({
+            title: 'Discard Changes',
+            message: 'You have unsaved changes. Are you sure you want to discard them?',
+            confirmText: 'Discard',
+            cancelText: 'Keep Editing',
+            type: 'warning'
+        });
+
+        if (!confirmed) {
             return;
         }
     }
@@ -1323,127 +1504,70 @@ function formatFullDate(dateString) {
 /**
  * Generate modal instance (using ModalService)
  */
-let generateModal = null;
+let createAssetModal = null;
 
 /**
- * Open the generate modal
+ * Get formatted asset types for the modal
+ */
+function getAssetTypesForModal() {
+    return state.assetTypes.map(t => ({
+        value: t.type_key,
+        label: `${t.icon} ${t.display_name}`
+    }));
+}
+
+/**
+ * Open the create asset modal using ModalService
  */
 function openGenerateModal() {
-    console.log('Opening generate modal...');
+    console.log('Opening create asset modal...');
 
-    // Show the modal overlay (inline modal in HTML)
-    const modal = document.getElementById('generateModal');
-    if (modal) modal.classList.add('active');
-
-    // Populate asset type dropdown
-    populateGenerateTypeSelect();
-    // Refresh icons in modal
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+    // Check if ModalService is available
+    if (typeof ModalService === 'undefined' || !ModalService.createAsset) {
+        console.error('ModalService.createAsset not available');
+        showNotification('Modal service not loaded', 'error');
+        return;
     }
-    console.log('Generate modal opened, asset types:', state.assetTypes.length);
+
+    // Create or reuse the modal
+    createAssetModal = ModalService.createAsset({
+        assetTypes: getAssetTypesForModal(),
+        onGenerate: handleModalGenerate,
+        onImport: handleModalImport,
+        onCancel: () => {
+            // Cancel any in-progress generation
+            if (state.generateAbortController && state.isGenerating) {
+                state.generateAbortController.abort();
+            }
+        }
+    });
+
+    console.log('Create asset modal opened, asset types:', state.assetTypes.length);
 }
 
 /**
- * Close the generate modal
+ * Close the create asset modal
  */
 function closeGenerateModal() {
-    const modal = document.getElementById('generateModal');
-    if (modal) modal.classList.remove('active');
-    // Reset form
-    resetGenerateForm();
-}
-
-/**
- * Populate the asset type select in generate modal
- */
-function populateGenerateTypeSelect() {
-    const select = document.getElementById('generateAssetType');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Select Type...</option>';
-
-    // Core types
-    const coreTypes = state.assetTypes.filter(t => t.category === 'core');
-    if (coreTypes.length > 0) {
-        select.innerHTML += '<optgroup label="Core Types">';
-        coreTypes.forEach(type => {
-            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
-        });
-        select.innerHTML += '</optgroup>';
-    }
-
-    // Extended types
-    const extendedTypes = state.assetTypes.filter(t => t.category === 'extended');
-    if (extendedTypes.length > 0) {
-        select.innerHTML += '<optgroup label="Extended Types">';
-        extendedTypes.forEach(type => {
-            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
-        });
-        select.innerHTML += '</optgroup>';
+    if (createAssetModal) {
+        createAssetModal.close();
+        createAssetModal = null;
     }
 }
 
 /**
- * Reset the generate form
+ * Handle generate action from CreateAssetModal
+ * @param {Object} data - { type, companyName, prompt, modal }
  */
-function resetGenerateForm() {
-    const typeSelect = document.getElementById('generateAssetType');
-    if (typeSelect) typeSelect.value = '';
-
-    const companyInput = document.getElementById('generateCompanyName');
-    if (companyInput) companyInput.value = '';
-
-    const promptInput = document.getElementById('generatePrompt');
-    if (promptInput) promptInput.value = '';
-
-    const status = document.getElementById('generateStatus');
-    if (status) {
-        status.style.display = 'none';
-    }
-}
-
-/**
- * Generate content using AI
- */
-async function generateWithAI() {
-    const assetType = document.getElementById('generateAssetType')?.value;
-    const companyName = document.getElementById('generateCompanyName')?.value.trim();
-    const description = document.getElementById('generatePrompt')?.value.trim();
-    const statusEl = document.getElementById('generateStatus');
-    const generateBtn = document.getElementById('generateSubmitBtn');
-    const cancelBtn = document.getElementById('generateCancelBtn');
-
-    // Validation
-    if (!assetType) {
-        showNotification('Please select an asset type', 'error');
-        return;
-    }
-
-    if (!description) {
-        showNotification('Please provide a description', 'error');
-        return;
-    }
+async function handleModalGenerate(data) {
+    const { type: assetType, companyName, prompt: description, modal } = data;
 
     // Create AbortController for cancellation
     state.generateAbortController = new AbortController();
     state.isGenerating = true;
 
-    // Show generating state
-    if (statusEl) {
-        statusEl.style.display = 'flex';
-    }
-    if (generateBtn) {
-        generateBtn.disabled = true;
-        generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Generating...';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-    // Update cancel button to show it will abort
-    if (cancelBtn) {
-        cancelBtn.innerHTML = '<i data-lucide="x"></i> Cancel Generation';
-        cancelBtn.classList.add('btn-danger');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
+    // Show status in modal
+    modal.showStatus('Generating content with AI...');
 
     try {
         const response = await fetch('/api/context/generate', {
@@ -1487,7 +1611,7 @@ async function generateWithAI() {
             });
 
             // Close modal
-            closeGenerateModal();
+            modal.close();
 
             // Show success
             showNotification(`Generated ${typeInfo.display_name} content! Review and save when ready.`, 'success');
@@ -1511,24 +1635,106 @@ async function generateWithAI() {
             console.error('Generate error:', error);
             showNotification('Failed to generate: ' + error.message, 'error');
         }
+        modal.hideStatus();
     } finally {
         // Reset state
         state.generateAbortController = null;
         state.isGenerating = false;
+    }
+}
 
-        // Reset button states
-        if (statusEl) {
-            statusEl.style.display = 'none';
+/**
+ * Handle import action from CreateAssetModal
+ * @param {Object} data - { type, source, content, file, modal }
+ */
+async function handleModalImport(data) {
+    const { type: assetType, source, content, modal } = data;
+
+    // Validation
+    if (content.length < 50) {
+        showNotification('Content is too short. Please provide more detail.', 'error');
+        return;
+    }
+
+    // Create AbortController for cancellation
+    state.generateAbortController = new AbortController();
+    state.isGenerating = true;
+
+    // Show status in modal
+    modal.showStatus('Analyzing and structuring content...');
+
+    try {
+        const response = await fetch('/api/context/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: content,
+                preferred_type: assetType || null,
+                source: source || null
+            }),
+            signal: state.generateAbortController.signal
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.error || `HTTP ${response.status}`);
         }
-        if (generateBtn) {
-            generateBtn.disabled = false;
-            generateBtn.innerHTML = '<i data-lucide="sparkles"></i> Generate';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        if (responseData.success && responseData.asset) {
+            const asset = responseData.asset;
+
+            // Get the type info for display
+            const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
+                           { display_name: asset.asset_type, icon: '📄' };
+
+            // Load into editor
+            loadAssetIntoEditor({
+                name: asset.name,
+                asset_type: asset.asset_type,
+                description: asset.description,
+                content_json: asset.content_json,
+                tags: asset.tags || ['imported'],
+                version: 1
+            });
+
+            // Close modal
+            modal.close();
+
+            // Show success with confidence info
+            const confidence = responseData.metadata?.confidence || 0;
+            const confidenceText = confidence >= 0.9 ? 'high' : confidence >= 0.7 ? 'good' : 'moderate';
+            showNotification(
+                `Created ${typeInfo.icon} ${typeInfo.display_name} with ${confidenceText} confidence. Review and save when ready.`,
+                'success'
+            );
+
+            // Mark as dirty so user knows to save
+            state.selectedAsset = null;
+            state.isDirty = true;
+            updateSaveButtonState();
+
+            // Log any fields needing review
+            if (responseData.metadata?.needs_review?.length > 0) {
+                console.log('Fields needing review:', responseData.metadata.needs_review);
+            }
+
+        } else {
+            throw new Error(responseData.error || 'Failed to parse content');
         }
-        if (cancelBtn) {
-            cancelBtn.innerHTML = 'Cancel';
-            cancelBtn.classList.remove('btn-danger');
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            showNotification('Conversion cancelled', 'info');
+        } else {
+            console.error('Import error:', error);
+            showNotification('Failed to convert: ' + error.message, 'error');
         }
+        modal.hideStatus();
+    } finally {
+        // Reset state
+        state.generateAbortController = null;
+        state.isGenerating = false;
     }
 }
 
@@ -1547,6 +1753,7 @@ function cancelGeneration() {
 /**
  * Setup generate modal event listeners
  * Called from main setupEventListeners function
+ * Now uses ModalService - only need to set up the toolbar button
  */
 function setupGenerateModalListeners() {
     console.log('Setting up generate modal event listeners...');
@@ -1565,359 +1772,8 @@ function setupGenerateModalListeners() {
         console.error('Generate button not found!');
     }
 
-    // Submit generate button (in modal)
-    const submitBtn = document.getElementById('generateSubmitBtn');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', generateWithAI);
-    }
-
-    // Cancel button (in modal) - handles both closing and aborting generation
-    const modalCancelBtn = document.getElementById('generateCancelBtn');
-    if (modalCancelBtn) {
-        modalCancelBtn.addEventListener('click', cancelGeneration);
-    }
-
-    // Close button (X in header)
-    const closeBtn = document.getElementById('generateModalClose');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeGenerateModal);
-    }
-
-    // Close modal when clicking overlay
-    const modal = document.getElementById('generateModal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeGenerateModal();
-            }
-        });
-    }
-
-    // Escape key to close modal
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const modal = document.getElementById('generateModal');
-            if (modal && modal.classList.contains('active')) {
-                closeGenerateModal();
-            }
-        }
-    });
-
-    // Tab switching
-    const tabs = document.querySelectorAll('.modal-tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => switchModalTab(tab.dataset.tab));
-    });
-
-    // Import tab - populate type select
-    populateImportTypeSelect();
-
-    // Import submit button
-    const importSubmitBtn = document.getElementById('importSubmitBtn');
-    if (importSubmitBtn) {
-        importSubmitBtn.addEventListener('click', importContentWithAI);
-    }
-
-    // File upload handling
-    setupFileUpload();
+    // All other event handling is now managed by CreateAssetModal via ModalService
 }
-
-/**
- * Switch between Generate and Import tabs
- */
-function switchModalTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.modal-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.tab === tabName);
-    });
-
-    // Update tab content
-    document.getElementById('generateTabContent').style.display = tabName === 'generate' ? 'block' : 'none';
-    document.getElementById('importTabContent').style.display = tabName === 'import' ? 'block' : 'none';
-
-    // Update tab content active class
-    document.getElementById('generateTabContent').classList.toggle('active', tabName === 'generate');
-    document.getElementById('importTabContent').classList.toggle('active', tabName === 'import');
-
-    // Update footer buttons
-    document.getElementById('generateSubmitBtn').style.display = tabName === 'generate' ? 'flex' : 'none';
-    document.getElementById('importSubmitBtn').style.display = tabName === 'import' ? 'flex' : 'none';
-
-    // Refresh icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-/**
- * Populate the import type select dropdown
- */
-function populateImportTypeSelect() {
-    const select = document.getElementById('importAssetType');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Auto-detect best type...</option>';
-
-    // Core types
-    const coreTypes = state.assetTypes.filter(t => t.category === 'core');
-    if (coreTypes.length > 0) {
-        select.innerHTML += '<optgroup label="Core Types">';
-        coreTypes.forEach(type => {
-            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
-        });
-        select.innerHTML += '</optgroup>';
-    }
-
-    // Extended types
-    const extendedTypes = state.assetTypes.filter(t => t.category === 'extended');
-    if (extendedTypes.length > 0) {
-        select.innerHTML += '<optgroup label="Extended Types">';
-        extendedTypes.forEach(type => {
-            select.innerHTML += `<option value="${type.type_key}">${type.icon} ${type.display_name}</option>`;
-        });
-        select.innerHTML += '</optgroup>';
-    }
-}
-
-/**
- * Setup file upload drag and drop
- */
-function setupFileUpload() {
-    const uploadArea = document.getElementById('fileUploadArea');
-    const fileInput = document.getElementById('importFileInput');
-    const clearBtn = document.getElementById('clearFileBtn');
-
-    if (!uploadArea || !fileInput) return;
-
-    // Click to upload
-    uploadArea.addEventListener('click', () => fileInput.click());
-
-    // File selected
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFileSelect(e.target.files[0]);
-        }
-    });
-
-    // Clear file
-    if (clearBtn) {
-        clearBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clearSelectedFile();
-        });
-    }
-
-    // Drag and drop
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files[0]);
-        }
-    });
-}
-
-/**
- * Handle file selection
- */
-async function handleFileSelect(file) {
-    const allowedTypes = ['.txt', '.md', '.json', '.csv'];
-    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-
-    if (!allowedTypes.includes(fileExt)) {
-        showNotification('Please upload a .txt, .md, .json, or .csv file', 'error');
-        return;
-    }
-
-    // Show file name
-    const uploadContent = document.querySelector('.file-upload-content');
-    const fileSelected = document.querySelector('.file-selected');
-    const fileNameSpan = document.getElementById('selectedFileName');
-
-    if (uploadContent) uploadContent.style.display = 'none';
-    if (fileSelected) fileSelected.style.display = 'flex';
-    if (fileNameSpan) fileNameSpan.textContent = file.name;
-
-    // Read file content
-    try {
-        const content = await file.text();
-        document.getElementById('importContent').value = content;
-
-        // Update source field with filename
-        const sourceInput = document.getElementById('importSource');
-        if (sourceInput && !sourceInput.value) {
-            sourceInput.value = file.name.replace(/\.[^/.]+$/, '');
-        }
-
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    } catch (error) {
-        console.error('Error reading file:', error);
-        showNotification('Error reading file', 'error');
-        clearSelectedFile();
-    }
-}
-
-/**
- * Clear selected file
- */
-function clearSelectedFile() {
-    const uploadContent = document.querySelector('.file-upload-content');
-    const fileSelected = document.querySelector('.file-selected');
-    const fileInput = document.getElementById('importFileInput');
-
-    if (uploadContent) uploadContent.style.display = 'flex';
-    if (fileSelected) fileSelected.style.display = 'none';
-    if (fileInput) fileInput.value = '';
-
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-/**
- * Import content using AI to convert to structured asset
- */
-async function importContentWithAI() {
-    const assetType = document.getElementById('importAssetType')?.value;
-    const source = document.getElementById('importSource')?.value.trim();
-    const content = document.getElementById('importContent')?.value.trim();
-    const statusEl = document.getElementById('generateStatus');
-    const statusText = document.getElementById('generateStatusText');
-    const importBtn = document.getElementById('importSubmitBtn');
-    const cancelBtn = document.getElementById('generateCancelBtn');
-
-    // Validation
-    if (!content) {
-        showNotification('Please paste or upload content to convert', 'error');
-        return;
-    }
-
-    if (content.length < 50) {
-        showNotification('Content is too short. Please provide more detail.', 'error');
-        return;
-    }
-
-    // Create AbortController for cancellation
-    state.generateAbortController = new AbortController();
-    state.isGenerating = true;
-
-    // Show processing state
-    if (statusEl) {
-        statusEl.style.display = 'flex';
-    }
-    if (statusText) {
-        statusText.textContent = 'Analyzing and structuring content...';
-    }
-    if (importBtn) {
-        importBtn.disabled = true;
-        importBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Converting...';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-    if (cancelBtn) {
-        cancelBtn.innerHTML = '<i data-lucide="x"></i> Cancel';
-        cancelBtn.classList.add('btn-danger');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-
-    try {
-        const response = await fetch('/api/context/parse', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                content: content,
-                preferred_type: assetType || null,
-                source: source || null
-            }),
-            signal: state.generateAbortController.signal
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}`);
-        }
-
-        if (data.success && data.asset) {
-            const asset = data.asset;
-
-            // Get the type info for display
-            const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
-                           { display_name: asset.asset_type, icon: '📄' };
-
-            // Load into editor
-            loadAssetIntoEditor({
-                name: asset.name,
-                asset_type: asset.asset_type,
-                description: asset.description,
-                content_json: asset.content_json,
-                tags: asset.tags || ['imported'],
-                version: 1
-            });
-
-            // Close modal
-            closeGenerateModal();
-
-            // Show success with confidence info
-            const confidence = data.metadata?.confidence || 0;
-            const confidenceText = confidence >= 0.9 ? 'high' : confidence >= 0.7 ? 'good' : 'moderate';
-            showNotification(
-                `Created ${typeInfo.icon} ${typeInfo.display_name} with ${confidenceText} confidence. Review and save when ready.`,
-                'success'
-            );
-
-            // Mark as dirty so user knows to save
-            state.selectedAsset = null;
-            state.isDirty = true;
-            updateSaveButtonState();
-
-            // Log any fields needing review
-            if (data.metadata?.needs_review?.length > 0) {
-                console.log('Fields needing review:', data.metadata.needs_review);
-            }
-
-        } else {
-            throw new Error(data.error || 'Failed to parse content');
-        }
-
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            showNotification('Conversion cancelled', 'info');
-        } else {
-            console.error('Import error:', error);
-            showNotification('Failed to convert: ' + error.message, 'error');
-        }
-    } finally {
-        // Reset state
-        state.generateAbortController = null;
-        state.isGenerating = false;
-
-        // Reset button states
-        if (statusEl) {
-            statusEl.style.display = 'none';
-        }
-        if (importBtn) {
-            importBtn.disabled = false;
-            importBtn.innerHTML = '<i data-lucide="sparkles"></i> Convert to Asset';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-        if (cancelBtn) {
-            cancelBtn.innerHTML = 'Cancel';
-            cancelBtn.classList.remove('btn-danger');
-        }
-    }
-}
-
 // ============================================
 // JSON TOGGLE
 // ============================================
@@ -1945,76 +1801,110 @@ function setupJsonToggle() {
 }
 
 // ============================================
-// PREVIEW MODAL
+// PREVIEW & JSON MODALS (using ModalService)
 // ============================================
 
 /**
- * Setup preview modal functionality
+ * Setup preview and JSON modal functionality
  */
 function setupPreviewModal() {
     const previewBtn = document.getElementById('previewModalBtn');
-    const closeBtn = document.getElementById('closePreviewModalBtn');
-    const modalCloseBtn = document.getElementById('previewModalClose');
+    const viewJsonBtn = document.getElementById('viewJsonBtn');
 
     if (previewBtn) {
         previewBtn.addEventListener('click', openPreviewModal);
     }
 
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closePreviewModal);
+    if (viewJsonBtn) {
+        viewJsonBtn.addEventListener('click', openJsonModal);
+    }
+}
+
+/**
+ * Open the preview modal using ModalService
+ * Now renders markdown content from the plainTextEditor
+ */
+async function openPreviewModal() {
+    // Get the markdown content from the plain text editor
+    const plainTextEditor = document.getElementById('plainTextEditor');
+    if (!plainTextEditor) {
+        console.warn('No markdown editor found');
+        return;
     }
 
-    if (modalCloseBtn) {
-        modalCloseBtn.addEventListener('click', closePreviewModal);
-    }
+    const markdownContent = plainTextEditor.value || '';
 
-    // Close on overlay click
-    const modal = document.getElementById('previewModal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closePreviewModal();
-            }
-        });
-    }
-
-    // Escape key to close
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const modal = document.getElementById('previewModal');
-            if (modal && modal.classList.contains('active')) {
-                closePreviewModal();
-            }
+    // Wait for ModalService to be loaded if needed
+    if (window.ModalServiceLoader && !window.ModalServiceLoader.isLoaded()) {
+        try {
+            await window.ModalServiceLoader.load();
+        } catch (e) {
+            console.warn('[Context] Failed to load ModalService:', e);
+            return;
         }
-    });
-}
-
-/**
- * Open the preview modal
- */
-function openPreviewModal() {
-    // Copy preview content to modal
-    const previewContent = document.getElementById('previewContent');
-    const modalContent = document.getElementById('previewModalContent');
-
-    if (previewContent && modalContent) {
-        modalContent.innerHTML = previewContent.innerHTML;
     }
 
-    // Show the modal overlay
-    const modal = document.getElementById('previewModal');
-    if (modal) modal.classList.add('active');
-
-    // Refresh icons in modal
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+    // Use ModalService.content() with markdown content type
+    if (window.ModalService && typeof window.ModalService.content === 'function') {
+        ModalService.content({
+            title: 'Content Preview',
+            content: markdownContent,
+            contentType: 'markdown',
+            width: 700,
+            height: 600,
+            resizable: true,
+            maximizable: true
+        });
+    } else {
+        console.warn('[Context] ModalService.content not available');
     }
 }
 
 /**
- * Close the preview modal
+ * Open the JSON viewer modal using ModalService
  */
-function closePreviewModal() {
-    const modal = document.getElementById('previewModal');
-    if (modal) modal.classList.remove('active');
+async function openJsonModal() {
+    // Get the JSON content from the hidden JSON editor
+    const jsonEditor = document.getElementById('jsonEditor');
+    if (!jsonEditor) {
+        console.warn('No JSON editor found');
+        return;
+    }
+
+    let jsonContent = jsonEditor.value || '{}';
+
+    // Try to format the JSON for better readability
+    try {
+        const parsed = JSON.parse(jsonContent);
+        jsonContent = JSON.stringify(parsed, null, 2);
+    } catch (e) {
+        // If parsing fails, show as-is
+    }
+
+    // Wait for ModalService to be loaded if needed
+    if (window.ModalServiceLoader && !window.ModalServiceLoader.isLoaded()) {
+        try {
+            await window.ModalServiceLoader.load();
+        } catch (e) {
+            console.warn('[Context] Failed to load ModalService:', e);
+            return;
+        }
+    }
+
+    // Use ModalService.content() with code content type
+    if (window.ModalService && typeof window.ModalService.content === 'function') {
+        ModalService.content({
+            title: 'JSON Data',
+            content: jsonContent,
+            contentType: 'code',
+            language: 'json',
+            copyable: true,
+            width: 700,
+            height: 600,
+            resizable: true,
+            maximizable: true
+        });
+    } else {
+        console.warn('[Context] ModalService.content not available');
+    }
 }

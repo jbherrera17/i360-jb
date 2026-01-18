@@ -90,6 +90,10 @@ const HelpRegistry = {
         '/workflow-builder': {
             file: '/api/docs/workflow-user-guide.md',
             title: 'Workflow Builder Help'
+        },
+        '/asset-types': {
+            file: '/api/docs/asset-types-user-guide.md',
+            title: 'Asset Types Help'
         }
     },
 

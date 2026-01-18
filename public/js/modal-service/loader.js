@@ -42,6 +42,7 @@ const ModalServiceLoader = (function() {
         'modals/ContentModal.js',
         'modals/ChatModal.js',
         'modals/AgentModal.js',
+        'modals/CreateAssetModal.js',
 
         // Service
         'index.js',
@@ -168,12 +169,13 @@ const ModalServiceLoader = (function() {
                 const modal = new ContentModal({
                     title: options.title || '',
                     content: options.content || '',
-                    contentType: options.contentType || 'markdown',
+                    contentType: options.contentType || 'html',
                     ...options
                 });
 
                 this.register(modal);
-                return modal.init();
+                modal.init().open();
+                return modal;
             };
 
             /**
@@ -188,7 +190,8 @@ const ModalServiceLoader = (function() {
                 });
 
                 this.register(modal);
-                return modal.init();
+                modal.init().open();
+                return modal;
             };
 
             /**
@@ -204,7 +207,27 @@ const ModalServiceLoader = (function() {
                 });
 
                 this.register(modal);
-                return modal.init();
+                modal.init().open();
+                return modal;
+            };
+
+            /**
+             * Create a create asset modal
+             * @param {Object} options - Create asset options
+             * @returns {CreateAssetModal}
+             */
+            ModalService.createAsset = function(options) {
+                const modal = new CreateAssetModal({
+                    assetTypes: options.assetTypes || [],
+                    onGenerate: options.onGenerate,
+                    onImport: options.onImport,
+                    onCancel: options.onCancel,
+                    ...options
+                });
+
+                this.register(modal);
+                modal.init().open();
+                return modal;
             };
 
             /**

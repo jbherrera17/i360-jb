@@ -191,6 +191,25 @@
             padding-left: 0.75rem;
         }
 
+        .hierarchy-category {
+            margin-bottom: 1.5rem;
+        }
+
+        .hierarchy-category:last-child {
+            margin-bottom: 0;
+        }
+
+        .hierarchy-category-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 0.75rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
         /* Stats Cards */
         .stats-grid {
             display: grid;
@@ -828,7 +847,13 @@
                 if (data.success) {
                     const hierarchy = data.data;
 
-                    if (hierarchy.length === 0) {
+                    // Handle both array (filtered) and object (grouped by category) responses
+                    const isGrouped = !Array.isArray(hierarchy);
+                    const isEmpty = isGrouped
+                        ? Object.values(hierarchy).every(arr => arr.length === 0)
+                        : hierarchy.length === 0;
+
+                    if (isEmpty) {
                         container.innerHTML = `
                             <div class="empty-state">
                                 <i data-lucide="git-branch"></i>
@@ -840,11 +865,32 @@
                         return;
                     }
 
-                    container.innerHTML = `
-                        <div class="hierarchy-tree">
-                            ${renderHierarchyNodes(hierarchy)}
-                        </div>
-                    `;
+                    // Render based on response type
+                    if (isGrouped) {
+                        // Grouped by category - render each category section
+                        const categoryLabels = { skill: 'Skills', domain: 'Domains', function: 'Functions' };
+                        let html = '';
+                        for (const [category, nodes] of Object.entries(hierarchy)) {
+                            if (nodes.length > 0) {
+                                html += `
+                                    <div class="hierarchy-category">
+                                        <h4 class="hierarchy-category-title">${categoryLabels[category] || category}</h4>
+                                        <div class="hierarchy-tree">
+                                            ${renderHierarchyNodes(nodes)}
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                        container.innerHTML = html;
+                    } else {
+                        // Single category array
+                        container.innerHTML = `
+                            <div class="hierarchy-tree">
+                                ${renderHierarchyNodes(hierarchy)}
+                            </div>
+                        `;
+                    }
                     lucide.createIcons();
                 }
             } catch (error) {

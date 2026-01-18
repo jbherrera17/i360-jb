@@ -836,6 +836,9 @@ html[data-theme="light"] .i360-form-checkbox-option {
 /* Code content */
 .i360-content-code-wrapper {
     position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .i360-content-copy {
@@ -868,11 +871,15 @@ html[data-theme="light"] .i360-form-checkbox-option {
     padding: 20px;
     background: #0f172a;
     border-radius: 8px;
-    overflow-x: auto;
+    overflow: auto;
     font-family: 'Monaco', 'Menlo', monospace;
     font-size: 13px;
     line-height: 1.5;
     color: #e2e8f0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Image content */
@@ -929,10 +936,15 @@ html[data-theme="light"] .i360-form-checkbox-option {
     border-radius: 8px;
 }
 
-/* Constrain video wrapper within modal body */
+/* Constrain content within modal body */
 .i360-content-modal .i360-modal-body {
     display: flex;
     flex-direction: column;
+    min-height: 0;
+}
+
+.i360-content-modal.i360-content-code .i360-modal-body {
+    padding: 16px;
 }
 
 .i360-content-modal .i360-content-video-wrapper {
@@ -1796,4 +1808,209 @@ html[data-theme="light"] .i360-form-checkbox-option {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* ============================================
+   CreateAssetModal Styles
+   ============================================ */
+
+.i360-create-asset-modal .i360-modal-title {
+    display: flex;
+    align-items: center;
+}
+
+.i360-create-asset-modal .i360-modal-title svg {
+    color: var(--i360-modal-info);
+}
+
+/* Tabs */
+.i360-create-asset-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--i360-modal-border);
+    background: var(--i360-modal-header-bg);
+    padding: 0 16px;
+}
+
+.i360-create-asset-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    color: var(--i360-modal-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 150ms ease, border-color 150ms ease;
+}
+
+.i360-create-asset-tab:hover {
+    color: var(--i360-modal-text);
+}
+
+.i360-create-asset-tab.active {
+    color: var(--i360-modal-info);
+    border-bottom-color: var(--i360-modal-info);
+}
+
+.i360-create-asset-tab svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Tab Content */
+.i360-create-asset-tab-content {
+    display: none;
+    padding: 4px 0;
+}
+
+.i360-create-asset-tab-content.active {
+    display: block;
+}
+
+.i360-create-asset-description {
+    margin: 0 0 16px 0;
+    color: var(--i360-modal-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* File Upload */
+.i360-file-upload-area {
+    border: 2px dashed var(--i360-modal-border);
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.i360-file-upload-area:hover {
+    border-color: var(--i360-modal-info);
+    background: rgba(var(--i360-modal-info-rgb, 99, 102, 241), 0.05);
+}
+
+.i360-file-upload-area.drag-over {
+    border-color: var(--i360-modal-info);
+    background: rgba(var(--i360-modal-info-rgb, 99, 102, 241), 0.1);
+}
+
+.i360-file-upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.i360-file-upload-content svg {
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-file-upload-content span {
+    color: var(--i360-modal-text);
+    font-size: 14px;
+}
+
+.i360-file-upload-content small {
+    color: var(--i360-modal-text-secondary);
+    font-size: 12px;
+}
+
+.i360-file-selected {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.i360-file-selected svg {
+    color: var(--i360-modal-success);
+}
+
+.i360-file-name {
+    color: var(--i360-modal-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.i360-file-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.i360-file-clear:hover {
+    background: rgba(var(--i360-modal-error-rgb, 239, 68, 68), 0.1);
+    color: var(--i360-modal-error);
+}
+
+/* Status Area */
+.i360-create-asset-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    background: rgba(var(--i360-modal-info-rgb, 99, 102, 241), 0.1);
+    border-radius: 8px;
+}
+
+.i360-create-asset-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.i360-create-asset-spinner svg {
+    color: var(--i360-modal-info);
+}
+
+.i360-create-asset-status-text {
+    color: var(--i360-modal-text);
+    font-size: 14px;
+}
+
+/* AI Button */
+.i360-btn-ai {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.i360-btn-ai:hover:not(:disabled) {
+    opacity: 0.95;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.i360-btn-ai:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.i360-btn-ai svg {
+    width: 16px;
+    height: 16px;
 }
