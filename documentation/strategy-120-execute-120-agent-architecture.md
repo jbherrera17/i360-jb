@@ -157,6 +157,23 @@ Transform alignment outputs into actionable strategic plans, investment decision
 ### Purpose
 Transform strategic plans into operational execution through AI-powered content, workflows, and monitoring.
 
+### User Profile Personalization (Phase 37)
+
+Execute 120 now automatically personalizes content based on the user's profile:
+
+| Feature | Description |
+|---------|-------------|
+| **Auto-Department Selection** | Page selects user's assigned department on load |
+| **Role-Based Filtering** | Content filtered by business role level (IC → Executive) |
+| **Department Briefings** | Daily briefings scoped to user's department |
+| **Executive Cards** | Strategy Overview card visible only to executives/directors |
+
+**New Content Cards:**
+- Context Assets (filtered by dept + role)
+- Quick Actions (filtered by dept + role)
+- Daily Briefing (department-specific)
+- Strategic Overview (executive role only)
+
 ### Inputs from Strategy 120
 - BSC Objectives and Strategy Map
 - OKRs with Key Results
@@ -378,6 +395,15 @@ Corporate Alignment   ─────────────> Governance Model
 - `improvement_backlog` - Continuous improvement queue
 - `experiment_results` - A/B test tracking
 
+### For Execute 120 Personalization (Phase 37)
+- `workflow_roles` - Role-based workflow access control
+- `agent_roles` - Role-based agent access control
+- `context_asset_roles` - Role-based context asset access control
+- `briefing_configs.department_id` - Department-specific briefings
+- `user_accessible_workflows` (view) - Workflows filtered by user dept + role
+- `user_accessible_agents` (view) - Agents filtered by user dept + role
+- `user_accessible_context_assets` (view) - Context assets filtered by user dept + role
+
 ---
 
 ## Next Steps
@@ -392,3 +418,4 @@ Corporate Alignment   ─────────────> Governance Model
 ---
 
 *Document generated for Insight 360 v2.23*
+*Updated January 2026 - Phase 37: Execute 120 User Profile Personalization*

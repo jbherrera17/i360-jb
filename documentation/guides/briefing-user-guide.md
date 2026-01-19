@@ -1,7 +1,7 @@
 # Briefing User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** January 2026 (Phase 37)
 
 ---
 
@@ -14,6 +14,7 @@ Key benefits:
 - **Consistency**: Same format and depth every day
 - **Agent-powered**: Each section uses specialized AI agents
 - **Historical context**: Track briefings over time for patterns
+- **Department-specific**: Briefings can be scoped to your department (Phase 37)
 
 ---
 
@@ -75,6 +76,13 @@ The Briefing interface provides:
 3. Set the generation time (e.g., 6:00 AM)
 4. Choose your timezone
 5. Changes save automatically
+
+**Department-Specific Briefings (Phase 37):**
+Briefings can now be scoped to your department:
+- Your user profile includes a department assignment
+- Briefing configurations can be linked to a specific department
+- When viewing Execute 120, you see your department's briefing summary
+- This ensures briefing content is relevant to your role
 
 **Managing Sections:**
 1. View existing sections in the Configuration tab
@@ -163,6 +171,8 @@ Each section is powered by an agent and generates content based on:
 | Agents Guide | Agents that power briefings | [agents-user-guide.md](./agents-user-guide.md) |
 | Dashboard Guide | Home screen overview | [dashboard-user-guide.md](./dashboard-user-guide.md) |
 | Chat Guide | Interact with agents directly | [chat-user-guide.md](./chat-user-guide.md) |
+| Execute 120 Guide | Department hub with briefing card | [execute120-user-guide.md](./execute120-user-guide.md) |
+| Profile Guide | Set your department for personalization | [profile-user-guide.md](./profile-user-guide.md) |
 
 ---
 

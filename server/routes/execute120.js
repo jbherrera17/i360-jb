@@ -139,6 +139,494 @@ module.exports = function(supabase) {
         }
     });
 
+    // ============================================
+    // USER PROFILE PERSONALIZATION (Phase 37)
+    // ============================================
+
+    /**
+     * GET /api/execute120/my-profile
+     * Get current user's profile with department, role, and permissions for Execute120
+     */
+    router.get('/my-profile', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+
+            if (!userId) {
+                return res.json({
+                    success: true,
+                    data: {
+                        user: null,
+                        permissions: null,
+                        isExecutive: false,
+                        showStrategyCards: false
+                    }
+                });
+            }
+
+            // Get user profile with department and business role
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select(`
+                    id,
+                    email,
+                    display_name,
+                    business_role,
+                    department_id
+                `)
+                .eq('id', userId)
+                .single();
+
+            if (userError && userError.code !== 'PGRST116') {
+                console.error('Error fetching user:', userError);
+            }
+
+            // Get department details if user has one
+            let department = null;
+            if (user?.department_id) {
+                const { data: deptData } = await supabase
+                    .from('departments')
+                    .select('id, name, slug, icon, color, tagline')
+                    .eq('id', user.department_id)
+                    .single();
+                department = deptData;
+            }
+
+            // Get business role info
+            let roleInfo = null;
+            if (user?.business_role) {
+                const { data: roleData } = await supabase
+                    .from('business_role_levels')
+                    .select('id, name, level, icon')
+                    .eq('id', user.business_role)
+                    .single();
+                roleInfo = roleData;
+            }
+
+            // Get effective permissions
+            let permissions = null;
+            const { data: permData } = await supabase
+                .from('user_effective_permissions')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            permissions = permData;
+
+            // Determine executive status
+            const isExecutive = ['executive', 'director'].includes(user?.business_role);
+            const showStrategyCards = isExecutive || permissions?.can_view_company_strategy === true;
+
+            res.json({
+                success: true,
+                data: {
+                    user: user ? {
+                        ...user,
+                        department,
+                        role_info: roleInfo
+                    } : null,
+                    permissions,
+                    isExecutive,
+                    showStrategyCards
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch user profile'
+            });
+        }
+    });
+
+    /**
+     * GET /api/execute120/my-cards
+     * Get personalized card data for Execute120 dashboard
+     * Filters by user's department and business role
+     */
+    router.get('/my-cards', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const { limit = 5 } = req.query;
+            const limitNum = parseInt(limit);
+
+            // Get user profile
+            let user = null;
+            if (userId) {
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('department_id, business_role')
+                    .eq('id', userId)
+                    .single();
+                user = userData;
+            }
+
+            const deptId = user?.department_id;
+            const roleLevel = user?.business_role || 'ic';
+
+            // Get user's role level number for filtering
+            let userRoleLevelNum = 1; // Default IC level
+            if (roleLevel) {
+                const { data: roleData } = await supabase
+                    .from('business_role_levels')
+                    .select('level')
+                    .eq('id', roleLevel)
+                    .single();
+                userRoleLevelNum = roleData?.level || 1;
+            }
+
+            // Parallel fetch all cards
+            const [contextAssets, agents, actions, workflows, briefing] = await Promise.all([
+                // Context Assets - filtered by department (or global)
+                getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum),
+                // Agents - filtered by department (via junction) and role
+                getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum),
+                // Actions - filtered by department (via junction)
+                getFilteredActions(supabase, deptId, limitNum),
+                // Workflows - filtered by department and role
+                getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limitNum),
+                // Briefing - user's latest
+                getLatestBriefing(supabase, userId)
+            ]);
+
+            // Strategy overview for executives only
+            let strategyOverview = null;
+            if (['executive', 'director'].includes(roleLevel)) {
+                strategyOverview = await getStrategyOverview(supabase, deptId);
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    contextAssets,
+                    agents,
+                    actions,
+                    workflows,
+                    briefing,
+                    strategyOverview
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching personalized cards:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch personalized cards'
+            });
+        }
+    });
+
+    /**
+     * GET /api/execute120/my-briefing
+     * Get user's latest daily briefing
+     */
+    router.get('/my-briefing', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+
+            if (!userId) {
+                return res.json({ success: true, data: null });
+            }
+
+            // Get latest briefing for user
+            const { data: briefing, error } = await supabase
+                .from('briefings')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                throw error;
+            }
+
+            res.json({ success: true, data: briefing || null });
+        } catch (error) {
+            console.error('Error fetching briefing:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch briefing'
+            });
+        }
+    });
+
+    // ============================================
+    // HELPER FUNCTIONS FOR PERSONALIZATION
+    // ============================================
+
+    /**
+     * Get context assets filtered by department and role
+     */
+    async function getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limit) {
+        try {
+            let query = supabase
+                .from('context_assets')
+                .select('id, name, asset_type, description, department_id, tags, updated_at')
+                .eq('is_current', true)
+                .order('updated_at', { ascending: false })
+                .limit(limit);
+
+            // Department filter: user's dept OR global (null)
+            if (deptId) {
+                query = query.or(`department_id.eq.${deptId},department_id.is.null`);
+            }
+
+            const { data: assets, error } = await query;
+            if (error) throw error;
+
+            // Role filter: check context_asset_roles junction
+            const filtered = [];
+            for (const asset of (assets || [])) {
+                const { data: roleReqs } = await supabase
+                    .from('context_asset_roles')
+                    .select('role_level')
+                    .eq('asset_id', asset.id);
+
+                // No role requirements = accessible to all
+                if (!roleReqs?.length) {
+                    filtered.push(asset);
+                    continue;
+                }
+
+                // Check if user's level meets minimum (need to look up levels)
+                const { data: levels } = await supabase
+                    .from('business_role_levels')
+                    .select('level')
+                    .in('id', roleReqs.map(r => r.role_level));
+
+                const minLevel = Math.min(...(levels || []).map(l => l.level));
+                if (userRoleLevelNum >= minLevel) {
+                    filtered.push(asset);
+                }
+            }
+
+            return filtered.slice(0, limit);
+        } catch (error) {
+            console.error('Error in getFilteredContextAssets:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get agents filtered by department and role
+     */
+    async function getFilteredAgents(supabase, deptId, userRoleLevelNum, limit) {
+        try {
+            // If user has a department, get agents mapped to that department
+            if (deptId) {
+                const { data: deptAgents, error } = await supabase
+                    .from('department_agents')
+                    .select(`
+                        is_featured,
+                        sort_order,
+                        use_case_summary,
+                        agent:agents(id, name, description, icon, category, suite)
+                    `)
+                    .eq('department_id', deptId)
+                    .order('is_featured', { ascending: false })
+                    .order('sort_order', { ascending: true })
+                    .limit(limit * 2); // Get more to filter by role
+
+                if (error) throw error;
+
+                // Flatten and filter by role
+                const agents = (deptAgents || [])
+                    .filter(da => da.agent)
+                    .map(da => ({
+                        ...da.agent,
+                        is_featured: da.is_featured,
+                        use_case_summary: da.use_case_summary
+                    }));
+
+                // Role filter
+                const filtered = [];
+                for (const agent of agents) {
+                    const { data: roleReqs } = await supabase
+                        .from('agent_roles')
+                        .select('role_level')
+                        .eq('agent_id', agent.id);
+
+                    if (!roleReqs?.length) {
+                        filtered.push(agent);
+                        continue;
+                    }
+
+                    const { data: levels } = await supabase
+                        .from('business_role_levels')
+                        .select('level')
+                        .in('id', roleReqs.map(r => r.role_level));
+
+                    const minLevel = Math.min(...(levels || []).map(l => l.level));
+                    if (userRoleLevelNum >= minLevel) {
+                        filtered.push(agent);
+                    }
+                }
+
+                return filtered.slice(0, limit);
+            }
+
+            // No department - get general agents
+            const { data: agents, error } = await supabase
+                .from('agents')
+                .select('id, name, description, icon, category, suite')
+                .eq('is_active', true)
+                .limit(limit);
+
+            return agents || [];
+        } catch (error) {
+            console.error('Error in getFilteredAgents:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get actions filtered by department
+     */
+    async function getFilteredActions(supabase, deptId, limit) {
+        try {
+            if (deptId) {
+                // Get actions mapped to user's department
+                const { data: deptActions, error } = await supabase
+                    .from('action_departments')
+                    .select(`
+                        is_primary,
+                        priority,
+                        action:actions(id, name, slug, description, suite, status)
+                    `)
+                    .eq('department_id', deptId)
+                    .order('is_primary', { ascending: false })
+                    .order('priority', { ascending: true })
+                    .limit(limit);
+
+                if (error) throw error;
+
+                return (deptActions || [])
+                    .filter(da => da.action && da.action.status === 'active')
+                    .map(da => da.action);
+            }
+
+            // No department - get general execute actions
+            const { data: actions, error } = await supabase
+                .from('actions')
+                .select('id, name, slug, description, suite, status')
+                .eq('status', 'active')
+                .eq('suite', 'execute')
+                .limit(limit);
+
+            return actions || [];
+        } catch (error) {
+            console.error('Error in getFilteredActions:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get workflows filtered by department and role
+     */
+    async function getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limit) {
+        try {
+            let query = supabase
+                .from('workflows')
+                .select('id, name, description, icon, color, category, estimated_minutes, department_id')
+                .eq('is_active', true)
+                .order('usage_count', { ascending: false })
+                .limit(limit * 2); // Get more to filter
+
+            // Department filter: user's dept OR global OR system public
+            if (deptId) {
+                query = query.or(`department_id.eq.${deptId},department_id.is.null,and(is_public.eq.true,is_system.eq.true)`);
+            }
+
+            const { data: workflows, error } = await query;
+            if (error) throw error;
+
+            // Role filter
+            const filtered = [];
+            for (const w of (workflows || [])) {
+                const { data: roleReqs } = await supabase
+                    .from('workflow_roles')
+                    .select('role_level')
+                    .eq('workflow_id', w.id);
+
+                if (!roleReqs?.length) {
+                    filtered.push(w);
+                    continue;
+                }
+
+                const { data: levels } = await supabase
+                    .from('business_role_levels')
+                    .select('level')
+                    .in('id', roleReqs.map(r => r.role_level));
+
+                const minLevel = Math.min(...(levels || []).map(l => l.level));
+                if (userRoleLevelNum >= minLevel) {
+                    filtered.push(w);
+                }
+            }
+
+            return filtered.slice(0, limit);
+        } catch (error) {
+            console.error('Error in getFilteredWorkflows:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get user's latest briefing
+     */
+    async function getLatestBriefing(supabase, userId) {
+        try {
+            if (!userId) return null;
+
+            const { data: briefing } = await supabase
+                .from('briefings')
+                .select('id, title, content, created_at, status')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            return briefing || null;
+        } catch (error) {
+            // No briefing is fine
+            return null;
+        }
+    }
+
+    /**
+     * Get strategy overview for executives
+     */
+    async function getStrategyOverview(supabase, deptId) {
+        try {
+            // Get initiative counts
+            let query = supabase
+                .from('strategy_initiatives')
+                .select('id, status, current_progress');
+
+            const { data: initiatives } = await query;
+
+            if (!initiatives) return null;
+
+            const activeInitiatives = initiatives.filter(i => i.status === 'in_progress').length;
+            const completedThisQuarter = initiatives.filter(i => i.status === 'completed').length;
+            const avgProgress = initiatives.length > 0
+                ? Math.round(initiatives.reduce((sum, i) => sum + (i.current_progress || 0), 0) / initiatives.length)
+                : 0;
+
+            return {
+                activeInitiatives,
+                completedThisQuarter,
+                avgProgress,
+                totalInitiatives: initiatives.length
+            };
+        } catch (error) {
+            console.error('Error in getStrategyOverview:', error);
+            return null;
+        }
+    }
+
+    // ============================================
+    // DEPARTMENT CONFIGURATION
+    // ============================================
+
     /**
      * PUT /api/execute120/departments/:id
      * Update department Execute 120 configuration

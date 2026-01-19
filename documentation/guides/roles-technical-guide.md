@@ -274,6 +274,67 @@ Higher role levels automatically see content from lower levels:
 - Manager sees IC content
 - IC sees only IC-level content
 
+### Role-Based Content Filtering (Phase 37)
+
+Phase 37 introduced role-based access control for workflows, agents, and context assets.
+
+#### Database Tables
+
+```sql
+-- Workflow role restrictions
+CREATE TABLE workflow_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+    role_level TEXT NOT NULL REFERENCES business_role_levels(id),
+    permission TEXT DEFAULT 'execute' CHECK (permission IN ('view', 'execute')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(workflow_id, role_level)
+);
+
+-- Agent role restrictions
+CREATE TABLE agent_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    role_level TEXT NOT NULL REFERENCES business_role_levels(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(agent_id, role_level)
+);
+
+-- Context asset role restrictions
+CREATE TABLE context_asset_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    asset_id UUID NOT NULL REFERENCES context_assets(id) ON DELETE CASCADE,
+    role_level TEXT NOT NULL REFERENCES business_role_levels(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(asset_id, role_level)
+);
+```
+
+#### Filtering Logic
+
+Entities are accessible to a user if:
+1. **No role restrictions exist** (entity is public to all authenticated users), OR
+2. **User's role level meets minimum requirement** (user's level >= required level)
+
+```sql
+-- Example: Check if user can access a workflow
+SELECT EXISTS (
+    SELECT 1 FROM workflow_roles wr
+    JOIN business_role_levels brl ON wr.role_level = brl.id
+    JOIN users u ON u.id = :userId
+    JOIN business_role_levels user_brl ON user_brl.id = u.business_role
+    WHERE wr.workflow_id = :workflowId
+      AND brl.level <= user_brl.level
+);
+```
+
+#### Execute 120 Integration
+
+Execute 120 uses these tables to filter content:
+- `/api/execute120/my-cards` filters all entities by user's role level
+- Strategy Overview card only appears for executive/director roles
+- Workflows with `workflow_roles` entries are restricted to those roles
+
 ---
 
 ## Role-Tag-User Flow

@@ -96,7 +96,7 @@ Execute 120 provides department-specific landing pages that present the most rel
 
 ## Recommended Design: Option C with Enhancements
 
-### Page Structure
+### Page Structure (Phase 37 Update)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -104,45 +104,49 @@ Execute 120 provides department-specific landing pages that present the most rel
 │  Department Execution Hub                                   │
 ├─────────────────────────────────────────────────────────────┤
 │  [Executive] [Marketing] [Sales] [Finance] [Operations]     │
+│  [HR] [Development] [Legal]                                 │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  MARKETING                                           │   │
+│  │  MARKETING (auto-selected from user profile)         │   │
 │  │  "Craft magnetic stories that convert"               │   │
 │  │                                                      │   │
 │  │  Key Metrics: SQLs +25% | CAC ↓15% | Awareness +10  │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ QUICK START  │  │  AGENTS      │  │  WORKFLOWS   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐  │
+│  │  WORKFLOW WIZARDS       │  │  RECOMMENDED AGENTS     │  │
+│  │  📝 Campaign Strategy   │  │  [Campaign Strategist]  │  │
+│  │  🎯 Battlecard          │  │  [Competitive Intel]    │  │
+│  │  ✍️  Blog Post          │  │  [Writing Coach]        │  │
+│  │  [View All]             │  │  [View All]             │  │
+│  └─────────────────────────┘  └─────────────────────────┘  │
+│                                                             │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐  │
+│  │  CONTEXT ASSETS         │  │  QUICK ACTIONS          │  │
+│  │  📄 Brand Guidelines    │  │  ⚡ Generate Post       │  │
+│  │  📄 ICP Document        │  │  ⚡ Create Campaign     │  │
+│  │  📄 Competitor Intel    │  │  ⚡ Research Topic      │  │
+│  │  [View All]             │  │  [View All]             │  │
+│  └─────────────────────────┘  └─────────────────────────┘  │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  RECOMMENDED AGENTS FOR MARKETING                    │   │
-│  │                                                      │   │
-│  │  [Campaign Strategist] [Competitive Intel] [Writing] │   │
-│  │  [Research Assistant]  [Content Atomizer]            │   │
-│  │                                                      │   │
-│  │  + View All Strategy 120 Agents                      │   │
+│  │  DAILY BRIEFING                       [Full Briefing]│   │
+│  │  📰 Your personalized intelligence for today         │   │
+│  │  • 3 news items relevant to Marketing                │   │
+│  │  • 2 competitor updates                              │   │
+│  │  • Key metrics alert: CAC trending up               │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  COMMON WORKFLOWS                                    │   │
-│  │                                                      │   │
-│  │  📝 Create Campaign Strategy                         │   │
-│  │  🎯 Generate Competitive Battlecard                  │   │
-│  │  ✍️  Write Blog Post with Brand Voice                │   │
-│  │  📧 Build Email Nurture Sequence                     │   │
-│  │                                                      │   │
+│  │  STRATEGIC OVERVIEW (Executives/Directors only)      │   │
+│  │  📊 Active Initiatives: 5 | Completed: 3 | Avg: 67% │   │
+│  │  [Strategy Hub]                                      │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  QUICK START PROMPTS                                 │   │
-│  │                                                      │   │
 │  │  "Generate a Q2 campaign strategy for..."            │   │
-│  │  "Create a battlecard for [competitor]..."           │   │
-│  │  "Write a blog post on [topic]..."                   │   │
-│  │                                                      │   │
 │  │  [Copy] [Start Chat with This]                       │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
@@ -363,6 +367,11 @@ app.get('/execute120', (req, res) => {
 app.get('/api/execute120/departments', (req, res) => { ... });
 app.get('/api/execute120/departments/:id', (req, res) => { ... });
 app.get('/api/execute120/departments/:id/agents', (req, res) => { ... });
+
+// Phase 37: Personalization API routes
+app.get('/api/execute120/my-profile', (req, res) => { ... });  // User profile + permissions
+app.get('/api/execute120/my-cards', (req, res) => { ... });    // Filtered content cards
+app.get('/api/execute120/my-briefing', (req, res) => { ... }); // Department-specific briefing
 ```
 
 ### Database Schema (Optional Enhancement)
@@ -384,6 +393,140 @@ CREATE TABLE department_configs (
   updated_at timestamptz DEFAULT now()
 );
 ```
+
+---
+
+## Phase 37: User Profile Personalization
+
+Phase 37 adds automatic personalization based on user profiles.
+
+### Personalization Features
+
+1. **Auto-Department Selection**: Page automatically selects user's assigned department
+2. **Role-Based Filtering**: Content filtered by user's business role level
+3. **Department-Specific Briefings**: Daily briefings scoped to user's department
+4. **Executive-Only Cards**: Strategy Overview card visible only to executives/directors
+
+### New Content Cards
+
+| Card | Description | Filtering |
+|------|-------------|-----------|
+| Context Assets | Key documents and knowledge | Department + Role |
+| Quick Actions | One-click Parthenon actions | Department + Role |
+| Daily Briefing | Personalized intelligence | Department |
+| Strategic Overview | Initiative metrics | Executive role only |
+
+### Database Schema (Phase 37)
+
+```sql
+-- Role-based access control for workflows
+CREATE TABLE workflow_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_id UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+    role_level TEXT NOT NULL REFERENCES business_role_levels(id),
+    permission TEXT DEFAULT 'execute' CHECK (permission IN ('view', 'execute')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(workflow_id, role_level)
+);
+
+-- Role-based access control for agents
+CREATE TABLE agent_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    role_level TEXT NOT NULL REFERENCES business_role_levels(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(agent_id, role_level)
+);
+
+-- Role-based access control for context assets
+CREATE TABLE context_asset_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    asset_id UUID NOT NULL REFERENCES context_assets(id) ON DELETE CASCADE,
+    role_level TEXT NOT NULL REFERENCES business_role_levels(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(asset_id, role_level)
+);
+
+-- Department support for briefings
+ALTER TABLE briefing_configs
+ADD COLUMN IF NOT EXISTS department_id UUID REFERENCES departments(id);
+```
+
+### API Endpoints (Phase 37)
+
+#### GET /api/execute120/my-profile
+Returns user profile with department and role information.
+
+```javascript
+// Response
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "user@example.com",
+      "display_name": "John Doe",
+      "business_role": "manager",
+      "department_id": "uuid"
+    },
+    "department": { "id": "uuid", "name": "Marketing", "icon": "megaphone" },
+    "roleInfo": { "id": "manager", "name": "Manager", "level": 3 },
+    "permissions": { ... },
+    "isExecutive": false,
+    "showStrategyCards": false
+  }
+}
+```
+
+#### GET /api/execute120/my-cards
+Returns all content cards filtered by user's department and role.
+
+```javascript
+// Response
+{
+  "success": true,
+  "data": {
+    "contextAssets": [...],  // Filtered by dept + role
+    "agents": [...],         // Filtered by dept + role
+    "actions": [...],        // Filtered by dept + role
+    "workflows": [...],      // Filtered by dept + role
+    "briefing": {...},       // User's latest briefing
+    "strategyOverview": null // Only for executives
+  }
+}
+```
+
+#### GET /api/execute120/my-briefing
+Returns latest briefing for user's department.
+
+### Filtering Logic
+
+Entities are accessible to a user if:
+1. **Department Filter**: Entity's department matches user's department OR entity has no department (global)
+2. **Role Filter**: No role restrictions exist for entity OR user's role level meets minimum requirement
+
+```sql
+-- Example: Get workflows accessible to user
+SELECT * FROM workflows w
+WHERE w.is_active = true
+  AND (w.department_id = :userDeptId OR w.department_id IS NULL)
+  AND (
+    NOT EXISTS (SELECT 1 FROM workflow_roles WHERE workflow_id = w.id)
+    OR EXISTS (
+      SELECT 1 FROM workflow_roles wr
+      JOIN business_role_levels brl ON wr.role_level = brl.id
+      WHERE wr.workflow_id = w.id AND brl.level <= :userRoleLevel
+    )
+  );
+```
+
+### Useful Database Views
+
+Phase 37 creates these views for easier querying:
+
+- `user_accessible_workflows` - Workflows filtered by user dept + role
+- `user_accessible_agents` - Agents filtered by user dept + role
+- `user_accessible_context_assets` - Context assets filtered by user dept + role
 
 ---
 
@@ -437,23 +580,27 @@ CREATE TABLE department_configs (
 
 ## Implementation Phases
 
-### Phase 1: Basic Structure
+### Phase 1: Basic Structure ✅
 - Create execute120.html page
 - Implement department tabs
 - Static department content
 - Link to existing agents
 
-### Phase 2: Dynamic Content
+### Phase 2: Dynamic Content ✅
 - Department data from database/config
 - Agent filtering by department
 - Workflow definitions
 
-### Phase 3: Personalization
+### Phase 3: Personalization ✅ (Phase 37)
 - User preferences storage
-- Role-based content
-- Favorite agents
+- Role-based content filtering
+- Department auto-selection from user profile
+- Context Assets card
+- Quick Actions card
+- Daily Briefing card
+- Strategic Overview card (executives only)
 
-### Phase 4: Analytics
+### Phase 4: Analytics (Future)
 - Usage tracking
 - Popular workflows
 - Content optimization
@@ -480,4 +627,4 @@ CREATE TABLE department_configs (
 
 ---
 
-*Last Updated: January 2026*
+*Last Updated: January 2026 (Phase 37: User Profile Personalization)*

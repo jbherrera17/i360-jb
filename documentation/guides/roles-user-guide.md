@@ -122,10 +122,13 @@ Click a title to see:
 
 | Aspect | How It's Affected |
 |--------|-------------------|
-| **Agents** | See agents matching your tags |
-| **Workflows** | See workflows matching your tags |
+| **Agents** | See agents matching your tags and role level |
+| **Workflows** | See workflows matching your tags and role level |
 | **OKRs** | See department/level appropriate goals |
 | **Content** | Personalized to your domain |
+| **Execute 120** | Auto-selects department, shows role-appropriate cards |
+| **Daily Briefing** | Department-specific intelligence |
+| **Strategy Overview** | Visible only to executives/directors |
 
 ### Multiple Titles
 

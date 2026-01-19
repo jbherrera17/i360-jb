@@ -243,6 +243,108 @@
             opacity: 1;
         }
 
+        /* Phase 37: Asset List Styles */
+        .asset-list, .action-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .asset-item, .action-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .asset-item:hover, .action-item:hover {
+            border-color: var(--primary);
+            background: var(--bg-secondary);
+        }
+
+        .asset-item-icon, .action-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: var(--primary-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .asset-item-info, .action-item-info {
+            flex: 1;
+        }
+
+        .asset-item-name, .action-item-name {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .asset-item-type, .action-item-suite {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .action-item-btn {
+            padding: 0.35rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-item:hover .action-item-btn {
+            opacity: 1;
+        }
+
+        /* Phase 37: Briefing Preview Styles */
+        .briefing-preview {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .briefing-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .briefing-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .briefing-summary {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Phase 37: Strategy Card Styles */
+        .strategy-card {
+            border: 1px solid var(--primary);
+        }
+
+        .strategy-metric {
+            text-align: center;
+            padding: 0.5rem 1rem;
+        }
+
         /* Workflow Cards */
         .workflow-list {
             display: flex;
@@ -864,6 +966,7 @@
         let currentWorkflow = null;
         let currentExecution = null;
         let currentStep = 1;
+        let userProfile = null; // Phase 37: User profile for personalization
 
         // Default departments if none configured
         const defaultDepartments = [
@@ -874,8 +977,22 @@
             { id: 'operations', name: 'Operations', icon: 'settings', color: '#8b5cf6', tagline: 'Process excellence fuels growth' }
         ];
 
-        // Initialize
+        // Initialize - Phase 37: Fetch user profile first for personalization
         document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Fetch user profile FIRST
+            try {
+                const profileRes = await fetch('/api/execute120/my-profile');
+                const profileResult = await profileRes.json();
+                if (profileResult.success) {
+                    userProfile = profileResult.data;
+                    console.log('User profile loaded:', userProfile);
+                }
+            } catch (e) {
+                console.error('Profile fetch failed:', e);
+                userProfile = { isExecutive: false, showStrategyCards: false };
+            }
+
+            // 2. Load departments
             await loadDepartments();
             lucide.createIcons();
         });
@@ -894,10 +1011,19 @@
 
                 renderDepartmentTabs();
 
-                // Load saved preference or default to first
-                const savedDept = localStorage.getItem('execute120_department');
-                const defaultDept = departments.find(d => d.id === savedDept) || departments[0];
-                selectDepartment(defaultDept.id);
+                // Phase 37: Auto-select user's department if available
+                const userDeptId = userProfile?.user?.department_id;
+                const userDept = userDeptId ? departments.find(d => d.id === userDeptId) : null;
+
+                if (userDept) {
+                    // User has a department - auto-select it
+                    selectDepartment(userDept.id);
+                } else {
+                    // Fallback to localStorage or first department
+                    const savedDept = localStorage.getItem('execute120_department');
+                    const defaultDept = departments.find(d => d.id === savedDept) || departments[0];
+                    selectDepartment(defaultDept.id);
+                }
             } catch (error) {
                 console.error('Error loading departments:', error);
                 departments = defaultDepartments;
@@ -978,6 +1104,18 @@
                 }
             } catch (error) {
                 console.error('Error loading initiatives:', error);
+            }
+
+            // Phase 37: Load personalized cards
+            let personalizedCards = { contextAssets: [], actions: [], briefing: null, strategyOverview: null };
+            try {
+                const cardsRes = await fetch('/api/execute120/my-cards?limit=5');
+                const cardsResult = await cardsRes.json();
+                if (cardsResult.success) {
+                    personalizedCards = cardsResult.data;
+                }
+            } catch (error) {
+                console.error('Error loading personalized cards:', error);
             }
 
             // Render content
@@ -1072,6 +1210,98 @@
                             </div>
                         </div>
 
+                        <!-- Phase 37: Context Assets Card -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3><i data-lucide="file-text"></i> Context Assets</h3>
+                                <a href="/context.html" style="font-size: 0.8rem; color: var(--primary);">View All</a>
+                            </div>
+                            <div class="section-content">
+                                ${(personalizedCards.contextAssets || []).length > 0 ? `
+                                    <div class="asset-list">
+                                        ${personalizedCards.contextAssets.slice(0, 5).map(a => `
+                                            <div class="asset-item" onclick="window.location.href='/context.html?id=${a.id}'">
+                                                <div class="asset-item-icon">
+                                                    <i data-lucide="${getAssetIcon(a.asset_type)}"></i>
+                                                </div>
+                                                <div class="asset-item-info">
+                                                    <div class="asset-item-name">${a.name}</div>
+                                                    <div class="asset-item-type">${formatAssetType(a.asset_type)}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="file-text"></i></div>
+                                        <p>No context assets for this department</p>
+                                        <a href="/context.html" style="color: var(--primary);">Browse all assets</a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- Phase 37: Quick Actions Card -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3><i data-lucide="play-circle"></i> Quick Actions</h3>
+                                <a href="/actions.html" style="font-size: 0.8rem; color: var(--primary);">View All</a>
+                            </div>
+                            <div class="section-content">
+                                ${(personalizedCards.actions || []).length > 0 ? `
+                                    <div class="action-list">
+                                        ${personalizedCards.actions.slice(0, 5).map(a => `
+                                            <div class="action-item" onclick="window.location.href='/actions.html?action=${a.slug}'">
+                                                <div class="action-item-icon">
+                                                    <i data-lucide="zap"></i>
+                                                </div>
+                                                <div class="action-item-info">
+                                                    <div class="action-item-name">${a.name}</div>
+                                                    <div class="action-item-suite">${a.suite || 'execute'}</div>
+                                                </div>
+                                                <button class="action-item-btn" onclick="event.stopPropagation(); executeAction('${a.id}')">
+                                                    <i data-lucide="play" style="width:14px;height:14px;"></i>
+                                                </button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="zap"></i></div>
+                                        <p>No actions available</p>
+                                        <a href="/actions.html" style="color: var(--primary);">Browse actions</a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- Phase 37: Daily Briefing Card -->
+                        <div class="section-card" style="grid-column: span 2;">
+                            <div class="section-header">
+                                <h3><i data-lucide="newspaper"></i> Daily Briefing</h3>
+                                <a href="/briefing.html" style="font-size: 0.8rem; color: var(--primary);">Full Briefing</a>
+                            </div>
+                            <div class="section-content">
+                                ${personalizedCards.briefing ? `
+                                    <div class="briefing-preview">
+                                        <div class="briefing-date">${formatDate(personalizedCards.briefing.created_at)}</div>
+                                        <div class="briefing-title">${personalizedCards.briefing.title || 'Your Daily Briefing'}</div>
+                                        <div class="briefing-summary">${truncateText(personalizedCards.briefing.content || '', 200)}</div>
+                                        <a href="/briefing.html" class="btn-secondary" style="margin-top: 0.75rem;">Read Full Briefing</a>
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="coffee"></i></div>
+                                        <p>No briefing generated today</p>
+                                        <a href="/briefing.html" class="btn-primary" style="margin-top: 0.75rem; padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                                            Generate Briefing
+                                        </a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
                         <!-- Strategic Initiatives Section -->
                         <div class="section-card" style="grid-column: span 2;">
                             <div class="section-header">
@@ -1117,6 +1347,44 @@
                                 `}
                             </div>
                         </div>
+
+                        <!-- Phase 37: Strategy Overview (Executives Only) -->
+                        ${userProfile?.showStrategyCards ? `
+                        <div class="section-card strategy-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--bg-secondary), var(--primary-bg));">
+                            <div class="section-header">
+                                <h3><i data-lucide="compass"></i> Strategic Overview</h3>
+                                <a href="/strategy120.html" style="font-size: 0.8rem; color: var(--primary);">Strategy Hub</a>
+                            </div>
+                            <div class="section-content">
+                                ${personalizedCards.strategyOverview ? `
+                                    <div class="strategy-metrics" style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                                        <div class="strategy-metric">
+                                            <div class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--primary);">${personalizedCards.strategyOverview.activeInitiatives || 0}</div>
+                                            <div class="metric-label" style="font-size: 0.85rem; color: var(--text-muted);">Active Initiatives</div>
+                                        </div>
+                                        <div class="strategy-metric">
+                                            <div class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--success);">${personalizedCards.strategyOverview.completedThisQuarter || 0}</div>
+                                            <div class="metric-label" style="font-size: 0.85rem; color: var(--text-muted);">Completed This Quarter</div>
+                                        </div>
+                                        <div class="strategy-metric">
+                                            <div class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--warning);">${personalizedCards.strategyOverview.avgProgress || 0}%</div>
+                                            <div class="metric-label" style="font-size: 0.85rem; color: var(--text-muted);">Avg Progress</div>
+                                        </div>
+                                        <div class="strategy-metric">
+                                            <div class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--text-secondary);">${personalizedCards.strategyOverview.totalInitiatives || 0}</div>
+                                            <div class="metric-label" style="font-size: 0.85rem; color: var(--text-muted);">Total Initiatives</div>
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="compass"></i></div>
+                                        <p>No strategic data available</p>
+                                        <a href="/strategy120.html" style="color: var(--primary);">Go to Strategy Hub</a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                        ` : ''}
 
                         <!-- Quick Start Prompts -->
                         <div class="section-card" style="grid-column: span 2;">
@@ -1187,6 +1455,46 @@
 
         function viewInitiative(id) {
             window.location.href = `/strategy120.html?initiative=${id}`;
+        }
+
+        // Phase 37: Helper functions for new cards
+        function getAssetIcon(assetType) {
+            const icons = {
+                'company_description': 'building-2',
+                'voice_dna': 'mic',
+                'icp': 'users',
+                'brand_guidelines': 'palette',
+                'product_info': 'package',
+                'competitive_landscape': 'target',
+                'case_study': 'file-check',
+                'faq': 'help-circle',
+                'process_doc': 'workflow',
+                'thought_leadership_topic': 'lightbulb'
+            };
+            return icons[assetType] || 'file-text';
+        }
+
+        function formatAssetType(assetType) {
+            if (!assetType) return 'Document';
+            return assetType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function truncateText(text, maxLength) {
+            if (!text) return '';
+            // Strip HTML tags
+            const stripped = text.replace(/<[^>]*>/g, '');
+            if (stripped.length <= maxLength) return stripped;
+            return stripped.substring(0, maxLength) + '...';
+        }
+
+        function executeAction(actionId) {
+            window.location.href = `/actions.html?action=${actionId}&execute=true`;
         }
 
         function getDefaultPrompts(deptId) {
