@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skills | Insight 360</title>
+    <title>Workflows | Insight 360</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -13,8 +13,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <style>
-        /* Skills Specific Styles */
-        .skills-layout {
+        /* Workflows Specific Styles */
+        .workflows-layout {
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
@@ -130,29 +130,6 @@
             color: white;
         }
 
-        /* Status Filter */
-        .status-chip {
-            padding: 0.35rem 0.7rem;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .status-chip:hover {
-            border-color: var(--primary);
-            color: var(--text-primary);
-        }
-
-        .status-chip.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-
         /* Stats Row */
         .stats-row {
             display: flex;
@@ -180,8 +157,8 @@
             justify-content: center;
         }
 
-        .stat-icon.skills { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-        .stat-icon.agents { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .stat-icon.workflows { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .stat-icon.templates { background: rgba(16, 185, 129, 0.15); color: #10b981; }
         .stat-icon.executions { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 
         .stat-info h3 {
@@ -197,15 +174,15 @@
             margin: 0;
         }
 
-        /* Skills Grid */
-        .skills-grid {
+        /* Workflows Grid */
+        .workflows-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1rem;
         }
 
-        /* Skill Card */
-        .skill-card {
+        /* Workflow Card */
+        .workflow-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -216,13 +193,13 @@
             overflow: hidden;
         }
 
-        .skill-card:hover {
+        .workflow-card:hover {
             border-color: var(--primary);
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
         }
 
-        .skill-card::before {
+        .workflow-card::before {
             content: '';
             position: absolute;
             top: 0;
@@ -234,15 +211,15 @@
             transition: opacity 0.2s;
         }
 
-        .skill-card:hover::before {
+        .workflow-card:hover::before {
             opacity: 1;
         }
 
-        .skill-card.align::before { background: #8b5cf6; }
-        .skill-card.strategy::before { background: #3b82f6; }
-        .skill-card.execute::before { background: #10b981; }
+        .workflow-card.align::before { background: #8b5cf6; }
+        .workflow-card.strategy::before { background: #3b82f6; }
+        .workflow-card.execute::before { background: #10b981; }
 
-        .skill-delete-btn {
+        .workflow-delete-btn {
             position: absolute;
             top: 0.75rem;
             right: 0.75rem;
@@ -261,29 +238,29 @@
             z-index: 10;
         }
 
-        .skill-delete-btn i {
+        .workflow-delete-btn i {
             width: 16px;
             height: 16px;
         }
 
-        .skill-card:hover .skill-delete-btn {
+        .workflow-card:hover .workflow-delete-btn {
             opacity: 1;
         }
 
-        .skill-delete-btn:hover {
+        .workflow-delete-btn:hover {
             background: #ef4444;
             border-color: #ef4444;
             color: white;
         }
 
-        .skill-header {
+        .workflow-header {
             display: flex;
             align-items: flex-start;
             gap: 0.75rem;
             margin-bottom: 0.75rem;
         }
 
-        .skill-icon {
+        .workflow-icon {
             width: 48px;
             height: 48px;
             border-radius: 12px;
@@ -294,29 +271,29 @@
             flex-shrink: 0;
         }
 
-        .skill-icon.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-        .skill-icon.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .skill-icon.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .workflow-icon.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .workflow-icon.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .workflow-icon.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 
-        .skill-info {
+        .workflow-info {
             flex: 1;
             min-width: 0;
         }
 
-        .skill-name {
+        .workflow-name {
             font-size: 1.1rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 0.25rem;
         }
 
-        .skill-badges {
+        .workflow-badges {
             display: flex;
             gap: 0.35rem;
             flex-wrap: wrap;
         }
 
-        .skill-suite {
+        .workflow-suite {
             display: inline-block;
             padding: 0.15rem 0.5rem;
             border-radius: 50px;
@@ -325,11 +302,11 @@
             text-transform: uppercase;
         }
 
-        .skill-suite.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-        .skill-suite.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .skill-suite.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .workflow-suite.align { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .workflow-suite.strategy { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .workflow-suite.execute { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 
-        .skill-version {
+        .workflow-category-badge {
             display: inline-block;
             padding: 0.15rem 0.5rem;
             border-radius: 50px;
@@ -339,20 +316,18 @@
             color: var(--text-muted);
         }
 
-        .skill-status {
+        .workflow-system {
             display: inline-block;
             padding: 0.15rem 0.5rem;
             border-radius: 50px;
             font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
         }
 
-        .skill-status.active { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .skill-status.draft { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-        .skill-status.archived { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
-
-        .skill-description {
+        .workflow-description {
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 1rem;
@@ -363,14 +338,14 @@
             overflow: hidden;
         }
 
-        .skill-context {
+        .workflow-tags {
             display: flex;
             flex-wrap: wrap;
             gap: 0.35rem;
             margin-bottom: 0.75rem;
         }
 
-        .context-pill {
+        .tag-pill {
             padding: 0.2rem 0.5rem;
             background: var(--bg-tertiary);
             border-radius: 50px;
@@ -378,12 +353,7 @@
             color: var(--text-secondary);
         }
 
-        .context-pill.required {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        .skill-meta {
+        .workflow-meta {
             display: flex;
             gap: 1rem;
             font-size: 0.8rem;
@@ -392,7 +362,7 @@
             border-top: 1px solid var(--border);
         }
 
-        .skill-meta span {
+        .workflow-meta span {
             display: flex;
             align-items: center;
             gap: 0.25rem;
@@ -525,88 +495,6 @@
             margin-right: auto;
         }
 
-        /* Modal styles handled by modal-manager.js */
-
-        /* Skill Detail View */
-        .skill-detail-header {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .skill-detail-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-
-        .skill-detail-title h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-
-        .skill-detail-title p {
-            color: var(--text-muted);
-            margin: 0.25rem 0 0 0;
-        }
-
-        .detail-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .detail-section h3 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin: 0 0 0.75rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .context-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .starters-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .starter-item {
-            padding: 0.75rem 1rem;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .starter-item:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .instructions-preview {
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.85rem;
-            white-space: pre-wrap;
-            max-height: 200px;
-            overflow-y: auto;
-            color: var(--text-secondary);
-        }
-
         /* Search */
         .search-bar {
             display: flex;
@@ -633,6 +521,78 @@
             color: var(--text-muted);
         }
 
+        /* Workflow Detail Modal Styles */
+        .workflow-detail-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .workflow-detail-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .workflow-detail-title h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .workflow-detail-title p {
+            color: var(--text-muted);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .step-item {
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .suite-tabs {
@@ -641,7 +601,7 @@
             .stats-row {
                 flex-direction: column;
             }
-            .skills-grid {
+            .workflows-grid {
                 grid-template-columns: 1fr;
             }
             .page-header {
@@ -664,15 +624,15 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="header-content">
-                    <h1>Skills Library</h1>
-                    <p class="header-subtitle">Reusable AI skill definitions for consistent, high-quality outputs</p>
+                    <h1>Workflows</h1>
+                    <p class="header-subtitle">Automated multi-step processes for consistent execution</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn-secondary" onclick="showImportModal()">
-                        <i data-lucide="upload" style="width:16px;height:16px;"></i> Import
+                    <button class="btn-secondary" onclick="showTemplates()">
+                        <i data-lucide="layout-template" style="width:16px;height:16px;"></i> Templates
                     </button>
-                    <button class="btn-primary" onclick="goToCreator()">
-                        <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Skill
+                    <button class="btn-primary" onclick="goToBuilder()">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i> Create Workflow
                     </button>
                     <button class="help-btn" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
@@ -680,26 +640,26 @@
                 </div>
             </header>
 
-            <div class="skills-layout">
+            <div class="workflows-layout">
 
                 <!-- Stats Row -->
                 <div class="stats-row">
                     <div class="stat-card">
-                        <div class="stat-icon skills">
-                            <i data-lucide="wand-2"></i>
+                        <div class="stat-icon workflows">
+                            <i data-lucide="git-branch"></i>
                         </div>
                         <div class="stat-info">
-                            <h3 id="totalSkills">0</h3>
-                            <p>Total Skills</p>
+                            <h3 id="totalWorkflows">0</h3>
+                            <p>Total Workflows</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon agents">
-                            <i data-lucide="bot"></i>
+                        <div class="stat-icon templates">
+                            <i data-lucide="layout-template"></i>
                         </div>
                         <div class="stat-info">
-                            <h3 id="agentsUsing">0</h3>
-                            <p>Agents Using Skills</p>
+                            <h3 id="totalTemplates">0</h3>
+                            <p>Templates Available</p>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -727,7 +687,7 @@
                 <div class="suite-tabs">
                     <button class="suite-tab active" data-suite="all">
                         <i data-lucide="layers" style="width:16px;height:16px;"></i>
-                        All Skills
+                        All Workflows
                         <span id="allCount" class="count">0</span>
                     </button>
                     <button class="suite-tab align" data-suite="align">
@@ -750,56 +710,64 @@
                 <!-- Category Filters -->
                 <div class="section-header">
                     <h2><i data-lucide="filter" style="width:18px;height:18px;"></i> Categories</h2>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div class="status-filter" style="display: flex; gap: 0.5rem;">
-                            <button class="status-chip active" data-status="all" onclick="setStatus('all')">All</button>
-                            <button class="status-chip" data-status="active" onclick="setStatus('active')">Active</button>
-                            <button class="status-chip" data-status="draft" onclick="setStatus('draft')">Draft</button>
-                        </div>
-                        <div class="search-bar">
-                            <i data-lucide="search" style="width:16px;height:16px;color:var(--text-muted);"></i>
-                            <input type="text" id="searchInput" placeholder="Search skills..." oninput="filterSkills()">
-                        </div>
+                    <div class="search-bar">
+                        <i data-lucide="search" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                        <input type="text" id="searchInput" placeholder="Search workflows..." oninput="filterWorkflows()">
                     </div>
                 </div>
                 <div id="categoryFilters" class="category-filters">
                     <!-- Populated by JS -->
                 </div>
 
-                <!-- Skills Grid -->
+                <!-- Workflows Grid -->
                 <div class="section-header" style="margin-top: 1rem;">
-                    <h2><i data-lucide="wand-2" style="width:18px;height:18px;"></i> My Skills</h2>
+                    <h2><i data-lucide="git-branch" style="width:18px;height:18px;"></i> My Workflows</h2>
                 </div>
-                <div id="skillsList" class="skills-grid">
+                <div id="workflowsList" class="workflows-grid">
                     <!-- Populated by JS -->
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modals are now created dynamically via ModalService -->
-
     <script>
         // State
-        let skills = [];
+        let workflows = [];
+        let templates = [];
         let categories = [];
         let departments = [];
         let currentSuite = 'all';
         let currentCategory = 'all';
-        let currentStatus = 'all';
         let currentDepartment = '';
-        let selectedSkill = null;
+        let userDepartmentId = null;
+        let selectedWorkflow = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
 
+            await fetchUserProfile();
             await fetchDepartments();
-            await loadCategories();
-            await loadSkills();
+            await loadTemplates();
+            await loadWorkflows();
             setupSuiteTabs();
             setupDepartmentFilter();
+            buildCategories();
         });
+
+        // Fetch user profile to get their department
+        async function fetchUserProfile() {
+            try {
+                const response = await fetch('/api/auth/profile', { credentials: 'include' });
+                const data = await response.json();
+                if (data.success && data.user?.department_id) {
+                    userDepartmentId = data.user.department_id;
+                    currentDepartment = userDepartmentId; // Default to user's department
+                }
+            } catch (error) {
+                console.error('Error fetching user profile:', error);
+            }
+        }
 
         // Fetch departments
         async function fetchDepartments() {
@@ -814,6 +782,10 @@
                         const option = document.createElement('option');
                         option.value = dept.id;
                         option.textContent = dept.name;
+                        // Pre-select user's department
+                        if (dept.id === userDepartmentId) {
+                            option.selected = true;
+                        }
                         select.appendChild(option);
                     });
                 }
@@ -826,22 +798,60 @@
         function setupDepartmentFilter() {
             document.getElementById('filterDepartment').addEventListener('change', (e) => {
                 currentDepartment = e.target.value;
-                loadSkills();
+                loadWorkflows();
             });
         }
 
-        // Load categories
-        async function loadCategories() {
+        // Load templates
+        async function loadTemplates() {
             try {
-                const res = await fetch('/api/skills/categories');
+                const res = await fetch('/api/workflows/templates');
                 const data = await res.json();
                 if (data.success) {
-                    categories = data.data;
-                    renderCategoryFilters();
+                    templates = data.templates || [];
+                    document.getElementById('totalTemplates').textContent = templates.length;
                 }
             } catch (error) {
-                console.error('Error loading categories:', error);
+                console.error('Error loading templates:', error);
             }
+        }
+
+        // Load workflows
+        async function loadWorkflows() {
+            try {
+                const params = new URLSearchParams();
+                if (currentDepartment) {
+                    params.append('department_id', currentDepartment);
+                }
+                const url = '/api/workflows' + (params.toString() ? '?' + params.toString() : '');
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.success) {
+                    workflows = data.workflows || [];
+                    renderWorkflows();
+                    updateStats();
+                    updateCounts();
+                    buildCategories();
+                }
+            } catch (error) {
+                console.error('Error loading workflows:', error);
+            }
+        }
+
+        // Build categories from workflows
+        function buildCategories() {
+            const categorySet = new Set();
+            workflows.forEach(wf => {
+                if (wf.category) categorySet.add(wf.category);
+            });
+
+            categories = Array.from(categorySet).map(cat => ({
+                key: cat,
+                name: cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' '),
+                count: workflows.filter(wf => wf.category === cat).length
+            }));
+
+            renderCategoryFilters();
         }
 
         function renderCategoryFilters() {
@@ -851,8 +861,8 @@
                     <i data-lucide="layers" style="width:14px;height:14px;"></i> All
                 </button>
                 ${categories.map(cat => `
-                    <button class="category-chip" data-category="${cat.category_key}" onclick="setCategory('${cat.category_key}')" style="--chip-color:${cat.color}">
-                        <i data-lucide="${cat.icon}" style="width:14px;height:14px;"></i> ${cat.display_name}
+                    <button class="category-chip" data-category="${cat.key}" onclick="setCategory('${cat.key}')">
+                        ${cat.name}
                         <span style="opacity:0.6;">${cat.count || 0}</span>
                     </button>
                 `).join('')}
@@ -865,15 +875,7 @@
             document.querySelectorAll('.category-chip').forEach(chip => {
                 chip.classList.toggle('active', chip.dataset.category === category);
             });
-            renderSkills();
-        }
-
-        function setStatus(status) {
-            currentStatus = status;
-            document.querySelectorAll('.status-chip').forEach(chip => {
-                chip.classList.toggle('active', chip.dataset.status === status);
-            });
-            loadSkills();
+            renderWorkflows();
         }
 
         // Suite tab switching
@@ -883,119 +885,102 @@
                     currentSuite = tab.dataset.suite;
                     document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
-                    renderSkills();
+                    renderWorkflows();
                 });
             });
         }
 
-        // Load skills
-        async function loadSkills() {
-            try {
-                const params = new URLSearchParams();
-                if (currentDepartment) {
-                    params.append('department_id', currentDepartment);
-                }
-                // Pass status - 'all' shows everything, otherwise filter
-                params.append('status', currentStatus || 'all');
-                const url = '/api/skills' + (params.toString() ? '?' + params.toString() : '');
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.success) {
-                    skills = data.data;
-                    renderSkills();
-                    updateStats();
-                    updateCounts();
-                }
-            } catch (error) {
-                console.error('Error loading skills:', error);
-            }
+        function filterWorkflows() {
+            renderWorkflows();
         }
 
-        function filterSkills() {
-            renderSkills();
-        }
-
-        function renderSkills() {
-            const container = document.getElementById('skillsList');
+        function renderWorkflows() {
+            const container = document.getElementById('workflowsList');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
-            let filtered = skills;
+            let filtered = workflows;
 
             // Filter by suite
             if (currentSuite !== 'all') {
-                filtered = filtered.filter(s => s.suite === currentSuite);
+                filtered = filtered.filter(wf => wf.suite === currentSuite);
             }
 
             // Filter by category
             if (currentCategory !== 'all') {
-                filtered = filtered.filter(s => s.category === currentCategory);
+                filtered = filtered.filter(wf => wf.category === currentCategory);
             }
 
             // Filter by search
             if (searchTerm) {
-                filtered = filtered.filter(s =>
-                    s.display_name?.toLowerCase().includes(searchTerm) ||
-                    s.name?.toLowerCase().includes(searchTerm) ||
-                    s.description?.toLowerCase().includes(searchTerm)
+                filtered = filtered.filter(wf =>
+                    wf.name?.toLowerCase().includes(searchTerm) ||
+                    wf.description?.toLowerCase().includes(searchTerm) ||
+                    (wf.tags || []).some(t => t.toLowerCase().includes(searchTerm))
                 );
             }
 
             // Create card first
             let html = `
-                <div class="create-card" onclick="goToCreator()">
+                <div class="create-card" onclick="goToBuilder()">
                     <div class="create-icon">
                         <i data-lucide="plus" style="width:32px;height:32px;"></i>
                     </div>
-                    <h3>Create New Skill</h3>
-                    <p>Build a reusable AI skill with instructions and context requirements</p>
+                    <h3>Create New Workflow</h3>
+                    <p>Build a multi-step automated process with agents and skills</p>
                 </div>
             `;
 
             if (filtered.length === 0 && !searchTerm) {
                 html += `
                     <div class="empty-state" style="grid-column: span 2;">
-                        <div class="empty-icon">&#x1F9D9;</div>
-                        <h3>No Skills Yet</h3>
-                        <p>Create your first skill to define reusable AI behaviors and instructions.</p>
+                        <div class="empty-icon">&#x1F504;</div>
+                        <h3>No Workflows Yet</h3>
+                        <p>Create your first workflow to automate multi-step processes.</p>
+                        <button class="btn-primary" onclick="showTemplates()">
+                            <i data-lucide="layout-template" style="width:16px;height:16px;"></i> Browse Templates
+                        </button>
                     </div>
                 `;
             } else if (filtered.length === 0) {
                 html += `
                     <div class="empty-state" style="grid-column: span 2;">
                         <div class="empty-icon">&#x1F50D;</div>
-                        <h3>No Matching Skills</h3>
+                        <h3>No Matching Workflows</h3>
                         <p>Try adjusting your search or filters.</p>
                     </div>
                 `;
             } else {
-                html += filtered.map(skill => `
-                    <div class="skill-card ${skill.suite}" onclick="showSkillDetail('${skill.id}')">
-                        <button class="skill-delete-btn" onclick="event.stopPropagation(); deleteSkill('${skill.id}', '${skill.display_name.replace(/'/g, "\\'")}')" title="Delete skill">
-                            <i data-lucide="trash-2"></i>
-                        </button>
-                        <div class="skill-header">
-                            <div class="skill-icon ${skill.suite}" style="background:${skill.color ? `${skill.color}20` : ''};color:${skill.color || ''};">
-                                <i data-lucide="${skill.icon || 'wand-2'}"></i>
+                html += filtered.map(wf => `
+                    <div class="workflow-card ${wf.suite || ''}" onclick="showWorkflowDetail('${wf.id}')">
+                        ${!wf.is_system ? `
+                            <button class="workflow-delete-btn" onclick="event.stopPropagation(); deleteWorkflow('${wf.id}', '${(wf.name || '').replace(/'/g, "\\'")}')" title="Delete workflow">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        ` : ''}
+                        <div class="workflow-header">
+                            <div class="workflow-icon ${wf.suite || ''}" style="background:${wf.color ? `${wf.color}20` : ''};color:${wf.color || ''};">
+                                <i data-lucide="${wf.icon || 'git-branch'}"></i>
                             </div>
-                            <div class="skill-info">
-                                <div class="skill-name">${skill.display_name}</div>
-                                <div class="skill-badges">
-                                    <span class="skill-suite ${skill.suite}">${skill.suite}</span>
-                                    <span class="skill-version">v${skill.version || '1.0.0'}</span>
-                                    <span class="skill-status ${skill.status}">${skill.status}</span>
+                            <div class="workflow-info">
+                                <div class="workflow-name">${wf.name}</div>
+                                <div class="workflow-badges">
+                                    ${wf.suite ? `<span class="workflow-suite ${wf.suite}">${wf.suite}</span>` : ''}
+                                    ${wf.category ? `<span class="workflow-category-badge">${wf.category}</span>` : ''}
+                                    ${wf.is_system ? '<span class="workflow-system">System</span>' : ''}
                                 </div>
                             </div>
                         </div>
-                        <p class="skill-description">${skill.description || 'No description'}</p>
-                        <div class="skill-context">
-                            ${(skill.required_context_types || []).map(t => `<span class="context-pill required">${t}</span>`).join('')}
-                            ${(skill.optional_context_types || []).slice(0, 2).map(t => `<span class="context-pill">${t}</span>`).join('')}
-                            ${(skill.optional_context_types || []).length > 2 ? `<span class="context-pill">+${skill.optional_context_types.length - 2}</span>` : ''}
-                        </div>
-                        <div class="skill-meta">
-                            <span><i data-lucide="play-circle" style="width:12px;height:12px;"></i> ${skill.usage_count || 0} uses</span>
-                            <span><i data-lucide="bot" style="width:12px;height:12px;"></i> ${skill.agents_using || 0} agents</span>
-                            <span>${skill.category || 'custom'}</span>
+                        <p class="workflow-description">${wf.description || 'No description'}</p>
+                        ${(wf.tags || []).length > 0 ? `
+                            <div class="workflow-tags">
+                                ${wf.tags.slice(0, 3).map(t => `<span class="tag-pill">${t}</span>`).join('')}
+                                ${wf.tags.length > 3 ? `<span class="tag-pill">+${wf.tags.length - 3}</span>` : ''}
+                            </div>
+                        ` : ''}
+                        <div class="workflow-meta">
+                            <span><i data-lucide="play-circle" style="width:12px;height:12px;"></i> ${wf.usage_count || 0} runs</span>
+                            ${wf.estimated_minutes ? `<span><i data-lucide="clock" style="width:12px;height:12px;"></i> ~${wf.estimated_minutes} min</span>` : ''}
+                            ${wf.department?.name ? `<span>${wf.department.name}</span>` : ''}
                         </div>
                     </div>
                 `).join('');
@@ -1006,125 +991,134 @@
         }
 
         function updateStats() {
-            document.getElementById('totalSkills').textContent = skills.length;
+            document.getElementById('totalWorkflows').textContent = workflows.length;
 
-            const agentsUsing = skills.reduce((sum, s) => sum + (s.agents_using || 0), 0);
-            document.getElementById('agentsUsing').textContent = agentsUsing;
-
-            const executions = skills.reduce((sum, s) => sum + (s.total_executions || s.usage_count || 0), 0);
+            const executions = workflows.reduce((sum, wf) => sum + (wf.usage_count || 0), 0);
             document.getElementById('totalExecutions').textContent = executions;
         }
 
         function updateCounts() {
-            document.getElementById('allCount').textContent = skills.length;
-            document.getElementById('alignCount').textContent = skills.filter(s => s.suite === 'align').length;
-            document.getElementById('strategyCount').textContent = skills.filter(s => s.suite === 'strategy').length;
-            document.getElementById('executeCount').textContent = skills.filter(s => s.suite === 'execute').length;
+            document.getElementById('allCount').textContent = workflows.length;
+            document.getElementById('alignCount').textContent = workflows.filter(wf => wf.suite === 'align').length;
+            document.getElementById('strategyCount').textContent = workflows.filter(wf => wf.suite === 'strategy').length;
+            document.getElementById('executeCount').textContent = workflows.filter(wf => wf.suite === 'execute').length;
         }
 
-        // Delete skill
-        async function deleteSkill(id, name) {
+        // Delete workflow
+        async function deleteWorkflow(id, name) {
             const confirmed = await ModalService.confirmDanger(
                 `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-                'Delete Skill'
+                'Delete Workflow'
             );
 
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/skills/${id}`, {
+                const response = await fetch(`/api/workflows/${id}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
 
                 if (data.success) {
-                    // Remove from local array and re-render
-                    skills = skills.filter(s => s.id !== id);
-                    renderSkills();
+                    workflows = workflows.filter(wf => wf.id !== id);
+                    renderWorkflows();
                     updateStats();
                     updateCounts();
-                    ModalService.success('Skill deleted successfully', 'Deleted');
+                    buildCategories();
+                    ModalService.success('Workflow deleted successfully', 'Deleted');
                 } else {
-                    ModalService.error(data.error || 'Failed to delete skill', 'Delete Failed');
+                    ModalService.error(data.error || 'Failed to delete workflow', 'Delete Failed');
                 }
             } catch (error) {
-                console.error('Error deleting skill:', error);
-                ModalService.error('Failed to delete skill: ' + error.message, 'Delete Failed');
+                console.error('Error deleting workflow:', error);
+                ModalService.error('Failed to delete workflow: ' + error.message, 'Delete Failed');
             }
         }
 
-        // Skill detail modal - using ModalService
+        // Workflow detail modal
         let detailModal = null;
 
-        function showSkillDetail(id) {
-            selectedSkill = skills.find(s => s.id === id);
-            if (!selectedSkill) return;
+        async function showWorkflowDetail(id) {
+            selectedWorkflow = workflows.find(wf => wf.id === id);
+            if (!selectedWorkflow) return;
+
+            // Fetch full workflow with steps
+            try {
+                const res = await fetch(`/api/workflows/${id}`);
+                const data = await res.json();
+                if (data.success) {
+                    selectedWorkflow = data.workflow;
+                }
+            } catch (error) {
+                console.error('Error loading workflow details:', error);
+            }
 
             const content = `
-                <div class="skill-detail-header">
-                    <div class="skill-detail-icon ${selectedSkill.suite}" style="background:${selectedSkill.color ? `${selectedSkill.color}20` : ''};color:${selectedSkill.color || ''};">
-                        <i data-lucide="${selectedSkill.icon || 'wand-2'}"></i>
+                <div class="workflow-detail-header">
+                    <div class="workflow-detail-icon ${selectedWorkflow.suite || ''}" style="background:${selectedWorkflow.color ? `${selectedWorkflow.color}20` : ''};color:${selectedWorkflow.color || ''};">
+                        <i data-lucide="${selectedWorkflow.icon || 'git-branch'}"></i>
                     </div>
-                    <div class="skill-detail-title">
-                        <h2>${selectedSkill.display_name}</h2>
-                        <p>${selectedSkill.description || 'No description'}</p>
-                        <div class="skill-badges" style="margin-top:0.5rem;">
-                            <span class="skill-suite ${selectedSkill.suite}">${selectedSkill.suite.toUpperCase()}</span>
-                            <span class="skill-version">v${selectedSkill.version || '1.0.0'}</span>
-                            <span class="skill-status ${selectedSkill.status}">${selectedSkill.status.toUpperCase()}</span>
+                    <div class="workflow-detail-title">
+                        <h2>${selectedWorkflow.name}</h2>
+                        <p>${selectedWorkflow.description || 'No description'}</p>
+                        <div class="workflow-badges" style="margin-top:0.5rem;">
+                            ${selectedWorkflow.suite ? `<span class="workflow-suite ${selectedWorkflow.suite}">${selectedWorkflow.suite.toUpperCase()}</span>` : ''}
+                            ${selectedWorkflow.category ? `<span class="workflow-category-badge">${selectedWorkflow.category}</span>` : ''}
+                            ${selectedWorkflow.is_system ? '<span class="workflow-system">SYSTEM</span>' : ''}
                         </div>
                     </div>
                 </div>
 
-                <div class="detail-section">
-                    <h3><i data-lucide="database" style="width:16px;height:16px;"></i> Required Context</h3>
-                    <div class="context-list">
-                        ${(selectedSkill.required_context_types || []).length > 0
-                            ? selectedSkill.required_context_types.map(t => `<span class="context-pill required">${t}</span>`).join('')
-                            : '<span style="color:var(--text-muted);">No required context</span>'
-                        }
-                    </div>
-                </div>
-
-                <div class="detail-section">
-                    <h3><i data-lucide="plus-circle" style="width:16px;height:16px;"></i> Optional Context</h3>
-                    <div class="context-list">
-                        ${(selectedSkill.optional_context_types || []).length > 0
-                            ? selectedSkill.optional_context_types.map(t => `<span class="context-pill">${t}</span>`).join('')
-                            : '<span style="color:var(--text-muted);">No optional context</span>'
-                        }
-                    </div>
-                </div>
-
-                ${(selectedSkill.conversation_starters || []).length > 0 ? `
+                ${(selectedWorkflow.steps || []).length > 0 ? `
                     <div class="detail-section">
-                        <h3><i data-lucide="message-circle" style="width:16px;height:16px;"></i> Conversation Starters</h3>
-                        <div class="starters-list">
-                            ${selectedSkill.conversation_starters.map(s => `<div class="starter-item">${s}</div>`).join('')}
+                        <h3><i data-lucide="list-ordered" style="width:16px;height:16px;"></i> Steps (${selectedWorkflow.steps.length})</h3>
+                        <div class="steps-list">
+                            ${selectedWorkflow.steps.map((step, idx) => `
+                                <div class="step-item">
+                                    <span class="step-number">${idx + 1}</span>
+                                    <div>
+                                        <strong>${step.name || `Step ${idx + 1}`}</strong>
+                                        ${step.description ? `<div style="font-size:0.8rem;color:var(--text-muted);">${step.description}</div>` : ''}
+                                        ${step.agent?.name ? `<span style="font-size:0.75rem;color:var(--primary);">Agent: ${step.agent.name}</span>` : ''}
+                                        ${step.skill?.display_name ? `<span style="font-size:0.75rem;color:#10b981;">Skill: ${step.skill.display_name}</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${(selectedWorkflow.tags || []).length > 0 ? `
+                    <div class="detail-section">
+                        <h3><i data-lucide="tags" style="width:16px;height:16px;"></i> Tags</h3>
+                        <div class="workflow-tags">
+                            ${selectedWorkflow.tags.map(t => `<span class="tag-pill">${t}</span>`).join('')}
                         </div>
                     </div>
                 ` : ''}
 
                 <div class="detail-section">
-                    <h3><i data-lucide="file-text" style="width:16px;height:16px;"></i> Instructions Preview</h3>
-                    <div class="instructions-preview">${(selectedSkill.instructions || 'No instructions').substring(0, 500)}${selectedSkill.instructions?.length > 500 ? '...' : ''}</div>
+                    <h3><i data-lucide="info" style="width:16px;height:16px;"></i> Details</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.9rem;">
+                        <div><strong>Usage:</strong> ${selectedWorkflow.usage_count || 0} executions</div>
+                        ${selectedWorkflow.estimated_minutes ? `<div><strong>Est. Time:</strong> ~${selectedWorkflow.estimated_minutes} min</div>` : ''}
+                        <div><strong>Public:</strong> ${selectedWorkflow.is_public ? 'Yes' : 'No'}</div>
+                        <div><strong>System:</strong> ${selectedWorkflow.is_system ? 'Yes' : 'No'}</div>
+                    </div>
                 </div>
             `;
 
             const footer = `
-                <button type="button" class="i360-btn i360-btn-secondary" id="btnExportSkill">
-                    <i data-lucide="download" style="width:16px;height:16px;"></i> Export
-                </button>
-                <button type="button" class="i360-btn i360-btn-secondary" id="btnEditSkill">
+                <button type="button" class="i360-btn i360-btn-secondary" id="btnEditWorkflow" ${selectedWorkflow.is_system ? 'disabled' : ''}>
                     <i data-lucide="edit" style="width:16px;height:16px;"></i> Edit
                 </button>
-                <button type="button" class="i360-btn i360-btn-primary" id="btnTestSkill">
-                    <i data-lucide="play" style="width:16px;height:16px;"></i> Test Skill
+                <button type="button" class="i360-btn i360-btn-primary" id="btnRunWorkflow">
+                    <i data-lucide="play" style="width:16px;height:16px;"></i> Run Workflow
                 </button>
             `;
 
             detailModal = ModalService.create({
-                title: `${selectedSkill.display_name}`,
+                title: selectedWorkflow.name,
                 content: content,
                 footer: footer,
                 width: 600,
@@ -1132,184 +1126,118 @@
                 resizable: true,
                 onOpen: () => {
                     lucide.createIcons();
-                    document.getElementById('btnExportSkill')?.addEventListener('click', exportSkill);
-                    document.getElementById('btnEditSkill')?.addEventListener('click', editSkill);
-                    document.getElementById('btnTestSkill')?.addEventListener('click', testSkill);
+                    document.getElementById('btnEditWorkflow')?.addEventListener('click', editWorkflow);
+                    document.getElementById('btnRunWorkflow')?.addEventListener('click', runWorkflow);
                 }
             });
 
             detailModal.open();
         }
 
-        function closeDetailModal() {
-            if (detailModal) {
-                detailModal.close();
-                detailModal = null;
-            }
-            selectedSkill = null;
+        function editWorkflow() {
+            if (!selectedWorkflow || selectedWorkflow.is_system) return;
+            window.location.href = `/workflow-builder.html?edit=${selectedWorkflow.id}`;
         }
 
-        // Export skill
-        async function exportSkill() {
-            if (!selectedSkill) return;
-
-            try {
-                const res = await fetch(`/api/skills/${selectedSkill.id}/export`);
-                const data = await res.json();
-
-                if (data.success) {
-                    // Create download
-                    const blob = new Blob([data.data.content], { type: 'text/markdown' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = data.data.filename;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    ModalService.success(`Exported ${data.data.filename}`, 'Export Complete');
-                } else {
-                    ModalService.error(data.error || 'Export failed', 'Export Error');
-                }
-            } catch (error) {
-                console.error('Error exporting skill:', error);
-                ModalService.error('Error exporting skill', 'Export Error');
-            }
+        function runWorkflow() {
+            if (!selectedWorkflow) return;
+            window.location.href = `/workflow-run.html?workflow=${selectedWorkflow.id}`;
         }
 
-        // Edit skill
-        function editSkill() {
-            if (!selectedSkill) return;
-            window.location.href = `/skill-creator.html?edit=${selectedSkill.id}`;
-        }
+        // Templates modal
+        let templatesModal = null;
 
-        // Test skill
-        async function testSkill() {
-            if (!selectedSkill) return;
-
-            const message = await ModalService.prompt({
-                title: 'Test Skill',
-                message: 'Enter a test message for this skill:',
-                placeholder: 'Type your message here...'
-            });
-
-            if (!message) return;
-
-            // Show loading
-            const loading = ModalService.loading({ message: 'Testing skill...' });
-
-            try {
-                const res = await fetch(`/api/skills/${selectedSkill.id}/test`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-
-                const data = await res.json();
-                loading.close();
-
-                if (data.success) {
-                    // Show response in a content modal
-                    ModalService.content({
-                        title: 'Skill Response',
-                        content: data.data.content,
-                        contentType: 'markdown',
-                        width: 600
-                    }).open();
-                } else {
-                    ModalService.error(data.error, 'Test Error');
-                }
-            } catch (error) {
-                loading.close();
-                console.error('Error testing skill:', error);
-                ModalService.error('Error testing skill', 'Test Error');
-            }
-        }
-
-        // Import modal - using ModalService
-        let importModal = null;
-
-        function showImportModal() {
-            const content = `
+        function showTemplates() {
+            const content = templates.length > 0 ? `
                 <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                    Paste SKILL.md content below to import a skill:
+                    Start with a pre-built workflow template:
                 </p>
-                <textarea id="importContent" style="width:100%;height:300px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--text-primary);resize:vertical;" placeholder="---
-name: my-skill
-description: &quot;Skill description&quot;
-version: 1.0.0
-category: content
-suite: execute
-required_context: [&quot;voice_dna&quot;]
----
-
-# My Skill
-
-## Instructions
-
-Your skill instructions here..."></textarea>
+                <div style="display:flex;flex-direction:column;gap:0.75rem;max-height:400px;overflow-y:auto;">
+                    ${templates.map(tpl => `
+                        <div class="step-item" style="cursor:pointer;" onclick="createFromTemplate('${tpl.id}')">
+                            <div class="workflow-icon" style="width:40px;height:40px;background:${tpl.color ? `${tpl.color}20` : 'var(--bg-tertiary)'};color:${tpl.color || 'var(--primary)'};">
+                                <i data-lucide="${tpl.icon || 'layout-template'}" style="width:20px;height:20px;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <strong>${tpl.display_name || tpl.name}</strong>
+                                <div style="font-size:0.8rem;color:var(--text-muted);">${tpl.description || ''}</div>
+                                <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
+                                    ${tpl.suite ? `<span class="workflow-suite ${tpl.suite}" style="font-size:0.65rem;">${tpl.suite}</span>` : ''}
+                                    ${tpl.category ? `<span class="workflow-category-badge" style="font-size:0.65rem;">${tpl.category}</span>` : ''}
+                                </div>
+                            </div>
+                            <span style="color:var(--text-muted);font-size:0.8rem;">${tpl.usage_count || 0} uses</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : `
+                <div class="empty-state">
+                    <div class="empty-icon">&#x1F4DD;</div>
+                    <h3>No Templates Available</h3>
+                    <p>Templates will be added soon. In the meantime, create a workflow from scratch.</p>
+                </div>
             `;
 
             const footer = `
                 <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
-                <button type="button" class="i360-btn i360-btn-primary" id="btnImportSkill">
-                    <i data-lucide="upload" style="width:16px;height:16px;"></i> Import Skill
+                <button type="button" class="i360-btn i360-btn-primary" onclick="goToBuilder()">
+                    <i data-lucide="plus" style="width:16px;height:16px;"></i> Create from Scratch
                 </button>
             `;
 
-            importModal = ModalService.create({
-                title: 'Import Skill',
+            templatesModal = ModalService.create({
+                title: 'Workflow Templates',
                 content: content,
                 footer: footer,
                 width: 600,
                 draggable: true,
                 onOpen: () => {
                     lucide.createIcons();
-                    document.getElementById('btnImportSkill')?.addEventListener('click', importSkill);
                 }
             });
 
-            importModal.open();
+            templatesModal.open();
         }
 
-        function closeImportModal() {
-            if (importModal) {
-                importModal.close();
-                importModal = null;
-            }
-        }
+        async function createFromTemplate(templateId) {
+            const template = templates.find(t => t.id === templateId);
+            if (!template) return;
 
-        async function importSkill() {
-            const content = document.getElementById('importContent')?.value?.trim();
-            if (!content) {
-                ModalService.warning('Please paste SKILL.md content', 'Missing Content');
-                return;
-            }
+            const name = await ModalService.prompt({
+                title: 'Create Workflow',
+                message: `Create a new workflow from "${template.display_name || template.name}"`,
+                placeholder: 'Enter workflow name...',
+                defaultValue: template.display_name || template.name
+            });
+
+            if (!name) return;
 
             try {
-                const res = await fetch('/api/skills/import', {
+                const res = await fetch(`/api/workflows/from-template/${templateId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content })
+                    body: JSON.stringify({ name })
                 });
 
                 const data = await res.json();
 
                 if (data.success) {
-                    closeImportModal();
-                    await loadSkills();
-                    ModalService.success(`Skill "${data.data.display_name}" imported successfully!`, 'Import Complete');
+                    if (templatesModal) templatesModal.close();
+                    ModalService.success(`Workflow "${name}" created!`, 'Created');
+                    await loadWorkflows();
+                    buildCategories();
                 } else {
-                    ModalService.error(data.error, 'Import Error');
+                    ModalService.error(data.error || 'Failed to create workflow', 'Error');
                 }
             } catch (error) {
-                console.error('Error importing skill:', error);
-                ModalService.error('Error importing skill', 'Import Error');
+                console.error('Error creating from template:', error);
+                ModalService.error('Failed to create workflow', 'Error');
             }
         }
 
         // Navigation
-        function goToCreator() {
-            window.location.href = '/skill-creator.html';
+        function goToBuilder() {
+            window.location.href = '/workflow-builder.html';
         }
     </script>
     <script src="/js/help-modal.js"></script>

@@ -452,6 +452,61 @@
             align-items: center;
             gap: 0.5rem;
         }
+
+        /* Platform Connections (Phase 36) */
+        .connection-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .connection-item.connected {
+            border-color: #10b981;
+        }
+
+        .connection-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .connection-icon.linkedin {
+            background: #0077b5;
+        }
+
+        .connection-icon.x {
+            background: #000;
+        }
+
+        .connection-icon.substack {
+            background: #ff6719;
+        }
+
+        .connection-info {
+            flex: 1;
+        }
+
+        .connection-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .connection-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .connection-status.connected {
+            color: #10b981;
+        }
     </style>
 </head>
 <body>
@@ -560,6 +615,21 @@
                     </div>
                 </div>
 
+                <!-- Platform Connections Card (Phase 36) -->
+                <div class="profile-card" id="connectionsCard">
+                    <div class="profile-card-header">
+                        <h2><i data-lucide="link"></i> Platform Connections</h2>
+                    </div>
+                    <div class="profile-card-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                            Connect your social accounts to enable publishing from Insight 360
+                        </p>
+                        <div id="platformConnections" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Connections loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Onboarding Progress Card -->
                 <div class="profile-card" id="onboardingCard">
                     <div class="profile-card-header">
@@ -633,10 +703,14 @@
                 if (result.success) {
                     currentProfile = result.data;
                     populateForm(currentProfile);
+                    // Load platform connections after profile is available
+                    loadPlatformConnections();
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
                 showToast('Failed to load profile', 'error');
+                // Still try to load connections (will show "not connected" state)
+                loadPlatformConnections();
             }
         }
 
@@ -933,6 +1007,140 @@
                 toast.classList.remove('show');
             }, 3000);
         }
+
+        // ============================================
+        // PLATFORM CONNECTIONS (Phase 36)
+        // ============================================
+
+        function getValidUserId() {
+            // Try currentProfile first
+            if (currentProfile?.id) return currentProfile.id;
+            // Try localStorage
+            try {
+                const userData = localStorage.getItem('insight360_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user.id) return user.id;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        async function loadPlatformConnections() {
+            const container = document.getElementById('platformConnections');
+            if (!container) return;
+
+            try {
+                const token = getAuthToken();
+                const userId = getValidUserId();
+
+                const response = await fetch('/api/oauth/connections', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-User-Id': userId
+                    }
+                });
+                const data = await response.json();
+
+                const connections = data.connections || [];
+                const platforms = data.availablePlatforms || [];
+
+                container.innerHTML = platforms.map(platform => {
+                    const connection = connections.find(c => c.platform === platform.id);
+                    const isConnected = connection && connection.status === 'active';
+
+                    return `
+                        <div class="connection-item ${isConnected ? 'connected' : ''}">
+                            <div class="connection-icon ${platform.id}">
+                                <i data-lucide="${platform.id === 'x' ? 'twitter' : platform.id}"></i>
+                            </div>
+                            <div class="connection-info">
+                                <div class="connection-name">${platform.name}</div>
+                                <div class="connection-status ${isConnected ? 'connected' : ''}">
+                                    ${isConnected
+                                        ? `Connected as ${connection.platform_username}`
+                                        : (platform.configured ? 'Not connected' : 'Coming soon')
+                                    }
+                                </div>
+                            </div>
+                            ${platform.configured ? (isConnected
+                                ? `<button class="btn btn-sm btn-ghost" onclick="disconnectPlatform('${platform.id}')">
+                                    Disconnect
+                                   </button>`
+                                : `<button class="btn btn-sm btn-primary" onclick="connectPlatform('${platform.id}')">
+                                    Connect
+                                   </button>`
+                            ) : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading connections:', error);
+                container.innerHTML = '<p style="color: var(--text-muted);">Failed to load connections</p>';
+            }
+        }
+
+        async function connectPlatform(platform) {
+            try {
+                const token = getAuthToken();
+                const userId = getValidUserId();
+
+                const response = await fetch(`/api/oauth/${platform}/authorize`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-User-Id': userId
+                    }
+                });
+                const data = await response.json();
+
+                if (data.authUrl) {
+                    window.location.href = data.authUrl;
+                } else {
+                    showToast(data.error || 'Failed to get authorization URL', 'error');
+                }
+            } catch (error) {
+                console.error('Error connecting platform:', error);
+                showToast('Failed to connect: ' + error.message, 'error');
+            }
+        }
+
+        async function disconnectPlatform(platform) {
+            if (!confirm(`Disconnect your ${platform} account?`)) return;
+
+            try {
+                const token = getAuthToken();
+                const userId = getValidUserId();
+
+                await fetch(`/api/oauth/${platform}/disconnect`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-User-Id': userId
+                    }
+                });
+
+                showToast(`${platform} disconnected`, 'success');
+                await loadPlatformConnections();
+            } catch (error) {
+                console.error('Error disconnecting platform:', error);
+                showToast('Failed to disconnect: ' + error.message, 'error');
+            }
+        }
+
+        // Check for OAuth callback results
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('oauth_success')) {
+                showToast(`${urlParams.get('oauth_success')} connected successfully!`, 'success');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.get('oauth_error')) {
+                showToast('Connection failed: ' + urlParams.get('oauth_error'), 'error');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+        });
     </script>
 </body>
 </html>

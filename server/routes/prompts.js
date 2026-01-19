@@ -455,7 +455,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
             }
 
             // Post-process based on type
-            const userId = req.userId || req.user?.id || null;
+            const userId = req.headers['x-user-id'] || req.userId || req.user?.id || null;
             let savedRecord = null;
             let defaultVisibility = 'team'; // Default visibility
 
@@ -483,13 +483,20 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                     console.log('Using default visibility (team):', permErr.message);
                 }
 
+                // Helper to make name unique if duplicate exists
+                const makeUniqueName = (baseName) => {
+                    const timestamp = Date.now().toString(36);
+                    return `${baseName}-${timestamp}`;
+                };
+
                 switch (finalTargetType) {
                     case 'skill':
                         // Save to skills table
+                        let skillName = transformed.name || generateSkillName(prompt, name_hint);
                         const skillData = {
                             id: uuidv4(),
                             user_id: userId,
-                            name: transformed.name || generateSkillName(prompt, name_hint),
+                            name: skillName,
                             display_name: transformed.display_name,
                             description: transformed.description,
                             instructions: transformed.instructions,
@@ -505,11 +512,24 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                             created_by: userId
                         };
 
-                        const { data: skillRecord, error: skillError } = await supabase
+                        let { data: skillRecord, error: skillError } = await supabase
                             .from('skills')
                             .insert(skillData)
                             .select()
                             .single();
+
+                        // Handle duplicate name - add timestamp suffix
+                        if (skillError && skillError.code === '23505') {
+                            skillData.name = makeUniqueName(skillName);
+                            skillData.id = uuidv4();
+                            const retry = await supabase
+                                .from('skills')
+                                .insert(skillData)
+                                .select()
+                                .single();
+                            skillRecord = retry.data;
+                            skillError = retry.error;
+                        }
 
                         if (skillError) throw skillError;
                         savedRecord = skillRecord;
@@ -519,11 +539,13 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                         // Save to agents table
                         // Map visibility to is_public (public=true, team/private=false)
                         const isPublic = defaultVisibility === 'public';
+                        let agentName = transformed.name;
+                        let agentSlug = transformed.slug;
                         const agentData = {
                             id: uuidv4(),
                             user_id: userId,
-                            name: transformed.name,
-                            slug: transformed.slug,
+                            name: agentName,
+                            slug: agentSlug,
                             icon: transformed.icon || '🤖',
                             description: transformed.description,
                             category: transformed.category || 'strategy',
@@ -535,20 +557,29 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                             is_public: isPublic,
                             required_context_types: transformed.required_context_types || [],
                             optional_context_types: transformed.optional_context_types || [],
-                            tags: transformed.tags || ['transformed'],
-                            metadata: {
-                                source: 'prompt-transformer',
-                                original_prompt_length: prompt.length,
-                                transformation_date: new Date().toISOString(),
-                                visibility: defaultVisibility
-                            }
+                            tags: transformed.tags || ['transformed']
                         };
 
-                        const { data: agentRecord, error: agentError } = await supabase
+                        let { data: agentRecord, error: agentError } = await supabase
                             .from('agents')
                             .insert(agentData)
                             .select()
                             .single();
+
+                        // Handle duplicate name/slug - add timestamp suffix
+                        if (agentError && agentError.code === '23505') {
+                            const suffix = Date.now().toString(36);
+                            agentData.name = `${agentName}-${suffix}`;
+                            agentData.slug = `${agentSlug}-${suffix}`;
+                            agentData.id = uuidv4();
+                            const retry = await supabase
+                                .from('agents')
+                                .insert(agentData)
+                                .select()
+                                .single();
+                            agentRecord = retry.data;
+                            agentError = retry.error;
+                        }
 
                         if (agentError) throw agentError;
                         savedRecord = agentRecord;

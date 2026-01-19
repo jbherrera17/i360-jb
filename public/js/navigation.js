@@ -20,7 +20,8 @@ const navConfig = {
     primary: [
         { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
         { href: '/chat.html', icon: 'graduation-cap', label: 'Higgins' },
-        { href: '/agents.html', icon: 'bot', label: 'Agent Library' }
+        { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
+        { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' }
     ],
 
     // Grouped items - collapsible categories
@@ -53,18 +54,8 @@ const navConfig = {
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
-                { href: '/skill-creator.html', icon: 'sparkles', label: 'Skill Creator' },
-                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' },
-                { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' }
-            ]
-        },
-        {
-            id: 'workflows',
-            label: 'Workflows',
-            icon: 'git-branch',
-            items: [
-                { href: '/workflow-builder.html', icon: 'workflow', label: 'Workflow Builder' },
-                { href: '/workflow-run.html', icon: 'play-circle', label: 'Workflow Runner' }
+                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' },
+                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' }
             ]
         },
         {
@@ -83,14 +74,7 @@ const navConfig = {
             icon: 'settings',
             adminOnly: true,
             items: [
-                { href: '/parthenon.html', icon: 'landmark', label: 'Parthenon' },
-                { href: '/admin.html', icon: 'users', label: 'User Management' },
-                { href: '/system-health.html', icon: 'activity', label: 'System Health' },
-                { href: '/synerginexus.html', icon: 'brain-circuit', label: 'SynergiNexus' },
-                { href: '/tags.html', icon: 'tags', label: 'Tag Management' },
-                { href: '/roles.html', icon: 'user-cog', label: 'Title Management' },
-                { href: '/asset-types.html', icon: 'folder-cog', label: 'Asset Types' },
-                { href: '/admin-icons.html', icon: 'image', label: 'Icon Library' }
+                { href: '/administrator.html', icon: 'shield', label: 'Administrator' }
             ]
         }
     ]

@@ -49,6 +49,7 @@ const departmentRolesRoutes = require('./routes/department-roles');
 const userProfileRoutes = require('./routes/user-profile');
 const synerginexusRoutes = require('./routes/synerginexus');
 const thoughtLeadershipRoutes = require('./routes/thought-leadership');
+const oauthRoutes = require('./routes/oauth');
 const modelAvailabilityRoutes = require('./routes/model-availability');
 const visualizationsRoutes = require('./routes/visualizations');
 const schedulerService = require('./services/schedulerService');
@@ -356,6 +357,7 @@ function initializeServices() {
         app.use('/api/user-profile', userProfileRoutes(supabase));
         app.use('/api/synerginexus', synerginexusRoutes(supabase));
         app.use('/api/thought-leadership', thoughtLeadershipRoutes(supabase));
+        app.use('/api/oauth', oauthRoutes(supabase));
         app.use('/api/models', modelAvailabilityRoutes);
         app.use('/api/visualizations', visualizationsRoutes);
         console.log('  ✅ Agent routes registered');
@@ -388,6 +390,11 @@ function initializeServices() {
         schedulerService.initializeScheduler()
             .then(() => console.log('  ✅ Briefing scheduler initialized'))
             .catch(err => console.error('  ⚠️ Briefing scheduler failed:', err.message));
+
+        // Initialize publishing scheduler
+        schedulerService.initializePublishingScheduler()
+            .then(() => console.log('  ✅ Publishing scheduler initialized'))
+            .catch(err => console.error('  ⚠️ Publishing scheduler failed:', err.message));
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }

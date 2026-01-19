@@ -118,28 +118,49 @@ module.exports = function(supabase) {
 
             if (catError) throw catError;
 
-            // Get counts per category
+            // Get counts per category (count all skills, not just active)
             const { data: skills, error: skillError } = await supabase
                 .from('skills')
-                .select('category')
-                .eq('status', 'active');
+                .select('category, status');
 
             if (skillError) throw skillError;
 
             const counts = {};
+            const activeCounts = {};
             (skills || []).forEach(s => {
                 counts[s.category] = (counts[s.category] || 0) + 1;
+                if (s.status === 'active') {
+                    activeCounts[s.category] = (activeCounts[s.category] || 0) + 1;
+                }
             });
 
             // Add counts to categories
             const categoriesWithCounts = (categories || []).map(cat => ({
                 ...cat,
-                count: counts[cat.category_key] || 0
+                count: counts[cat.category_key] || 0,
+                active_count: activeCounts[cat.category_key] || 0
             }));
+
+            // Add any categories found in skills but not in categories table
+            const knownKeys = new Set((categories || []).map(c => c.category_key));
+            const dynamicCategories = Object.keys(counts)
+                .filter(key => key && !knownKeys.has(key))
+                .map((key, idx) => ({
+                    id: `dynamic-${key}`,
+                    category_key: key,
+                    display_name: key.charAt(0).toUpperCase() + key.slice(1),
+                    description: `${key} skills`,
+                    icon: 'folder',
+                    color: '#6b7280',
+                    sort_order: 100 + idx,
+                    is_active: true,
+                    count: counts[key] || 0,
+                    active_count: activeCounts[key] || 0
+                }));
 
             res.json({
                 success: true,
-                data: categoriesWithCounts
+                data: [...categoriesWithCounts, ...dynamicCategories]
             });
 
         } catch (error) {

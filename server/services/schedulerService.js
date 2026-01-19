@@ -14,6 +14,7 @@ const { createClient } = require('@supabase/supabase-js');
 const briefingService = require('./briefingService');
 const s2eService = require('./s2eService');
 const modelAvailabilityService = require('./modelAvailabilityService');
+const linkedinService = require('./linkedinService');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -26,6 +27,9 @@ const activeJobs = new Map();
 
 // Store S2E health check jobs: Map<`${userId}-${type}`, cronJob>
 const activeS2EJobs = new Map();
+
+// Store publishing jobs: Map<publicationId, timeoutId>
+const activePublishingJobs = new Map();
 
 // Scheduler status
 let isInitialized = false;
@@ -513,6 +517,460 @@ async function triggerManualHealthCheck(userId, checkType = 'adhoc') {
     return generateHealthCheckForUser(userId, checkType);
 }
 
+// ============================================================================
+// OPTIMAL POSTING TIME LOGIC
+// ============================================================================
+
+/**
+ * Optimal posting times by platform and content type (in local timezone)
+ * Based on B2B social media engagement research
+ */
+const OPTIMAL_POSTING_TIMES = {
+    linkedin: {
+        article: {
+            preferredDays: [2, 3, 4],  // Tuesday, Wednesday, Thursday
+            preferredHours: [8, 9],     // 8-9 AM
+            alternativeHours: [11, 12], // 11 AM - 12 PM
+            avoidDays: [0, 6],          // Sunday, Saturday
+            avoidHours: [0, 1, 2, 3, 4, 5, 22, 23]  // Late night/early morning
+        },
+        linkedin_post: {
+            preferredDays: [2, 3],      // Tuesday, Wednesday
+            preferredHours: [10, 11],   // 10-11 AM
+            alternativeHours: [8, 9, 14, 15],  // 8-9 AM or 2-3 PM
+            avoidDays: [0, 6],
+            avoidHours: [0, 1, 2, 3, 4, 5, 22, 23]
+        },
+        default: {
+            preferredDays: [2, 3, 4],
+            preferredHours: [9, 10],
+            alternativeHours: [8, 11, 14],
+            avoidDays: [0, 6],
+            avoidHours: [0, 1, 2, 3, 4, 5, 22, 23]
+        }
+    },
+    x: {
+        default: {
+            preferredDays: [1, 2, 3, 4],  // Monday-Thursday
+            preferredHours: [9, 12, 17],   // 9 AM, 12 PM, 5 PM
+            alternativeHours: [8, 10, 11, 13, 14, 15, 16, 18],
+            avoidDays: [0, 6],
+            avoidHours: [0, 1, 2, 3, 4, 5, 6, 23]
+        }
+    }
+};
+
+/**
+ * Get the next optimal posting time for a given platform and content type
+ *
+ * @param {string} platform - Platform (linkedin, x, etc.)
+ * @param {string} timezone - User's timezone
+ * @param {string} contentType - Type of content (article, linkedin_post, etc.)
+ * @returns {Object} - { recommendedTime, reason, alternatives }
+ */
+function getOptimalPublishTime(platform, timezone = 'America/New_York', contentType = 'default') {
+    const platformConfig = OPTIMAL_POSTING_TIMES[platform] || OPTIMAL_POSTING_TIMES.linkedin;
+    const config = platformConfig[contentType] || platformConfig.default;
+
+    // Get current time in user's timezone
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+
+    const parts = formatter.formatToParts(now);
+    const currentHour = parseInt(parts.find(p => p.type === 'hour').value);
+    const currentDay = new Date(now.toLocaleString('en-US', { timeZone: timezone })).getDay();
+
+    // Find next optimal slot
+    let recommendedDate = new Date(now);
+    let daysToAdd = 0;
+    let selectedHour = config.preferredHours[0];
+    let reason = '';
+
+    // Check if we can schedule today
+    const todayIsPreferred = config.preferredDays.includes(currentDay);
+    const todayIsNotAvoided = !config.avoidDays.includes(currentDay);
+
+    if (todayIsPreferred) {
+        // Find next preferred hour today
+        const nextHourToday = config.preferredHours.find(h => h > currentHour);
+        if (nextHourToday) {
+            selectedHour = nextHourToday;
+            reason = `${getDayName(currentDay)} ${selectedHour}:00 - peak ${platform} engagement window`;
+        }
+    }
+
+    if (!reason && todayIsNotAvoided) {
+        // Try alternative hours today
+        const nextAltHour = config.alternativeHours.find(h => h > currentHour);
+        if (nextAltHour) {
+            selectedHour = nextAltHour;
+            reason = `${getDayName(currentDay)} ${selectedHour}:00 - good engagement window`;
+        }
+    }
+
+    // If nothing found today, find next preferred day
+    if (!reason) {
+        for (let i = 1; i <= 7; i++) {
+            const checkDay = (currentDay + i) % 7;
+            if (config.preferredDays.includes(checkDay)) {
+                daysToAdd = i;
+                selectedHour = config.preferredHours[0];
+                reason = `${getDayName(checkDay)} ${selectedHour}:00 - peak B2B engagement for ${platform}`;
+                break;
+            }
+        }
+    }
+
+    // Fallback to next non-avoided day
+    if (!reason) {
+        for (let i = 1; i <= 7; i++) {
+            const checkDay = (currentDay + i) % 7;
+            if (!config.avoidDays.includes(checkDay)) {
+                daysToAdd = i;
+                selectedHour = config.alternativeHours[0] || 10;
+                reason = `${getDayName(checkDay)} ${selectedHour}:00 - reasonable engagement window`;
+                break;
+            }
+        }
+    }
+
+    // Calculate recommended time
+    recommendedDate.setDate(recommendedDate.getDate() + daysToAdd);
+    recommendedDate.setHours(selectedHour, 0, 0, 0);
+
+    // Generate alternatives
+    const alternatives = [];
+
+    // Alternative 1: Different hour same day (if preferred day)
+    if (config.preferredDays.includes((currentDay + daysToAdd) % 7)) {
+        const altHour = config.alternativeHours.find(h => h !== selectedHour);
+        if (altHour) {
+            const altDate = new Date(recommendedDate);
+            altDate.setHours(altHour, 0, 0, 0);
+            alternatives.push({
+                time: altDate.toISOString(),
+                reason: `Alternative time slot - ${altHour}:00`
+            });
+        }
+    }
+
+    // Alternative 2: Next preferred day
+    const nextPreferredDay = config.preferredDays.find(d => d > (currentDay + daysToAdd) % 7);
+    if (nextPreferredDay !== undefined) {
+        const daysUntilNext = (nextPreferredDay - currentDay + 7) % 7 || 7;
+        const nextDate = new Date(now);
+        nextDate.setDate(nextDate.getDate() + daysUntilNext);
+        nextDate.setHours(config.preferredHours[0], 0, 0, 0);
+        alternatives.push({
+            time: nextDate.toISOString(),
+            reason: `${getDayName(nextPreferredDay)} morning - another peak engagement window`
+        });
+    }
+
+    return {
+        recommendedTime: recommendedDate.toISOString(),
+        reason,
+        alternatives: alternatives.slice(0, 2),
+        timezone,
+        platform,
+        contentType
+    };
+}
+
+/**
+ * Helper to get day name from day number
+ */
+function getDayName(dayNum) {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dayNum];
+}
+
+// ============================================================================
+// PUBLISHING SCHEDULER
+// ============================================================================
+
+/**
+ * Initialize the publishing scheduler - load all scheduled publications
+ */
+async function initializePublishingScheduler() {
+    console.log('[Scheduler] Initializing publishing scheduler...');
+
+    try {
+        // Load all scheduled publications
+        const { data: scheduled, error } = await supabase
+            .from('scheduled_publications')
+            .select('*')
+            .eq('status', 'scheduled')
+            .gte('scheduled_at', new Date().toISOString());
+
+        if (error) throw error;
+
+        let scheduledCount = 0;
+        for (const pub of scheduled || []) {
+            schedulePublication(pub);
+            scheduledCount++;
+        }
+
+        console.log(`[Scheduler] Loaded ${scheduledCount} scheduled publication(s)`);
+    } catch (error) {
+        console.error('[Scheduler] Failed to initialize publishing scheduler:', error);
+    }
+}
+
+/**
+ * Schedule a publication for future execution
+ * @param {Object} publication - Publication record from database
+ */
+function schedulePublication(publication) {
+    const scheduledTime = new Date(publication.scheduled_at);
+    const now = new Date();
+
+    // If already past, execute immediately
+    if (scheduledTime <= now) {
+        console.log(`[Scheduler] Publication ${publication.id} is past due, executing now`);
+        executePublication(publication.id);
+        return;
+    }
+
+    const delay = scheduledTime.getTime() - now.getTime();
+    console.log(`[Scheduler] Scheduling publication ${publication.id} for ${scheduledTime.toISOString()} (${Math.round(delay / 60000)} min)`);
+
+    const timeoutId = setTimeout(() => {
+        executePublication(publication.id);
+    }, delay);
+
+    activePublishingJobs.set(publication.id, timeoutId);
+}
+
+/**
+ * Execute a scheduled publication
+ * @param {string} publicationId - Publication ID
+ */
+async function executePublication(publicationId) {
+    console.log(`[Scheduler] Executing publication ${publicationId}`);
+
+    try {
+        // Get publication details
+        const { data: pub, error: fetchError } = await supabase
+            .from('scheduled_publications')
+            .select('*')
+            .eq('id', publicationId)
+            .single();
+
+        if (fetchError || !pub) {
+            console.error(`[Scheduler] Publication ${publicationId} not found`);
+            return;
+        }
+
+        if (pub.status !== 'scheduled') {
+            console.log(`[Scheduler] Publication ${publicationId} status is ${pub.status}, skipping`);
+            return;
+        }
+
+        // Update status to publishing
+        await supabase
+            .from('scheduled_publications')
+            .update({ status: 'publishing', updated_at: new Date().toISOString() })
+            .eq('id', publicationId);
+
+        let result;
+        let errorMessage = null;
+
+        try {
+            switch (pub.platform) {
+                case 'linkedin':
+                    result = await linkedinService.publishPost(pub.user_id, pub.content_text, {
+                        imageUrl: pub.media_urls?.[0],
+                        articleUrl: pub.content_json?.articleUrl,
+                        articleTitle: pub.content_json?.articleTitle
+                    });
+                    break;
+
+                // Future platforms
+                case 'x':
+                case 'substack':
+                    throw new Error(`${pub.platform} publishing not yet implemented`);
+
+                default:
+                    throw new Error(`Unknown platform: ${pub.platform}`);
+            }
+
+            // Success - update publication record
+            await supabase
+                .from('scheduled_publications')
+                .update({
+                    status: 'published',
+                    published_at: new Date().toISOString(),
+                    published_url: result.postUrl,
+                    platform_post_id: result.postId,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', publicationId);
+
+            // Add to publication history
+            await supabase
+                .from('publication_history')
+                .insert({
+                    scheduled_publication_id: publicationId,
+                    user_id: pub.user_id,
+                    calendar_entry_id: pub.calendar_entry_id,
+                    platform: pub.platform,
+                    content_type: pub.content_type,
+                    published_at: new Date().toISOString(),
+                    published_url: result.postUrl,
+                    platform_post_id: result.postId,
+                    content_preview: pub.content_text.substring(0, 500),
+                    media_count: pub.media_urls?.length || 0
+                });
+
+            console.log(`[Scheduler] Publication ${publicationId} completed successfully`);
+
+        } catch (publishError) {
+            errorMessage = publishError.message;
+            console.error(`[Scheduler] Publication ${publicationId} failed:`, publishError);
+
+            const retryCount = (pub.retry_count || 0) + 1;
+            const maxRetries = pub.max_retries || 3;
+
+            if (retryCount < maxRetries) {
+                // Schedule retry in 5 minutes
+                const retryAt = new Date(Date.now() + 5 * 60 * 1000);
+
+                await supabase
+                    .from('scheduled_publications')
+                    .update({
+                        status: 'scheduled',
+                        scheduled_at: retryAt.toISOString(),
+                        retry_count: retryCount,
+                        last_retry_at: new Date().toISOString(),
+                        error_message: errorMessage,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', publicationId);
+
+                console.log(`[Scheduler] Publication ${publicationId} scheduled for retry ${retryCount}/${maxRetries}`);
+
+                // Schedule the retry
+                schedulePublication({
+                    ...pub,
+                    scheduled_at: retryAt.toISOString(),
+                    retry_count: retryCount
+                });
+            } else {
+                // Max retries reached
+                await supabase
+                    .from('scheduled_publications')
+                    .update({
+                        status: 'failed',
+                        error_message: errorMessage,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', publicationId);
+
+                console.log(`[Scheduler] Publication ${publicationId} failed after ${maxRetries} retries`);
+            }
+        }
+
+    } catch (error) {
+        console.error(`[Scheduler] Error executing publication ${publicationId}:`, error);
+    } finally {
+        activePublishingJobs.delete(publicationId);
+    }
+}
+
+/**
+ * Cancel a scheduled publication
+ * @param {string} publicationId - Publication ID
+ */
+async function cancelScheduledPublication(publicationId) {
+    // Cancel the timeout
+    if (activePublishingJobs.has(publicationId)) {
+        clearTimeout(activePublishingJobs.get(publicationId));
+        activePublishingJobs.delete(publicationId);
+    }
+
+    // Update database
+    const { error } = await supabase
+        .from('scheduled_publications')
+        .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', publicationId);
+
+    if (error) throw error;
+
+    console.log(`[Scheduler] Publication ${publicationId} cancelled`);
+    return { success: true };
+}
+
+/**
+ * Create and schedule a new publication
+ * @param {Object} options - Publication options
+ */
+async function createScheduledPublication(options) {
+    const {
+        userId,
+        calendarEntryId,
+        outputId,
+        platform,
+        scheduledAt,
+        timezone = 'America/New_York',
+        contentType,
+        contentText,
+        contentJson,
+        mediaUrls,
+        wasOptimalTime = false,
+        optimalTimeReason = null
+    } = options;
+
+    const { data, error } = await supabase
+        .from('scheduled_publications')
+        .insert({
+            user_id: userId,
+            calendar_entry_id: calendarEntryId,
+            output_id: outputId,
+            platform,
+            scheduled_at: scheduledAt,
+            timezone,
+            content_type: contentType,
+            content_text: contentText,
+            content_json: contentJson,
+            media_urls: mediaUrls,
+            was_optimal_time: wasOptimalTime,
+            optimal_time_reason: optimalTimeReason,
+            status: 'scheduled'
+        })
+        .select()
+        .single();
+
+    if (error) throw error;
+
+    // Schedule the job
+    schedulePublication(data);
+
+    console.log(`[Scheduler] Created publication ${data.id} for ${scheduledAt}`);
+    return data;
+}
+
+/**
+ * Get publishing scheduler status
+ */
+function getPublishingSchedulerStatus() {
+    return {
+        activeJobs: activePublishingJobs.size,
+        jobIds: Array.from(activePublishingJobs.keys())
+    };
+}
+
 module.exports = {
     // Core scheduling
     initializeScheduler,
@@ -539,5 +997,14 @@ module.exports = {
     cancelS2ESchedule,
     generateHealthCheckForUser,
     triggerManualHealthCheck,
-    getS2ESchedulerStatus
+    getS2ESchedulerStatus,
+
+    // Publishing Scheduling (NEW)
+    initializePublishingScheduler,
+    getOptimalPublishTime,
+    schedulePublication,
+    executePublication,
+    cancelScheduledPublication,
+    createScheduledPublication,
+    getPublishingSchedulerStatus
 };

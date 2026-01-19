@@ -1061,7 +1061,7 @@ module.exports = function(supabase) {
                     preferences,
                     created_at,
                     updated_at,
-                    department:departments(id, name, icon, color)
+                    department:departments!users_department_id_fkey(id, name, icon, color)
                 `)
                 .single();
 
@@ -1120,7 +1120,7 @@ module.exports = function(supabase) {
                     preferences,
                     created_at,
                     updated_at,
-                    department:departments(id, name, icon, color)
+                    department:departments!users_department_id_fkey(id, name, icon, color)
                 `)
                 .eq('id', user.id)
                 .single();

@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
     try {
         const supabase = req.supabase;
         const userId = getUserId(req);
-        const { category, suite, is_system } = req.query;
+        const { category, suite, is_system, department_id } = req.query;
 
         let query = supabase
             .from('workflows')
@@ -33,6 +33,7 @@ router.get('/', async (req, res) => {
                 is_public,
                 is_system,
                 usage_count,
+                department_id,
                 created_at,
                 updated_at,
                 department:departments(id, name, icon, color)
@@ -50,6 +51,7 @@ router.get('/', async (req, res) => {
         if (category) query = query.eq('category', category);
         if (suite) query = query.eq('suite', suite);
         if (is_system !== undefined) query = query.eq('is_system', is_system === 'true');
+        if (department_id) query = query.eq('department_id', department_id);
 
         query = query.order('usage_count', { ascending: false });
 

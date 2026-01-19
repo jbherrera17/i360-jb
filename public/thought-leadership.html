@@ -1088,6 +1088,167 @@
                 justify-content: center;
             }
         }
+
+        /* Image Generation Styles (Phase 36) */
+        .image-style-select {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .image-style-option {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .image-style-option:hover {
+            border-color: var(--primary);
+        }
+
+        .image-style-option.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .generated-image-preview {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Publishing & Scheduling Styles (Phase 36) */
+        .platform-connections {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .platform-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            min-width: 200px;
+        }
+
+        .platform-card.connected {
+            border-color: var(--success);
+        }
+
+        .platform-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .platform-icon.linkedin {
+            background: #0077b5;
+        }
+
+        .platform-info {
+            flex: 1;
+        }
+
+        .platform-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .platform-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .platform-status.connected {
+            color: var(--success);
+        }
+
+        .scheduling-time-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .optimal-time-suggestion {
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .optimal-time-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .optimal-time-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .optimal-time-reason {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .scheduled-queue {
+            margin-top: 1.5rem;
+        }
+
+        .scheduled-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .scheduled-item-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .scheduled-item-platform {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            background: #0077b5;
+        }
+
+        .scheduled-item-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
@@ -1541,6 +1702,15 @@
                         <div class="action-text">
                             <h4>Design Pillars</h4>
                             <p>Create or refine content pillars</p>
+                        </div>
+                    </div>
+                    <div class="action-card" onclick="openSchedulingModal()">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                            <i data-lucide="calendar-clock"></i>
+                        </div>
+                        <div class="action-text">
+                            <h4>Schedule Content</h4>
+                            <p>Schedule posts for optimal times</p>
                         </div>
                     </div>
                 </section>
@@ -2577,6 +2747,188 @@ Start by asking about their current online presence and platforms.`
                 // Wrap in paragraph
                 .replace(/^(.+)$/, '<p style="margin: 12px 0;">$1</p>');
         }
+
+        // ============================================
+        // SCHEDULING FUNCTIONS (Phase 36)
+        // ============================================
+
+        let linkedinConnected = false;
+        let optimalTimeData = null;
+
+        // Check LinkedIn connection status
+        async function checkLinkedInStatus() {
+            try {
+                const response = await fetch('/api/oauth/linkedin/status', {
+                    headers: { 'X-User-Id': getUserId() }
+                });
+                const data = await response.json();
+                linkedinConnected = data.connected;
+                return data;
+            } catch (err) {
+                console.error('Error checking LinkedIn status:', err);
+                return { connected: false };
+            }
+        }
+
+        // Get optimal posting time
+        async function getOptimalTime(platform = 'linkedin', contentType = 'linkedin_post') {
+            try {
+                const response = await fetch(`/api/thought-leadership/publish/optimal-time?platform=${platform}&content_type=${contentType}`, {
+                    headers: { 'X-User-Id': getUserId() }
+                });
+                optimalTimeData = await response.json();
+                return optimalTimeData;
+            } catch (err) {
+                console.error('Error getting optimal time:', err);
+                return null;
+            }
+        }
+
+        // Open Scheduling Modal
+        async function openSchedulingModal() {
+            const status = await checkLinkedInStatus();
+            const optimal = await getOptimalTime();
+
+            const optimalDate = optimal?.recommendedTime ? new Date(optimal.recommendedTime) : null;
+            const formattedOptimal = optimalDate ? optimalDate.toLocaleString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            }) : 'Unable to calculate';
+
+            const modal = ModalService.create({
+                title: 'Schedule Content',
+                size: 'medium',
+                content: `
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="margin-bottom: 12px;">Platform Connections</h4>
+                        <div class="platform-connections">
+                            <div class="platform-card ${status.connected ? 'connected' : ''}">
+                                <div class="platform-icon linkedin">
+                                    <i data-lucide="linkedin"></i>
+                                </div>
+                                <div class="platform-info">
+                                    <div class="platform-name">LinkedIn</div>
+                                    <div class="platform-status ${status.connected ? 'connected' : ''}">
+                                        ${status.connected ? `Connected as ${status.username}` : 'Not connected'}
+                                    </div>
+                                </div>
+                                ${!status.connected ? `
+                                    <button class="btn btn-sm btn-primary" onclick="connectLinkedIn()">
+                                        Connect
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-sm btn-ghost" onclick="disconnectLinkedIn()">
+                                        Disconnect
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+
+                        ${status.connected ? `
+                            <h4 style="margin-bottom: 12px; margin-top: 20px;">Optimal Posting Time</h4>
+                            <div class="optimal-time-suggestion">
+                                <div class="optimal-time-text">
+                                    <div class="optimal-time-value">${formattedOptimal}</div>
+                                    <div class="optimal-time-reason">${optimal?.reason || ''}</div>
+                                </div>
+                                <button class="btn btn-sm btn-primary" onclick="useOptimalTime()">
+                                    Use This Time
+                                </button>
+                            </div>
+
+                            <h4 style="margin-bottom: 12px; margin-top: 20px;">Or Choose Custom Time</h4>
+                            <div class="scheduling-time-picker">
+                                <input type="datetime-local" id="custom-schedule-time" class="form-control"
+                                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-tertiary);">
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                                <p>Connect your LinkedIn account to schedule posts</p>
+                            </div>
+                        `}
+                    </div>
+                `,
+                buttons: status.connected ? [
+                    { label: 'Schedule', variant: 'primary', onClick: () => scheduleSelectedContent() },
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ] : [
+                    { label: 'Close', variant: 'secondary', onClick: () => modal.close() }
+                ]
+            });
+            modal.open();
+            setTimeout(() => lucide.createIcons(), 100);
+        }
+
+        // Connect LinkedIn
+        async function connectLinkedIn() {
+            try {
+                const response = await fetch('/api/oauth/linkedin/authorize', {
+                    headers: { 'X-User-Id': getUserId() }
+                });
+                const data = await response.json();
+                if (data.authUrl) {
+                    window.location.href = data.authUrl;
+                } else {
+                    alert('Failed to get authorization URL: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Error connecting LinkedIn:', err);
+                alert('Error connecting to LinkedIn: ' + err.message);
+            }
+        }
+
+        // Disconnect LinkedIn
+        async function disconnectLinkedIn() {
+            if (!confirm('Disconnect your LinkedIn account?')) return;
+
+            try {
+                await fetch('/api/oauth/linkedin/disconnect', {
+                    method: 'DELETE',
+                    headers: { 'X-User-Id': getUserId() }
+                });
+                openSchedulingModal(); // Refresh modal
+            } catch (err) {
+                console.error('Error disconnecting LinkedIn:', err);
+            }
+        }
+
+        // Use optimal time
+        function useOptimalTime() {
+            if (optimalTimeData?.recommendedTime) {
+                const input = document.getElementById('custom-schedule-time');
+                if (input) {
+                    const date = new Date(optimalTimeData.recommendedTime);
+                    input.value = date.toISOString().slice(0, 16);
+                }
+            }
+        }
+
+        // Schedule content
+        async function scheduleSelectedContent() {
+            const timeInput = document.getElementById('custom-schedule-time');
+            if (!timeInput || !timeInput.value) {
+                alert('Please select a time to schedule');
+                return;
+            }
+
+            // This would need to be connected to actual content selection
+            alert('Scheduling functionality requires content selection. Use this from a calendar entry to schedule specific content.');
+        }
+
+        // Check for OAuth success/error on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('oauth_success') === 'linkedin') {
+                alert('LinkedIn connected successfully!');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.get('oauth_error')) {
+                alert('LinkedIn connection failed: ' + urlParams.get('oauth_error'));
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
     </script>
     <script src="/js/help-modal.js"></script>
     <script>

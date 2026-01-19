@@ -14,6 +14,9 @@ const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
 const notionService = require('../services/notionService');
 const { executeAgent } = require('../services/agentService');
+const tlImageService = require('../services/tlImageService');
+const linkedinService = require('../services/linkedinService');
+const schedulerService = require('../services/schedulerService');
 
 // TL Agent IDs (from seed-thought-leadership-agents.sql)
 const TL_AGENTS = {
@@ -1248,7 +1251,9 @@ Generate all 5 posts now in JSON format:
                 calendar_entry_id,
                 format = 'medium',
                 research_findings,
-                additional_context
+                additional_context,
+                generate_image = true,
+                image_style = 'professional'
             } = req.body;
 
             if (!topic) {
@@ -1260,6 +1265,7 @@ Generate all 5 posts now in JSON format:
                 article: null,
                 article_ai: null,
                 linkedin_posts: null,
+                header_image: null,
                 errors: []
             };
 
@@ -1406,6 +1412,33 @@ Generate all 5 posts in JSON format:
                 }
             }
 
+            // STEP 4: Generate Header Image (only if article succeeded and image generation enabled)
+            if (results.article && generate_image) {
+                console.log(`[TL Package] Step 4: Generating ${image_style} header image`);
+                try {
+                    const imageResult = await tlImageService.generateArticleImage(results.article.content, {
+                        style: image_style,
+                        topic,
+                        pillar: pillarInfo?.name,
+                        thesis: profile?.core_thesis,
+                        calendarEntryId: calendar_entry_id,
+                        userId
+                    });
+
+                    results.header_image = {
+                        url: imageResult.url,
+                        prompt: imageResult.prompt,
+                        revisedPrompt: imageResult.revisedPrompt,
+                        style: imageResult.style,
+                        styleName: imageResult.styleName,
+                        generationTimeMs: imageResult.generationTimeMs
+                    };
+                } catch (imageErr) {
+                    console.error('[TL Package] Image generation failed:', imageErr);
+                    results.errors.push({ step: 'image', error: imageErr.message });
+                }
+            }
+
             const totalDuration = Date.now() - packageStartTime;
 
             // Save outputs if calendar_entry_id provided
@@ -1477,6 +1510,7 @@ Generate all 5 posts in JSON format:
                     .eq('id', calendar_entry_id);
             }
 
+            const totalSteps = generate_image ? 4 : 3;
             console.log(`[TL Package] Complete in ${totalDuration}ms with ${results.errors.length} errors`);
 
             res.json({
@@ -1485,20 +1519,455 @@ Generate all 5 posts in JSON format:
                     article: results.article?.content,
                     article_ai_optimized: results.article_ai?.content,
                     linkedin_posts: results.linkedin_posts?.posts || null,
-                    linkedin_raw: results.linkedin_posts?.raw
+                    linkedin_raw: results.linkedin_posts?.raw,
+                    header_image: results.header_image || null
                 },
                 metadata: {
                     topic,
                     format,
                     pillar: pillarInfo?.name,
+                    image_style: generate_image ? image_style : null,
                     total_duration_ms: totalDuration,
-                    steps_completed: 3 - results.errors.length,
+                    steps_completed: totalSteps - results.errors.length,
                     saved_outputs: savedOutputs,
                     errors: results.errors.length > 0 ? results.errors : undefined
                 }
             });
         } catch (err) {
             console.error('Error generating package:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ============================================================================
+    // IMAGE GENERATION ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/thought-leadership/images/styles
+     * Get available image styles
+     */
+    router.get('/images/styles', (req, res) => {
+        res.json({
+            styles: tlImageService.getImageStyles()
+        });
+    });
+
+    /**
+     * POST /api/thought-leadership/generate/image
+     * Generate a header image for an article
+     */
+    router.post('/generate/image', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const {
+                calendar_entry_id,
+                article_content,
+                style = 'professional',
+                topic,
+                pillar_id
+            } = req.body;
+
+            // Get article content from calendar entry if not provided directly
+            let content = article_content;
+            let pillarInfo = null;
+            let entryTopic = topic;
+
+            if (calendar_entry_id && !content) {
+                const { data: entry } = await supabase
+                    .from('content_calendar_entries')
+                    .select('article_markdown, title, pillar_id')
+                    .eq('id', calendar_entry_id)
+                    .single();
+
+                if (entry) {
+                    content = entry.article_markdown;
+                    entryTopic = entryTopic || entry.title;
+                    if (entry.pillar_id) {
+                        const { data: pillar } = await supabase
+                            .from('content_pillars')
+                            .select('name')
+                            .eq('id', entry.pillar_id)
+                            .single();
+                        pillarInfo = pillar;
+                    }
+                }
+            }
+
+            // Get pillar info if pillar_id provided
+            if (pillar_id && !pillarInfo) {
+                const { data: pillar } = await supabase
+                    .from('content_pillars')
+                    .select('name')
+                    .eq('id', pillar_id)
+                    .single();
+                pillarInfo = pillar;
+            }
+
+            if (!content && !entryTopic) {
+                return res.status(400).json({
+                    error: 'Either article_content, topic, or calendar_entry_id with existing article is required'
+                });
+            }
+
+            // Get user's thesis for context
+            const { data: profile } = await supabase
+                .from('thought_leadership_profiles')
+                .select('core_thesis')
+                .eq('user_id', userId)
+                .single();
+
+            console.log(`[TL Image] Generating ${style} image for topic: ${entryTopic || 'article'}`);
+
+            const result = await tlImageService.generateArticleImage(content || entryTopic, {
+                style,
+                topic: entryTopic,
+                pillar: pillarInfo?.name,
+                thesis: profile?.core_thesis,
+                calendarEntryId: calendar_entry_id,
+                userId
+            });
+
+            res.json({
+                success: true,
+                image: {
+                    url: result.url,
+                    prompt: result.prompt,
+                    revisedPrompt: result.revisedPrompt,
+                    style: result.style,
+                    styleName: result.styleName
+                },
+                metadata: {
+                    size: result.size,
+                    quality: result.quality,
+                    model: result.model,
+                    generationTimeMs: result.generationTimeMs
+                }
+            });
+        } catch (err) {
+            console.error('Error generating image:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/images/:calendar_entry_id
+     * Get image generation history for a calendar entry
+     */
+    router.get('/images/:calendar_entry_id', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const { calendar_entry_id } = req.params;
+
+            const images = await tlImageService.getImageHistory(calendar_entry_id);
+
+            res.json({
+                images,
+                currentImage: images.find(img => img.is_current) || null
+            });
+        } catch (err) {
+            console.error('Error fetching image history:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * PUT /api/thought-leadership/images/:calendar_entry_id/current/:image_id
+     * Set a specific image as current for a calendar entry
+     */
+    router.put('/images/:calendar_entry_id/current/:image_id', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const { calendar_entry_id, image_id } = req.params;
+
+            const image = await tlImageService.setCurrentImage(calendar_entry_id, image_id);
+
+            res.json({
+                success: true,
+                image
+            });
+        } catch (err) {
+            console.error('Error setting current image:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ============================================================================
+    // PUBLISHING & SCHEDULING ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/thought-leadership/publish/optimal-time
+     * Get optimal posting time recommendation
+     */
+    router.get('/publish/optimal-time', (req, res) => {
+        try {
+            const {
+                platform = 'linkedin',
+                content_type = 'linkedin_post',
+                timezone = 'America/New_York'
+            } = req.query;
+
+            const recommendation = schedulerService.getOptimalPublishTime(
+                platform,
+                timezone,
+                content_type
+            );
+
+            res.json(recommendation);
+        } catch (err) {
+            console.error('Error getting optimal time:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * POST /api/thought-leadership/publish/schedule
+     * Schedule content for future publication
+     */
+    router.post('/publish/schedule', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const {
+                calendar_entry_id,
+                output_id,
+                platform,
+                scheduled_at,
+                timezone = 'America/New_York',
+                content_type,
+                content_text,
+                content_json,
+                media_urls,
+                use_optimal_time = false
+            } = req.body;
+
+            if (!platform || !content_type || !content_text) {
+                return res.status(400).json({
+                    error: 'platform, content_type, and content_text are required'
+                });
+            }
+
+            // Check if user has connected the platform
+            if (platform === 'linkedin') {
+                const isConnected = await linkedinService.isConnected(userId);
+                if (!isConnected) {
+                    return res.status(400).json({
+                        error: 'LinkedIn not connected. Please connect your account first.',
+                        code: 'PLATFORM_NOT_CONNECTED'
+                    });
+                }
+            }
+
+            // Determine scheduled time
+            let finalScheduledAt = scheduled_at;
+            let wasOptimalTime = false;
+            let optimalTimeReason = null;
+
+            if (use_optimal_time || !scheduled_at) {
+                const optimal = schedulerService.getOptimalPublishTime(platform, timezone, content_type);
+                finalScheduledAt = optimal.recommendedTime;
+                wasOptimalTime = true;
+                optimalTimeReason = optimal.reason;
+            }
+
+            // Create the scheduled publication
+            const publication = await schedulerService.createScheduledPublication({
+                userId,
+                calendarEntryId: calendar_entry_id,
+                outputId: output_id,
+                platform,
+                scheduledAt: finalScheduledAt,
+                timezone,
+                contentType: content_type,
+                contentText: content_text,
+                contentJson: content_json,
+                mediaUrls: media_urls,
+                wasOptimalTime,
+                optimalTimeReason
+            });
+
+            res.json({
+                success: true,
+                publication: {
+                    id: publication.id,
+                    platform: publication.platform,
+                    scheduled_at: publication.scheduled_at,
+                    status: publication.status,
+                    was_optimal_time: publication.was_optimal_time,
+                    optimal_time_reason: publication.optimal_time_reason
+                }
+            });
+        } catch (err) {
+            console.error('Error scheduling publication:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * POST /api/thought-leadership/publish/now
+     * Publish content immediately
+     */
+    router.post('/publish/now', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const {
+                platform,
+                content_text,
+                image_url,
+                article_url,
+                article_title
+            } = req.body;
+
+            if (!platform || !content_text) {
+                return res.status(400).json({
+                    error: 'platform and content_text are required'
+                });
+            }
+
+            let result;
+
+            switch (platform) {
+                case 'linkedin':
+                    result = await linkedinService.publishPost(userId, content_text, {
+                        imageUrl: image_url,
+                        articleUrl: article_url,
+                        articleTitle: article_title
+                    });
+                    break;
+
+                default:
+                    return res.status(400).json({
+                        error: `Publishing to ${platform} is not yet supported`
+                    });
+            }
+
+            res.json({
+                success: true,
+                result
+            });
+        } catch (err) {
+            console.error('Error publishing:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/publish/scheduled
+     * Get all scheduled publications for user
+     */
+    router.get('/publish/scheduled', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const { status = 'scheduled', limit = 20 } = req.query;
+
+            const { data, error } = await supabase
+                .from('scheduled_publications')
+                .select(`
+                    *,
+                    content_calendar_entries(title)
+                `)
+                .eq('user_id', userId)
+                .eq('status', status)
+                .order('scheduled_at', { ascending: true })
+                .limit(parseInt(limit));
+
+            if (error) throw error;
+
+            res.json({ publications: data });
+        } catch (err) {
+            console.error('Error fetching scheduled publications:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * DELETE /api/thought-leadership/publish/:id
+     * Cancel a scheduled publication
+     */
+    router.delete('/publish/:id', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const { id } = req.params;
+
+            // Verify ownership
+            const { data: pub } = await supabase
+                .from('scheduled_publications')
+                .select('user_id')
+                .eq('id', id)
+                .single();
+
+            if (!pub || pub.user_id !== userId) {
+                return res.status(404).json({ error: 'Publication not found' });
+            }
+
+            await schedulerService.cancelScheduledPublication(id);
+
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Error cancelling publication:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/publish/history
+     * Get publication history
+     */
+    router.get('/publish/history', async (req, res) => {
+        try {
+            const userId = req.headers['x-user-id'];
+            if (!userId) {
+                return res.status(401).json({ error: 'User ID required' });
+            }
+
+            const { platform, limit = 50 } = req.query;
+
+            let query = supabase
+                .from('publication_history')
+                .select('*')
+                .eq('user_id', userId)
+                .order('published_at', { ascending: false })
+                .limit(parseInt(limit));
+
+            if (platform) {
+                query = query.eq('platform', platform);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            res.json({ history: data });
+        } catch (err) {
+            console.error('Error fetching publication history:', err);
             res.status(500).json({ error: err.message });
         }
     });
