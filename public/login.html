@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/direction-modal.js"></script>
     <style>
         .login-container {
             min-height: 100vh;
@@ -620,32 +621,13 @@
             userCard.style.display = 'none';
         }
 
-        // Show logged-in user card
+        // Show logged-in user card (direction modal)
         function showUserCard(user) {
             authCard.style.display = 'none';
-            userCard.style.display = 'block';
+            userCard.style.display = 'none';
 
-            const avatar = document.getElementById('userAvatar');
-            const name = document.getElementById('userName');
-            const role = document.getElementById('userRole');
-            const adminNav = document.getElementById('adminNav');
-            const userNav = document.getElementById('userNav');
-
-            avatar.textContent = (user.display_name || user.email)[0].toUpperCase();
-            name.textContent = user.display_name || user.email.split('@')[0];
-            role.textContent = user.role || 'user';
-            role.className = 'user-role' + (user.role === 'admin' ? ' admin' : '');
-
-            // Show appropriate navigation based on role
-            if (user.role === 'admin') {
-                adminNav.style.display = 'grid';
-                userNav.style.display = 'none';
-            } else {
-                adminNav.style.display = 'none';
-                userNav.style.display = 'grid';
-            }
-
-            lucide.createIcons();
+            // Show the direction modal
+            directionModal.show(user);
         }
 
         // Show reset password form (when user clicks email link)

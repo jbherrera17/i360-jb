@@ -63,6 +63,7 @@ const navConfig = {
             label: 'Tools',
             icon: 'wrench',
             items: [
+                { href: '/research-studio.html', icon: 'book-open-text', label: 'Research Studio' },
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
                 { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
                 { href: '/guides.html', icon: 'book-open', label: 'Guides' }
@@ -361,9 +362,13 @@ function generateUserProfileHTML() {
                     <i data-lucide="user"></i>
                     <span>Profile</span>
                 </a>
-                <a href="/admin.html" class="user-menu-item ${role !== 'admin' ? 'hidden' : ''}">
-                    <i data-lucide="settings"></i>
-                    <span>Admin Settings</span>
+                <a href="/administrator.html" class="user-menu-item ${role !== 'admin' ? 'hidden' : ''}">
+                    <i data-lucide="shield"></i>
+                    <span>Administrator</span>
+                </a>
+                <a href="/" class="user-menu-item">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
                 </a>
                 <button class="user-menu-item logout" onclick="handleLogout()">
                     <i data-lucide="log-out"></i>

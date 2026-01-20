@@ -44,7 +44,10 @@ const ALLOWED_DOCS = [
     'roles-user-guide.md',
     'roles-technical-guide.md',
     // Admin guides
-    'asset-types-user-guide.md'
+    'asset-types-user-guide.md',
+    // Research Studio
+    'research-studio-user-guide.md',
+    'research-studio-technical-guide.md'
 ];
 
 /**

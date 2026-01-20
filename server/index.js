@@ -52,6 +52,7 @@ const thoughtLeadershipRoutes = require('./routes/thought-leadership');
 const oauthRoutes = require('./routes/oauth');
 const modelAvailabilityRoutes = require('./routes/model-availability');
 const visualizationsRoutes = require('./routes/visualizations');
+const researchStudioRoutes = require('./routes/researchStudio');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -142,7 +143,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/guides', '/guides.html', '/admin', '/admin.html', '/profile', '/profile.html',
     '/workflow-run', '/workflow-run.html', '/workflow-builder', '/workflow-builder.html',
     '/system-health', '/system-health.html', '/synerginexus', '/synerginexus.html',
-    '/tags', '/tags.html', '/roles', '/roles.html'];
+    '/tags', '/tags.html', '/roles', '/roles.html',
+    '/research-studio', '/research-studio.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -360,7 +362,9 @@ function initializeServices() {
         app.use('/api/oauth', oauthRoutes(supabase));
         app.use('/api/models', modelAvailabilityRoutes);
         app.use('/api/visualizations', visualizationsRoutes);
+        app.use('/api/research-studios', researchStudioRoutes(supabase));
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Research Studio routes registered (Phase 6)');
         console.log('  ✅ Visualizations routes registered');
         console.log('  ✅ Model Availability routes registered');
         console.log('  ✅ Auth routes registered');
@@ -569,6 +573,11 @@ app.get('/tags', (req, res) => {
 
 app.get('/roles', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/roles.html'));
+});
+
+// Research Studio page (Phase 6 - NotebookLM-style)
+app.get('/research-studio', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/research-studio.html'));
 });
 
 // ============================================

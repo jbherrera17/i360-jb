@@ -94,6 +94,10 @@ const HelpRegistry = {
         '/asset-types': {
             file: '/api/docs/asset-types-user-guide.md',
             title: 'Asset Types Help'
+        },
+        '/research-studio': {
+            file: '/api/docs/research-studio-user-guide.md',
+            title: 'Research Studio Help'
         }
     },
 
