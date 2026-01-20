@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/agent-dialog.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -2157,6 +2158,7 @@
 
     <!-- ModalService must load before inline scripts that use it -->
     <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/agent-dialog-service.js"></script>
 
     <script>
         // Initialize Lucide icons
@@ -2183,6 +2185,13 @@
         // Modal instances (ModalService)
         let agentModal = null;
         let contextMappingModal = null;
+
+        // Agent Dialog Service for running agents in modal
+        const agentDialog = new AgentDialogService({
+            defaultWidth: 800,
+            minWidth: 500,
+            minHeight: 500
+        });
 
         // =========================================================================
         // API Functions
@@ -3788,8 +3797,12 @@
 
         document.getElementById('btnLaunch').addEventListener('click', () => {
             if (selectedAgent) {
-                // Open agent runner page in new tab
-                window.open(`/agent-runner.html?id=${selectedAgent.id}`, '_blank');
+                // Open agent in modal dialog
+                agentDialog.open({
+                    agentId: selectedAgent.id,
+                    title: selectedAgent.name,
+                    subtitle: selectedAgent.description || 'Ready to assist'
+                });
             }
         });
 
