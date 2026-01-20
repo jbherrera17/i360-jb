@@ -2014,3 +2014,130 @@ html[data-theme="light"] .i360-form-checkbox-option {
     width: 16px;
     height: 16px;
 }
+
+/* ============================================
+   CUSTOM SELECT (for icon + label dropdowns)
+   ============================================ */
+
+.i360-custom-select {
+    position: relative;
+}
+
+.i360-custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 8px;
+    background: var(--i360-modal-bg);
+    color: var(--i360-modal-text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    text-align: left;
+}
+
+.i360-custom-select-trigger:hover {
+    border-color: var(--i360-modal-info);
+}
+
+.i360-custom-select.is-open .i360-custom-select-trigger {
+    border-color: var(--i360-modal-info);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.i360-custom-select-trigger svg {
+    flex-shrink: 0;
+    color: var(--i360-modal-text-secondary);
+    transition: transform 150ms ease;
+}
+
+.i360-custom-select.is-open .i360-custom-select-trigger > svg:last-child {
+    transform: rotate(180deg);
+}
+
+.i360-custom-select-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.i360-custom-select-value .i360-custom-select-icon {
+    flex-shrink: 0;
+}
+
+.i360-custom-select-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--i360-modal-bg);
+    border: 1px solid var(--i360-modal-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+}
+
+.i360-custom-select.is-open .i360-custom-select-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.i360-custom-select-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 100ms ease;
+}
+
+.i360-custom-select-option:hover {
+    background: var(--i360-modal-bg-hover, rgba(99, 102, 241, 0.08));
+}
+
+.i360-custom-select-option.is-selected {
+    background: var(--i360-modal-bg-hover, rgba(99, 102, 241, 0.12));
+}
+
+.i360-custom-select-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.i360-custom-select-icon svg,
+.i360-custom-select-icon i {
+    width: 18px;
+    height: 18px;
+    color: var(--i360-modal-info);
+}
+
+.i360-custom-select-emoji {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.i360-custom-select-label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--i360-modal-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -63,6 +63,9 @@ class CreateAssetModal extends ModalBase {
 
         // Create footer
         this._createFooter();
+
+        // Setup custom selects after DOM is ready
+        setTimeout(() => this._setupCustomSelects(), 0);
     }
 
     /**
@@ -119,10 +122,18 @@ class CreateAssetModal extends ModalBase {
 
             <div class="i360-form-field">
                 <label class="i360-form-label">Asset Type</label>
-                <select class="i360-form-select" id="${this.id}-generate-type">
-                    <option value="">Select Type...</option>
-                    ${typeOptions}
-                </select>
+                <div class="i360-custom-select" id="${this.id}-generate-type-container">
+                    <button type="button" class="i360-custom-select-trigger" id="${this.id}-generate-type-trigger">
+                        <span class="i360-custom-select-value">Select Type...</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="i360-custom-select-dropdown" id="${this.id}-generate-type-dropdown">
+                        ${this._renderTypeOptions(this.assetOptions.assetTypes)}
+                    </div>
+                    <input type="hidden" id="${this.id}-generate-type" value="">
+                </div>
             </div>
 
             <div class="i360-form-field">
@@ -148,19 +159,32 @@ class CreateAssetModal extends ModalBase {
         this.elements.importTab.className = 'i360-create-asset-tab-content';
         this.elements.importTab.dataset.tab = 'import';
 
-        const typeOptions = this.assetOptions.assetTypes
-            .map(t => `<option value="${this._escapeHtml(t.value)}">${this._escapeHtml(t.label)}</option>`)
-            .join('');
-
         this.elements.importTab.innerHTML = `
             <p class="i360-create-asset-description">Paste any business content (SOPs, processes, product info, etc.) and AI will convert it into a structured context asset.</p>
 
             <div class="i360-form-field">
                 <label class="i360-form-label">Content Type (Optional)</label>
-                <select class="i360-form-select" id="${this.id}-import-type">
-                    <option value="">Auto-detect best type...</option>
-                    ${typeOptions}
-                </select>
+                <div class="i360-custom-select" id="${this.id}-import-type-container">
+                    <button type="button" class="i360-custom-select-trigger" id="${this.id}-import-type-trigger">
+                        <span class="i360-custom-select-value">Auto-detect best type...</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="i360-custom-select-dropdown" id="${this.id}-import-type-dropdown">
+                        <div class="i360-custom-select-option" data-value="">
+                            <span class="i360-custom-select-icon">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 16v-4M12 8h.01"/>
+                                </svg>
+                            </span>
+                            <span class="i360-custom-select-label">Auto-detect best type...</span>
+                        </div>
+                        ${this._renderTypeOptions(this.assetOptions.assetTypes)}
+                    </div>
+                    <input type="hidden" id="${this.id}-import-type" value="">
+                </div>
                 <small class="i360-form-hint">Leave empty to let AI determine the best asset type</small>
             </div>
 
@@ -216,6 +240,126 @@ Examples:
 
         // Setup file upload after adding to DOM
         setTimeout(() => this._setupFileUpload(), 0);
+    }
+
+    /**
+     * Render type options for custom select dropdown
+     * @private
+     * @param {Array} types - Asset types array
+     * @returns {string} HTML string
+     */
+    _renderTypeOptions(types) {
+        return types.map(t => {
+            const icon = t.icon || 'file';
+            const isEmoji = icon && !/^[a-z0-9-]+$/.test(icon);
+            const iconHtml = isEmoji
+                ? `<span class="i360-custom-select-emoji">${this._escapeHtml(icon)}</span>`
+                : `<i data-lucide="${this._escapeHtml(icon)}"></i>`;
+
+            return `
+                <div class="i360-custom-select-option" data-value="${this._escapeHtml(t.value)}">
+                    <span class="i360-custom-select-icon">${iconHtml}</span>
+                    <span class="i360-custom-select-label">${this._escapeHtml(t.label)}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Setup custom select dropdowns
+     * @private
+     */
+    _setupCustomSelects() {
+        // Setup generate type select
+        this._setupCustomSelect(
+            `${this.id}-generate-type-container`,
+            `${this.id}-generate-type-trigger`,
+            `${this.id}-generate-type-dropdown`,
+            `${this.id}-generate-type`,
+            'Select Type...'
+        );
+
+        // Setup import type select
+        this._setupCustomSelect(
+            `${this.id}-import-type-container`,
+            `${this.id}-import-type-trigger`,
+            `${this.id}-import-type-dropdown`,
+            `${this.id}-import-type`,
+            'Auto-detect best type...'
+        );
+    }
+
+    /**
+     * Setup a single custom select
+     * @private
+     */
+    _setupCustomSelect(containerId, triggerId, dropdownId, inputId, placeholder) {
+        const container = document.getElementById(containerId);
+        const trigger = document.getElementById(triggerId);
+        const dropdown = document.getElementById(dropdownId);
+        const input = document.getElementById(inputId);
+
+        if (!container || !trigger || !dropdown || !input) return;
+
+        // Toggle dropdown on trigger click
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = container.classList.contains('is-open');
+
+            // Close all other dropdowns first
+            document.querySelectorAll('.i360-custom-select.is-open').forEach(el => {
+                el.classList.remove('is-open');
+            });
+
+            if (!isOpen) {
+                container.classList.add('is-open');
+                // Initialize Lucide icons in dropdown if needed
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons({ nodes: dropdown.querySelectorAll('[data-lucide]') });
+                }
+            }
+        });
+
+        // Handle option selection
+        dropdown.addEventListener('click', (e) => {
+            const option = e.target.closest('.i360-custom-select-option');
+            if (!option) return;
+
+            const value = option.dataset.value;
+            const label = option.querySelector('.i360-custom-select-label')?.textContent || placeholder;
+            const iconEl = option.querySelector('.i360-custom-select-icon');
+
+            // Update hidden input
+            input.value = value;
+
+            // Update trigger display
+            const valueSpan = trigger.querySelector('.i360-custom-select-value');
+            if (value) {
+                valueSpan.innerHTML = `${iconEl ? iconEl.outerHTML : ''}<span>${this._escapeHtml(label)}</span>`;
+                // Re-init lucide icons in the trigger
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons({ nodes: valueSpan.querySelectorAll('[data-lucide]') });
+                }
+            } else {
+                valueSpan.textContent = placeholder;
+            }
+
+            // Mark selected
+            dropdown.querySelectorAll('.i360-custom-select-option').forEach(opt => {
+                opt.classList.toggle('is-selected', opt.dataset.value === value);
+            });
+
+            // Close dropdown
+            container.classList.remove('is-open');
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                container.classList.remove('is-open');
+            }
+        });
     }
 
     /**
@@ -509,11 +653,27 @@ Examples:
         this.elements.generateTab.querySelector(`#${this.id}-generate-company`).value = '';
         this.elements.generateTab.querySelector(`#${this.id}-generate-prompt`).value = '';
 
+        // Reset generate custom select display
+        const generateTrigger = this.elements.generateTab.querySelector(`#${this.id}-generate-type-trigger .i360-custom-select-value`);
+        if (generateTrigger) generateTrigger.textContent = 'Select Type...';
+        const generateDropdown = this.elements.generateTab.querySelector(`#${this.id}-generate-type-dropdown`);
+        if (generateDropdown) {
+            generateDropdown.querySelectorAll('.i360-custom-select-option').forEach(opt => opt.classList.remove('is-selected'));
+        }
+
         // Reset import tab
         this.elements.importTab.querySelector(`#${this.id}-import-type`).value = '';
         this.elements.importTab.querySelector(`#${this.id}-import-source`).value = '';
         this.elements.importTab.querySelector(`#${this.id}-import-content`).value = '';
         this._clearFile();
+
+        // Reset import custom select display
+        const importTrigger = this.elements.importTab.querySelector(`#${this.id}-import-type-trigger .i360-custom-select-value`);
+        if (importTrigger) importTrigger.textContent = 'Auto-detect best type...';
+        const importDropdown = this.elements.importTab.querySelector(`#${this.id}-import-type-dropdown`);
+        if (importDropdown) {
+            importDropdown.querySelectorAll('.i360-custom-select-option').forEach(opt => opt.classList.remove('is-selected'));
+        }
 
         // Reset to generate tab
         this._switchTab('generate');
@@ -529,17 +689,41 @@ Examples:
     setAssetTypes(types) {
         this.assetOptions.assetTypes = types;
 
-        const typeOptions = types
-            .map(t => `<option value="${this._escapeHtml(t.value)}">${this._escapeHtml(t.label)}</option>`)
-            .join('');
+        const typeOptionsHtml = this._renderTypeOptions(types);
 
-        // Update generate type select
-        const generateSelect = this.elements.generateTab.querySelector(`#${this.id}-generate-type`);
-        generateSelect.innerHTML = `<option value="">Select Type...</option>${typeOptions}`;
+        // Update generate type dropdown
+        const generateDropdown = this.elements.generateTab.querySelector(`#${this.id}-generate-type-dropdown`);
+        if (generateDropdown) {
+            generateDropdown.innerHTML = typeOptionsHtml;
+            // Re-init Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons({ nodes: generateDropdown.querySelectorAll('[data-lucide]') });
+            }
+        }
 
-        // Update import type select
-        const importSelect = this.elements.importTab.querySelector(`#${this.id}-import-type`);
-        importSelect.innerHTML = `<option value="">Auto-detect best type...</option>${typeOptions}`;
+        // Update import type dropdown
+        const importDropdown = this.elements.importTab.querySelector(`#${this.id}-import-type-dropdown`);
+        if (importDropdown) {
+            importDropdown.innerHTML = `
+                <div class="i360-custom-select-option" data-value="">
+                    <span class="i360-custom-select-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4M12 8h.01"/>
+                        </svg>
+                    </span>
+                    <span class="i360-custom-select-label">Auto-detect best type...</span>
+                </div>
+                ${typeOptionsHtml}
+            `;
+            // Re-init Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons({ nodes: importDropdown.querySelectorAll('[data-lucide]') });
+            }
+        }
+
+        // Reset selections
+        this.reset();
     }
 
     /**

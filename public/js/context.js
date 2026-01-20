@@ -1512,7 +1512,8 @@ let createAssetModal = null;
 function getAssetTypesForModal() {
     return state.assetTypes.map(t => ({
         value: t.type_key,
-        label: `${t.icon} ${t.display_name}`
+        label: t.display_name,
+        icon: t.icon
     }));
 }
 

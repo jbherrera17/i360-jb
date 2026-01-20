@@ -1752,30 +1752,6 @@ const artifactModalHtml = `
                     <i data-lucide="chevron-right"></i>
                 </div>
             </div>
-            <div class="artifact-option" onclick="saveAsContextAsset()">
-                <div class="artifact-option-icon">
-                    <i data-lucide="database"></i>
-                </div>
-                <div class="artifact-option-content">
-                    <div class="artifact-option-title">Save as Context Asset</div>
-                    <div class="artifact-option-desc">Store for reuse in future conversations</div>
-                </div>
-                <div class="artifact-option-arrow">
-                    <i data-lucide="chevron-right"></i>
-                </div>
-            </div>
-            <div class="artifact-option" onclick="saveAsSnippet()">
-                <div class="artifact-option-icon">
-                    <i data-lucide="bookmark"></i>
-                </div>
-                <div class="artifact-option-content">
-                    <div class="artifact-option-title">Save as Snippet</div>
-                    <div class="artifact-option-desc">Save as a reusable prompt template</div>
-                </div>
-                <div class="artifact-option-arrow">
-                    <i data-lucide="chevron-right"></i>
-                </div>
-            </div>
         </div>
     </div>
 </div>

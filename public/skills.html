@@ -752,8 +752,8 @@
                     <h2><i data-lucide="filter" style="width:18px;height:18px;"></i> Categories</h2>
                     <div style="display: flex; align-items: center; gap: 1rem;">
                         <div class="status-filter" style="display: flex; gap: 0.5rem;">
-                            <button class="status-chip active" data-status="all" onclick="setStatus('all')">All</button>
-                            <button class="status-chip" data-status="active" onclick="setStatus('active')">Active</button>
+                            <button class="status-chip" data-status="all" onclick="setStatus('all')">All</button>
+                            <button class="status-chip active" data-status="active" onclick="setStatus('active')">Active</button>
                             <button class="status-chip" data-status="draft" onclick="setStatus('draft')">Draft</button>
                         </div>
                         <div class="search-bar">
@@ -786,7 +786,7 @@
         let departments = [];
         let currentSuite = 'all';
         let currentCategory = 'all';
-        let currentStatus = 'all';
+        let currentStatus = 'active';
         let currentDepartment = '';
         let selectedSkill = null;
 
