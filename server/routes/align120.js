@@ -14,7 +14,7 @@ const express = require('express');
 const agentService = require('../services/agentService');
 const integrationService = require('../services/align120IntegrationService');
 const webScraperService = require('../services/webScraperService');
-const { getUserId } = require('../utils/auth');
+const { getUserId, isAdminAsync } = require('../utils/auth');
 
 /**
  * Align 120 Routes Factory
@@ -36,20 +36,37 @@ module.exports = function(supabase) {
         try {
             const userId = getUserId(req);
 
-            let query = supabase
-                .from('align120_sessions')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (userId) {
-                query = query.eq('user_id', userId);
+            // User ID is required - only return sessions owned by the current user
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required to view sessions'
+                });
             }
 
-            const { data, error } = await query;
+            // Fetch sessions
+            const { data: sessions, error } = await supabase
+                .from('align120_sessions')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            res.json({ success: true, data: data || [] });
+            // Fetch user info for display
+            const { data: userData } = await supabase
+                .from('users')
+                .select('display_name, email')
+                .eq('id', userId)
+                .single();
+
+            // Attach user info to each session
+            const data = (sessions || []).map(session => ({
+                ...session,
+                user: userData || null
+            }));
+
+            res.json({ success: true, data });
         } catch (error) {
             console.error('Error listing sessions:', error);
             res.status(500).json({ success: false, error: error.message });
@@ -58,19 +75,50 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/align120/sessions/:id
-     * Get a single session by ID
+     * Get a single session by ID (must be owned by current user)
      */
     router.get('/sessions/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const userId = getUserId(req);
 
-            const { data, error } = await supabase
+            // User ID is required
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required to view session'
+                });
+            }
+
+            const { data: session, error } = await supabase
                 .from('align120_sessions')
                 .select('*')
                 .eq('id', id)
+                .eq('user_id', userId)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Session not found or access denied'
+                    });
+                }
+                throw error;
+            }
+
+            // Fetch user info for display
+            const { data: userData } = await supabase
+                .from('users')
+                .select('display_name, email')
+                .eq('id', userId)
+                .single();
+
+            // Attach user info to session
+            const data = {
+                ...session,
+                user: userData || null
+            };
 
             res.json({ success: true, data });
         } catch (error) {
@@ -104,13 +152,26 @@ module.exports = function(supabase) {
                 module_progress: { 1: false, 2: false, 3: false, 4: false, 5: false }
             };
 
-            const { data, error } = await supabase
+            const { data: session, error } = await supabase
                 .from('align120_sessions')
                 .insert(sessionData)
                 .select()
                 .single();
 
             if (error) throw error;
+
+            // Fetch user info for display
+            const { data: userData } = await supabase
+                .from('users')
+                .select('display_name, email')
+                .eq('id', userId)
+                .single();
+
+            // Attach user info to session
+            const data = {
+                ...session,
+                user: userData || null
+            };
 
             res.json({ success: true, data });
         } catch (error) {
@@ -152,22 +213,271 @@ module.exports = function(supabase) {
 
     /**
      * DELETE /api/align120/sessions/:id
-     * Delete a session
+     * Delete a session (must be owned by current user)
      */
     router.delete('/sessions/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const userId = getUserId(req);
 
-            const { error } = await supabase
+            // User ID is required
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required to delete session'
+                });
+            }
+
+            // Only delete if the session belongs to the current user
+            const { data, error } = await supabase
                 .from('align120_sessions')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId)
+                .select();
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Session not found or access denied'
+                });
+            }
+
+            res.json({ success: true, message: 'Session deleted' });
+        } catch (error) {
+            console.error('Error deleting session:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================================================
+    // ADMIN ENDPOINTS
+    // ============================================================================
+
+    /**
+     * GET /api/align120/admin/sessions
+     * Get all sessions (admin only) with user and company info
+     */
+    router.get('/admin/sessions', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+
+            // Check if user is admin
+            const isAdmin = await isAdminAsync(req, supabase);
+            if (!isAdmin) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Admin access required'
+                });
+            }
+
+            // Fetch all sessions
+            const { data: sessions, error } = await supabase
+                .from('align120_sessions')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Get unique user IDs
+            const userIds = [...new Set(sessions.map(s => s.user_id).filter(Boolean))];
+
+            // Fetch all users for these sessions
+            let usersMap = {};
+            if (userIds.length > 0) {
+                const { data: users } = await supabase
+                    .from('users')
+                    .select('id, display_name, email')
+                    .in('id', userIds);
+
+                if (users) {
+                    usersMap = users.reduce((acc, u) => {
+                        acc[u.id] = u;
+                        return acc;
+                    }, {});
+                }
+            }
+
+            // Get unique company profile IDs
+            const companyProfileIds = [...new Set(sessions.map(s => s.company_profile_id).filter(Boolean))];
+
+            // Fetch company profiles if any
+            let companiesMap = {};
+            if (companyProfileIds.length > 0) {
+                const { data: companies } = await supabase
+                    .from('company_profiles')
+                    .select('id, company_name, industry, status')
+                    .in('id', companyProfileIds);
+
+                if (companies) {
+                    companiesMap = companies.reduce((acc, c) => {
+                        acc[c.id] = c;
+                        return acc;
+                    }, {});
+                }
+            }
+
+            // Attach user and company info to each session
+            const data = sessions.map(session => ({
+                ...session,
+                user: session.user_id ? usersMap[session.user_id] || null : null,
+                company_profile: session.company_profile_id ? companiesMap[session.company_profile_id] || null : null
+            }));
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error listing admin sessions:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/align120/admin/sessions/:id
+     * Delete any session (admin only)
+     */
+    router.delete('/admin/sessions/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { deleteCompanyProfile } = req.query;
+
+            // Check if user is admin
+            const isAdmin = await isAdminAsync(req, supabase);
+            if (!isAdmin) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Admin access required'
+                });
+            }
+
+            // Get session first to check for company_profile_id
+            const { data: session, error: fetchError } = await supabase
+                .from('align120_sessions')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (fetchError) {
+                if (fetchError.code === 'PGRST116') {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Session not found'
+                    });
+                }
+                throw fetchError;
+            }
+
+            // Delete the session
+            const { error: deleteError } = await supabase
+                .from('align120_sessions')
+                .delete()
+                .eq('id', id);
+
+            if (deleteError) throw deleteError;
+
+            // Optionally delete associated company profile
+            if (deleteCompanyProfile === 'true' && session.company_profile_id) {
+                await supabase
+                    .from('company_profiles')
+                    .delete()
+                    .eq('id', session.company_profile_id);
+            }
+
+            res.json({
+                success: true,
+                message: 'Session deleted',
+                deletedCompanyProfile: deleteCompanyProfile === 'true' && session.company_profile_id
+            });
+        } catch (error) {
+            console.error('Error deleting session (admin):', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/align120/admin/company-profiles
+     * Get all company profiles (admin only)
+     */
+    router.get('/admin/company-profiles', async (req, res) => {
+        try {
+            // Check if user is admin
+            const isAdmin = await isAdminAsync(req, supabase);
+            if (!isAdmin) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Admin access required'
+                });
+            }
+
+            // Fetch all company profiles
+            const { data: profiles, error } = await supabase
+                .from('company_profiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Get unique user IDs
+            const userIds = [...new Set(profiles.map(p => p.user_id).filter(Boolean))];
+
+            // Fetch users
+            let usersMap = {};
+            if (userIds.length > 0) {
+                const { data: users } = await supabase
+                    .from('users')
+                    .select('id, display_name, email')
+                    .in('id', userIds);
+
+                if (users) {
+                    usersMap = users.reduce((acc, u) => {
+                        acc[u.id] = u;
+                        return acc;
+                    }, {});
+                }
+            }
+
+            // Attach user info
+            const data = profiles.map(profile => ({
+                ...profile,
+                user: profile.user_id ? usersMap[profile.user_id] || null : null
+            }));
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error listing company profiles (admin):', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/align120/admin/company-profiles/:id
+     * Delete a company profile (admin only)
+     */
+    router.delete('/admin/company-profiles/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            // Check if user is admin
+            const isAdmin = await isAdminAsync(req, supabase);
+            if (!isAdmin) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Admin access required'
+                });
+            }
+
+            // Delete the company profile (cascade will handle related records)
+            const { error } = await supabase
+                .from('company_profiles')
                 .delete()
                 .eq('id', id);
 
             if (error) throw error;
 
-            res.json({ success: true, message: 'Session deleted' });
+            res.json({ success: true, message: 'Company profile deleted' });
         } catch (error) {
-            console.error('Error deleting session:', error);
+            console.error('Error deleting company profile (admin):', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });

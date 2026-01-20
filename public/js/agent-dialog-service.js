@@ -1426,8 +1426,11 @@ class AgentDialogService {
      * Get display name for a model ID
      */
     getModelDisplayName(modelId) {
-        const model = this.contextState.loadedModels.find(m => m.id === modelId);
-        if (model) return model.name;
+        // Guard against loadedModels not being initialized yet
+        if (Array.isArray(this.contextState.loadedModels)) {
+            const model = this.contextState.loadedModels.find(m => m.id === modelId);
+            if (model) return model.name;
+        }
 
         // Fallback display names
         const fallbacks = {

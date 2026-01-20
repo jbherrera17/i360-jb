@@ -328,6 +328,97 @@
                 </div>
             </div>
 
+            <!-- Align 120 Administration Section -->
+            <div class="section">
+                <div class="section-header">
+                    <i data-lucide="rocket"></i>
+                    <h2>Align 120 Administration</h2>
+                </div>
+                <div id="align120AdminSection">
+                    <div class="admin-grid" style="margin-bottom: 1.5rem;">
+                        <div class="admin-card" onclick="showSessionsPanel()" style="cursor: pointer;">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon purple">
+                                    <i data-lucide="clipboard-list"></i>
+                                </div>
+                                <div class="admin-card-title">All Sessions</div>
+                            </div>
+                            <div class="admin-card-description">
+                                View and manage all Align 120 sessions across all users
+                            </div>
+                            <div id="sessionCount" class="admin-card-badge">Loading...</div>
+                        </div>
+
+                        <div class="admin-card" onclick="showCompanyProfilesPanel()" style="cursor: pointer;">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon blue">
+                                    <i data-lucide="building-2"></i>
+                                </div>
+                                <div class="admin-card-title">Company Profiles</div>
+                            </div>
+                            <div class="admin-card-description">
+                                Manage company profiles created from Align 120 assessments
+                            </div>
+                            <div id="companyCount" class="admin-card-badge">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Sessions Panel (hidden by default) -->
+                    <div id="sessionsPanel" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.1rem; font-weight: 600;">All Align 120 Sessions</h3>
+                            <button onclick="hideSessionsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                            </button>
+                        </div>
+                        <div id="sessionsTable" style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border);">
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Company</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">User</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Status</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Progress</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Created</th>
+                                        <th style="text-align: right; padding: 0.75rem; color: var(--text-secondary);">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessionsTableBody">
+                                    <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading sessions...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Company Profiles Panel (hidden by default) -->
+                    <div id="companyProfilesPanel" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.1rem; font-weight: 600;">All Company Profiles</h3>
+                            <button onclick="hideCompanyProfilesPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                            </button>
+                        </div>
+                        <div id="companyProfilesTable" style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border);">
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Company Name</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Industry</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">User</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Status</th>
+                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Created</th>
+                                        <th style="text-align: right; padding: 0.75rem; color: var(--text-secondary);">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="companyProfilesTableBody">
+                                    <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading company profiles...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Content & Assets Section -->
             <div class="section">
                 <div class="section-header">
@@ -410,10 +501,234 @@
         </main>
     </div>
 
+    <script src="/js/modal-service/ModalBase.js"></script>
+    <script src="/js/modal-service/modals/AlertModal.js"></script>
+    <script src="/js/modal-service/modals/ConfirmModal.js"></script>
+    <script src="/js/modal-service/index.js"></script>
     <script>
+        // Align 120 Admin Data
+        let sessionsData = [];
+        let companyProfilesData = [];
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            loadAlign120AdminData();
         });
+
+        // Load admin data for Align 120
+        async function loadAlign120AdminData() {
+            await Promise.all([
+                loadSessionsCount(),
+                loadCompanyProfilesCount()
+            ]);
+        }
+
+        async function loadSessionsCount() {
+            try {
+                const response = await fetch('/api/align120/admin/sessions');
+                const data = await response.json();
+
+                if (data.success) {
+                    sessionsData = data.data;
+                    document.getElementById('sessionCount').textContent = `${sessionsData.length} session${sessionsData.length !== 1 ? 's' : ''}`;
+                } else {
+                    document.getElementById('sessionCount').textContent = 'Access denied';
+                    document.getElementById('sessionCount').classList.add('dev');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('sessionCount').textContent = 'Error loading';
+            }
+        }
+
+        async function loadCompanyProfilesCount() {
+            try {
+                const response = await fetch('/api/align120/admin/company-profiles');
+                const data = await response.json();
+
+                if (data.success) {
+                    companyProfilesData = data.data;
+                    document.getElementById('companyCount').textContent = `${companyProfilesData.length} profile${companyProfilesData.length !== 1 ? 's' : ''}`;
+                } else {
+                    document.getElementById('companyCount').textContent = 'Access denied';
+                    document.getElementById('companyCount').classList.add('dev');
+                }
+            } catch (error) {
+                console.error('Error loading company profiles:', error);
+                document.getElementById('companyCount').textContent = 'Error loading';
+            }
+        }
+
+        function showSessionsPanel() {
+            document.getElementById('sessionsPanel').style.display = 'block';
+            document.getElementById('companyProfilesPanel').style.display = 'none';
+            renderSessionsTable();
+            lucide.createIcons();
+        }
+
+        function hideSessionsPanel() {
+            document.getElementById('sessionsPanel').style.display = 'none';
+        }
+
+        function showCompanyProfilesPanel() {
+            document.getElementById('companyProfilesPanel').style.display = 'block';
+            document.getElementById('sessionsPanel').style.display = 'none';
+            renderCompanyProfilesTable();
+            lucide.createIcons();
+        }
+
+        function hideCompanyProfilesPanel() {
+            document.getElementById('companyProfilesPanel').style.display = 'none';
+        }
+
+        function renderSessionsTable() {
+            const tbody = document.getElementById('sessionsTableBody');
+
+            if (sessionsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No sessions found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sessionsData.map(session => {
+                const userName = session.user?.display_name || session.user?.email?.split('@')[0] || 'Unknown';
+                const progress = calculateProgress(session.module_progress);
+                const statusColor = session.status === 'completed' ? '#10b981' : session.status === 'in_progress' ? '#f59e0b' : '#6366f1';
+                const date = new Date(session.created_at).toLocaleDateString();
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-light);">
+                        <td style="padding: 0.75rem; font-weight: 500;">${session.company_name || 'Unnamed'}</td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${userName}</td>
+                        <td style="padding: 0.75rem;">
+                            <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: ${statusColor}20; color: ${statusColor};">
+                                ${session.status || 'draft'}
+                            </span>
+                        </td>
+                        <td style="padding: 0.75rem;">${progress}%</td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${date}</td>
+                        <td style="padding: 0.75rem; text-align: right;">
+                            <button onclick="deleteSession('${session.id}', '${(session.company_name || 'Unnamed').replace(/'/g, "\\'")}')"
+                                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;"
+                                    title="Delete session">
+                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderCompanyProfilesTable() {
+            const tbody = document.getElementById('companyProfilesTableBody');
+
+            if (companyProfilesData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No company profiles found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = companyProfilesData.map(profile => {
+                const userName = profile.user?.display_name || profile.user?.email?.split('@')[0] || 'Unknown';
+                const date = new Date(profile.created_at).toLocaleDateString();
+                const statusColor = profile.status === 'active' ? '#10b981' : profile.status === 'archived' ? '#6b7280' : '#f59e0b';
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-light);">
+                        <td style="padding: 0.75rem; font-weight: 500;">${profile.company_name || 'Unnamed'}</td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${profile.industry || '-'}</td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${userName}</td>
+                        <td style="padding: 0.75rem;">
+                            <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: ${statusColor}20; color: ${statusColor};">
+                                ${profile.status || 'draft'}
+                            </span>
+                        </td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${date}</td>
+                        <td style="padding: 0.75rem; text-align: right;">
+                            <button onclick="deleteCompanyProfile('${profile.id}', '${(profile.company_name || 'Unnamed').replace(/'/g, "\\'")}')"
+                                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;"
+                                    title="Delete company profile">
+                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function calculateProgress(moduleProgress) {
+            if (!moduleProgress) return 0;
+            const completed = Object.values(moduleProgress).filter(v => v === true).length;
+            return Math.round((completed / 5) * 100);
+        }
+
+        async function deleteSession(sessionId, companyName) {
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Session',
+                message: `Are you sure you want to delete the session for "${companyName}"? This action cannot be undone.`,
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`/api/align120/admin/sessions/${sessionId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Remove from local data and re-render
+                    sessionsData = sessionsData.filter(s => s.id !== sessionId);
+                    document.getElementById('sessionCount').textContent = `${sessionsData.length} session${sessionsData.length !== 1 ? 's' : ''}`;
+                    renderSessionsTable();
+                    await ModalService.alert({ title: 'Success', message: 'Session deleted successfully', type: 'success' });
+                } else {
+                    await ModalService.alert({ title: 'Error', message: data.error || 'Failed to delete session', type: 'error' });
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                await ModalService.alert({ title: 'Error', message: 'Error deleting session', type: 'error' });
+            }
+        }
+
+        async function deleteCompanyProfile(profileId, companyName) {
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Company Profile',
+                message: `Are you sure you want to delete the company profile for "${companyName}"? This will also delete associated assessments and cannot be undone.`,
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`/api/align120/admin/company-profiles/${profileId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Remove from local data and re-render
+                    companyProfilesData = companyProfilesData.filter(p => p.id !== profileId);
+                    document.getElementById('companyCount').textContent = `${companyProfilesData.length} profile${companyProfilesData.length !== 1 ? 's' : ''}`;
+                    renderCompanyProfilesTable();
+                    await ModalService.alert({ title: 'Success', message: 'Company profile deleted successfully', type: 'success' });
+                } else {
+                    await ModalService.alert({ title: 'Error', message: data.error || 'Failed to delete company profile', type: 'error' });
+                }
+            } catch (error) {
+                console.error('Error deleting company profile:', error);
+                await ModalService.alert({ title: 'Error', message: 'Error deleting company profile', type: 'error' });
+            }
+        }
     </script>
 </body>
 </html>

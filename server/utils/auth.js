@@ -60,9 +60,42 @@ function isAdmin(req) {
     return getUserRole(req) === 'admin';
 }
 
+/**
+ * Check if the user has admin privileges (async version that checks database)
+ * Use this when req.userRole may not be set (e.g., development mode)
+ * @param {Request} req - Express request object
+ * @param {object} supabase - Supabase client
+ * @returns {Promise<boolean>} True if user is an admin
+ */
+async function isAdminAsync(req, supabase) {
+    // First check if already set on request
+    if (req.userRole === 'admin') {
+        return true;
+    }
+
+    const userId = getUserId(req);
+    if (!userId) {
+        return false;
+    }
+
+    try {
+        const { data } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', userId)
+            .single();
+
+        return data?.role === 'admin';
+    } catch (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+    }
+}
+
 module.exports = {
     getUserId,
     isAuthenticated,
     getUserRole,
-    isAdmin
+    isAdmin,
+    isAdminAsync
 };

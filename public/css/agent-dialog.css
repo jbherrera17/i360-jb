@@ -36,10 +36,10 @@
     background: var(--bg-secondary, #1a1a2e);
     border: 1px solid var(--border, #2a2a4a);
     border-radius: 16px;
-    width: 600px;
-    min-width: 400px;
-    min-height: 400px;
-    max-height: 80vh;
+    width: 800px;
+    min-width: 500px;
+    min-height: 500px;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);

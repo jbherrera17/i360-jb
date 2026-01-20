@@ -725,6 +725,10 @@
                             <i data-lucide="calendar" style="width:16px;height:16px;"></i>
                             <span>Started: <strong id="sessionDate">--</strong></span>
                         </div>
+                        <div class="session-info-item">
+                            <i data-lucide="user" style="width:16px;height:16px;"></i>
+                            <span>By: <strong id="sessionUser">--</strong></span>
+                        </div>
                     </div>
                     <div class="progress-ring-container">
                         <div class="progress-ring">
@@ -1235,20 +1239,22 @@
 
                 const container = document.getElementById('sessionsList');
 
+                // Hide the entire "Previous Sessions" section if no sessions exist
+                const existingSessionsDiv = document.getElementById('existingSessions');
                 if (!data.success || !data.data || data.data.length === 0) {
-                    container.innerHTML = `
-                        <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); background: var(--bg-primary); border-radius: 8px;">
-                            <p>No previous sessions found</p>
-                        </div>
-                    `;
+                    existingSessionsDiv.style.display = 'none';
                     return;
                 }
+
+                // Show the section if sessions exist
+                existingSessionsDiv.style.display = 'block';
 
                 container.innerHTML = data.data.map(session => {
                     const progress = calculateSessionProgress(session);
                     const date = new Date(session.created_at).toLocaleDateString();
                     const statusColor = session.status === 'completed' ? '#10b981' :
                                        session.status === 'in_progress' ? '#f59e0b' : '#6366f1';
+                    const userName = session.user?.display_name || session.user?.email?.split('@')[0] || 'Unknown';
 
                     return `
                         <div class="agent-card" style="margin-bottom: 0.75rem;">
@@ -1256,7 +1262,7 @@
                                 <div style="flex: 1; cursor: pointer;" onclick="resumeSession('${session.id}')">
                                     <div style="font-weight: 600;">${session.company_name || 'Unnamed Company'}</div>
                                     <div style="font-size: 0.8rem; color: var(--text-muted);">
-                                        Started ${date} | Module ${session.current_module || 1}/5
+                                        <i data-lucide="user" style="width: 12px; height: 12px; display: inline; vertical-align: middle; margin-right: 3px;"></i>${userName} | Started ${date} | Module ${session.current_module || 1}/5
                                     </div>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -1292,11 +1298,8 @@
                 });
             } catch (error) {
                 console.error('Error loading sessions:', error);
-                document.getElementById('sessionsList').innerHTML = `
-                    <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); background: var(--bg-primary); border-radius: 8px;">
-                        <p>Unable to load sessions</p>
-                    </div>
-                `;
+                // Hide section on error - don't show empty/broken state on first visit
+                document.getElementById('existingSessions').style.display = 'none';
             }
         }
 
@@ -1321,7 +1324,11 @@
 
         // Start new session
         async function startNewSession() {
-            const companyName = prompt('Enter company name for this assessment:');
+            const companyName = await ModalService.prompt({
+                title: 'What is the name of the company?',
+                message: 'Enter the company name for this Align 120 assessment:',
+                placeholder: 'e.g., Acme Corporation'
+            });
             if (!companyName) return;
 
             showLoading('Creating Session', 'Setting up your Align 120 assessment session...');
@@ -1340,11 +1347,11 @@
                     updateSessionInfo();
                     goToModule(1);
                 } else {
-                    alert('Failed to create session: ' + (data.error || 'Unknown error'));
+                    await ModalService.alert({ title: 'Error', message: 'Failed to create session: ' + (data.error || 'Unknown error') });
                 }
             } catch (error) {
                 console.error('Error creating session:', error);
-                alert('Error creating session');
+                await ModalService.alert({ title: 'Error', message: 'Error creating session. Please try again.' });
             } finally {
                 hideLoading();
             }
@@ -1365,11 +1372,11 @@
                     updateStepperState();
                     goToModule(currentSession.current_module || 1);
                 } else {
-                    alert('Failed to load session: ' + (data.error || 'Unknown error'));
+                    await ModalService.alert({ title: 'Error', message: 'Failed to load session: ' + (data.error || 'Unknown error') });
                 }
             } catch (error) {
                 console.error('Error loading session:', error);
-                alert('Error loading session');
+                await ModalService.alert({ title: 'Error', message: 'Error loading session. Please try again.' });
             } finally {
                 hideLoading();
             }
@@ -1377,7 +1384,13 @@
 
         // Delete a session
         async function deleteSession(sessionId, companyName) {
-            const confirmed = confirm(`Are you sure you want to delete the session for "${companyName}"?\n\nThis action cannot be undone.`);
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Session',
+                message: `Are you sure you want to delete the session for "${companyName}"? This action cannot be undone.`,
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
             if (!confirmed) {
                 return;
             }
@@ -1401,11 +1414,11 @@
                     // Reload the sessions list
                     await loadSessions();
                 } else {
-                    alert('Failed to delete session: ' + (data.error || 'Unknown error'));
+                    await ModalService.alert({ title: 'Error', message: 'Failed to delete session: ' + (data.error || 'Unknown error') });
                 }
             } catch (error) {
                 console.error('Error deleting session:', error);
-                alert('Error deleting session: ' + error.message);
+                await ModalService.alert({ title: 'Error', message: 'Error deleting session: ' + error.message });
             } finally {
                 hideLoading();
             }
@@ -1418,6 +1431,8 @@
             document.getElementById('sessionInfo').style.display = 'flex';
             document.getElementById('sessionCompany').textContent = currentSession.company_name || '--';
             document.getElementById('sessionDate').textContent = new Date(currentSession.created_at).toLocaleDateString();
+            const userName = currentSession.user?.display_name || currentSession.user?.email?.split('@')[0] || '--';
+            document.getElementById('sessionUser').textContent = userName;
             updateProgressRing();
         }
 
@@ -1490,6 +1505,9 @@
             if (!agentDialog) {
                 agentDialog = new AgentDialogService({
                     allowClose: false,
+                    defaultWidth: 800,
+                    minWidth: 600,
+                    minHeight: 500,
                     onClose: () => {
                         console.log('Agent dialog closed');
                     }
@@ -1501,7 +1519,7 @@
         // Run module agents using Interactive Chat Dialog
         async function runModuleAgents(moduleNum) {
             if (!currentSession) {
-                alert('Please start or resume a session first');
+                await ModalService.alert({ title: 'No Session', message: 'Please start or resume a session first.' });
                 return;
             }
 
@@ -1659,7 +1677,7 @@ Ask ONE question at a time. Provide governance recommendations at the end.`
         // Legacy function for non-streaming execution (fallback)
         async function runModuleAgentsLegacy(moduleNum) {
             if (!currentSession) {
-                alert('Please start or resume a session first');
+                await ModalService.alert({ title: 'No Session', message: 'Please start or resume a session first.' });
                 return;
             }
 
@@ -1695,11 +1713,11 @@ Ask ONE question at a time. Provide governance recommendations at the end.`
                     // Save progress
                     await saveSessionProgress();
                 } else {
-                    alert('Assessment failed: ' + (data.error || 'Unknown error'));
+                    await ModalService.alert({ title: 'Error', message: 'Assessment failed: ' + (data.error || 'Unknown error') });
                 }
             } catch (error) {
                 console.error('Error running module:', error);
-                alert('Error running assessment');
+                await ModalService.alert({ title: 'Error', message: 'Error running assessment. Please try again.' });
             } finally {
                 hideLoading();
             }
@@ -1820,7 +1838,7 @@ Ask ONE question at a time. Provide governance recommendations at the end.`
                 const data = await response.json();
 
                 if (!data.success) {
-                    alert('Failed to complete session: ' + (data.error || 'Unknown error'));
+                    await ModalService.alert({ title: 'Error', message: 'Failed to complete session: ' + (data.error || 'Unknown error') });
                     return;
                 }
 
@@ -1831,7 +1849,7 @@ Ask ONE question at a time. Provide governance recommendations at the end.`
 
             } catch (error) {
                 console.error('Error completing session:', error);
-                alert('Error completing session');
+                await ModalService.alert({ title: 'Error', message: 'Error completing session. Please try again.' });
                 hideLoading();
             }
         }
@@ -1933,7 +1951,13 @@ Be encouraging but honest. Focus on actionable insights.`;
 
             // If user cancelled without saving
             if (!result) {
-                if (confirm('Your session is complete. Would you like to go to the Company Dashboard?')) {
+                const goToDashboard = await ModalService.confirm({
+                    title: 'Session Complete',
+                    message: 'Your session is complete. Would you like to go to the Company Dashboard?',
+                    confirmText: 'Go to Dashboard',
+                    cancelText: 'Stay Here'
+                });
+                if (goToDashboard) {
                     window.location.href = '/company-dashboard.html';
                 }
             }
