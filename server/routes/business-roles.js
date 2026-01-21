@@ -420,7 +420,7 @@ router.put('/users/:userId/role', async (req, res) => {
             .from('users')
             .update({ business_role })
             .eq('id', userId)
-            .select('id, email, name, business_role')
+            .select('id, email, display_name, business_role')
             .single();
 
         if (error) throw error;

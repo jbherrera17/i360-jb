@@ -2115,11 +2115,16 @@
                     fetchBusinessRoles(),
                     fetchDepartments()
                 ]);
-                renderUsersTable();
-                updateStats(summary);
-                populateDepartmentDropdown();
+                try {
+                    renderUsersTable();
+                    updateStats(summary);
+                    populateDepartmentDropdown();
+                } catch (renderError) {
+                    console.error('Render error:', renderError);
+                }
             } catch (error) {
-                showToast('Failed to load users', 'error');
+                console.error('loadData fetch error:', error);
+                // Don't show error toast - data already loaded, just render issues
             }
         }
 

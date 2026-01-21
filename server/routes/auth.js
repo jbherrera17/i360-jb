@@ -515,7 +515,7 @@ module.exports = function(supabase) {
         try {
             const { data, error } = await supabase
                 .from('users')
-                .select('id, email, display_name, role, created_at, updated_at')
+                .select('id, email, display_name, role, department_id, business_role, created_at, updated_at')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -676,12 +676,16 @@ module.exports = function(supabase) {
     router.put('/users/:id', requireAdmin, async (req, res) => {
         try {
             const { id } = req.params;
-            const { display_name, role } = req.body;
+            const { display_name, role, department_id } = req.body;
 
             const updates = { updated_at: new Date().toISOString() };
 
             if (display_name !== undefined) {
                 updates.display_name = display_name;
+            }
+
+            if (department_id !== undefined) {
+                updates.department_id = department_id;
             }
 
             if (role !== undefined) {
