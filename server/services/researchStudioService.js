@@ -798,6 +798,145 @@ async function getMessages(conversationId, limit = 100) {
     return data || [];
 }
 
+/**
+ * Create a new conversation for a studio
+ * @param {string} studioId - Studio ID
+ * @param {string} [title] - Optional conversation title
+ * @returns {Promise<object>} - New conversation
+ */
+async function createConversation(studioId, title = null) {
+    // Deactivate all existing conversations for this studio
+    await supabase
+        .from('studio_conversations')
+        .update({ is_active: false })
+        .eq('studio_id', studioId);
+
+    // Create new conversation
+    const { data, error } = await supabase
+        .from('studio_conversations')
+        .insert({
+            studio_id: studioId,
+            title: title || `Chat ${new Date().toLocaleDateString()}`,
+            is_active: true
+        })
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Failed to create conversation: ${error.message}`);
+    }
+
+    return data;
+}
+
+/**
+ * List all conversations for a studio
+ * @param {string} studioId - Studio ID
+ * @returns {Promise<object[]>} - Conversations with preview
+ */
+async function listConversations(studioId) {
+    const { data, error } = await supabase
+        .from('studio_conversations')
+        .select(`
+            id, title, is_active, created_at, updated_at,
+            studio_messages (
+                content,
+                role,
+                created_at
+            )
+        `)
+        .eq('studio_id', studioId)
+        .order('updated_at', { ascending: false });
+
+    if (error) {
+        throw new Error(`Failed to list conversations: ${error.message}`);
+    }
+
+    // Transform to include message count and preview
+    return (data || []).map(convo => {
+        const messages = convo.studio_messages || [];
+        const userMessages = messages.filter(m => m.role === 'user');
+        const firstUserMessage = userMessages.length > 0 ? userMessages[0] : null;
+
+        return {
+            id: convo.id,
+            title: convo.title,
+            is_active: convo.is_active,
+            created_at: convo.created_at,
+            updated_at: convo.updated_at,
+            message_count: messages.length,
+            preview: firstUserMessage
+                ? firstUserMessage.content.substring(0, 100) + (firstUserMessage.content.length > 100 ? '...' : '')
+                : 'No messages yet'
+        };
+    });
+}
+
+/**
+ * Switch to a specific conversation
+ * @param {string} studioId - Studio ID
+ * @param {string} conversationId - Conversation ID to switch to
+ * @returns {Promise<object>} - The activated conversation
+ */
+async function switchConversation(studioId, conversationId) {
+    // Deactivate all conversations for this studio
+    await supabase
+        .from('studio_conversations')
+        .update({ is_active: false })
+        .eq('studio_id', studioId);
+
+    // Activate the target conversation
+    const { data, error } = await supabase
+        .from('studio_conversations')
+        .update({ is_active: true })
+        .eq('id', conversationId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Failed to switch conversation: ${error.message}`);
+    }
+
+    return data;
+}
+
+/**
+ * Update conversation title
+ * @param {string} conversationId - Conversation ID
+ * @param {string} title - New title
+ * @returns {Promise<object>} - Updated conversation
+ */
+async function updateConversationTitle(conversationId, title) {
+    const { data, error } = await supabase
+        .from('studio_conversations')
+        .update({ title })
+        .eq('id', conversationId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Failed to update conversation title: ${error.message}`);
+    }
+
+    return data;
+}
+
+/**
+ * Delete a conversation
+ * @param {string} conversationId - Conversation ID
+ * @returns {Promise<void>}
+ */
+async function deleteConversation(conversationId) {
+    const { error } = await supabase
+        .from('studio_conversations')
+        .delete()
+        .eq('id', conversationId);
+
+    if (error) {
+        throw new Error(`Failed to delete conversation: ${error.message}`);
+    }
+}
+
 // =====================================================
 // OUTPUT MANAGEMENT
 // =====================================================
@@ -960,6 +1099,11 @@ module.exports = {
     getActiveConversation,
     addMessage,
     getMessages,
+    createConversation,
+    listConversations,
+    switchConversation,
+    updateConversationTitle,
+    deleteConversation,
 
     // Outputs
     createOutput,

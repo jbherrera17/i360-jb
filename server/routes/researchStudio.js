@@ -19,6 +19,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const studioService = require('../services/researchStudioService');
 const sourceProcessor = require('../services/sourceProcessor');
 const outputService = require('../services/studioOutputService');
+const llmRegistry = require('../services/llmRegistry');
 
 // Configure multer for file uploads
 const upload = multer({
@@ -490,23 +491,28 @@ Return format: ["Question 1?", "Question 2?", ...]`
             const systemPrompt = buildSystemPrompt(context);
 
             // Get chat history (limit to last 10 for context window management)
+            // Note: The user message was already saved above, so history includes it
             const history = await studioService.getMessages(conversation.id, 10);
-            const messages = history.slice(-10).map(m => ({
+
+            // Convert to message format and ensure proper alternation for Anthropic API
+            // Anthropic requires messages to alternate between user and assistant roles
+            let messages = history.slice(-10).map(m => ({
                 role: m.role,
                 content: m.content
             }));
 
-            // Add current message
-            messages.push({ role: 'user', content: message });
+            // Ensure message alternation - merge consecutive same-role messages
+            messages = ensureMessageAlternation(messages);
 
             // Stream response from LLM
             const startTime = Date.now();
             let fullResponse = '';
 
-            // Use the appropriate LLM service based on model
+            // Use the appropriate LLM service based on model using llmRegistry
             const selectedModel = model || 'claude-sonnet-4-20250514';
+            const provider = llmRegistry.getProvider(selectedModel);
 
-            if (selectedModel.startsWith('claude')) {
+            if (provider === 'anthropic') {
                 // Use Anthropic
                 const Anthropic = require('@anthropic-ai/sdk');
                 const anthropic = new Anthropic({
@@ -515,7 +521,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
 
                 const stream = anthropic.messages.stream({
                     model: selectedModel,
-                    max_tokens: 4096,
+                    max_tokens: 8192,
                     system: systemPrompt,
                     messages: messages
                 });
@@ -531,7 +537,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                         })}\n\n`);
                     }
                 }
-            } else if (selectedModel.startsWith('gpt')) {
+            } else if (provider === 'openai') {
                 // Use OpenAI
                 const OpenAI = require('openai');
                 const openai = new OpenAI({
@@ -544,7 +550,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                         { role: 'system', content: systemPrompt },
                         ...messages
                     ],
-                    max_tokens: 4096,
+                    max_tokens: 8192,
                     stream: true
                 });
 
@@ -556,6 +562,90 @@ Return format: ["Question 1?", "Question 2?", ...]`
                         res.write(`data: ${JSON.stringify({
                             type: 'chunk',
                             content
+                        })}\n\n`);
+                    }
+                }
+            } else if (provider === 'perplexity') {
+                // Use Perplexity (OpenAI-compatible API)
+                const OpenAI = require('openai');
+                const perplexity = new OpenAI({
+                    apiKey: process.env.PERPLEXITY_API_KEY,
+                    baseURL: 'https://api.perplexity.ai'
+                });
+
+                const stream = await perplexity.chat.completions.create({
+                    model: selectedModel,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...messages
+                    ],
+                    max_tokens: 8192,
+                    stream: true
+                });
+
+                for await (const chunk of stream) {
+                    const content = chunk.choices[0]?.delta?.content;
+                    if (content) {
+                        fullResponse += content;
+
+                        res.write(`data: ${JSON.stringify({
+                            type: 'chunk',
+                            content
+                        })}\n\n`);
+                    }
+                }
+            } else if (provider === 'google') {
+                // Use Google Gemini
+                const { GoogleGenerativeAI } = require('@google/generative-ai');
+                const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+                const geminiModel = genAI.getGenerativeModel({ model: selectedModel });
+
+                // Convert messages to Gemini format
+                const geminiHistory = messages.slice(0, -1).map(m => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                }));
+
+                const chat = geminiModel.startChat({
+                    history: geminiHistory,
+                    systemInstruction: systemPrompt
+                });
+
+                const result = await chat.sendMessageStream(message);
+
+                for await (const chunk of result.stream) {
+                    const content = chunk.text();
+                    if (content) {
+                        fullResponse += content;
+
+                        res.write(`data: ${JSON.stringify({
+                            type: 'chunk',
+                            content
+                        })}\n\n`);
+                    }
+                }
+            } else {
+                // Fallback to Claude for unknown providers
+                const Anthropic = require('@anthropic-ai/sdk');
+                const anthropic = new Anthropic({
+                    apiKey: process.env.ANTHROPIC_API_KEY
+                });
+
+                const stream = anthropic.messages.stream({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 8192,
+                    system: systemPrompt,
+                    messages: messages
+                });
+
+                for await (const event of stream) {
+                    if (event.type === 'content_block_delta' && event.delta.text) {
+                        const chunk = event.delta.text;
+                        fullResponse += chunk;
+
+                        res.write(`data: ${JSON.stringify({
+                            type: 'chunk',
+                            content: chunk
                         })}\n\n`);
                     }
                 }
@@ -603,26 +693,99 @@ Return format: ["Question 1?", "Question 2?", ...]`
 
     /**
      * GET /api/research-studios/:id/conversations
-     * Get chat conversations for a studio
+     * Get chat conversations for a studio with previews
      */
     router.get('/:id/conversations', async (req, res) => {
         try {
             const { id: studioId } = req.params;
 
-            const { data: conversations, error } = await supabase
-                .from('studio_conversations')
-                .select('id, title, is_active, created_at, updated_at')
-                .eq('studio_id', studioId)
-                .order('updated_at', { ascending: false });
-
-            if (error) throw error;
+            const conversations = await studioService.listConversations(studioId);
 
             res.json({
                 success: true,
-                data: conversations || []
+                data: conversations
             });
         } catch (error) {
             console.error('Error getting conversations:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/research-studios/:id/conversations
+     * Create a new conversation
+     */
+    router.post('/:id/conversations', async (req, res) => {
+        try {
+            const { id: studioId } = req.params;
+            const { title } = req.body;
+
+            const conversation = await studioService.createConversation(studioId, title);
+
+            res.status(201).json({
+                success: true,
+                data: conversation
+            });
+        } catch (error) {
+            console.error('Error creating conversation:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * PUT /api/research-studios/:id/conversations/:conversationId
+     * Update conversation (e.g., switch to it or rename)
+     */
+    router.put('/:id/conversations/:conversationId', async (req, res) => {
+        try {
+            const { id: studioId, conversationId } = req.params;
+            const { title, is_active } = req.body;
+
+            let conversation;
+
+            if (is_active === true) {
+                // Switch to this conversation
+                conversation = await studioService.switchConversation(studioId, conversationId);
+            } else if (title !== undefined) {
+                // Update title
+                conversation = await studioService.updateConversationTitle(conversationId, title);
+            }
+
+            res.json({
+                success: true,
+                data: conversation
+            });
+        } catch (error) {
+            console.error('Error updating conversation:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * DELETE /api/research-studios/:id/conversations/:conversationId
+     * Delete a conversation
+     */
+    router.delete('/:id/conversations/:conversationId', async (req, res) => {
+        try {
+            const { conversationId } = req.params;
+
+            await studioService.deleteConversation(conversationId);
+
+            res.json({
+                success: true,
+                message: 'Conversation deleted successfully'
+            });
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
             res.status(500).json({
                 success: false,
                 error: error.message
@@ -1062,3 +1225,49 @@ function extractCitations(response, chunks) {
 }
 
 // Note: Output generation moved to studioOutputService.js
+
+/**
+ * Ensure message alternation for Anthropic API compatibility
+ * Merges consecutive same-role messages and ensures user/assistant alternation
+ * @param {object[]} messages - Array of {role, content} messages
+ * @returns {object[]} - Messages with proper alternation
+ */
+function ensureMessageAlternation(messages) {
+    if (!messages || messages.length === 0) {
+        return [];
+    }
+
+    const result = [];
+    let lastRole = null;
+
+    for (const msg of messages) {
+        // Skip empty messages
+        if (!msg.content || msg.content.trim() === '') {
+            continue;
+        }
+
+        if (msg.role === lastRole) {
+            // Merge consecutive same-role messages
+            if (result.length > 0) {
+                result[result.length - 1].content += '\n\n' + msg.content;
+            }
+        } else {
+            result.push({ role: msg.role, content: msg.content });
+            lastRole = msg.role;
+        }
+    }
+
+    // Ensure the conversation starts with a user message (required by Anthropic)
+    if (result.length > 0 && result[0].role === 'assistant') {
+        // Prepend a placeholder user message if first message is from assistant
+        result.unshift({ role: 'user', content: '(continuing conversation)' });
+    }
+
+    // Ensure the conversation ends with a user message for the API call
+    if (result.length > 0 && result[result.length - 1].role === 'assistant') {
+        // This shouldn't happen in normal flow, but handle it
+        result.push({ role: 'user', content: '(please continue)' });
+    }
+
+    return result;
+}

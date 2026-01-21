@@ -14,6 +14,7 @@ let currentConversationId = null;
 let sources = [];
 let outputs = [];
 let isStreaming = false;
+let loadingMessageController = null;
 
 // ============================================================================
 // INITIALIZATION
@@ -103,9 +104,10 @@ async function loadStudio(studioId) {
             sources = result.data.sources || [];
             outputs = result.data.outputs || [];
 
-            // Get active conversation
+            // Get active conversation (find the one marked as active, or use first one)
             if (result.data.conversations && result.data.conversations.length > 0) {
-                currentConversationId = result.data.conversations[0].id;
+                const activeConvo = result.data.conversations.find(c => c.is_active);
+                currentConversationId = activeConvo ? activeConvo.id : result.data.conversations[0].id;
             }
 
             // Update URL
@@ -252,18 +254,23 @@ function renderSources() {
     container.innerHTML = sources.map(source => `
         <div class="source-item ${source.is_selected ? 'selected' : ''}" data-id="${source.id}">
             <div class="source-checkbox">
-                <input type="checkbox" ${source.is_selected ? 'checked' : ''} onchange="toggleSource('${source.id}', this.checked)">
+                <input type="checkbox" ${source.is_selected ? 'checked' : ''} onchange="event.stopPropagation(); toggleSource('${source.id}', this.checked)">
             </div>
-            <div class="source-type-icon ${source.source_type}">
+            <div class="source-type-icon ${source.source_type}" onclick="viewSource('${source.id}')">
                 <i data-lucide="${getSourceIcon(source.source_type)}"></i>
             </div>
-            <div class="source-info">
+            <div class="source-info" onclick="viewSource('${source.id}')">
                 <div class="source-title">${escapeHtml(source.title)}</div>
                 <div class="source-meta">${formatFileSize(source.file_size || 0)} · ${source.source_type.toUpperCase()}</div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="deleteSource('${source.id}')" title="Delete">
-                <i data-lucide="trash-2"></i>
-            </button>
+            <div class="source-actions">
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editSource('${source.id}')" title="Edit">
+                    <i data-lucide="pencil"></i>
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteSource('${source.id}')" title="Delete">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
         </div>
     `).join('');
 
@@ -514,12 +521,151 @@ async function toggleSource(sourceId, isSelected) {
 }
 
 /**
+ * View a source in a modal
+ */
+async function viewSource(sourceId) {
+    const source = sources.find(s => s.id === sourceId);
+    if (!source) return;
+
+    // Check if ContentModal is available
+    if (typeof ContentModal === 'undefined') {
+        console.error('ContentModal not available');
+        alert('View functionality not available');
+        return;
+    }
+
+    // Determine content type and format
+    let contentType = 'markdown';
+    let content = source.content || '';
+    let modalTitle = source.title;
+
+    // For URL sources, show the URL and any extracted content
+    if (source.source_type === 'url') {
+        content = `**Source URL:** [${source.url}](${source.url})\n\n---\n\n${content || '*No content extracted*'}`;
+    }
+
+    // For file sources without content, show metadata
+    if (!content && (source.source_type === 'pdf' || source.source_type === 'docx')) {
+        content = `**File:** ${source.file_name || source.title}\n\n**Size:** ${formatFileSize(source.file_size || 0)}\n\n**Type:** ${source.source_type.toUpperCase()}\n\n*Content extraction may still be processing...*`;
+    }
+
+    // Add metadata header
+    const metadata = `
+> **Type:** ${source.source_type.toUpperCase()} | **Size:** ${formatFileSize(source.file_size || 0)} | **Added:** ${new Date(source.created_at).toLocaleDateString()}
+
+---
+
+`;
+
+    // Use ModalService.content() instead of direct ContentModal instantiation
+    const modal = ModalService.content({
+        title: modalTitle,
+        content: metadata + content,
+        contentType: 'markdown',
+        resizable: true,
+        width: 700,
+        height: 500
+    });
+
+}
+
+/**
+ * Edit a source using the modal service
+ */
+async function editSource(sourceId) {
+    const source = sources.find(s => s.id === sourceId);
+    if (!source) return;
+
+    // Check if ModalService is available
+    if (typeof ModalService === 'undefined') {
+        console.error('ModalService not available');
+        alert('Edit functionality not available');
+        return;
+    }
+
+    // Build fields based on source type
+    const fields = [
+        {
+            name: 'title',
+            label: 'Title',
+            type: 'text',
+            required: true,
+            placeholder: 'Source title',
+            value: source.title
+        }
+    ];
+
+    // Only show content field for text-based sources
+    if (source.source_type === 'text' || source.source_type === 'markdown') {
+        fields.push({
+            name: 'content',
+            label: 'Content',
+            type: 'textarea',
+            rows: 12,
+            placeholder: 'Source content',
+            value: source.content || ''
+        });
+    }
+
+    const values = await ModalService.form({
+        title: `Edit Source: ${source.title}`,
+        fields: fields,
+        submitText: 'Save Changes',
+        cancelText: 'Cancel'
+    });
+
+    // If user cancelled, values will be null
+    if (!values) return;
+
+    try {
+        const updateData = { title: values.title };
+        if (values.content !== undefined) {
+            updateData.content = values.content;
+        }
+
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Update local source
+            Object.assign(source, updateData);
+            renderSources();
+        } else {
+            throw new Error(result.error || 'Failed to update source');
+        }
+    } catch (error) {
+        console.error('Error updating source:', error);
+        alert('Error updating source: ' + error.message);
+    }
+}
+
+/**
  * Delete a source
  */
 async function deleteSource(sourceId) {
-    if (!confirm('Are you sure you want to delete this source?')) {
-        return;
+    const source = sources.find(s => s.id === sourceId);
+    if (!source) return;
+
+    // Use ModalService for confirmation if available
+    let confirmed = false;
+    if (typeof ModalService !== 'undefined') {
+        confirmed = await ModalService.confirm({
+            title: 'Delete Source',
+            message: `Are you sure you want to delete "${source.title}"? This action cannot be undone.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            type: 'danger'
+        });
+    } else {
+        confirmed = confirm('Are you sure you want to delete this source?');
     }
+
+    if (!confirmed) return;
 
     try {
         const response = await fetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
@@ -532,11 +678,19 @@ async function deleteSource(sourceId) {
             sources = sources.filter(s => s.id !== sourceId);
             renderSources();
         } else {
-            alert('Failed to delete source: ' + result.error);
+            if (typeof ModalService !== 'undefined') {
+                ModalService.error(result.error || 'Failed to delete source', 'Delete Failed');
+            } else {
+                alert('Failed to delete source: ' + result.error);
+            }
         }
     } catch (error) {
         console.error('Error deleting source:', error);
-        alert('Error deleting source');
+        if (typeof ModalService !== 'undefined') {
+            ModalService.error('An error occurred while deleting the source', 'Delete Failed');
+        } else {
+            alert('Error deleting source');
+        }
     }
 }
 
@@ -686,7 +840,7 @@ async function sendMessage() {
     document.getElementById('sendBtn').disabled = true;
 
     // Clear welcome message if present
-    const welcomeEl = document.querySelector('.chat-welcome');
+    const welcomeEl = document.querySelector('.studio-chat-welcome');
     if (welcomeEl) {
         welcomeEl.remove();
     }
@@ -696,24 +850,41 @@ async function sendMessage() {
 
     // Append placeholder for assistant
     const assistantDiv = appendMessage('assistant', '');
-    const contentDiv = assistantDiv.querySelector('.message-text') || assistantDiv;
+    const contentDiv = assistantDiv.querySelector('.studio-message-content') || assistantDiv;
 
-    // Show typing indicator
+    // Show loading spinner with rotating messages (like chat.html)
     contentDiv.innerHTML = `
-        <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
+        <div class="message-loading">
+            <img src="/assets/loading-spinner.svg" alt="Loading" class="loading-spinner">
+            <span class="loading-text"></span>
         </div>
     `;
 
+    // Start rotating loading messages
+    if (typeof LoadingMessages !== 'undefined') {
+        const loadingTextEl = contentDiv.querySelector('.loading-text');
+        if (loadingTextEl) {
+            if (loadingMessageController) {
+                loadingMessageController.stop();
+            }
+            loadingMessageController = LoadingMessages.start(loadingTextEl, {
+                preset: 'chat',
+                interval: 2500
+            });
+        }
+    }
+
     try {
+        // Get selected model (function defined in research-studio.html)
+        const model = typeof getSelectedModel === 'function' ? getSelectedModel() : 'claude-sonnet-4-20250514';
+
         const response = await fetch(`${API_BASE}/${currentStudio.id}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message,
-                conversationId: currentConversationId
+                conversationId: currentConversationId,
+                model
             })
         });
 
@@ -735,6 +906,10 @@ async function sendMessage() {
                         const data = JSON.parse(line.slice(6));
 
                         if (data.type === 'chunk') {
+                            // Stop loading messages on first content
+                            if (fullContent === '') {
+                                stopLoadingMessages();
+                            }
                             fullContent += data.content;
                             contentDiv.innerHTML = formatMarkdown(fullContent);
                             scrollToBottom();
@@ -771,6 +946,7 @@ async function sendMessage() {
                                 renderFollowUpQuestions(data.followUpQuestions, assistantDiv);
                             }
                         } else if (data.type === 'error') {
+                            stopLoadingMessages();
                             contentDiv.innerHTML = `<span style="color: var(--danger);">Error: ${escapeHtml(data.error)}</span>`;
                         }
                     } catch (e) {
@@ -781,10 +957,22 @@ async function sendMessage() {
         }
     } catch (error) {
         console.error('Chat error:', error);
+        stopLoadingMessages();
         contentDiv.innerHTML = `<span style="color: var(--danger);">Error: ${error.message}</span>`;
     } finally {
         isStreaming = false;
+        stopLoadingMessages();
         document.getElementById('sendBtn').disabled = false;
+    }
+}
+
+/**
+ * Stop loading messages rotation
+ */
+function stopLoadingMessages() {
+    if (loadingMessageController) {
+        loadingMessageController.stop();
+        loadingMessageController = null;
     }
 }
 
@@ -795,7 +983,7 @@ function appendMessage(role, content, citations = []) {
     const container = document.getElementById('chatMessages');
 
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${role}`;
+    messageDiv.className = `studio-message ${role}`;
 
     // Format content with highlighted citations for assistant messages
     let formattedContent = formatMarkdown(content);
@@ -803,7 +991,32 @@ function appendMessage(role, content, citations = []) {
         formattedContent = highlightCitations(formattedContent, citations);
     }
 
-    let html = `<div class="message-text">${formattedContent}</div>`;
+    const avatar = role === 'user' ? '👤' : '🔬';
+    const label = role === 'user' ? 'You' : 'Research Assistant';
+    const time = new Date().toLocaleTimeString();
+    const messageId = `msg-${Date.now()}`;
+
+    // Action buttons - assistant messages get save as source button
+    const saveAsSourceBtn = role === 'assistant' ? `
+        <button class="studio-message-action" onclick="saveMessageAsSource('${messageId}')" title="Save as Source">
+            <i data-lucide="file-plus"></i>
+        </button>` : '';
+
+    let html = `
+        <div class="studio-message-avatar">${avatar}</div>
+        <div class="studio-message-body">
+            <div class="studio-message-header">
+                <span class="studio-message-author">${label}</span>
+                <span class="studio-message-time">${time}</span>
+                <div class="studio-message-actions">
+                    <button class="studio-message-action" onclick="copyMessageContent('${messageId}')" title="Copy">
+                        <i data-lucide="copy"></i>
+                    </button>
+                    ${saveAsSourceBtn}
+                </div>
+            </div>
+            <div class="studio-message-content" id="${messageId}">${formattedContent}</div>
+    `;
 
     if (citations && citations.length > 0) {
         html += `
@@ -820,11 +1033,127 @@ function appendMessage(role, content, citations = []) {
         `;
     }
 
+    html += `</div>`;
+
     messageDiv.innerHTML = html;
     container.appendChild(messageDiv);
+
+    // Initialize Lucide icons for the new message
+    lucide.createIcons();
+
     scrollToBottom();
 
     return messageDiv;
+}
+
+/**
+ * Copy message content to clipboard
+ */
+function copyMessageContent(messageId) {
+    const contentEl = document.getElementById(messageId);
+    if (contentEl) {
+        const text = contentEl.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            // Show brief feedback
+            const btn = contentEl.closest('.studio-message').querySelector('.studio-message-action[title="Copy"]');
+            if (btn) {
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalIcon;
+                    lucide.createIcons();
+                }, 1500);
+            }
+        });
+    }
+}
+
+/**
+ * Save a message as a new source
+ */
+async function saveMessageAsSource(messageId) {
+    if (!currentStudio) {
+        alert('Please select or create a studio first');
+        return;
+    }
+
+    const contentEl = document.getElementById(messageId);
+    if (!contentEl) {
+        console.error('Message element not found:', messageId);
+        alert('Could not find message content');
+        return;
+    }
+
+    const content = contentEl.innerText;
+    if (!content || content.trim().length === 0) {
+        alert('No content to save');
+        return;
+    }
+
+    const model = typeof getSelectedModel === 'function' ? getSelectedModel() : 'Unknown';
+    const title = `Research Response - ${new Date().toLocaleDateString()} (${model})`;
+
+    // Show loading state on button
+    const btn = contentEl.closest('.studio-message')?.querySelector('.studio-message-action[title="Save as Source"]');
+    let originalIcon = null;
+    if (btn) {
+        originalIcon = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
+        btn.disabled = true;
+        lucide.createIcons();
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: content,
+                title: title
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API error:', response.status, errorText);
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Add to sources list
+            sources.unshift(result.data);
+            renderSources();
+            updateContextInfo();
+
+            // Show success feedback
+            if (btn) {
+                btn.innerHTML = '<i data-lucide="check"></i>';
+                btn.title = 'Saved!';
+                btn.disabled = false;
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalIcon;
+                    btn.title = 'Save as Source';
+                    lucide.createIcons();
+                }, 2000);
+            }
+        } else {
+            throw new Error(result.error || 'Failed to save source');
+        }
+    } catch (error) {
+        console.error('Error saving as source:', error);
+        alert('Error saving as source: ' + error.message);
+
+        // Reset button on error
+        if (btn && originalIcon) {
+            btn.innerHTML = originalIcon;
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+    }
 }
 
 /**
@@ -877,11 +1206,25 @@ function askSuggested(button) {
 /**
  * Clear chat
  */
-function clearChat() {
-    if (!confirm('Clear all messages in this conversation?')) return;
+async function clearChat() {
+    // Use ModalService for confirmation if available
+    let confirmed = false;
+    if (typeof ModalService !== 'undefined') {
+        confirmed = await ModalService.confirm({
+            title: 'Clear Chat',
+            message: 'Are you sure you want to clear all messages in this conversation?',
+            confirmText: 'Clear',
+            cancelText: 'Cancel',
+            type: 'warning'
+        });
+    } else {
+        confirmed = confirm('Clear all messages in this conversation?');
+    }
+
+    if (!confirmed) return;
 
     document.getElementById('chatMessages').innerHTML = `
-        <div class="chat-welcome">
+        <div class="studio-chat-welcome">
             <h2>Welcome to Research Studio</h2>
             <p>Upload your sources and start asking questions. I'll analyze them and provide answers with citations.</p>
             <div class="suggested-questions" id="suggestedQuestions">
@@ -905,6 +1248,271 @@ function clearChat() {
 function scrollToBottom() {
     const container = document.getElementById('chatMessages');
     container.scrollTop = container.scrollHeight;
+}
+
+// ============================================================================
+// CHAT HISTORY MANAGEMENT
+// ============================================================================
+
+// Chat history state
+let conversations = [];
+let chatHistoryVisible = false;
+
+/**
+ * Toggle chat history panel visibility
+ */
+function toggleChatHistory() {
+    const panel = document.getElementById('chatHistoryPanel');
+    chatHistoryVisible = !chatHistoryVisible;
+
+    if (chatHistoryVisible) {
+        panel.style.display = 'flex';
+        loadChatHistoryList();
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+/**
+ * Load chat history list
+ */
+async function loadChatHistoryList() {
+    if (!currentStudio) return;
+
+    const container = document.getElementById('chatHistoryList');
+    container.innerHTML = '<div class="chat-history-empty"><i data-lucide="loader-2" class="spin"></i> Loading...</div>';
+    lucide.createIcons();
+
+    try {
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations`);
+        const result = await response.json();
+
+        if (result.success) {
+            conversations = result.data;
+            renderChatHistoryList();
+        } else {
+            container.innerHTML = '<div class="chat-history-empty">Failed to load conversations</div>';
+        }
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+        container.innerHTML = '<div class="chat-history-empty">Error loading conversations</div>';
+    }
+}
+
+/**
+ * Render chat history list
+ */
+function renderChatHistoryList() {
+    const container = document.getElementById('chatHistoryList');
+
+    if (conversations.length === 0) {
+        container.innerHTML = '<div class="chat-history-empty">No conversations yet</div>';
+        return;
+    }
+
+    container.innerHTML = conversations.map(convo => {
+        const date = new Date(convo.updated_at).toLocaleDateString();
+        const isActive = convo.id === currentConversationId;
+
+        return `
+            <div class="chat-history-card ${isActive ? 'active' : ''}"
+                 data-id="${convo.id}"
+                 onclick="switchToConversation('${convo.id}')">
+                <div class="chat-history-card-header">
+                    <span class="chat-history-card-title">${escapeHtml(convo.title)}</span>
+                    <div class="chat-history-card-actions">
+                        <button class="btn btn-icon btn-sm" onclick="event.stopPropagation(); renameConversation('${convo.id}')" title="Rename">
+                            <i data-lucide="pencil"></i>
+                        </button>
+                        <button class="btn btn-icon btn-sm" onclick="event.stopPropagation(); deleteConversation('${convo.id}')" title="Delete">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-history-card-preview">${escapeHtml(convo.preview)}</div>
+                <div class="chat-history-card-meta">
+                    <span><i data-lucide="message-square"></i> ${convo.message_count} messages</span>
+                    <span><i data-lucide="calendar"></i> ${date}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    lucide.createIcons();
+}
+
+/**
+ * Start a new chat conversation
+ */
+async function startNewChat() {
+    if (!currentStudio) {
+        alert('Please select or create a studio first');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            currentConversationId = result.data.id;
+
+            // Clear chat display
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="studio-chat-welcome">
+                    <h2>Welcome to Research Studio</h2>
+                    <p>Upload your sources and start asking questions. I'll analyze them and provide answers with citations.</p>
+                    <div class="suggested-questions" id="suggestedQuestions">
+                        <button class="suggested-question" onclick="askSuggested(this)">
+                            What are the main themes across these sources?
+                        </button>
+                        <button class="suggested-question" onclick="askSuggested(this)">
+                            Summarize the key findings
+                        </button>
+                        <button class="suggested-question" onclick="askSuggested(this)">
+                            What questions do these sources answer?
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Refresh chat history if visible
+            if (chatHistoryVisible) {
+                await loadChatHistoryList();
+            }
+        } else {
+            alert('Failed to create new chat: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error creating new chat:', error);
+        alert('Error creating new chat');
+    }
+}
+
+/**
+ * Switch to a specific conversation
+ */
+async function switchToConversation(conversationId) {
+    if (!currentStudio || conversationId === currentConversationId) return;
+
+    try {
+        // Activate the conversation on the server
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: true })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            currentConversationId = conversationId;
+
+            // Load messages for this conversation
+            await loadChatHistory();
+
+            // Update chat history list highlight
+            if (chatHistoryVisible) {
+                document.querySelectorAll('.chat-history-card').forEach(card => {
+                    card.classList.toggle('active', card.dataset.id === conversationId);
+                });
+            }
+
+            // Close the history panel
+            toggleChatHistory();
+        } else {
+            alert('Failed to switch conversation: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error switching conversation:', error);
+        alert('Error switching conversation');
+    }
+}
+
+/**
+ * Rename a conversation
+ */
+async function renameConversation(conversationId) {
+    const convo = conversations.find(c => c.id === conversationId);
+    if (!convo) return;
+
+    const newTitle = prompt('Enter new name for this conversation:', convo.title);
+    if (!newTitle || newTitle === convo.title) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Update local state
+            convo.title = newTitle;
+            renderChatHistoryList();
+        } else {
+            alert('Failed to rename conversation: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error renaming conversation:', error);
+        alert('Error renaming conversation');
+    }
+}
+
+/**
+ * Delete a conversation
+ */
+async function deleteConversation(conversationId) {
+    const convo = conversations.find(c => c.id === conversationId);
+    if (!convo) return;
+
+    // Use ModalService for confirmation if available
+    let confirmed = false;
+    if (typeof ModalService !== 'undefined') {
+        confirmed = await ModalService.confirm({
+            title: 'Delete Conversation',
+            message: `Are you sure you want to delete "${convo.title}"? This will permanently delete all messages in this conversation.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            type: 'danger'
+        });
+    } else {
+        confirmed = confirm(`Delete conversation "${convo.title}"? This cannot be undone.`);
+    }
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Remove from local state
+            conversations = conversations.filter(c => c.id !== conversationId);
+
+            // If we deleted the current conversation, create a new one
+            if (conversationId === currentConversationId) {
+                await startNewChat();
+            } else {
+                renderChatHistoryList();
+            }
+        } else {
+            alert('Failed to delete conversation: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error deleting conversation:', error);
+        alert('Error deleting conversation');
+    }
 }
 
 // ============================================================================
@@ -935,10 +1543,13 @@ async function generateOutput(type) {
     }
 
     try {
+        // Get selected model (function defined in research-studio.html)
+        const model = typeof getSelectedModel === 'function' ? getSelectedModel() : 'claude-sonnet-4-20250514';
+
         const response = await fetch(`${API_BASE}/${currentStudio.id}/outputs/${type}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
+            body: JSON.stringify({ model })
         });
 
         const result = await response.json();
@@ -1835,11 +2446,16 @@ function capitalizeFirst(str) {
 }
 
 /**
- * Format markdown to HTML
+ * Format markdown to HTML (matches chat.js configuration)
  */
 function formatMarkdown(text) {
     if (!text) return '';
     if (typeof marked !== 'undefined') {
+        // Configure marked like chat.js does
+        marked.setOptions({
+            breaks: true,  // Convert \n to <br>
+            gfm: true      // GitHub Flavored Markdown
+        });
         return marked.parse(text);
     }
     // Basic fallback

@@ -586,7 +586,7 @@ select {
 
 /* Sidebar Collapsed State */
 .sidebar.sidebar-collapsed {
-    width: 60px;
+    width: 72px;
 }
 
 .sidebar.sidebar-collapsed .logo-text {
@@ -650,7 +650,7 @@ select {
 
 /* Adjust main content when sidebar is collapsed */
 .app-container:has(.sidebar-collapsed) .main-content {
-    margin-left: 60px;
+    margin-left: 72px;
 }
 
 .version-info {
