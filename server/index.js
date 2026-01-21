@@ -53,6 +53,7 @@ const oauthRoutes = require('./routes/oauth');
 const modelAvailabilityRoutes = require('./routes/model-availability');
 const visualizationsRoutes = require('./routes/visualizations');
 const researchStudioRoutes = require('./routes/researchStudio');
+const usersRoutes = require('./routes/users');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -363,7 +364,9 @@ function initializeServices() {
         app.use('/api/models', modelAvailabilityRoutes);
         app.use('/api/visualizations', visualizationsRoutes);
         app.use('/api/research-studios', researchStudioRoutes(supabase));
+        app.use('/api/users', usersRoutes);
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Users routes registered');
         console.log('  ✅ Research Studio routes registered (Phase 6)');
         console.log('  ✅ Visualizations routes registered');
         console.log('  ✅ Model Availability routes registered');

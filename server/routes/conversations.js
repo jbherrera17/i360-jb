@@ -1,13 +1,133 @@
 /**
  * Conversations Routes - Insight 360
  * API endpoints for conversation management
- * Version: 1.0.1 - Added user-specific filtering
+ * Version: 1.1.1 - Fixed route ordering for admin endpoints
  */
 
 const express = require('express');
 const router = express.Router();
 const conversationService = require('../services/conversationService');
 const { getUserId } = require('../utils/auth');
+
+// ============================================
+// ADMIN ENDPOINTS (must be before /:id routes)
+// ============================================
+
+/**
+ * GET /api/conversations/admin/all
+ * List all conversations with user info (admin only)
+ */
+router.get('/admin/all', async (req, res) => {
+    try {
+        const {
+            limit = 100,
+            offset = 0,
+            department_id,
+            business_role,
+            user_id,
+            search
+        } = req.query;
+
+        const conversations = await conversationService.getAdminConversations({
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            departmentId: department_id,
+            businessRole: business_role,
+            userId: user_id,
+            search
+        });
+
+        res.json({
+            success: true,
+            data: conversations,
+            count: conversations.length
+        });
+    } catch (error) {
+        console.error('Error fetching admin conversations:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/conversations/admin/stats
+ * Get conversation statistics by department and role
+ */
+router.get('/admin/stats', async (req, res) => {
+    try {
+        const stats = await conversationService.getConversationStats();
+
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        console.error('Error fetching conversation stats:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/conversations/admin/:id
+ * Get a specific conversation with messages (admin - bypasses ownership)
+ */
+router.get('/admin/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const conversation = await conversationService.getAdminConversation(id);
+
+        if (!conversation) {
+            return res.status(404).json({
+                success: false,
+                error: 'Conversation not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: conversation
+        });
+    } catch (error) {
+        console.error('Error fetching admin conversation:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/conversations/admin/:id
+ * Delete a conversation (admin)
+ */
+router.delete('/admin/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await conversationService.deleteConversation(id);
+
+        res.json({
+            success: true,
+            message: 'Conversation deleted'
+        });
+    } catch (error) {
+        console.error('Error deleting admin conversation:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============================================
+// USER ENDPOINTS
+// ============================================
 
 /**
  * GET /api/conversations

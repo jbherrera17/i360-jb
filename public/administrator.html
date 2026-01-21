@@ -325,6 +325,105 @@
                             Configure business roles and title hierarchies
                         </div>
                     </a>
+
+                    <div class="admin-card" onclick="showConversationsPanel()" style="cursor: pointer;">
+                        <div class="admin-card-header">
+                            <div class="admin-card-icon green">
+                                <i data-lucide="message-square"></i>
+                            </div>
+                            <div class="admin-card-title">Conversations</div>
+                        </div>
+                        <div class="admin-card-description">
+                            View and manage all user conversations with Higgins
+                        </div>
+                        <div id="conversationCount" class="admin-card-badge">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversations Admin Panel (hidden by default) -->
+            <div id="conversationsPanel" class="section" style="display: none;">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600;">All Conversations</h3>
+                        <button onclick="hideConversationsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Department</label>
+                            <select id="filterDepartment" onchange="loadConversationsData()" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Role</label>
+                            <select id="filterRole" onchange="loadConversationsData()" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);">
+                                <option value="">All Roles</option>
+                                <option value="executive">Executive</option>
+                                <option value="director">Director</option>
+                                <option value="manager">Manager</option>
+                                <option value="supervisor">Supervisor</option>
+                                <option value="ic">Individual Contributor</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">User</label>
+                            <select id="filterUser" onchange="loadConversationsData()" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);">
+                                <option value="">All Users</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Search</label>
+                            <input type="text" id="filterSearch" placeholder="Search title or user..." oninput="debounceSearch()" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                    </div>
+
+                    <!-- Stats Summary -->
+                    <div id="conversationStats" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Conversations Table -->
+                    <div id="conversationsTable" style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Title</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">User</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Department</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Role</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Model</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Updated</th>
+                                    <th style="text-align: right; padding: 0.75rem; color: var(--text-secondary);">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="conversationsTableBody">
+                                <tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading conversations...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversation Detail Modal -->
+            <div id="conversationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+                <div style="max-width: 800px; margin: 2rem auto; background: var(--bg-primary); border-radius: 12px; max-height: calc(100vh - 4rem); display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+                        <h3 id="modalTitle" style="font-size: 1.1rem; font-weight: 600;">Conversation</h3>
+                        <button onclick="closeConversationModal()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+                    <div id="modalMeta" style="padding: 0.75rem 1.5rem; background: var(--bg-secondary); font-size: 0.85rem; color: var(--text-secondary);">
+                        <!-- User info populated by JS -->
+                    </div>
+                    <div id="modalMessages" style="flex: 1; overflow-y: auto; padding: 1rem 1.5rem; max-height: 60vh;">
+                        <!-- Messages populated by JS -->
+                    </div>
                 </div>
             </div>
 
@@ -414,6 +513,79 @@
                                     <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading company profiles...</td></tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Execute 120 Configuration Section -->
+            <div class="section">
+                <div class="section-header">
+                    <i data-lucide="zap"></i>
+                    <h2>Execute 120 Configuration</h2>
+                </div>
+                <div class="admin-grid">
+                    <div class="admin-card" onclick="showQuickPromptsPanel()" style="cursor: pointer;">
+                        <div class="admin-card-header">
+                            <div class="admin-card-icon amber">
+                                <i data-lucide="message-square-text"></i>
+                            </div>
+                            <div class="admin-card-title">Quick Start Prompts</div>
+                        </div>
+                        <div class="admin-card-description">
+                            Configure quick start prompts for each department in Execute 120
+                        </div>
+                        <div id="quickPromptsCount" class="admin-card-badge">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Quick Prompts Admin Panel (hidden by default) -->
+                <div id="quickPromptsPanel" class="section" style="display: none; margin-top: 1.5rem;">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.1rem; font-weight: 600;">Quick Start Prompts by Department</h3>
+                            <button onclick="hideQuickPromptsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                            </button>
+                        </div>
+
+                        <!-- Department Tabs -->
+                        <div id="deptTabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Prompts Editor -->
+                        <div id="promptsEditor" style="display: none;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px;">
+                                <div id="selectedDeptIcon" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <div id="selectedDeptName" style="font-weight: 600;"></div>
+                                    <div id="selectedDeptTagline" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem;">Quick Start Prompts (one per line)</label>
+                                <textarea id="promptsTextarea" rows="8" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; resize: vertical;" placeholder="Enter prompts, one per line..."></textarea>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    These prompts appear in Execute 120 for this department. Maximum 6 recommended.
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <button onclick="resetPrompts()" style="padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); cursor: pointer;">
+                                    Reset
+                                </button>
+                                <button onclick="savePrompts()" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; background: var(--primary); color: white; cursor: pointer;">
+                                    Save Prompts
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="promptsPlaceholder" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            Select a department above to edit its quick start prompts
                         </div>
                     </div>
                 </div>
@@ -513,6 +685,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             loadAlign120AdminData();
+            loadConversationCount();
+            loadFilterOptions();
         });
 
         // Load admin data for Align 120
@@ -729,6 +903,430 @@
                 await ModalService.alert({ title: 'Error', message: 'Error deleting company profile', type: 'error' });
             }
         }
+
+        // ============================================
+        // CONVERSATIONS ADMIN
+        // ============================================
+
+        let conversationsData = [];
+        let conversationStatsData = null;
+        let searchTimeout = null;
+
+        async function loadConversationCount() {
+            try {
+                const response = await fetch('/api/conversations/admin/stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    conversationStatsData = data.data;
+                    document.getElementById('conversationCount').textContent = `${data.data.total} conversation${data.data.total !== 1 ? 's' : ''}`;
+                } else {
+                    document.getElementById('conversationCount').textContent = 'Error';
+                }
+            } catch (error) {
+                console.error('Error loading conversation count:', error);
+                document.getElementById('conversationCount').textContent = 'Error';
+            }
+        }
+
+        async function loadFilterOptions() {
+            try {
+                // Load departments
+                const deptResponse = await fetch('/api/departments');
+                const deptData = await deptResponse.json();
+
+                if (deptData.success) {
+                    const deptSelect = document.getElementById('filterDepartment');
+                    deptData.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        deptSelect.appendChild(option);
+                    });
+                }
+
+                // Load users
+                const userResponse = await fetch('/api/users');
+                const userData = await userResponse.json();
+
+                if (userData.success) {
+                    const userSelect = document.getElementById('filterUser');
+                    userData.data.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.display_name || user.email;
+                        userSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading filter options:', error);
+            }
+        }
+
+        function showConversationsPanel() {
+            document.getElementById('conversationsPanel').style.display = 'block';
+            loadConversationsData();
+            lucide.createIcons();
+        }
+
+        function hideConversationsPanel() {
+            document.getElementById('conversationsPanel').style.display = 'none';
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadConversationsData();
+            }, 300);
+        }
+
+        async function loadConversationsData() {
+            const department = document.getElementById('filterDepartment').value;
+            const role = document.getElementById('filterRole').value;
+            const user = document.getElementById('filterUser').value;
+            const search = document.getElementById('filterSearch').value;
+
+            let url = '/api/conversations/admin/all?limit=100';
+            if (department) url += `&department_id=${department}`;
+            if (role) url += `&business_role=${role}`;
+            if (user) url += `&user_id=${user}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success) {
+                    conversationsData = data.data;
+                    renderConversationsTable();
+                    renderConversationStats();
+                } else {
+                    document.getElementById('conversationsTableBody').innerHTML =
+                        '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">Error loading conversations</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                document.getElementById('conversationsTableBody').innerHTML =
+                    '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">Error loading conversations</td></tr>';
+            }
+        }
+
+        function renderConversationStats() {
+            const statsContainer = document.getElementById('conversationStats');
+            if (!conversationStatsData) {
+                statsContainer.innerHTML = '';
+                return;
+            }
+
+            statsContainer.innerHTML = `
+                <div style="background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: 8px; min-width: 120px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary);">${conversationStatsData.total}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Total Conversations</div>
+                </div>
+                <div style="background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: 8px; min-width: 120px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--success);">${conversationStatsData.byDepartment.length}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Departments</div>
+                </div>
+                <div style="background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: 8px; min-width: 120px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--info);">${conversationsData.length}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Showing</div>
+                </div>
+            `;
+        }
+
+        function renderConversationsTable() {
+            const tbody = document.getElementById('conversationsTableBody');
+
+            if (conversationsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No conversations found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = conversationsData.map(conv => {
+                const userName = conv.users?.display_name || conv.users?.email?.split('@')[0] || 'Unknown';
+                const deptName = conv.users?.departments?.name || '-';
+                const roleName = formatRole(conv.users?.business_role);
+                const date = formatDate(conv.updated_at);
+                const title = escapeHtml(conv.title || 'Untitled');
+                const model = conv.model ? conv.model.split('-').slice(0, 2).join('-') : '-';
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-light);">
+                        <td style="padding: 0.75rem; max-width: 250px;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${title}">
+                                ${title}
+                            </div>
+                        </td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${escapeHtml(userName)}</td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${escapeHtml(deptName)}</td>
+                        <td style="padding: 0.75rem;">
+                            <span style="padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: var(--bg-tertiary);">
+                                ${roleName}
+                            </span>
+                        </td>
+                        <td style="padding: 0.75rem; color: var(--text-muted); font-size: 0.8rem;">${model}</td>
+                        <td style="padding: 0.75rem; color: var(--text-secondary);">${date}</td>
+                        <td style="padding: 0.75rem; text-align: right;">
+                            <button onclick="viewConversation('${conv.id}')"
+                                    style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; margin-right: 0.25rem;"
+                                    title="View conversation">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <button onclick="deleteConversationAdmin('${conv.id}', '${title.replace(/'/g, "\\'")}')"
+                                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;"
+                                    title="Delete conversation">
+                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        async function viewConversation(conversationId) {
+            try {
+                const response = await fetch(`/api/conversations/admin/${conversationId}`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const conv = data.data;
+                    const userName = conv.users?.display_name || conv.users?.email || 'Unknown';
+                    const deptName = conv.users?.departments?.name || 'Unassigned';
+                    const roleName = formatRole(conv.users?.business_role);
+
+                    document.getElementById('modalTitle').textContent = conv.title || 'Untitled Conversation';
+                    document.getElementById('modalMeta').innerHTML = `
+                        <strong>User:</strong> ${escapeHtml(userName)} |
+                        <strong>Department:</strong> ${escapeHtml(deptName)} |
+                        <strong>Role:</strong> ${roleName} |
+                        <strong>Model:</strong> ${conv.model || 'Unknown'} |
+                        <strong>Messages:</strong> ${conv.messages?.length || 0}
+                    `;
+
+                    // Render messages
+                    const messagesHtml = (conv.messages || []).map(msg => {
+                        const isUser = msg.role === 'user';
+                        const bgColor = isUser ? 'var(--primary-soft, rgba(99, 102, 241, 0.1))' : 'var(--bg-secondary)';
+                        const borderColor = isUser ? 'var(--primary)' : 'var(--border)';
+
+                        return `
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; background: ${bgColor}; border-left: 3px solid ${borderColor}; border-radius: 0 8px 8px 0;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                                    ${isUser ? 'User' : 'Assistant'} - ${formatDate(msg.created_at)}
+                                </div>
+                                <div style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(msg.content)}</div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    document.getElementById('modalMessages').innerHTML = messagesHtml || '<p style="color: var(--text-muted);">No messages in this conversation</p>';
+                    document.getElementById('conversationModal').style.display = 'block';
+                    lucide.createIcons();
+                } else {
+                    await ModalService.alert({ title: 'Error', message: 'Failed to load conversation', type: 'error' });
+                }
+            } catch (error) {
+                console.error('Error viewing conversation:', error);
+                await ModalService.alert({ title: 'Error', message: 'Error loading conversation', type: 'error' });
+            }
+        }
+
+        function closeConversationModal() {
+            document.getElementById('conversationModal').style.display = 'none';
+        }
+
+        // Close modal on outside click
+        document.getElementById('conversationModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'conversationModal') {
+                closeConversationModal();
+            }
+        });
+
+        async function deleteConversationAdmin(conversationId, title) {
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Conversation',
+                message: `Are you sure you want to delete "${title}"? This action cannot be undone.`,
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`/api/conversations/admin/${conversationId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    conversationsData = conversationsData.filter(c => c.id !== conversationId);
+                    renderConversationsTable();
+                    loadConversationCount(); // Refresh count
+                    await ModalService.alert({ title: 'Success', message: 'Conversation deleted successfully', type: 'success' });
+                } else {
+                    await ModalService.alert({ title: 'Error', message: data.error || 'Failed to delete conversation', type: 'error' });
+                }
+            } catch (error) {
+                console.error('Error deleting conversation:', error);
+                await ModalService.alert({ title: 'Error', message: 'Error deleting conversation', type: 'error' });
+            }
+        }
+
+        function formatRole(role) {
+            const roleNames = {
+                executive: 'Executive',
+                director: 'Director',
+                manager: 'Manager',
+                supervisor: 'Supervisor',
+                ic: 'IC'
+            };
+            return roleNames[role] || role || '-';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ============================================
+        // QUICK PROMPTS ADMIN
+        // ============================================
+
+        let departmentsData = [];
+        let selectedDepartment = null;
+        let originalPrompts = [];
+
+        async function loadQuickPromptsCount() {
+            try {
+                const response = await fetch('/api/departments');
+                const data = await response.json();
+
+                if (data.success) {
+                    departmentsData = data.data;
+                    const totalPrompts = departmentsData.reduce((sum, dept) => sum + (dept.quick_prompts?.length || 0), 0);
+                    document.getElementById('quickPromptsCount').textContent = `${departmentsData.length} departments, ${totalPrompts} prompts`;
+                } else {
+                    document.getElementById('quickPromptsCount').textContent = 'Error';
+                }
+            } catch (error) {
+                console.error('Error loading quick prompts count:', error);
+                document.getElementById('quickPromptsCount').textContent = 'Error';
+            }
+        }
+
+        function showQuickPromptsPanel() {
+            document.getElementById('quickPromptsPanel').style.display = 'block';
+            renderDepartmentTabs();
+            lucide.createIcons();
+        }
+
+        function hideQuickPromptsPanel() {
+            document.getElementById('quickPromptsPanel').style.display = 'none';
+            selectedDepartment = null;
+            document.getElementById('promptsEditor').style.display = 'none';
+            document.getElementById('promptsPlaceholder').style.display = 'block';
+        }
+
+        function renderDepartmentTabs() {
+            const container = document.getElementById('deptTabs');
+            container.innerHTML = departmentsData.map(dept => `
+                <button onclick="selectDepartment('${dept.id}')"
+                        id="deptTab-${dept.id}"
+                        style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border: 1px solid ${selectedDepartment?.id === dept.id ? dept.color || 'var(--primary)' : 'var(--border)'}; border-radius: 8px; background: ${selectedDepartment?.id === dept.id ? (dept.color || 'var(--primary)') + '20' : 'var(--bg-primary)'}; color: var(--text-primary); cursor: pointer; transition: all 0.2s;">
+                    <i data-lucide="${dept.icon || 'folder'}" style="width: 16px; height: 16px; color: ${dept.color || 'var(--text-muted)'};"></i>
+                    <span>${escapeHtml(dept.name)}</span>
+                    <span style="font-size: 0.75rem; background: var(--bg-tertiary); padding: 0.1rem 0.4rem; border-radius: 4px;">${dept.quick_prompts?.length || 0}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function selectDepartment(deptId) {
+            selectedDepartment = departmentsData.find(d => d.id === deptId);
+            if (!selectedDepartment) return;
+
+            // Update UI
+            document.getElementById('promptsPlaceholder').style.display = 'none';
+            document.getElementById('promptsEditor').style.display = 'block';
+
+            // Update header
+            document.getElementById('selectedDeptIcon').style.background = selectedDepartment.color || '#6366f1';
+            document.getElementById('selectedDeptIcon').innerHTML = `<i data-lucide="${selectedDepartment.icon || 'folder'}" style="width: 20px; height: 20px;"></i>`;
+            document.getElementById('selectedDeptName').textContent = selectedDepartment.name;
+            document.getElementById('selectedDeptTagline').textContent = selectedDepartment.tagline || '';
+
+            // Load prompts
+            originalPrompts = selectedDepartment.quick_prompts || [];
+            document.getElementById('promptsTextarea').value = originalPrompts.join('\n');
+
+            // Update tabs highlight
+            renderDepartmentTabs();
+            lucide.createIcons();
+        }
+
+        function resetPrompts() {
+            if (selectedDepartment) {
+                document.getElementById('promptsTextarea').value = originalPrompts.join('\n');
+            }
+        }
+
+        async function savePrompts() {
+            if (!selectedDepartment) return;
+
+            const textarea = document.getElementById('promptsTextarea');
+            const prompts = textarea.value
+                .split('\n')
+                .map(p => p.trim())
+                .filter(p => p.length > 0);
+
+            try {
+                const response = await fetch(`/api/departments/${selectedDepartment.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quick_prompts: prompts })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update local data
+                    const deptIndex = departmentsData.findIndex(d => d.id === selectedDepartment.id);
+                    if (deptIndex !== -1) {
+                        departmentsData[deptIndex].quick_prompts = prompts;
+                    }
+                    selectedDepartment.quick_prompts = prompts;
+                    originalPrompts = prompts;
+
+                    // Refresh UI
+                    renderDepartmentTabs();
+                    loadQuickPromptsCount();
+
+                    await ModalService.alert({ title: 'Success', message: `Saved ${prompts.length} prompts for ${selectedDepartment.name}`, type: 'success' });
+                } else {
+                    await ModalService.alert({ title: 'Error', message: data.error || 'Failed to save prompts', type: 'error' });
+                }
+            } catch (error) {
+                console.error('Error saving prompts:', error);
+                await ModalService.alert({ title: 'Error', message: 'Error saving prompts', type: 'error' });
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuickPromptsCount();
+        });
     </script>
 </body>
 </html>
