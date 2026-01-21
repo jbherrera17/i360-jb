@@ -2187,11 +2187,8 @@
         let contextMappingModal = null;
 
         // Agent Dialog Service for running agents in modal
-        const agentDialog = new AgentDialogService({
-            defaultWidth: 800,
-            minWidth: 500,
-            minHeight: 500
-        });
+        // Defaults: 800px width, 75vh height, centered via flexbox
+        const agentDialog = new AgentDialogService();
 
         // =========================================================================
         // API Functions

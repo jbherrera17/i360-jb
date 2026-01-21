@@ -37,9 +37,10 @@
     border: 1px solid var(--border, #2a2a4a);
     border-radius: 16px;
     width: 800px;
+    height: 75vh;
     min-width: 500px;
     min-height: 500px;
-    max-height: 85vh;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -644,16 +645,17 @@
 .agent-dialog-model-btn {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.5rem;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
     background: var(--bg-tertiary, #252540);
     border: 1px solid var(--border, #2a2a4a);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-secondary, #aaa);
-    font-size: 0.7rem;
-    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .agent-dialog-model-btn:hover {
@@ -668,9 +670,10 @@
 }
 
 .agent-dialog-model-btn .chevron {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     transition: transform 0.2s;
+    flex-shrink: 0;
 }
 
 .agent-dialog-model-selector.open .chevron {
@@ -683,13 +686,14 @@
     top: 100%;
     right: 0;
     margin-top: 4px;
-    min-width: 220px;
+    min-width: 260px;
+    max-height: 400px;
+    overflow-y: auto;
     background: var(--bg-secondary, #1a1a2e);
     border: 1px solid var(--border, #2a2a4a);
     border-radius: 8px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     z-index: 100;
-    overflow: hidden;
 }
 
 .agent-dialog-model-selector.open .agent-dialog-model-menu {
@@ -703,24 +707,26 @@
 }
 
 .agent-dialog-model-menu .model-group-label {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.6rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-muted, #888);
     background: var(--bg-tertiary, #252540);
     border-bottom: 1px solid var(--border, #2a2a4a);
+    position: sticky;
+    top: 0;
 }
 
 .agent-dialog-model-menu .model-option {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 1rem;
     cursor: pointer;
     transition: background 0.15s;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--text-primary, #ffffff);
 }
 

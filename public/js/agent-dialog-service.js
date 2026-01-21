@@ -27,7 +27,8 @@ class AgentDialogService {
             onError: options.onError || this.defaultErrorHandler.bind(this),
             minWidth: options.minWidth || 400,
             minHeight: options.minHeight || 400,
-            defaultWidth: options.defaultWidth || 600,
+            defaultWidth: options.defaultWidth || 800,
+            defaultHeight: options.defaultHeight || '75vh',
             closeOnOverlayClick: options.closeOnOverlayClick !== false
         };
 
@@ -942,8 +943,8 @@ class AgentDialogService {
     resetModalSize() {
         if (!this.elements.dialog) return;
         this.elements.dialog.style.width = `${this.options.defaultWidth}px`;
-        this.elements.dialog.style.height = '';
-        this.elements.dialog.style.maxHeight = '80vh';
+        this.elements.dialog.style.height = this.options.defaultHeight;
+        this.elements.dialog.style.maxHeight = '90vh';
         this.elements.dialog.style.left = '';
         this.elements.dialog.style.top = '';
         // Remove positioned class so flexbox centering works
@@ -1344,30 +1345,35 @@ class AgentDialogService {
             const data = await response.json();
 
             if (data.success && data.models) {
-                this.contextState.loadedModels = data.models;
+                // API returns models grouped by provider: { anthropic: [...], openai: [...], perplexity: [...] }
+                const grouped = data.models;
 
-                // Group models by provider
-                const grouped = {};
-                data.models.forEach(model => {
-                    const provider = model.provider || 'other';
-                    if (!grouped[provider]) grouped[provider] = [];
-                    grouped[provider].push(model);
+                // Flatten for internal use (add provider field to each model)
+                const flatModels = [];
+                Object.entries(grouped).forEach(([provider, models]) => {
+                    if (Array.isArray(models)) {
+                        models.forEach(model => {
+                            flatModels.push({ ...model, provider });
+                        });
+                    }
                 });
+                this.contextState.loadedModels = flatModels;
 
                 // Provider display names
                 const providerNames = {
                     'anthropic': 'Anthropic Claude',
                     'openai': 'OpenAI GPT',
                     'perplexity': 'Perplexity (Web Search)',
-                    'other': 'Other'
+                    'google': 'Google Gemini',
+                    'imageModels': null // Skip image models
                 };
 
                 // Build HTML
                 let html = '';
-                const providerOrder = ['anthropic', 'openai', 'perplexity', 'other'];
+                const providerOrder = ['anthropic', 'openai', 'perplexity', 'google'];
 
                 providerOrder.forEach(provider => {
-                    if (grouped[provider] && grouped[provider].length > 0) {
+                    if (grouped[provider] && Array.isArray(grouped[provider]) && grouped[provider].length > 0) {
                         html += `<div class="model-group-label">${providerNames[provider] || provider}</div>`;
                         grouped[provider].forEach(model => {
                             html += `

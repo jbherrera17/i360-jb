@@ -71,7 +71,9 @@ CREATE TABLE IF NOT EXISTS source_chunks (
     content TEXT NOT NULL,
     token_count INTEGER,
     metadata JSONB DEFAULT '{}', -- page_number, section_heading, start_char, end_char
-    embedding VECTOR(1536), -- For future semantic search (OpenAI embedding dimension)
+    -- NOTE: embedding column removed - requires pgvector extension
+    -- To enable semantic search in the future, run: CREATE EXTENSION IF NOT EXISTS vector;
+    -- Then add: embedding VECTOR(1536)
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -436,6 +438,6 @@ COMMENT ON TABLE studio_outputs IS 'Generated content outputs (reports, audio, f
 COMMENT ON TABLE studio_notes IS 'User notes and annotations within research studios';
 
 COMMENT ON COLUMN studio_sources.is_selected IS 'Toggle to include/exclude source from AI queries';
-COMMENT ON COLUMN source_chunks.embedding IS 'Vector embedding for semantic search (1536 dim for OpenAI ada-002)';
+-- COMMENT ON COLUMN source_chunks.embedding IS 'Vector embedding for semantic search (1536 dim for OpenAI ada-002)';
 COMMENT ON COLUMN studio_messages.citations IS 'JSON array of source citations [{source_id, chunk_id, quote, page_number}]';
 COMMENT ON COLUMN studio_outputs.content IS 'Structured JSON content specific to output type';
