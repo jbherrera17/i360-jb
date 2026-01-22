@@ -222,6 +222,8 @@ function initializeSupabase() {
                 console.log('🔑 Using SUPABASE_SERVICE_KEY (RLS bypassed)');
             } else if (process.env.NODE_ENV === 'production') {
                 console.warn('⚠️  WARNING: SUPABASE_SERVICE_KEY not set. Using ANON_KEY - admin operations may fail due to RLS.');
+            } else {
+                console.log('⚠️  Using ANON_KEY (RLS enforced)');
             }
 
             supabase = createClient(
@@ -231,6 +233,13 @@ function initializeSupabase() {
                     auth: {
                         autoRefreshToken: false,
                         persistSession: false
+                    },
+                    // Force the Authorization header to always use the service key
+                    // This prevents user sessions from overriding it
+                    global: {
+                        headers: {
+                            Authorization: `Bearer ${supabaseKey}`
+                        }
                     }
                 }
             );

@@ -49,20 +49,34 @@ module.exports = function(supabase) {
                     status,
                     invited_by,
                     joined_at,
-                    created_at,
-                    users (
-                        id,
-                        email,
-                        display_name,
-                        avatar_url
-                    )
+                    created_at
                 `)
                 .eq('org_id', orgId)
+                .neq('status', 'removed')
                 .order('joined_at', { ascending: true });
 
             if (error) throw error;
 
-            // Flatten user data
+            // Get unique user IDs to fetch user details
+            const userIds = [...new Set(data.map(m => m.user_id).filter(Boolean))];
+
+            // Fetch user details from the users table
+            let usersMap = {};
+            if (userIds.length > 0) {
+                const { data: users } = await supabase
+                    .from('users')
+                    .select('id, email, display_name, avatar_url')
+                    .in('id', userIds);
+
+                if (users) {
+                    usersMap = users.reduce((acc, u) => {
+                        acc[u.id] = u;
+                        return acc;
+                    }, {});
+                }
+            }
+
+            // Combine member data with user details
             const members = data.map(m => ({
                 id: m.id,
                 user_id: m.user_id,
@@ -71,9 +85,10 @@ module.exports = function(supabase) {
                 invited_by: m.invited_by,
                 joined_at: m.joined_at,
                 created_at: m.created_at,
-                email: m.users?.email,
-                display_name: m.users?.display_name,
-                avatar_url: m.users?.avatar_url
+                // User details from separate query
+                email: usersMap[m.user_id]?.email,
+                display_name: usersMap[m.user_id]?.display_name,
+                avatar_url: usersMap[m.user_id]?.avatar_url
             }));
 
             res.json({
@@ -358,10 +373,10 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Soft delete - set status to inactive
+            // Soft delete - set status to removed
             const { error } = await supabase
                 .from('organization_members')
-                .update({ status: 'inactive' })
+                .update({ status: 'removed' })
                 .eq('id', memberId);
 
             if (error) throw error;
@@ -422,7 +437,7 @@ module.exports = function(supabase) {
             // Soft delete
             const { error } = await supabase
                 .from('organization_members')
-                .update({ status: 'inactive' })
+                .update({ status: 'removed' })
                 .eq('id', membership.id);
 
             if (error) throw error;

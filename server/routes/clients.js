@@ -155,7 +155,7 @@ module.exports = function(supabase) {
      */
     router.post('/', checkOrgMembership, async (req, res) => {
         try {
-            const { name, contact_email, contact_name, phone, address, industry, settings } = req.body;
+            const { name, contact_email, contact_name, contact_phone, notes, settings, status } = req.body;
 
             if (!name) {
                 return res.status(400).json({
@@ -179,10 +179,9 @@ module.exports = function(supabase) {
                     name,
                     contact_email: contact_email || null,
                     contact_name: contact_name || null,
-                    phone: phone || null,
-                    address: address || null,
-                    industry: industry || null,
-                    status: 'active',
+                    contact_phone: contact_phone || null,
+                    notes: notes || null,
+                    status: status || 'active',
                     settings: settings || {}
                 })
                 .select()
@@ -211,7 +210,7 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
             const userId = req.userId;
-            const { name, contact_email, contact_name, phone, address, industry, status, settings } = req.body;
+            const { name, contact_email, contact_name, contact_phone, notes, status, settings } = req.body;
 
             if (!userId) {
                 return res.status(401).json({
@@ -254,9 +253,8 @@ module.exports = function(supabase) {
             if (name !== undefined) updates.name = name;
             if (contact_email !== undefined) updates.contact_email = contact_email;
             if (contact_name !== undefined) updates.contact_name = contact_name;
-            if (phone !== undefined) updates.phone = phone;
-            if (address !== undefined) updates.address = address;
-            if (industry !== undefined) updates.industry = industry;
+            if (contact_phone !== undefined) updates.contact_phone = contact_phone;
+            if (notes !== undefined) updates.notes = notes;
             if (status !== undefined) updates.status = status;
             if (settings !== undefined) updates.settings = settings;
             updates.updated_at = new Date().toISOString();

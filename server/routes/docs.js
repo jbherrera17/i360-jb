@@ -47,7 +47,19 @@ const ALLOWED_DOCS = [
     'asset-types-user-guide.md',
     // Research Studio
     'research-studio-user-guide.md',
-    'research-studio-technical-guide.md'
+    'research-studio-technical-guide.md',
+    // Connection Management & Agency Features (Phase 39-40)
+    'my-capabilities-user-guide.md',
+    'admin-responsibilities-user-guide.md',
+    'admin-responsibility-ai-user-guide.md',
+    'admin-department-ai-user-guide.md',
+    'admin-okr-capabilities-user-guide.md',
+    'client-comparison-user-guide.md',
+    'connection-management-technical-guide.md',
+    // Agency Foundation (Phase 39)
+    'admin-org-settings-user-guide.md',
+    'admin-org-members-user-guide.md',
+    'admin-clients-user-guide.md'
 ];
 
 /**

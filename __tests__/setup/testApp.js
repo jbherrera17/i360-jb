@@ -98,6 +98,21 @@ function createTestApp(options = {}) {
     app.use('/api/bugs', bugsRoutes);
   }
 
+  if (routes.includes('organizations')) {
+    const organizationsRoutes = require('../../server/routes/organizations');
+    app.use('/api/organizations', organizationsRoutes(mockSupabase));
+  }
+
+  if (routes.includes('org-members')) {
+    const orgMembersRoutes = require('../../server/routes/org-members');
+    app.use('/api/org-members', orgMembersRoutes(mockSupabase));
+  }
+
+  if (routes.includes('clients')) {
+    const clientsRoutes = require('../../server/routes/clients');
+    app.use('/api/clients', clientsRoutes(mockSupabase));
+  }
+
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Test app error:', err);

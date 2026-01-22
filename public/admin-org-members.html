@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .page-header {
@@ -390,6 +392,9 @@
                 <p class="header-subtitle">Manage your organization's team members and their roles</p>
             </div>
             <div class="header-actions">
+                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                    <i data-lucide="help-circle"></i>
+                </button>
                 <button class="btn btn-secondary" onclick="loadMembers()">
                     <i data-lucide="refresh-cw"></i>
                     Refresh
@@ -444,82 +449,7 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- Invite Modal -->
-    <div class="modal-backdrop hidden" id="invite-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Invite Team Member</h2>
-                <button class="modal-close" onclick="hideInviteModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="invite-form">
-                    <div class="form-group">
-                        <label for="invite-email">Email Address *</label>
-                        <input type="email" id="invite-email" name="email" required placeholder="colleague@company.com">
-                        <p class="helper">The user must already have an Insight 360 account</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="invite-role">Role</label>
-                        <select id="invite-role" name="role">
-                            <option value="consultant">Consultant</option>
-                            <option value="admin">Admin</option>
-                            <option value="viewer">Viewer</option>
-                        </select>
-                        <p class="helper">
-                            <strong>Admin:</strong> Full access to manage members and settings<br>
-                            <strong>Consultant:</strong> Can work with clients and create content<br>
-                            <strong>Viewer:</strong> Read-only access
-                        </p>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="hideInviteModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="inviteMember()">
-                    <i data-lucide="send"></i>
-                    Send Invitation
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Role Modal -->
-    <div class="modal-backdrop hidden" id="edit-role-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Edit Member Role</h2>
-                <button class="modal-close" onclick="hideEditRoleModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-role-form">
-                    <input type="hidden" id="edit-member-id">
-                    <div class="form-group">
-                        <label>Member</label>
-                        <p id="edit-member-name" style="margin: 0; font-weight: 500;"></p>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-role">Role</label>
-                        <select id="edit-role" name="role">
-                            <option value="admin">Admin</option>
-                            <option value="consultant">Consultant</option>
-                            <option value="viewer">Viewer</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="hideEditRoleModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="updateMemberRole()">
-                    <i data-lucide="save"></i>
-                    Save Changes
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Modals are now rendered by ModalService -->
 
     <script>
         // State
@@ -547,12 +477,27 @@
         // Authenticated fetch helper
         async function authFetch(url, options = {}) {
             const token = getAuthToken();
+            if (!token) {
+                // No token found, redirect to login
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
             const headers = {
                 'Content-Type': 'application/json',
                 ...(options.headers || {}),
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                'Authorization': `Bearer ${token}`
             };
-            return fetch(url, { ...options, headers });
+            const response = await fetch(url, { ...options, headers });
+
+            // Handle 401 by redirecting to login
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+
+            return response;
         }
 
         // Initialize
@@ -740,24 +685,45 @@
             lucide.createIcons();
         }
 
-        // Invite modal
-        function showInviteModal() {
-            document.getElementById('invite-modal').classList.remove('hidden');
-            document.getElementById('invite-email').value = '';
-            document.getElementById('invite-role').value = 'consultant';
-            lucide.createIcons();
+        // Invite modal using ModalService
+        async function showInviteModal() {
+            const result = await ModalService.form({
+                title: 'Invite Team Member',
+                fields: [
+                    {
+                        name: 'email',
+                        label: 'Email Address',
+                        type: 'email',
+                        required: true,
+                        placeholder: 'colleague@company.com',
+                        help: 'The user must already have an Insight 360 account'
+                    },
+                    {
+                        name: 'role',
+                        label: 'Role',
+                        type: 'select',
+                        options: [
+                            { value: 'consultant', label: 'Consultant' },
+                            { value: 'admin', label: 'Admin' },
+                            { value: 'viewer', label: 'Viewer' }
+                        ],
+                        value: 'consultant',
+                        help: 'Admin: Full access | Consultant: Can work with clients | Viewer: Read-only'
+                    }
+                ],
+                submitText: 'Send Invitation',
+                cancelText: 'Cancel',
+                width: 500
+            });
+
+            if (result) {
+                await inviteMember(result.email, result.role);
+            }
         }
 
-        function hideInviteModal() {
-            document.getElementById('invite-modal').classList.add('hidden');
-        }
-
-        async function inviteMember() {
-            const email = document.getElementById('invite-email').value.trim();
-            const role = document.getElementById('invite-role').value;
-
+        async function inviteMember(email, role) {
             if (!email) {
-                showToast('Email is required', 'error');
+                ModalService.toast({ message: 'Email is required', type: 'error' });
                 return;
             }
 
@@ -771,37 +737,54 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Member invited successfully', 'success');
-                    hideInviteModal();
+                    ModalService.toast({ message: 'Member invited successfully', type: 'success' });
                     await loadMembers();
                 } else {
                     throw new Error(result.error);
                 }
             } catch (error) {
                 console.error('Error inviting member:', error);
-                showToast(error.message || 'Failed to invite member', 'error');
+                ModalService.toast({ message: error.message || 'Failed to invite member', type: 'error' });
             } finally {
                 hideLoading();
             }
         }
 
-        // Edit role modal
-        function showEditRoleModal(memberId, name, currentRole) {
-            document.getElementById('edit-member-id').value = memberId;
-            document.getElementById('edit-member-name').textContent = name;
-            document.getElementById('edit-role').value = currentRole;
-            document.getElementById('edit-role-modal').classList.remove('hidden');
-            lucide.createIcons();
+        // Edit role modal using ModalService
+        async function showEditRoleModal(memberId, name, currentRole) {
+            const result = await ModalService.form({
+                title: 'Edit Member Role',
+                fields: [
+                    {
+                        name: 'memberName',
+                        label: 'Member',
+                        type: 'text',
+                        value: name,
+                        disabled: true
+                    },
+                    {
+                        name: 'role',
+                        label: 'Role',
+                        type: 'select',
+                        options: [
+                            { value: 'admin', label: 'Admin' },
+                            { value: 'consultant', label: 'Consultant' },
+                            { value: 'viewer', label: 'Viewer' }
+                        ],
+                        value: currentRole
+                    }
+                ],
+                submitText: 'Save Changes',
+                cancelText: 'Cancel',
+                width: 450
+            });
+
+            if (result && result.role !== currentRole) {
+                await updateMemberRole(memberId, result.role);
+            }
         }
 
-        function hideEditRoleModal() {
-            document.getElementById('edit-role-modal').classList.add('hidden');
-        }
-
-        async function updateMemberRole() {
-            const memberId = document.getElementById('edit-member-id').value;
-            const role = document.getElementById('edit-role').value;
-
+        async function updateMemberRole(memberId, role) {
             try {
                 showLoading();
                 const response = await authFetch(`/api/org-members/${currentOrgId}/${memberId}`, {
@@ -812,23 +795,29 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Role updated successfully', 'success');
-                    hideEditRoleModal();
+                    ModalService.toast({ message: 'Role updated successfully', type: 'success' });
                     await loadMembers();
                 } else {
                     throw new Error(result.error);
                 }
             } catch (error) {
                 console.error('Error updating role:', error);
-                showToast(error.message || 'Failed to update role', 'error');
+                ModalService.toast({ message: error.message || 'Failed to update role', type: 'error' });
             } finally {
                 hideLoading();
             }
         }
 
-        // Remove member
+        // Remove member using ModalService
         async function removeMember(memberId, name) {
-            const confirmed = confirm(`Are you sure you want to remove "${name}" from this organization?`);
+            const confirmed = await ModalService.confirm({
+                title: 'Remove Member',
+                message: `Are you sure you want to remove "${name}" from this organization?\n\nThey will lose access to all organization resources.`,
+                confirmText: 'Remove',
+                cancelText: 'Cancel',
+                type: 'danger'
+            });
+
             if (!confirmed) return;
 
             try {
@@ -839,21 +828,25 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Member removed successfully', 'success');
+                    ModalService.toast({ message: 'Member removed successfully', type: 'success' });
                     await loadMembers();
                 } else {
                     throw new Error(result.error);
                 }
             } catch (error) {
                 console.error('Error removing member:', error);
-                showToast(error.message || 'Failed to remove member', 'error');
+                ModalService.toast({ message: error.message || 'Failed to remove member', type: 'error' });
             } finally {
                 hideLoading();
             }
         }
 
-        // Toast notification
+        // Toast notification (fallback, but prefer ModalService.toast)
         function showToast(message, type = 'info') {
+            if (typeof ModalService !== 'undefined') {
+                ModalService.toast({ message, type });
+                return;
+            }
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed;

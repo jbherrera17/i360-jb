@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .page-header {
@@ -414,6 +416,9 @@
                 <p class="header-subtitle">Manage your organization's clients and their engagements</p>
             </div>
             <div class="header-actions">
+                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                    <i data-lucide="help-circle"></i>
+                </button>
                 <button class="btn btn-secondary" onclick="loadClients()">
                     <i data-lucide="refresh-cw"></i>
                     Refresh
@@ -462,65 +467,7 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- Client Modal (Create/Edit) -->
-    <div class="modal-backdrop hidden" id="client-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modal-title">Add New Client</h2>
-                <button class="modal-close" onclick="hideClientModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="client-form">
-                    <input type="hidden" id="client-id">
-                    <div class="form-group">
-                        <label for="client-name">Client Name *</label>
-                        <input type="text" id="client-name" name="name" required placeholder="Acme Corporation">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="client-contact-name">Contact Name</label>
-                            <input type="text" id="client-contact-name" name="contact_name" placeholder="John Smith">
-                        </div>
-                        <div class="form-group">
-                            <label for="client-email">Contact Email</label>
-                            <input type="email" id="client-email" name="contact_email" placeholder="john@acme.com">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="client-phone">Phone</label>
-                            <input type="tel" id="client-phone" name="phone" placeholder="+1 (555) 123-4567">
-                        </div>
-                        <div class="form-group">
-                            <label for="client-industry">Industry</label>
-                            <input type="text" id="client-industry" name="industry" placeholder="Technology">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="client-address">Address</label>
-                        <textarea id="client-address" name="address" rows="2" placeholder="123 Main St, City, State 12345"></textarea>
-                    </div>
-                    <div class="form-group" id="status-group" style="display: none;">
-                        <label for="client-status">Status</label>
-                        <select id="client-status" name="status">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="archived">Archived</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="hideClientModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="saveClient()">
-                    <i data-lucide="save"></i>
-                    <span id="save-btn-text">Create Client</span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Client Modal is now handled by ModalService -->
 
     <script>
         // State
@@ -549,12 +496,27 @@
         // Authenticated fetch helper
         async function authFetch(url, options = {}) {
             const token = getAuthToken();
+            if (!token) {
+                // No token found, redirect to login
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
             const headers = {
                 'Content-Type': 'application/json',
                 ...(options.headers || {}),
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                'Authorization': `Bearer ${token}`
             };
-            return fetch(url, { ...options, headers });
+            const response = await fetch(url, { ...options, headers });
+
+            // Handle 401 by redirecting to login
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+
+            return response;
         }
 
         // Initialize
@@ -660,7 +622,7 @@
                 const matchesSearch = !search ||
                     client.name.toLowerCase().includes(search) ||
                     (client.contact_email && client.contact_email.toLowerCase().includes(search)) ||
-                    (client.industry && client.industry.toLowerCase().includes(search));
+                    (client.contact_name && client.contact_name.toLowerCase().includes(search));
 
                 const matchesStatus = !status || client.status === status;
 
@@ -695,27 +657,21 @@
                     <div class="client-card-header">
                         <div class="client-info">
                             <div class="client-name">${client.name}</div>
-                            ${client.industry ? `<div class="client-industry"><i data-lucide="briefcase" style="width: 14px; height: 14px;"></i> ${client.industry}</div>` : ''}
+                            ${client.contact_name ? `<div class="client-industry"><i data-lucide="user" style="width: 14px; height: 14px;"></i> ${client.contact_name}</div>` : ''}
                         </div>
                         <span class="status-badge ${client.status}">${client.status}</span>
                     </div>
                     <div class="client-card-body">
-                        ${client.contact_name ? `
-                            <div class="client-detail">
-                                <i data-lucide="user"></i>
-                                <span>${client.contact_name}</span>
-                            </div>
-                        ` : ''}
                         ${client.contact_email ? `
                             <div class="client-detail">
                                 <i data-lucide="mail"></i>
                                 <span>${client.contact_email}</span>
                             </div>
                         ` : ''}
-                        ${client.phone ? `
+                        ${client.contact_phone ? `
                             <div class="client-detail">
                                 <i data-lucide="phone"></i>
-                                <span>${client.phone}</span>
+                                <span>${client.contact_phone}</span>
                             </div>
                         ` : ''}
                         <div class="client-stats">
@@ -749,30 +705,76 @@
             lucide.createIcons();
         }
 
-        // Client modal
-        function showClientModal(client = null) {
+        // Client modal using ModalService
+        async function showClientModal(client = null) {
             editingClientId = client?.id || null;
 
-            document.getElementById('modal-title').textContent = client ? 'Edit Client' : 'Add New Client';
-            document.getElementById('save-btn-text').textContent = client ? 'Save Changes' : 'Create Client';
-            document.getElementById('status-group').style.display = client ? 'block' : 'none';
+            const fields = [
+                {
+                    name: 'name',
+                    label: 'Client Name',
+                    type: 'text',
+                    required: true,
+                    placeholder: 'Acme Corporation',
+                    value: client?.name || ''
+                },
+                {
+                    name: 'contact_name',
+                    label: 'Contact Name',
+                    type: 'text',
+                    placeholder: 'John Smith',
+                    value: client?.contact_name || ''
+                },
+                {
+                    name: 'contact_email',
+                    label: 'Contact Email',
+                    type: 'email',
+                    placeholder: 'john@acme.com',
+                    value: client?.contact_email || ''
+                },
+                {
+                    name: 'contact_phone',
+                    label: 'Phone',
+                    type: 'tel',
+                    placeholder: '+1 (555) 123-4567',
+                    value: client?.contact_phone || ''
+                },
+                {
+                    name: 'notes',
+                    label: 'Notes',
+                    type: 'textarea',
+                    placeholder: 'Additional notes about this client...',
+                    value: client?.notes || ''
+                }
+            ];
 
-            document.getElementById('client-id').value = client?.id || '';
-            document.getElementById('client-name').value = client?.name || '';
-            document.getElementById('client-contact-name').value = client?.contact_name || '';
-            document.getElementById('client-email').value = client?.contact_email || '';
-            document.getElementById('client-phone').value = client?.phone || '';
-            document.getElementById('client-industry').value = client?.industry || '';
-            document.getElementById('client-address').value = client?.address || '';
-            document.getElementById('client-status').value = client?.status || 'active';
+            // Add status field for editing existing clients
+            if (client) {
+                fields.push({
+                    name: 'status',
+                    label: 'Status',
+                    type: 'select',
+                    options: [
+                        { value: 'active', label: 'Active' },
+                        { value: 'prospect', label: 'Prospect' },
+                        { value: 'paused', label: 'Paused' },
+                        { value: 'archived', label: 'Archived' }
+                    ],
+                    value: client?.status || 'active'
+                });
+            }
 
-            document.getElementById('client-modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
+            const result = await ModalService.form({
+                title: client ? 'Edit Client' : 'Add New Client',
+                fields,
+                submitText: client ? 'Save Changes' : 'Create Client',
+                cancelText: 'Cancel',
+                width: 500
+            });
 
-        function hideClientModal() {
-            document.getElementById('client-modal').classList.add('hidden');
-            editingClientId = null;
+            if (result) {
+                await saveClient(result);
+            }
         }
 
         function editClient(clientId) {
@@ -782,25 +784,23 @@
             }
         }
 
-        async function saveClient() {
-            const name = document.getElementById('client-name').value.trim();
-            if (!name) {
+        async function saveClient(formData) {
+            if (!formData.name || !formData.name.trim()) {
                 showToast('Client name is required', 'error');
                 return;
             }
 
             const clientData = {
                 org_id: currentOrgId,
-                name,
-                contact_name: document.getElementById('client-contact-name').value.trim() || null,
-                contact_email: document.getElementById('client-email').value.trim() || null,
-                phone: document.getElementById('client-phone').value.trim() || null,
-                industry: document.getElementById('client-industry').value.trim() || null,
-                address: document.getElementById('client-address').value.trim() || null
+                name: formData.name.trim(),
+                contact_name: formData.contact_name?.trim() || null,
+                contact_email: formData.contact_email?.trim() || null,
+                contact_phone: formData.contact_phone?.trim() || null,
+                notes: formData.notes?.trim() || null
             };
 
-            if (editingClientId) {
-                clientData.status = document.getElementById('client-status').value;
+            if (editingClientId && formData.status) {
+                clientData.status = formData.status;
             }
 
             try {
@@ -816,7 +816,7 @@
                 const result = await response.json();
                 if (result.success) {
                     showToast(editingClientId ? 'Client updated successfully' : 'Client created successfully', 'success');
-                    hideClientModal();
+                    editingClientId = null;
                     await loadClients();
                 } else {
                     throw new Error(result.error);
@@ -830,7 +830,13 @@
         }
 
         async function archiveClient(clientId, name) {
-            const confirmed = confirm(`Are you sure you want to archive "${name}"?\n\nThis will hide the client from the active list.`);
+            const confirmed = await ModalService.confirm({
+                title: 'Archive Client',
+                message: `Are you sure you want to archive "${name}"?\n\nThis will hide the client from the active list.`,
+                confirmText: 'Archive',
+                confirmClass: 'btn-danger',
+                cancelText: 'Cancel'
+            });
             if (!confirmed) return;
 
             try {

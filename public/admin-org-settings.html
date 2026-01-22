@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .page-header {
@@ -256,6 +258,9 @@
                 <p class="header-subtitle">Manage your organization's configuration and preferences</p>
             </div>
             <div class="header-actions">
+                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                    <i data-lucide="help-circle"></i>
+                </button>
                 <button class="btn btn-secondary" onclick="loadOrganization()">
                     <i data-lucide="refresh-cw"></i>
                     Refresh
@@ -395,99 +400,6 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- Create Organization Modal -->
-    <div class="modal-backdrop hidden" id="create-org-modal">
-        <div class="modal" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2>Create New Organization</h2>
-                <button class="modal-close" onclick="hideCreateOrgModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="create-org-form">
-                    <div class="form-group">
-                        <label for="new-org-name">Organization Name *</label>
-                        <input type="text" id="new-org-name" name="name" required placeholder="My Agency">
-                    </div>
-                    <div class="form-group">
-                        <label for="new-org-slug">URL Slug (optional)</label>
-                        <input type="text" id="new-org-slug" name="slug" placeholder="my-agency">
-                        <p class="helper">Leave blank to auto-generate from name</p>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="hideCreateOrgModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="createOrganization()">
-                    <i data-lucide="plus"></i>
-                    Create Organization
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-backdrop.hidden {
-            display: none;
-        }
-
-        .modal {
-            background: var(--bg-primary);
-            border-radius: 16px;
-            width: 90%;
-            max-height: 90vh;
-            overflow: auto;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            background: var(--bg-secondary);
-        }
-    </style>
 
     <script>
         // State
@@ -513,12 +425,27 @@
         // Authenticated fetch helper
         async function authFetch(url, options = {}) {
             const token = getAuthToken();
+            if (!token) {
+                // No token found, redirect to login
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
             const headers = {
                 'Content-Type': 'application/json',
                 ...(options.headers || {}),
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                'Authorization': `Bearer ${token}`
             };
-            return fetch(url, { ...options, headers });
+            const response = await fetch(url, { ...options, headers });
+
+            // Handle 401 by redirecting to login
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+
+            return response;
         }
 
         // Initialize
@@ -558,7 +485,7 @@
                 }
             } catch (error) {
                 console.error('Error loading organizations:', error);
-                showToast('Failed to load organizations', 'error');
+                ModalService.toast({ message: 'Failed to load organizations', type: 'error' });
             } finally {
                 hideLoading();
             }
@@ -643,7 +570,7 @@
 
             } catch (error) {
                 console.error('Error loading organization:', error);
-                showToast('Failed to load organization details', 'error');
+                ModalService.toast({ message: 'Failed to load organization details', type: 'error' });
             } finally {
                 hideLoading();
             }
@@ -682,14 +609,14 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Organization updated successfully', 'success');
+                    ModalService.toast({ message: 'Organization updated successfully', type: 'success' });
                     await loadOrganizations();
                 } else {
                     throw new Error(result.error);
                 }
             } catch (error) {
                 console.error('Error updating organization:', error);
-                showToast('Failed to update organization', 'error');
+                ModalService.toast({ message: 'Failed to update organization', type: 'error' });
             } finally {
                 hideLoading();
             }
@@ -714,37 +641,52 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Branding updated successfully', 'success');
+                    ModalService.toast({ message: 'Branding updated successfully', type: 'success' });
                     currentOrg.settings = settings;
                 } else {
                     throw new Error(result.error);
                 }
             } catch (error) {
                 console.error('Error updating branding:', error);
-                showToast('Failed to update branding', 'error');
+                ModalService.toast({ message: 'Failed to update branding', type: 'error' });
             } finally {
                 hideLoading();
             }
         });
 
-        // Create organization modal
-        function showCreateOrgModal() {
-            document.getElementById('create-org-modal').classList.remove('hidden');
-            document.getElementById('new-org-name').value = '';
-            document.getElementById('new-org-slug').value = '';
-            lucide.createIcons();
+        // Create organization modal using ModalService
+        async function showCreateOrgModal() {
+            const result = await ModalService.form({
+                title: 'Create New Organization',
+                fields: [
+                    {
+                        name: 'name',
+                        label: 'Organization Name',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'My Agency'
+                    },
+                    {
+                        name: 'slug',
+                        label: 'URL Slug (optional)',
+                        type: 'text',
+                        placeholder: 'my-agency',
+                        help: 'Leave blank to auto-generate from name'
+                    }
+                ],
+                submitText: 'Create Organization',
+                cancelText: 'Cancel',
+                width: 500
+            });
+
+            if (result) {
+                await createOrganization(result.name, result.slug);
+            }
         }
 
-        function hideCreateOrgModal() {
-            document.getElementById('create-org-modal').classList.add('hidden');
-        }
-
-        async function createOrganization() {
-            const name = document.getElementById('new-org-name').value.trim();
-            const slug = document.getElementById('new-org-slug').value.trim();
-
-            if (!name) {
-                showToast('Organization name is required', 'error');
+        async function createOrganization(name, slug) {
+            if (!name || !name.trim()) {
+                ModalService.toast({ message: 'Organization name is required', type: 'error' });
                 return;
             }
 
@@ -752,13 +694,12 @@
                 showLoading();
                 const response = await authFetch('/api/organizations', {
                     method: 'POST',
-                    body: JSON.stringify({ name, slug: slug || undefined })
+                    body: JSON.stringify({ name: name.trim(), slug: slug?.trim() || undefined })
                 });
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Organization created successfully', 'success');
-                    hideCreateOrgModal();
+                    ModalService.toast({ message: 'Organization created successfully', type: 'success' });
                     await loadOrganizations();
                     document.getElementById('org-select').value = result.data.id;
                     await loadOrganization(result.data.id);
@@ -767,7 +708,7 @@
                 }
             } catch (error) {
                 console.error('Error creating organization:', error);
-                showToast(error.message || 'Failed to create organization', 'error');
+                ModalService.toast({ message: error.message || 'Failed to create organization', type: 'error' });
             } finally {
                 hideLoading();
             }
@@ -777,21 +718,27 @@
         async function confirmDeleteOrg() {
             if (!currentOrg || currentOrg.settings?.is_personal) return;
 
-            const confirmed = confirm(
-                `Are you sure you want to delete "${currentOrg.name}"?\n\n` +
-                'This will permanently delete all associated data including:\n' +
-                '- All clients\n' +
-                '- All shared agents and workflows\n' +
-                '- All team member associations\n\n' +
-                'This action cannot be undone.'
-            );
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Organization',
+                message: `Are you sure you want to delete "${currentOrg.name}"?\n\nThis will permanently delete all associated data including:\n• All clients\n• All shared agents and workflows\n• All team member associations\n\nThis action cannot be undone.`,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                type: 'danger'
+            });
 
             if (!confirmed) return;
 
-            // Double confirmation
-            const typedName = prompt(`Please type "${currentOrg.name}" to confirm deletion:`);
+            // Double confirmation with prompt
+            const typedName = await ModalService.prompt({
+                title: 'Confirm Deletion',
+                message: `Please type "${currentOrg.name}" to confirm deletion:`,
+                placeholder: 'Organization name',
+                confirmText: 'Delete Forever',
+                cancelText: 'Cancel'
+            });
+
             if (typedName !== currentOrg.name) {
-                showToast('Organization name did not match. Deletion cancelled.', 'error');
+                ModalService.toast({ message: 'Organization name did not match. Deletion cancelled.', type: 'error' });
                 return;
             }
 
@@ -803,7 +750,7 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Organization deleted successfully', 'success');
+                    ModalService.toast({ message: 'Organization deleted successfully', type: 'success' });
                     localStorage.removeItem('currentOrgId');
                     await loadOrganizations();
                 } else {
@@ -811,50 +758,12 @@
                 }
             } catch (error) {
                 console.error('Error deleting organization:', error);
-                showToast(error.message || 'Failed to delete organization', 'error');
+                ModalService.toast({ message: error.message || 'Failed to delete organization', type: 'error' });
             } finally {
                 hideLoading();
             }
         }
 
-        // Toast notification
-        function showToast(message, type = 'info') {
-            // Simple toast - could use modal-service toast
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                border-radius: 8px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Add toast animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

@@ -94,6 +94,200 @@ Models are registered in `llmRegistry.js` with capabilities (vision, streaming, 
 ### Streaming Responses
 Chat uses Server-Sent Events (SSE). Compression middleware skips SSE streams. Frontend handles `data:` events in `public/js/chat.js`.
 
+## Frontend Development Guidelines
+
+**IMPORTANT:** When creating or modifying HTML pages in `public/`, follow these patterns for consistency:
+
+### Required Components for New HTML Pages
+
+1. **Navigation Panel** - Always include the sidebar navigation:
+   ```html
+   <script src="js/navigation.js"></script>
+   ```
+   And add the nav container in body:
+   ```html
+   <nav id="sidebar" class="sidebar"></nav>
+   ```
+
+2. **Modal Service** - Always use ModalService for dialogs (never inline HTML modals):
+   ```html
+   <script src="js/modal-service-loader.js"></script>
+   ```
+
+   **Usage Examples:**
+   ```javascript
+   // Confirmation dialog
+   const confirmed = await ModalService.confirm({
+       title: 'Delete Item',
+       message: 'Are you sure you want to delete this item?',
+       confirmText: 'Delete',
+       confirmClass: 'btn-danger'
+   });
+
+   // Form dialog
+   const result = await ModalService.form({
+       title: 'Add New Item',
+       fields: [
+           { name: 'name', label: 'Name', type: 'text', required: true },
+           { name: 'type', label: 'Type', type: 'select', options: [...] }
+       ],
+       submitText: 'Create'
+   });
+
+   // Alert dialog
+   await ModalService.alert({
+       title: 'Success',
+       message: 'Operation completed successfully'
+   });
+   ```
+
+3. **Toast Notifications** - Use showToast() for feedback:
+   ```javascript
+   showToast('Operation successful', 'success');
+   showToast('Something went wrong', 'error');
+   ```
+
+### Standard HTML Template Structure
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Title - Insight 360</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+        <!-- Page content -->
+    </main>
+
+    <script src="js/navigation.js"></script>
+    <script src="js/modal-service-loader.js"></script>
+    <script>
+        // Page initialization
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            // Check authentication, load data, etc.
+        }
+    </script>
+</body>
+</html>
+```
+
+### Do NOT Use
+- Inline `<div class="modal">` HTML - use ModalService instead
+- Direct `window.confirm()` or `window.alert()` - use ModalService
+- Custom navigation HTML - use navigation.js
+
+### Help Button (Required for All Pages)
+
+Every page must include a help button and documentation:
+
+1. **Include help modal CSS and JS:**
+   ```html
+   <link rel="stylesheet" href="/css/help-modal.css">
+   <script src="/js/help-modal.js"></script>
+   <script src="/js/help-registry.js"></script>
+   ```
+
+2. **Add help button in page header:**
+   ```html
+   <div class="header-actions">
+       <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+           <i data-lucide="help-circle"></i>
+       </button>
+       <!-- other header buttons -->
+   </div>
+   ```
+
+3. **Register page in help-registry.js:**
+   ```javascript
+   // In public/js/help-registry.js, add entry:
+   '/your-page': {
+       file: '/api/docs/your-page-user-guide.md',
+       title: 'Your Page Help'
+   }
+   ```
+
+## Page Documentation Requirements
+
+**IMPORTANT:** When creating a new HTML page, you MUST also create documentation:
+
+### 1. User Guide (Required)
+Create `documentation/guides/{page-name}-user-guide.md` with:
+
+```markdown
+# {Page Name} User Guide
+
+**For:** Insight 360 Users
+**Last Updated:** {Date}
+
+---
+
+## Why {Feature} Is Important
+Brief explanation of the value this feature provides.
+
+---
+
+## What It Does
+| Action | Description |
+|--------|-------------|
+| **Action 1** | What it does |
+| **Action 2** | What it does |
+
+---
+
+## Step by Step Use
+
+### Task 1
+1. Step one
+2. Step two
+3. Step three
+
+### Task 2
+1. Step one
+2. Step two
+
+---
+
+## Tips & Best Practices
+- Tip 1
+- Tip 2
+
+---
+
+## Troubleshooting
+| Issue | Solution |
+|-------|----------|
+| Problem 1 | How to fix |
+| Problem 2 | How to fix |
+```
+
+### 2. Technical Guide (Recommended for Complex Features)
+Create `documentation/guides/{page-name}-technical-guide.md` with:
+- Architecture overview
+- Database schema details
+- API endpoints
+- Component interactions
+- Security considerations
+
+### 3. Register in Help System
+Add entry to `public/js/help-registry.js` so the help button works.
+
+### 4. Whitelist in Docs Route
+Add the new user guide filename to the `ALLOWED_DOCS` array in `server/routes/docs.js`:
+```javascript
+// In server/routes/docs.js, add to ALLOWED_DOCS array:
+'your-page-user-guide.md',
+```
+This whitelist is required for security - the docs API will return 404 for files not in this list.
+
+### 5. Higgins Context Integration
+User guides are automatically available to Higgins (chat.html) via the `/api/docs/` endpoint, enabling AI-assisted help for users. Write guides with clear, searchable language.
+
 ## Environment Variables
 
 Required in `.env` (see `.env.example`):
