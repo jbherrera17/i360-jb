@@ -31,10 +31,12 @@ module.exports = function(supabase) {
     /**
      * GET /api/align120/sessions
      * List all Align 120 sessions for the current user
+     * Supports filtering by org_id, client_id, and excluding ephemeral sessions
      */
     router.get('/sessions', async (req, res) => {
         try {
             const userId = getUserId(req);
+            const { org_id, client_id, include_ephemeral } = req.query;
 
             // User ID is required - only return sessions owned by the current user
             if (!userId) {
@@ -44,12 +46,47 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Fetch sessions
-            const { data: sessions, error } = await supabase
+            // Build query - start with user's own sessions
+            let query = supabase
                 .from('align120_sessions')
                 .select('*')
-                .eq('user_id', userId)
                 .order('created_at', { ascending: false });
+
+            // If org_id specified, get org sessions user can access
+            if (org_id) {
+                // Verify membership
+                const { data: membership } = await supabase
+                    .from('organization_members')
+                    .select('role')
+                    .eq('org_id', org_id)
+                    .eq('user_id', userId)
+                    .eq('status', 'active')
+                    .single();
+
+                if (!membership) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Not a member of this organization'
+                    });
+                }
+
+                query = query.eq('org_id', org_id);
+
+                // Optionally filter by client
+                if (client_id) {
+                    query = query.eq('client_id', client_id);
+                }
+            } else {
+                // No org specified - get user's own sessions only
+                query = query.eq('user_id', userId);
+            }
+
+            // By default, exclude ephemeral sessions from dashboard views
+            if (include_ephemeral !== 'true') {
+                query = query.or('is_ephemeral.is.null,is_ephemeral.eq.false');
+            }
+
+            const { data: sessions, error } = await query;
 
             if (error) throw error;
 
@@ -130,11 +167,19 @@ module.exports = function(supabase) {
     /**
      * POST /api/align120/sessions
      * Create a new Align 120 session
+     * Supports multi-tenant with org_id, client_id, and ephemeral mode
      */
     router.post('/sessions', async (req, res) => {
         try {
             const userId = getUserId(req);
-            const { company_name, company_profile_id } = req.body;
+            const {
+                company_name,
+                company_profile_id,
+                org_id,
+                client_id,
+                is_ephemeral,
+                report_format
+            } = req.body;
 
             if (!company_name) {
                 return res.status(400).json({
@@ -143,10 +188,50 @@ module.exports = function(supabase) {
                 });
             }
 
+            // If org_id provided, verify user is a member
+            if (org_id) {
+                const { data: membership } = await supabase
+                    .from('organization_members')
+                    .select('role')
+                    .eq('org_id', org_id)
+                    .eq('user_id', userId)
+                    .eq('status', 'active')
+                    .single();
+
+                if (!membership) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Not a member of this organization'
+                    });
+                }
+            }
+
+            // If client_id provided, verify it belongs to the org
+            if (client_id && org_id) {
+                const { data: client } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .eq('id', client_id)
+                    .eq('org_id', org_id)
+                    .single();
+
+                if (!client) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Client not found in this organization'
+                    });
+                }
+            }
+
             const sessionData = {
                 user_id: userId,
                 company_name,
                 company_profile_id: company_profile_id || null,
+                org_id: org_id || null,
+                client_id: client_id || null,
+                is_ephemeral: is_ephemeral || false,
+                ephemeral_expires_at: is_ephemeral ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null,
+                report_format: report_format || 'standard',
                 status: 'in_progress',
                 current_module: 1,
                 module_progress: { 1: false, 2: false, 3: false, 4: false, 5: false }

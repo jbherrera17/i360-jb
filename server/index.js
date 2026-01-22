@@ -54,6 +54,10 @@ const modelAvailabilityRoutes = require('./routes/model-availability');
 const visualizationsRoutes = require('./routes/visualizations');
 const researchStudioRoutes = require('./routes/researchStudio');
 const usersRoutes = require('./routes/users');
+const organizationsRoutes = require('./routes/organizations');
+const orgMembersRoutes = require('./routes/org-members');
+const clientsRoutes = require('./routes/clients');
+const connectionsRoutes = require('./routes/connections');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -145,7 +149,16 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/workflow-run', '/workflow-run.html', '/workflow-builder', '/workflow-builder.html',
     '/system-health', '/system-health.html', '/synerginexus', '/synerginexus.html',
     '/tags', '/tags.html', '/roles', '/roles.html',
-    '/research-studio', '/research-studio.html'];
+    '/research-studio', '/research-studio.html',
+    '/admin-org-settings', '/admin-org-settings.html',
+    '/admin-org-members', '/admin-org-members.html',
+    '/admin-clients', '/admin-clients.html',
+    '/admin-responsibilities', '/admin-responsibilities.html',
+    '/admin-responsibility-ai', '/admin-responsibility-ai.html',
+    '/admin-department-ai', '/admin-department-ai.html',
+    '/admin-okr-capabilities', '/admin-okr-capabilities.html',
+    '/my-capabilities', '/my-capabilities.html',
+    '/client-comparison', '/client-comparison.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -365,7 +378,12 @@ function initializeServices() {
         app.use('/api/visualizations', visualizationsRoutes);
         app.use('/api/research-studios', researchStudioRoutes(supabase));
         app.use('/api/users', usersRoutes);
+        app.use('/api/organizations', organizationsRoutes(supabase));
+        app.use('/api/org-members', orgMembersRoutes(supabase));
+        app.use('/api/clients', clientsRoutes(supabase));
+        app.use('/api/connections', connectionsRoutes(supabase));
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Connection Management routes registered (Phase 40)');
         console.log('  ✅ Users routes registered');
         console.log('  ✅ Research Studio routes registered (Phase 6)');
         console.log('  ✅ Visualizations routes registered');

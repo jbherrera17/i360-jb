@@ -98,6 +98,31 @@ const HelpRegistry = {
         '/research-studio': {
             file: '/api/docs/research-studio-user-guide.md',
             title: 'Research Studio Help'
+        },
+        // Connection Management & Agency Features (Phase 40)
+        '/my-capabilities': {
+            file: '/api/docs/my-capabilities-user-guide.md',
+            title: 'My Capabilities Help'
+        },
+        '/admin-responsibilities': {
+            file: '/api/docs/admin-responsibilities-user-guide.md',
+            title: 'Responsibilities Management Help'
+        },
+        '/admin-responsibility-ai': {
+            file: '/api/docs/admin-responsibility-ai-user-guide.md',
+            title: 'Responsibility AI Mapping Help'
+        },
+        '/admin-department-ai': {
+            file: '/api/docs/admin-department-ai-user-guide.md',
+            title: 'Department AI Configuration Help'
+        },
+        '/admin-okr-capabilities': {
+            file: '/api/docs/admin-okr-capabilities-user-guide.md',
+            title: 'OKR Capabilities Help'
+        },
+        '/client-comparison': {
+            file: '/api/docs/client-comparison-user-guide.md',
+            title: 'Client Comparison Help'
         }
     },
 

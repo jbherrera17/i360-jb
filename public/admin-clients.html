@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Management | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; }
+
+        /* Organization Switcher */
+        .org-switcher {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .org-switcher select {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .org-switcher label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Search & Filters */
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .search-input i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            min-width: 150px;
+        }
+
+        /* Clients Grid */
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .client-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .client-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .client-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 1.25rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .client-info {
+            flex: 1;
+        }
+
+        .client-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .client-industry {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-badge.inactive {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        .status-badge.archived {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .client-card-body {
+            padding: 1.25rem;
+        }
+
+        .client-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .client-detail i {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .client-detail:last-child {
+            margin-bottom: 0;
+        }
+
+        .client-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .client-stat {
+            text-align: center;
+        }
+
+        .client-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .client-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .client-card-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .empty-state i {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group .helper {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Client Management</h1>
+                <p class="header-subtitle">Manage your organization's clients and their engagements</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="loadClients()">
+                    <i data-lucide="refresh-cw"></i>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" id="add-client-btn" onclick="showClientModal()">
+                    <i data-lucide="plus"></i>
+                    Add Client
+                </button>
+            </div>
+        </div>
+
+        <!-- Organization Switcher -->
+        <div class="org-switcher">
+            <label for="org-select">Organization:</label>
+            <select id="org-select" onchange="switchOrganization()">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="search-input">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-input" placeholder="Search clients..." oninput="filterClients()">
+            </div>
+            <select class="filter-select" id="status-filter" onchange="filterClients()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="archived">Archived</option>
+            </select>
+        </div>
+
+        <!-- Clients Grid -->
+        <div class="clients-grid" id="clients-grid">
+            <div class="empty-state">
+                <i data-lucide="building-2"></i>
+                <h3>Loading clients...</h3>
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Client Modal (Create/Edit) -->
+    <div class="modal-backdrop hidden" id="client-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Client</h2>
+                <button class="modal-close" onclick="hideClientModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="client-form">
+                    <input type="hidden" id="client-id">
+                    <div class="form-group">
+                        <label for="client-name">Client Name *</label>
+                        <input type="text" id="client-name" name="name" required placeholder="Acme Corporation">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="client-contact-name">Contact Name</label>
+                            <input type="text" id="client-contact-name" name="contact_name" placeholder="John Smith">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-email">Contact Email</label>
+                            <input type="email" id="client-email" name="contact_email" placeholder="john@acme.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="client-phone">Phone</label>
+                            <input type="tel" id="client-phone" name="phone" placeholder="+1 (555) 123-4567">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-industry">Industry</label>
+                            <input type="text" id="client-industry" name="industry" placeholder="Technology">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="client-address">Address</label>
+                        <textarea id="client-address" name="address" rows="2" placeholder="123 Main St, City, State 12345"></textarea>
+                    </div>
+                    <div class="form-group" id="status-group" style="display: none;">
+                        <label for="client-status">Status</label>
+                        <select id="client-status" name="status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideClientModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveClient()">
+                    <i data-lucide="save"></i>
+                    <span id="save-btn-text">Create Client</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let organizations = [];
+        let currentOrgId = null;
+        let clients = [];
+        let filteredClients = [];
+        let userRole = null;
+        let editingClientId = null;
+
+        // Get auth token from localStorage or cookie
+        function getAuthToken() {
+            // Check localStorage first
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+
+            // Check cookies
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        // Authenticated fetch helper
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+            return fetch(url, { ...options, headers });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadOrganizations();
+        });
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Load organizations list
+        async function loadOrganizations() {
+            try {
+                showLoading();
+                const response = await authFetch('/api/organizations');
+                const result = await response.json();
+
+                if (result.success) {
+                    organizations = result.data;
+                    populateOrgSelect();
+
+                    // Load first org or saved preference
+                    const savedOrgId = localStorage.getItem('currentOrgId');
+                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+
+                    if (orgToLoad) {
+                        currentOrgId = orgToLoad.id;
+                        userRole = orgToLoad.member_role;
+                        document.getElementById('org-select').value = orgToLoad.id;
+                        await loadClients();
+                    }
+
+                    updateUIForRole();
+                }
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                showToast('Failed to load organizations', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Populate org select dropdown
+        function populateOrgSelect() {
+            const select = document.getElementById('org-select');
+            select.innerHTML = organizations.map(org =>
+                `<option value="${org.id}">${org.name}${org.settings?.is_personal ? ' (Personal)' : ''}</option>`
+            ).join('');
+        }
+
+        // Switch organization
+        async function switchOrganization() {
+            currentOrgId = document.getElementById('org-select').value;
+            if (currentOrgId) {
+                localStorage.setItem('currentOrgId', currentOrgId);
+                const org = organizations.find(o => o.id === currentOrgId);
+                userRole = org?.member_role;
+                updateUIForRole();
+                await loadClients();
+            }
+        }
+
+        // Update UI based on role
+        function updateUIForRole() {
+            const canCreate = ['owner', 'admin', 'consultant'].includes(userRole);
+            document.getElementById('add-client-btn').style.display = canCreate ? 'flex' : 'none';
+        }
+
+        // Load clients
+        async function loadClients() {
+            if (!currentOrgId) return;
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/clients?org_id=${currentOrgId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    clients = result.data;
+                    filterClients();
+                }
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                showToast('Failed to load clients', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Filter clients
+        function filterClients() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('status-filter').value;
+
+            filteredClients = clients.filter(client => {
+                const matchesSearch = !search ||
+                    client.name.toLowerCase().includes(search) ||
+                    (client.contact_email && client.contact_email.toLowerCase().includes(search)) ||
+                    (client.industry && client.industry.toLowerCase().includes(search));
+
+                const matchesStatus = !status || client.status === status;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderClients();
+        }
+
+        // Render clients grid
+        function renderClients() {
+            const grid = document.getElementById('clients-grid');
+
+            if (filteredClients.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i data-lucide="building-2"></i>
+                        <h3>${clients.length === 0 ? 'No Clients Yet' : 'No Matching Clients'}</h3>
+                        <p>${clients.length === 0 ? 'Add your first client to get started.' : 'Try adjusting your search or filters.'}</p>
+                        ${clients.length === 0 ? '<button class="btn btn-primary" onclick="showClientModal()"><i data-lucide="plus"></i> Add Client</button>' : ''}
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const canEdit = ['owner', 'admin', 'consultant'].includes(userRole);
+            const canDelete = ['owner', 'admin'].includes(userRole);
+
+            grid.innerHTML = filteredClients.map(client => `
+                <div class="client-card">
+                    <div class="client-card-header">
+                        <div class="client-info">
+                            <div class="client-name">${client.name}</div>
+                            ${client.industry ? `<div class="client-industry"><i data-lucide="briefcase" style="width: 14px; height: 14px;"></i> ${client.industry}</div>` : ''}
+                        </div>
+                        <span class="status-badge ${client.status}">${client.status}</span>
+                    </div>
+                    <div class="client-card-body">
+                        ${client.contact_name ? `
+                            <div class="client-detail">
+                                <i data-lucide="user"></i>
+                                <span>${client.contact_name}</span>
+                            </div>
+                        ` : ''}
+                        ${client.contact_email ? `
+                            <div class="client-detail">
+                                <i data-lucide="mail"></i>
+                                <span>${client.contact_email}</span>
+                            </div>
+                        ` : ''}
+                        ${client.phone ? `
+                            <div class="client-detail">
+                                <i data-lucide="phone"></i>
+                                <span>${client.phone}</span>
+                            </div>
+                        ` : ''}
+                        <div class="client-stats">
+                            <div class="client-stat">
+                                <div class="client-stat-value">-</div>
+                                <div class="client-stat-label">Sessions</div>
+                            </div>
+                            <div class="client-stat">
+                                <div class="client-stat-value">-</div>
+                                <div class="client-stat-label">Profiles</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="client-card-footer">
+                        ${canEdit ? `
+                            <button class="btn btn-sm btn-secondary" onclick="editClient('${client.id}')">
+                                <i data-lucide="edit-2"></i>
+                                Edit
+                            </button>
+                        ` : ''}
+                        ${canDelete ? `
+                            <button class="btn btn-sm btn-danger" onclick="archiveClient('${client.id}', '${client.name}')">
+                                <i data-lucide="archive"></i>
+                                Archive
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Client modal
+        function showClientModal(client = null) {
+            editingClientId = client?.id || null;
+
+            document.getElementById('modal-title').textContent = client ? 'Edit Client' : 'Add New Client';
+            document.getElementById('save-btn-text').textContent = client ? 'Save Changes' : 'Create Client';
+            document.getElementById('status-group').style.display = client ? 'block' : 'none';
+
+            document.getElementById('client-id').value = client?.id || '';
+            document.getElementById('client-name').value = client?.name || '';
+            document.getElementById('client-contact-name').value = client?.contact_name || '';
+            document.getElementById('client-email').value = client?.contact_email || '';
+            document.getElementById('client-phone').value = client?.phone || '';
+            document.getElementById('client-industry').value = client?.industry || '';
+            document.getElementById('client-address').value = client?.address || '';
+            document.getElementById('client-status').value = client?.status || 'active';
+
+            document.getElementById('client-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function hideClientModal() {
+            document.getElementById('client-modal').classList.add('hidden');
+            editingClientId = null;
+        }
+
+        function editClient(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (client) {
+                showClientModal(client);
+            }
+        }
+
+        async function saveClient() {
+            const name = document.getElementById('client-name').value.trim();
+            if (!name) {
+                showToast('Client name is required', 'error');
+                return;
+            }
+
+            const clientData = {
+                org_id: currentOrgId,
+                name,
+                contact_name: document.getElementById('client-contact-name').value.trim() || null,
+                contact_email: document.getElementById('client-email').value.trim() || null,
+                phone: document.getElementById('client-phone').value.trim() || null,
+                industry: document.getElementById('client-industry').value.trim() || null,
+                address: document.getElementById('client-address').value.trim() || null
+            };
+
+            if (editingClientId) {
+                clientData.status = document.getElementById('client-status').value;
+            }
+
+            try {
+                showLoading();
+                const url = editingClientId ? `/api/clients/${editingClientId}` : '/api/clients';
+                const method = editingClientId ? 'PUT' : 'POST';
+
+                const response = await authFetch(url, {
+                    method,
+                    body: JSON.stringify(clientData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast(editingClientId ? 'Client updated successfully' : 'Client created successfully', 'success');
+                    hideClientModal();
+                    await loadClients();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error saving client:', error);
+                showToast(error.message || 'Failed to save client', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function archiveClient(clientId, name) {
+            const confirmed = confirm(`Are you sure you want to archive "${name}"?\n\nThis will hide the client from the active list.`);
+            if (!confirmed) return;
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/clients/${clientId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Client archived successfully', 'success');
+                    await loadClients();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error archiving client:', error);
+                showToast(error.message || 'Failed to archive client', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add toast animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

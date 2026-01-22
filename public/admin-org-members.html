@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Members | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; }
+
+        /* Organization Switcher */
+        .org-switcher {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .org-switcher select {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .org-switcher label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Members Table */
+        .members-table-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .members-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .members-table th,
+        .members-table td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .members-table th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--bg-tertiary);
+        }
+
+        .members-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .members-table tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        /* Member Info */
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .member-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .member-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .member-email {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Role Badge */
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .role-badge.owner {
+            background: rgba(124, 58, 237, 0.15);
+            color: #7c3aed;
+        }
+
+        .role-badge.admin {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .role-badge.consultant {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .role-badge.viewer {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        /* Status */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .status-badge.active {
+            color: var(--success);
+        }
+
+        .status-badge.inactive {
+            color: var(--text-muted);
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Actions */
+        .member-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .member-actions button {
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: transparent;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .member-actions button:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .member-actions button.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group .helper {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Team Members</h1>
+                <p class="header-subtitle">Manage your organization's team members and their roles</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="loadMembers()">
+                    <i data-lucide="refresh-cw"></i>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" id="invite-btn" onclick="showInviteModal()">
+                    <i data-lucide="user-plus"></i>
+                    Invite Member
+                </button>
+            </div>
+        </div>
+
+        <!-- Organization Switcher -->
+        <div class="org-switcher">
+            <label for="org-select">Organization:</label>
+            <select id="org-select" onchange="switchOrganization()">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+
+        <!-- Members Table -->
+        <div class="members-table-container">
+            <div class="table-header">
+                <h2>Members (<span id="member-count">0</span>)</h2>
+            </div>
+            <table class="members-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="members-tbody">
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="users"></i>
+                                <p>Loading members...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div class="modal-backdrop hidden" id="invite-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Invite Team Member</h2>
+                <button class="modal-close" onclick="hideInviteModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="invite-form">
+                    <div class="form-group">
+                        <label for="invite-email">Email Address *</label>
+                        <input type="email" id="invite-email" name="email" required placeholder="colleague@company.com">
+                        <p class="helper">The user must already have an Insight 360 account</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="invite-role">Role</label>
+                        <select id="invite-role" name="role">
+                            <option value="consultant">Consultant</option>
+                            <option value="admin">Admin</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                        <p class="helper">
+                            <strong>Admin:</strong> Full access to manage members and settings<br>
+                            <strong>Consultant:</strong> Can work with clients and create content<br>
+                            <strong>Viewer:</strong> Read-only access
+                        </p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideInviteModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="inviteMember()">
+                    <i data-lucide="send"></i>
+                    Send Invitation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Role Modal -->
+    <div class="modal-backdrop hidden" id="edit-role-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit Member Role</h2>
+                <button class="modal-close" onclick="hideEditRoleModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-role-form">
+                    <input type="hidden" id="edit-member-id">
+                    <div class="form-group">
+                        <label>Member</label>
+                        <p id="edit-member-name" style="margin: 0; font-weight: 500;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-role">Role</label>
+                        <select id="edit-role" name="role">
+                            <option value="admin">Admin</option>
+                            <option value="consultant">Consultant</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideEditRoleModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="updateMemberRole()">
+                    <i data-lucide="save"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let organizations = [];
+        let currentOrgId = null;
+        let members = [];
+        let userRole = null;
+        let currentUserId = null;
+
+        // Get auth token from localStorage or cookie
+        function getAuthToken() {
+            // Check localStorage first
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+
+            // Check cookies
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        // Authenticated fetch helper
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+            return fetch(url, { ...options, headers });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+
+            // Get current user ID from session
+            try {
+                const response = await authFetch('/api/user-profile');
+                const result = await response.json();
+                if (result.success) {
+                    currentUserId = result.data.id;
+                }
+            } catch (e) {}
+
+            await loadOrganizations();
+        });
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Load organizations list
+        async function loadOrganizations() {
+            try {
+                showLoading();
+                const response = await authFetch('/api/organizations');
+                const result = await response.json();
+
+                if (result.success) {
+                    organizations = result.data;
+                    populateOrgSelect();
+
+                    // Load first org or saved preference
+                    const savedOrgId = localStorage.getItem('currentOrgId');
+                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+
+                    if (orgToLoad) {
+                        currentOrgId = orgToLoad.id;
+                        userRole = orgToLoad.member_role;
+                        document.getElementById('org-select').value = orgToLoad.id;
+                        await loadMembers();
+                    }
+
+                    updateUIForRole();
+                }
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                showToast('Failed to load organizations', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Populate org select dropdown
+        function populateOrgSelect() {
+            const select = document.getElementById('org-select');
+            select.innerHTML = organizations.map(org =>
+                `<option value="${org.id}">${org.name}${org.settings?.is_personal ? ' (Personal)' : ''}</option>`
+            ).join('');
+        }
+
+        // Switch organization
+        async function switchOrganization() {
+            currentOrgId = document.getElementById('org-select').value;
+            if (currentOrgId) {
+                localStorage.setItem('currentOrgId', currentOrgId);
+                const org = organizations.find(o => o.id === currentOrgId);
+                userRole = org?.member_role;
+                updateUIForRole();
+                await loadMembers();
+            }
+        }
+
+        // Update UI based on role
+        function updateUIForRole() {
+            const isAdmin = ['owner', 'admin'].includes(userRole);
+            document.getElementById('invite-btn').style.display = isAdmin ? 'flex' : 'none';
+        }
+
+        // Load members
+        async function loadMembers() {
+            if (!currentOrgId) return;
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/org-members/${currentOrgId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    members = result.data;
+                    renderMembers();
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+                showToast('Failed to load members', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render members table
+        function renderMembers() {
+            const tbody = document.getElementById('members-tbody');
+            document.getElementById('member-count').textContent = members.length;
+
+            if (members.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="users"></i>
+                                <p>No members found</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const isAdmin = ['owner', 'admin'].includes(userRole);
+
+            tbody.innerHTML = members.map(member => {
+                const initials = (member.display_name || member.email || 'U')
+                    .split(' ')
+                    .map(n => n[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase();
+
+                const joinedDate = member.joined_at
+                    ? new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'N/A';
+
+                const canEdit = isAdmin && member.role !== 'owner';
+                const canRemove = isAdmin && member.role !== 'owner' && member.user_id !== currentUserId;
+                const isCurrentUser = member.user_id === currentUserId;
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="member-info">
+                                <div class="member-avatar">
+                                    ${member.avatar_url
+                                        ? `<img src="${member.avatar_url}" alt="">`
+                                        : initials}
+                                </div>
+                                <div class="member-details">
+                                    <span class="member-name">${member.display_name || 'Unknown'}${isCurrentUser ? ' (You)' : ''}</span>
+                                    <span class="member-email">${member.email || ''}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-badge ${member.role}">${member.role}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge ${member.status}">${member.status}</span>
+                        </td>
+                        <td>${joinedDate}</td>
+                        <td>
+                            <div class="member-actions">
+                                ${canEdit ? `
+                                    <button onclick="showEditRoleModal('${member.id}', '${member.display_name || member.email}', '${member.role}')" title="Edit role">
+                                        <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                ` : ''}
+                                ${canRemove ? `
+                                    <button class="danger" onclick="removeMember('${member.id}', '${member.display_name || member.email}')" title="Remove member">
+                                        <i data-lucide="user-minus" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Invite modal
+        function showInviteModal() {
+            document.getElementById('invite-modal').classList.remove('hidden');
+            document.getElementById('invite-email').value = '';
+            document.getElementById('invite-role').value = 'consultant';
+            lucide.createIcons();
+        }
+
+        function hideInviteModal() {
+            document.getElementById('invite-modal').classList.add('hidden');
+        }
+
+        async function inviteMember() {
+            const email = document.getElementById('invite-email').value.trim();
+            const role = document.getElementById('invite-role').value;
+
+            if (!email) {
+                showToast('Email is required', 'error');
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/org-members/${currentOrgId}/invite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, role })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Member invited successfully', 'success');
+                    hideInviteModal();
+                    await loadMembers();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error inviting member:', error);
+                showToast(error.message || 'Failed to invite member', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Edit role modal
+        function showEditRoleModal(memberId, name, currentRole) {
+            document.getElementById('edit-member-id').value = memberId;
+            document.getElementById('edit-member-name').textContent = name;
+            document.getElementById('edit-role').value = currentRole;
+            document.getElementById('edit-role-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function hideEditRoleModal() {
+            document.getElementById('edit-role-modal').classList.add('hidden');
+        }
+
+        async function updateMemberRole() {
+            const memberId = document.getElementById('edit-member-id').value;
+            const role = document.getElementById('edit-role').value;
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/org-members/${currentOrgId}/${memberId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Role updated successfully', 'success');
+                    hideEditRoleModal();
+                    await loadMembers();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error updating role:', error);
+                showToast(error.message || 'Failed to update role', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Remove member
+        async function removeMember(memberId, name) {
+            const confirmed = confirm(`Are you sure you want to remove "${name}" from this organization?`);
+            if (!confirmed) return;
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/org-members/${currentOrgId}/${memberId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Member removed successfully', 'success');
+                    await loadMembers();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error removing member:', error);
+                showToast(error.message || 'Failed to remove member', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add toast animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

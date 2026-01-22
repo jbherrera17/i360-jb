@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department AI Configuration | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .ai-config-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .back-link {
+            color: var(--primary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .department-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .department-info h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.75rem;
+        }
+
+        .department-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .department-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .config-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .config-tab {
+            padding: 0.75rem 1.25rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s;
+        }
+
+        .config-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .config-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .config-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header h2 svg {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
+
+        .add-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .add-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .entity-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        .entity-card.featured {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg-primary) 100%);
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: -8px;
+            right: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .entity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .entity-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entity-details h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .entity-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .entity-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .entity-action-btn {
+            padding: 0.35rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .entity-action-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .entity-action-btn.remove:hover {
+            color: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
+
+        /* Quick Prompts specific styling */
+        .quick-prompts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .quick-prompt-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .quick-prompt-item .prompt-text {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        .quick-prompt-item .prompt-order {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .btn-secondary {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .help-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .help-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="ai-config-container">
+                <div class="header-row">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Departments
+                    </a>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+
+                <div class="department-header">
+                <div class="department-info">
+                    <h1 id="department-name">Loading...</h1>
+                    <div class="department-meta">
+                        <span id="department-code"></span>
+                        <span id="member-count"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Tabs -->
+            <div class="config-tabs">
+                <button class="config-tab active" data-tab="agents" onclick="switchTab('agents')">
+                    Featured Agents
+                </button>
+                <button class="config-tab" data-tab="workflows" onclick="switchTab('workflows')">
+                    Default Workflows
+                </button>
+                <button class="config-tab" data-tab="skills" onclick="switchTab('skills')">
+                    Required Skills
+                </button>
+                <button class="config-tab" data-tab="prompts" onclick="switchTab('prompts')">
+                    Quick Prompts
+                </button>
+            </div>
+
+            <!-- Agents Tab -->
+            <div id="agents-tab" class="tab-content active">
+                <div class="config-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="7" r="4"/>
+                                <path d="M5.5 21a7.5 7.5 0 0113 0"/>
+                            </svg>
+                            Featured Agents
+                        </h2>
+                        <button class="add-btn" onclick="showAddModal('agent')">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add Agent
+                        </button>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                        Featured agents appear prominently for department members and are recommended for their workflows.
+                    </p>
+                    <div id="agents-list" class="entity-grid">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflows Tab -->
+            <div id="workflows-tab" class="tab-content">
+                <div class="config-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="6" height="6" rx="1"/>
+                                <rect x="15" y="3" width="6" height="6" rx="1"/>
+                                <rect x="9" y="15" width="6" height="6" rx="1"/>
+                                <path d="M6 9v3H9M18 9v6h-3"/>
+                            </svg>
+                            Default Workflows
+                        </h2>
+                        <button class="add-btn" onclick="showAddModal('workflow')">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add Workflow
+                        </button>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                        Default workflows are automatically available to all department members.
+                    </p>
+                    <div id="workflows-list" class="entity-grid">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Tab -->
+            <div id="skills-tab" class="tab-content">
+                <div class="config-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Required Skills
+                        </h2>
+                        <button class="add-btn" onclick="showAddModal('skill')">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add Skill
+                        </button>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                        Skills that agents in this department must have access to.
+                    </p>
+                    <div id="skills-list" class="entity-grid">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Prompts Tab -->
+            <div id="prompts-tab" class="tab-content">
+                <div class="config-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                            </svg>
+                            Quick Prompts
+                        </h2>
+                        <button class="add-btn" onclick="showAddPromptModal()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add Prompt
+                        </button>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                        Quick prompts that department members can use to quickly access common actions.
+                    </p>
+                    <div id="prompts-list" class="quick-prompts-list">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Entity Modal -->
+    <div id="add-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Agent</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-form" onsubmit="handleAddSubmit(event)">
+                    <input type="hidden" id="entity-type" value="">
+
+                    <div class="form-group">
+                        <label id="entity-label">Select Agent</label>
+                        <select id="entity-select" required>
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group checkbox-group" id="featured-checkbox-group">
+                        <input type="checkbox" id="is-featured">
+                        <label for="is-featured">Mark as Featured</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary" form="add-form">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Prompt Modal -->
+    <div id="prompt-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Add Quick Prompt</h2>
+                <button class="modal-close" onclick="closePromptModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="prompt-form" onsubmit="handlePromptSubmit(event)">
+                    <div class="form-group">
+                        <label>Prompt Text</label>
+                        <textarea id="prompt-text" rows="3" required placeholder="Enter the quick prompt text..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Display Order</label>
+                        <input type="number" id="prompt-order" value="1" min="1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closePromptModal()">Cancel</button>
+                <button type="submit" class="btn-primary" form="prompt-form">Add Prompt</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let departmentId = null;
+        let department = null;
+        let featuredAgents = [];
+        let departmentWorkflows = [];
+        let departmentSkills = [];
+        let quickPrompts = [];
+        let availableEntities = { agents: [], workflows: [], skills: [] };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const params = new URLSearchParams(window.location.search);
+            departmentId = params.get('id');
+
+            if (!departmentId) {
+                alert('No department ID provided');
+                window.location.href = '/admin-departments.html';
+                return;
+            }
+
+            loadData();
+        });
+
+        async function loadData() {
+            try {
+                await Promise.all([
+                    loadDepartment(),
+                    loadFeaturedAgents(),
+                    loadDepartmentWorkflows(),
+                    loadDepartmentSkills(),
+                    loadQuickPrompts(),
+                    loadAvailableEntities()
+                ]);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        async function loadDepartment() {
+            try {
+                const response = await fetch(`/api/departments/${departmentId}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    department = result.data;
+                    document.getElementById('department-name').textContent = `${department.name} - AI Configuration`;
+                    document.getElementById('department-code').textContent = department.code ? `Code: ${department.code}` : '';
+                } else {
+                    document.getElementById('department-name').textContent = 'Department not found';
+                }
+            } catch (error) {
+                console.error('Error loading department:', error);
+                document.getElementById('department-name').textContent = 'Error loading department';
+            }
+        }
+
+        async function loadFeaturedAgents() {
+            try {
+                const response = await fetch(`/api/departments/${departmentId}/agents`);
+                const result = await response.json();
+                featuredAgents = result.success ? result.data : [];
+                renderAgentsList();
+            } catch (error) {
+                console.error('Error loading featured agents:', error);
+                featuredAgents = [];
+                renderAgentsList();
+            }
+        }
+
+        async function loadDepartmentWorkflows() {
+            try {
+                const response = await fetch(`/api/workflows?department_id=${departmentId}`);
+                const result = await response.json();
+                departmentWorkflows = result.success ? result.data : [];
+                renderWorkflowsList();
+            } catch (error) {
+                console.error('Error loading workflows:', error);
+                departmentWorkflows = [];
+                renderWorkflowsList();
+            }
+        }
+
+        async function loadDepartmentSkills() {
+            try {
+                const response = await fetch(`/api/skills?department_id=${departmentId}`);
+                const result = await response.json();
+                departmentSkills = result.success ? result.data : [];
+                renderSkillsList();
+            } catch (error) {
+                console.error('Error loading skills:', error);
+                departmentSkills = [];
+                renderSkillsList();
+            }
+        }
+
+        async function loadQuickPrompts() {
+            try {
+                const response = await fetch(`/api/departments/${departmentId}/quick-prompts`);
+                const result = await response.json();
+                quickPrompts = result.success ? result.data : [];
+                renderPromptsList();
+            } catch (error) {
+                console.error('Error loading quick prompts:', error);
+                quickPrompts = [];
+                renderPromptsList();
+            }
+        }
+
+        async function loadAvailableEntities() {
+            try {
+                const [agentsRes, workflowsRes, skillsRes] = await Promise.all([
+                    fetch('/api/agents'),
+                    fetch('/api/workflows'),
+                    fetch('/api/skills')
+                ]);
+
+                const [agents, workflows, skills] = await Promise.all([
+                    agentsRes.json(),
+                    workflowsRes.json(),
+                    skillsRes.json()
+                ]);
+
+                availableEntities.agents = agents.success ? agents.data : [];
+                availableEntities.workflows = workflows.success ? workflows.data : [];
+                availableEntities.skills = skills.success ? skills.data : [];
+            } catch (error) {
+                console.error('Error loading available entities:', error);
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.config-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `${tabName}-tab`);
+            });
+        }
+
+        function renderAgentsList() {
+            const container = document.getElementById('agents-list');
+
+            if (!featuredAgents || featuredAgents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M5.5 21a7.5 7.5 0 0113 0"/>
+                        </svg>
+                        <p>No featured agents configured</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = featuredAgents.map(agent => `
+                <div class="entity-card featured">
+                    <span class="featured-badge">Featured</span>
+                    <div class="entity-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M5.5 21a7.5 7.5 0 0113 0"/>
+                        </svg>
+                    </div>
+                    <div class="entity-details">
+                        <h3>${escapeHtml(agent.name)}</h3>
+                        <p>${escapeHtml(agent.description || 'No description')}</p>
+                    </div>
+                    <div class="entity-actions">
+                        <button class="entity-action-btn remove" onclick="removeAgent('${agent.id}')" title="Remove">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderWorkflowsList() {
+            const container = document.getElementById('workflows-list');
+
+            if (!departmentWorkflows || departmentWorkflows.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="6" height="6" rx="1"/>
+                            <rect x="15" y="3" width="6" height="6" rx="1"/>
+                            <rect x="9" y="15" width="6" height="6" rx="1"/>
+                        </svg>
+                        <p>No workflows assigned to this department</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = departmentWorkflows.map(wf => `
+                <div class="entity-card">
+                    <div class="entity-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="6" height="6" rx="1"/>
+                            <rect x="15" y="3" width="6" height="6" rx="1"/>
+                            <rect x="9" y="15" width="6" height="6" rx="1"/>
+                        </svg>
+                    </div>
+                    <div class="entity-details">
+                        <h3>${escapeHtml(wf.name)}</h3>
+                        <p>${escapeHtml(wf.description || 'No description')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderSkillsList() {
+            const container = document.getElementById('skills-list');
+
+            if (!departmentSkills || departmentSkills.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                        </svg>
+                        <p>No skills assigned to this department</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = departmentSkills.map(skill => `
+                <div class="entity-card">
+                    <div class="entity-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <div class="entity-details">
+                        <h3>${escapeHtml(skill.name)}</h3>
+                        <p>${escapeHtml(skill.description || 'No description')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPromptsList() {
+            const container = document.getElementById('prompts-list');
+
+            if (!quickPrompts || quickPrompts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                        </svg>
+                        <p>No quick prompts configured</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = quickPrompts.map((prompt, idx) => `
+                <div class="quick-prompt-item">
+                    <span class="prompt-order">${idx + 1}</span>
+                    <span class="prompt-text">${escapeHtml(prompt.prompt_text || prompt.text)}</span>
+                    <button class="entity-action-btn remove" onclick="removePrompt('${prompt.id}')" title="Remove">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function showAddModal(type) {
+            const modal = document.getElementById('add-modal');
+            document.getElementById('entity-type').value = type;
+
+            const labels = { agent: 'Agent', workflow: 'Workflow', skill: 'Skill' };
+            document.getElementById('modal-title').textContent = `Add ${labels[type]}`;
+            document.getElementById('entity-label').textContent = `Select ${labels[type]}`;
+
+            // Show/hide featured checkbox (only for agents)
+            document.getElementById('featured-checkbox-group').style.display = type === 'agent' ? 'flex' : 'none';
+
+            // Populate select
+            const typeKey = type + 's';
+            const entities = availableEntities[typeKey] || [];
+            const select = document.getElementById('entity-select');
+            select.innerHTML = '<option value="">-- Select --</option>' +
+                entities.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('add-modal').classList.remove('active');
+            document.getElementById('add-form').reset();
+        }
+
+        async function handleAddSubmit(event) {
+            event.preventDefault();
+
+            const type = document.getElementById('entity-type').value;
+            const entityId = document.getElementById('entity-select').value;
+            const isFeatured = document.getElementById('is-featured').checked;
+
+            if (!entityId) {
+                alert('Please select an item');
+                return;
+            }
+
+            try {
+                if (type === 'agent') {
+                    // Add featured agent to department
+                    const response = await fetch(`/api/departments/${departmentId}/agents`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            agent_id: entityId,
+                            is_featured: isFeatured
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        closeModal();
+                        await loadFeaturedAgents();
+                    } else {
+                        alert(result.error || 'Failed to add agent');
+                    }
+                } else if (type === 'workflow') {
+                    // Update workflow's department_id
+                    const response = await fetch(`/api/workflows/${entityId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ department_id: departmentId })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        closeModal();
+                        await loadDepartmentWorkflows();
+                    } else {
+                        alert(result.error || 'Failed to assign workflow');
+                    }
+                } else if (type === 'skill') {
+                    // Update skill's department_id
+                    const response = await fetch(`/api/skills/${entityId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ department_id: departmentId })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        closeModal();
+                        await loadDepartmentSkills();
+                    } else {
+                        alert(result.error || 'Failed to assign skill');
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding entity:', error);
+                alert('Failed to add item');
+            }
+        }
+
+        async function removeAgent(agentId) {
+            if (!confirm('Remove this agent from the department?')) return;
+
+            try {
+                const response = await fetch(`/api/departments/${departmentId}/agents/${agentId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await loadFeaturedAgents();
+                } else {
+                    alert(result.error || 'Failed to remove agent');
+                }
+            } catch (error) {
+                console.error('Error removing agent:', error);
+                alert('Failed to remove agent');
+            }
+        }
+
+        function showAddPromptModal() {
+            document.getElementById('prompt-modal').classList.add('active');
+            document.getElementById('prompt-order').value = quickPrompts.length + 1;
+        }
+
+        function closePromptModal() {
+            document.getElementById('prompt-modal').classList.remove('active');
+            document.getElementById('prompt-form').reset();
+        }
+
+        async function handlePromptSubmit(event) {
+            event.preventDefault();
+
+            const text = document.getElementById('prompt-text').value;
+            const order = parseInt(document.getElementById('prompt-order').value);
+
+            try {
+                const response = await fetch(`/api/departments/${departmentId}/quick-prompts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt_text: text,
+                        display_order: order
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closePromptModal();
+                    await loadQuickPrompts();
+                } else {
+                    alert(result.error || 'Failed to add prompt');
+                }
+            } catch (error) {
+                console.error('Error adding prompt:', error);
+                alert('Failed to add prompt');
+            }
+        }
+
+        async function removePrompt(promptId) {
+            if (!confirm('Remove this quick prompt?')) return;
+
+            try {
+                const response = await fetch(`/api/departments/${departmentId}/quick-prompts/${promptId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await loadQuickPrompts();
+                } else {
+                    alert(result.error || 'Failed to remove prompt');
+                }
+            } catch (error) {
+                console.error('Error removing prompt:', error);
+                alert('Failed to remove prompt');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

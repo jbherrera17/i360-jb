@@ -75,7 +75,13 @@ const navConfig = {
             icon: 'settings',
             adminOnly: true,
             items: [
-                { href: '/administrator.html', icon: 'shield', label: 'Administrator' }
+                { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
+                { href: '/admin-org-settings.html', icon: 'building-2', label: 'Organization' },
+                { href: '/admin-org-members.html', icon: 'users', label: 'Team Members' },
+                { href: '/admin-clients.html', icon: 'briefcase', label: 'Clients' },
+                { href: '/client-comparison.html', icon: 'bar-chart-3', label: 'Client Comparison' },
+                { href: '/admin-responsibilities.html', icon: 'clipboard-check', label: 'Responsibilities' },
+                { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' }
             ]
         }
     ]

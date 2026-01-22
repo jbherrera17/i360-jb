@@ -13,6 +13,52 @@ module.exports = function(supabase) {
     const router = express.Router();
 
     /**
+     * GET /api/user-profile
+     * Get current logged-in user's profile
+     */
+    router.get('/', async (req, res) => {
+        try {
+            const userId = req.userId;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required'
+                });
+            }
+
+            // Get user basic info
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select(`
+                    id, email, display_name, avatar_url, department_id, business_role,
+                    manager_id, role,
+                    department:department_id(id, name, icon, color),
+                    manager:manager_id(id, email, display_name)
+                `)
+                .eq('id', userId)
+                .single();
+
+            if (userError) throw userError;
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'User not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: user
+            });
+        } catch (error) {
+            console.error('Error getting current user profile:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
      * GET /api/user-profile/:id
      * Get user profile with roles, responsibilities, and matched resources
      */

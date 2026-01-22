@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Settings | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card.members { border-left: 4px solid var(--primary); }
+        .stat-card.clients { border-left: 4px solid var(--success); }
+        .stat-card.agents { border-left: 4px solid var(--warning); }
+        .stat-card.workflows { border-left: 4px solid var(--secondary); }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Organization Switcher */
+        .org-switcher {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .org-switcher select {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .org-switcher label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Settings Sections */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .settings-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .settings-section-header {
+            padding: 1.25rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .settings-section-body {
+            padding: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group .helper {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Subscription Badge */
+        .subscription-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .subscription-badge.free {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        .subscription-badge.pro {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .subscription-badge.enterprise {
+            background: rgba(124, 58, 237, 0.15);
+            color: #7c3aed;
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+            border-color: var(--danger);
+        }
+
+        .danger-zone .settings-section-header {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .danger-zone .settings-section-header h2 {
+            color: var(--danger);
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Organization Settings</h1>
+                <p class="header-subtitle">Manage your organization's configuration and preferences</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="loadOrganization()">
+                    <i data-lucide="refresh-cw"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Organization Switcher -->
+        <div class="org-switcher">
+            <label for="org-select">Organization:</label>
+            <select id="org-select" onchange="switchOrganization()">
+                <option value="">Loading...</option>
+            </select>
+            <button class="btn btn-primary" onclick="showCreateOrgModal()">
+                <i data-lucide="plus"></i>
+                New Organization
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="stats-container">
+            <div class="stat-card members">
+                <div class="stat-value" id="stat-members">-</div>
+                <div class="stat-label">Team Members</div>
+            </div>
+            <div class="stat-card clients">
+                <div class="stat-value" id="stat-clients">-</div>
+                <div class="stat-label">Clients</div>
+            </div>
+            <div class="stat-card agents">
+                <div class="stat-value" id="stat-agents">-</div>
+                <div class="stat-label">Agents</div>
+            </div>
+            <div class="stat-card workflows">
+                <div class="stat-value" id="stat-workflows">-</div>
+                <div class="stat-label">Workflows</div>
+            </div>
+        </div>
+
+        <!-- Settings Grid -->
+        <div class="settings-grid">
+            <!-- General Settings -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h2>General Settings</h2>
+                </div>
+                <div class="settings-section-body">
+                    <form id="general-form">
+                        <div class="form-group">
+                            <label for="org-name">Organization Name</label>
+                            <input type="text" id="org-name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="org-slug">URL Slug</label>
+                            <input type="text" id="org-slug" name="slug" readonly>
+                            <p class="helper">This is used in URLs and cannot be changed</p>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-lucide="save"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Subscription -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h2>Subscription</h2>
+                </div>
+                <div class="settings-section-body">
+                    <div class="form-group">
+                        <label>Current Plan</label>
+                        <div id="subscription-badge"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <p id="subscription-status" style="margin: 0; color: var(--text-secondary);"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>Member Since</label>
+                        <p id="member-since" style="margin: 0; color: var(--text-secondary);"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branding (Full Width) -->
+            <div class="settings-section" style="grid-column: 1 / -1;">
+                <div class="settings-section-header">
+                    <h2>Branding & Appearance</h2>
+                </div>
+                <div class="settings-section-body">
+                    <form id="branding-form">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label for="brand-color">Primary Color</label>
+                                <input type="color" id="brand-color" name="primary_color" value="#6366f1" style="width: 100px; height: 40px; padding: 0; border: none;">
+                            </div>
+                            <div class="form-group">
+                                <label for="logo-url">Logo URL</label>
+                                <input type="url" id="logo-url" name="logo_url" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-lucide="save"></i>
+                                Save Branding
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="settings-section danger-zone" id="danger-zone" style="grid-column: 1 / -1; display: none;">
+                <div class="settings-section-header">
+                    <h2>Danger Zone</h2>
+                </div>
+                <div class="settings-section-body">
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                        These actions are irreversible. Please proceed with caution.
+                    </p>
+                    <button class="btn btn-danger" onclick="confirmDeleteOrg()">
+                        <i data-lucide="trash-2"></i>
+                        Delete Organization
+                    </button>
+                </div>
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Create Organization Modal -->
+    <div class="modal-backdrop hidden" id="create-org-modal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Create New Organization</h2>
+                <button class="modal-close" onclick="hideCreateOrgModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="create-org-form">
+                    <div class="form-group">
+                        <label for="new-org-name">Organization Name *</label>
+                        <input type="text" id="new-org-name" name="name" required placeholder="My Agency">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-org-slug">URL Slug (optional)</label>
+                        <input type="text" id="new-org-slug" name="slug" placeholder="my-agency">
+                        <p class="helper">Leave blank to auto-generate from name</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideCreateOrgModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createOrganization()">
+                    <i data-lucide="plus"></i>
+                    Create Organization
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+    </style>
+
+    <script>
+        // State
+        let organizations = [];
+        let currentOrg = null;
+        let userRole = null;
+
+        // Get auth token from localStorage or cookie
+        function getAuthToken() {
+            // Check localStorage first
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+
+            // Check cookies
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        // Authenticated fetch helper
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+            return fetch(url, { ...options, headers });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadOrganizations();
+        });
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Load organizations list
+        async function loadOrganizations() {
+            try {
+                showLoading();
+                const response = await authFetch('/api/organizations');
+                const result = await response.json();
+
+                if (result.success) {
+                    organizations = result.data;
+                    populateOrgSelect();
+
+                    // Load first org or saved preference
+                    const savedOrgId = localStorage.getItem('currentOrgId');
+                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+
+                    if (orgToLoad) {
+                        document.getElementById('org-select').value = orgToLoad.id;
+                        await loadOrganization(orgToLoad.id);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                showToast('Failed to load organizations', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Populate org select dropdown
+        function populateOrgSelect() {
+            const select = document.getElementById('org-select');
+            select.innerHTML = organizations.map(org =>
+                `<option value="${org.id}">${org.name}${org.settings?.is_personal ? ' (Personal)' : ''}</option>`
+            ).join('');
+        }
+
+        // Switch organization
+        async function switchOrganization() {
+            const orgId = document.getElementById('org-select').value;
+            if (orgId) {
+                localStorage.setItem('currentOrgId', orgId);
+                await loadOrganization(orgId);
+            }
+        }
+
+        // Load organization details
+        async function loadOrganization(orgId) {
+            if (!orgId) {
+                orgId = document.getElementById('org-select').value;
+            }
+
+            try {
+                showLoading();
+
+                // Load org details
+                const orgResponse = await authFetch(`/api/organizations/${orgId}`);
+                const orgResult = await orgResponse.json();
+
+                if (!orgResult.success) {
+                    throw new Error(orgResult.error);
+                }
+
+                currentOrg = orgResult.data;
+                userRole = currentOrg.member_role;
+
+                // Populate form
+                document.getElementById('org-name').value = currentOrg.name;
+                document.getElementById('org-slug').value = currentOrg.slug;
+
+                // Subscription info
+                const tier = currentOrg.subscription_tier || 'free';
+                document.getElementById('subscription-badge').innerHTML =
+                    `<span class="subscription-badge ${tier}">${tier.charAt(0).toUpperCase() + tier.slice(1)}</span>`;
+                document.getElementById('subscription-status').textContent =
+                    currentOrg.subscription_status ? currentOrg.subscription_status.charAt(0).toUpperCase() + currentOrg.subscription_status.slice(1) : 'Active';
+                document.getElementById('member-since').textContent =
+                    new Date(currentOrg.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                // Branding
+                const settings = currentOrg.settings || {};
+                document.getElementById('brand-color').value = settings.primary_color || '#6366f1';
+                document.getElementById('logo-url').value = settings.logo_url || '';
+
+                // Show danger zone only for owner (non-personal org)
+                const dangerZone = document.getElementById('danger-zone');
+                if (userRole === 'owner' && !settings.is_personal) {
+                    dangerZone.style.display = 'block';
+                } else {
+                    dangerZone.style.display = 'none';
+                }
+
+                // Disable forms for non-admins
+                const isAdmin = ['owner', 'admin'].includes(userRole);
+                document.querySelectorAll('#general-form input, #branding-form input').forEach(input => {
+                    if (input.id !== 'org-slug') {
+                        input.disabled = !isAdmin;
+                    }
+                });
+                document.querySelectorAll('#general-form button, #branding-form button').forEach(btn => {
+                    btn.disabled = !isAdmin;
+                });
+
+                // Load stats
+                await loadStats(orgId);
+
+            } catch (error) {
+                console.error('Error loading organization:', error);
+                showToast('Failed to load organization details', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load organization stats
+        async function loadStats(orgId) {
+            try {
+                const response = await authFetch(`/api/organizations/${orgId}/stats`);
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('stat-members').textContent = result.data.members;
+                    document.getElementById('stat-clients').textContent = result.data.clients;
+                    document.getElementById('stat-agents').textContent = result.data.agents;
+                    document.getElementById('stat-workflows').textContent = result.data.workflows;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Form submissions
+        document.getElementById('general-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentOrg) return;
+
+            try {
+                showLoading();
+                const name = document.getElementById('org-name').value;
+
+                const response = await authFetch(`/api/organizations/${currentOrg.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Organization updated successfully', 'success');
+                    await loadOrganizations();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error updating organization:', error);
+                showToast('Failed to update organization', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        document.getElementById('branding-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentOrg) return;
+
+            try {
+                showLoading();
+                const settings = {
+                    ...currentOrg.settings,
+                    primary_color: document.getElementById('brand-color').value,
+                    logo_url: document.getElementById('logo-url').value
+                };
+
+                const response = await authFetch(`/api/organizations/${currentOrg.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ settings })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Branding updated successfully', 'success');
+                    currentOrg.settings = settings;
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error updating branding:', error);
+                showToast('Failed to update branding', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Create organization modal
+        function showCreateOrgModal() {
+            document.getElementById('create-org-modal').classList.remove('hidden');
+            document.getElementById('new-org-name').value = '';
+            document.getElementById('new-org-slug').value = '';
+            lucide.createIcons();
+        }
+
+        function hideCreateOrgModal() {
+            document.getElementById('create-org-modal').classList.add('hidden');
+        }
+
+        async function createOrganization() {
+            const name = document.getElementById('new-org-name').value.trim();
+            const slug = document.getElementById('new-org-slug').value.trim();
+
+            if (!name) {
+                showToast('Organization name is required', 'error');
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await authFetch('/api/organizations', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, slug: slug || undefined })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Organization created successfully', 'success');
+                    hideCreateOrgModal();
+                    await loadOrganizations();
+                    document.getElementById('org-select').value = result.data.id;
+                    await loadOrganization(result.data.id);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error creating organization:', error);
+                showToast(error.message || 'Failed to create organization', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete organization
+        async function confirmDeleteOrg() {
+            if (!currentOrg || currentOrg.settings?.is_personal) return;
+
+            const confirmed = confirm(
+                `Are you sure you want to delete "${currentOrg.name}"?\n\n` +
+                'This will permanently delete all associated data including:\n' +
+                '- All clients\n' +
+                '- All shared agents and workflows\n' +
+                '- All team member associations\n\n' +
+                'This action cannot be undone.'
+            );
+
+            if (!confirmed) return;
+
+            // Double confirmation
+            const typedName = prompt(`Please type "${currentOrg.name}" to confirm deletion:`);
+            if (typedName !== currentOrg.name) {
+                showToast('Organization name did not match. Deletion cancelled.', 'error');
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/organizations/${currentOrg.id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Organization deleted successfully', 'success');
+                    localStorage.removeItem('currentOrgId');
+                    await loadOrganizations();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting organization:', error);
+                showToast(error.message || 'Failed to delete organization', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            // Simple toast - could use modal-service toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add toast animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

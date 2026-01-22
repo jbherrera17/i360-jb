@@ -1131,6 +1131,180 @@
         </div>
     </div>
 
+    <!-- New Session Modal -->
+    <div class="modal-backdrop hidden" id="newSessionModal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="rocket" style="width: 20px; height: 20px;"></i>
+                    Start New Align 120 Session
+                </h2>
+                <button class="modal-close" onclick="hideNewSessionModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <!-- Company Name -->
+                    <div class="form-group">
+                        <label for="newSessionCompanyName">Company Name *</label>
+                        <input type="text" id="newSessionCompanyName" placeholder="e.g., Acme Corporation" required>
+                    </div>
+
+                    <!-- Organization Selector -->
+                    <div class="form-group">
+                        <label for="newSessionOrg">Organization</label>
+                        <select id="newSessionOrg" onchange="onNewSessionOrgChange()">
+                            <option value="">Personal Workspace</option>
+                        </select>
+                        <p class="helper">Select an organization to share this session with your team</p>
+                    </div>
+
+                    <!-- Client Selector -->
+                    <div class="form-group">
+                        <label for="newSessionClient">Client</label>
+                        <select id="newSessionClient">
+                            <option value="">No Client (Personal)</option>
+                        </select>
+                        <p class="helper">Associate this session with a specific client</p>
+                    </div>
+
+                    <!-- Ephemeral Mode Toggle -->
+                    <div class="form-group" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px;">
+                        <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; margin: 0;">
+                            <input type="checkbox" id="newSessionEphemeral" onchange="updateEphemeralWarning()" style="width: 18px; height: 18px;">
+                            <span style="font-weight: 500;">Report-Only Mode</span>
+                        </label>
+                        <p class="helper" style="margin-top: 0.5rem; margin-left: 2rem;">
+                            Generate a one-time report without saving to dashboards
+                        </p>
+                        <div id="ephemeralWarning" class="ephemeral-warning" style="display: none; margin-top: 0.75rem; padding: 0.75rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
+                            <div style="display: flex; align-items: flex-start; gap: 0.5rem; color: var(--warning);">
+                                <i data-lucide="alert-triangle" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+                                <span style="font-size: 0.85rem;">
+                                    This session will be automatically deleted after 24 hours. Results will not appear in dashboards or analytics.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideNewSessionModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createSessionFromModal()">
+                    <i data-lucide="sparkles"></i>
+                    Start Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* New Session Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-backdrop.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group .helper {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+    </style>
+
     <!-- Scripts -->
     <script src="/js/supabase.js"></script>
     <script>
@@ -1322,22 +1496,131 @@
             });
         }
 
-        // Start new session
-        async function startNewSession() {
-            const companyName = await ModalService.prompt({
-                title: 'What is the name of the company?',
-                message: 'Enter the company name for this Align 120 assessment:',
-                placeholder: 'e.g., Acme Corporation'
-            });
-            if (!companyName) return;
+        // State for new session modal
+        let sessionModalOrgs = [];
+        let sessionModalClients = [];
 
+        // Start new session - show modal with org/client selection
+        async function startNewSession() {
+            // Load organizations for the modal
+            try {
+                const orgsResponse = await fetch('/api/organizations');
+                const orgsData = await orgsResponse.json();
+                if (orgsData.success) {
+                    sessionModalOrgs = orgsData.data;
+                }
+            } catch (e) {
+                console.warn('Could not load organizations:', e);
+            }
+
+            // Show the new session modal
+            showNewSessionModal();
+        }
+
+        // Show the new session modal
+        function showNewSessionModal() {
+            const modal = document.getElementById('newSessionModal');
+            if (modal) {
+                // Populate org dropdown
+                const orgSelect = document.getElementById('newSessionOrg');
+                if (orgSelect && sessionModalOrgs.length > 0) {
+                    orgSelect.innerHTML = `
+                        <option value="">Personal Workspace</option>
+                        ${sessionModalOrgs.map(org =>
+                            `<option value="${org.id}">${org.name}${org.settings?.is_personal ? ' (Personal)' : ''}</option>`
+                        ).join('')}
+                    `;
+                }
+
+                // Reset form
+                document.getElementById('newSessionCompanyName').value = '';
+                document.getElementById('newSessionClient').innerHTML = '<option value="">No Client (Personal)</option>';
+                document.getElementById('newSessionEphemeral').checked = false;
+                updateEphemeralWarning();
+
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        // Hide new session modal
+        function hideNewSessionModal() {
+            const modal = document.getElementById('newSessionModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Load clients when org changes
+        async function onNewSessionOrgChange() {
+            const orgId = document.getElementById('newSessionOrg').value;
+            const clientSelect = document.getElementById('newSessionClient');
+
+            if (!orgId) {
+                clientSelect.innerHTML = '<option value="">No Client (Personal)</option>';
+                sessionModalClients = [];
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/clients?org_id=${orgId}&status=active`);
+                const data = await response.json();
+
+                if (data.success) {
+                    sessionModalClients = data.data;
+                    clientSelect.innerHTML = `
+                        <option value="">Select a Client (optional)</option>
+                        ${sessionModalClients.map(client =>
+                            `<option value="${client.id}">${client.name}</option>`
+                        ).join('')}
+                    `;
+                }
+            } catch (e) {
+                console.warn('Could not load clients:', e);
+                clientSelect.innerHTML = '<option value="">No clients available</option>';
+            }
+        }
+
+        // Update ephemeral warning visibility
+        function updateEphemeralWarning() {
+            const isEphemeral = document.getElementById('newSessionEphemeral').checked;
+            const warning = document.getElementById('ephemeralWarning');
+            if (warning) {
+                warning.style.display = isEphemeral ? 'flex' : 'none';
+            }
+        }
+
+        // Create session from modal
+        async function createSessionFromModal() {
+            const companyName = document.getElementById('newSessionCompanyName').value.trim();
+            const orgId = document.getElementById('newSessionOrg').value;
+            const clientId = document.getElementById('newSessionClient').value;
+            const isEphemeral = document.getElementById('newSessionEphemeral').checked;
+
+            if (!companyName) {
+                await ModalService.alert({
+                    title: 'Required Field',
+                    message: 'Please enter a company name for this assessment.'
+                });
+                return;
+            }
+
+            hideNewSessionModal();
             showLoading('Creating Session', 'Setting up your Align 120 assessment session...');
 
             try {
+                const sessionPayload = {
+                    company_name: companyName,
+                    org_id: orgId || null,
+                    client_id: clientId || null,
+                    is_ephemeral: isEphemeral,
+                    report_format: 'standard'
+                };
+
                 const response = await fetch('/api/align120/sessions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ company_name: companyName })
+                    body: JSON.stringify(sessionPayload)
                 });
 
                 const data = await response.json();

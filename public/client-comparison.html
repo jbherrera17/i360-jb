@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Comparison | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .comparison-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .org-selector {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            font-size: 0.95rem;
+        }
+
+        .export-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Summary Stats */
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .summary-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .summary-card-change {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .summary-card-change.positive { color: #16a34a; }
+        .summary-card-change.negative { color: #dc2626; }
+
+        /* Comparison Table */
+        .comparison-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header h2 svg {
+            color: var(--primary);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-primary);
+        }
+
+        .client-name {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .client-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .client-status.active { background: #16a34a; }
+        .client-status.inactive { background: #9ca3af; }
+        .client-status.archived { background: #dc2626; }
+
+        .metric-value {
+            font-weight: 500;
+        }
+
+        .progress-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 120px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.excellent { background: #16a34a; }
+        .progress-fill.good { background: #22c55e; }
+        .progress-fill.fair { background: #f59e0b; }
+        .progress-fill.poor { background: #dc2626; }
+
+        .progress-text {
+            font-weight: 500;
+            min-width: 40px;
+        }
+
+        .action-link {
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Chart Container */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .chart-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .chart-section h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .help-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .help-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .summary-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 0.9rem;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="comparison-container">
+                <div class="page-header">
+                    <h1>Client Comparison</h1>
+                    <div class="header-actions">
+                        <div id="org-switcher-container"></div>
+                            <i data-lucide="download" style="width:16px;height:16px;"></i>
+                            Export Report
+                        </button>
+                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                            <i data-lucide="help-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+            <!-- Summary Stats -->
+            <div class="summary-row">
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <i data-lucide="briefcase" style="width:16px;height:16px;"></i>
+                        Total Clients
+                    </div>
+                    <div class="summary-card-value" id="total-clients">0</div>
+                    <div class="summary-card-change" id="clients-change"></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
+                        Active Clients
+                    </div>
+                    <div class="summary-card-value" id="active-clients">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <i data-lucide="target" style="width:16px;height:16px;"></i>
+                        Avg OKR Progress
+                    </div>
+                    <div class="summary-card-value" id="avg-progress">0%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <i data-lucide="activity" style="width:16px;height:16px;"></i>
+                        Avg Health Score
+                    </div>
+                    <div class="summary-card-value" id="avg-health">0%</div>
+                </div>
+            </div>
+
+            <!-- Client Comparison Table -->
+            <section class="comparison-section">
+                <div class="section-header">
+                    <h2>
+                        <i data-lucide="bar-chart-3" style="width:20px;height:20px;"></i>
+                        Client Performance Overview
+                    </h2>
+                </div>
+                <div id="comparison-table-container">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-section">
+                    <h3>
+                        <i data-lucide="pie-chart" style="width:18px;height:18px;color:var(--primary);"></i>
+                        Client Distribution by Status
+                    </h3>
+                    <div class="chart-placeholder" id="status-chart">
+                        Chart visualization coming soon
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h3>
+                        <i data-lucide="trending-up" style="width:18px;height:18px;color:var(--primary);"></i>
+                        OKR Progress Trend
+                    </h3>
+                    <div class="chart-placeholder" id="progress-chart">
+                        Chart visualization coming soon
+                    </div>
+                </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/org-switcher.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let clients = [];
+        let clientStats = [];
+        let currentOrgId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Listen for org changes
+            document.addEventListener('orgChanged', async (e) => {
+                currentOrgId = e.detail.orgId;
+                await loadComparisonData();
+            });
+
+            currentOrgId = localStorage.getItem('currentOrgId');
+            loadComparisonData();
+        });
+
+        async function loadComparisonData() {
+            if (!currentOrgId) {
+                showEmptyState('Select an organization to view client comparison');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/clients?org_id=${currentOrgId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    clients = result.data || [];
+                    await loadClientStats();
+                    updateSummary();
+                    renderComparisonTable();
+                } else {
+                    showEmptyState('Failed to load clients');
+                }
+            } catch (error) {
+                console.error('Error loading comparison data:', error);
+                showEmptyState('Error loading comparison data');
+            }
+        }
+
+        async function loadClientStats() {
+            // Load stats for each client
+            clientStats = [];
+            for (const client of clients) {
+                try {
+                    // In a real implementation, this would be a batch API call
+                    const stats = {
+                        clientId: client.id,
+                        okrProgress: Math.floor(Math.random() * 100), // Placeholder
+                        healthScore: Math.floor(Math.random() * 100), // Placeholder
+                        activeWorkflows: Math.floor(Math.random() * 20),
+                        lastActivity: new Date().toISOString()
+                    };
+                    clientStats.push(stats);
+                } catch (error) {
+                    console.error(`Error loading stats for client ${client.id}:`, error);
+                }
+            }
+        }
+
+        function updateSummary() {
+            const activeClients = clients.filter(c => c.status === 'active');
+            const avgProgress = clientStats.length > 0
+                ? Math.round(clientStats.reduce((sum, s) => sum + s.okrProgress, 0) / clientStats.length)
+                : 0;
+            const avgHealth = clientStats.length > 0
+                ? Math.round(clientStats.reduce((sum, s) => sum + s.healthScore, 0) / clientStats.length)
+                : 0;
+
+            document.getElementById('total-clients').textContent = clients.length;
+            document.getElementById('active-clients').textContent = activeClients.length;
+            document.getElementById('avg-progress').textContent = `${avgProgress}%`;
+            document.getElementById('avg-health').textContent = `${avgHealth}%`;
+        }
+
+        function renderComparisonTable() {
+            const container = document.getElementById('comparison-table-container');
+
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="briefcase" style="width:48px;height:48px;"></i>
+                        <p>No clients found for this organization</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const tableHTML = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>OKR Progress</th>
+                            <th>Health Score</th>
+                            <th>Active Workflows</th>
+                            <th>Last Activity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clients.map((client, idx) => {
+                            const stats = clientStats[idx] || {};
+                            const progress = stats.okrProgress || 0;
+                            const health = stats.healthScore || 0;
+                            const progressClass = progress >= 80 ? 'excellent' : progress >= 60 ? 'good' : progress >= 40 ? 'fair' : 'poor';
+                            const healthClass = health >= 80 ? 'excellent' : health >= 60 ? 'good' : health >= 40 ? 'fair' : 'poor';
+
+                            return `
+                                <tr>
+                                    <td>
+                                        <span class="client-name">
+                                            <span class="client-status ${client.status || 'active'}"></span>
+                                            ${escapeHtml(client.name)}
+                                        </span>
+                                    </td>
+                                    <td style="text-transform: capitalize;">${client.status || 'active'}</td>
+                                    <td>
+                                        <div class="progress-cell">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill ${progressClass}" style="width: ${progress}%"></div>
+                                            </div>
+                                            <span class="progress-text">${progress}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress-cell">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill ${healthClass}" style="width: ${health}%"></div>
+                                            </div>
+                                            <span class="progress-text">${health}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="metric-value">${stats.activeWorkflows || 0}</td>
+                                    <td>${formatDate(stats.lastActivity)}</td>
+                                    <td>
+                                        <a href="/company-dashboard.html?client=${client.id}" class="action-link">
+                                            View Dashboard
+                                            <i data-lucide="external-link" style="width:14px;height:14px;"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+            lucide.createIcons();
+        }
+
+        function showEmptyState(message) {
+            document.getElementById('comparison-table-container').innerHTML = `
+                <div class="empty-state">
+                    <i data-lucide="alert-circle" style="width:48px;height:48px;"></i>
+                    <p>${escapeHtml(message)}</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        function exportComparison() {
+            // Placeholder for export functionality
+            alert('Export functionality coming soon. Will generate PDF/CSV report.');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

@@ -490,6 +490,10 @@
             <div class="dashboard-layout">
                 <!-- Filter Bar -->
                 <div class="filter-bar">
+                    <!-- Organization & Client Selectors -->
+                    <div id="org-switcher-container" class="filter-group"></div>
+                    <div id="client-selector-container" class="filter-group"></div>
+                    <div class="filter-divider"></div>
                     <div class="filter-group">
                         <label>Department</label>
                         <select id="deptFilter">
@@ -681,6 +685,8 @@
 
     <!-- Supabase client -->
     <script src="/js/supabase.js"></script>
+    <script src="/js/org-switcher.js"></script>
+    <script src="/js/client-selector.js"></script>
 
     <script>
         // State
@@ -688,10 +694,28 @@
         let roles = [];
         let okrs = [];
         let processes = [];
+        let currentOrgId = null;
+        let currentClientId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Listen for org/client changes
+            document.addEventListener('orgChanged', async (e) => {
+                currentOrgId = e.detail.orgId;
+                await loadAllData();
+            });
+
+            document.addEventListener('clientChanged', async (e) => {
+                currentClientId = e.detail.clientId;
+                await loadAllData();
+            });
+
+            // Get initial values
+            currentOrgId = localStorage.getItem('currentOrgId');
+            currentClientId = localStorage.getItem('currentClientId');
+
             await loadAllData();
             setupFilterListeners();
         });

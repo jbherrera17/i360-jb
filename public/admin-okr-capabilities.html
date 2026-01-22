@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKR Supporting Capabilities | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .okr-capabilities-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .back-link {
+            color: var(--primary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .okr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .okr-info h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+        }
+
+        .okr-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .okr-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .scope-badge {
+            display: inline-flex;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .scope-company { background: #dbeafe; color: #1e40af; }
+        .scope-department { background: #dcfce7; color: #166534; }
+        .scope-team { background: #fef3c7; color: #92400e; }
+        .scope-individual { background: #f3e8ff; color: #7e22ce; }
+
+        .progress-bar {
+            width: 100px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .key-results-summary {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .key-results-summary h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+        }
+
+        .kr-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .kr-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .kr-item .kr-title {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        .kr-item .kr-progress {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--primary);
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .capabilities-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .capability-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header h2 svg {
+            width: 22px;
+            height: 22px;
+            color: var(--primary);
+        }
+
+        .section-count {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .capability-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .capability-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+
+        .capability-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .capability-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .capability-title h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+        }
+
+        .contribution-badge {
+            display: inline-flex;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .contribution-supports { background: #dbeafe; color: #1e40af; }
+        .contribution-measures { background: #dcfce7; color: #166534; }
+        .contribution-drives { background: #fef3c7; color: #92400e; }
+        .contribution-reports { background: #f3e8ff; color: #7e22ce; }
+
+        .capability-card p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .add-capability-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .add-capability-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .btn-secondary {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .help-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .help-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="okr-capabilities-container">
+                <div class="header-row">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Strategy
+                    </a>
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+
+                <div class="okr-header">
+                <div class="okr-info">
+                    <h1 id="okr-title">Loading...</h1>
+                    <div class="okr-meta">
+                        <span id="okr-scope" class="scope-badge"></span>
+                        <span id="okr-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Results Summary -->
+            <div class="key-results-summary" id="key-results-section">
+                <h2>Key Results</h2>
+                <div id="kr-list" class="kr-list">
+                    <div class="loading-spinner"><div class="spinner"></div></div>
+                </div>
+            </div>
+
+            <!-- Supporting Capabilities -->
+            <div class="capabilities-grid">
+                <!-- Actions Section -->
+                <section class="capability-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                                <path d="M22 4L12 14.01l-3-3"/>
+                            </svg>
+                            Supporting Actions
+                        </h2>
+                        <span id="actions-count" class="section-count">0</span>
+                    </div>
+                    <div id="actions-list" class="capability-cards">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </section>
+
+                <!-- Workflows Section -->
+                <section class="capability-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="6" height="6" rx="1"/>
+                                <rect x="15" y="3" width="6" height="6" rx="1"/>
+                                <rect x="9" y="15" width="6" height="6" rx="1"/>
+                                <path d="M6 9v3H9M18 9v6h-3"/>
+                            </svg>
+                            Supporting Workflows
+                        </h2>
+                        <span id="workflows-count" class="section-count">0</span>
+                    </div>
+                    <div id="workflows-list" class="capability-cards">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </section>
+
+                <!-- Skills Section -->
+                <section class="capability-section">
+                    <div class="section-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Supporting Skills
+                        </h2>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <span id="skills-count" class="section-count">0</span>
+                            <button class="add-capability-btn" onclick="showAddSkillModal()">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Add Skill
+                            </button>
+                        </div>
+                    </div>
+                    <div id="skills-list" class="capability-cards">
+                        <div class="loading-spinner"><div class="spinner"></div></div>
+                    </div>
+                </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Skill Modal -->
+    <div id="add-skill-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Map Skill to OKR</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-skill-form" onsubmit="handleAddSkill(event)">
+                    <div class="form-group">
+                        <label>Select Skill</label>
+                        <select id="skill-select" required>
+                            <option value="">-- Select Skill --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Contribution Type</label>
+                        <select id="contribution-type" required>
+                            <option value="supports">Supports - Helps achieve the OKR</option>
+                            <option value="measures">Measures - Tracks progress</option>
+                            <option value="drives">Drives - Directly impacts outcome</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary" form="add-skill-form">Map Skill</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let okrId = null;
+        let okr = null;
+        let capabilities = [];
+        let availableSkills = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const params = new URLSearchParams(window.location.search);
+            okrId = params.get('id');
+
+            if (!okrId) {
+                alert('No OKR ID provided');
+                window.location.href = '/strategy.html';
+                return;
+            }
+
+            loadData();
+        });
+
+        async function loadData() {
+            try {
+                await Promise.all([
+                    loadOKR(),
+                    loadCapabilities(),
+                    loadAvailableSkills()
+                ]);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        async function loadOKR() {
+            try {
+                const response = await fetch(`/api/strategy120/okrs/${okrId}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    okr = result.data;
+                    renderOKRHeader();
+                    renderKeyResults();
+                } else {
+                    document.getElementById('okr-title').textContent = 'OKR not found';
+                }
+            } catch (error) {
+                console.error('Error loading OKR:', error);
+                document.getElementById('okr-title').textContent = 'Error loading OKR';
+            }
+        }
+
+        async function loadCapabilities() {
+            try {
+                const response = await fetch(`/api/connections/okrs/${okrId}/capabilities`);
+                const result = await response.json();
+
+                capabilities = result.success ? result.data : [];
+                renderCapabilities();
+            } catch (error) {
+                console.error('Error loading capabilities:', error);
+                capabilities = [];
+                renderCapabilities();
+            }
+        }
+
+        async function loadAvailableSkills() {
+            try {
+                const response = await fetch('/api/skills');
+                const result = await response.json();
+                availableSkills = result.success ? result.data : [];
+            } catch (error) {
+                console.error('Error loading skills:', error);
+            }
+        }
+
+        function renderOKRHeader() {
+            document.getElementById('okr-title').textContent = okr.title;
+
+            const scopeEl = document.getElementById('okr-scope');
+            scopeEl.textContent = okr.scope;
+            scopeEl.className = `scope-badge scope-${okr.scope}`;
+
+            const progress = okr.progress || 0;
+            document.querySelector('.progress-fill').style.width = `${progress}%`;
+        }
+
+        function renderKeyResults() {
+            const container = document.getElementById('kr-list');
+            const keyResults = okr.key_results || [];
+
+            if (keyResults.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">No key results defined</p>';
+                return;
+            }
+
+            container.innerHTML = keyResults.map(kr => `
+                <div class="kr-item">
+                    <span class="kr-title">${escapeHtml(kr.title || kr.description)}</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${kr.progress || 0}%"></div>
+                    </div>
+                    <span class="kr-progress">${kr.progress || 0}%</span>
+                </div>
+            `).join('');
+        }
+
+        function renderCapabilities() {
+            // Group by entity type
+            const actions = capabilities.filter(c => c.entity_type === 'action');
+            const workflows = capabilities.filter(c => c.entity_type === 'workflow');
+            const skills = capabilities.filter(c => c.entity_type === 'skill');
+
+            renderCapabilityList('actions', actions);
+            renderCapabilityList('workflows', workflows);
+            renderCapabilityList('skills', skills);
+
+            document.getElementById('actions-count').textContent = actions.length;
+            document.getElementById('workflows-count').textContent = workflows.length;
+            document.getElementById('skills-count').textContent = skills.length;
+        }
+
+        function renderCapabilityList(type, items) {
+            const container = document.getElementById(`${type}-list`);
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M12 8v8M8 12h8"/>
+                        </svg>
+                        <p>No ${type} supporting this OKR</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="capability-card">
+                    <div class="capability-card-header">
+                        <div class="capability-icon">
+                            ${getTypeIcon(type)}
+                        </div>
+                        <div class="capability-title">
+                            <h3>${escapeHtml(item.entity_name || 'Unknown')}</h3>
+                            <span class="contribution-badge contribution-${item.contribution_type}">
+                                ${item.contribution_type}
+                            </span>
+                        </div>
+                    </div>
+                    <p>${escapeHtml(item.description || 'No description')}</p>
+                </div>
+            `).join('');
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                actions: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>',
+                workflows: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/></svg>',
+                skills: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>'
+            };
+            return icons[type] || '';
+        }
+
+        function showAddSkillModal() {
+            const modal = document.getElementById('add-skill-modal');
+            const select = document.getElementById('skill-select');
+
+            // Filter out already mapped skills
+            const mappedSkillIds = capabilities
+                .filter(c => c.entity_type === 'skill')
+                .map(c => c.entity_id);
+
+            const unmappedSkills = availableSkills.filter(s => !mappedSkillIds.includes(s.id));
+
+            select.innerHTML = '<option value="">-- Select Skill --</option>' +
+                unmappedSkills.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('add-skill-modal').classList.remove('active');
+            document.getElementById('add-skill-form').reset();
+        }
+
+        async function handleAddSkill(event) {
+            event.preventDefault();
+
+            const skillId = document.getElementById('skill-select').value;
+            const contributionType = document.getElementById('contribution-type').value;
+
+            if (!skillId) {
+                alert('Please select a skill');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/connections/skills/${skillId}/okrs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        okr_id: okrId,
+                        contribution_type: contributionType
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeModal();
+                    await loadCapabilities();
+                } else {
+                    alert(result.error || 'Failed to map skill');
+                }
+            } catch (error) {
+                console.error('Error mapping skill:', error);
+                alert('Failed to map skill');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
