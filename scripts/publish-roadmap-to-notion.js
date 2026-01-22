@@ -37,21 +37,40 @@ async function main() {
     const markdown = fs.readFileSync(roadmapPath, 'utf-8');
 
     try {
-        // Publish to Notion with toggle heading
-        // Publish without toggle wrapper (simpler, more reliable)
-        const result = await notionService.publishToPage(markdown, {
-            useToggles: false
+        // Get today's date for page title
+        const today = new Date().toISOString().split('T')[0];
+        const title = `I360 Roadmap ${today}`;
+
+        // Step 1: Create a calendar entry in the Content Calendar database
+        console.log('Creating calendar entry...');
+        const entryResult = await notionService.createCalendarEntry({
+            title: title,
+            status: 'Published',
+            contentType: 'Documentation',
+            scheduledDate: today
         });
 
+        console.log(`   Entry created: ${entryResult.pageId}`);
+
+        // Step 2: Add the markdown content to the page
+        console.log('Adding content to page...');
+        await notionService.addContentToCalendarEntry(entryResult.pageId, markdown);
+
         console.log('\n✅ Successfully published to Notion!');
-        console.log(`   Page ID: ${result.pageId}`);
-        console.log(`   URL: ${result.url}`);
-        console.log(`   Blocks created: ${result.blocksCreated}`);
+        console.log(`   Page ID: ${entryResult.pageId}`);
+        console.log(`   URL: ${entryResult.url}`);
+        console.log(`   Title: ${title}`);
     } catch (error) {
         console.error('\n❌ Failed to publish to Notion:', error.message);
         if (error.code === 'object_not_found') {
-            console.error('\nThe NOTION_PAGE_ID may be incorrect or the integration does not have access.');
-            console.error('Make sure the integration is connected to the page in Notion.');
+            console.error('\n📋 To fix this:');
+            console.error('   1. Open the Notion database/page in your browser');
+            console.error('   2. Click "..." menu → "Connections" → "Connect to"');
+            console.error('   3. Select your Insight 360 integration');
+            console.error('   4. Click "Confirm" to grant access');
+            console.error('\n   Database ID: e5228731-3073-4081-a379-c09beb2a9412');
+        } else if (error.code === 'validation_error') {
+            console.error('\n📋 Validation error - check that NOTION_PAGE_ID points to a page (not a database view).');
         }
         process.exit(1);
     }

@@ -900,15 +900,23 @@ class NotionService {
      * Clear all children from a page
      */
     async clearPage(pageId) {
-        const children = await this.client.blocks.children.list({
-            block_id: pageId,
-            page_size: 100
-        });
-
-        for (const block of children.results) {
-            await this.client.blocks.delete({
-                block_id: block.id
+        try {
+            const children = await this.client.blocks.children.list({
+                block_id: pageId,
+                page_size: 100
             });
+
+            for (const block of children.results) {
+                try {
+                    await this.client.blocks.delete({
+                        block_id: block.id
+                    });
+                } catch (deleteErr) {
+                    console.warn(`[NotionService] Could not delete block ${block.id}:`, deleteErr.message);
+                }
+            }
+        } catch (err) {
+            console.warn('[NotionService] Could not clear page:', err.message);
         }
     }
 
