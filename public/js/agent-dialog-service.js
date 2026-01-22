@@ -573,10 +573,30 @@ class AgentDialogService {
             ? `<div class="message-avatar user"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`
             : '';
 
+        // Action buttons for assistant messages (copy + artifact/export)
+        const actionButtons = role === 'assistant' ? `
+            <div class="message-actions">
+                <button class="message-action-btn" onclick="window.agentDialogInstance.copyMessageContent(this)" title="Copy to clipboard">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                </button>
+                <button class="message-action-btn" onclick="window.agentDialogInstance.openArtifactModal(this)" title="Export as document">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </button>
+            </div>
+        ` : '';
+
         messageEl.innerHTML = `
             ${avatar}
             <div class="message-body">
                 <div class="message-content">${this.formatMarkdown(content)}</div>
+                ${actionButtons}
             </div>
         `;
 
@@ -587,35 +607,61 @@ class AgentDialogService {
     }
 
     /**
-     * Format markdown to HTML
+     * Format markdown to HTML with proper list handling
      */
     formatMarkdown(text) {
         if (!text) return '';
 
-        return text
-            // Code blocks first (before other transformations)
-            .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
-            // Headers
+        // Process code blocks first (protect from other transformations)
+        let html = text.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+
+        // Headers
+        html = html
             .replace(/^#### (.*$)/gm, '<h4>$1</h4>')
             .replace(/^### (.*$)/gm, '<h3>$1</h3>')
             .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-            // Bold
+            .replace(/^# (.*$)/gm, '<h1>$1</h1>');
+
+        // Bold and italic
+        html = html
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            // Italic
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            // Inline code
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
-            // Horizontal rule
-            .replace(/^---$/gm, '<hr>')
-            // Unordered lists
-            .replace(/^\s*[-*]\s+(.*$)/gm, '<li>$1</li>')
-            // Numbered lists
-            .replace(/^\s*(\d+)\.\s+(.*$)/gm, '<li>$2</li>')
-            // Paragraphs (double newline)
-            .replace(/\n\n/g, '</p><p>')
-            // Line breaks
-            .replace(/\n/g, '<br>');
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        // Inline code
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Horizontal rule
+        html = html.replace(/^---$/gm, '<hr>');
+
+        // Process lists - wrap consecutive list items in ul/ol tags
+        // First, mark list items with a placeholder
+        html = html.replace(/^(\s*)[-*]\s+(.*$)/gm, '$1<__UL__>$2</__UL__>');
+        html = html.replace(/^(\s*)(\d+)\.\s+(.*$)/gm, '$1<__OL__>$3</__OL__>');
+
+        // Now wrap consecutive list items
+        html = html.replace(/(<__UL__>.*?<\/__UL__>\n?)+/g, (match) => {
+            const items = match.replace(/<__UL__>/g, '<li>').replace(/<\/__UL__>/g, '</li>').replace(/\n/g, '');
+            return '<ul>' + items + '</ul>';
+        });
+
+        html = html.replace(/(<__OL__>.*?<\/__OL__>\n?)+/g, (match) => {
+            const items = match.replace(/<__OL__>/g, '<li>').replace(/<\/__OL__>/g, '</li>').replace(/\n/g, '');
+            return '<ol>' + items + '</ol>';
+        });
+
+        // Paragraphs - split by double newlines
+        const blocks = html.split(/\n\n+/);
+        html = blocks.map(block => {
+            block = block.trim();
+            // Don't wrap if already a block element
+            if (block.match(/^<(h[1-6]|ul|ol|pre|hr|blockquote)/i)) {
+                return block;
+            }
+            // Wrap in paragraph
+            return block ? '<p>' + block.replace(/\n/g, '<br>') + '</p>' : '';
+        }).filter(b => b).join('\n');
+
+        return html;
     }
 
     /**
@@ -817,7 +863,7 @@ class AgentDialogService {
     }
 
     /**
-     * Accept and save results
+     * Accept and save results - keeps modal open for further interaction
      */
     async acceptResults() {
         const result = {
@@ -831,18 +877,16 @@ class AgentDialogService {
         // Extract key outputs from conversation
         result.outputs = this.extractOutputs();
 
-        // Call onAccept callback
+        // Call onAccept callback if provided
         if (this.callbacks.onAccept) {
             await this.callbacks.onAccept(result);
         }
 
-        // Resolve promise with result
-        if (this.resolvePromise) {
-            this.resolvePromise(result);
-            this.resolvePromise = null;
-        }
+        // Show confirmation toast
+        this.showToast('Results saved! Continue chatting or close when ready.');
 
-        this.close();
+        // Note: Modal stays open - user can continue conversation or manually close
+        // The promise is NOT resolved here so the modal stays interactive
     }
 
     /**
@@ -867,6 +911,435 @@ class AgentDialogService {
      */
     defaultErrorHandler(error) {
         console.error('AgentDialogService error:', error);
+    }
+
+    /**
+     * Show a toast notification within the dialog
+     */
+    showToast(message, duration = 3000) {
+        // Remove existing toast if any
+        const existingToast = this.elements.dialog.querySelector('.agent-dialog-toast');
+        if (existingToast) existingToast.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'agent-dialog-toast';
+        toast.textContent = message;
+        this.elements.dialog.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => toast.classList.add('show'));
+
+        // Auto-remove
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    /**
+     * Copy message content to clipboard
+     */
+    async copyMessageContent(button) {
+        const messageEl = button.closest('.agent-message');
+        const contentEl = messageEl.querySelector('.message-content');
+        if (!contentEl) return;
+
+        try {
+            await navigator.clipboard.writeText(contentEl.innerText);
+            // Show feedback
+            const originalTitle = button.title;
+            button.title = 'Copied!';
+            button.classList.add('copied');
+            setTimeout(() => {
+                button.title = originalTitle;
+                button.classList.remove('copied');
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    }
+
+    /**
+     * Open artifact/export modal for a message
+     */
+    openArtifactModal(button) {
+        const messageEl = button.closest('.agent-message');
+        const contentEl = messageEl.querySelector('.message-content');
+        if (!contentEl) return;
+
+        // Get the message index to find raw markdown from conversation history
+        const allMessages = this.elements.messagesContainer.querySelectorAll('.agent-message.assistant');
+        const messageIndex = Array.from(allMessages).indexOf(messageEl);
+
+        // Get raw markdown from conversation history
+        const assistantMessages = this.state.conversationHistory.filter(m => m.role === 'assistant');
+        const rawMarkdown = assistantMessages[messageIndex]?.content || '';
+
+        this.currentArtifactMarkdown = rawMarkdown;  // Raw markdown for .md export
+        this.currentArtifactContent = contentEl.innerText;  // Plain text fallback
+        this.currentArtifactHtmlContent = contentEl.innerHTML;  // HTML for PDF/DOCX
+
+        // Show artifact modal
+        let modal = document.getElementById('agentArtifactModal');
+        if (!modal) {
+            this.createArtifactModal();
+            modal = document.getElementById('agentArtifactModal');
+        }
+        modal.classList.add('active');
+    }
+
+    /**
+     * Create the artifact export modal
+     */
+    createArtifactModal() {
+        const modalHtml = `
+            <div id="agentArtifactModal" class="artifact-modal">
+                <div class="artifact-modal-content">
+                    <div class="artifact-modal-header">
+                        <h3>Export Content</h3>
+                        <button class="artifact-modal-close" onclick="window.agentDialogInstance.closeArtifactModal()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="artifact-options">
+                        <div class="artifact-option" onclick="window.agentDialogInstance.exportAsDocument('markdown')">
+                            <div class="artifact-option-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </div>
+                            <div class="artifact-option-content">
+                                <div class="artifact-option-title">Export as Markdown</div>
+                                <div class="artifact-option-desc">Download as .md file for docs or notes</div>
+                            </div>
+                            <div class="artifact-option-arrow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                        </div>
+                        <div class="artifact-option" onclick="window.agentDialogInstance.exportAsDocument('pdf')">
+                            <div class="artifact-option-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h6"/></svg>
+                            </div>
+                            <div class="artifact-option-content">
+                                <div class="artifact-option-title">Export as PDF</div>
+                                <div class="artifact-option-desc">Download as formatted PDF document</div>
+                            </div>
+                            <div class="artifact-option-arrow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                        </div>
+                        <div class="artifact-option" onclick="window.agentDialogInstance.exportAsDocument('docx')">
+                            <div class="artifact-option-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                            </div>
+                            <div class="artifact-option-content">
+                                <div class="artifact-option-title">Export as Word</div>
+                                <div class="artifact-option-desc">Download as .docx for Microsoft Word</div>
+                            </div>
+                            <div class="artifact-option-arrow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Close on outside click
+        const modal = document.getElementById('agentArtifactModal');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeArtifactModal();
+        });
+    }
+
+    /**
+     * Close artifact modal
+     */
+    closeArtifactModal() {
+        const modal = document.getElementById('agentArtifactModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    /**
+     * Export content as document
+     */
+    async exportAsDocument(format) {
+        if (!this.currentArtifactMarkdown && !this.currentArtifactContent) {
+            this.showToast('No content to export');
+            return;
+        }
+
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `agent-output-${timestamp}`;
+
+        try {
+            if (format === 'markdown') {
+                // Use raw markdown from conversation history
+                const markdown = this.currentArtifactMarkdown || this.currentArtifactContent;
+                const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+                this.downloadBlob(blob, `${filename}.md`);
+            } else if (format === 'pdf') {
+                // Open print dialog with professionally formatted content
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(this.getPrintHtml(this.currentArtifactHtmlContent));
+                printWindow.document.close();
+                // Small delay to ensure styles load
+                setTimeout(() => printWindow.print(), 250);
+            } else if (format === 'docx') {
+                // Create proper Word document using HTML format Word can import
+                const docContent = this.getWordHtml(this.currentArtifactHtmlContent);
+                const blob = new Blob([docContent], {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                });
+                this.downloadBlob(blob, `${filename}.doc`);
+            }
+
+            this.closeArtifactModal();
+            this.showToast(`Exported as ${format.toUpperCase()}`);
+        } catch (err) {
+            console.error('Export error:', err);
+            this.showToast('Export failed');
+        }
+    }
+
+    /**
+     * Download a blob as file
+     */
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Get print-friendly HTML for PDF export
+     */
+    getPrintHtml(content) {
+        const dateStr = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Insight 360 - Document Export</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { box-sizing: border-box; }
+
+        @page {
+            size: letter;
+            margin: 1in;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 11pt;
+            line-height: 1.7;
+            color: #1a1a2e;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .document-header {
+            border-bottom: 2px solid #6366f1;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .document-header h1 {
+            font-size: 24pt;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: #1a1a2e;
+        }
+
+        .document-meta {
+            font-size: 10pt;
+            color: #666;
+        }
+
+        /* Typography */
+        h1 { font-size: 20pt; font-weight: 700; margin: 1.5em 0 0.5em; color: #1a1a2e; }
+        h2 { font-size: 16pt; font-weight: 600; margin: 1.5em 0 0.5em; color: #2a2a4a; border-bottom: 1px solid #e5e5e5; padding-bottom: 0.3em; }
+        h3 { font-size: 13pt; font-weight: 600; margin: 1.25em 0 0.5em; color: #3a3a5a; }
+        h4 { font-size: 11pt; font-weight: 600; margin: 1em 0 0.5em; color: #4a4a6a; }
+
+        p { margin: 0 0 1em; }
+
+        strong { font-weight: 600; }
+        em { font-style: italic; }
+
+        /* Lists */
+        ul, ol {
+            margin: 0.5em 0 1em 0;
+            padding-left: 1.5em;
+        }
+        li {
+            margin-bottom: 0.25em;
+            line-height: 1.5;
+        }
+        li p {
+            margin: 0;
+        }
+        /* Nested lists */
+        li ul, li ol {
+            margin: 0.25em 0 0.25em 0;
+        }
+
+        /* Code */
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 1em;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 9pt;
+            line-height: 1.5;
+            margin: 1em 0;
+        }
+
+        code {
+            background: #f1f3f4;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid #6366f1;
+            margin: 1em 0;
+            padding: 0.5em 0 0.5em 1em;
+            background: #f8f9ff;
+            color: #4a4a6a;
+            font-style: italic;
+        }
+
+        /* Horizontal rules */
+        hr {
+            border: none;
+            border-top: 1px solid #e5e5e5;
+            margin: 2em 0;
+        }
+
+        /* Tables */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.5em 0.75em;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .document-footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e5e5;
+            font-size: 9pt;
+            color: #888;
+            text-align: center;
+        }
+
+        /* Print-specific */
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .document-header { page-break-after: avoid; }
+            h1, h2, h3, h4 { page-break-after: avoid; }
+            pre, blockquote { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="document-header">
+        <h1>Insight 360</h1>
+        <div class="document-meta">Generated on ${dateStr}</div>
+    </div>
+
+    <div class="document-content">
+        ${content}
+    </div>
+
+    <div class="document-footer">
+        Generated by Insight 360 &bull; Values-Based AI Command Center
+    </div>
+</body>
+</html>`;
+    }
+
+    /**
+     * Get Word-compatible HTML for DOCX export
+     */
+    getWordHtml(content) {
+        return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+    <meta charset="utf-8">
+    <meta name="ProgId" content="Word.Document">
+    <meta name="Generator" content="Insight 360">
+    <!--[if gte mso 9]>
+    <xml>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000000;
+        }
+        h1 { font-size: 18pt; font-weight: bold; margin-top: 24pt; margin-bottom: 12pt; color: #1a1a2e; }
+        h2 { font-size: 14pt; font-weight: bold; margin-top: 18pt; margin-bottom: 10pt; color: #2a2a4a; }
+        h3 { font-size: 12pt; font-weight: bold; margin-top: 14pt; margin-bottom: 8pt; color: #3a3a5a; }
+        h4 { font-size: 11pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
+        p { margin-top: 0; margin-bottom: 10pt; }
+        ul, ol { margin-top: 6pt; margin-bottom: 10pt; margin-left: 0; padding-left: 24pt; }
+        li { margin-bottom: 3pt; line-height: 1.4; }
+        li p { margin: 0; display: inline; }
+        pre, code { font-family: 'Consolas', 'Courier New', monospace; font-size: 10pt; background-color: #f5f5f5; }
+        pre { padding: 10pt; border: 1px solid #ddd; margin: 10pt 0; }
+        blockquote { margin-left: 20pt; padding-left: 10pt; border-left: 3px solid #6366f1; font-style: italic; color: #555; }
+        strong { font-weight: bold; }
+        em { font-style: italic; }
+        hr { border: none; border-top: 1px solid #ccc; margin: 20pt 0; }
+    </style>
+</head>
+<body>
+    ${content}
+</body>
+</html>`;
     }
 
     /**
