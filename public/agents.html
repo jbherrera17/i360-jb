@@ -2567,10 +2567,13 @@
             const status = agent.is_active !== false ? 'active' : 'inactive';
             const statusLabel = status === 'active' ? 'Active' : 'Inactive';
 
-            // Hide edit/delete buttons for system agents
+            // Hide edit/delete buttons for system agents (unless user is admin)
             const btnEdit = document.getElementById('btnEdit');
             const btnDelete = document.getElementById('btnDelete');
-            if (agent.is_system) {
+            const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            const isAdmin = currentUser?.role === 'admin';
+
+            if (agent.is_system && !isAdmin) {
                 btnEdit.style.display = 'none';
                 btnDelete.style.display = 'none';
             } else {
@@ -2594,6 +2597,34 @@
             document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
             document.getElementById('detailUsage').textContent = agent.usage_count || 0;
             document.getElementById('detailDescription').textContent = agent.description || 'No description provided.';
+
+            // Show system agent warning banner
+            let existingWarning = document.getElementById('systemAgentWarning');
+            if (existingWarning) existingWarning.remove();
+
+            if (agent.is_system) {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'systemAgentWarning';
+                if (isAdmin) {
+                    warningDiv.innerHTML = `
+                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 0.85rem;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;margin-bottom:0.75rem;">
+                            <i data-lucide="shield-check" style="width:16px;height:16px;color:#6366f1;flex-shrink:0;"></i>
+                            <span style="font-size:0.8rem;color:#6366f1;">Admin mode: You can edit this system agent</span>
+                        </div>
+                    `;
+                } else {
+                    warningDiv.innerHTML = `
+                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;margin-bottom:0.75rem;">
+                            <i data-lucide="shield-alert" style="width:16px;height:16px;color:#ef4444;flex-shrink:0;"></i>
+                            <span style="font-size:0.8rem;color:#ef4444;">System agent — Use "Duplicate" to create your own editable copy</span>
+                        </div>
+                    `;
+                }
+                const detailHeader = document.querySelector('.detail-header');
+                if (detailHeader) {
+                    detailHeader.insertAdjacentElement('afterend', warningDiv);
+                }
+            }
 
             // Show lineage info if agent was duplicated from another
             const lineageContainer = document.getElementById('detailLineage');
