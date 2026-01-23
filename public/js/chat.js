@@ -300,16 +300,31 @@ async function sendMessage() {
         const useSearch = enableSearch?.checked;
         const endpoint = useSearch ? '/api/chat/with-search' : '/api/chat/stream';
 
+        // Source citation instructions for all LLMs
+        const sourceCitationInstructions = `
+
+When your response references external information, facts, statistics, or claims that would benefit from verification:
+1. Include a Sources section at the end of your response
+2. Format sources as a numbered list with clickable markdown links:
+
+---
+
+**Sources:**
+1. [Source Title or Domain](https://example.com/full-url)
+
+Only include sources when you reference specific external information. For general knowledge or reasoning, you may omit sources.`;
+
         // Build request body
         const requestBody = {
             messages: conversationHistory,
-            model: currentModel
+            model: currentModel,
+            systemPrompt: sourceCitationInstructions
         };
 
         if (useSearch) {
             // For search endpoint, use the user's message as the search query
             requestBody.searchQuery = message;
-            requestBody.systemPrompt = 'Use the web search results provided to answer the user\'s question with current, accurate information. Always cite sources when using search results.';
+            requestBody.systemPrompt = 'Use the web search results provided to answer the user\'s question with current, accurate information. Always cite sources when using search results.' + sourceCitationInstructions;
         }
 
         // Stream response (or use non-streaming for search)
@@ -350,6 +365,7 @@ async function sendMessage() {
             // Streaming SSE response
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let citations = [];
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -379,6 +395,9 @@ async function sendMessage() {
                                     // Check if content overflows and show scroll button
                                     updateScrollToBottomButton();
                                 }
+                            } else if (parsed.type === 'citations' && parsed.citations) {
+                                // Capture citations from Perplexity
+                                citations = parsed.citations;
                             } else if (parsed.type === 'error') {
                                 stopLoadingMessages();
                                 throw new Error(parsed.error);
@@ -387,6 +406,15 @@ async function sendMessage() {
                             // Skip invalid JSON
                         }
                     }
+                }
+            }
+
+            // Append citations as sources if available (from Perplexity)
+            if (citations.length > 0) {
+                fullResponse += formatCitations(citations);
+                if (contentDiv) {
+                    contentDiv.innerHTML = formatMessage(fullResponse);
+                    autoScrollIfNearBottom();
                 }
             }
         }
@@ -502,6 +530,37 @@ function stopLoadingMessages() {
         loadingMessageController.stop();
         loadingMessageController = null;
     }
+}
+
+/**
+ * Format citations from Perplexity into a sources section
+ * @param {Array} citations - Array of citation URLs
+ * @returns {string} Markdown formatted sources section
+ */
+function formatCitations(citations) {
+    if (!citations || citations.length === 0) return '';
+
+    let sourcesMarkdown = '\n\n---\n\n**Sources:**\n';
+
+    citations.forEach((citation, index) => {
+        // Citation can be a string (URL) or an object with url/title
+        const url = typeof citation === 'string' ? citation : citation.url;
+        let title;
+        if (typeof citation === 'object' && citation.title) {
+            title = citation.title;
+        } else {
+            // Extract domain from URL
+            try {
+                const urlObj = new URL(url);
+                title = urlObj.hostname.replace(/^www\./, '');
+            } catch {
+                title = url;
+            }
+        }
+        sourcesMarkdown += `${index + 1}. [${title}](${url})\n`;
+    });
+
+    return sourcesMarkdown;
 }
 
 /**

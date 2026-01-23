@@ -799,34 +799,7 @@
         </div>
     </div>
 
-    <!-- Chat Modal -->
-    <div class="chat-modal" id="chatModal">
-        <div class="chat-container">
-            <div class="chat-header">
-                <div class="chat-agent-info">
-                    <div class="chat-agent-icon" id="chatAgentIcon">
-                        <i data-lucide="bot" style="width:22px;height:22px;"></i>
-                    </div>
-                    <div>
-                        <div style="font-weight:600;" id="chatAgentName">Agent</div>
-                        <div style="font-size:0.8rem;color:var(--text-muted);" id="chatAgentCategory">Category</div>
-                    </div>
-                </div>
-                <button class="chat-close" onclick="closeChatModal()">
-                    <i data-lucide="x" style="width:20px;height:20px;"></i>
-                </button>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <!-- Messages populated dynamically -->
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Ask a question..." onkeypress="handleChatKeypress(event)">
-                <button class="btn-primary" onclick="sendMessage()">
-                    <i data-lucide="send" style="width:16px;height:16px;"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Chat Modal is now handled by AgentDialogService (agent-dialog-service.js) -->
 
     <!-- Initiative Modal -->
     <div class="chat-modal" id="initiativeModal">
@@ -1144,6 +1117,8 @@
     <script src="/js/supabase.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
+    <script src="/js/agent-dialog-service.js"></script>
+    <link rel="stylesheet" href="/css/agent-dialog.css">
 
     <script>
         // State
@@ -1152,6 +1127,9 @@
         let selectedDepartment = 'all';
         let departments = [];
         let currentAgent = null;
+
+        // Agent Dialog Service instance for running agents
+        const agentDialog = new AgentDialogService();
         let initiatives = [];
         let decisions = [];
         let intelligence = [];
@@ -1604,104 +1582,25 @@
             document.getElementById(`${tabId}Tab`).classList.add('active');
         }
 
-        // Open chat modal
+        // Open chat modal using AgentDialogService (same as agents.html)
         function openChat(agentId) {
             currentAgent = agents.find(a => a.id === agentId);
             if (!currentAgent) return;
 
-            const config = categories[currentAgent.category] || { color: '#6b7280' };
+            const categoryConfig = categories[currentAgent.category] || { label: currentAgent.category };
 
-            document.getElementById('chatAgentName').textContent = currentAgent.name;
-            document.getElementById('chatAgentCategory').textContent = categories[currentAgent.category]?.label || currentAgent.category;
-            document.getElementById('chatAgentIcon').style.background = `${config.color}20`;
-            document.getElementById('chatAgentIcon').style.color = config.color;
-
-            document.getElementById('chatMessages').innerHTML = `
-                <div class="message assistant">
-                    Hello! I'm ${currentAgent.name}. ${currentAgent.description || 'How can I help with your strategic planning?'}
-                </div>
-            `;
-
-            document.getElementById('chatInput').value = '';
-            document.getElementById('chatModal').classList.add('active');
-
-            setTimeout(() => {
-                document.getElementById('chatInput').focus();
-            }, 100);
-
-            lucide.createIcons();
+            // Use AgentDialogService for consistent experience with agents.html
+            agentDialog.open({
+                agentId: agentId,
+                title: currentAgent.name,
+                subtitle: categoryConfig.label || currentAgent.category
+            });
         }
 
-        // Close chat modal
-        function closeChatModal() {
-            document.getElementById('chatModal').classList.remove('active');
-            currentAgent = null;
-        }
+        // Chat functions are now handled by AgentDialogService
+        // The service provides: streaming, conversation starters, source citations, context assets
 
-        // Handle chat keypress
-        function handleChatKeypress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        // Send message
-        async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-
-            if (!message || !currentAgent) return;
-
-            const container = document.getElementById('chatMessages');
-
-            // Add user message
-            container.innerHTML += `<div class="message user">${escapeHtml(message)}</div>`;
-            input.value = '';
-
-            // Add typing indicator
-            container.innerHTML += `
-                <div class="message assistant" id="loadingMsg">
-                    <div class="typing-indicator">
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                    </div>
-                </div>`;
-            container.scrollTop = container.scrollHeight;
-
-            try {
-                const context = buildContext();
-
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: message,
-                        agent_id: currentAgent.id,
-                        context: context,
-                        stream: false
-                    })
-                });
-
-                const data = await res.json();
-                document.getElementById('loadingMsg')?.remove();
-
-                if (data.success && data.response) {
-                    container.innerHTML += `<div class="message assistant">${formatResponse(data.response)}</div>`;
-                } else {
-                    container.innerHTML += `<div class="message assistant">Sorry, I encountered an error. Please try again.</div>`;
-                }
-            } catch (error) {
-                console.error('Chat error:', error);
-                document.getElementById('loadingMsg')?.remove();
-                container.innerHTML += `<div class="message assistant">Connection error. Please try again.</div>`;
-            }
-
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // Build context
+        // Build context (kept for potential future use with context injection)
         function buildContext() {
             let ctx = '';
 

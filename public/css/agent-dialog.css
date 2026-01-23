@@ -1157,3 +1157,66 @@
     transform: translateX(3px);
     color: var(--text-secondary, #aaa);
 }
+
+/* ================================
+   Conversation Starters
+   ================================ */
+.conversation-starters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    animation: messageSlide 0.3s ease;
+}
+
+.conversation-starters .starter-btn {
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary, #252540);
+    border: 1px solid var(--border, #2a2a4a);
+    border-radius: 20px;
+    color: var(--text-primary, #ffffff);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-width: 100%;
+    text-align: left;
+    line-height: 1.4;
+}
+
+.conversation-starters .starter-btn:hover {
+    background: var(--bg-secondary, #1a1a2e);
+    border-color: var(--primary, #6366f1);
+    color: var(--primary, #6366f1);
+    transform: translateY(-1px);
+}
+
+.conversation-starters .starter-btn:active {
+    transform: translateY(0);
+}
+
+/* ================================
+   Citations / Sources Section
+   ================================ */
+.message-content hr {
+    border: none;
+    border-top: 1px solid var(--border, #2a2a4a);
+    margin: 1rem 0;
+}
+
+.message-content a {
+    color: var(--primary, #6366f1);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.message-content a:hover {
+    color: #818cf8;
+    text-decoration: underline;
+}
+
+/* Style for the sources list */
+.message-content ol a,
+.message-content ul a {
+    word-break: break-word;
+}

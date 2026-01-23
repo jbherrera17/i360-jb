@@ -2390,8 +2390,7 @@
                 if (data.success) {
                     showToast(editingAgent ? 'Agent updated' : 'Agent created', 'success');
                     closeModal();
-                    fetchAgents();
-                    fetchStats();
+                    fetchAgents(); // updateStats() is called within fetchAgents()
                 } else {
                     showToast(data.error || 'Failed to save agent', 'error');
                 }
@@ -2412,8 +2411,7 @@
                     showToast('Agent archived', 'success');
                     selectedAgent = null;
                     showEmptyState();
-                    fetchAgents();
-                    fetchStats();
+                    fetchAgents(); // updateStats() is called within fetchAgents()
                 }
             } catch (error) {
                 console.error('Error deleting agent:', error);
@@ -2679,11 +2677,12 @@
         }
 
         function updateStats() {
-            // Local stats update from agents array
+            // Local stats update from currently loaded agents array
+            // This reflects the filtered view, not total database counts
             document.getElementById('statTotal').textContent = agents.length;
-            document.getElementById('statActive').textContent = agents.filter(a => a.status === 'active').length;
-            document.getElementById('statMindStudio').textContent = agents.filter(a => a.source_type === 'mindstudio').length;
-            document.getElementById('statPickAxe').textContent = agents.filter(a => a.source_type === 'pickaxe').length;
+            document.getElementById('statActive').textContent = agents.filter(a => a.is_active !== false).length;
+            document.getElementById('statMindStudio').textContent = agents.filter(a => a.type === 'mindstudio').length;
+            document.getElementById('statPickAxe').textContent = agents.filter(a => a.type === 'pickaxe').length;
         }
 
         // =========================================================================
@@ -3980,8 +3979,7 @@
                 fetchContextAssets(),
                 fetchModels()
             ]);
-            await fetchAgents();
-            fetchStats();
+            await fetchAgents(); // updateStats() is called within fetchAgents()
 
             // Check for edit query parameter (from Strategy 120 redirect)
             const urlParams = new URLSearchParams(window.location.search);

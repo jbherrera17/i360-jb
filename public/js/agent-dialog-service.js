@@ -459,11 +459,14 @@ class AgentDialogService {
         try {
             this.state.abortController = new AbortController();
 
+            // Enhance system prompt with source citation instructions
+            const enhancedSystemPrompt = this.enhancePromptWithSourceInstructions(this.state.systemPrompt);
+
             // Build request body with selected model and context assets
             const requestBody = {
                 messages: this.state.conversationHistory,
                 model: this.getActiveModel(),
-                systemPrompt: this.state.systemPrompt,
+                systemPrompt: enhancedSystemPrompt,
                 context: this.state.context,
                 stream: true
             };
@@ -497,6 +500,7 @@ class AgentDialogService {
             const messageEl = this.addMessage('assistant', '', true);
             const contentEl = messageEl.querySelector('.message-content');
             let fullResponse = '';
+            let citations = [];
 
             // Process stream
             const reader = response.body.getReader();
@@ -519,6 +523,9 @@ class AgentDialogService {
                                 fullResponse += text;
                                 contentEl.innerHTML = this.formatMarkdown(fullResponse);
                                 this.scrollToBottom();
+                            } else if (data.type === 'citations' && data.citations) {
+                                // Capture citations from Perplexity
+                                citations = data.citations;
                             } else if (data.type === 'done' || data.type === 'complete') {
                                 // Stream complete
                             } else if (data.type === 'error') {
@@ -532,6 +539,13 @@ class AgentDialogService {
                         }
                     }
                 }
+            }
+
+            // Append citations as sources if available
+            if (citations.length > 0) {
+                fullResponse += this.formatCitations(citations);
+                contentEl.innerHTML = this.formatMarkdown(fullResponse);
+                this.scrollToBottom();
             }
 
             // Add to conversation history
@@ -607,6 +621,37 @@ class AgentDialogService {
     }
 
     /**
+     * Render conversation starters as clickable buttons
+     */
+    renderConversationStarters(starters) {
+        if (!starters || starters.length === 0) return;
+
+        // Remove any existing starters container
+        const existing = this.elements.messagesContainer.querySelector('.conversation-starters');
+        if (existing) existing.remove();
+
+        const startersEl = document.createElement('div');
+        startersEl.className = 'conversation-starters';
+        startersEl.innerHTML = starters.map(starter => `
+            <button class="starter-btn" type="button">${this.escapeHtml(starter)}</button>
+        `).join('');
+
+        // Add click handlers
+        startersEl.querySelectorAll('.starter-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                // Remove starters immediately to prevent double-clicks
+                startersEl.remove();
+                // Set the starter text in the input and send
+                this.elements.input.value = btn.textContent;
+                await this.sendMessage();
+            });
+        });
+
+        this.elements.messagesContainer.appendChild(startersEl);
+        this.scrollToBottom();
+    }
+
+    /**
      * Format markdown to HTML with proper list handling
      */
     formatMarkdown(text) {
@@ -662,6 +707,79 @@ class AgentDialogService {
         }).filter(b => b).join('\n');
 
         return html;
+    }
+
+    /**
+     * Enhance system prompt with source citation instructions
+     * @param {string} basePrompt - The original system prompt
+     * @returns {string} Enhanced prompt with source instructions
+     */
+    enhancePromptWithSourceInstructions(basePrompt) {
+        const sourceInstructions = `
+
+## Source Citation Requirements
+
+When your response references external information, facts, statistics, or claims that would benefit from verification:
+
+1. **Include a Sources section** at the end of your response
+2. Format sources as a numbered list with clickable markdown links
+3. Use this exact format:
+
+---
+
+**Sources:**
+1. [Source Title or Domain](https://example.com/full-url)
+2. [Another Source](https://another-example.com/page)
+
+**Important guidelines:**
+- Only include sources when you reference specific external information
+- Use real, valid URLs that support your claims
+- If you cannot provide a real URL, describe the source type instead (e.g., "Industry research reports", "Academic studies")
+- For general knowledge or reasoning that doesn't require citation, you may omit the Sources section
+- Prefer authoritative sources (official documentation, reputable publications, academic sources)`;
+
+        if (basePrompt) {
+            return basePrompt + sourceInstructions;
+        }
+        return sourceInstructions.trim();
+    }
+
+    /**
+     * Format citations into a sources section
+     * @param {Array} citations - Array of citation URLs from Perplexity
+     * @returns {string} Markdown formatted sources section
+     */
+    formatCitations(citations) {
+        if (!citations || citations.length === 0) return '';
+
+        let sourcesMarkdown = '\n\n---\n\n**Sources:**\n';
+
+        citations.forEach((citation, index) => {
+            // Citation can be a string (URL) or an object with url/title
+            const url = typeof citation === 'string' ? citation : citation.url;
+            const title = typeof citation === 'object' && citation.title
+                ? citation.title
+                : this.extractDomainFromUrl(url);
+
+            sourcesMarkdown += `${index + 1}. [${title}](${url})\n`;
+        });
+
+        return sourcesMarkdown;
+    }
+
+    /**
+     * Extract a readable domain name from a URL
+     * @param {string} url - The URL to extract domain from
+     * @returns {string} The domain name
+     */
+    extractDomainFromUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            // Remove 'www.' prefix if present
+            return urlObj.hostname.replace(/^www\./, '');
+        } catch {
+            return url;
+        }
     }
 
     /**
@@ -781,6 +899,18 @@ class AgentDialogService {
 
                 // Load context mappings for this agent
                 await this.loadContextMappings(options.agentId);
+
+                // Display agent's introduction message if present
+                // Note: We display it but don't add to conversation history
+                // because LLM APIs require user message first (not assistant)
+                if (agent.introduction) {
+                    this.addMessage('assistant', agent.introduction);
+                }
+
+                // Display conversation starters if present
+                if (agent.conversation_starters && agent.conversation_starters.length > 0) {
+                    this.renderConversationStarters(agent.conversation_starters);
+                }
 
                 // If there's an initial message, add it and get agent response
                 if (options.initialMessage) {
