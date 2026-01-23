@@ -594,10 +594,12 @@ module.exports = function(supabase) {
     /**
      * POST /api/auth/users
      * Admin: Create a new user
+     *
+     * Optional: Include org_id and org_role to automatically add user to an organization
      */
     router.post('/users', requireAdmin, async (req, res) => {
         try {
-            const { email, password, display_name, role } = req.body;
+            const { email, password, display_name, role, org_id, org_role } = req.body;
 
             if (!email || !password) {
                 return res.status(400).json({
@@ -611,6 +613,31 @@ module.exports = function(supabase) {
                     success: false,
                     error: 'Password must be at least 6 characters'
                 });
+            }
+
+            // Validate org_role if provided
+            const validOrgRoles = ['admin', 'consultant', 'viewer'];
+            if (org_role && !validOrgRoles.includes(org_role)) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid organization role. Must be one of: ${validOrgRoles.join(', ')}`
+                });
+            }
+
+            // Validate org_id if provided
+            if (org_id) {
+                const { data: org, error: orgError } = await supabase
+                    .from('organizations')
+                    .select('id, name')
+                    .eq('id', org_id)
+                    .single();
+
+                if (orgError || !org) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Organization not found'
+                    });
+                }
             }
 
             const userRole = role && ['admin', 'user', 'viewer'].includes(role) ? role : 'user';
@@ -641,22 +668,44 @@ module.exports = function(supabase) {
                         id: authData.user.id,
                         email: authData.user.email,
                         display_name: display_name || email.split('@')[0],
-                        role: userRole
+                        role: userRole,
+                        default_org_id: org_id || null
                     });
 
                 if (profileError) {
                     console.error('Profile creation error:', profileError);
                 }
+
+                // Add user to organization if org_id was provided
+                if (org_id) {
+                    const { error: memberError } = await supabase
+                        .from('organization_members')
+                        .insert({
+                            org_id: org_id,
+                            user_id: authData.user.id,
+                            role: org_role || 'consultant',
+                            status: 'active',
+                            invited_by: req.user.id,
+                            joined_at: new Date().toISOString()
+                        });
+
+                    if (memberError) {
+                        console.error('Organization membership error:', memberError);
+                        // Don't fail the whole operation, user is created
+                    }
+                }
             }
 
             res.json({
                 success: true,
-                message: 'User created successfully',
+                message: org_id ? 'User created and added to organization' : 'User created successfully',
                 data: {
                     id: authData.user.id,
                     email: authData.user.email,
                     display_name: display_name || email.split('@')[0],
-                    role: userRole
+                    role: userRole,
+                    org_id: org_id || null,
+                    org_role: org_id ? (org_role || 'consultant') : null
                 }
             });
 

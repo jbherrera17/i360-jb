@@ -714,6 +714,139 @@ select {
 }
 
 /* ============================================
+   PAGE CONTAINER - Standard content wrapper
+   Use this for consistent padding across all pages
+   ============================================ */
+.page-container {
+    padding: var(--spacing-xl);
+}
+
+/* ============================================
+   PANELS - Standard panel styling
+   All panels should use these classes for consistency
+   ============================================ */
+.panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.panel-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-tertiary);
+}
+
+.panel-header h2,
+.panel-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.panel-body {
+    padding: var(--spacing-lg);
+}
+
+.panel-footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border);
+    background: var(--bg-tertiary);
+}
+
+/* Stats bar - consistent stats display */
+.stats-bar {
+    display: flex;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Filter bar - consistent filter controls */
+.filter-bar {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Search box - consistent search input */
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+
+.search-box input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    min-width: 180px;
+}
+
+.search-box svg {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* Filter select - consistent dropdown */
+.filter-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+/* Help button - consistent help button */
+.help-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.help-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ============================================
    THEME TOGGLE
    ============================================ */
 

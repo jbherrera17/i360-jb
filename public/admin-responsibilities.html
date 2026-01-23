@@ -10,90 +10,42 @@
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .responsibilities-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+        /* Page-specific styles - common styles now in styles.css */
 
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-            margin: 0;
-            font-size: 1.75rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-secondary);
-        }
-
-        .search-box input {
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 0.95rem;
-            width: 200px;
-        }
-
-        .search-box svg {
-            color: var(--text-secondary);
-        }
-
-        .filter-select {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-secondary);
-            font-size: 0.95rem;
-        }
-
+        /* Responsibilities grid - matches strategy120 layout */
         .responsibilities-grid {
             display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1rem;
         }
 
         .responsibility-card {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1.25rem;
+            flex-direction: column;
+            padding: 1rem;
             background: var(--bg-secondary);
             border-radius: 12px;
             border: 1px solid var(--border);
-            transition: border-color 0.2s;
+            transition: all 0.2s;
+            cursor: pointer;
         }
 
         .responsibility-card:hover {
             border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .responsibility-info {
+        .responsibility-header {
             display: flex;
             align-items: flex-start;
-            gap: 1rem;
-            flex: 1;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
         }
 
         .responsibility-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 10px;
             background: var(--primary-light);
             display: flex;
@@ -103,61 +55,84 @@
             flex-shrink: 0;
         }
 
-        .responsibility-details {
-            flex: 1;
-        }
-
-        .responsibility-details h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.1rem;
-        }
-
         .responsibility-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .responsibility-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .responsibility-badges {
             display: flex;
-            gap: 1rem;
+            gap: 0.4rem;
             flex-wrap: wrap;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
         }
 
-        .responsibility-meta span {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .ai-count-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
-            background: var(--primary-light);
-            color: var(--primary);
-            border-radius: 999px;
-            font-size: 0.8rem;
+        .level-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            text-transform: uppercase;
             font-weight: 500;
         }
 
-        .ai-count-badge.empty {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
+        .responsibility-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .card-actions {
             display: flex;
             gap: 0.5rem;
+            margin-top: auto;
+        }
+
+        .ai-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.5rem;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            flex: 1;
+            border: 1px solid transparent;
+        }
+
+        .ai-count-badge.empty {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-color: var(--border);
         }
 
         .action-btn {
-            padding: 0.5rem 1rem;
+            flex: 1;
+            padding: 0.5rem;
             border: 1px solid var(--border);
             background: var(--bg-primary);
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 0.35rem;
             color: var(--text-primary);
             text-decoration: none;
         }
@@ -210,66 +185,6 @@
             to { transform: rotate(360deg); }
         }
 
-        .level-badge {
-            display: inline-flex;
-            padding: 0.2rem 0.5rem;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .hierarchy-tree {
-            margin-left: 1rem;
-            padding-left: 1rem;
-            border-left: 2px solid var(--border);
-        }
-
-        .stats-bar {
-            display: flex;
-            gap: 2rem;
-            padding: 1rem 1.5rem;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border);
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .help-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .help-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
     </style>
 </head>
 <body>
@@ -277,13 +192,19 @@
         <aside class="sidebar"></aside>
 
         <main class="main-content">
-            <div class="responsibilities-container">
-                <div class="page-header">
+            <header class="page-header">
+                <div class="header-content">
                     <h1>Responsibilities</h1>
-                    <div class="header-actions">
-                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
-                            <i data-lucide="help-circle"></i>
-                        </button>
+                    <p class="header-subtitle">Manage organizational responsibilities and their AI capability mappings</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="page-container">
+                <div class="filter-bar">
                     <div class="search-box">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"/>
@@ -298,10 +219,9 @@
                         <option value="operational">Operational</option>
                     </select>
                 </div>
-            </div>
 
-            <!-- Stats Bar -->
-            <div class="stats-bar">
+                <!-- Stats Bar -->
+                <div class="stats-bar">
                 <div class="stat-item">
                     <span class="stat-value" id="total-count">0</span>
                     <span class="stat-label">Total Responsibilities</span>
@@ -413,22 +333,22 @@
             container.innerHTML = filtered.map(resp => {
                 const aiCount = aiMappingCounts[resp.id] || 0;
                 return `
-                    <div class="responsibility-card">
-                        <div class="responsibility-info">
+                    <div class="responsibility-card" onclick="window.location.href='/admin-responsibility-ai.html?id=${resp.id}'">
+                        <div class="responsibility-header">
                             <div class="responsibility-icon">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M9 11l3 3L22 4"/>
                                     <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
                                 </svg>
                             </div>
-                            <div class="responsibility-details">
-                                <h3>${escapeHtml(resp.name)}</h3>
-                                <div class="responsibility-meta">
+                            <div class="responsibility-meta">
+                                <div class="responsibility-name">${escapeHtml(resp.name)}</div>
+                                <div class="responsibility-badges">
                                     <span class="level-badge">${resp.level || 'N/A'}</span>
-                                    ${resp.description ? `<span>${escapeHtml(resp.description.substring(0, 100))}${resp.description.length > 100 ? '...' : ''}</span>` : ''}
                                 </div>
                             </div>
                         </div>
+                        <div class="responsibility-desc">${escapeHtml(resp.description || 'No description')}</div>
                         <div class="card-actions">
                             <span class="ai-count-badge ${aiCount === 0 ? 'empty' : ''}">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -437,8 +357,8 @@
                                 </svg>
                                 ${aiCount} AI ${aiCount === 1 ? 'mapping' : 'mappings'}
                             </span>
-                            <a href="/admin-responsibility-ai.html?id=${resp.id}" class="action-btn primary">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <a href="/admin-responsibility-ai.html?id=${resp.id}" class="action-btn primary" onclick="event.stopPropagation()">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>

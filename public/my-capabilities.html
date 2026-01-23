@@ -10,31 +10,10 @@
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Page-specific styles - common styles now in styles.css */
         .capabilities-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .page-header {
-            margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.75rem;
-        }
-
-        .page-header p {
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        .filter-bar {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
         }
 
         .filter-chip {
@@ -293,51 +272,6 @@
         .capability-card {
             position: relative;
         }
-
-        .stats-bar {
-            display: flex;
-            gap: 2rem;
-            padding: 1rem 1.5rem;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-            .help-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .help-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
     </style>
 </head>
 <body>
@@ -345,19 +279,21 @@
         <aside class="sidebar"></aside>
 
         <main class="main-content">
-            <div class="capabilities-container">
-                <div class="page-header">
-                    <div>
-                        <h1>My AI Capabilities</h1>
-                        <p>Based on your role, department, and responsibilities, here's what you can access.</p>
-                    </div>
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>My AI Capabilities</h1>
+                    <p class="header-subtitle">Based on your role, department, and responsibilities, here's what you can access</p>
+                </div>
+                <div class="header-actions">
                     <button class="help-btn" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
                     </button>
                 </div>
+            </header>
 
-            <!-- Stats -->
-            <div class="stats-bar">
+            <div class="page-container capabilities-container">
+                <!-- Stats -->
+                <div class="stats-bar">
                 <div class="stat-item">
                     <span class="stat-value" id="agents-count">0</span>
                     <span class="stat-label">Agents</span>
