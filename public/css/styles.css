@@ -1477,7 +1477,7 @@ select {
 }
 
 /* Legacy .modal as overlay (for backwards compatibility) */
-.modal:not(.modal-overlay .modal) {
+.modal:not(.modal-overlay .modal):not(.modal-backdrop .modal) {
     position: fixed;
     top: 0;
     left: 0;
@@ -1494,7 +1494,7 @@ select {
     transition: all var(--transition-base);
 }
 
-.modal:not(.modal-overlay .modal).active {
+.modal:not(.modal-overlay .modal):not(.modal-backdrop .modal).active {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
