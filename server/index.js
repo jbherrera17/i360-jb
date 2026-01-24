@@ -355,7 +355,21 @@ function initializeServices() {
     if (initializeSupabase()) {
         serviceStatus.supabase = true;
         console.log('  ✅ Supabase (Database) - Ready');
-        
+
+        // Apply authentication middleware BEFORE routes
+        try {
+            const { authenticate, rateLimit } = require('./middleware/auth');
+            app.use('/api', authenticate);
+            app.use('/api/chat', rateLimit({
+                windowMs: 60000,
+                max: 30,
+                message: 'Too many chat requests. Please wait a moment.'
+            }));
+            console.log('  ✅ Authentication middleware applied');
+        } catch (error) {
+            console.log('  ⚠️  Auth middleware not loaded:', error.message);
+        }
+
         // Register Supabase-dependent routes HERE (after Supabase is initialized)
         app.use('/api/agents', agentsRoutes(supabase));
         app.use('/api/injection', injectionRoutes(supabase));
@@ -437,31 +451,7 @@ function initializeServices() {
 }
 
 // ============================================
-// AUTHENTICATION MIDDLEWARE (Optional)
-// ============================================
-
-// Try to load auth middleware if it exists
-try {
-    const { authenticate, rateLimit } = require('./middleware/auth');
-
-    // Apply authentication to API routes
-    app.use('/api', authenticate);
-
-    // Rate limiting for chat endpoints
-    app.use('/api/chat', rateLimit({
-        windowMs: 60000, // 1 minute
-        max: 30, // 30 requests per minute
-        message: 'Too many chat requests. Please wait a moment.'
-    }));
-
-    console.log('🔐 Authentication middleware loaded\n');
-} catch (error) {
-    // Auth middleware not available, continue without it
-    console.log('ℹ️  Auth middleware not loaded (optional)\n');
-}
-
-// ============================================
-// API ROUTES
+// API ROUTES (Non-Supabase dependent)
 // ============================================
 
 // Health check route (enhanced in Phase 14)
