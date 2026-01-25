@@ -232,6 +232,10 @@ CREATE POLICY "Users can delete own briefing sections" ON briefing_sections
 -- VIEWS
 -- =====================================================
 
+-- Drop existing views first to allow column changes
+DROP VIEW IF EXISTS briefing_config_summary CASCADE;
+DROP VIEW IF EXISTS recent_briefings CASCADE;
+
 -- View: User's briefing configuration with section count
 CREATE OR REPLACE VIEW briefing_config_summary AS
 SELECT

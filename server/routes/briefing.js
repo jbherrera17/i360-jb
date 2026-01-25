@@ -21,9 +21,9 @@ const schedulerService = require('../services/schedulerService');
 module.exports = function(supabase) {
     const router = express.Router();
 
-    // Default user ID for development (in production, use auth middleware)
+    // Get user ID from auth middleware (req.userId is set by middleware/auth.js)
     const getUser = (req) => {
-        return req.headers['x-user-id'] || process.env.DEFAULT_USER_ID || 'default-user';
+        return req.userId || req.headers['x-user-id'] || process.env.DEFAULT_USER_ID;
     };
 
     // ============================================================================
@@ -56,6 +56,9 @@ module.exports = function(supabase) {
     router.get('/today', async (req, res) => {
         try {
             const userId = getUser(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
             const briefing = await briefingService.getTodaysBriefing(userId);
 
             res.json({
@@ -106,6 +109,9 @@ module.exports = function(supabase) {
     router.get('/config', async (req, res) => {
         try {
             const userId = getUser(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
             const config = await briefingService.getConfigWithSections(userId);
 
             // Add scheduler status

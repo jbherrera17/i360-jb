@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -642,7 +643,7 @@
             }
         }
 
-        /* Modal styles handled by modal-manager.js */
+        /* Modal styles handled by ModalService */
 
         .form-group {
             margin-bottom: 1rem;
@@ -873,42 +874,6 @@
         </main>
     </div>
 
-    <!-- Add/Edit Section Modal -->
-    <div class="modal-overlay" id="sectionModal">
-        <div class="modal-content modal" id="section-modal-dialog">
-            <div class="modal-header" id="section-modal-header">
-                <h2 id="sectionModalTitle">Add Section</h2>
-                <button class="modal-close" onclick="closeSectionModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Section Name</label>
-                    <input type="text" id="sectionName" placeholder="e.g., Market Intelligence">
-                </div>
-                <div class="form-group">
-                    <label>Agent</label>
-                    <select id="sectionAgent">
-                        <option value="">Select an agent...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Prompt Template (Optional)</label>
-                    <textarea id="sectionPrompt" placeholder="Custom prompt for this section..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Icon (Lucide icon name)</label>
-                    <input type="text" id="sectionIcon" placeholder="e.g., trending-up" value="file-text">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeSectionModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveSection()">Save Section</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
@@ -921,19 +886,13 @@
         let editingSectionId = null;
         let historyPage = 1;
 
-        // Modal manager
-        let sectionModalManager = null;
+        // Modal instance (using ModalService)
+        let sectionModal = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             setupTabs();
-
-            // Initialize modal manager if available
-            if (typeof ModalManager !== 'undefined') {
-                sectionModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 500 });
-                sectionModalManager.init('section-modal-dialog', 'section-modal-header', 'sectionModal');
-            }
 
             await loadConfig();
             await loadAgents();
@@ -978,7 +937,6 @@
                 const data = await res.json();
                 if (data.success) {
                     agents = data.data;
-                    populateAgentDropdown();
                 }
             } catch (error) {
                 console.error('Error loading agents:', error);
@@ -1051,52 +1009,67 @@
             lucide.createIcons();
         }
 
-        // Populate agent dropdown
-        function populateAgentDropdown() {
-            const select = document.getElementById('sectionAgent');
-            select.innerHTML = '<option value="">Select an agent...</option>' +
-                agents.map(a => `<option value="${a.id}">${a.display_name || a.name}</option>`).join('');
+        // Section modal functions
+        function openSectionModal(section = null) {
+            editingSectionId = section?.id || null;
+            const title = section ? 'Edit Section' : 'Add Section';
+
+            const agentOptions = agents.map(a =>
+                `<option value="${a.id}" ${section?.agent_id === a.id ? 'selected' : ''}>${a.display_name || a.name}</option>`
+            ).join('');
+
+            sectionModal = ModalService.create({
+                title: title,
+                content: `
+                    <div class="form-group">
+                        <label>Section Name</label>
+                        <input type="text" id="sectionName" placeholder="e.g., Market Intelligence" value="${section?.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Agent</label>
+                        <select id="sectionAgent">
+                            <option value="">Select an agent...</option>
+                            ${agentOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prompt Template (Optional)</label>
+                        <textarea id="sectionPrompt" placeholder="Custom prompt for this section...">${section?.prompt_template || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Icon (Lucide icon name)</label>
+                        <input type="text" id="sectionIcon" placeholder="e.g., trending-up" value="${section?.icon || 'file-text'}">
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-section-btn">Save Section</button>
+                `,
+                width: 500,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    document.getElementById('save-section-btn').addEventListener('click', saveSection);
+                    lucide.createIcons();
+                }
+            });
+            sectionModal.open();
         }
 
-        // Section modal
         function showAddSectionModal() {
-            editingSectionId = null;
-            document.getElementById('sectionModalTitle').textContent = 'Add Section';
-            document.getElementById('sectionName').value = '';
-            document.getElementById('sectionAgent').value = '';
-            document.getElementById('sectionPrompt').value = '';
-            document.getElementById('sectionIcon').value = 'file-text';
-            if (sectionModalManager) {
-                sectionModalManager.open();
-            } else {
-                document.getElementById('sectionModal').classList.add('active');
-            }
-            lucide.createIcons();
+            openSectionModal(null);
         }
 
         function editSection(id) {
             const section = sections.find(s => s.id === id);
             if (!section) return;
-
-            editingSectionId = id;
-            document.getElementById('sectionModalTitle').textContent = 'Edit Section';
-            document.getElementById('sectionName').value = section.name;
-            document.getElementById('sectionAgent').value = section.agent_id || '';
-            document.getElementById('sectionPrompt').value = section.prompt_template || '';
-            document.getElementById('sectionIcon').value = section.icon || 'file-text';
-            if (sectionModalManager) {
-                sectionModalManager.open();
-            } else {
-                document.getElementById('sectionModal').classList.add('active');
-            }
-            lucide.createIcons();
+            openSectionModal(section);
         }
 
         function closeSectionModal() {
-            if (sectionModalManager) {
-                sectionModalManager.close();
-            } else {
-                document.getElementById('sectionModal').classList.remove('active');
+            if (sectionModal) {
+                sectionModal.close();
+                sectionModal = null;
             }
             editingSectionId = null;
         }
@@ -1104,7 +1077,7 @@
         async function saveSection() {
             const name = document.getElementById('sectionName').value.trim();
             if (!name) {
-                showToast('Section name is required', 'error');
+                ModalService.warning('Section name is required');
                 return;
             }
 
@@ -1146,17 +1119,23 @@
         }
 
         async function deleteSection(id) {
-            if (!confirm('Delete this section?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Section',
+                message: 'Delete this section?',
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/api/briefing/sections/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Section deleted');
+                    ModalService.success('Section deleted');
                     await loadConfig();
                 }
             } catch (error) {
-                showToast('Failed to delete section', 'error');
+                ModalService.error('Failed to delete section');
             }
         }
 
@@ -1400,7 +1379,6 @@
             setTimeout(() => toast.remove(), 3000);
         }
     </script>
-    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

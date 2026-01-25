@@ -30,8 +30,15 @@ async function getOrCreateConfig(userId) {
         .eq('user_id', userId)
         .single();
 
+    // If config exists, return it
     if (existing) {
         return existing;
+    }
+
+    // Check for errors other than "no rows found" (PGRST116)
+    if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching briefing config:', fetchError);
+        throw new Error(`Failed to fetch briefing config: ${fetchError.message}`);
     }
 
     // Create default config if none exists
@@ -47,6 +54,7 @@ async function getOrCreateConfig(userId) {
         .single();
 
     if (createError) {
+        console.error('Error creating briefing config:', createError);
         throw new Error(`Failed to create briefing config: ${createError.message}`);
     }
 
