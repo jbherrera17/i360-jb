@@ -394,8 +394,8 @@
 
         .history-item {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 0.75rem;
             padding: 1rem 1.25rem;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -409,8 +409,43 @@
             background: var(--bg-tertiary);
         }
 
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         .history-date {
             font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .history-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.5rem 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .history-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--text-muted);
+            min-width: 100px;
+        }
+
+        .history-value {
+            color: var(--text-primary);
         }
 
         .history-meta {
@@ -431,6 +466,7 @@
         .history-status.completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
         .history-status.partial { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
         .history-status.failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .history-status.generating { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 
         /* Configuration View */
         .config-section {
@@ -672,6 +708,13 @@
             resize: vertical;
         }
 
+        .form-hint {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
         .btn-secondary {
             background: var(--bg-tertiary);
             color: var(--text-secondary);
@@ -882,9 +925,12 @@
         let config = null;
         let sections = [];
         let agents = [];
+        let categories = [];
+        let userDepartmentId = null;
         let currentBriefing = null;
         let editingSectionId = null;
         let historyPage = 1;
+        let selectedCategory = '';
 
         // Modal instance (using ModalService)
         let sectionModal = null;
@@ -937,6 +983,8 @@
                 const data = await res.json();
                 if (data.success) {
                     agents = data.data;
+                    categories = data.categories || [];
+                    userDepartmentId = data.user_department_id;
                 }
             } catch (error) {
                 console.error('Error loading agents:', error);
@@ -1010,13 +1058,35 @@
         }
 
         // Section modal functions
+        function getFilteredAgents(categoryFilter = '') {
+            let filtered = agents;
+            if (categoryFilter) {
+                filtered = agents.filter(a => a.category === categoryFilter);
+            }
+            return filtered;
+        }
+
+        function buildAgentOptions(filteredAgents, selectedId = null) {
+            return filteredAgents.map(a => {
+                const badges = [];
+                if (a.is_featured) badges.push('★');
+                if (a.is_department_agent && !a.is_featured) badges.push('●');
+                const badge = badges.length ? ` ${badges.join('')}` : '';
+                const categoryLabel = a.category ? ` (${a.category})` : '';
+                return `<option value="${a.id}" ${selectedId === a.id ? 'selected' : ''}>${a.display_name || a.name}${categoryLabel}${badge}</option>`;
+            }).join('');
+        }
+
         function openSectionModal(section = null) {
             editingSectionId = section?.id || null;
+            selectedCategory = '';
             const title = section ? 'Edit Section' : 'Add Section';
 
-            const agentOptions = agents.map(a =>
-                `<option value="${a.id}" ${section?.agent_id === a.id ? 'selected' : ''}>${a.display_name || a.name}</option>`
+            const categoryOptions = categories.map(c =>
+                `<option value="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</option>`
             ).join('');
+
+            const agentOptions = buildAgentOptions(agents, section?.agent_id);
 
             sectionModal = ModalService.create({
                 title: title,
@@ -1024,6 +1094,14 @@
                     <div class="form-group">
                         <label>Section Name</label>
                         <input type="text" id="sectionName" placeholder="e.g., Market Intelligence" value="${section?.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Filter by Category</label>
+                        <select id="categoryFilter">
+                            <option value="">All Categories</option>
+                            ${categoryOptions}
+                        </select>
+                        <small class="form-hint">★ Featured for your department · ● Relevant to your department</small>
                     </div>
                     <div class="form-group">
                         <label>Agent</label>
@@ -1050,6 +1128,13 @@
                 resizable: true,
                 onOpen: () => {
                     document.getElementById('save-section-btn').addEventListener('click', saveSection);
+                    document.getElementById('categoryFilter').addEventListener('change', (e) => {
+                        selectedCategory = e.target.value;
+                        const filtered = getFilteredAgents(selectedCategory);
+                        const agentSelect = document.getElementById('sectionAgent');
+                        const currentValue = agentSelect.value;
+                        agentSelect.innerHTML = '<option value="">Select an agent...</option>' + buildAgentOptions(filtered, currentValue);
+                    });
                     lucide.createIcons();
                 }
             });
@@ -1307,16 +1392,43 @@
                 return;
             }
 
-            container.innerHTML = briefings.map(b => `
-                <div class="history-item" onclick="viewBriefing('${b.id}')">
-                    <div class="history-date">${formatDate(b.date)}</div>
-                    <div class="history-meta">
-                        <span>${b.sections_generated || 0} sections</span>
-                        <span>${b.total_tokens_used || 0} tokens</span>
-                        <span class="history-status ${b.status}">${b.status}</span>
+            container.innerHTML = briefings.map(b => {
+                const userName = b.user?.name || b.user?.email || 'Unknown';
+                const timestamp = b.generation_completed_at
+                    ? new Date(b.generation_completed_at).toLocaleString()
+                    : 'N/A';
+                const agentNames = (b.agents_used || []).map(a => a.name).join(', ') || 'No agents';
+
+                return `
+                    <div class="history-item" onclick="viewBriefing('${b.id}')">
+                        <div class="history-header">
+                            <div class="history-date">${formatDate(b.date)}</div>
+                            <span class="history-status ${b.status}">${b.status}</span>
+                        </div>
+                        <div class="history-details">
+                            <div class="history-row">
+                                <span class="history-label"><i data-lucide="user" style="width:14px;height:14px;"></i> Run by:</span>
+                                <span class="history-value">${userName}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="history-label"><i data-lucide="clock" style="width:14px;height:14px;"></i> Completed:</span>
+                                <span class="history-value">${timestamp}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="history-label"><i data-lucide="bot" style="width:14px;height:14px;"></i> Agents:</span>
+                                <span class="history-value">${agentNames}</span>
+                            </div>
+                        </div>
+                        <div class="history-meta">
+                            <span>${b.sections_generated || 0} sections</span>
+                            <span>${b.total_tokens_used || 0} tokens</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+
+            // Re-initialize icons
+            lucide.createIcons();
         }
 
         async function viewBriefing(id) {

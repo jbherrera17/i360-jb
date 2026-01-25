@@ -478,7 +478,7 @@ async function getBriefingById(userId, briefingId) {
  * Get briefing history for a user
  * @param {string} userId - User ID
  * @param {Object} options - Pagination options
- * @returns {Object} - Paginated briefings
+ * @returns {Object} - Paginated briefings with user and agent details
  */
 async function getBriefingHistory(userId, options = {}) {
     const { page = 1, limit = 10 } = options;
@@ -490,10 +490,14 @@ async function getBriefingHistory(userId, options = {}) {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
 
-    // Get briefings
+    // Get briefings with user info
     const { data, error } = await supabase
         .from('briefings')
-        .select('id, date, status, sections_generated, total_tokens_used, generation_completed_at')
+        .select(`
+            id, date, status, sections_generated, total_tokens_used,
+            generation_started_at, generation_completed_at, content,
+            user:users!briefings_user_id_fkey(id, name, email)
+        `)
         .eq('user_id', userId)
         .order('date', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -502,8 +506,60 @@ async function getBriefingHistory(userId, options = {}) {
         throw new Error(`Failed to fetch briefing history: ${error.message}`);
     }
 
+    // Extract agent IDs from content and fetch agent names
+    const briefings = data || [];
+    const agentIds = new Set();
+
+    briefings.forEach(b => {
+        const sections = b.content?.sections || [];
+        sections.forEach(s => {
+            if (s.agent_id) agentIds.add(s.agent_id);
+        });
+    });
+
+    // Fetch agent names if there are any
+    let agentMap = {};
+    if (agentIds.size > 0) {
+        const { data: agents } = await supabase
+            .from('agents')
+            .select('id, name, icon')
+            .in('id', Array.from(agentIds));
+
+        if (agents) {
+            agentMap = agents.reduce((acc, a) => {
+                acc[a.id] = { name: a.name, icon: a.icon };
+                return acc;
+            }, {});
+        }
+    }
+
+    // Enrich briefings with agent details
+    const enrichedBriefings = briefings.map(b => {
+        const sections = b.content?.sections || [];
+        const agentsUsed = sections
+            .filter(s => s.agent_id && agentMap[s.agent_id])
+            .map(s => ({
+                id: s.agent_id,
+                name: agentMap[s.agent_id].name,
+                icon: agentMap[s.agent_id].icon,
+                section: s.name
+            }));
+
+        return {
+            id: b.id,
+            date: b.date,
+            status: b.status,
+            sections_generated: b.sections_generated,
+            total_tokens_used: b.total_tokens_used,
+            generation_started_at: b.generation_started_at,
+            generation_completed_at: b.generation_completed_at,
+            user: b.user,
+            agents_used: agentsUsed
+        };
+    });
+
     return {
-        briefings: data || [],
+        briefings: enrichedBriefings,
         pagination: {
             page,
             limit,

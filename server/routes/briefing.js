@@ -444,20 +444,74 @@ module.exports = function(supabase) {
     /**
      * GET /api/briefing/agents
      * Get agents that can be used for briefing sections
+     * Query params: category (optional filter)
+     * Returns agents filtered by user's department (if set) with category info
      */
     router.get('/agents', async (req, res) => {
         try {
-            const { data: agents, error } = await supabase
+            const userId = getUser(req);
+            const { category } = req.query;
+
+            // Get user's department if logged in
+            let userDepartmentId = null;
+            if (userId) {
+                const { data: userProfile } = await supabase
+                    .from('users')
+                    .select('department_id')
+                    .eq('id', userId)
+                    .single();
+                userDepartmentId = userProfile?.department_id;
+            }
+
+            // Build base query
+            let query = supabase
                 .from('agents')
-                .select('id, name, description, icon, suite, type')
-                .eq('is_active', true)
-                .order('name');
+                .select('id, name, description, icon, suite, category, type')
+                .eq('is_active', true);
+
+            // Filter by category if provided
+            if (category) {
+                query = query.eq('category', category);
+            }
+
+            const { data: agents, error } = await query.order('name');
 
             if (error) throw error;
 
+            // If user has a department, prioritize agents linked to that department
+            let enrichedAgents = agents || [];
+            if (userDepartmentId && agents && agents.length > 0) {
+                const { data: deptAgents } = await supabase
+                    .from('department_agents')
+                    .select('agent_id, is_featured')
+                    .eq('department_id', userDepartmentId);
+
+                const deptAgentIds = new Set((deptAgents || []).map(da => da.agent_id));
+                const featuredIds = new Set((deptAgents || []).filter(da => da.is_featured).map(da => da.agent_id));
+
+                // Enrich agents with department relevance
+                enrichedAgents = agents.map(a => ({
+                    ...a,
+                    is_department_agent: deptAgentIds.has(a.id),
+                    is_featured: featuredIds.has(a.id)
+                }));
+
+                // Sort: featured first, then department agents, then others
+                enrichedAgents.sort((a, b) => {
+                    if (a.is_featured !== b.is_featured) return b.is_featured ? 1 : -1;
+                    if (a.is_department_agent !== b.is_department_agent) return b.is_department_agent ? 1 : -1;
+                    return a.name.localeCompare(b.name);
+                });
+            }
+
+            // Get unique categories for filter dropdown
+            const categories = [...new Set(agents.map(a => a.category).filter(Boolean))].sort();
+
             res.json({
                 success: true,
-                data: agents || []
+                data: enrichedAgents,
+                categories: categories,
+                user_department_id: userDepartmentId
             });
         } catch (error) {
             console.error('Error fetching agents:', error);
