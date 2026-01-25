@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .ai-mapping-container {
@@ -209,55 +210,7 @@
             opacity: 0.5;
         }
 
-        /* Modal styles */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
+        /* Form styles for ModalService */
         .form-group {
             margin-bottom: 1.25rem;
         }
@@ -276,43 +229,13 @@
             border-radius: 6px;
             background: var(--bg-secondary);
             font-size: 0.95rem;
+            color: var(--text-primary);
         }
 
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        .btn-secondary {
-            padding: 0.75rem 1.25rem;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            padding: 0.75rem 1.25rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
         }
 
         .loading-spinner {
@@ -467,50 +390,6 @@
         </main>
     </div>
 
-    <!-- Add Modal -->
-    <div id="add-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modal-title">Add AI Recommendation</h2>
-                <button class="modal-close" onclick="closeModal()">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="add-form" onsubmit="handleAddSubmit(event)">
-                    <input type="hidden" id="add-type" value="">
-
-                    <div class="form-group">
-                        <label id="entity-label">Select Item</label>
-                        <select id="entity-select" required>
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Recommendation Strength</label>
-                        <select id="strength-select" required>
-                            <option value="suggested">Suggested - Nice to have</option>
-                            <option value="recommended">Recommended - Should use</option>
-                            <option value="required">Required - Must use</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Use Case Note (Optional)</label>
-                        <textarea id="use-case-note" rows="3" placeholder="Describe when/how this should be used..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-primary" form="add-form">Add Recommendation</button>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
@@ -519,16 +398,20 @@
         let responsibility = null;
         let aiMappings = { agents: [], skills: [], workflows: [] };
         let availableEntities = { agents: [], skills: [], workflows: [] };
+        let addModal = null;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             // Get responsibility ID from URL
             const params = new URLSearchParams(window.location.search);
             responsibilityId = params.get('id');
 
             if (!responsibilityId) {
-                alert('No responsibility ID provided');
+                await ModalService.alert({
+                    title: 'Error',
+                    message: 'No responsibility ID provided'
+                });
                 window.location.href = '/admin-responsibilities.html';
                 return;
             }
@@ -672,49 +555,73 @@
         }
 
         function showAddModal(type) {
-            const modal = document.getElementById('add-modal');
-            const typeInput = document.getElementById('add-type');
-            const titleEl = document.getElementById('modal-title');
-            const labelEl = document.getElementById('entity-label');
-            const selectEl = document.getElementById('entity-select');
-
-            typeInput.value = type;
-
             const typeLabels = {
                 agents: 'Agent',
                 skills: 'Skill',
                 workflows: 'Workflow'
             };
 
-            titleEl.textContent = `Add ${typeLabels[type]} Recommendation`;
-            labelEl.textContent = `Select ${typeLabels[type]}`;
-
             // Populate select with available entities
             const entities = availableEntities[type] || [];
             const existingIds = aiMappings[type].map(m => m.entity_id);
             const filteredEntities = entities.filter(e => !existingIds.includes(e.id));
 
-            selectEl.innerHTML = '<option value="">-- Select --</option>' +
-                filteredEntities.map(e => `<option value="${e.id}">${e.name || e.title}</option>`).join('');
+            const entityOptions = filteredEntities.map(e =>
+                `<option value="${e.id}">${e.name || e.title}</option>`
+            ).join('');
 
-            modal.classList.add('active');
+            addModal = ModalService.create({
+                title: `Add ${typeLabels[type]} Recommendation`,
+                content: `
+                    <div class="form-group">
+                        <label>Select ${typeLabels[type]}</label>
+                        <select id="entity-select" required>
+                            <option value="">-- Select --</option>
+                            ${entityOptions}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Recommendation Strength</label>
+                        <select id="strength-select" required>
+                            <option value="suggested">Suggested - Nice to have</option>
+                            <option value="recommended">Recommended - Should use</option>
+                            <option value="required">Required - Must use</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Use Case Note (Optional)</label>
+                        <textarea id="use-case-note" rows="3" placeholder="Describe when/how this should be used..."></textarea>
+                    </div>
+                `,
+                footer: `
+                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button type="button" class="i360-btn i360-btn-primary" id="add-recommendation-btn">Add Recommendation</button>
+                `,
+                width: 500,
+                draggable: true,
+                onOpen: () => {
+                    document.getElementById('add-recommendation-btn').addEventListener('click', () => handleAddSubmit(type));
+                }
+            });
+            addModal.open();
         }
 
         function closeModal() {
-            document.getElementById('add-modal').classList.remove('active');
-            document.getElementById('add-form').reset();
+            if (addModal) {
+                addModal.close();
+                addModal = null;
+            }
         }
 
-        async function handleAddSubmit(event) {
-            event.preventDefault();
-
-            const type = document.getElementById('add-type').value;
+        async function handleAddSubmit(type) {
             const entityId = document.getElementById('entity-select').value;
             const strength = document.getElementById('strength-select').value;
             const note = document.getElementById('use-case-note').value;
 
             if (!entityId) {
-                alert('Please select an item');
+                ModalService.warning('Please select an item');
                 return;
             }
 
@@ -736,17 +643,25 @@
                 if (result.success) {
                     closeModal();
                     await loadAIMappings();
+                    ModalService.success('Recommendation added');
                 } else {
-                    alert(result.error || 'Failed to add recommendation');
+                    ModalService.error(result.error || 'Failed to add recommendation');
                 }
             } catch (error) {
                 console.error('Error adding recommendation:', error);
-                alert('Failed to add recommendation');
+                ModalService.error('Failed to add recommendation');
             }
         }
 
         async function removeMapping(type, entityId) {
-            if (!confirm('Remove this AI recommendation?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Remove Recommendation',
+                message: 'Remove this AI recommendation?',
+                confirmText: 'Remove',
+                confirmClass: 'btn-danger'
+            });
+
+            if (!confirmed) return;
 
             try {
                 const response = await fetch(
@@ -758,12 +673,13 @@
 
                 if (result.success) {
                     await loadAIMappings();
+                    ModalService.success('Recommendation removed');
                 } else {
-                    alert(result.error || 'Failed to remove recommendation');
+                    ModalService.error(result.error || 'Failed to remove recommendation');
                 }
             } catch (error) {
                 console.error('Error removing recommendation:', error);
-                alert('Failed to remove recommendation');
+                ModalService.error('Failed to remove recommendation');
             }
         }
     </script>

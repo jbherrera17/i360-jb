@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Dashboard | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+        /* Organization Switcher */
+        .org-switcher {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .org-switcher select {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .org-switcher label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon.clients { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+        .stat-icon.sessions { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .stat-icon.maturity { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .stat-icon.portal { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+        .stat-icon i {
+            width: 24px;
+            height: 24px;
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .stat-change.positive { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .stat-change.negative { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .stat-change.neutral { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .dashboard-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .dashboard-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dashboard-card-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .dashboard-card-body {
+            padding: 1.25rem;
+        }
+
+        /* Client Health Grid */
+        .client-health-grid {
+            display: grid;
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .client-health-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .client-health-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .client-health-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .client-health-info {
+            flex: 1;
+        }
+
+        .client-health-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .client-health-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .client-health-score {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .health-score-bar {
+            width: 80px;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .health-score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .health-score-fill.high { background: #10b981; }
+        .health-score-fill.medium { background: #f59e0b; }
+        .health-score-fill.low { background: #ef4444; }
+
+        .health-score-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            min-width: 35px;
+        }
+
+        /* Maturity Distribution */
+        .maturity-distribution {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .maturity-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .maturity-label {
+            width: 100px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .maturity-track {
+            flex: 1;
+            height: 24px;
+            background: var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .maturity-fill {
+            height: 100%;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            min-width: fit-content;
+        }
+
+        .maturity-fill.nascent { background: #ef4444; }
+        .maturity-fill.emerging { background: #f59e0b; }
+        .maturity-fill.developing { background: #eab308; }
+        .maturity-fill.advanced { background: #22c55e; }
+        .maturity-fill.leading { background: #10b981; }
+
+        .maturity-count {
+            min-width: 30px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Needs Attention */
+        .attention-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .attention-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+        }
+
+        .attention-item i {
+            width: 20px;
+            height: 20px;
+            color: #ef4444;
+        }
+
+        .attention-item-info {
+            flex: 1;
+        }
+
+        .attention-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .attention-item-reason {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Agency Dashboard</h1>
+                    <p class="header-subtitle">Overview of your organization's client portfolio and performance</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadDashboard()">
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="exportData()">
+                        <i data-lucide="download"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Organization Switcher -->
+            <div class="org-switcher">
+                <label for="org-select">Organization:</label>
+                <select id="org-select" onchange="switchOrganization()">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon clients">
+                            <i data-lucide="building-2"></i>
+                        </div>
+                        <span class="stat-change neutral" id="clients-change">-</span>
+                    </div>
+                    <div class="stat-value" id="total-clients">-</div>
+                    <div class="stat-label">Active Clients</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon sessions">
+                            <i data-lucide="file-check"></i>
+                        </div>
+                        <span class="stat-change neutral" id="sessions-change">-</span>
+                    </div>
+                    <div class="stat-value" id="completed-sessions">-</div>
+                    <div class="stat-label">Completed Sessions</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon maturity">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="avg-maturity">-</div>
+                    <div class="stat-label">Avg Maturity Score</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon portal">
+                            <i data-lucide="users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="portal-users">-</div>
+                    <div class="stat-label">Portal Users</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Client Health -->
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h3>Client Health Overview</h3>
+                        <a href="/admin-clients.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="client-health-grid" id="client-health-grid">
+                            <div class="empty-state">
+                                <i data-lucide="loader"></i>
+                                <p>Loading clients...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maturity Distribution -->
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h3>Maturity Distribution</h3>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="maturity-distribution" id="maturity-distribution">
+                            <div class="empty-state">
+                                <i data-lucide="loader"></i>
+                                <p>Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Needs Attention -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h3>Needs Attention</h3>
+                    <span class="badge" id="attention-count">0</span>
+                </div>
+                <div class="dashboard-card-body">
+                    <div class="attention-list" id="attention-list">
+                        <div class="empty-state">
+                            <i data-lucide="check-circle"></i>
+                            <p>All clients are healthy!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // State
+        let organizations = [];
+        let currentOrgId = null;
+        let dashboardData = null;
+
+        // Get auth token
+        function getAuthToken() {
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        // Authenticated fetch
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                'Authorization': `Bearer ${token}`
+            };
+            const response = await fetch(url, { ...options, headers });
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+            return response;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadOrganizations();
+        });
+
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Load organizations
+        async function loadOrganizations() {
+            try {
+                showLoading();
+                const response = await authFetch('/api/organizations');
+                const result = await response.json();
+
+                if (result.success) {
+                    organizations = result.data;
+                    populateOrgSelect();
+
+                    const savedOrgId = localStorage.getItem('currentOrgId');
+                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+
+                    if (orgToLoad) {
+                        currentOrgId = orgToLoad.id;
+                        document.getElementById('org-select').value = orgToLoad.id;
+                        await loadDashboard();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                showToast('Failed to load organizations', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function populateOrgSelect() {
+            const select = document.getElementById('org-select');
+            select.innerHTML = organizations.map(org =>
+                `<option value="${org.id}">${org.name}${org.settings?.is_personal ? ' (Personal)' : ''}</option>`
+            ).join('');
+        }
+
+        async function switchOrganization() {
+            currentOrgId = document.getElementById('org-select').value;
+            if (currentOrgId) {
+                localStorage.setItem('currentOrgId', currentOrgId);
+                await loadDashboard();
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            if (!currentOrgId) return;
+
+            try {
+                showLoading();
+
+                // Fetch all dashboard data in parallel
+                const [overviewRes, clientsRes, distributionRes, attentionRes] = await Promise.all([
+                    authFetch(`/api/analytics/${currentOrgId}/overview`),
+                    authFetch(`/api/analytics/${currentOrgId}/clients?limit=10&sort_by=health_score&sort_order=desc`),
+                    authFetch(`/api/analytics/${currentOrgId}/distribution/maturity`),
+                    authFetch(`/api/analytics/${currentOrgId}/needs-attention`)
+                ]);
+
+                const [overview, clients, distribution, attention] = await Promise.all([
+                    overviewRes.json(),
+                    clientsRes.json(),
+                    distributionRes.json(),
+                    attentionRes.json()
+                ]);
+
+                // Update stats
+                if (overview.success) {
+                    updateStats(overview.data);
+                }
+
+                // Update client health
+                if (clients.success) {
+                    renderClientHealth(clients.data);
+                }
+
+                // Update maturity distribution
+                if (distribution.success) {
+                    renderMaturityDistribution(distribution.data);
+                }
+
+                // Update needs attention
+                if (attention.success) {
+                    renderNeedsAttention(attention.data);
+                }
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Failed to load dashboard data', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('total-clients').textContent = data.active_clients || 0;
+            document.getElementById('completed-sessions').textContent = data.completed_sessions || 0;
+            document.getElementById('avg-maturity').textContent = data.avg_maturity_score
+                ? Math.round(data.avg_maturity_score)
+                : '-';
+            document.getElementById('portal-users').textContent = data.total_portal_users || 0;
+        }
+
+        function renderClientHealth(clients) {
+            const container = document.getElementById('client-health-grid');
+
+            if (!clients || clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="building-2"></i>
+                        <p>No clients yet</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = clients.map(client => {
+                const score = client.health_score || 0;
+                const scoreClass = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
+                const initials = client.client_name
+                    ? client.client_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+                    : '??';
+
+                return `
+                    <div class="client-health-item">
+                        <div class="client-health-avatar">${initials}</div>
+                        <div class="client-health-info">
+                            <div class="client-health-name">${client.client_name || 'Unknown'}</div>
+                            <div class="client-health-status">${client.engagement_status || 'New'}</div>
+                        </div>
+                        <div class="client-health-score">
+                            <div class="health-score-bar">
+                                <div class="health-score-fill ${scoreClass}" style="width: ${score}%"></div>
+                            </div>
+                            <span class="health-score-value">${Math.round(score)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMaturityDistribution(data) {
+            const container = document.getElementById('maturity-distribution');
+
+            if (!data || !data.data) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="bar-chart-2"></i>
+                        <p>No data available</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const total = data.data.reduce((a, b) => a + b, 0);
+            if (total === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="bar-chart-2"></i>
+                        <p>No assessments yet</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const levels = ['Nascent', 'Emerging', 'Developing', 'Advanced', 'Leading'];
+            const classes = ['nascent', 'emerging', 'developing', 'advanced', 'leading'];
+
+            container.innerHTML = levels.map((level, i) => {
+                const count = data.data[i] || 0;
+                const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+                return `
+                    <div class="maturity-bar">
+                        <span class="maturity-label">${level}</span>
+                        <div class="maturity-track">
+                            <div class="maturity-fill ${classes[i]}" style="width: ${Math.max(percent, count > 0 ? 10 : 0)}%">
+                                ${percent > 15 ? `${percent}%` : ''}
+                            </div>
+                        </div>
+                        <span class="maturity-count">${count}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderNeedsAttention(clients) {
+            const container = document.getElementById('attention-list');
+            const countBadge = document.getElementById('attention-count');
+
+            if (!clients || clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="check-circle"></i>
+                        <p>All clients are healthy!</p>
+                    </div>
+                `;
+                countBadge.textContent = '0';
+                lucide.createIcons();
+                return;
+            }
+
+            countBadge.textContent = clients.length;
+
+            container.innerHTML = clients.map(client => {
+                let reason = '';
+                if (client.health_score !== null && client.health_score < 50) {
+                    reason = `Health score: ${Math.round(client.health_score)}`;
+                } else if (client.engagement_status === 'dormant') {
+                    reason = 'No recent activity';
+                } else {
+                    reason = 'Needs review';
+                }
+
+                return `
+                    <div class="attention-item">
+                        <i data-lucide="alert-triangle"></i>
+                        <div class="attention-item-info">
+                            <div class="attention-item-name">${client.client_name || 'Unknown'}</div>
+                            <div class="attention-item-reason">${reason}</div>
+                        </div>
+                        <a href="/admin-clients.html" class="btn btn-sm btn-secondary">View</a>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        async function exportData() {
+            if (!currentOrgId) return;
+
+            try {
+                const response = await authFetch(`/api/analytics/${currentOrgId}/export?format=csv&type=clients`);
+
+                if (response.headers.get('content-type')?.includes('text/csv')) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `agency-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showToast('Export downloaded', 'success');
+                } else {
+                    const result = await response.json();
+                    if (result.success) {
+                        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `agency-analytics-${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        showToast('Export downloaded', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showToast('Failed to export data', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

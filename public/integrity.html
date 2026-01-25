@@ -221,7 +221,7 @@
         function renderEmptyState(container) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">🛡️</div>
+                    <div class="empty-state-icon"><i data-lucide="shield" style="width: 48px; height: 48px;"></i></div>
                     <h2>Set Up Your Integrity Dashboard</h2>
                     <p>Start by configuring your foundation assets: Bright Lines and Values Map. These form the basis for measuring your organization's integrity posture.</p>
                     <div class="empty-state-actions">
@@ -327,7 +327,7 @@
                 <div class="components-grid">
                     <div class="component-card">
                         <div class="component-header">
-                            <div class="component-icon trust">📈</div>
+                            <div class="component-icon trust"><i data-lucide="trending-up" style="width: 24px; height: 24px;"></i></div>
                             <span class="component-weight">${(data.components.trustVelocity.weight * 100)}%</span>
                         </div>
                         <h4 class="component-title">Trust Velocity</h4>
@@ -342,7 +342,7 @@
                     </div>
                     <div class="component-card">
                         <div class="component-header">
-                            <div class="component-icon intervention">⚡</div>
+                            <div class="component-icon intervention"><i data-lucide="zap" style="width: 24px; height: 24px;"></i></div>
                             <span class="component-weight">${(data.components.interventionEffectiveness.weight * 100)}%</span>
                         </div>
                         <h4 class="component-title">Intervention Effectiveness</h4>
@@ -357,7 +357,7 @@
                     </div>
                     <div class="component-card">
                         <div class="component-header">
-                            <div class="component-icon alignment">🎯</div>
+                            <div class="component-icon alignment"><i data-lucide="target" style="width: 24px; height: 24px;"></i></div>
                             <span class="component-weight">${(data.components.alignmentAudit.weight * 100)}%</span>
                         </div>
                         <h4 class="component-title">Alignment Audit</h4>
@@ -372,7 +372,7 @@
                     </div>
                     <div class="component-card">
                         <div class="component-header">
-                            <div class="component-icon counterfactual">💰</div>
+                            <div class="component-icon counterfactual"><i data-lucide="dollar-sign" style="width: 24px; height: 24px;"></i></div>
                             <span class="component-weight">${(data.components.counterfactualValue.weight * 100)}%</span>
                         </div>
                         <h4 class="component-title">Counterfactual Value</h4>
@@ -445,13 +445,13 @@
 
         function renderAssetStatusCards(assets) {
             const assetTypes = {
-                bright_lines: { icon: '🚫', name: 'Bright Lines', layer: 'Foundation' },
-                values_map: { icon: '🗺️', name: 'Values Map', layer: 'Foundation' },
-                intervention_metrics: { icon: '⚡', name: 'Intervention Metrics', layer: 'Measurement' },
-                trust_velocity_metrics: { icon: '📈', name: 'Trust Velocity', layer: 'Measurement' },
-                close_call_log: { icon: '🛡️', name: 'Close Call Log', layer: 'Measurement' },
-                industry_baseline: { icon: '📊', name: 'Industry Baseline', layer: 'Comparison' },
-                integrity_yield: { icon: '🎯', name: 'Integrity Yield', layer: 'Composite' }
+                bright_lines: { icon: 'ban', name: 'Bright Lines', layer: 'Foundation' },
+                values_map: { icon: 'map', name: 'Values Map', layer: 'Foundation' },
+                intervention_metrics: { icon: 'zap', name: 'Intervention Metrics', layer: 'Measurement' },
+                trust_velocity_metrics: { icon: 'trending-up', name: 'Trust Velocity', layer: 'Measurement' },
+                close_call_log: { icon: 'shield', name: 'Close Call Log', layer: 'Measurement' },
+                industry_baseline: { icon: 'bar-chart-2', name: 'Industry Baseline', layer: 'Comparison' },
+                integrity_yield: { icon: 'target', name: 'Integrity Yield', layer: 'Composite' }
             };
 
             return Object.entries(assets).map(([key, value]) => {
@@ -459,7 +459,7 @@
                 return `
                     <div class="asset-status-card ${value.populated ? 'populated' : 'empty'}"
                          onclick="openAsset('${key}')">
-                        <div class="asset-status-icon">${type.icon}</div>
+                        <div class="asset-status-icon"><i data-lucide="${type.icon}" style="width: 24px; height: 24px;"></i></div>
                         <div class="asset-status-info">
                             <h4>${type.name}</h4>
                             <div class="asset-status-meta">

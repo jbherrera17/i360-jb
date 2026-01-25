@@ -9,6 +9,23 @@ const express = require('express');
 const { createMockSupabase } = require('./mockSupabase');
 
 /**
+ * Simple cookie parser middleware for tests
+ */
+function parseCookies(req, res, next) {
+  const cookieHeader = req.headers.cookie;
+  req.cookies = {};
+  if (cookieHeader) {
+    cookieHeader.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      const key = parts[0].trim();
+      const value = parts.slice(1).join('=').trim();
+      req.cookies[key] = value;
+    });
+  }
+  next();
+}
+
+/**
  * Create a test Express app with routes
  * @param {object} options - Configuration options
  * @param {object} options.mockSupabase - Custom mock Supabase client (optional)
@@ -23,14 +40,30 @@ function createTestApp(options = {}) {
   // Basic middleware
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(parseCookies);
 
   // Inject mock Supabase into request
   app.use((req, res, next) => {
     req.supabase = mockSupabase;
-    // Set default auth state (can be overridden in tests)
-    req.userId = options.userId || null;
-    req.userRole = options.userRole || null;
-    req.isAnonymous = options.isAnonymous !== false;
+
+    // Set auth state from options OR from cookie if present
+    // This simulates the real auth middleware behavior
+    if (options.userId) {
+      // Explicit userId passed in options takes precedence
+      req.userId = options.userId;
+      req.userRole = options.userRole || null;
+      req.isAnonymous = options.isAnonymous !== false;
+    } else if (req.cookies && req.cookies.auth_token) {
+      // Cookie present - simulate authenticated user
+      req.userId = 'test-user-123';
+      req.userRole = 'user';
+      req.isAnonymous = false;
+    } else {
+      // No auth - anonymous user
+      req.userId = null;
+      req.userRole = null;
+      req.isAnonymous = true;
+    }
     next();
   });
 
@@ -111,6 +144,21 @@ function createTestApp(options = {}) {
   if (routes.includes('clients')) {
     const clientsRoutes = require('../../server/routes/clients');
     app.use('/api/clients', clientsRoutes(mockSupabase));
+  }
+
+  if (routes.includes('org-customization')) {
+    const orgCustomizationRoutes = require('../../server/routes/orgCustomization');
+    app.use('/api/org-customization', orgCustomizationRoutes(mockSupabase));
+  }
+
+  if (routes.includes('client-portal')) {
+    const clientPortalRoutes = require('../../server/routes/clientPortal');
+    app.use('/api/client-portal', clientPortalRoutes(mockSupabase));
+  }
+
+  if (routes.includes('analytics')) {
+    const agencyAnalyticsRoutes = require('../../server/routes/agencyAnalytics');
+    app.use('/api/analytics', agencyAnalyticsRoutes(mockSupabase));
   }
 
   // Error handler

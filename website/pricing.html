@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Insight 360 pricing - Simple, transparent pricing designed for small and mid-sized businesses. Invest in outcomes, not tools.">
+    <title>Pricing - Insight 360</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2377bde0'/><circle cx='50' cy='50' r='25' fill='%23b78bd3'/><circle cx='50' cy='50' r='10' fill='%23dc9171'/></svg>">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="pricing-page">
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="index.html" class="navbar-brand">
+                <svg class="logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" stroke="#77bde0" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="12" stroke="#b78bd3" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="6" fill="#dc9171"/>
+                </svg>
+                <span class="brand-name">Insight<span>360</span></span>
+            </a>
+
+            <div class="navbar-menu" id="navbarMenu">
+                <ul class="navbar-links">
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="features.html">What You Get</a></li>
+                    <li><a href="technology.html">Technology</a></li>
+                    <li><a href="agency.html">For Agencies</a></li>
+                    <li><a href="pricing.html" class="active">Pricing</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+
+                <div class="navbar-actions">
+                    <a href="contact.html" class="btn btn-primary">Talk to Us</a>
+                </div>
+            </div>
+
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <span class="hero-badge">Simple Pricing</span>
+                <h1>Invest in outcomes, <span class="text-gradient">not tools</span></h1>
+                <p class="hero-subtitle">
+                    No hidden fees. No per-user madness. Just straightforward pricing that grows with your business.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Direct Plans Section -->
+    <section class="pricing section" style="padding-top: 0;">
+        <div class="container">
+            <div class="section-header" style="margin-bottom: var(--spacing-xl);">
+                <span class="label">For Businesses</span>
+                <h2>Direct Plans</h2>
+                <p>AI that knows your business, works with your team, and respects your values.</p>
+            </div>
+
+            <div class="pricing-toggle">
+                <span class="active">Monthly</span>
+                <div class="toggle-switch" id="pricingToggle"></div>
+                <span>Annual</span>
+                <span class="pricing-save">Save up to 20%</span>
+            </div>
+
+            <div class="pricing-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <!-- Starter Plan -->
+                <div class="pricing-card fade-in">
+                    <div class="pricing-header">
+                        <div class="pricing-name">Starter</div>
+                        <div class="pricing-desc">For small teams exploring AI</div>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount" data-monthly="299" data-annual="249">299</span>
+                            <span class="period">/mo</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Up to 10 users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Claude Haiku, GPT-4o Mini
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            25 context assets
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            10 pre-built agents
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            5 workflows
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            30-day chat history
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Email support (business hours)
+                        </li>
+                    </ul>
+                    <a href="contact.html" class="btn btn-secondary">Get Started</a>
+                </div>
+
+                <!-- Professional Plan -->
+                <div class="pricing-card featured fade-in delay-1">
+                    <div class="pricing-badge">Most Popular</div>
+                    <div class="pricing-header">
+                        <div class="pricing-name">Professional</div>
+                        <div class="pricing-desc">For mid-size companies transforming with AI</div>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount" data-monthly="999" data-annual="799">999</span>
+                            <span class="period">/mo</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Up to 50 users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            All Claude, GPT-4o, Gemini models
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Unlimited context assets
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Full agent library (40+ agents)
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Unlimited workflows
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            <strong>Full Align 120 + Strategy 120</strong>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Execute 120 (5 departments)
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            3 Research Studios
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Daily automated briefings
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            1-year chat history
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Priority support + guided onboarding
+                        </li>
+                    </ul>
+                    <a href="contact.html" class="btn btn-primary">Get Started</a>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div class="pricing-card fade-in delay-2">
+                    <div class="pricing-header">
+                        <div class="pricing-name">Enterprise</div>
+                        <div class="pricing-desc">For large organizations at scale</div>
+                        <div class="pricing-price">
+                            <span class="custom-price">Custom</span>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--color-gray-500); margin-top: var(--spacing-xs);">Starting at $3,500/mo</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Unlimited users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            All models including Claude Opus 4.5
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Full agent library + custom agents
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            <strong>Parthenon governance framework</strong>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Complete integrity monitoring
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Full API access
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            SSO/SAML + advanced audit logging
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Data residency options
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            24/7 support + dedicated CSM
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            99.9% uptime SLA
+                        </li>
+                    </ul>
+                    <a href="contact.html" class="btn btn-secondary">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agency Plans Section -->
+    <section class="section section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="label">For Consultancies & Agencies</span>
+                <h2>Agency Plans</h2>
+                <p>Serve your clients at scale with white-label AI capabilities and powerful analytics.</p>
+            </div>
+
+            <div class="pricing-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <!-- Agency Starter -->
+                <div class="pricing-card fade-in" style="background: var(--color-white);">
+                    <div class="pricing-header">
+                        <div class="pricing-name">Agency Starter</div>
+                        <div class="pricing-desc">For small consultancies</div>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">499</span>
+                            <span class="period">/mo</span>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--color-gray-500); margin-top: var(--spacing-xs);">Annual commitment</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Up to 5 agency users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Up to 5 client organizations
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Unlimited client portal users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Custom logo branding
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Basic analytics dashboard
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Align 120 assessments
+                        </li>
+                        <li style="color: var(--color-gray-400);">
+                            <span style="font-size: 0.875rem;">+$75/mo per additional client</span>
+                        </li>
+                    </ul>
+                    <a href="contact.html" class="btn btn-secondary">Become a Partner</a>
+                </div>
+
+                <!-- Agency Professional -->
+                <div class="pricing-card featured fade-in delay-1" style="background: var(--color-white);">
+                    <div class="pricing-badge">Best Value</div>
+                    <div class="pricing-header">
+                        <div class="pricing-name">Agency Professional</div>
+                        <div class="pricing-desc">For growing agencies</div>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">1,499</span>
+                            <span class="period">/mo</span>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--color-gray-500); margin-top: var(--spacing-xs);">Annual commitment</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Up to 15 agency users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Up to 25 client organizations
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            <strong>Full white-label branding</strong>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Full agency analytics dashboard
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            All 120 modules (Align, Strategy, Execute)
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Customizable report templates
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Cross-client analysis & benchmarks
+                        </li>
+                        <li style="color: var(--color-gray-400);">
+                            <span style="font-size: 0.875rem;">+$50/mo per additional client</span>
+                        </li>
+                        <li style="color: var(--color-gray-400);">
+                            <span style="font-size: 0.875rem;">20% volume discount at 50+ clients</span>
+                        </li>
+                    </ul>
+                    <a href="contact.html" class="btn btn-primary">Become a Partner</a>
+                </div>
+
+                <!-- Agency Enterprise -->
+                <div class="pricing-card fade-in delay-2" style="background: var(--color-white);">
+                    <div class="pricing-header">
+                        <div class="pricing-name">Agency Enterprise</div>
+                        <div class="pricing-desc">For large consultancies</div>
+                        <div class="pricing-price">
+                            <span class="custom-price">Custom</span>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--color-gray-500); margin-top: var(--spacing-xs);">Starting at $4,999/mo</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Unlimited agency users
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Unlimited client organizations
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Complete white-label customization
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Advanced analytics + API access
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Multi-region data residency
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Included custom development hours
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Dedicated customer success manager
+                        </li>
+                    </ul>
+                    <a href="contact.html" class="btn btn-secondary">Contact Sales</a>
+                </div>
+            </div>
+
+            <!-- Agency Economics Callout -->
+            <div style="margin-top: var(--spacing-3xl); background: linear-gradient(135deg, var(--color-primary-light), var(--color-secondary-light)); border-radius: var(--radius-xl); padding: var(--spacing-2xl); text-align: center;">
+                <h3 style="margin-bottom: var(--spacing-md); color: var(--color-gray-900);">Agency Economics That Make Sense</h3>
+                <p style="font-size: 1.125rem; color: var(--color-gray-700); max-width: 700px; margin: 0 auto var(--spacing-xl);">
+                    Platform cost is typically <strong>2-3%</strong> of potential client revenue. Agencies using Insight 360 see <strong>40x+ margin</strong> on software costs.
+                </p>
+                <div style="display: flex; justify-content: center; gap: var(--spacing-2xl); flex-wrap: wrap;">
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary-dark);">97%+</div>
+                        <div style="font-size: 0.875rem; color: var(--color-gray-600);">Gross margin potential</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-secondary-dark);">$3K-10K</div>
+                        <div style="font-size: 0.875rem; color: var(--color-gray-600);">Typical monthly client fee</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-accent-dark);">~$50</div>
+                        <div style="font-size: 0.875rem; color: var(--color-gray-600);">Your cost per client</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Add-On Services -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="label">Professional Services</span>
+                <h2>Implementation & Support</h2>
+                <p>Get the most out of Insight 360 with expert guidance.</p>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <h4>Implementation Package</h4>
+                    <p style="margin-bottom: var(--spacing-md);">Guided setup, data migration, and team training to get you running fast.</p>
+                    <span style="font-size: 1.125rem; font-weight: 600; color: var(--color-primary-dark);">$5,000 - $15,000</span>
+                </div>
+
+                <div class="feature-card fade-in delay-1">
+                    <div class="feature-icon" style="background: var(--color-secondary-light);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9668b8" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6"/>
+                            <path d="M1 12h6m6 0h6"/>
+                        </svg>
+                    </div>
+                    <h4>Custom Agent Development</h4>
+                    <p style="margin-bottom: var(--spacing-md);">Bespoke AI agents tailored to your specific workflows and use cases.</p>
+                    <span style="font-size: 1.125rem; font-weight: 600; color: var(--color-secondary-dark);">$2,500/agent</span>
+                </div>
+
+                <div class="feature-card fade-in delay-2">
+                    <div class="feature-icon" style="background: var(--color-accent-light);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#c67856" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <h4>Executive Training</h4>
+                    <p style="margin-bottom: var(--spacing-md);">Leadership alignment workshop to ensure AI transformation success.</p>
+                    <span style="font-size: 1.125rem; font-weight: 600; color: var(--color-accent-dark);">$2,500/session</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why This Pricing Section -->
+    <section class="section section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="label">Why This Pricing</span>
+                <h2>Built for SMB economics</h2>
+                <p>We understand that every dollar matters when you're running a small business.</p>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="solution-card fade-in" style="background: var(--color-white);">
+                    <div class="solution-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M16 8l-8 8M8 8l8 8"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>No Per-User Pricing Traps</h4>
+                        <p>We don't penalize you for growing. Generous user limits mean you can add team members without budget anxiety.</p>
+                    </div>
+                </div>
+
+                <div class="solution-card fade-in delay-1" style="background: var(--color-white);">
+                    <div class="solution-icon" style="background: var(--color-secondary-light);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9668b8" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>All AI Models Included</h4>
+                        <p>No choosing between providers. No separate subscriptions to ChatGPT, Claude, and others. One price, all the AI you need.</p>
+                    </div>
+                </div>
+
+                <div class="solution-card fade-in delay-2" style="background: var(--color-white);">
+                    <div class="solution-icon" style="background: var(--color-accent-light);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c67856" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>Human Support Included</h4>
+                        <p>You're not paying for a bot. Real humans help you get started and answer questions. Because AI tools should come with human support.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Value Comparison -->
+            <div style="margin-top: var(--spacing-3xl); background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--radius-xl); padding: var(--spacing-2xl);">
+                <h3 style="text-align: center; margin-bottom: var(--spacing-xl);">The Real Comparison</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-2xl);">
+                    <div>
+                        <h4 style="color: var(--color-gray-500); margin-bottom: var(--spacing-md);">Without Insight 360</h4>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                                ChatGPT Teams: $30/user/month
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                                Claude Pro: $20/user/month
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                                Strategic consulting: $15,000-50,000
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                                Hours managing context manually
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                                No values governance
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--color-primary-dark); margin-bottom: var(--spacing-md);">With Insight 360</h4>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                All AI models in one platform
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Context always loaded automatically
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Built-in strategic frameworks
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Values-based AI governance
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Platform pays for itself in first assessment
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section section">
+        <div class="container">
+            <div class="section-header">
+                <span class="label">FAQ</span>
+                <h2>Common questions</h2>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                        <h4>What if I'm not sure which plan is right for me?</h4>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>That's exactly what our intro conversation is for. We'll talk through your specific situation and recommend the best fit - even if that means waiting or trying something else first. No pressure sales.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                        <h4>Can I change plans later?</h4>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely. Upgrade anytime and get immediate access to new features. Downgrade at the end of your billing cycle. Your data stays with you either way.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                        <h4>Is there a free trial?</h4>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We prefer to start with a conversation rather than a timer. We'll show you the platform, answer your questions, and make sure it's the right fit before you commit anything.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                        <h4>What about data security?</h4>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Your data is completely isolated from other customers. We never use your information to train AI models. Enterprise-grade security is included in all plans, not just the expensive ones.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                        <h4>Do you offer discounts for non-profits?</h4>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes - 25% off for registered non-profits. We also offer discounts for multi-year commitments (up to 15% for 3-year deals). Just mention it when we talk and we'll set it up.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                        <h4>What if it doesn't work for me?</h4>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We're not for everyone, and that's okay. If after our conversation and initial setup you don't think it's working, we'll help you export your data and cancel without hassle. No contracts, no exit fees.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta section">
+        <div class="container">
+            <div class="cta-wrapper">
+                <div class="cta-content">
+                    <h2>Let's talk about your business</h2>
+                    <p>No pitch deck, no pressure. Just a conversation to see if we can actually help.</p>
+                    <div class="cta-actions">
+                        <a href="contact.html" class="btn btn-white btn-lg">Schedule a Conversation</a>
+                        <a href="features.html" class="btn btn-outline-white btn-lg">See What You Get</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo-wrapper">
+                        <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" stroke="#77bde0" stroke-width="2" fill="none"/>
+                            <circle cx="20" cy="20" r="12" stroke="#b78bd3" stroke-width="2" fill="none"/>
+                            <circle cx="20" cy="20" r="6" fill="#dc9171"/>
+                        </svg>
+                        <span class="brand-name">Insight<span>360</span></span>
+                    </div>
+                    <p>Human Brilliance. Amplified by AI.</p>
+                    <p class="footer-tagline">"Built by SMBs, for SMBs."</p>
+                </div>
+
+                <div class="footer-column">
+                    <h5>Platform</h5>
+                    <ul>
+                        <li><a href="features.html">What You Get</a></li>
+                        <li><a href="technology.html">Technology</a></li>
+                        <li><a href="pricing.html">Pricing</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h5>Company</h5>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h5>Resources</h5>
+                    <ul>
+                        <li><a href="#">Guides</a></li>
+                        <li><a href="#">Case Studies</a></li>
+                        <li><a href="#">Help Center</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h5>Connect</h5>
+                    <ul>
+                        <li><a href="#">LinkedIn</a></li>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="contact.html">Email Us</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Synergi AI. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy</a>
+                    <a href="#">Terms</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

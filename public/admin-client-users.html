@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal Users | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; }
+
+        /* Organization Switcher */
+        .org-switcher {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .org-switcher select {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .org-switcher label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-header i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Filters */
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .search-input i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            min-width: 150px;
+        }
+
+        /* Users Table */
+        .users-table-wrapper {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th {
+            text-align: left;
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .users-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .users-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .users-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-info .user-name {
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+        }
+
+        .user-info .user-email {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .client-name {
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-badge.invited {
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+        }
+
+        .status-badge.inactive {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        .status-badge.removed {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .last-login {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state i {
+            width: 64px;
+            height: 64px;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .users-table-wrapper {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Client Portal Users</h1>
+                    <p class="header-subtitle">Manage client access to the self-service portal</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadUsers()">
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="showInviteModal()">
+                        <i data-lucide="user-plus"></i>
+                        Invite User
+                    </button>
+                </div>
+            </div>
+
+            <!-- Organization Switcher -->
+            <div class="org-switcher">
+                <label for="org-select">Organization:</label>
+                <select id="org-select" onchange="switchOrganization()">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i data-lucide="users"></i>
+                        Total Users
+                    </div>
+                    <div class="stat-value" id="stat-total">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i data-lucide="user-check"></i>
+                        Active
+                    </div>
+                    <div class="stat-value" id="stat-active">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i data-lucide="mail"></i>
+                        Invited
+                    </div>
+                    <div class="stat-value" id="stat-invited">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i data-lucide="file-text"></i>
+                        Reports Shared
+                    </div>
+                    <div class="stat-value" id="stat-reports">-</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-input">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Search users..." oninput="filterUsers()">
+                </div>
+                <select class="filter-select" id="status-filter" onchange="filterUsers()">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="invited">Invited</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="removed">Removed</option>
+                </select>
+                <select class="filter-select" id="client-filter" onchange="filterUsers()">
+                    <option value="">All Clients</option>
+                </select>
+            </div>
+
+            <!-- Users Table -->
+            <div class="users-table-wrapper">
+                <table class="users-table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <!-- Users loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // State
+        let organizations = [];
+        let currentOrgId = null;
+        let users = [];
+        let clients = [];
+        let filteredUsers = [];
+
+        // Auth helper
+        function getAuthToken() {
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                'Authorization': `Bearer ${token}`
+            };
+            const response = await fetch(url, { ...options, headers });
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+            return response;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await loadOrganizations();
+        });
+
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Load organizations
+        async function loadOrganizations() {
+            try {
+                showLoading();
+                const response = await authFetch('/api/organizations');
+                const result = await response.json();
+
+                if (result.success) {
+                    organizations = result.data.filter(o =>
+                        ['owner', 'admin', 'consultant'].includes(o.member_role)
+                    );
+                    populateOrgSelect();
+
+                    const savedOrgId = localStorage.getItem('currentOrgId');
+                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+
+                    if (orgToLoad) {
+                        currentOrgId = orgToLoad.id;
+                        document.getElementById('org-select').value = orgToLoad.id;
+                        await loadData();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                showToast('Failed to load organizations', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function populateOrgSelect() {
+            const select = document.getElementById('org-select');
+            select.innerHTML = organizations.map(org =>
+                `<option value="${org.id}">${org.name}</option>`
+            ).join('');
+        }
+
+        async function switchOrganization() {
+            currentOrgId = document.getElementById('org-select').value;
+            if (currentOrgId) {
+                localStorage.setItem('currentOrgId', currentOrgId);
+                await loadData();
+            }
+        }
+
+        // Load all data
+        async function loadData() {
+            if (!currentOrgId) return;
+            showLoading();
+
+            try {
+                await Promise.all([loadUsers(), loadClients()]);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const response = await authFetch(`/api/client-portal/agency/users?org_id=${currentOrgId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    users = result.data;
+                    updateStats();
+                    filterUsers();
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Failed to load users', 'error');
+            }
+        }
+
+        // Load clients for filter
+        async function loadClients() {
+            try {
+                const response = await authFetch(`/api/clients?org_id=${currentOrgId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    clients = result.data;
+                    populateClientFilter();
+                }
+            } catch (error) {
+                console.error('Error loading clients:', error);
+            }
+        }
+
+        function populateClientFilter() {
+            const select = document.getElementById('client-filter');
+            select.innerHTML = '<option value="">All Clients</option>' +
+                clients.map(client =>
+                    `<option value="${client.id}">${client.name}</option>`
+                ).join('');
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('stat-total').textContent = users.length;
+            document.getElementById('stat-active').textContent =
+                users.filter(u => u.status === 'active').length;
+            document.getElementById('stat-invited').textContent =
+                users.filter(u => u.status === 'invited').length;
+
+            // Count total reports shared
+            const totalReports = users.reduce((sum, u) => sum + (u.reports_shared || 0), 0);
+            document.getElementById('stat-reports').textContent = totalReports;
+        }
+
+        // Filter users
+        function filterUsers() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('status-filter').value;
+            const clientId = document.getElementById('client-filter').value;
+
+            filteredUsers = users.filter(user => {
+                const matchesSearch = !search ||
+                    (user.name && user.name.toLowerCase().includes(search)) ||
+                    user.email.toLowerCase().includes(search) ||
+                    (user.client_name && user.client_name.toLowerCase().includes(search));
+
+                const matchesStatus = !status || user.status === status;
+                const matchesClient = !clientId || user.client_id === clientId;
+
+                return matchesSearch && matchesStatus && matchesClient;
+            });
+
+            renderUsers();
+        }
+
+        // Render users table
+        function renderUsers() {
+            const tbody = document.getElementById('users-tbody');
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="users"></i>
+                                <h3>${users.length === 0 ? 'No Portal Users' : 'No Matching Users'}</h3>
+                                <p>${users.length === 0 ? 'Invite your first client user to access the portal.' : 'Try adjusting your search or filters.'}</p>
+                                ${users.length === 0 ? '<button class="btn btn-primary" onclick="showInviteModal()"><i data-lucide="user-plus"></i> Invite User</button>' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            tbody.innerHTML = filteredUsers.map(user => `
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">${getInitials(user.name || user.email)}</div>
+                            <div class="user-info">
+                                <div class="user-name">${user.name || 'Unnamed'}</div>
+                                <div class="user-email">${user.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="client-name">${user.client_name || '-'}</div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${user.status}">${user.status}</span>
+                    </td>
+                    <td>
+                        <div class="last-login">${user.last_login_at ? formatDate(user.last_login_at) : 'Never'}</div>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            ${user.status === 'invited' ? `
+                                <button class="btn btn-sm btn-secondary" onclick="resendInvite('${user.id}')" title="Resend Invite">
+                                    <i data-lucide="send"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-sm btn-secondary" onclick="shareReport('${user.client_id}')" title="Share Report">
+                                <i data-lucide="share-2"></i>
+                            </button>
+                            ${user.status !== 'removed' ? `
+                                <button class="btn btn-sm btn-danger" onclick="removeUser('${user.id}', '${user.email}')" title="Remove Access">
+                                    <i data-lucide="user-x"></i>
+                                </button>
+                            ` : `
+                                <button class="btn btn-sm btn-success" onclick="restoreUser('${user.id}')" title="Restore Access">
+                                    <i data-lucide="user-check"></i>
+                                </button>
+                            `}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Invite user modal
+        async function showInviteModal() {
+            const clientOptions = clients.map(c => ({
+                value: c.id,
+                label: c.name
+            }));
+
+            if (clientOptions.length === 0) {
+                showToast('No clients available. Create a client first.', 'error');
+                return;
+            }
+
+            const result = await ModalService.form({
+                title: 'Invite Client User',
+                fields: [
+                    {
+                        name: 'client_id',
+                        label: 'Client',
+                        type: 'select',
+                        required: true,
+                        options: clientOptions
+                    },
+                    {
+                        name: 'email',
+                        label: 'Email Address',
+                        type: 'email',
+                        required: true,
+                        placeholder: 'user@company.com'
+                    },
+                    {
+                        name: 'name',
+                        label: 'Name',
+                        type: 'text',
+                        placeholder: 'John Smith'
+                    }
+                ],
+                submitText: 'Send Invitation',
+                width: 450
+            });
+
+            if (result) {
+                await inviteUser(result);
+            }
+        }
+
+        async function inviteUser(data) {
+            try {
+                showLoading();
+                const response = await authFetch('/api/client-portal/agency/invite', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        ...data,
+                        org_id: currentOrgId
+                    })
+                });
+
+                const resultData = await response.json();
+                if (resultData.success) {
+                    showToast('Invitation sent successfully', 'success');
+                    await loadUsers();
+                } else {
+                    throw new Error(resultData.error);
+                }
+            } catch (error) {
+                showToast(error.message || 'Failed to send invitation', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function resendInvite(userId) {
+            try {
+                showLoading();
+                const response = await authFetch(`/api/client-portal/agency/users/${userId}/resend-invite`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Invitation resent', 'success');
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(error.message || 'Failed to resend invitation', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function shareReport(clientId) {
+            // For now, show a simple info message
+            // In full implementation, this would open a modal to select reports to share
+            showToast('Report sharing coming soon. Use the Reports page to share individual reports.', 'info');
+        }
+
+        async function removeUser(userId, email) {
+            const confirmed = await ModalService.confirm({
+                title: 'Remove User Access',
+                message: `Are you sure you want to remove portal access for ${email}?`,
+                confirmText: 'Remove',
+                confirmClass: 'btn-danger'
+            });
+
+            if (confirmed) {
+                try {
+                    showLoading();
+                    const response = await authFetch(`/api/client-portal/agency/users/${userId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('User access removed', 'success');
+                        await loadUsers();
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    showToast(error.message || 'Failed to remove user', 'error');
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+
+        async function restoreUser(userId) {
+            try {
+                showLoading();
+                const response = await authFetch(`/api/client-portal/agency/users/${userId}/restore`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('User access restored', 'success');
+                    await loadUsers();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(error.message || 'Failed to restore user', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Helpers
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.split(/[\s@]+/);
+            if (parts.length === 1) {
+                return parts[0].charAt(0).toUpperCase();
+            }
+            return (parts[0].charAt(0) + parts[parts.length > 1 ? 1 : 0].charAt(0)).toUpperCase();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+
+            // Less than 24 hours
+            if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                if (hours < 1) {
+                    const mins = Math.floor(diff / 60000);
+                    return `${mins}m ago`;
+                }
+                return `${hours}h ago`;
+            }
+
+            // Less than 7 days
+            if (diff < 604800000) {
+                const days = Math.floor(diff / 86400000);
+                return `${days}d ago`;
+            }
+
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add toast animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

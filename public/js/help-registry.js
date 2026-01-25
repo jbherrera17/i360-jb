@@ -136,6 +136,19 @@ const HelpRegistry = {
         '/admin-clients': {
             file: '/api/docs/admin-clients-user-guide.md',
             title: 'Client Management Help'
+        },
+        // Agency Model (Phase 40-43)
+        '/agency-dashboard': {
+            file: '/api/docs/agency-dashboard-user-guide.md',
+            title: 'Agency Dashboard Help'
+        },
+        '/admin-org-customization': {
+            file: '/api/docs/admin-org-customization-user-guide.md',
+            title: 'Organization Customization Help'
+        },
+        '/admin-client-users': {
+            file: '/api/docs/admin-client-users-user-guide.md',
+            title: 'Client Portal Users Help'
         }
     },
 

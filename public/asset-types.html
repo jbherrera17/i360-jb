@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -780,26 +781,6 @@
                     <button type="submit" class="btn btn-primary" id="submit-btn">Create Type</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal-overlay" id="delete-modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Delete Asset Type</h2>
-                <button class="modal-close" onclick="closeDeleteModal()">
-                    <i data-lucide="x" width="20" height="20"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete <strong id="delete-type-name"></strong>?</p>
-                <p style="margin-top: 12px; color: var(--text-secondary);">This action cannot be undone. Assets with this type will retain their data but may not display correctly.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete Type</button>
-            </div>
         </div>
     </div>
 

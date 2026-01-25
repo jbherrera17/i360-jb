@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .ai-config-container {
@@ -281,55 +282,7 @@
             color: var(--text-secondary);
         }
 
-        /* Modal styles */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
+        /* Form styles for ModalService */
         .form-group {
             margin-bottom: 1.25rem;
         }
@@ -348,6 +301,7 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             background: var(--bg-secondary);
+            color: var(--text-primary);
             font-size: 0.95rem;
         }
 
@@ -367,37 +321,6 @@
         .checkbox-group input[type="checkbox"] {
             width: 18px;
             height: 18px;
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        .btn-secondary {
-            padding: 0.75rem 1.25rem;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            padding: 0.75rem 1.25rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
         }
 
         .loading-spinner {
@@ -603,71 +526,6 @@
         </main>
     </div>
 
-    <!-- Add Entity Modal -->
-    <div id="add-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modal-title">Add Agent</h2>
-                <button class="modal-close" onclick="closeModal()">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="add-form" onsubmit="handleAddSubmit(event)">
-                    <input type="hidden" id="entity-type" value="">
-
-                    <div class="form-group">
-                        <label id="entity-label">Select Agent</label>
-                        <select id="entity-select" required>
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group checkbox-group" id="featured-checkbox-group">
-                        <input type="checkbox" id="is-featured">
-                        <label for="is-featured">Mark as Featured</label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-primary" form="add-form">Add</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Prompt Modal -->
-    <div id="prompt-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Add Quick Prompt</h2>
-                <button class="modal-close" onclick="closePromptModal()">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="prompt-form" onsubmit="handlePromptSubmit(event)">
-                    <div class="form-group">
-                        <label>Prompt Text</label>
-                        <textarea id="prompt-text" rows="3" required placeholder="Enter the quick prompt text..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Display Order</label>
-                        <input type="number" id="prompt-order" value="1" min="1" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closePromptModal()">Cancel</button>
-                <button type="submit" class="btn-primary" form="prompt-form">Add Prompt</button>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
@@ -679,15 +537,19 @@
         let departmentSkills = [];
         let quickPrompts = [];
         let availableEntities = { agents: [], workflows: [], skills: [] };
+        let activeModal = null;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const params = new URLSearchParams(window.location.search);
             departmentId = params.get('id');
 
             if (!departmentId) {
-                alert('No department ID provided');
+                await ModalService.alert({
+                    title: 'Error',
+                    message: 'No department ID provided'
+                });
                 window.location.href = '/admin-departments.html';
                 return;
             }
@@ -949,46 +811,64 @@
         }
 
         function showAddModal(type) {
-            const modal = document.getElementById('add-modal');
-            document.getElementById('entity-type').value = type;
-
             const labels = { agent: 'Agent', workflow: 'Workflow', skill: 'Skill' };
-            document.getElementById('modal-title').textContent = `Add ${labels[type]}`;
-            document.getElementById('entity-label').textContent = `Select ${labels[type]}`;
-
-            // Show/hide featured checkbox (only for agents)
-            document.getElementById('featured-checkbox-group').style.display = type === 'agent' ? 'flex' : 'none';
-
-            // Populate select
             const typeKey = type + 's';
             const entities = availableEntities[typeKey] || [];
-            const select = document.getElementById('entity-select');
-            select.innerHTML = '<option value="">-- Select --</option>' +
-                entities.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+            const entityOptions = entities.map(e =>
+                `<option value="${e.id}">${escapeHtml(e.name)}</option>`
+            ).join('');
 
-            modal.classList.add('active');
+            const featuredCheckbox = type === 'agent' ? `
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="is-featured">
+                    <label for="is-featured">Mark as Featured</label>
+                </div>
+            ` : '';
+
+            activeModal = ModalService.create({
+                title: `Add ${labels[type]}`,
+                content: `
+                    <div class="form-group">
+                        <label>Select ${labels[type]}</label>
+                        <select id="entity-select" required>
+                            <option value="">-- Select --</option>
+                            ${entityOptions}
+                        </select>
+                    </div>
+                    ${featuredCheckbox}
+                `,
+                footer: `
+                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button type="button" class="i360-btn i360-btn-primary" id="add-entity-btn">Add</button>
+                `,
+                width: 500,
+                draggable: true,
+                onOpen: () => {
+                    document.getElementById('add-entity-btn').addEventListener('click', () => handleAddSubmit(type));
+                }
+            });
+            activeModal.open();
         }
 
         function closeModal() {
-            document.getElementById('add-modal').classList.remove('active');
-            document.getElementById('add-form').reset();
+            if (activeModal) {
+                activeModal.close();
+                activeModal = null;
+            }
         }
 
-        async function handleAddSubmit(event) {
-            event.preventDefault();
-
-            const type = document.getElementById('entity-type').value;
+        async function handleAddSubmit(type) {
             const entityId = document.getElementById('entity-select').value;
-            const isFeatured = document.getElementById('is-featured').checked;
+            const isFeaturedEl = document.getElementById('is-featured');
+            const isFeatured = isFeaturedEl ? isFeaturedEl.checked : false;
 
             if (!entityId) {
-                alert('Please select an item');
+                ModalService.warning('Please select an item');
                 return;
             }
 
             try {
                 if (type === 'agent') {
-                    // Add featured agent to department
                     const response = await fetch(`/api/departments/${departmentId}/agents`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1001,11 +881,11 @@
                     if (result.success) {
                         closeModal();
                         await loadFeaturedAgents();
+                        ModalService.success('Agent added');
                     } else {
-                        alert(result.error || 'Failed to add agent');
+                        ModalService.error(result.error || 'Failed to add agent');
                     }
                 } else if (type === 'workflow') {
-                    // Update workflow's department_id
                     const response = await fetch(`/api/workflows/${entityId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1015,11 +895,11 @@
                     if (result.success) {
                         closeModal();
                         await loadDepartmentWorkflows();
+                        ModalService.success('Workflow assigned');
                     } else {
-                        alert(result.error || 'Failed to assign workflow');
+                        ModalService.error(result.error || 'Failed to assign workflow');
                     }
                 } else if (type === 'skill') {
-                    // Update skill's department_id
                     const response = await fetch(`/api/skills/${entityId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1029,18 +909,25 @@
                     if (result.success) {
                         closeModal();
                         await loadDepartmentSkills();
+                        ModalService.success('Skill assigned');
                     } else {
-                        alert(result.error || 'Failed to assign skill');
+                        ModalService.error(result.error || 'Failed to assign skill');
                     }
                 }
             } catch (error) {
                 console.error('Error adding entity:', error);
-                alert('Failed to add item');
+                ModalService.error('Failed to add item');
             }
         }
 
         async function removeAgent(agentId) {
-            if (!confirm('Remove this agent from the department?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Remove Agent',
+                message: 'Remove this agent from the department?',
+                confirmText: 'Remove',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             try {
                 const response = await fetch(`/api/departments/${departmentId}/agents/${agentId}`, {
@@ -1049,30 +936,56 @@
                 const result = await response.json();
                 if (result.success) {
                     await loadFeaturedAgents();
+                    ModalService.success('Agent removed');
                 } else {
-                    alert(result.error || 'Failed to remove agent');
+                    ModalService.error(result.error || 'Failed to remove agent');
                 }
             } catch (error) {
                 console.error('Error removing agent:', error);
-                alert('Failed to remove agent');
+                ModalService.error('Failed to remove agent');
             }
         }
 
         function showAddPromptModal() {
-            document.getElementById('prompt-modal').classList.add('active');
-            document.getElementById('prompt-order').value = quickPrompts.length + 1;
+            const defaultOrder = quickPrompts.length + 1;
+
+            activeModal = ModalService.create({
+                title: 'Add Quick Prompt',
+                content: `
+                    <div class="form-group">
+                        <label>Prompt Text</label>
+                        <textarea id="prompt-text" rows="3" required placeholder="Enter the quick prompt text..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Display Order</label>
+                        <input type="number" id="prompt-order" value="${defaultOrder}" min="1" required>
+                    </div>
+                `,
+                footer: `
+                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button type="button" class="i360-btn i360-btn-primary" id="add-prompt-btn">Add Prompt</button>
+                `,
+                width: 500,
+                draggable: true,
+                onOpen: () => {
+                    document.getElementById('add-prompt-btn').addEventListener('click', handlePromptSubmit);
+                }
+            });
+            activeModal.open();
         }
 
         function closePromptModal() {
-            document.getElementById('prompt-modal').classList.remove('active');
-            document.getElementById('prompt-form').reset();
+            closeModal();
         }
 
-        async function handlePromptSubmit(event) {
-            event.preventDefault();
-
+        async function handlePromptSubmit() {
             const text = document.getElementById('prompt-text').value;
             const order = parseInt(document.getElementById('prompt-order').value);
+
+            if (!text) {
+                ModalService.warning('Please enter prompt text');
+                return;
+            }
 
             try {
                 const response = await fetch(`/api/departments/${departmentId}/quick-prompts`, {
@@ -1085,19 +998,26 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    closePromptModal();
+                    closeModal();
                     await loadQuickPrompts();
+                    ModalService.success('Prompt added');
                 } else {
-                    alert(result.error || 'Failed to add prompt');
+                    ModalService.error(result.error || 'Failed to add prompt');
                 }
             } catch (error) {
                 console.error('Error adding prompt:', error);
-                alert('Failed to add prompt');
+                ModalService.error('Failed to add prompt');
             }
         }
 
         async function removePrompt(promptId) {
-            if (!confirm('Remove this quick prompt?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Remove Prompt',
+                message: 'Remove this quick prompt?',
+                confirmText: 'Remove',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             try {
                 const response = await fetch(`/api/departments/${departmentId}/quick-prompts/${promptId}`, {
@@ -1106,12 +1026,13 @@
                 const result = await response.json();
                 if (result.success) {
                     await loadQuickPrompts();
+                    ModalService.success('Prompt removed');
                 } else {
-                    alert(result.error || 'Failed to remove prompt');
+                    ModalService.error(result.error || 'Failed to remove prompt');
                 }
             } catch (error) {
                 console.error('Error removing prompt:', error);
-                alert('Failed to remove prompt');
+                ModalService.error('Failed to remove prompt');
             }
         }
 

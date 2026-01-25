@@ -28,6 +28,9 @@ const { getUserId } = require('../utils/auth');
 module.exports = function(supabase) {
     const router = express.Router();
 
+    // Inject Supabase client into the service for consistent usage
+    s2eService.setSupabaseClient(supabase);
+
     // ============================================================================
     // STRATEGIC FOUNDATIONS ENDPOINTS
     // ============================================================================

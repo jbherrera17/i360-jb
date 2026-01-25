@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -394,7 +395,7 @@
             color: var(--danger);
         }
 
-        /* Modal styles handled by modal-manager.js */
+        /* Modal styles handled by ModalService */
 
         /* Form Elements */
         .form-group {
@@ -600,76 +601,7 @@
         </main>
     </div>
 
-    <!-- Create/Edit Tag Modal -->
-    <div class="modal-overlay" id="tag-modal">
-        <div class="modal" id="tag-modal-dialog">
-            <div class="modal-header" id="tag-modal-header">
-                <h3 class="modal-title" id="modal-title">Create New Tag</h3>
-                <button class="modal-close" onclick="closeModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="tag-form" onsubmit="saveTag(event)">
-                    <input type="hidden" id="tag-id">
-
-                    <div class="form-group">
-                        <label class="form-label">Tag Name *</label>
-                        <input type="text" class="form-input" id="tag-name" required placeholder="e.g., Strategic Planning">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Category *</label>
-                        <select class="form-select" id="tag-category" required>
-                            <option value="">Select category...</option>
-                            <option value="skill">Skill</option>
-                            <option value="domain">Domain</option>
-                            <option value="function">Function</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Parent Tag (Optional)</label>
-                        <select class="form-select" id="tag-parent">
-                            <option value="">None (Top Level)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-textarea" id="tag-description" placeholder="Brief description of this tag..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" form="tag-form" id="save-btn">Create Tag</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal-overlay" id="delete-modal">
-        <div class="modal" id="delete-modal-dialog">
-            <div class="modal-header" id="delete-modal-header">
-                <h3 class="modal-title">Delete Tag</h3>
-                <button class="modal-close" onclick="closeDeleteModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete <strong id="delete-tag-name"></strong>?</p>
-                <p style="color: var(--text-secondary); margin-top: 0.5rem;">This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmDelete()" style="background: var(--danger);">Delete</button>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/help-modal.js"></script>
-    <script src="/js/modal-manager.js"></script>
     <script>
         // State
         let allTags = [];
@@ -678,9 +610,8 @@
         let editingTagId = null;
         let deletingTagId = null;
 
-        // Modal managers
-        let tagModalManager = null;
-        let deleteModalManager = null;
+        // Modal instances (using ModalService)
+        let tagModal = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -691,13 +622,6 @@
                 helpFile: '/api/docs/tags-user-guide.md',
                 title: 'Tag Management Guide'
             });
-
-            // Initialize modal managers
-            tagModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 480 });
-            tagModalManager.init('tag-modal-dialog', 'tag-modal-header', 'tag-modal');
-
-            deleteModalManager = new ModalManager({ minWidth: 350, minHeight: 200, defaultWidth: 400 });
-            deleteModalManager.init('delete-modal-dialog', 'delete-modal-header', 'delete-modal');
 
             await loadTags();
             await loadStats();
@@ -956,45 +880,93 @@
             }
         }
 
-        // Modal handlers
+        // Modal handlers using ModalService
+        function openTagModal(tag = null) {
+            editingTagId = tag?.id || null;
+            const title = tag ? 'Edit Tag' : 'Create New Tag';
+            const btnText = tag ? 'Save Changes' : 'Create Tag';
+
+            const parentOptions = allTags
+                .filter(t => t.id !== tag?.id)
+                .map(t => `<option value="${t.id}" ${tag?.parent_id === t.id ? 'selected' : ''}>${t.name}</option>`)
+                .join('');
+
+            tagModal = ModalService.create({
+                title: title,
+                content: `
+                    <div class="form-group">
+                        <label class="form-label">Tag Name *</label>
+                        <input type="text" class="form-input" id="tag-name" required placeholder="e.g., Strategic Planning" value="${tag?.name || ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-select" id="tag-category" required>
+                            <option value="">Select category...</option>
+                            <option value="skill" ${tag?.category === 'skill' ? 'selected' : ''}>Skill</option>
+                            <option value="domain" ${tag?.category === 'domain' ? 'selected' : ''}>Domain</option>
+                            <option value="function" ${tag?.category === 'function' ? 'selected' : ''}>Function</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Parent Tag (Optional)</label>
+                        <select class="form-select" id="tag-parent">
+                            <option value="">None (Top Level)</option>
+                            ${parentOptions}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="tag-description" placeholder="Brief description of this tag...">${tag?.description || ''}</textarea>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-tag-btn">${btnText}</button>
+                `,
+                width: 480,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    document.getElementById('save-tag-btn').addEventListener('click', saveTag);
+                }
+            });
+            tagModal.open();
+        }
+
         function openCreateTagModal() {
-            editingTagId = null;
-            document.getElementById('modal-title').textContent = 'Create New Tag';
-            document.getElementById('save-btn').textContent = 'Create Tag';
-            document.getElementById('tag-form').reset();
-            tagModalManager.open();
+            openTagModal(null);
         }
 
         function editTag(id) {
             const tag = allTags.find(t => t.id === id);
             if (!tag) return;
-
-            editingTagId = id;
-            document.getElementById('modal-title').textContent = 'Edit Tag';
-            document.getElementById('save-btn').textContent = 'Save Changes';
-            document.getElementById('tag-id').value = id;
-            document.getElementById('tag-name').value = tag.name;
-            document.getElementById('tag-category').value = tag.category;
-            document.getElementById('tag-parent').value = tag.parent_id || '';
-            document.getElementById('tag-description').value = tag.description || '';
-            tagModalManager.open();
+            openTagModal(tag);
         }
 
         function closeModal() {
-            tagModalManager.close();
+            if (tagModal) {
+                tagModal.close();
+                tagModal = null;
+            }
             editingTagId = null;
         }
 
         // Save tag
-        async function saveTag(event) {
-            event.preventDefault();
-
+        async function saveTag() {
             const tagData = {
                 name: document.getElementById('tag-name').value.trim(),
                 category: document.getElementById('tag-category').value,
                 parent_id: document.getElementById('tag-parent').value || null,
                 description: document.getElementById('tag-description').value.trim() || null
             };
+
+            if (!tagData.name || !tagData.category) {
+                ModalService.warning('Name and category are required');
+                return;
+            }
 
             try {
                 const url = editingTagId ? `/api/tags/${editingTagId}` : '/api/tags';
@@ -1012,49 +984,44 @@
                     closeModal();
                     await loadTags();
                     await loadStats();
-                    showSuccess(editingTagId ? 'Tag updated successfully' : 'Tag created successfully');
+                    ModalService.success(editingTagId ? 'Tag updated successfully' : 'Tag created successfully');
                 } else {
-                    showError(data.error || 'Failed to save tag');
+                    ModalService.error(data.error || 'Failed to save tag');
                 }
             } catch (error) {
                 console.error('Error saving tag:', error);
-                showError('Failed to save tag');
+                ModalService.error('Failed to save tag');
             }
         }
 
-        // Delete tag
-        function deleteTag(id, name) {
-            deletingTagId = id;
-            document.getElementById('delete-tag-name').textContent = name;
-            deleteModalManager.open();
-        }
+        // Delete tag using ModalService.confirm
+        async function deleteTag(id, name) {
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Tag',
+                message: `Are you sure you want to delete <strong>${name}</strong>?<br><span style="color: var(--text-secondary);">This action cannot be undone.</span>`,
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
 
-        function closeDeleteModal() {
-            deleteModalManager.close();
-            deletingTagId = null;
-        }
-
-        async function confirmDelete() {
-            if (!deletingTagId) return;
+            if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/tags/${deletingTagId}`, {
+                const response = await fetch(`/api/tags/${id}`, {
                     method: 'DELETE'
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    closeDeleteModal();
                     await loadTags();
                     await loadStats();
-                    showSuccess('Tag deleted successfully');
+                    ModalService.success('Tag deleted successfully');
                 } else {
-                    showError(data.error || 'Failed to delete tag');
+                    ModalService.error(data.error || 'Failed to delete tag');
                 }
             } catch (error) {
                 console.error('Error deleting tag:', error);
-                showError('Failed to delete tag');
+                ModalService.error('Failed to delete tag');
             }
         }
 

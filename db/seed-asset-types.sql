@@ -14,7 +14,7 @@
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
 
 -- 1. Company Description
-('company_description', 'Company Description', 'Who we are, mission, history, and vision', '🏢', 10,
+('company_description', 'Company Description', 'Who we are, mission, history, and vision', 'building-2', 10,
 '{
   "type": "object",
   "properties": {
@@ -32,7 +32,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 2. Why We Win
-('why_we_win', 'Why We Win', 'Competitive differentiation and unique value proposition', '🏆', 20,
+('why_we_win', 'Why We Win', 'Competitive differentiation and unique value proposition', 'trophy', 20,
 '{
   "type": "object",
   "properties": {
@@ -46,7 +46,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 3. Products
-('products', 'Products & Services', 'Offerings, features, benefits, and pricing', '📦', 30,
+('products', 'Products & Services', 'Offerings, features, benefits, and pricing', 'package', 30,
 '{
   "type": "object",
   "properties": {
@@ -71,7 +71,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 4. Pain Points We Solve
-('pain_points', 'Pain Points We Solve', 'Customer problems we address', '🎯', 40,
+('pain_points', 'Pain Points We Solve', 'Customer problems we address', 'target', 40,
 '{
   "type": "object",
   "properties": {
@@ -92,7 +92,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 5. VoiceDNA
-('voice_dna', 'VoiceDNA', 'Brand voice, tone, style rules, and writing guidelines', '🎤', 50,
+('voice_dna', 'VoiceDNA', 'Brand voice, tone, style rules, and writing guidelines', 'mic', 50,
 '{
   "type": "object",
   "properties": {
@@ -116,7 +116,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 6. ICP (Ideal Customer Profile)
-('icp', 'ICP (Ideal Customer Profile)', 'Target customer segments and profiles', '👤', 60,
+('icp', 'ICP (Ideal Customer Profile)', 'Target customer segments and profiles', 'user', 60,
 '{
   "type": "object",
   "properties": {
@@ -156,7 +156,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 7. Core Values
-('core_values', 'Core Values', 'Guiding principles and organizational beliefs', '💎', 70,
+('core_values', 'Core Values', 'Guiding principles and organizational beliefs', 'gem', 70,
 '{
   "type": "object",
   "properties": {
@@ -177,7 +177,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 8. Custom Processes
-('custom_processes', 'Custom Processes', 'Internal workflows, methodologies, and procedures', '⚙️', 80,
+('custom_processes', 'Custom Processes', 'Internal workflows, methodologies, and procedures', 'settings', 80,
 '{
   "type": "object",
   "properties": {
@@ -213,7 +213,7 @@ ON CONFLICT (type_key) DO UPDATE SET
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
 
 -- 9. Competitors
-('competitors', 'Competitors', 'Competitive landscape and analysis', '⚔️', 110,
+('competitors', 'Competitors', 'Competitive landscape and analysis', 'swords', 110,
 '{
   "type": "object",
   "properties": {
@@ -235,7 +235,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 10. Case Studies
-('case_studies', 'Case Studies', 'Success stories and customer testimonials', '📖', 120,
+('case_studies', 'Case Studies', 'Success stories and customer testimonials', 'book-open', 120,
 '{
   "type": "object",
   "properties": {
@@ -259,7 +259,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 11. FAQs
-('faqs', 'FAQs', 'Common questions and objection handling', '❓', 130,
+('faqs', 'FAQs', 'Common questions and objection handling', 'help-circle', 130,
 '{
   "type": "object",
   "properties": {
@@ -287,7 +287,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 12. Team Bios
-('team_bios', 'Team Bios', 'Key people, expertise, and backgrounds', '👥', 140,
+('team_bios', 'Team Bios', 'Key people, expertise, and backgrounds', 'users', 140,
 '{
   "type": "object",
   "properties": {
@@ -310,7 +310,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 13. Industry Context
-('industry_context', 'Industry Context', 'Market trends, regulations, and landscape', '🌐', 150,
+('industry_context', 'Industry Context', 'Market trends, regulations, and landscape', 'globe', 150,
 '{
   "type": "object",
   "properties": {
@@ -325,7 +325,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 14. Terminology
-('terminology', 'Terminology', 'Domain-specific glossary and definitions', '📚', 160,
+('terminology', 'Terminology', 'Domain-specific glossary and definitions', 'library', 160,
 '{
   "type": "object",
   "properties": {
@@ -345,7 +345,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 15. Templates
-('templates', 'Templates', 'Email, proposal, and content templates', '📝', 170,
+('templates', 'Templates', 'Email, proposal, and content templates', 'file-text', 170,
 '{
   "type": "object",
   "properties": {
@@ -367,7 +367,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 16. Pricing
-('pricing', 'Pricing', 'Pricing structure, packages, and terms', '💰', 180,
+('pricing', 'Pricing', 'Pricing structure, packages, and terms', 'dollar-sign', 180,
 '{
   "type": "object",
   "properties": {
@@ -392,7 +392,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 17. Brand Guidelines
-('brand_guidelines', 'Brand Guidelines', 'Visual identity, colors, and usage rules', '🎨', 190,
+('brand_guidelines', 'Brand Guidelines', 'Visual identity, colors, and usage rules', 'palette', 190,
 '{
   "type": "object",
   "properties": {
@@ -420,7 +420,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 18. Personas
-('personas', 'Personas', 'Detailed buyer personas for targeting', '🎭', 200,
+('personas', 'Personas', 'Detailed buyer personas for targeting', 'drama', 200,
 '{
   "type": "object",
   "properties": {

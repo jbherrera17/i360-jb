@@ -51,14 +51,14 @@ async function loadSystemStatus() {
             let allOperational = true;
             let html = '';
             
-            // Define service display order and icons
+            // Define service display order and icons (Lucide icon names)
             const serviceConfig = {
-                anthropic: { name: 'Claude (Anthropic)', icon: '🤖' },
-                openai: { name: 'GPT (OpenAI)', icon: '🧠' },
-                gemini: { name: 'Gemini (Google)', icon: '✨' },
-                voice: { name: 'Voice (TTS/STT)', icon: '🎤' },
-                search: { name: 'Web Search', icon: '🔍' },
-                supabase: { name: 'Database', icon: '💾' }
+                anthropic: { name: 'Claude (Anthropic)', icon: 'bot' },
+                openai: { name: 'GPT (OpenAI)', icon: 'brain' },
+                gemini: { name: 'Gemini (Google)', icon: 'sparkles' },
+                voice: { name: 'Voice (TTS/STT)', icon: 'mic' },
+                search: { name: 'Web Search', icon: 'search' },
+                supabase: { name: 'Database', icon: 'database' }
             };
             
             for (const [key, config] of Object.entries(serviceConfig)) {
@@ -67,7 +67,7 @@ async function loadSystemStatus() {
                 
                 html += `
                     <div class="service-item ${isActive ? 'active' : 'inactive'}">
-                        <span class="service-icon">${config.icon}</span>
+                        <span class="service-icon"><i data-lucide="${config.icon}" style="width:18px;height:18px;"></i></span>
                         <span class="service-name">${config.name}</span>
                         <span class="service-status">${isActive ? '✓ Ready' : '○ Offline'}</span>
                     </div>
@@ -75,7 +75,12 @@ async function loadSystemStatus() {
             }
             
             serviceStatusEl.innerHTML = html;
-            
+
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
             // Update overall status badge
             if (allOperational) {
                 overallStatusEl.textContent = 'All Systems Operational';
@@ -114,24 +119,24 @@ async function loadAvailableModels() {
             let totalCount = 0;
             let html = '';
             
-            // Provider configurations
+            // Provider configurations (Lucide icon names)
             const providerConfig = {
-                anthropic: { name: 'Claude (Anthropic)', icon: '🤖', color: '#6366f1' },
-                openai: { name: 'GPT (OpenAI)', icon: '🧠', color: '#10b981' },
-                google: { name: 'Gemini (Google)', icon: '✨', color: '#4285f4' }
+                anthropic: { name: 'Claude (Anthropic)', icon: 'bot', color: '#6366f1' },
+                openai: { name: 'GPT (OpenAI)', icon: 'brain', color: '#10b981' },
+                google: { name: 'Gemini (Google)', icon: 'sparkles', color: '#4285f4' }
             };
             
             // Iterate through providers
             for (const [provider, providerModels] of Object.entries(models)) {
                 if (!Array.isArray(providerModels) || providerModels.length === 0) continue;
                 
-                const config = providerConfig[provider] || { name: provider, icon: '🔮', color: '#8b5cf6' };
+                const config = providerConfig[provider] || { name: provider, icon: 'wand-2', color: '#8b5cf6' };
                 totalCount += providerModels.length;
                 
                 html += `
                     <div class="model-provider">
                         <div class="provider-header">
-                            <span class="provider-icon">${config.icon}</span>
+                            <span class="provider-icon"><i data-lucide="${config.icon}" style="width:18px;height:18px;"></i></span>
                             <span class="provider-name">${config.name}</span>
                             <span class="provider-count">${providerModels.length} models</span>
                         </div>
@@ -159,7 +164,12 @@ async function loadAvailableModels() {
             }
             
             modelListEl.innerHTML = html;
-            
+
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
             // Update model count badge
             if (modelCountEl) {
                 modelCountEl.textContent = totalCount;

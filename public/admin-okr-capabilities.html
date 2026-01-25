@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .okr-capabilities-container {
@@ -280,55 +281,7 @@
             background: var(--primary-hover);
         }
 
-        /* Modal styles */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
+        /* Form styles for ModalService */
         .form-group {
             margin-bottom: 1.25rem;
         }
@@ -345,43 +298,13 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             background: var(--bg-secondary);
+            color: var(--text-primary);
             font-size: 0.95rem;
         }
 
         .form-group select:focus {
             outline: none;
             border-color: var(--primary);
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        .btn-secondary {
-            padding: 0.75rem 1.25rem;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            padding: 0.75rem 1.25rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
         }
 
         .help-btn {
@@ -518,42 +441,6 @@
         </main>
     </div>
 
-    <!-- Add Skill Modal -->
-    <div id="add-skill-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Map Skill to OKR</h2>
-                <button class="modal-close" onclick="closeModal()">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="add-skill-form" onsubmit="handleAddSkill(event)">
-                    <div class="form-group">
-                        <label>Select Skill</label>
-                        <select id="skill-select" required>
-                            <option value="">-- Select Skill --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Contribution Type</label>
-                        <select id="contribution-type" required>
-                            <option value="supports">Supports - Helps achieve the OKR</option>
-                            <option value="measures">Measures - Tracks progress</option>
-                            <option value="drives">Drives - Directly impacts outcome</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-primary" form="add-skill-form">Map Skill</button>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
@@ -562,15 +449,19 @@
         let okr = null;
         let capabilities = [];
         let availableSkills = [];
+        let skillModal = null;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const params = new URLSearchParams(window.location.search);
             okrId = params.get('id');
 
             if (!okrId) {
-                alert('No OKR ID provided');
+                await ModalService.alert({
+                    title: 'Error',
+                    message: 'No OKR ID provided'
+                });
                 window.location.href = '/strategy.html';
                 return;
             }
@@ -722,9 +613,6 @@
         }
 
         function showAddSkillModal() {
-            const modal = document.getElementById('add-skill-modal');
-            const select = document.getElementById('skill-select');
-
             // Filter out already mapped skills
             const mappedSkillIds = capabilities
                 .filter(c => c.entity_type === 'skill')
@@ -732,25 +620,55 @@
 
             const unmappedSkills = availableSkills.filter(s => !mappedSkillIds.includes(s.id));
 
-            select.innerHTML = '<option value="">-- Select Skill --</option>' +
-                unmappedSkills.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            const skillOptions = unmappedSkills.map(s =>
+                `<option value="${s.id}">${escapeHtml(s.name)}</option>`
+            ).join('');
 
-            modal.classList.add('active');
+            skillModal = ModalService.create({
+                title: 'Map Skill to OKR',
+                content: `
+                    <div class="form-group">
+                        <label>Select Skill</label>
+                        <select id="skill-select" required>
+                            <option value="">-- Select Skill --</option>
+                            ${skillOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Contribution Type</label>
+                        <select id="contribution-type" required>
+                            <option value="supports">Supports - Helps achieve the OKR</option>
+                            <option value="measures">Measures - Tracks progress</option>
+                            <option value="drives">Drives - Directly impacts outcome</option>
+                        </select>
+                    </div>
+                `,
+                footer: `
+                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button type="button" class="i360-btn i360-btn-primary" id="map-skill-btn">Map Skill</button>
+                `,
+                width: 500,
+                draggable: true,
+                onOpen: () => {
+                    document.getElementById('map-skill-btn').addEventListener('click', handleAddSkill);
+                }
+            });
+            skillModal.open();
         }
 
         function closeModal() {
-            document.getElementById('add-skill-modal').classList.remove('active');
-            document.getElementById('add-skill-form').reset();
+            if (skillModal) {
+                skillModal.close();
+                skillModal = null;
+            }
         }
 
-        async function handleAddSkill(event) {
-            event.preventDefault();
-
+        async function handleAddSkill() {
             const skillId = document.getElementById('skill-select').value;
             const contributionType = document.getElementById('contribution-type').value;
 
             if (!skillId) {
-                alert('Please select a skill');
+                ModalService.warning('Please select a skill');
                 return;
             }
 
@@ -769,12 +687,13 @@
                 if (result.success) {
                     closeModal();
                     await loadCapabilities();
+                    ModalService.success('Skill mapped to OKR');
                 } else {
-                    alert(result.error || 'Failed to map skill');
+                    ModalService.error(result.error || 'Failed to map skill');
                 }
             } catch (error) {
                 console.error('Error mapping skill:', error);
-                alert('Failed to map skill');
+                ModalService.error('Failed to map skill');
             }
         }
 

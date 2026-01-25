@@ -6,7 +6,7 @@
 
 -- Add Assessment category (for Align 120 Module 1)
 INSERT INTO agent_categories (key, display_name, description, icon, sort_order, is_active, color)
-VALUES ('assessment', 'Assessment', 'Agents for AI readiness and maturity assessments', '📋', 1, true, '#10b981')
+VALUES ('assessment', 'Assessment', 'Agents for AI readiness and maturity assessments', 'clipboard-list', 1, true, '#10b981')
 ON CONFLICT (key) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     description = EXCLUDED.description,

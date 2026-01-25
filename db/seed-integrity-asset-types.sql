@@ -11,7 +11,7 @@
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
 
 -- 1. Bright Lines
-('bright_lines', 'Bright Lines', 'Non-negotiable ethical boundaries and values that cannot be crossed', '🚫', 75,
+('bright_lines', 'Bright Lines', 'Non-negotiable ethical boundaries and values that cannot be crossed', 'ban', 75,
 '{
   "type": "object",
   "properties": {
@@ -45,7 +45,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 2. Values Map
-('values_map', 'Values Map', 'Stated values vs. stress values - how values manifest under normal and pressure conditions', '🗺️', 76,
+('values_map', 'Values Map', 'Stated values vs. stress values - how values manifest under normal and pressure conditions', 'map', 76,
 '{
   "type": "object",
   "properties": {
@@ -107,7 +107,7 @@ ON CONFLICT (type_key) DO UPDATE SET
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
 
 -- 3. Intervention Metrics
-('intervention_metrics', 'Intervention Metrics', 'Measures of human oversight effectiveness in AI/automated systems', '⚡', 210,
+('intervention_metrics', 'Intervention Metrics', 'Measures of human oversight effectiveness in AI/automated systems', 'zap', 210,
 '{
   "type": "object",
   "properties": {
@@ -174,7 +174,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 4. Trust Velocity Metrics
-('trust_velocity_metrics', 'Trust Velocity Metrics', 'Measures of trust accumulation vs. erosion in stakeholder relationships', '📈', 220,
+('trust_velocity_metrics', 'Trust Velocity Metrics', 'Measures of trust accumulation vs. erosion in stakeholder relationships', 'trending-up', 220,
 '{
   "type": "object",
   "properties": {
@@ -239,7 +239,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 5. Close Call Log
-('close_call_log', 'Close Call Log', 'Documented incidents where potential integrity breaches were prevented before causing harm', '🛡️', 230,
+('close_call_log', 'Close Call Log', 'Documented incidents where potential integrity breaches were prevented before causing harm', 'shield', 230,
 '{
   "type": "object",
   "properties": {
@@ -314,7 +314,7 @@ ON CONFLICT (type_key) DO UPDATE SET
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
 
 -- 6. Industry Baseline
-('industry_baseline', 'Industry Baseline', 'Industry incident database for counterfactual comparison and cost avoidance calculation', '📊', 240,
+('industry_baseline', 'Industry Baseline', 'Industry incident database for counterfactual comparison and cost avoidance calculation', 'bar-chart-2', 240,
 '{
   "type": "object",
   "properties": {
@@ -401,7 +401,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- 7. Integrity Yield (Composite Score)
-('integrity_yield', 'Integrity Yield', 'Composite integrity score for stakeholder visibility and trend tracking', '🎯', 250,
+('integrity_yield', 'Integrity Yield', 'Composite integrity score for stakeholder visibility and trend tracking', 'target', 250,
 '{
   "type": "object",
   "properties": {

@@ -70,6 +70,17 @@ const navConfig = {
             ]
         },
         {
+            id: 'agency',
+            label: 'Agency',
+            icon: 'building',
+            adminOnly: true,
+            items: [
+                { href: '/agency-dashboard.html', icon: 'gauge', label: 'Agency Dashboard' },
+                { href: '/admin-org-customization.html', icon: 'palette', label: 'Customization' },
+                { href: '/admin-client-users.html', icon: 'user-check', label: 'Portal Users' }
+            ]
+        },
+        {
             id: 'admin',
             label: 'Administration',
             icon: 'settings',

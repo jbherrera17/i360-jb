@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* S2E Page Styles */
@@ -539,7 +540,7 @@
             background: var(--border);
         }
 
-        /* Modal styles handled by modal-manager.js */
+        /* Modal styles handled by ModalService */
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -1022,166 +1023,8 @@
         </main>
     </div>
 
-    <!-- Theme Modal -->
-    <div class="modal-overlay" id="themeModal">
-        <div class="modal" id="theme-modal-dialog">
-            <div class="modal-header" id="theme-modal-header">
-                <h2><i data-lucide="compass"></i> <span id="themeModalTitle">Add Strategic Theme</span></h2>
-                <button class="modal-close" onclick="closeThemeModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Theme Name</label>
-                    <input type="text" id="themeName" placeholder="e.g., Customer Excellence">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="themeDescription" rows="2" placeholder="Brief description of this strategic focus area"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Strategic Rationale</label>
-                    <textarea id="themeRationale" rows="3" placeholder="Why is this theme critical now? What happens if we don't focus here?"></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Icon</label>
-                        <select id="themeIcon">
-                            <option value="compass">Compass</option>
-                            <option value="target">Target</option>
-                            <option value="rocket">Rocket</option>
-                            <option value="shield">Shield</option>
-                            <option value="heart">Heart</option>
-                            <option value="zap">Zap</option>
-                            <option value="star">Star</option>
-                            <option value="trending-up">Growth</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Color</label>
-                        <input type="color" id="themeColor" value="#6366f1">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeThemeModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveTheme()">
-                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Objective Modal -->
-    <div class="modal-overlay" id="objectiveModal">
-        <div class="modal" id="objective-modal-dialog">
-            <div class="modal-header" id="objective-modal-header">
-                <h2><i data-lucide="target"></i> <span id="objectiveModalTitle">Add Objective</span></h2>
-                <button class="modal-close" onclick="closeObjectiveModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Objective Name</label>
-                    <input type="text" id="objectiveName" placeholder="e.g., Predictable cash flow">
-                    <div class="form-help">A directional commitment, not a metric (avoid numbers)</div>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="objectiveDescription" rows="2" placeholder="What does success look like for this objective?"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Linked Theme (optional)</label>
-                    <select id="objectiveTheme">
-                        <option value="">Select a theme...</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeObjectiveModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveObjective()">
-                    <i data-lucide="save" style="width:16px;height:16px;"></i> Save
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Link OKR Modal -->
-    <div class="modal-overlay" id="linkOkrModal">
-        <div class="modal" id="link-okr-modal-dialog">
-            <div class="modal-header" id="link-okr-modal-header">
-                <h2><i data-lucide="link"></i> Link to Strategic Objective</h2>
-                <button class="modal-close" onclick="closeLinkOkrModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>OKR</label>
-                    <div id="linkOkrTitle" style="font-weight: 600; padding: 0.5rem 0;"></div>
-                </div>
-                <div class="form-group">
-                    <label>Strategic Objective</label>
-                    <select id="linkObjectiveSelect">
-                        <option value="">Select an objective...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Link Type</label>
-                    <select id="linkType">
-                        <option value="supports">Supports</option>
-                        <option value="measures">Measures</option>
-                        <option value="enables">Enables</option>
-                        <option value="validates">Validates</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>How does this OKR contribute?</label>
-                    <textarea id="linkContribution" rows="2" placeholder="Describe how this OKR advances the strategic objective"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeLinkOkrModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveLinkOkr()">
-                    <i data-lucide="link" style="width:16px;height:16px;"></i> Link
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Agent Chat Modal -->
-    <div class="modal-overlay" id="agentChatModal">
-        <div class="modal agent-modal" id="agent-chat-modal-dialog">
-            <div class="modal-header" id="agent-chat-modal-header">
-                <h2>
-                    <i data-lucide="bot"></i>
-                    <span id="chatAgentName">Agent</span>
-                </h2>
-                <button class="modal-close" onclick="closeAgentChatModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="agent-chat-messages" id="agentChatMessages">
-                    <div class="chat-message assistant">
-                        <p>Hello! I'm ready to help with your strategic planning. What would you like to explore?</p>
-                    </div>
-                </div>
-                <div class="agent-input-area">
-                    <input type="text" id="agentChatInput" placeholder="Ask a question..." onkeypress="handleChatKeypress(event)">
-                    <button class="btn-primary" onclick="sendAgentMessage()">
-                        <i data-lucide="send" style="width:16px;height:16px;"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Scripts -->
     <script src="/js/supabase.js"></script>
-    <script src="/js/modal-manager.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 
@@ -1209,26 +1052,11 @@
         let currentChatAgent = null;
         let aiPanelExpanded = false;
 
-        // Modal managers
-        let themeModalManager = null;
-        let objectiveModalManager = null;
-        let linkOkrModalManager = null;
-        let agentChatModalManager = null;
-
-        // Initialize modal managers
-        if (typeof ModalManager !== 'undefined') {
-            themeModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 500 });
-            themeModalManager.init('theme-modal-dialog', 'theme-modal-header', 'themeModal');
-
-            objectiveModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 500 });
-            objectiveModalManager.init('objective-modal-dialog', 'objective-modal-header', 'objectiveModal');
-
-            linkOkrModalManager = new ModalManager({ minWidth: 400, minHeight: 350, defaultWidth: 500 });
-            linkOkrModalManager.init('link-okr-modal-dialog', 'link-okr-modal-header', 'linkOkrModal');
-
-            agentChatModalManager = new ModalManager({ minWidth: 450, minHeight: 400, defaultWidth: 700 });
-            agentChatModalManager.init('agent-chat-modal-dialog', 'agent-chat-modal-header', 'agentChatModal');
-        }
+        // Modal instances (using ModalService)
+        let themeModal = null;
+        let objectiveModal = null;
+        let linkOkrModal = null;
+        let agentChatModal = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1386,11 +1214,17 @@
             lucide.createIcons();
         }
 
-        function addCoreValue() {
-            const name = prompt('Core value name:');
-            if (!name) return;
-            const description = prompt('Brief description (optional):');
-            coreValues.push({ name, description: description || '' });
+        async function addCoreValue() {
+            const result = await ModalService.form({
+                title: 'Add Core Value',
+                fields: [
+                    { name: 'name', label: 'Core Value Name', type: 'text', required: true, placeholder: 'e.g., Integrity' },
+                    { name: 'description', label: 'Brief Description (optional)', type: 'text', placeholder: 'What this value means...' }
+                ],
+                submitText: 'Add Value'
+            });
+            if (!result) return;
+            coreValues.push({ name: result.name, description: result.description || '' });
             renderCoreValues();
         }
 
@@ -1411,7 +1245,7 @@
             };
 
             if (!data.vision || !data.mission) {
-                alert('Please provide both vision and mission statements');
+                ModalService.warning('Please provide both vision and mission statements');
                 return;
             }
 
@@ -1441,11 +1275,11 @@
                     updateStepperCompletion();
                     goToStep(2);
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error('Error: ' + result.error);
                 }
             } catch (error) {
                 console.error('Error saving foundation:', error);
-                alert('Error saving foundation');
+                ModalService.error('Error saving foundation');
             }
         }
 
@@ -1489,27 +1323,64 @@
         function showThemeModal(themeId = null) {
             editingThemeId = themeId;
             const theme = themeId ? themes.find(t => t.id === themeId) : null;
+            const title = theme ? 'Edit Theme' : 'Add Strategic Theme';
 
-            document.getElementById('themeModalTitle').textContent = theme ? 'Edit Theme' : 'Add Strategic Theme';
-            document.getElementById('themeName').value = theme?.name || '';
-            document.getElementById('themeDescription').value = theme?.description || '';
-            document.getElementById('themeRationale').value = theme?.rationale || '';
-            document.getElementById('themeIcon').value = theme?.icon || 'compass';
-            document.getElementById('themeColor').value = theme?.color || '#6366f1';
-
-            if (themeModalManager) {
-                themeModalManager.open();
-            } else {
-                document.getElementById('themeModal').classList.add('active');
-            }
-            lucide.createIcons();
+            themeModal = ModalService.create({
+                title: `<i data-lucide="compass" style="width:18px;height:18px;"></i> ${title}`,
+                content: `
+                    <div class="form-group">
+                        <label>Theme Name</label>
+                        <input type="text" id="themeName" placeholder="e.g., Customer Excellence" value="${theme?.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="themeDescription" rows="2" placeholder="Brief description of this strategic focus area">${theme?.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Strategic Rationale</label>
+                        <textarea id="themeRationale" rows="3" placeholder="Why is this theme critical now? What happens if we don't focus here?">${theme?.rationale || ''}</textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Icon</label>
+                            <select id="themeIcon">
+                                <option value="compass" ${theme?.icon === 'compass' ? 'selected' : ''}>Compass</option>
+                                <option value="target" ${theme?.icon === 'target' ? 'selected' : ''}>Target</option>
+                                <option value="rocket" ${theme?.icon === 'rocket' ? 'selected' : ''}>Rocket</option>
+                                <option value="shield" ${theme?.icon === 'shield' ? 'selected' : ''}>Shield</option>
+                                <option value="heart" ${theme?.icon === 'heart' ? 'selected' : ''}>Heart</option>
+                                <option value="zap" ${theme?.icon === 'zap' ? 'selected' : ''}>Zap</option>
+                                <option value="star" ${theme?.icon === 'star' ? 'selected' : ''}>Star</option>
+                                <option value="trending-up" ${theme?.icon === 'trending-up' ? 'selected' : ''}>Growth</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Color</label>
+                            <input type="color" id="themeColor" value="${theme?.color || '#6366f1'}">
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-theme-btn">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                    </button>
+                `,
+                width: 500,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    document.getElementById('save-theme-btn').addEventListener('click', saveTheme);
+                    lucide.createIcons();
+                }
+            });
+            themeModal.open();
         }
 
         function closeThemeModal() {
-            if (themeModalManager) {
-                themeModalManager.close();
-            } else {
-                document.getElementById('themeModal').classList.remove('active');
+            if (themeModal) {
+                themeModal.close();
+                themeModal = null;
             }
             editingThemeId = null;
         }
@@ -1529,7 +1400,7 @@
             };
 
             if (!data.name) {
-                alert('Theme name is required');
+                ModalService.warning('Theme name is required');
                 return;
             }
 
@@ -1554,17 +1425,24 @@
                     closeThemeModal();
                     renderThemes();
                     updateStepperCompletion();
+                    ModalService.success('Theme saved');
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error('Error: ' + result.error);
                 }
             } catch (error) {
                 console.error('Error saving theme:', error);
-                alert('Error saving theme');
+                ModalService.error('Error saving theme');
             }
         }
 
         async function deleteTheme(id) {
-            if (!confirm('Delete this strategic theme?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Theme',
+                message: 'Delete this strategic theme?',
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/api/s2e/themes/${id}`, { method: 'DELETE' });
@@ -1663,28 +1541,49 @@
             currentPerspectiveId = perspectiveId;
             editingObjectiveId = null;
 
-            document.getElementById('objectiveModalTitle').textContent = 'Add Objective';
-            document.getElementById('objectiveName').value = '';
-            document.getElementById('objectiveDescription').value = '';
+            const themeOptions = themes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
 
-            // Populate theme dropdown
-            const themeSelect = document.getElementById('objectiveTheme');
-            themeSelect.innerHTML = '<option value="">Select a theme...</option>' +
-                themes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-
-            if (objectiveModalManager) {
-                objectiveModalManager.open();
-            } else {
-                document.getElementById('objectiveModal').classList.add('active');
-            }
-            lucide.createIcons();
+            objectiveModal = ModalService.create({
+                title: '<i data-lucide="target" style="width:18px;height:18px;"></i> Add Objective',
+                content: `
+                    <div class="form-group">
+                        <label>Objective Name</label>
+                        <input type="text" id="objectiveName" placeholder="e.g., Predictable cash flow">
+                        <div class="form-help">A directional commitment, not a metric (avoid numbers)</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="objectiveDescription" rows="2" placeholder="What does success look like for this objective?"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Linked Theme (optional)</label>
+                        <select id="objectiveTheme">
+                            <option value="">Select a theme...</option>
+                            ${themeOptions}
+                        </select>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-objective-btn">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i> Save
+                    </button>
+                `,
+                width: 500,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    document.getElementById('save-objective-btn').addEventListener('click', saveObjective);
+                    lucide.createIcons();
+                }
+            });
+            objectiveModal.open();
         }
 
         function closeObjectiveModal() {
-            if (objectiveModalManager) {
-                objectiveModalManager.close();
-            } else {
-                document.getElementById('objectiveModal').classList.remove('active');
+            if (objectiveModal) {
+                objectiveModal.close();
+                objectiveModal = null;
             }
             currentPerspectiveId = null;
             editingObjectiveId = null;
@@ -1700,7 +1599,7 @@
             };
 
             if (!data.name) {
-                alert('Objective name is required');
+                ModalService.warning('Objective name is required');
                 return;
             }
 
@@ -1716,17 +1615,24 @@
                     closeObjectiveModal();
                     renderPerspectives();
                     updateStepperCompletion();
+                    ModalService.success('Objective saved');
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error('Error: ' + result.error);
                 }
             } catch (error) {
                 console.error('Error saving objective:', error);
-                alert('Error saving objective');
+                ModalService.error('Error saving objective');
             }
         }
 
         async function deleteObjective(id) {
-            if (!confirm('Delete this objective?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Objective',
+                message: 'Delete this objective?',
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/api/s2e/objectives/${id}`, { method: 'DELETE' });
@@ -1819,38 +1725,66 @@
         function showLinkOkrModal(okrId) {
             linkingOkrId = okrId;
             const okr = okrs.find(o => o.id === okrId);
+            const okrTitle = okr?.title || '';
 
-            document.getElementById('linkOkrTitle').textContent = okr?.title || '';
-
-            // Populate objectives dropdown
-            const select = document.getElementById('linkObjectiveSelect');
-            select.innerHTML = '<option value="">Select an objective...</option>' +
-                objectives.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-
-            // Check if already linked
+            const objectiveOptions = objectives.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
             const existingLink = okrLinks.find(l => l.okr_id === okrId);
-            if (existingLink) {
-                select.value = existingLink.bsc_objective_id;
-                document.getElementById('linkType').value = existingLink.link_type || 'supports';
-                document.getElementById('linkContribution').value = existingLink.contribution_description || '';
-            } else {
-                document.getElementById('linkType').value = 'supports';
-                document.getElementById('linkContribution').value = '';
-            }
 
-            if (linkOkrModalManager) {
-                linkOkrModalManager.open();
-            } else {
-                document.getElementById('linkOkrModal').classList.add('active');
-            }
-            lucide.createIcons();
+            linkOkrModal = ModalService.create({
+                title: '<i data-lucide="link" style="width:18px;height:18px;"></i> Link to Strategic Objective',
+                content: `
+                    <div class="form-group">
+                        <label>OKR</label>
+                        <div style="font-weight: 600; padding: 0.5rem 0;">${okrTitle}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Strategic Objective</label>
+                        <select id="linkObjectiveSelect">
+                            <option value="">Select an objective...</option>
+                            ${objectiveOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Link Type</label>
+                        <select id="linkType">
+                            <option value="supports">Supports</option>
+                            <option value="measures">Measures</option>
+                            <option value="enables">Enables</option>
+                            <option value="validates">Validates</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>How does this OKR contribute?</label>
+                        <textarea id="linkContribution" rows="2" placeholder="Describe how this OKR advances the strategic objective"></textarea>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-link-btn">
+                        <i data-lucide="link" style="width:16px;height:16px;"></i> Link
+                    </button>
+                `,
+                width: 500,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    // Set existing values if already linked
+                    if (existingLink) {
+                        document.getElementById('linkObjectiveSelect').value = existingLink.bsc_objective_id;
+                        document.getElementById('linkType').value = existingLink.link_type || 'supports';
+                        document.getElementById('linkContribution').value = existingLink.contribution_description || '';
+                    }
+                    document.getElementById('save-link-btn').addEventListener('click', saveLinkOkr);
+                    lucide.createIcons();
+                }
+            });
+            linkOkrModal.open();
         }
 
         function closeLinkOkrModal() {
-            if (linkOkrModalManager) {
-                linkOkrModalManager.close();
-            } else {
-                document.getElementById('linkOkrModal').classList.remove('active');
+            if (linkOkrModal) {
+                linkOkrModal.close();
+                linkOkrModal = null;
             }
             linkingOkrId = null;
         }
@@ -1858,7 +1792,7 @@
         async function saveLinkOkr() {
             const objectiveId = document.getElementById('linkObjectiveSelect').value;
             if (!objectiveId) {
-                alert('Please select an objective');
+                ModalService.warning('Please select an objective');
                 return;
             }
 
@@ -1888,17 +1822,24 @@
                     closeLinkOkrModal();
                     renderOkrLinkage();
                     updateStepperCompletion();
+                    ModalService.success('OKR linked');
                 } else {
-                    alert('Error: ' + result.error);
+                    ModalService.error('Error: ' + result.error);
                 }
             } catch (error) {
                 console.error('Error linking OKR:', error);
-                alert('Error linking OKR');
+                ModalService.error('Error linking OKR');
             }
         }
 
         async function unlinkOkr(linkId) {
-            if (!confirm('Remove this strategic link?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Remove Link',
+                message: 'Remove this strategic link?',
+                confirmText: 'Remove',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/api/s2e/okr-links/${linkId}`, { method: 'DELETE' });
@@ -1984,7 +1925,7 @@
 
         async function activateStrategy() {
             if (!foundation) {
-                alert('No strategy foundation to activate');
+                ModalService.warning('No strategy foundation to activate');
                 return;
             }
 
@@ -1997,12 +1938,12 @@
 
                 const result = await res.json();
                 if (result.success) {
-                    alert('Strategy activated! Your strategic framework is now live.');
+                    ModalService.success('Strategy activated! Your strategic framework is now live.');
                     foundation = result.data;
                 }
             } catch (error) {
                 console.error('Error activating strategy:', error);
-                alert('Error activating strategy');
+                ModalService.error('Error activating strategy');
             }
         }
 
@@ -2097,6 +2038,25 @@
             renderAgentsGrid();
         }
 
+        // Check if a string is an emoji (or starts with emoji)
+        function isEmoji(str) {
+            if (!str) return false;
+            // Match common emoji ranges and variation selectors
+            const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2300}-\u{23FF}\u{2B50}\u{2934}\u{2935}\u{25AA}\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}\u{26AB}\u{26BD}\u{26BE}\u{26C4}\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}\u{2712}\u{2714}\u{2716}\u{271D}\u{2721}\u{2728}\u{2733}\u{2734}\u{2744}\u{2747}\u{274C}\u{274E}\u{2753}-\u{2755}\u{2757}\u{2763}\u{2764}\u{2795}-\u{2797}\u{27A1}\u{27B0}\u{27BF}\u{FE0F}]/u;
+            return emojiRegex.test(str);
+        }
+
+        // Render icon - handles both Lucide icons and emojis
+        function renderIcon(icon, size = 16) {
+            if (!icon) {
+                return `<i data-lucide="bot" style="width:${size}px;height:${size}px;"></i>`;
+            }
+            if (isEmoji(icon)) {
+                return `<span style="font-size:${size}px;line-height:1;">${icon}</span>`;
+            }
+            return `<i data-lucide="${icon}" style="width:${size}px;height:${size}px;"></i>`;
+        }
+
         // Render agents grid
         function renderAgentsGrid() {
             const container = document.getElementById('agentsGrid');
@@ -2125,7 +2085,7 @@
                     <div class="agent-card" onclick="openAgentChat('${agent.id}')">
                         <div class="agent-card-header">
                             <div class="agent-card-icon" style="background: ${colors.bg}20; color: ${colors.fg}">
-                                <i data-lucide="${agent.icon || 'bot'}" style="width:16px;height:16px;"></i>
+                                ${renderIcon(agent.icon, 16)}
                             </div>
                             <div class="agent-card-name" title="${agent.name}">${agent.name}</div>
                             <div class="agent-card-model">${modelShort}</div>
@@ -2143,32 +2103,42 @@
             currentChatAgent = strategy120Agents.find(a => a.id === agentId);
             if (!currentChatAgent) return;
 
-            document.getElementById('chatAgentName').textContent = currentChatAgent.name;
-            document.getElementById('agentChatMessages').innerHTML = `
-                <div class="chat-message assistant">
-                    <p>Hello! I'm ${currentChatAgent.name}. ${currentChatAgent.description || 'How can I help with your strategic planning?'}</p>
-                </div>
-            `;
-            document.getElementById('agentChatInput').value = '';
-            if (agentChatModalManager) {
-                agentChatModalManager.open();
-            } else {
-                document.getElementById('agentChatModal').classList.add('active');
-            }
-            lucide.createIcons();
+            const agentName = currentChatAgent.name;
+            const agentDescription = currentChatAgent.description || 'How can I help with your strategic planning?';
 
-            // Focus input
-            setTimeout(() => {
-                document.getElementById('agentChatInput').focus();
-            }, 100);
+            agentChatModal = ModalService.create({
+                title: `<i data-lucide="bot" style="width:18px;height:18px;"></i> ${agentName}`,
+                content: `
+                    <div class="agent-chat-messages" id="agentChatMessages">
+                        <div class="chat-message assistant">
+                            <p>Hello! I'm ${agentName}. ${agentDescription}</p>
+                        </div>
+                    </div>
+                    <div class="agent-input-area">
+                        <input type="text" id="agentChatInput" placeholder="Ask a question..." onkeypress="handleChatKeypress(event)">
+                        <button class="btn-primary" onclick="sendAgentMessage()">
+                            <i data-lucide="send" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                `,
+                width: 700,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        document.getElementById('agentChatInput')?.focus();
+                    }, 100);
+                }
+            });
+            agentChatModal.open();
         }
 
         // Close agent chat modal
         function closeAgentChatModal() {
-            if (agentChatModalManager) {
-                agentChatModalManager.close();
-            } else {
-                document.getElementById('agentChatModal').classList.remove('active');
+            if (agentChatModal) {
+                agentChatModal.close();
+                agentChatModal = null;
             }
             currentChatAgent = null;
         }

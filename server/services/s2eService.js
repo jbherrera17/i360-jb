@@ -1,6 +1,6 @@
 /**
  * INSIGHT 360 - Strategy-to-Execution (S2E) Service
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Business logic for S2E module including:
  * - Strategic foundation hierarchy management
@@ -12,11 +12,30 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-);
+// Initialize Supabase client - use service key if available, otherwise anon key
+let supabase = null;
+try {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+    if (url && key) {
+        supabase = createClient(url, key);
+    } else {
+        console.warn('[S2E Service] Supabase credentials not found in environment');
+    }
+} catch (error) {
+    console.error('[S2E Service] Failed to initialize Supabase client:', error.message);
+}
+
+/**
+ * Set the Supabase client for the service
+ * Allows injection from routes for consistent client usage
+ * @param {object} client - Supabase client instance
+ */
+function setSupabaseClient(client) {
+    if (client) {
+        supabase = client;
+    }
+}
 
 // ============================================================================
 // CONSTANTS
@@ -1480,6 +1499,9 @@ async function getBriefingMetrics(userId) {
 // ============================================================================
 
 module.exports = {
+    // Client injection
+    setSupabaseClient,
+
     // Validation helpers
     validateFoundation,
     validateTheme,

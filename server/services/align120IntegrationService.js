@@ -807,25 +807,88 @@ class Align120IntegrationService {
 
     /**
      * Get or create company profile ID for a session
+     * Enforces 1:1 client-profile relationship for agency sessions
      */
     async getCompanyProfileId(sessionId) {
         const { data: session } = await supabase
             .from('align120_sessions')
-            .select('company_profile_id, company_name, user_id')
+            .select('company_profile_id, company_name, user_id, org_id, client_id')
             .eq('id', sessionId)
             .single();
 
         if (session?.company_profile_id) {
+            // Ensure existing profile is linked to client if this is a client session
+            if (session.client_id) {
+                await supabase
+                    .from('company_profiles')
+                    .update({
+                        client_id: session.client_id,
+                        org_id: session.org_id,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', session.company_profile_id)
+                    .is('client_id', null); // Only update if not already linked
+            }
             return session.company_profile_id;
         }
 
-        // Create a company profile if none exists
+        // For client sessions, use the get_or_create_client_profile function
+        // to enforce 1:1 relationship
+        if (session?.client_id) {
+            // Check for existing client profile first
+            const { data: existingProfile } = await supabase
+                .from('company_profiles')
+                .select('id')
+                .eq('client_id', session.client_id)
+                .neq('status', 'archived')
+                .single();
+
+            if (existingProfile) {
+                // Link session to existing client profile
+                await supabase
+                    .from('align120_sessions')
+                    .update({ company_profile_id: existingProfile.id })
+                    .eq('id', sessionId);
+                return existingProfile.id;
+            }
+
+            // Create new profile linked to client
+            const { data: newProfile, error: profileError } = await supabase
+                .from('company_profiles')
+                .insert({
+                    id: uuidv4(),
+                    user_id: session.user_id,
+                    org_id: session.org_id,
+                    client_id: session.client_id,
+                    company_name: session.company_name,
+                    status: 'active',
+                    version: 1,
+                    created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (profileError) throw profileError;
+
+            // Update session with profile ID
+            await supabase
+                .from('align120_sessions')
+                .update({ company_profile_id: newProfile.id })
+                .eq('id', sessionId);
+
+            return newProfile.id;
+        }
+
+        // For personal sessions (no client), create a standalone profile
         const { data: profile, error } = await supabase
             .from('company_profiles')
             .insert({
                 id: uuidv4(),
                 user_id: session.user_id,
-                name: session.company_name,
+                org_id: session.org_id,
+                company_name: session.company_name,
+                status: 'active',
+                version: 1,
                 created_at: new Date().toISOString()
             })
             .select()

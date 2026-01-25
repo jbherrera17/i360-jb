@@ -199,24 +199,24 @@ async function loadAssets() {
 
 function getDefaultAssetTypes() {
     return [
-        { type_key: 'voice_dna', icon: '🎤', display_name: 'VoiceDNA', category: 'core' },
-        { type_key: 'icp', icon: '👤', display_name: 'ICP', category: 'core' },
-        { type_key: 'products', icon: '📦', display_name: 'Products', category: 'core' },
-        { type_key: 'company_description', icon: '🏢', display_name: 'Company Description', category: 'core' },
-        { type_key: 'why_we_win', icon: '🏆', display_name: 'Why We Win', category: 'core' },
-        { type_key: 'core_values', icon: '💎', display_name: 'Core Values', category: 'core' },
-        { type_key: 'pain_points', icon: '🎯', display_name: 'Pain Points', category: 'core' },
-        { type_key: 'custom_processes', icon: '⚙️', display_name: 'Custom Processes', category: 'core' },
-        { type_key: 'competitors', icon: '⚔️', display_name: 'Competitors', category: 'extended' },
-        { type_key: 'case_studies', icon: '📖', display_name: 'Case Studies', category: 'extended' },
-        { type_key: 'faqs', icon: '❓', display_name: 'FAQs', category: 'extended' },
-        { type_key: 'team_bios', icon: '👥', display_name: 'Team Bios', category: 'extended' },
-        { type_key: 'industry_context', icon: '🌐', display_name: 'Industry Context', category: 'extended' },
-        { type_key: 'terminology', icon: '📚', display_name: 'Terminology', category: 'extended' },
-        { type_key: 'templates', icon: '📝', display_name: 'Templates', category: 'extended' },
-        { type_key: 'pricing', icon: '💰', display_name: 'Pricing', category: 'extended' },
-        { type_key: 'brand_guidelines', icon: '🎨', display_name: 'Brand Guidelines', category: 'extended' },
-        { type_key: 'personas', icon: '🎭', display_name: 'Personas', category: 'extended' }
+        { type_key: 'voice_dna', icon: 'mic', display_name: 'VoiceDNA', category: 'core' },
+        { type_key: 'icp', icon: 'user', display_name: 'ICP', category: 'core' },
+        { type_key: 'products', icon: 'package', display_name: 'Products', category: 'core' },
+        { type_key: 'company_description', icon: 'building-2', display_name: 'Company Description', category: 'core' },
+        { type_key: 'why_we_win', icon: 'trophy', display_name: 'Why We Win', category: 'core' },
+        { type_key: 'core_values', icon: 'gem', display_name: 'Core Values', category: 'core' },
+        { type_key: 'pain_points', icon: 'target', display_name: 'Pain Points', category: 'core' },
+        { type_key: 'custom_processes', icon: 'settings', display_name: 'Custom Processes', category: 'core' },
+        { type_key: 'competitors', icon: 'swords', display_name: 'Competitors', category: 'extended' },
+        { type_key: 'case_studies', icon: 'book-open', display_name: 'Case Studies', category: 'extended' },
+        { type_key: 'faqs', icon: 'help-circle', display_name: 'FAQs', category: 'extended' },
+        { type_key: 'team_bios', icon: 'users', display_name: 'Team Bios', category: 'extended' },
+        { type_key: 'industry_context', icon: 'globe', display_name: 'Industry Context', category: 'extended' },
+        { type_key: 'terminology', icon: 'library', display_name: 'Terminology', category: 'extended' },
+        { type_key: 'templates', icon: 'file-text', display_name: 'Templates', category: 'extended' },
+        { type_key: 'pricing', icon: 'dollar-sign', display_name: 'Pricing', category: 'extended' },
+        { type_key: 'brand_guidelines', icon: 'palette', display_name: 'Brand Guidelines', category: 'extended' },
+        { type_key: 'personas', icon: 'drama', display_name: 'Personas', category: 'extended' }
     ];
 }
 

@@ -369,50 +369,46 @@ async function handleSubmit(event) {
 }
 
 /**
- * Open delete confirmation modal
+ * Open delete confirmation modal - using ModalService
  */
-function openDeleteModal(typeKey) {
+async function openDeleteModal(typeKey) {
     const type = assetTypes.find(t => t.type_key === typeKey);
     if (!type) return;
 
-    deletingType = typeKey;
-    document.getElementById('delete-type-name').textContent = type.display_name;
-    document.getElementById('delete-modal-overlay').classList.add('active');
+    const confirmed = await ModalService.confirm({
+        title: 'Delete Asset Type',
+        message: `Are you sure you want to delete <strong>${escapeHtml(type.display_name)}</strong>?<br><br><span style="color: var(--text-secondary);">This action cannot be undone. Assets with this type will retain their data but may not display correctly.</span>`,
+        confirmText: 'Delete Type',
+        confirmClass: 'btn-danger'
+    });
+
+    if (confirmed) {
+        await performDelete(typeKey);
+    }
 }
 
 /**
- * Close delete modal
+ * Perform the actual delete operation
  */
-function closeDeleteModal() {
-    document.getElementById('delete-modal-overlay').classList.remove('active');
-    deletingType = null;
-}
-
-/**
- * Confirm delete
- */
-async function confirmDelete() {
-    if (!deletingType) return;
-
+async function performDelete(typeKey) {
     try {
-        const response = await fetch(`/api/context/types/${deletingType}`, {
+        const response = await fetch(`/api/context/types/${typeKey}`, {
             method: 'DELETE'
         });
 
         const result = await response.json();
 
         if (result.success) {
-            showToast('Type deleted successfully', 'success');
-            closeDeleteModal();
+            ModalService.success('Type deleted successfully');
             await loadAssetTypes();
             renderTable();
             updateStats();
         } else {
-            showToast(result.error || 'Delete failed', 'error');
+            ModalService.error(result.error || 'Delete failed');
         }
     } catch (error) {
         console.error('Error deleting asset type:', error);
-        showToast('Failed to delete asset type', 'error');
+        ModalService.error('Failed to delete asset type');
     }
 }
 

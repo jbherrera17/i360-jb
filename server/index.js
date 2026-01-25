@@ -58,6 +58,9 @@ const organizationsRoutes = require('./routes/organizations');
 const orgMembersRoutes = require('./routes/org-members');
 const clientsRoutes = require('./routes/clients');
 const connectionsRoutes = require('./routes/connections');
+const orgCustomizationRoutes = require('./routes/orgCustomization');
+const clientPortalRoutes = require('./routes/clientPortal');
+const agencyAnalyticsRoutes = require('./routes/agencyAnalytics');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -405,7 +408,13 @@ function initializeServices() {
         app.use('/api/org-members', orgMembersRoutes(supabase));
         app.use('/api/clients', clientsRoutes(supabase));
         app.use('/api/connections', connectionsRoutes(supabase));
+        app.use('/api/org-customization', orgCustomizationRoutes(supabase));
+        app.use('/api/client-portal', clientPortalRoutes(supabase));
+        app.use('/api/analytics', agencyAnalyticsRoutes(supabase));
         console.log('  ✅ Agent routes registered');
+        console.log('  ✅ Agency Customization routes registered (Phase 41)');
+        console.log('  ✅ Client Portal routes registered (Phase 42)');
+        console.log('  ✅ Agency Analytics routes registered (Phase 43)');
         console.log('  ✅ Connection Management routes registered (Phase 40)');
         console.log('  ✅ Users routes registered');
         console.log('  ✅ Research Studio routes registered (Phase 6)');

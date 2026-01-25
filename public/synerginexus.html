@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -462,7 +463,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Modal styles handled by modal-manager.js */
+        /* Modal styles handled by ModalService */
 
         /* Form Elements */
         .form-group {
@@ -647,84 +648,7 @@
         </main>
     </div>
 
-    <!-- Value Modal -->
-    <div class="modal-overlay" id="value-modal">
-        <div class="modal" id="value-modal-dialog">
-            <div class="modal-header" id="value-modal-header">
-                <h3 class="modal-title">Add Governance Value</h3>
-                <button class="modal-close" onclick="closeValueModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="value-form" onsubmit="saveValue(event)">
-                    <div class="form-group">
-                        <label class="form-label">Value Name *</label>
-                        <input type="text" class="form-input" id="value-name" required placeholder="e.g., Integrity">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Plain Meaning *</label>
-                        <input type="text" class="form-input" id="value-meaning" required placeholder="What this value means in simple terms">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Why It Matters</label>
-                        <textarea class="form-textarea" id="value-why" placeholder="Explain the importance of this value..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-checkbox">
-                            <input type="checkbox" id="value-non-negotiable">
-                            <span>Non-Negotiable (Cannot be compromised)</span>
-                        </label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeValueModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" form="value-form">Add Value</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Conflict Modal -->
-    <div class="modal-overlay" id="conflict-modal">
-        <div class="modal" id="conflict-modal-dialog">
-            <div class="modal-header" id="conflict-modal-header">
-                <h3 class="modal-title">Log Governance Conflict</h3>
-                <button class="modal-close" onclick="closeConflictModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="conflict-form" onsubmit="saveConflict(event)">
-                    <div class="form-group">
-                        <label class="form-label">Conflict Description *</label>
-                        <textarea class="form-textarea" id="conflict-description" required placeholder="Describe the governance conflict..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Severity *</label>
-                        <select class="form-select" id="conflict-severity" required>
-                            <option value="">Select severity...</option>
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="critical">Critical</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Context</label>
-                        <textarea class="form-textarea" id="conflict-context" placeholder="Additional context about when/how this occurred..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeConflictModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" form="conflict-form">Log Conflict</button>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/help-modal.js"></script>
-    <script src="/js/modal-manager.js"></script>
     <script>
         // State
         let digmConfigs = [];
@@ -732,9 +656,9 @@
         let conflicts = [];
         let escalationRules = [];
 
-        // Modal managers
-        let valueModalManager = null;
-        let conflictModalManager = null;
+        // Modal instances (using ModalService)
+        let valueModal = null;
+        let conflictModal = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -745,13 +669,6 @@
                 helpFile: '/api/docs/synerginexus-user-guide.md',
                 title: 'SynergiNexus Guide'
             });
-
-            // Initialize modal managers
-            valueModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 520 });
-            valueModalManager.init('value-modal-dialog', 'value-modal-header', 'value-modal');
-
-            conflictModalManager = new ModalManager({ minWidth: 400, minHeight: 300, defaultWidth: 520 });
-            conflictModalManager.init('conflict-modal-dialog', 'conflict-modal-header', 'conflict-modal');
 
             await loadDashboard();
         });
@@ -1064,35 +981,108 @@
             }
         }
 
-        // Modal handlers
+        // Modal handlers using ModalService
         function openValueModal() {
-            document.getElementById('value-form').reset();
-            valueModalManager.open();
+            valueModal = ModalService.create({
+                title: 'Add Governance Value',
+                content: `
+                    <div class="form-group">
+                        <label class="form-label">Value Name *</label>
+                        <input type="text" class="form-input" id="value-name" required placeholder="e.g., Integrity">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Plain Meaning *</label>
+                        <input type="text" class="form-input" id="value-meaning" required placeholder="What this value means in simple terms">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Why It Matters</label>
+                        <textarea class="form-textarea" id="value-why" placeholder="Explain the importance of this value..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="value-non-negotiable">
+                            <span>Non-Negotiable (Cannot be compromised)</span>
+                        </label>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-value-btn">Add Value</button>
+                `,
+                width: 520,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    document.getElementById('save-value-btn').addEventListener('click', saveValue);
+                }
+            });
+            valueModal.open();
         }
 
         function closeValueModal() {
-            valueModalManager.close();
+            if (valueModal) {
+                valueModal.close();
+                valueModal = null;
+            }
         }
 
         function openConflictModal() {
-            document.getElementById('conflict-form').reset();
-            conflictModalManager.open();
+            conflictModal = ModalService.create({
+                title: 'Log Governance Conflict',
+                content: `
+                    <div class="form-group">
+                        <label class="form-label">Conflict Description *</label>
+                        <textarea class="form-textarea" id="conflict-description" required placeholder="Describe the governance conflict..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Severity *</label>
+                        <select class="form-select" id="conflict-severity" required>
+                            <option value="">Select severity...</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Context</label>
+                        <textarea class="form-textarea" id="conflict-context" placeholder="Additional context about when/how this occurred..."></textarea>
+                    </div>
+                `,
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="save-conflict-btn">Log Conflict</button>
+                `,
+                width: 520,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    document.getElementById('save-conflict-btn').addEventListener('click', saveConflict);
+                }
+            });
+            conflictModal.open();
         }
 
         function closeConflictModal() {
-            conflictModalManager.close();
+            if (conflictModal) {
+                conflictModal.close();
+                conflictModal = null;
+            }
         }
 
         // Save handlers
-        async function saveValue(event) {
-            event.preventDefault();
-
+        async function saveValue() {
             const valueData = {
                 name: document.getElementById('value-name').value.trim(),
                 plain_meaning: document.getElementById('value-meaning').value.trim(),
                 why_it_matters: document.getElementById('value-why').value.trim() || null,
                 is_non_negotiable: document.getElementById('value-non-negotiable').checked
             };
+
+            if (!valueData.name || !valueData.plain_meaning) {
+                ModalService.warning('Name and plain meaning are required');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/synerginexus/values', {
@@ -1107,24 +1097,27 @@
                     closeValueModal();
                     loadValues();
                     loadDashboard();
-                    showSuccess('Value added successfully');
+                    ModalService.success('Value added successfully');
                 } else {
-                    showError(data.error || 'Failed to add value');
+                    ModalService.error(data.error || 'Failed to add value');
                 }
             } catch (error) {
                 console.error('Error saving value:', error);
-                showError('Failed to add value');
+                ModalService.error('Failed to add value');
             }
         }
 
-        async function saveConflict(event) {
-            event.preventDefault();
-
+        async function saveConflict() {
             const conflictData = {
                 description: document.getElementById('conflict-description').value.trim(),
                 severity: document.getElementById('conflict-severity').value,
                 context: { note: document.getElementById('conflict-context').value.trim() }
             };
+
+            if (!conflictData.description || !conflictData.severity) {
+                ModalService.warning('Description and severity are required');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/synerginexus/conflicts', {
@@ -1139,19 +1132,26 @@
                     closeConflictModal();
                     loadConflicts();
                     loadDashboard();
-                    showSuccess('Conflict logged successfully');
+                    ModalService.success('Conflict logged successfully');
                 } else {
-                    showError(data.error || 'Failed to log conflict');
+                    ModalService.error(data.error || 'Failed to log conflict');
                 }
             } catch (error) {
                 console.error('Error saving conflict:', error);
-                showError('Failed to log conflict');
+                ModalService.error('Failed to log conflict');
             }
         }
 
         async function resolveConflict(id) {
-            const resolution = prompt('Enter resolution notes:');
-            if (!resolution) return;
+            const result = await ModalService.form({
+                title: 'Resolve Conflict',
+                fields: [
+                    { name: 'resolution', label: 'Resolution Notes', type: 'textarea', required: true, placeholder: 'Enter resolution notes...' }
+                ],
+                submitText: 'Resolve'
+            });
+            if (!result) return;
+            const resolution = result.resolution;
 
             try {
                 const response = await fetch(`/api/synerginexus/conflicts/${id}/resolve`, {

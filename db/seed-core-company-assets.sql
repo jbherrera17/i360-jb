@@ -581,7 +581,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- First, add the asset type if it doesn't exist
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
-('thought_leadership_topics', 'Thought Leadership Topics', 'Strategic topics and themes for thought leadership content', '💡', 85,
+('thought_leadership_topics', 'Thought Leadership Topics', 'Strategic topics and themes for thought leadership content', 'lightbulb', 85,
 '{
   "type": "object",
   "properties": {

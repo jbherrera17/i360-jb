@@ -59,7 +59,11 @@ const ALLOWED_DOCS = [
     // Agency Foundation (Phase 39)
     'admin-org-settings-user-guide.md',
     'admin-org-members-user-guide.md',
-    'admin-clients-user-guide.md'
+    'admin-clients-user-guide.md',
+    // Agency Model Enhancement (Phase 40-43)
+    'agency-dashboard-user-guide.md',
+    'admin-org-customization-user-guide.md',
+    'admin-client-users-user-guide.md'
 ];
 
 /**

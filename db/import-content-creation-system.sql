@@ -14,7 +14,7 @@
 INSERT INTO context_asset_types (type_key, display_name, description, icon, sort_order, json_schema) VALUES
 
 -- Origin Story
-('origin_story', 'Origin Story', 'Personal or company origin story for thought leadership', '📜', 210,
+('origin_story', 'Origin Story', 'Personal or company origin story for thought leadership', 'scroll', 210,
 '{
   "type": "object",
   "properties": {
@@ -29,7 +29,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- Product Suite
-('product_suite', 'Product Suite', 'Complete product and service offerings catalog', '🎁', 35,
+('product_suite', 'Product Suite', 'Complete product and service offerings catalog', 'gift', 35,
 '{
   "type": "object",
   "properties": {
@@ -52,7 +52,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- Buyer Personas (detailed)
-('buyer_personas', 'Buyer Personas', 'Detailed buyer persona profiles', '🎯', 65,
+('buyer_personas', 'Buyer Personas', 'Detailed buyer persona profiles', 'target', 65,
 '{
   "type": "object",
   "properties": {
@@ -74,7 +74,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- Editorial Calendar
-('editorial_calendar', 'Editorial Calendar', 'Content calendar with themes and topics', '📅', 220,
+('editorial_calendar', 'Editorial Calendar', 'Content calendar with themes and topics', 'calendar', 220,
 '{
   "type": "object",
   "properties": {
@@ -95,7 +95,7 @@ INSERT INTO context_asset_types (type_key, display_name, description, icon, sort
 }'::jsonb),
 
 -- Hashtag Strategy
-('hashtag_strategy', 'Hashtag Strategy', 'Social media hashtag taxonomy and strategy', '#️⃣', 230,
+('hashtag_strategy', 'Hashtag Strategy', 'Social media hashtag taxonomy and strategy', 'hash', 230,
 '{
   "type": "object",
   "properties": {

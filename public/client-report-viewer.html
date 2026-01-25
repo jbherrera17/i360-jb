@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Viewer | Client Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background: var(--bg-primary);
+            min-height: 100vh;
+        }
+
+        .viewer-layout {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .back-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .report-title-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .report-meta-header {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Main Content */
+        .viewer-main {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+        }
+
+        /* Report Header Section */
+        .report-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 16px;
+            padding: 2.5rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .report-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-header-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .report-header-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .report-header-meta-item i {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Score Cards */
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .score-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .score-card-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .score-card-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .score-card-level {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .score-ring {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 0.5rem;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-ring-bg {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 8;
+        }
+
+        .score-ring-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .score-ring-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Report Sections */
+        .report-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .section-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .section-header i {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
+
+        .section-header h2 {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .section-toggle {
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .section-header.collapsed .section-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .section-body {
+            padding: 1.5rem;
+        }
+
+        .section-body.collapsed {
+            display: none;
+        }
+
+        /* Content Blocks */
+        .content-block {
+            margin-bottom: 1.5rem;
+        }
+
+        .content-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .content-block h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .content-block p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .content-block ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .content-block li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .content-block li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5em;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        /* Recommendations */
+        .recommendation-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .recommendation-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendation-priority {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .recommendation-priority.high {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .recommendation-priority.medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .recommendation-priority.low {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .recommendation-title {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .recommendation-body {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            color: var(--text-muted);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Print styles */
+        @media print {
+            .viewer-header { display: none; }
+            .viewer-main { max-width: none; padding: 0; }
+            .report-section { break-inside: avoid; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .viewer-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .viewer-main {
+                padding: 1rem;
+            }
+
+            .report-header {
+                padding: 1.5rem;
+            }
+
+            .report-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .report-header-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="viewer-layout">
+        <!-- Header -->
+        <header class="viewer-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()">
+                    <i data-lucide="arrow-left"></i>
+                    Back
+                </button>
+                <div>
+                    <div class="report-title-header" id="header-title">Loading...</div>
+                    <div class="report-meta-header" id="header-meta"></div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i data-lucide="printer"></i>
+                    Print
+                </button>
+                <button class="btn btn-primary" id="download-btn" onclick="downloadReport()" style="display: none;">
+                    <i data-lucide="download"></i>
+                    Download PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="viewer-main" id="report-content">
+            <!-- Content loaded dynamically -->
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // State
+        let clientToken = null;
+        let reportId = null;
+        let report = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+
+            // Get token
+            clientToken = localStorage.getItem('client_portal_token');
+            if (!clientToken) {
+                window.location.href = '/client-portal.html';
+                return;
+            }
+
+            // Get report ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            reportId = urlParams.get('id');
+
+            if (!reportId) {
+                showError('No report specified');
+                return;
+            }
+
+            await loadReport();
+        });
+
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        function goBack() {
+            window.location.href = '/client-portal.html';
+        }
+
+        async function loadReport() {
+            try {
+                const response = await fetch(`/api/client-portal/reports/${reportId}`, {
+                    headers: { 'Authorization': `Bearer ${clientToken}` }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/client-portal.html';
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    report = result.data;
+                    renderReport();
+                } else {
+                    showError(result.error || 'Failed to load report');
+                }
+            } catch (error) {
+                console.error('Error loading report:', error);
+                showError('Failed to load report');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderReport() {
+            // Update header
+            document.getElementById('header-title').textContent = report.report_name || 'Strategic Report';
+            document.getElementById('header-meta').textContent = formatDate(report.shared_at);
+
+            if (report.download_url) {
+                document.getElementById('download-btn').style.display = 'flex';
+            }
+
+            const content = document.getElementById('report-content');
+
+            // Build report HTML
+            let html = `
+                <div class="report-header">
+                    <h1>${report.report_name || 'Strategic Assessment Report'}</h1>
+                    <p>${report.company_name || ''}</p>
+                    <div class="report-header-meta">
+                        <div class="report-header-meta-item">
+                            <i data-lucide="calendar"></i>
+                            ${formatDate(report.created_at || report.shared_at)}
+                        </div>
+                        <div class="report-header-meta-item">
+                            <i data-lucide="file-text"></i>
+                            ${formatReportType(report.report_type)}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Scores section
+            if (report.maturity_score || report.readiness_score) {
+                html += `<div class="scores-grid">`;
+
+                if (report.maturity_score) {
+                    html += `
+                        <div class="score-card">
+                            <div class="score-ring">
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                    <circle class="score-ring-progress" cx="60" cy="60" r="52"
+                                        stroke-dasharray="326.73"
+                                        stroke-dashoffset="${326.73 - (326.73 * report.maturity_score / 100)}"/>
+                                </svg>
+                                <div class="score-ring-value">${Math.round(report.maturity_score)}</div>
+                            </div>
+                            <div class="score-card-label">AI Maturity Score</div>
+                            ${report.maturity_level ? `<div class="score-card-level">${report.maturity_level}</div>` : ''}
+                        </div>
+                    `;
+                }
+
+                if (report.readiness_score) {
+                    html += `
+                        <div class="score-card">
+                            <div class="score-ring">
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+                                    <circle class="score-ring-progress" cx="60" cy="60" r="52"
+                                        stroke-dasharray="326.73"
+                                        stroke-dashoffset="${326.73 - (326.73 * report.readiness_score / 100)}"/>
+                                </svg>
+                                <div class="score-ring-value">${Math.round(report.readiness_score)}</div>
+                            </div>
+                            <div class="score-card-label">Team Readiness Score</div>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            }
+
+            // Report sections
+            if (report.sections && report.sections.length > 0) {
+                report.sections.forEach((section, index) => {
+                    html += renderSection(section, index);
+                });
+            } else if (report.report_content) {
+                // Fallback for simple content
+                html += `
+                    <div class="report-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <i data-lucide="file-text"></i>
+                            <h2>Report Content</h2>
+                            <i data-lucide="chevron-down" class="section-toggle"></i>
+                        </div>
+                        <div class="section-body">
+                            <div class="content-block">
+                                ${formatContent(report.report_content)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // No content yet
+                html += `
+                    <div class="report-section">
+                        <div class="section-body" style="text-align: center; padding: 3rem;">
+                            <i data-lucide="file-text" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                            <h3>Report details coming soon</h3>
+                            <p style="color: var(--text-secondary);">The full report content will be available shortly.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderSection(section, index) {
+            const iconMap = {
+                'executive_summary': 'briefcase',
+                'findings': 'search',
+                'analysis': 'bar-chart-3',
+                'recommendations': 'lightbulb',
+                'next_steps': 'arrow-right-circle',
+                'appendix': 'paperclip'
+            };
+
+            const icon = iconMap[section.type] || 'file-text';
+
+            let bodyContent = '';
+
+            if (section.type === 'recommendations' && Array.isArray(section.items)) {
+                bodyContent = section.items.map(item => `
+                    <div class="recommendation-card">
+                        <div class="recommendation-header">
+                            <span class="recommendation-priority ${item.priority || 'medium'}">${(item.priority || 'medium').toUpperCase()}</span>
+                            <span class="recommendation-title">${item.title || ''}</span>
+                        </div>
+                        <div class="recommendation-body">${item.description || ''}</div>
+                    </div>
+                `).join('');
+            } else if (Array.isArray(section.items)) {
+                bodyContent = `
+                    <div class="content-block">
+                        <ul>
+                            ${section.items.map(item => `<li>${typeof item === 'string' ? item : item.text || item.title || ''}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else if (section.content) {
+                bodyContent = `
+                    <div class="content-block">
+                        ${formatContent(section.content)}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="report-section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <i data-lucide="${icon}"></i>
+                        <h2>${section.title || 'Section ' + (index + 1)}</h2>
+                        <i data-lucide="chevron-down" class="section-toggle"></i>
+                    </div>
+                    <div class="section-body">
+                        ${bodyContent}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleSection(header) {
+            header.classList.toggle('collapsed');
+            const body = header.nextElementSibling;
+            body.classList.toggle('collapsed');
+        }
+
+        function formatContent(content) {
+            if (!content) return '';
+
+            // Convert markdown-like content to HTML
+            let html = content
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            return `<p>${html}</p>`;
+        }
+
+        async function downloadReport() {
+            try {
+                showLoading();
+                const response = await fetch(`/api/client-portal/reports/${reportId}/download`, {
+                    headers: { 'Authorization': `Bearer ${clientToken}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${report.report_name || 'report'}.pdf`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    showToast('Failed to download report', 'error');
+                }
+            } catch (error) {
+                console.error('Error downloading report:', error);
+                showToast('Failed to download report', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showError(message) {
+            const content = document.getElementById('report-content');
+            content.innerHTML = `
+                <div style="text-align: center; padding: 4rem;">
+                    <i data-lucide="alert-circle" style="width: 64px; height: 64px; color: var(--danger); margin-bottom: 1rem;"></i>
+                    <h2>Error Loading Report</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${message}</p>
+                    <button class="btn btn-primary" onclick="goBack()">Return to Portal</button>
+                </div>
+            `;
+            lucide.createIcons();
+            hideLoading();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function formatReportType(type) {
+            const types = {
+                'align120': 'Align 120 Report',
+                'strategy': 'Strategy Report',
+                'maturity': 'AI Maturity Assessment',
+                'readiness': 'Team Readiness Report',
+                'executive': 'Executive Summary'
+            };
+            return types[type] || 'Strategic Report';
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

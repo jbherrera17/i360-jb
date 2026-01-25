@@ -743,13 +743,9 @@
                     <div class="canvas-header">
                         <div class="canvas-header-left">
                             <input type="text" class="workflow-name-input" id="workflowName" value="New Workflow" placeholder="Workflow Name">
-                            <select class="form-select" id="workflowCategory" style="width: auto;">
-                                <option value="executive">Executive</option>
-                                <option value="marketing">Marketing</option>
-                                <option value="sales">Sales</option>
-                                <option value="finance">Finance</option>
-                                <option value="operations">Operations</option>
-                                <option value="general">General</option>
+                            <select class="form-select" id="workflowDepartment" style="width: auto;">
+                                <option value="">Select Department</option>
+                                <!-- Populated dynamically from database -->
                             </select>
                         </div>
                         <div class="canvas-header-right">
@@ -886,9 +882,15 @@
             }
         };
 
+        // Departments array for dropdown
+        let departments = [];
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+
+            // Load departments first for dropdown
+            await loadDepartments();
 
             // Check for workflow ID in URL
             const params = new URLSearchParams(window.location.search);
@@ -903,6 +905,32 @@
 
             renderSteps();
         });
+
+        // Load departments from database
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    departments = result.data;
+                    const select = document.getElementById('workflowDepartment');
+
+                    // Clear existing options except the first one
+                    select.innerHTML = '<option value="">Select Department</option>';
+
+                    // Add departments from database
+                    departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
 
         // Get auth token
         function getAuthToken() {
@@ -927,14 +955,14 @@
                         description: result.workflow.description || '',
                         icon: result.workflow.icon || 'zap',
                         color: result.workflow.color || '#6366f1',
-                        category: result.workflow.category || 'general',
+                        department_id: result.workflow.department_id || '',
                         suite: result.workflow.suite || 'execute',
                         estimated_minutes: result.workflow.estimated_minutes || 15,
                         steps: result.workflow.steps || []
                     };
 
                     document.getElementById('workflowName').value = workflow.name;
-                    document.getElementById('workflowCategory').value = workflow.category;
+                    document.getElementById('workflowDepartment').value = workflow.department_id || '';
                     renderSteps();
                 }
             } catch (error) {
@@ -1362,7 +1390,7 @@
         async function saveWorkflow() {
             // Update from inputs
             workflow.name = document.getElementById('workflowName').value;
-            workflow.category = document.getElementById('workflowCategory').value;
+            workflow.department_id = document.getElementById('workflowDepartment').value || null;
 
             if (!workflow.name.trim()) {
                 alert('Please enter a workflow name');
@@ -1390,7 +1418,7 @@
                         description: workflow.description,
                         icon: workflow.icon,
                         color: workflow.color,
-                        category: workflow.category,
+                        department_id: workflow.department_id,
                         suite: workflow.suite,
                         estimated_minutes: workflow.estimated_minutes,
                         is_active: true,
