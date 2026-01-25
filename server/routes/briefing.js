@@ -26,6 +26,16 @@ module.exports = function(supabase) {
         return req.userId || req.headers['x-user-id'] || process.env.DEFAULT_USER_ID;
     };
 
+    // Helper to require authentication - returns 401 if no user
+    const requireAuth = (req, res) => {
+        const userId = getUser(req);
+        if (!userId) {
+            res.status(401).json({ success: false, error: 'Authentication required' });
+            return null;
+        }
+        return userId;
+    };
+
     // ============================================================================
     // BRIEFING RETRIEVAL ENDPOINTS
     // ============================================================================
@@ -36,7 +46,8 @@ module.exports = function(supabase) {
      */
     router.get('/latest', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const briefing = await briefingService.getLatestBriefing(userId);
 
             res.json({
@@ -55,10 +66,8 @@ module.exports = function(supabase) {
      */
     router.get('/today', async (req, res) => {
         try {
-            const userId = getUser(req);
-            if (!userId) {
-                return res.status(401).json({ success: false, error: 'Authentication required' });
-            }
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const briefing = await briefingService.getTodaysBriefing(userId);
 
             res.json({
@@ -77,7 +86,8 @@ module.exports = function(supabase) {
      */
     router.get('/history', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const { page = 1, limit = 10 } = req.query;
 
             const result = await briefingService.getBriefingHistory(userId, {
@@ -108,10 +118,8 @@ module.exports = function(supabase) {
      */
     router.get('/config', async (req, res) => {
         try {
-            const userId = getUser(req);
-            if (!userId) {
-                return res.status(401).json({ success: false, error: 'Authentication required' });
-            }
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const config = await briefingService.getConfigWithSections(userId);
 
             // Add scheduler status
@@ -136,7 +144,8 @@ module.exports = function(supabase) {
      */
     router.put('/config', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const { is_enabled, schedule_time, timezone } = req.body;
 
             const config = await briefingService.updateConfig(userId, {
@@ -197,7 +206,8 @@ module.exports = function(supabase) {
      */
     router.get('/sections', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const config = await briefingService.getConfigWithSections(userId);
 
             res.json({
@@ -216,7 +226,8 @@ module.exports = function(supabase) {
      */
     router.post('/sections', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const {
                 name,
                 slug,
@@ -265,7 +276,8 @@ module.exports = function(supabase) {
      */
     router.put('/sections/:id', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const { id } = req.params;
 
             const section = await briefingService.updateSection(userId, id, req.body);
@@ -287,7 +299,8 @@ module.exports = function(supabase) {
      */
     router.delete('/sections/:id', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const { id } = req.params;
 
             await briefingService.deleteSection(userId, id);
@@ -308,7 +321,8 @@ module.exports = function(supabase) {
      */
     router.post('/sections/reorder', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const { section_ids } = req.body;
 
             if (!Array.isArray(section_ids)) {
@@ -340,7 +354,8 @@ module.exports = function(supabase) {
      */
     router.post('/generate', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
 
             const briefing = await briefingService.generateBriefing(userId);
 
@@ -360,7 +375,8 @@ module.exports = function(supabase) {
      * Generate briefing with SSE streaming for progress updates
      */
     router.get('/generate/stream', async (req, res) => {
-        const userId = getUser(req);
+        const userId = requireAuth(req, res);
+        if (!userId) return;
 
         // Set SSE headers
         res.setHeader('Content-Type', 'text/event-stream');
@@ -459,7 +475,8 @@ module.exports = function(supabase) {
      */
     router.get('/:id', async (req, res) => {
         try {
-            const userId = getUser(req);
+            const userId = requireAuth(req, res);
+            if (!userId) return;
             const { id } = req.params;
 
             const briefing = await briefingService.getBriefingById(userId, id);

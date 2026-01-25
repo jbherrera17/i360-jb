@@ -40,8 +40,13 @@ async function authenticate(req, res, next) {
     
     // Check for authorization header
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
+
+    // Also check for auth token in cookie (for browser requests)
+    const cookies = req.headers.cookie || '';
+    const cookieTokenMatch = cookies.match(/auth_token=([^;]+)/);
+    const cookieToken = cookieTokenMatch ? cookieTokenMatch[1] : null;
+
+    if (!authHeader && !cookieToken) {
         // Check for user ID header (simple auth for development)
         const userId = req.headers['x-user-id'];
         if (userId) {
@@ -49,17 +54,20 @@ async function authenticate(req, res, next) {
             req.isAnonymous = false;
             return next();
         }
-        
+
         // Allow anonymous access but mark it
         req.userId = null;
         req.isAnonymous = true;
         return next();
     }
-    
-    // Parse bearer token
-    if (authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
 
+    // Use cookie token if no Authorization header
+    const token = authHeader?.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : cookieToken;
+    
+    // Verify token with Supabase
+    if (token) {
         try {
             // Verify JWT with Supabase
             const { data: { user }, error } = await supabase.auth.getUser(token);
