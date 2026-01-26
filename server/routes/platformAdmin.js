@@ -182,6 +182,21 @@ module.exports = function(supabase) {
                 .select('*')
                 .order('display_order');
 
+            // If table doesn't exist, return default tiers
+            if (error && (error.code === '42P01' || error.message?.includes('does not exist'))) {
+                console.log('subscription_tiers table not found - returning defaults');
+                return res.json({
+                    success: true,
+                    data: [
+                        { id: 'starter', name: 'Starter', description: 'For individuals and small teams', max_members: 3, max_clients: 0, max_agents: 5 },
+                        { id: 'business', name: 'Business', description: 'For growing teams', max_members: 10, max_clients: 0, max_agents: 25 },
+                        { id: 'enterprise', name: 'Enterprise', description: 'For large organizations', max_members: 100, max_clients: 0, max_agents: 100 },
+                        { id: 'agency', name: 'Agency', description: 'For agencies with clients', max_members: 50, max_clients: 100, max_agents: 200 }
+                    ],
+                    note: 'Using default tiers. Deploy Phase 44 schema to enable tier management.'
+                });
+            }
+
             if (error) throw error;
 
             res.json({
@@ -413,7 +428,8 @@ module.exports = function(supabase) {
      */
     router.get('/admins', async (req, res) => {
         try {
-            const { data, error } = await supabase
+            // Try query with user relationship first
+            let { data, error } = await supabase
                 .from('platform_admins')
                 .select(`
                     *,
@@ -429,6 +445,59 @@ module.exports = function(supabase) {
                     )
                 `)
                 .order('granted_at', { ascending: false });
+
+            // If table doesn't exist (Phase 44 not deployed), return empty with note
+            if (error && (error.code === '42P01' || error.message?.includes('does not exist'))) {
+                console.log('platform_admins table not found - Phase 44 schema not deployed');
+                return res.json({
+                    success: true,
+                    data: [],
+                    note: 'Platform admins table not found. Deploy Phase 44 schema to enable this feature.'
+                });
+            }
+
+            // If relationship error, try simpler query and manually fetch user info
+            if (error && error.message?.includes('relationship')) {
+                console.log('platform_admins relationship not found, using fallback query');
+
+                const simpleResult = await supabase
+                    .from('platform_admins')
+                    .select('*')
+                    .order('granted_at', { ascending: false });
+
+                if (simpleResult.error) throw simpleResult.error;
+
+                // Fetch user info separately for each admin
+                const adminsWithUsers = await Promise.all((simpleResult.data || []).map(async (admin) => {
+                    let user = null;
+                    let granted_by_user = null;
+
+                    if (admin.user_id) {
+                        const { data: userData } = await supabase
+                            .from('users')
+                            .select('id, email, display_name')
+                            .eq('id', admin.user_id)
+                            .single();
+                        user = userData;
+                    }
+
+                    if (admin.granted_by) {
+                        const { data: grantedByData } = await supabase
+                            .from('users')
+                            .select('id, email, display_name')
+                            .eq('id', admin.granted_by)
+                            .single();
+                        granted_by_user = grantedByData;
+                    }
+
+                    return { ...admin, user, granted_by_user };
+                }));
+
+                return res.json({
+                    success: true,
+                    data: adminsWithUsers
+                });
+            }
 
             if (error) throw error;
 
@@ -615,6 +684,10 @@ module.exports = function(supabase) {
         try {
             const { tier, status, org_type, search, limit = 50, offset = 0 } = req.query;
 
+            // Try to use the view first (Phase 44), fall back to direct query
+            let data, error;
+
+            // First attempt: use org_tier_details view
             let query = supabase
                 .from('org_tier_details')
                 .select('*');
@@ -639,17 +712,72 @@ module.exports = function(supabase) {
                 .order('created_at', { ascending: false })
                 .range(offset, offset + limit - 1);
 
-            const { data, error, count } = await query;
+            const viewResult = await query;
+            data = viewResult.data;
+            error = viewResult.error;
+
+            // Fallback: if view doesn't exist, query organizations table directly
+            if (error && (error.code === '42P01' || error.message?.includes('does not exist'))) {
+                console.log('org_tier_details view not found, using fallback query');
+
+                let fallbackQuery = supabase
+                    .from('organizations')
+                    .select(`
+                        id,
+                        name,
+                        slug,
+                        org_type,
+                        subscription_tier,
+                        subscription_status,
+                        created_at,
+                        is_active
+                    `);
+
+                if (tier) {
+                    fallbackQuery = fallbackQuery.eq('subscription_tier', tier);
+                }
+
+                if (status) {
+                    fallbackQuery = fallbackQuery.eq('subscription_status', status);
+                }
+
+                if (org_type) {
+                    fallbackQuery = fallbackQuery.eq('org_type', org_type);
+                }
+
+                if (search) {
+                    fallbackQuery = fallbackQuery.or(`name.ilike.%${search}%,slug.ilike.%${search}%`);
+                }
+
+                fallbackQuery = fallbackQuery
+                    .order('created_at', { ascending: false })
+                    .range(offset, offset + limit - 1);
+
+                const fallbackResult = await fallbackQuery;
+
+                if (fallbackResult.error) throw fallbackResult.error;
+
+                // Add placeholder tier info since we don't have the view
+                data = (fallbackResult.data || []).map(org => ({
+                    ...org,
+                    tier_name: org.subscription_tier,
+                    max_members: null,
+                    max_clients: null,
+                    current_members: null,
+                    current_clients: null
+                }));
+                error = null;
+            }
 
             if (error) throw error;
 
             res.json({
                 success: true,
-                data,
+                data: data || [],
                 pagination: {
                     limit: parseInt(limit),
                     offset: parseInt(offset),
-                    total: count
+                    total: data?.length || 0
                 }
             });
         } catch (error) {
@@ -677,14 +805,25 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Validate tier exists
+            // Valid tiers (fallback if table doesn't exist)
+            const validTiers = ['starter', 'business', 'enterprise', 'agency', 'free', 'pro'];
+
+            // Try to validate tier from database
             const { data: tierData, error: tierError } = await supabase
                 .from('subscription_tiers')
                 .select('id')
                 .eq('id', tier)
                 .single();
 
-            if (tierError || !tierData) {
+            // If table doesn't exist, validate against known tiers
+            if (tierError && (tierError.code === '42P01' || tierError.message?.includes('does not exist'))) {
+                if (!validTiers.includes(tier)) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Invalid tier'
+                    });
+                }
+            } else if (tierError || !tierData) {
                 return res.status(400).json({
                     success: false,
                     error: 'Invalid tier'

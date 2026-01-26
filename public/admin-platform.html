@@ -613,7 +613,7 @@
         </main>
     </div>
 
-    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
@@ -713,6 +713,14 @@
                     const data = await orgsRes.json();
                     organizations = data.data || [];
                     renderOrganizations();
+                } else {
+                    // Show error in table if API fails
+                    const tbody = document.getElementById('orgsTableBody');
+                    const errorData = await orgsRes.json().catch(() => ({}));
+                    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">
+                        Failed to load organizations: ${errorData.error || 'API error'}.
+                        <br><small>Make sure the Phase 44 schema (db/phase44-enterprise-multitenancy.sql) has been deployed.</small>
+                    </td></tr>`;
                 }
 
                 if (tiersRes.ok) {
@@ -730,7 +738,19 @@
                 if (adminsRes.ok) {
                     const data = await adminsRes.json();
                     admins = data.data || [];
+                    // Check for note about missing schema
+                    if (data.note) {
+                        console.log('Platform admins note:', data.note);
+                    }
                     renderAdmins();
+                } else {
+                    // Show error in table if API fails
+                    const tbody = document.getElementById('adminsTableBody');
+                    const errorData = await adminsRes.json().catch(() => ({}));
+                    tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color: var(--danger);">
+                        Failed to load admins: ${errorData.error || 'API error'}.
+                        <br><small>Make sure the Phase 44 schema has been deployed.</small>
+                    </td></tr>`;
                 }
 
                 if (configRes.ok) {
@@ -963,28 +983,39 @@
 
         // Show change tier modal
         async function showChangeTierModal(orgId, currentTier) {
-            const tierOptions = tiers.map(t =>
+            // Use loaded tiers or fallback to defaults
+            const availableTiers = tiers.length > 0 ? tiers : [
+                { id: 'starter', name: 'Starter', description: 'For individuals and small teams' },
+                { id: 'business', name: 'Business', description: 'For growing teams' },
+                { id: 'enterprise', name: 'Enterprise', description: 'For large organizations' },
+                { id: 'agency', name: 'Agency', description: 'For agencies with clients' }
+            ];
+
+            const tierOptions = availableTiers.map(t =>
                 ({ label: t.name, value: t.id, description: t.description })
             );
 
-            if (typeof ModalService !== 'undefined') {
-                const result = await ModalService.form({
-                    title: 'Change Organization Tier',
-                    fields: [
-                        {
-                            name: 'tier',
-                            label: 'New Tier',
-                            type: 'select',
-                            value: currentTier,
-                            options: tierOptions
-                        }
-                    ],
-                    submitText: 'Change Tier'
-                });
+            if (typeof ModalService === 'undefined') {
+                showToast('Modal service not loaded', 'error');
+                return;
+            }
 
-                if (result && result.tier) {
-                    await changeTier(orgId, result.tier);
-                }
+            const result = await ModalService.form({
+                title: 'Change Organization Tier',
+                fields: [
+                    {
+                        name: 'tier',
+                        label: 'New Tier',
+                        type: 'select',
+                        value: currentTier,
+                        options: tierOptions
+                    }
+                ],
+                submitText: 'Change Tier'
+            });
+
+            if (result && result.tier) {
+                await changeTier(orgId, result.tier);
             }
         }
 
@@ -1046,21 +1077,218 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Placeholder functions for edit actions
-        function editTier(tierId) {
-            showToast('Tier editing coming soon', 'info');
+        // Edit subscription tier
+        async function editTier(tierId) {
+            const tier = tiers.find(t => t.id === tierId);
+            if (!tier) {
+                showToast('Tier not found', 'error');
+                return;
+            }
+
+            const result = await ModalService.form({
+                title: `Edit Tier: ${tier.name}`,
+                width: 500,
+                fields: [
+                    { name: 'name', label: 'Tier Name', type: 'text', value: tier.name, required: true },
+                    { name: 'description', label: 'Description', type: 'textarea', value: tier.description || '' },
+                    { name: 'price_monthly', label: 'Monthly Price ($)', type: 'number', value: tier.price_monthly || 0 },
+                    { name: 'price_yearly', label: 'Yearly Price ($)', type: 'number', value: tier.price_yearly || 0 },
+                    { name: 'max_members', label: 'Max Members', type: 'number', value: tier.max_members || 5 },
+                    { name: 'max_clients', label: 'Max Clients', type: 'number', value: tier.max_clients || 0 },
+                    { name: 'max_agents', label: 'Max Agents', type: 'number', value: tier.max_agents || 10 },
+                    { name: 'max_workflows', label: 'Max Workflows', type: 'number', value: tier.max_workflows || 5 },
+                    { name: 'max_skills', label: 'Max Skills', type: 'number', value: tier.max_skills || 20 },
+                    { name: 'max_context_assets', label: 'Max Context Assets', type: 'number', value: tier.max_context_assets || 50 },
+                    { name: 'is_active', label: 'Active', type: 'checkbox', value: tier.is_active !== false }
+                ],
+                submitText: 'Save Changes'
+            });
+
+            if (result) {
+                try {
+                    const token = localStorage.getItem('insight360_token');
+                    const response = await fetch(`/api/platform/tiers/${tierId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(result)
+                    });
+
+                    if (response.ok) {
+                        showToast('Tier updated successfully', 'success');
+                        await loadAllData();
+                    } else {
+                        const data = await response.json();
+                        showToast(data.error || 'Failed to update tier', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating tier:', error);
+                    showToast('Failed to update tier', 'error');
+                }
+            }
         }
 
-        function editModule(moduleId) {
-            showToast('Module editing coming soon', 'info');
+        // Edit platform module
+        async function editModule(moduleId) {
+            const module = modules.find(m => m.id === moduleId);
+            if (!module) {
+                showToast('Module not found', 'error');
+                return;
+            }
+
+            // Build tier options for select
+            const tierOptions = [{ label: 'All Tiers (No Minimum)', value: '' }];
+            tiers.forEach(t => tierOptions.push({ label: t.name, value: t.id }));
+
+            const result = await ModalService.form({
+                title: `Edit Module: ${module.name}`,
+                width: 500,
+                fields: [
+                    { name: 'name', label: 'Module Name', type: 'text', value: module.name, required: true },
+                    { name: 'description', label: 'Description', type: 'textarea', value: module.description || '' },
+                    {
+                        name: 'min_tier',
+                        label: 'Minimum Tier Required',
+                        type: 'select',
+                        value: module.min_tier || '',
+                        options: tierOptions
+                    },
+                    { name: 'route_path', label: 'Route Path', type: 'text', value: module.route_path || '' },
+                    { name: 'icon', label: 'Icon (Lucide name)', type: 'text', value: module.icon || '' },
+                    { name: 'is_active', label: 'Active', type: 'checkbox', value: module.is_active !== false },
+                    { name: 'is_beta', label: 'Beta Feature', type: 'checkbox', value: module.is_beta === true }
+                ],
+                submitText: 'Save Changes'
+            });
+
+            if (result) {
+                try {
+                    const token = localStorage.getItem('insight360_token');
+                    // Convert empty string to null for min_tier
+                    if (result.min_tier === '') result.min_tier = null;
+
+                    const response = await fetch(`/api/platform/modules/${moduleId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(result)
+                    });
+
+                    if (response.ok) {
+                        showToast('Module updated successfully', 'success');
+                        await loadAllData();
+                    } else {
+                        const data = await response.json();
+                        showToast(data.error || 'Failed to update module', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating module:', error);
+                    showToast('Failed to update module', 'error');
+                }
+            }
         }
 
-        function showAddAdminModal() {
-            showToast('Add admin functionality coming soon', 'info');
+        // Add platform admin
+        async function showAddAdminModal() {
+            const result = await ModalService.form({
+                title: 'Add Platform Admin',
+                width: 450,
+                fields: [
+                    {
+                        name: 'user_id',
+                        label: 'User ID (UUID)',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'Enter the user UUID from the users table'
+                    },
+                    {
+                        name: 'role',
+                        label: 'Admin Role',
+                        type: 'select',
+                        value: 'admin',
+                        options: [
+                            { label: 'Super Admin (Full Control)', value: 'super_admin' },
+                            { label: 'Admin (Manage Platform)', value: 'admin' },
+                            { label: 'Support (Read Only)', value: 'support' }
+                        ]
+                    },
+                    {
+                        name: 'notes',
+                        label: 'Notes',
+                        type: 'textarea',
+                        placeholder: 'Reason for granting admin access'
+                    }
+                ],
+                submitText: 'Add Admin'
+            });
+
+            if (result && result.user_id) {
+                try {
+                    const token = localStorage.getItem('insight360_token');
+                    const response = await fetch('/api/platform/admins', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(result)
+                    });
+
+                    if (response.ok) {
+                        showToast('Platform admin added successfully', 'success');
+                        await loadAllData();
+                    } else {
+                        const data = await response.json();
+                        showToast(data.error || 'Failed to add admin', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding admin:', error);
+                    showToast('Failed to add admin', 'error');
+                }
+            }
         }
 
-        function toggleAdminStatus(adminId, newStatus) {
-            showToast('Admin status toggle coming soon', 'info');
+        // Toggle admin active status
+        async function toggleAdminStatus(adminId, newStatus) {
+            const action = newStatus ? 'enable' : 'disable';
+            const admin = admins.find(a => a.id === adminId);
+            const adminName = admin?.users?.name || admin?.users?.email || 'this admin';
+
+            const confirmed = await ModalService.confirm({
+                title: `${newStatus ? 'Enable' : 'Disable'} Admin`,
+                message: `Are you sure you want to ${action} ${adminName}?`,
+                confirmText: newStatus ? 'Enable' : 'Disable',
+                confirmClass: newStatus ? 'btn-success' : 'btn-warning'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const token = localStorage.getItem('insight360_token');
+                const response = await fetch(`/api/platform/admins/${adminId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ is_active: newStatus })
+                });
+
+                if (response.ok) {
+                    showToast(`Admin ${action}d successfully`, 'success');
+                    await loadAllData();
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || `Failed to ${action} admin`, 'error');
+                }
+            } catch (error) {
+                console.error(`Error ${action}ing admin:`, error);
+                showToast(`Failed to ${action} admin`, 'error');
+            }
         }
 
         function toggleMaintenance(enabled) {

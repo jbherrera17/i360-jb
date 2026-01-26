@@ -364,7 +364,7 @@ VALUES
     ('org_settings', 'Organization Settings', 'Organization configuration', 'building-2', '/admin-org-settings.html', NULL, NULL, 'admin', 'admin', 61),
     ('team_members', 'Team Members', 'Team and member management', 'users', '/admin-org-members.html', NULL, NULL, 'admin', 'admin', 62),
     ('clients_admin', 'Clients', 'Client management', 'briefcase', '/admin-clients.html', 'agency', NULL, 'admin', 'admin', 63),
-    ('roles_admin', 'Roles & Responsibilities', 'Role and permission management', 'shield-check', '/responsibilities.html', NULL, 'director', 'admin', 'admin', 64),
+    ('roles_admin', 'Roles & Responsibilities', 'Role and permission management', 'shield-check', '/roles.html', NULL, 'director', 'admin', 'admin', 64),
     ('capabilities_admin', 'My Capabilities', 'Personal capabilities and skills', 'sparkles', '/my-capabilities.html', NULL, NULL, 'admin', 'admin', 65)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,

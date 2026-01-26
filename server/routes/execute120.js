@@ -16,6 +16,48 @@ const { getUserId } = require('../utils/auth');
 module.exports = function(supabase) {
     const router = express.Router();
 
+    // Phase 44: Module access middleware for Execute 120
+    // Business tier and above required for this module
+    router.use(async (req, res, next) => {
+        try {
+            const userId = req.userId || req.headers['x-user-id'];
+            const orgId = req.headers['x-org-id'];
+
+            // Skip check if no user context (will fail auth later anyway)
+            if (!userId) {
+                return next();
+            }
+
+            // Check module access using database function
+            const { data: canAccess, error } = await supabase
+                .rpc('can_access_module', {
+                    p_user_id: userId,
+                    p_module_id: 'execute120',
+                    p_org_id: orgId || null
+                });
+
+            if (error) {
+                console.error('Module access check error:', error);
+                // Don't block on database errors
+                return next();
+            }
+
+            if (canAccess === false) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Execute 120 requires a Business tier or higher subscription',
+                    module: 'execute120',
+                    upgrade_required: true
+                });
+            }
+
+            next();
+        } catch (err) {
+            console.error('Module access middleware error:', err);
+            next(); // Don't block on errors
+        }
+    });
+
     // ============================================
     // DEPARTMENTS (Execute 120 Extension)
     // ============================================

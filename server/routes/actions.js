@@ -84,6 +84,48 @@ module.exports = function(supabase) {
         return message;
     }
 
+    // Phase 44: Module access middleware for Actions/Parthenon
+    // Checks if user's tier and role allow access to this module
+    router.use(async (req, res, next) => {
+        try {
+            const userId = req.userId || req.headers['x-user-id'];
+            const orgId = req.headers['x-org-id'];
+
+            // Skip check if no user context (will fail auth later anyway)
+            if (!userId) {
+                return next();
+            }
+
+            // Check module access using database function
+            const { data: canAccess, error } = await supabase
+                .rpc('can_access_module', {
+                    p_user_id: userId,
+                    p_module_id: 'actions',
+                    p_org_id: orgId || null
+                });
+
+            if (error) {
+                console.error('Module access check error:', error);
+                // Don't block on database errors
+                return next();
+            }
+
+            if (canAccess === false) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Actions module requires appropriate subscription and role',
+                    module: 'actions',
+                    upgrade_required: true
+                });
+            }
+
+            next();
+        } catch (err) {
+            console.error('Module access middleware error:', err);
+            next(); // Don't block on errors
+        }
+    });
+
     // ============================================================================
     // ACTIONS CRUD ENDPOINTS
     // ============================================================================
@@ -353,6 +395,26 @@ module.exports = function(supabase) {
             }
 
             const userId = getUserId(req);
+            const orgId = req.headers['x-org-id'] || req.body.org_id;
+
+            // Phase 44: Check organization resource limits
+            if (orgId) {
+                const { data: limits, error: limitError } = await supabase
+                    .rpc('check_org_limits', {
+                        p_org_id: orgId,
+                        p_resource_type: 'actions'
+                    });
+
+                if (!limitError && limits?.[0] && !limits[0].within_limits) {
+                    return res.status(403).json({
+                        success: false,
+                        error: `Action limit reached (${limits[0].current_count}/${limits[0].max_allowed}). Please upgrade your subscription.`,
+                        upgrade_required: true,
+                        current_count: limits[0].current_count,
+                        max_allowed: limits[0].max_allowed
+                    });
+                }
+            }
 
             // Generate slug if not provided
             const actionSlug = slug || name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -360,6 +422,7 @@ module.exports = function(supabase) {
             const actionData = {
                 id: uuidv4(),
                 user_id: userId,
+                org_id: orgId || null,
                 name,
                 slug: actionSlug,
                 description,
