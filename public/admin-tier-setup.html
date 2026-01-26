@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tier Configuration | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tier-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 2px solid var(--border);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .tier-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tier-card.editing {
+            border-color: var(--primary);
+        }
+
+        .tier-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .tier-starter { background: #e5e7eb; color: #374151; }
+        .tier-business { background: #dbeafe; color: #1d4ed8; }
+        .tier-enterprise { background: #fef3c7; color: #b45309; }
+        .tier-agency { background: #ede9fe; color: #7c3aed; }
+
+        .tier-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .tier-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .tier-price span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .tier-body {
+            padding: 1.5rem;
+        }
+
+        .tier-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .tier-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .tier-section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .limit-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .limit-item {
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .limit-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .limit-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .limit-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .feature-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .feature-tag.enabled {
+            background: var(--success);
+            color: white;
+        }
+
+        .feature-tag.disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .feature-toggle {
+            cursor: pointer;
+        }
+
+        .tier-footer {
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tier-stats {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+        }
+
+        .comparison-table th:first-child,
+        .comparison-table td:first-child {
+            text-align: left;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            color: var(--success);
+        }
+
+        .x-icon {
+            color: var(--text-muted);
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .access-denied {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+
+        .access-denied i {
+            width: 64px;
+            height: 64px;
+            color: var(--danger);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div id="accessDenied" class="access-denied hidden">
+                <i data-lucide="shield-x"></i>
+                <h2>Access Denied</h2>
+                <p>You don't have permission to configure subscription tiers.</p>
+                <a href="/" class="btn btn-primary" style="margin-top: 1rem;">
+                    <i data-lucide="home"></i>
+                    Return to Dashboard
+                </a>
+            </div>
+
+            <div id="mainContent">
+                <header class="page-header">
+                    <div class="header-content">
+                        <h1>
+                            <i data-lucide="layers" style="width:28px;height:28px;color:var(--primary);"></i>
+                            Subscription Tier Configuration
+                        </h1>
+                        <p class="header-subtitle">Configure resource limits and features for each subscription tier</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                            <i data-lucide="help-circle"></i>
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetChanges()">
+                            <i data-lucide="rotate-ccw"></i>
+                            Reset
+                        </button>
+                        <button class="btn btn-primary" onclick="saveAllChanges()">
+                            <i data-lucide="save"></i>
+                            Save All Changes
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Content Area with consistent 2rem padding -->
+                <div style="padding: var(--spacing-xl);">
+
+                <!-- Tier Cards -->
+                <div class="tier-grid" id="tierGrid">
+                    <!-- Tier cards will be loaded here -->
+                </div>
+
+                <!-- Comparison Table -->
+                <h2 style="margin-top: 2rem; margin-bottom: 1rem;">
+                    <i data-lucide="table"></i>
+                    Feature Comparison
+                </h2>
+                <table class="comparison-table" id="comparisonTable">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Starter</th>
+                            <th>Business</th>
+                            <th>Enterprise</th>
+                            <th>Agency</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonBody">
+                        <!-- Comparison rows will be loaded here -->
+                    </tbody>
+                </table>
+
+                </div><!-- End content padding wrapper -->
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let tiers = [];
+        let originalTiers = [];
+        let hasChanges = false;
+
+        const FEATURE_LABELS = {
+            white_label: 'White Label',
+            custom_branding: 'Custom Branding',
+            api_access: 'API Access',
+            sso: 'Single Sign-On',
+            priority_support: 'Priority Support',
+            advanced_analytics: 'Advanced Analytics',
+            client_portal: 'Client Portal'
+        };
+
+        const LIMIT_LABELS = {
+            max_members: 'Members',
+            max_clients: 'Clients',
+            max_agents: 'Agents',
+            max_workflows: 'Workflows',
+            max_skills: 'Skills',
+            max_context_assets: 'Context Assets',
+            max_research_studios: 'Research Studios',
+            max_monthly_api_calls: 'API Calls/Month'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof initNavigation === 'function') {
+                await initNavigation();
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            const hasAccess = await checkPlatformAdminAccess();
+            if (!hasAccess) {
+                document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('accessDenied').classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            await loadTiers();
+        });
+
+        async function checkPlatformAdminAccess() {
+            try {
+                const token = localStorage.getItem('insight360_token');
+                if (!token) return false;
+
+                const response = await fetch('/api/platform/tiers', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function loadTiers() {
+            try {
+                const token = localStorage.getItem('insight360_token');
+                const response = await fetch('/api/platform/tiers', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load tiers');
+
+                const data = await response.json();
+                tiers = data.data || [];
+                originalTiers = JSON.parse(JSON.stringify(tiers));
+
+                renderTiers();
+                renderComparison();
+            } catch (error) {
+                console.error('Error loading tiers:', error);
+                showToast('Failed to load tiers', 'error');
+            }
+        }
+
+        function renderTiers() {
+            const grid = document.getElementById('tierGrid');
+
+            grid.innerHTML = tiers.map(tier => `
+                <div class="tier-card" data-tier-id="${tier.id}">
+                    <div class="tier-header">
+                        <span class="tier-badge tier-${tier.id}">${tier.id.toUpperCase()}</span>
+                        <div class="tier-name">${escapeHtml(tier.name)}</div>
+                        <div class="tier-price">
+                            $<input type="number" class="limit-input" style="width: 80px; display: inline-block;"
+                                   value="${tier.price_monthly || 0}"
+                                   onchange="updateTier('${tier.id}', 'price_monthly', this.value)">
+                            <span>/month</span>
+                        </div>
+                    </div>
+
+                    <div class="tier-body">
+                        <div class="tier-section">
+                            <div class="tier-section-title">Resource Limits</div>
+                            <div class="limit-grid">
+                                ${Object.entries(LIMIT_LABELS).map(([key, label]) => `
+                                    <div class="limit-item">
+                                        <span class="limit-label">${label}</span>
+                                        <input type="number" class="limit-input"
+                                               value="${tier[key] || 0}"
+                                               onchange="updateTier('${tier.id}', '${key}', this.value)">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="tier-section">
+                            <div class="tier-section-title">Features</div>
+                            <div class="feature-list">
+                                ${Object.entries(FEATURE_LABELS).map(([key, label]) => {
+                                    const enabled = tier.features?.[key] || false;
+                                    return `
+                                        <span class="feature-tag feature-toggle ${enabled ? 'enabled' : 'disabled'}"
+                                              onclick="toggleFeature('${tier.id}', '${key}')">
+                                            <i data-lucide="${enabled ? 'check' : 'x'}" style="width: 12px; height: 12px;"></i>
+                                            ${label}
+                                        </span>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tier-footer">
+                        <span class="tier-stats">
+                            ${tier.allow_self_upgrade ? 'Self-service upgrade' : 'Manual approval required'}
+                        </span>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleSelfUpgrade('${tier.id}')">
+                            ${tier.allow_self_upgrade ? 'Disable' : 'Enable'} Self-Service
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderComparison() {
+            const tbody = document.getElementById('comparisonBody');
+
+            // Limits comparison
+            const limitRows = Object.entries(LIMIT_LABELS).map(([key, label]) => `
+                <tr>
+                    <td><strong>${label}</strong></td>
+                    ${tiers.map(tier => `<td>${tier[key] || 0}</td>`).join('')}
+                </tr>
+            `).join('');
+
+            // Features comparison
+            const featureRows = Object.entries(FEATURE_LABELS).map(([key, label]) => `
+                <tr>
+                    <td><strong>${label}</strong></td>
+                    ${tiers.map(tier => {
+                        const enabled = tier.features?.[key] || false;
+                        return `<td><i data-lucide="${enabled ? 'check' : 'x'}" class="${enabled ? 'check-icon' : 'x-icon'}"></i></td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = `
+                <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Resource Limits</td></tr>
+                ${limitRows}
+                <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Features</td></tr>
+                ${featureRows}
+            `;
+
+            lucide.createIcons();
+        }
+
+        function updateTier(tierId, field, value) {
+            const tier = tiers.find(t => t.id === tierId);
+            if (tier) {
+                tier[field] = parseInt(value) || 0;
+                hasChanges = true;
+                renderComparison();
+            }
+        }
+
+        function toggleFeature(tierId, featureKey) {
+            const tier = tiers.find(t => t.id === tierId);
+            if (tier) {
+                if (!tier.features) tier.features = {};
+                tier.features[featureKey] = !tier.features[featureKey];
+                hasChanges = true;
+                renderTiers();
+                renderComparison();
+            }
+        }
+
+        function toggleSelfUpgrade(tierId) {
+            const tier = tiers.find(t => t.id === tierId);
+            if (tier) {
+                tier.allow_self_upgrade = !tier.allow_self_upgrade;
+                hasChanges = true;
+                renderTiers();
+            }
+        }
+
+        async function saveAllChanges() {
+            const token = localStorage.getItem('insight360_token');
+
+            try {
+                for (const tier of tiers) {
+                    const response = await fetch(`/api/platform/tiers/${tier.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            price_monthly: tier.price_monthly,
+                            price_yearly: tier.price_yearly,
+                            max_members: tier.max_members,
+                            max_clients: tier.max_clients,
+                            max_agents: tier.max_agents,
+                            max_workflows: tier.max_workflows,
+                            max_skills: tier.max_skills,
+                            max_context_assets: tier.max_context_assets,
+                            max_research_studios: tier.max_research_studios,
+                            max_monthly_api_calls: tier.max_monthly_api_calls,
+                            features: tier.features,
+                            allow_self_upgrade: tier.allow_self_upgrade
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.error || `Failed to save ${tier.id}`);
+                    }
+                }
+
+                originalTiers = JSON.parse(JSON.stringify(tiers));
+                hasChanges = false;
+                showToast('All tiers saved successfully', 'success');
+            } catch (error) {
+                console.error('Error saving tiers:', error);
+                showToast(error.message || 'Failed to save tiers', 'error');
+            }
+        }
+
+        function resetChanges() {
+            tiers = JSON.parse(JSON.stringify(originalTiers));
+            hasChanges = false;
+            renderTiers();
+            renderComparison();
+            showToast('Changes reset', 'info');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--info)'};
+                color: white; border-radius: 8px; z-index: 9999; animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Warn before leaving with unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (hasChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

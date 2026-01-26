@@ -63,7 +63,10 @@ const ALLOWED_DOCS = [
     // Agency Model Enhancement (Phase 40-43)
     'agency-dashboard-user-guide.md',
     'admin-org-customization-user-guide.md',
-    'admin-client-users-user-guide.md'
+    'admin-client-users-user-guide.md',
+    // Enterprise Multi-Tenancy (Phase 44)
+    'admin-platform-user-guide.md',
+    'admin-tier-setup-user-guide.md'
 ];
 
 /**

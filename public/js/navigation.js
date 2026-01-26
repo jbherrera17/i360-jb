@@ -18,8 +18,8 @@
 const navConfig = {
     // Primary items - always visible at top level
     primary: [
-        { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
         { href: '/chat.html', icon: 'graduation-cap', label: 'Higgins' },
+        { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
         { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
         { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' }
     ],
@@ -60,7 +60,7 @@ const navConfig = {
         },
         {
             id: 'tools',
-            label: 'Tools',
+            label: 'Modules',
             icon: 'wrench',
             items: [
                 { href: '/research-studio.html', icon: 'book-open-text', label: 'Research Studio' },
@@ -77,7 +77,8 @@ const navConfig = {
             items: [
                 { href: '/agency-dashboard.html', icon: 'gauge', label: 'Agency Dashboard' },
                 { href: '/admin-org-customization.html', icon: 'palette', label: 'Customization' },
-                { href: '/admin-client-users.html', icon: 'user-check', label: 'Portal Users' }
+                { href: '/admin-client-users.html', icon: 'user-check', label: 'Portal Users' },
+                { href: '/client-comparison.html', icon: 'bar-chart-3', label: 'Client Comparison' }
             ]
         },
         {
@@ -87,22 +88,133 @@ const navConfig = {
             adminOnly: true,
             items: [
                 { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
-                { href: '/admin-org-settings.html', icon: 'building-2', label: 'Organization' },
-                { href: '/admin-org-members.html', icon: 'users', label: 'Team Members' },
-                { href: '/admin-clients.html', icon: 'briefcase', label: 'Clients' },
-                { href: '/client-comparison.html', icon: 'bar-chart-3', label: 'Client Comparison' },
-                { href: '/admin-responsibilities.html', icon: 'clipboard-check', label: 'Responsibilities' },
                 { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' }
             ]
         }
     ]
 };
 
-// Flatten all items for path matching
-const allNavItems = [
+// Flatten all items for path matching (from static config)
+let allNavItems = [
     ...navConfig.primary,
     ...navConfig.groups.flatMap(g => g.items)
 ];
+
+// Dynamic navigation state
+let dynamicNavConfig = null;
+let modulesLoaded = false;
+
+/**
+ * Fetch accessible modules from API
+ * Returns grouped modules for navigation
+ */
+async function fetchAccessibleModules() {
+    try {
+        const token = localStorage.getItem('insight360_token');
+        if (!token) {
+            console.log('Navigation: No auth token, using static nav');
+            return null;
+        }
+
+        const orgId = localStorage.getItem('insight360_org_id');
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+        if (orgId) {
+            headers['x-org-id'] = orgId;
+        }
+
+        const response = await fetch('/api/modules', { headers });
+
+        if (!response.ok) {
+            console.warn('Navigation: Failed to fetch modules, using static nav');
+            return null;
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            return null;
+        }
+
+        return result.data;
+    } catch (error) {
+        console.warn('Navigation: Error fetching modules:', error);
+        return null;
+    }
+}
+
+/**
+ * Convert API modules to navigation config format
+ */
+function convertModulesToNavConfig(modulesData) {
+    const modules = modulesData.modules || [];
+    const grouped = modulesData.grouped || {};
+
+    // Map nav_group to our group structure
+    const groupMap = {
+        'primary': { id: 'primary', label: 'Primary', items: [] },
+        'dashboards': { id: 'dashboards', label: 'Dashboards', icon: 'gauge', items: [] },
+        'systems': { id: 'systems', label: 'I360 Systems', icon: 'target', items: [] },
+        'components': { id: 'components', label: 'Components', icon: 'puzzle', items: [] },
+        'tools': { id: 'tools', label: 'Modules', icon: 'wrench', items: [] },
+        'agency': { id: 'agency', label: 'Agency', icon: 'building', items: [] },
+        'admin': { id: 'admin', label: 'Administration', icon: 'settings', items: [] }
+    };
+
+    // Convert modules to nav items
+    modules.forEach(module => {
+        const navItem = {
+            href: module.route_path,
+            icon: module.icon || 'circle',
+            label: module.module_name,
+            moduleId: module.module_id,
+            isBeta: module.is_beta
+        };
+
+        const group = module.nav_group || 'other';
+        if (groupMap[group]) {
+            groupMap[group].items.push(navItem);
+        } else {
+            // Add to components as fallback
+            groupMap.components.items.push(navItem);
+        }
+    });
+
+    // Build config
+    const primary = groupMap.primary.items;
+    const groups = Object.values(groupMap)
+        .filter(g => g.id !== 'primary' && g.items.length > 0);
+
+    return { primary, groups };
+}
+
+/**
+ * Get current organization ID from localStorage
+ */
+function getCurrentOrgId() {
+    try {
+        return localStorage.getItem('insight360_org_id');
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Get current organization tier from localStorage
+ */
+function getCurrentTier() {
+    try {
+        const orgData = localStorage.getItem('insight360_org');
+        if (orgData) {
+            const org = JSON.parse(orgData);
+            return org.subscription_tier || 'starter';
+        }
+    } catch (e) {
+        // Ignore
+    }
+    return 'starter';
+}
 
 /**
  * Determine which nav item is active based on current path
@@ -299,6 +411,7 @@ function generateNavItemHTML(item, activePath) {
 
 /**
  * Generate navigation HTML with groups
+ * Uses dynamic config if available, falls back to static config
  */
 function generateNavHTML() {
     const activePath = getActivePath();
@@ -306,11 +419,14 @@ function generateNavHTML() {
     const userRole = getCurrentUserRole();
     const collapsed = getCollapsedGroups();
 
+    // Use dynamic config if loaded, otherwise use static
+    const config = modulesLoaded && dynamicNavConfig ? dynamicNavConfig : navConfig;
+
     let html = '';
 
     // Primary items (always visible)
     html += '<div class="nav-section nav-primary">';
-    navConfig.primary.forEach(item => {
+    (config.primary || []).forEach(item => {
         html += generateNavItemHTML(item, activePath);
     });
     html += '</div>';
@@ -318,8 +434,15 @@ function generateNavHTML() {
     // Grouped items
     html += '<div class="nav-section nav-groups">';
 
-    navConfig.groups
-        .filter(group => !group.adminOnly || userRole === 'admin')
+    (config.groups || [])
+        .filter(group => {
+            // For static config, check adminOnly
+            if (!modulesLoaded && group.adminOnly && userRole !== 'admin') {
+                return false;
+            }
+            // For dynamic config, modules are already filtered by the API
+            return group.items && group.items.length > 0;
+        })
         .forEach(group => {
             // Auto-expand if contains active item, otherwise use saved state
             const isExpanded = group.id === activeGroup || !collapsed[group.id];
@@ -465,7 +588,7 @@ function generateSidebarHTML() {
  * Initialize navigation
  * Call this after DOMContentLoaded
  */
-function initNavigation() {
+async function initNavigation() {
     // Find sidebar element
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) {
@@ -478,6 +601,25 @@ function initNavigation() {
         // Just update active state
         updateActiveNavItem();
         return;
+    }
+
+    // Try to load dynamic modules from API
+    try {
+        const modulesData = await fetchAccessibleModules();
+        if (modulesData && modulesData.modules && modulesData.modules.length > 0) {
+            dynamicNavConfig = convertModulesToNavConfig(modulesData);
+            modulesLoaded = true;
+
+            // Update allNavItems for path matching
+            allNavItems = [
+                ...(dynamicNavConfig.primary || []),
+                ...(dynamicNavConfig.groups || []).flatMap(g => g.items)
+            ];
+
+            console.log('Navigation: Loaded dynamic modules');
+        }
+    } catch (error) {
+        console.warn('Navigation: Using static config due to error:', error);
     }
 
     // Inject navigation
@@ -504,6 +646,44 @@ function initNavigation() {
 
     // Update active nav item and scroll into view
     updateActiveNavItem();
+}
+
+/**
+ * Refresh navigation with latest modules from API
+ * Can be called after tier change or module enable/disable
+ */
+async function refreshNavigation() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    try {
+        const modulesData = await fetchAccessibleModules();
+        if (modulesData && modulesData.modules) {
+            dynamicNavConfig = convertModulesToNavConfig(modulesData);
+            modulesLoaded = true;
+
+            allNavItems = [
+                ...(dynamicNavConfig.primary || []),
+                ...(dynamicNavConfig.groups || []).flatMap(g => g.items)
+            ];
+
+            // Re-inject navigation
+            sidebar.innerHTML = generateSidebarHTML();
+
+            if (getSidebarCollapsed()) {
+                sidebar.classList.add('sidebar-collapsed');
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            updateThemeToggleIcon();
+            updateActiveNavItem();
+        }
+    } catch (error) {
+        console.warn('Navigation: Failed to refresh:', error);
+    }
 }
 
 /**

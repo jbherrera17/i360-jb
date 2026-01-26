@@ -153,6 +153,26 @@ module.exports = function(supabase) {
                 });
             }
 
+            // Check organization member limits (Phase 44)
+            const { data: limits, error: limitError } = await supabase
+                .rpc('check_org_limits', {
+                    p_org_id: orgId,
+                    p_resource_type: 'members'
+                });
+
+            if (!limitError && limits && limits[0] && !limits[0].within_limits) {
+                return res.status(403).json({
+                    success: false,
+                    error: `Member limit reached (${limits[0].current_count}/${limits[0].max_allowed})`,
+                    details: {
+                        current: limits[0].current_count,
+                        max: limits[0].max_allowed,
+                        usage_percent: limits[0].usage_percent
+                    },
+                    upgrade_required: true
+                });
+            }
+
             // Check if user exists
             const { data: invitee } = await supabase
                 .from('users')

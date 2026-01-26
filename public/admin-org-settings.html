@@ -13,22 +13,6 @@
     <script src="/js/help-registry.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.75rem;
-            font-weight: 700;
-        }
-
-        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
-        .header-actions { display: flex; gap: 0.75rem; }
-
         /* Stats Cards */
         .stats-grid {
             display: grid;
@@ -248,27 +232,33 @@
     </style>
 </head>
 <body>
-    <div class="app-layout">
+    <div class="app-container">
         <aside class="sidebar"></aside>
 
         <main class="main-content">
-        <div class="page-header">
-            <div>
-                <h1>Organization Settings</h1>
-                <p class="header-subtitle">Manage your organization's configuration and preferences</p>
-            </div>
-            <div class="header-actions">
-                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
-                    <i data-lucide="help-circle"></i>
-                </button>
-                <button class="btn btn-secondary" onclick="loadOrganization()">
-                    <i data-lucide="refresh-cw"></i>
-                    Refresh
-                </button>
-            </div>
-        </div>
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="building-2" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Organization Settings
+                    </h1>
+                    <p class="header-subtitle">Manage your organization's configuration and preferences</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadOrganization()">
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+                    </button>
+                </div>
+            </header>
 
-        <!-- Organization Switcher -->
+            <!-- Content Area with consistent 2rem padding -->
+            <div style="padding: var(--spacing-xl);">
+
+            <!-- Organization Switcher -->
         <div class="org-switcher">
             <label for="org-select">Organization:</label>
             <select id="org-select" onchange="switchOrganization()">
@@ -392,6 +382,8 @@
                 </div>
             </div>
         </div>
+
+            </div><!-- End content padding wrapper -->
         </main>
     </div>
 

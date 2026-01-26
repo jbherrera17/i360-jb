@@ -61,6 +61,9 @@ const connectionsRoutes = require('./routes/connections');
 const orgCustomizationRoutes = require('./routes/orgCustomization');
 const clientPortalRoutes = require('./routes/clientPortal');
 const agencyAnalyticsRoutes = require('./routes/agencyAnalytics');
+const platformAdminRoutes = require('./routes/platformAdmin');
+const modulesRoutes = require('./routes/modules');
+const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
 
 // ============================================
@@ -411,9 +414,19 @@ function initializeServices() {
         app.use('/api/org-customization', orgCustomizationRoutes(supabase));
         app.use('/api/client-portal', clientPortalRoutes(supabase));
         app.use('/api/analytics', agencyAnalyticsRoutes(supabase));
+
+        // Phase 44: Enterprise Multi-Tenancy
+        app.use('/api/platform', platformAdminRoutes(supabase));
+        app.use('/api/modules', modulesRoutes(supabase));
+
+        // Initialize module access middleware for use in other routes
+        const moduleAccess = createModuleAccessMiddleware(supabase);
+        app.set('moduleAccess', moduleAccess);
+
         console.log('  ✅ Agent routes registered');
         console.log('  ✅ Agency Customization routes registered (Phase 41)');
         console.log('  ✅ Client Portal routes registered (Phase 42)');
+        console.log('  ✅ Enterprise Multi-Tenancy routes registered (Phase 44)');
         console.log('  ✅ Agency Analytics routes registered (Phase 43)');
         console.log('  ✅ Connection Management routes registered (Phase 40)');
         console.log('  ✅ Users routes registered');

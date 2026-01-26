@@ -593,9 +593,33 @@ module.exports = function(supabase) {
             // Get user ID from auth (if available)
             const userId = req.userId || null;
 
+            // Check organization resource limits (Phase 44)
+            const orgId = req.headers['x-org-id'] || req.body.org_id;
+            if (orgId) {
+                const { data: limits, error: limitError } = await supabase
+                    .rpc('check_org_limits', {
+                        p_org_id: orgId,
+                        p_resource_type: 'agents'
+                    });
+
+                if (!limitError && limits && limits[0] && !limits[0].within_limits) {
+                    return res.status(403).json({
+                        success: false,
+                        error: `Agent limit reached (${limits[0].current_count}/${limits[0].max_allowed})`,
+                        details: {
+                            current: limits[0].current_count,
+                            max: limits[0].max_allowed,
+                            usage_percent: limits[0].usage_percent
+                        },
+                        upgrade_required: true
+                    });
+                }
+            }
+
             const agentData = {
                 id: uuidv4(),
                 user_id: userId,
+                org_id: orgId || null,  // Phase 44: Associate with organization
                 name,
                 description,
                 icon,

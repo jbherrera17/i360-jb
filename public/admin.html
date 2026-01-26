@@ -1082,6 +1082,116 @@
             outline: none;
             border-color: var(--primary);
         }
+
+        /* User Filter Buttons */
+        .filter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.875rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Assignment Badges */
+        .assignment-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .assignment-badge.platform {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+        }
+
+        .assignment-badge.org {
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+        }
+
+        .assignment-badge.client {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .assignments-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            max-width: 300px;
+        }
+
+        /* Assignment Form Sections */
+        .assignment-section {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .assignment-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .assignment-section-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assignment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .assignment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .assignment-item-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assignment-item-role {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -1141,16 +1251,36 @@
                 <div class="stats-grid">
                     <div class="stat-card admin">
                         <div class="stat-value" id="adminCount">0</div>
-                        <div class="stat-label">Administrators</div>
+                        <div class="stat-label">Platform Admins</div>
                     </div>
                     <div class="stat-card user">
                         <div class="stat-value" id="userCount">0</div>
-                        <div class="stat-label">Users</div>
+                        <div class="stat-label">Agency Members</div>
                     </div>
                     <div class="stat-card viewer">
                         <div class="stat-value" id="viewerCount">0</div>
-                        <div class="stat-label">Viewers</div>
+                        <div class="stat-label">Client Portal</div>
                     </div>
+                </div>
+
+                <!-- User Filter Tabs -->
+                <div class="user-filter-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button class="filter-btn active" data-filter="all" onclick="filterUsers('all')">
+                        <i data-lucide="users" style="width:14px;height:14px;"></i>
+                        All Users
+                    </button>
+                    <button class="filter-btn" data-filter="platform" onclick="filterUsers('platform')">
+                        <i data-lucide="crown" style="width:14px;height:14px;"></i>
+                        Platform
+                    </button>
+                    <button class="filter-btn" data-filter="agency" onclick="filterUsers('agency')">
+                        <i data-lucide="building" style="width:14px;height:14px;"></i>
+                        Agency Teams
+                    </button>
+                    <button class="filter-btn" data-filter="client" onclick="filterUsers('client')">
+                        <i data-lucide="user-check" style="width:14px;height:14px;"></i>
+                        Client Portal
+                    </button>
                 </div>
 
                 <!-- Users Table -->
@@ -1218,6 +1348,7 @@
         // ============================================================================
         let currentUser = null;
         let users = [];
+        let unifiedUsers = [];
         let editingUserId = null;
         let deletingUserId = null;
         let businessRoles = [];
@@ -1225,6 +1356,9 @@
         let departments = [];
         let agentCategories = [];
         let editingCategoryId = null;
+        let organizations = [];
+        let clients = [];
+        let currentUserFilter = 'all'; // 'all', 'platform', 'agency', 'client'
 
         // Modal instances (ModalService)
         let userModal = null;
@@ -1274,6 +1408,70 @@
                 console.error('Error fetching users:', error);
                 throw error;
             }
+        }
+
+        async function fetchUnifiedUsers(filter = '') {
+            try {
+                const url = filter ? `/api/users/unified?filter=${filter}` : '/api/users/unified';
+                const response = await fetch(url, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    unifiedUsers = data.data;
+                    return unifiedUsers;
+                }
+                throw new Error(data.error || 'Failed to fetch unified users');
+            } catch (error) {
+                console.error('Error fetching unified users:', error);
+                throw error;
+            }
+        }
+
+        async function fetchOrganizations() {
+            try {
+                const response = await fetch('/api/organizations', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    organizations = data.data || [];
+                    return organizations;
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching organizations:', error);
+                return [];
+            }
+        }
+
+        async function fetchClients(orgId) {
+            try {
+                const response = await fetch(`/api/clients?org_id=${orgId}`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    return data.data || [];
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching clients:', error);
+                return [];
+            }
+        }
+
+        async function updateUserAssignments(userId, assignments) {
+            const response = await fetch(`/api/users/${userId}/assignments`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(assignments)
+            });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update assignments');
+            }
+            return data;
         }
 
         async function fetchRolesSummary() {
@@ -1426,7 +1624,10 @@
             const tableContent = document.getElementById('tableContent');
             const userTotal = document.getElementById('userTotal');
 
-            if (users.length === 0) {
+            // Use unified users if available, otherwise fall back to regular users
+            const displayUsers = unifiedUsers.length > 0 ? unifiedUsers : users;
+
+            if (displayUsers.length === 0) {
                 tableContent.innerHTML = `
                     <div class="empty-state">
                         <i data-lucide="users" class="empty-icon"></i>
@@ -1437,21 +1638,21 @@
                 return;
             }
 
-            userTotal.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+            userTotal.textContent = `${displayUsers.length} user${displayUsers.length !== 1 ? 's' : ''}`;
 
             tableContent.innerHTML = `
                 <table>
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>System Role</th>
+                            <th>Assignments</th>
                             <th>Business Role</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${users.map(user => `
+                        ${displayUsers.map(user => `
                             <tr>
                                 <td>
                                     <div class="user-info">
@@ -1463,7 +1664,9 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="role-badge ${user.role}">${user.role}</span>
+                                    <div class="assignments-cell">
+                                        ${renderUserAssignments(user)}
+                                    </div>
                                 </td>
                                 <td>
                                     <span class="business-role-badge ${user.business_role || 'ic'}">${getBusinessRoleName(user.business_role || 'ic')}</span>
@@ -1485,6 +1688,88 @@
                 </table>
             `;
             lucide.createIcons();
+        }
+
+        function renderUserAssignments(user) {
+            let badges = [];
+
+            // Platform admin badge
+            if (user.platform_admin) {
+                badges.push(`<span class="assignment-badge platform" title="Platform Admin">
+                    <i data-lucide="crown" style="width:12px;height:12px;"></i>
+                    ${user.platform_admin.role}
+                </span>`);
+            }
+
+            // Organization memberships
+            if (user.organization_memberships && user.organization_memberships.length > 0) {
+                user.organization_memberships.forEach(om => {
+                    badges.push(`<span class="assignment-badge org" title="${om.org_name}">
+                        <i data-lucide="building" style="width:12px;height:12px;"></i>
+                        ${om.org_name}: ${om.role}
+                    </span>`);
+                });
+            }
+
+            // Client portal access
+            if (user.client_portal_access && user.client_portal_access.length > 0) {
+                user.client_portal_access.forEach(ca => {
+                    badges.push(`<span class="assignment-badge client" title="${ca.client_name}">
+                        <i data-lucide="user-check" style="width:12px;height:12px;"></i>
+                        ${ca.client_name}: ${ca.role}
+                    </span>`);
+                });
+            }
+
+            // Legacy role badge if no other assignments
+            if (badges.length === 0 && user.role) {
+                badges.push(`<span class="role-badge ${user.role}">${user.role}</span>`);
+            }
+
+            return badges.join('');
+        }
+
+        async function filterUsers(filter) {
+            currentUserFilter = filter;
+
+            // Update filter button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+
+            // Show loading
+            document.getElementById('tableContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading users...
+                </div>
+            `;
+
+            try {
+                await fetchUnifiedUsers(filter === 'all' ? '' : filter);
+                renderUsersTable();
+                updateAssignmentStats();
+            } catch (error) {
+                console.error('Error filtering users:', error);
+                showToast('Failed to filter users', 'error');
+            }
+        }
+
+        function updateAssignmentStats() {
+            // Count users by assignment type
+            let platformCount = 0;
+            let agencyCount = 0;
+            let clientCount = 0;
+
+            unifiedUsers.forEach(user => {
+                if (user.platform_admin) platformCount++;
+                if (user.organization_memberships && user.organization_memberships.length > 0) agencyCount++;
+                if (user.client_portal_access && user.client_portal_access.length > 0) clientCount++;
+            });
+
+            document.getElementById('adminCount').textContent = platformCount;
+            document.getElementById('userCount').textContent = agencyCount;
+            document.getElementById('viewerCount').textContent = clientCount;
         }
 
         function updateStats(summary) {
@@ -1904,13 +2189,15 @@
 
         function buildUserFormContent(user = null) {
             const isEdit = !!user;
+            const unifiedUser = isEdit ? unifiedUsers.find(u => u.id === user.id) : null;
+
             return `
                 <form id="userForm">
                     <input type="hidden" id="userId" value="${isEdit ? user.id : ''}">
 
                     <div class="form-group">
                         <label class="form-label" for="userEmail">Email</label>
-                        <input type="email" id="userEmail" class="form-input" placeholder="user@example.com" value="${isEdit ? escapeHtml(user.email) : ''}" required>
+                        <input type="email" id="userEmail" class="form-input" placeholder="user@example.com" value="${isEdit ? escapeHtml(user.email) : ''}" ${isEdit ? 'readonly style="background:var(--bg-tertiary);"' : 'required'}>
                     </div>
 
                     <div class="form-group" id="passwordGroup" style="display: ${isEdit ? 'none' : 'block'};">
@@ -1923,36 +2210,259 @@
                         <input type="text" id="userDisplayName" class="form-input" placeholder="John Doe" value="${isEdit ? escapeHtml(user.display_name || '') : ''}">
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="userRole">System Role</label>
-                        <select id="userRole" class="form-select">
-                            <option value="user" ${isEdit && user.role === 'user' ? 'selected' : ''}>User - Can create and manage own agents</option>
-                            <option value="viewer" ${isEdit && user.role === 'viewer' ? 'selected' : ''}>Viewer - Read-only access</option>
-                            <option value="admin" ${isEdit && user.role === 'admin' ? 'selected' : ''}>Admin - Full access to all features</option>
-                        </select>
-                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls platform-level access</small>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="userBusinessRole">Business Role</label>
+                            <select id="userBusinessRole" class="form-select">
+                                <option value="ic" ${isEdit && (user.business_role === 'ic' || !user.business_role) ? 'selected' : ''}>Individual Contributor</option>
+                                <option value="supervisor" ${isEdit && user.business_role === 'supervisor' ? 'selected' : ''}>Supervisor</option>
+                                <option value="manager" ${isEdit && user.business_role === 'manager' ? 'selected' : ''}>Manager</option>
+                                <option value="director" ${isEdit && user.business_role === 'director' ? 'selected' : ''}>Director</option>
+                                <option value="executive" ${isEdit && user.business_role === 'executive' ? 'selected' : ''}>Executive</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="userDepartment">Department</label>
+                            <select id="userDepartment" class="form-select">
+                                ${buildDepartmentOptions(isEdit ? user.department_id : '')}
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="userBusinessRole">Business Role</label>
-                        <select id="userBusinessRole" class="form-select">
-                            <option value="ic" ${isEdit && (user.business_role === 'ic' || !user.business_role) ? 'selected' : ''}>Individual Contributor</option>
-                            <option value="supervisor" ${isEdit && user.business_role === 'supervisor' ? 'selected' : ''}>Supervisor</option>
-                            <option value="manager" ${isEdit && user.business_role === 'manager' ? 'selected' : ''}>Manager</option>
-                            <option value="director" ${isEdit && user.business_role === 'director' ? 'selected' : ''}>Director</option>
-                            <option value="executive" ${isEdit && user.business_role === 'executive' ? 'selected' : ''}>Executive</option>
-                        </select>
-                        <small style="color: var(--text-muted); font-size: 0.8rem;">Controls department and strategy access</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="userDepartment">Department</label>
-                        <select id="userDepartment" class="form-select">
-                            ${buildDepartmentOptions(isEdit ? user.department_id : '')}
-                        </select>
-                    </div>
+                    ${isEdit ? buildAssignmentSections(unifiedUser) : buildNewUserAssignment()}
                 </form>
             `;
+        }
+
+        function buildNewUserAssignment() {
+            return `
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                <div class="form-group">
+                    <label class="form-label">Initial Assignment</label>
+                    <select id="newUserAssignmentType" class="form-select" onchange="toggleNewUserAssignmentFields()">
+                        <option value="">-- Select assignment type --</option>
+                        <option value="platform">Platform Admin (Synergi)</option>
+                        <option value="organization">Agency Team Member</option>
+                    </select>
+                </div>
+
+                <div id="platformAssignmentFields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="platformRole">Platform Role</label>
+                        <select id="platformRole" class="form-select">
+                            <option value="admin">Admin - Manage platform</option>
+                            <option value="support">Support - Read-only access</option>
+                            <option value="super_admin">Super Admin - Full control</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="orgAssignmentFields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="assignOrgId">Organization</label>
+                        <select id="assignOrgId" class="form-select">
+                            <option value="">-- Select organization --</option>
+                            ${organizations.map(org => `<option value="${org.id}">${escapeHtml(org.name)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="orgMemberRole">Role</label>
+                        <select id="orgMemberRole" class="form-select">
+                            <option value="consultant">Consultant</option>
+                            <option value="admin">Admin</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildAssignmentSections(user) {
+            if (!user) return '';
+
+            const hasPlatformAdmin = user.platform_admin;
+            const orgMemberships = user.organization_memberships || [];
+            const clientAccess = user.client_portal_access || [];
+
+            return `
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600;">Organization Assignments</h4>
+
+                <!-- Platform Admin Section -->
+                <div class="assignment-section">
+                    <div class="assignment-section-header">
+                        <span class="assignment-section-title">
+                            <i data-lucide="crown" style="width:16px;height:16px;color:#eab308;"></i>
+                            Platform Admin
+                        </span>
+                        ${!hasPlatformAdmin ? `<button type="button" class="btn btn-sm btn-secondary" onclick="showAddPlatformAdmin()">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> Add
+                        </button>` : ''}
+                    </div>
+                    <div class="assignment-list" id="platformAdminList">
+                        ${hasPlatformAdmin ? `
+                            <div class="assignment-item">
+                                <div class="assignment-item-info">
+                                    <span class="assignment-badge platform">${user.platform_admin.role}</span>
+                                </div>
+                                <button type="button" class="icon-btn danger" onclick="removePlatformAdmin()" title="Remove">
+                                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>
+                        ` : '<span style="color: var(--text-muted); font-size: 0.85rem;">No platform admin access</span>'}
+                    </div>
+                    <div id="addPlatformAdminForm" style="display: none; margin-top: 0.75rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="newPlatformRole" class="form-select" style="flex: 1;">
+                                <option value="admin">Admin</option>
+                                <option value="support">Support</option>
+                                <option value="super_admin">Super Admin</option>
+                            </select>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addPlatformAdmin()">Add</button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="hideAddPlatformAdmin()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Organization Memberships Section -->
+                <div class="assignment-section">
+                    <div class="assignment-section-header">
+                        <span class="assignment-section-title">
+                            <i data-lucide="building" style="width:16px;height:16px;color:#6366f1;"></i>
+                            Organization Memberships
+                        </span>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="showAddOrgMembership()">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> Add
+                        </button>
+                    </div>
+                    <div class="assignment-list" id="orgMembershipList">
+                        ${orgMemberships.length > 0 ? orgMemberships.map(om => `
+                            <div class="assignment-item" data-membership-id="${om.membership_id}">
+                                <div class="assignment-item-info">
+                                    <span>${escapeHtml(om.org_name)}</span>
+                                    <span class="assignment-item-role">${om.role}</span>
+                                </div>
+                                <button type="button" class="icon-btn danger" onclick="removeOrgMembership('${om.membership_id}')" title="Remove">
+                                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>
+                        `).join('') : '<span style="color: var(--text-muted); font-size: 0.85rem;">No organization memberships</span>'}
+                    </div>
+                    <div id="addOrgMembershipForm" style="display: none; margin-top: 0.75rem;">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <select id="newOrgId" class="form-select" style="flex: 2; min-width: 150px;">
+                                <option value="">Select organization</option>
+                                ${organizations.map(org => `<option value="${org.id}">${escapeHtml(org.name)}</option>`).join('')}
+                            </select>
+                            <select id="newOrgRole" class="form-select" style="flex: 1; min-width: 100px;">
+                                <option value="consultant">Consultant</option>
+                                <option value="admin">Admin</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addOrgMembership()">Add</button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="hideAddOrgMembership()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleNewUserAssignmentFields() {
+            const type = document.getElementById('newUserAssignmentType').value;
+            document.getElementById('platformAssignmentFields').style.display = type === 'platform' ? 'block' : 'none';
+            document.getElementById('orgAssignmentFields').style.display = type === 'organization' ? 'block' : 'none';
+        }
+
+        // Platform Admin assignment functions
+        function showAddPlatformAdmin() {
+            document.getElementById('addPlatformAdminForm').style.display = 'block';
+        }
+
+        function hideAddPlatformAdmin() {
+            document.getElementById('addPlatformAdminForm').style.display = 'none';
+        }
+
+        async function addPlatformAdmin() {
+            const role = document.getElementById('newPlatformRole').value;
+            const userId = editingUserId;
+
+            try {
+                await updateUserAssignments(userId, {
+                    platform_admin: { role }
+                });
+                showToast('Platform admin added');
+                await loadData();
+                // Refresh the modal
+                const user = users.find(u => u.id === userId);
+                if (user) openEditModal(userId);
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function removePlatformAdmin() {
+            const userId = editingUserId;
+
+            try {
+                await updateUserAssignments(userId, {
+                    platform_admin: null
+                });
+                showToast('Platform admin removed');
+                await loadData();
+                const user = users.find(u => u.id === userId);
+                if (user) openEditModal(userId);
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        // Organization membership functions
+        function showAddOrgMembership() {
+            document.getElementById('addOrgMembershipForm').style.display = 'block';
+        }
+
+        function hideAddOrgMembership() {
+            document.getElementById('addOrgMembershipForm').style.display = 'none';
+        }
+
+        async function addOrgMembership() {
+            const orgId = document.getElementById('newOrgId').value;
+            const role = document.getElementById('newOrgRole').value;
+            const userId = editingUserId;
+
+            if (!orgId) {
+                showToast('Please select an organization', 'error');
+                return;
+            }
+
+            try {
+                await updateUserAssignments(userId, {
+                    add_org_memberships: [{ org_id: orgId, role }]
+                });
+                showToast('Organization membership added');
+                await loadData();
+                const user = users.find(u => u.id === userId);
+                if (user) openEditModal(userId);
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function removeOrgMembership(membershipId) {
+            const userId = editingUserId;
+
+            try {
+                await updateUserAssignments(userId, {
+                    remove_org_memberships: [membershipId]
+                });
+                showToast('Organization membership removed');
+                await loadData();
+                const user = users.find(u => u.id === userId);
+                if (user) openEditModal(userId);
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
         }
 
         function openAddModal() {
@@ -1979,15 +2489,20 @@
             const user = users.find(u => u.id === userId);
             if (!user) return;
 
+            // Close existing modal if open
+            if (userModal) {
+                userModal.close();
+            }
+
             editingUserId = userId;
             userModal = ModalService.create({
                 title: 'Edit User',
                 content: buildUserFormContent(user),
                 footer: `
                     <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
-                    <button class="i360-btn i360-btn-primary" id="saveUserBtn">Save User</button>
+                    <button class="i360-btn i360-btn-primary" id="saveUserBtn">Save Changes</button>
                 `,
-                width: 480,
+                width: 560,
                 draggable: true,
                 resizable: true,
                 onOpen: () => {
@@ -2032,7 +2547,6 @@
             const email = document.getElementById('userEmail').value;
             const password = document.getElementById('userPassword')?.value || '';
             const displayName = document.getElementById('userDisplayName').value;
-            const role = document.getElementById('userRole').value;
             const businessRole = document.getElementById('userBusinessRole').value;
             const departmentId = document.getElementById('userDepartment').value || null;
 
@@ -2041,21 +2555,43 @@
                     // Update user info
                     await updateUser(editingUserId, {
                         display_name: displayName,
-                        role: role,
                         department_id: departmentId
                     });
                     // Update business role separately
                     await updateUserBusinessRole(editingUserId, businessRole);
                     ModalService.toast({ message: 'User updated successfully', type: 'success' });
                 } else {
-                    await createUser({
+                    // Create new user
+                    const result = await createUser({
                         email,
                         password,
                         display_name: displayName,
-                        role,
+                        role: 'user', // Default system role
                         business_role: businessRole,
                         department_id: departmentId
                     });
+
+                    // Handle initial assignment if selected
+                    const assignmentType = document.getElementById('newUserAssignmentType')?.value;
+                    if (assignmentType && result.data?.id) {
+                        const newUserId = result.data.id;
+
+                        if (assignmentType === 'platform') {
+                            const platformRole = document.getElementById('platformRole').value;
+                            await updateUserAssignments(newUserId, {
+                                platform_admin: { role: platformRole }
+                            });
+                        } else if (assignmentType === 'organization') {
+                            const orgId = document.getElementById('assignOrgId').value;
+                            const orgRole = document.getElementById('orgMemberRole').value;
+                            if (orgId) {
+                                await updateUserAssignments(newUserId, {
+                                    add_org_memberships: [{ org_id: orgId, role: orgRole }]
+                                });
+                            }
+                        }
+                    }
+
                     ModalService.toast({ message: 'User created successfully', type: 'success' });
                 }
 
@@ -2109,15 +2645,17 @@
         // ============================================================================
         async function loadData() {
             try {
-                const [usersData, summary, roles, depts] = await Promise.all([
+                const [usersData, unifiedData, summary, roles, depts, orgs] = await Promise.all([
                     fetchUsers(),
+                    fetchUnifiedUsers(),
                     fetchRolesSummary(),
                     fetchBusinessRoles(),
-                    fetchDepartments()
+                    fetchDepartments(),
+                    fetchOrganizations()
                 ]);
                 try {
                     renderUsersTable();
-                    updateStats(summary);
+                    updateAssignmentStats();
                     populateDepartmentDropdown();
                 } catch (renderError) {
                     console.error('Render error:', renderError);

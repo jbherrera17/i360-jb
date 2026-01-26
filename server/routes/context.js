@@ -663,13 +663,37 @@ router.post('/assets', async (req, res) => {
         
         // Generate content_text from JSON
         const content_text = generateContentText(content_json || {});
-        
+
         const userId = getUserId(req);
         const assetId = uuidv4();
-        
+
+        // Check organization resource limits (Phase 44)
+        const orgId = req.headers['x-org-id'] || req.body.org_id;
+        if (orgId) {
+            const { data: limits, error: limitError } = await supabase
+                .rpc('check_org_limits', {
+                    p_org_id: orgId,
+                    p_resource_type: 'context_assets'
+                });
+
+            if (!limitError && limits && limits[0] && !limits[0].within_limits) {
+                return res.status(403).json({
+                    success: false,
+                    error: `Context asset limit reached (${limits[0].current_count}/${limits[0].max_allowed})`,
+                    details: {
+                        current: limits[0].current_count,
+                        max: limits[0].max_allowed,
+                        usage_percent: limits[0].usage_percent
+                    },
+                    upgrade_required: true
+                });
+            }
+        }
+
         const newAsset = {
             id: assetId,
             user_id: userId,
+            org_id: orgId || null,  // Phase 44: Associate with organization
             asset_type,
             name,
             description: description || '',

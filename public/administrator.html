@@ -295,6 +295,39 @@
                 </div>
             </div>
 
+            <!-- Platform Administration Section (Phase 44) -->
+            <div class="section" id="platformAdminSection">
+                <div class="section-header">
+                    <i data-lucide="crown"></i>
+                    <h2>Platform Administration</h2>
+                </div>
+                <div class="admin-grid">
+                    <a href="/admin-platform.html" class="admin-card">
+                        <div class="admin-card-header">
+                            <div class="admin-card-icon indigo">
+                                <i data-lucide="crown"></i>
+                            </div>
+                            <div class="admin-card-title">Platform Dashboard</div>
+                        </div>
+                        <div class="admin-card-description">
+                            Manage all organizations, view platform statistics, and configure global settings
+                        </div>
+                    </a>
+
+                    <a href="/admin-tier-setup.html" class="admin-card">
+                        <div class="admin-card-header">
+                            <div class="admin-card-icon purple">
+                                <i data-lucide="layers"></i>
+                            </div>
+                            <div class="admin-card-title">Tier Configuration</div>
+                        </div>
+                        <div class="admin-card-description">
+                            Configure subscription tiers, resource limits, and feature availability
+                        </div>
+                    </a>
+                </div>
+            </div>
+
             <!-- User & Access Section -->
             <div class="section">
                 <div class="section-header">
@@ -561,6 +594,30 @@
                         </div>
                     </a>
 
+                    <a href="/admin-org-settings.html" class="admin-card">
+                        <div class="admin-card-header">
+                            <div class="admin-card-icon indigo">
+                                <i data-lucide="building-2"></i>
+                            </div>
+                            <div class="admin-card-title">Organization Settings</div>
+                        </div>
+                        <div class="admin-card-description">
+                            Manage organization configuration, subscription, and preferences
+                        </div>
+                    </a>
+
+                    <a href="/admin-org-members.html" class="admin-card">
+                        <div class="admin-card-header">
+                            <div class="admin-card-icon blue">
+                                <i data-lucide="users"></i>
+                            </div>
+                            <div class="admin-card-title">Team Members</div>
+                        </div>
+                        <div class="admin-card-description">
+                            Manage organization team members, roles, and permissions
+                        </div>
+                    </a>
+
                     <a href="/admin-clients.html" class="admin-card">
                         <div class="admin-card-header">
                             <div class="admin-card-icon orange">
@@ -768,7 +825,37 @@
             loadAlign120AdminData();
             loadConversationCount();
             loadFilterOptions();
+            checkPlatformAdminAccess();
         });
+
+        // Check if user has platform admin access
+        async function checkPlatformAdminAccess() {
+            try {
+                const token = localStorage.getItem('insight360_token');
+                if (!token) {
+                    hidePlatformAdminSection();
+                    return;
+                }
+
+                const response = await fetch('/api/platform/config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    hidePlatformAdminSection();
+                }
+                // If response is OK, user is a platform admin - section stays visible
+            } catch (error) {
+                hidePlatformAdminSection();
+            }
+        }
+
+        function hidePlatformAdminSection() {
+            const section = document.getElementById('platformAdminSection');
+            if (section) {
+                section.style.display = 'none';
+            }
+        }
 
         // Load admin data for Align 120
         async function loadAlign120AdminData() {

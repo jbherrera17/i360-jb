@@ -94,6 +94,63 @@ Models are registered in `llmRegistry.js` with capabilities (vision, streaming, 
 ### Streaming Responses
 Chat uses Server-Sent Events (SSE). Compression middleware skips SSE streams. Frontend handles `data:` events in `public/js/chat.js`.
 
+### Enterprise Multi-Tenancy (Phase 44)
+
+The platform supports a complete multi-tenant architecture with subscription tiers and module-based access control.
+
+**Hierarchy Structure:**
+```
+Synergi (Platform Owner)
+    └── Organizations (Clients/Agencies)
+            ├── Departments
+            │       └── Users (with business roles)
+            └── Clients (for Agency tier only)
+```
+
+**Subscription Tiers:**
+| Tier | Members | Clients | Agents | Workflows | Key Features |
+|------|---------|---------|--------|-----------|--------------|
+| Starter | 3 | 0 | 5 | 3 | Basic modules only |
+| Business | 10 | 0 | 25 | 15 | +Align120, Research Studio, TL |
+| Enterprise | 100 | 0 | 100 | 50 | +SSO, Priority Support |
+| Agency | 50 | 100 | 200 | 100 | +White-label, Client Portal |
+
+**Key Database Tables (Phase 44):**
+- `subscription_tiers` - Tier definitions with limits and features
+- `platform_modules` - Module definitions with tier/role requirements
+- `org_module_access` - Per-org module overrides
+- `platform_admins` - Synergi super-admin users
+- `role_module_access` - Role-to-module mapping
+
+**Helper Functions:**
+- `can_access_module(user_id, module_id, org_id)` - Check module access
+- `get_user_modules(user_id, org_id)` - Get accessible modules
+- `check_org_limits(org_id, resource_type)` - Check resource limits
+- `is_platform_admin(user_id)` - Check platform admin status
+
+**Routes:**
+- `/api/platform/*` - Platform admin operations (tiers, modules, admins, orgs)
+- `/api/modules` - User's accessible modules for dynamic navigation
+
+**Middleware (`server/middleware/moduleAccess.js`):**
+```javascript
+// Protect routes by module
+const { requireModule } = createModuleAccessMiddleware(supabase);
+router.get('/research', requireModule('research_studio'), handler);
+
+// Check resource limits before creation
+const { checkResourceLimit } = createModuleAccessMiddleware(supabase);
+router.post('/', checkResourceLimit('agents'), handler);
+
+// Require platform admin
+const { requirePlatformAdmin } = createModuleAccessMiddleware(supabase);
+router.get('/stats', requirePlatformAdmin(), handler);
+```
+
+**Admin Pages:**
+- `admin-platform.html` - Platform admin dashboard (Synergi only)
+- `admin-tier-setup.html` - Tier configuration and limits
+
 ## Frontend Development Guidelines
 
 **IMPORTANT:** When creating or modifying HTML pages in `public/`, follow these patterns for consistency:
@@ -155,27 +212,82 @@ Chat uses Server-Sent Events (SSE). Compression middleware skips SSE streams. Fr
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Title - Insight 360</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <nav id="sidebar" class="sidebar"></nav>
-    <main class="main-content">
-        <!-- Page content -->
-    </main>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
 
-    <script src="js/navigation.js"></script>
-    <script src="js/modal-service-loader.js"></script>
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="icon-name" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Page Title
+                    </h1>
+                    <p class="header-subtitle">Page description goes here</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <!-- Additional action buttons -->
+                </div>
+            </header>
+
+            <!-- Content with 2rem padding (use existing classes or inline) -->
+            <div style="padding: var(--spacing-xl);">
+                <!-- Page content -->
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
     <script>
-        // Page initialization
-        document.addEventListener('DOMContentLoaded', init);
-
-        async function init() {
-            // Check authentication, load data, etc.
-        }
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            // Initialize page...
+        });
     </script>
 </body>
 </html>
 ```
+
+### Content Spacing Rules (Critical for Consistency)
+
+All pages must follow these spacing standards:
+
+1. **App Container**: Wrap everything in `<div class="app-container">` (NOT `app-layout`)
+
+2. **Page Header**: Use `padding: var(--spacing-xl)` (2rem) - this is automatic with `.page-header` class
+
+3. **Content Area**: Apply 2rem padding to content sections:
+   - Use `padding: var(--spacing-xl)` inline, OR
+   - Use `.dashboard-grid` class (includes 2rem padding), OR
+   - Wrap content in a div with the padding
+
+4. **Spacing Variables**:
+   - `--spacing-xs`: 0.25rem (4px)
+   - `--spacing-sm`: 0.5rem (8px)
+   - `--spacing-md`: 1rem (16px)
+   - `--spacing-lg`: 1.5rem (24px)
+   - `--spacing-xl`: 2rem (32px) - **Use for main content padding**
+   - `--spacing-2xl`: 3rem (48px)
+
+5. **Grid Gaps**: Use `gap: var(--spacing-lg)` (1.5rem) between cards/sections
+
+This ensures equal 2rem spacing between:
+- The sidebar and content (left side)
+- The content and window edge (right side)
 
 ### Do NOT Use
 - Inline `<div class="modal">` HTML - use ModalService instead
@@ -307,8 +419,14 @@ Optional: `BRAVE_SEARCH_API_KEY`, `TAVILY_API_KEY`, `PERPLEXITY_API_KEY`, `GOOGL
 
 In Supabase SQL Editor:
 1. Run `db/schema.sql`
-2. Run phase schemas as needed (`phase3-schema.sql` through `phase25-schema.sql`)
+2. Run phase schemas as needed (`phase3-schema.sql` through `phase44-enterprise-multitenancy.sql`)
 3. Run `db/seed.sql` for starter agents
+
+**Phase 44 Migration:** Run `db/phase44-enterprise-multitenancy.sql` to enable:
+- Subscription tiers with resource limits
+- Module-based access control
+- Platform admin roles
+- Dynamic navigation based on tier/role
 
 ## Documentation
 

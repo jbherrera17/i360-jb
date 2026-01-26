@@ -310,9 +310,33 @@ module.exports = function(supabase) {
 
             const userId = req.user?.id || null;
 
+            // Check organization resource limits (Phase 44)
+            const orgId = req.headers['x-org-id'] || req.body.org_id;
+            if (orgId) {
+                const { data: limits, error: limitError } = await supabase
+                    .rpc('check_org_limits', {
+                        p_org_id: orgId,
+                        p_resource_type: 'skills'
+                    });
+
+                if (!limitError && limits && limits[0] && !limits[0].within_limits) {
+                    return res.status(403).json({
+                        success: false,
+                        error: `Skill limit reached (${limits[0].current_count}/${limits[0].max_allowed})`,
+                        details: {
+                            current: limits[0].current_count,
+                            max: limits[0].max_allowed,
+                            usage_percent: limits[0].usage_percent
+                        },
+                        upgrade_required: true
+                    });
+                }
+            }
+
             const skillData = {
                 id: uuidv4(),
                 user_id: userId,
+                org_id: orgId || null,  // Phase 44: Associate with organization
                 name,
                 display_name: display_name || name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
                 description,

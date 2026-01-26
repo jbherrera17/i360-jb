@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Admin | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-card .stat-breakdown {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .stat-card .tier-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tier-starter { background: #e5e7eb; color: #374151; }
+        .tier-business { background: #dbeafe; color: #1d4ed8; }
+        .tier-enterprise { background: #fef3c7; color: #b45309; }
+        .tier-agency { background: #ede9fe; color: #7c3aed; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-trial { background: #fef3c7; color: #b45309; }
+        .status-suspended { background: #fee2e2; color: #991b1b; }
+
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .role-super_admin { background: #fee2e2; color: #991b1b; }
+        .role-admin { background: #fef3c7; color: #b45309; }
+        .role-support { background: #dbeafe; color: #1d4ed8; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            min-width: 150px;
+        }
+
+        .usage-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .usage-bar-fill.warning { background: var(--warning); }
+        .usage-bar-fill.danger { background: var(--danger); }
+
+        .maintenance-banner {
+            background: var(--warning);
+            color: #000;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .maintenance-banner.hidden {
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .config-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .config-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .config-card-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .access-denied {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+
+        .access-denied i {
+            width: 64px;
+            height: 64px;
+            color: var(--danger);
+            margin-bottom: 1rem;
+        }
+
+        .access-denied h2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .access-denied p {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div id="accessDenied" class="access-denied hidden">
+                <i data-lucide="shield-x"></i>
+                <h2>Access Denied</h2>
+                <p>You don't have permission to access the Platform Admin panel.</p>
+                <a href="/" class="btn btn-primary" style="margin-top: 1rem;">
+                    <i data-lucide="home"></i>
+                    Return to Dashboard
+                </a>
+            </div>
+
+            <div id="mainContent">
+                <header class="page-header">
+                    <div class="header-content">
+                        <h1>
+                            <i data-lucide="crown" style="width:28px;height:28px;color:var(--primary);"></i>
+                            Platform Administration
+                        </h1>
+                        <p class="header-subtitle">Manage Insight 360 platform settings, tiers, and organizations</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="help-btn" onclick="HelpModal.open()" title="Help">
+                            <i data-lucide="help-circle"></i>
+                        </button>
+                        <button class="btn btn-secondary" onclick="refreshData()">
+                            <i data-lucide="refresh-cw"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </header>
+
+                <div id="maintenanceBanner" class="maintenance-banner hidden">
+                    <i data-lucide="alert-triangle"></i>
+                    <span>Maintenance mode is active. Only platform admins can access the system.</span>
+                    <button class="btn btn-sm" onclick="toggleMaintenance(false)">Disable</button>
+                </div>
+
+                <!-- Content Area with consistent 2rem padding -->
+                <div style="padding: var(--spacing-xl);">
+
+                <!-- Stats Grid -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Organizations</div>
+                        <div class="stat-value" id="statOrgs">-</div>
+                        <div class="stat-breakdown" id="statOrgsByTier"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value" id="statUsers">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Clients</div>
+                        <div class="stat-value" id="statClients">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Agents</div>
+                        <div class="stat-value" id="statAgents">-</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="organizations">Organizations</button>
+                    <button class="tab" data-tab="tiers">Subscription Tiers</button>
+                    <button class="tab" data-tab="modules">Modules</button>
+                    <button class="tab" data-tab="admins">Platform Admins</button>
+                    <button class="tab" data-tab="config">Configuration</button>
+                </div>
+
+                <!-- Organizations Tab -->
+                <div class="tab-content active" id="tab-organizations">
+                    <div class="section">
+                        <div class="search-bar">
+                            <input type="text" class="search-input" id="orgSearch" placeholder="Search organizations...">
+                            <select class="filter-select" id="tierFilter">
+                                <option value="">All Tiers</option>
+                                <option value="starter">Starter</option>
+                                <option value="business">Business</option>
+                                <option value="enterprise">Enterprise</option>
+                                <option value="agency">Agency</option>
+                            </select>
+                            <select class="filter-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="trial">Trial</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Organization</th>
+                                    <th>Tier</th>
+                                    <th>Status</th>
+                                    <th>Members</th>
+                                    <th>Clients</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orgsTableBody">
+                                <tr>
+                                    <td colspan="7" class="empty-state">Loading organizations...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tiers Tab -->
+                <div class="tab-content" id="tab-tiers">
+                    <div class="section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i data-lucide="layers"></i>
+                                Subscription Tiers
+                            </h3>
+                        </div>
+
+                        <div id="tiersContainer">
+                            <!-- Tiers will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modules Tab -->
+                <div class="tab-content" id="tab-modules">
+                    <div class="section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i data-lucide="puzzle"></i>
+                                Platform Modules
+                            </h3>
+                        </div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Module</th>
+                                    <th>Category</th>
+                                    <th>Min Tier</th>
+                                    <th>Min Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modulesTableBody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">Loading modules...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admins Tab -->
+                <div class="tab-content" id="tab-admins">
+                    <div class="section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i data-lucide="shield"></i>
+                                Platform Administrators
+                            </h3>
+                            <button class="btn btn-primary" onclick="showAddAdminModal()">
+                                <i data-lucide="plus"></i>
+                                Add Admin
+                            </button>
+                        </div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Granted By</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminsTableBody">
+                                <tr>
+                                    <td colspan="5" class="empty-state">Loading admins...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Config Tab -->
+                <div class="tab-content" id="tab-config">
+                    <div class="section">
+                        <div class="config-card">
+                            <div class="config-card-header">
+                                <span class="config-card-title">Platform Settings</span>
+                                <button class="btn btn-primary btn-sm" onclick="savePlatformConfig()">
+                                    <i data-lucide="save"></i>
+                                    Save
+                                </button>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Platform Name</label>
+                                    <input type="text" id="configPlatformName" value="Insight 360">
+                                </div>
+                                <div class="form-group">
+                                    <label>Default Tier for New Orgs</label>
+                                    <select id="configDefaultTier">
+                                        <option value="starter">Starter</option>
+                                        <option value="business">Business</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Trial Duration (days)</label>
+                                    <input type="number" id="configTrialDays" value="14" min="0" max="90">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="configMaintenance"> Enable Maintenance Mode
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="configStripe"> Enable Stripe Payments
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Maintenance Message</label>
+                                <textarea id="configMaintenanceMsg" rows="2" placeholder="System is under maintenance..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                </div><!-- End content padding wrapper -->
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let platformConfig = null;
+        let organizations = [];
+        let tiers = [];
+        let modules = [];
+        let admins = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Apply saved theme
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // Initialize navigation
+            if (typeof initNavigation === 'function') {
+                await initNavigation();
+            }
+
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Setup tabs
+            setupTabs();
+
+            // Check platform admin access
+            const hasAccess = await checkPlatformAdminAccess();
+            if (!hasAccess) {
+                document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('accessDenied').classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            // Load data
+            await loadAllData();
+        });
+
+        // Check if user is platform admin
+        async function checkPlatformAdminAccess() {
+            try {
+                const token = localStorage.getItem('insight360_token');
+                if (!token) return false;
+
+                const response = await fetch('/api/platform/config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Setup tab navigation
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active tab
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Show corresponding content
+                    const tabId = tab.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`tab-${tabId}`).classList.add('active');
+                });
+            });
+        }
+
+        // Load all data
+        async function loadAllData() {
+            const token = localStorage.getItem('insight360_token');
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            try {
+                // Load in parallel
+                const [statsRes, orgsRes, tiersRes, modulesRes, adminsRes, configRes] = await Promise.all([
+                    fetch('/api/platform/stats', { headers }),
+                    fetch('/api/platform/organizations', { headers }),
+                    fetch('/api/platform/tiers', { headers }),
+                    fetch('/api/platform/modules', { headers }),
+                    fetch('/api/platform/admins', { headers }),
+                    fetch('/api/platform/config', { headers })
+                ]);
+
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    renderStats(stats.data);
+                }
+
+                if (orgsRes.ok) {
+                    const data = await orgsRes.json();
+                    organizations = data.data || [];
+                    renderOrganizations();
+                }
+
+                if (tiersRes.ok) {
+                    const data = await tiersRes.json();
+                    tiers = data.data || [];
+                    renderTiers();
+                }
+
+                if (modulesRes.ok) {
+                    const data = await modulesRes.json();
+                    modules = data.data || [];
+                    renderModules();
+                }
+
+                if (adminsRes.ok) {
+                    const data = await adminsRes.json();
+                    admins = data.data || [];
+                    renderAdmins();
+                }
+
+                if (configRes.ok) {
+                    const data = await configRes.json();
+                    platformConfig = data.data || {};
+                    renderConfig();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Failed to load platform data', 'error');
+            }
+        }
+
+        // Render stats
+        function renderStats(stats) {
+            if (!stats) return;
+
+            document.getElementById('statOrgs').textContent = stats.organizations?.total || 0;
+            document.getElementById('statUsers').textContent = stats.users || 0;
+            document.getElementById('statClients').textContent = stats.clients || 0;
+            document.getElementById('statAgents').textContent = stats.agents || 0;
+
+            // Render tier breakdown
+            const byTier = stats.organizations?.by_tier || {};
+            const breakdown = document.getElementById('statOrgsByTier');
+            breakdown.innerHTML = Object.entries(byTier)
+                .map(([tier, count]) => `<span class="tier-badge tier-${tier}">${tier}: ${count}</span>`)
+                .join('');
+        }
+
+        // Render organizations
+        function renderOrganizations() {
+            const tbody = document.getElementById('orgsTableBody');
+
+            if (organizations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No organizations found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = organizations.map(org => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(org.name)}</strong>
+                        <br><small style="color: var(--text-secondary);">${escapeHtml(org.slug)}</small>
+                    </td>
+                    <td><span class="tier-badge tier-${org.subscription_tier}">${org.subscription_tier}</span></td>
+                    <td><span class="status-badge status-${org.subscription_status}">${org.subscription_status}</span></td>
+                    <td>${org.current_members || 0} / ${org.max_members || '-'}</td>
+                    <td>${org.current_clients || 0} / ${org.max_clients || '-'}</td>
+                    <td>${formatDate(org.created_at)}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm btn-secondary" onclick="showChangeTierModal('${org.id}', '${org.subscription_tier}')">
+                            Change Tier
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render tiers
+        function renderTiers() {
+            const container = document.getElementById('tiersContainer');
+
+            container.innerHTML = tiers.map(tier => `
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <span class="config-card-title">
+                            <span class="tier-badge tier-${tier.id}">${tier.name}</span>
+                            ${tier.description ? `<small style="margin-left: 0.5rem; color: var(--text-secondary);">${tier.description}</small>` : ''}
+                        </span>
+                        <button class="btn btn-sm btn-secondary" onclick="editTier('${tier.id}')">
+                            <i data-lucide="edit-2"></i>
+                            Edit
+                        </button>
+                    </div>
+
+                    <div class="form-row" style="font-size: 0.875rem;">
+                        <div>
+                            <strong>Pricing:</strong>
+                            $${tier.price_monthly || 0}/mo or $${tier.price_yearly || 0}/yr
+                        </div>
+                        <div>
+                            <strong>Members:</strong> ${tier.max_members}
+                        </div>
+                        <div>
+                            <strong>Clients:</strong> ${tier.max_clients}
+                        </div>
+                        <div>
+                            <strong>Agents:</strong> ${tier.max_agents}
+                        </div>
+                        <div>
+                            <strong>Workflows:</strong> ${tier.max_workflows}
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1rem;">
+                        <strong>Features:</strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                            ${Object.entries(tier.features || {}).map(([key, value]) =>
+                                `<span class="tier-badge" style="background: ${value ? 'var(--success)' : 'var(--bg-tertiary)'}; color: ${value ? 'white' : 'var(--text-secondary)'};">
+                                    ${key.replace(/_/g, ' ')}
+                                </span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render modules
+        function renderModules() {
+            const tbody = document.getElementById('modulesTableBody');
+
+            if (modules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No modules found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = modules.map(mod => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="${mod.icon || 'circle'}" style="width: 16px; height: 16px;"></i>
+                            <strong>${escapeHtml(mod.name)}</strong>
+                            ${mod.is_beta ? '<span class="tier-badge" style="background: var(--info); color: white;">Beta</span>' : ''}
+                        </div>
+                        <small style="color: var(--text-secondary);">${mod.route_path}</small>
+                    </td>
+                    <td>${mod.category}</td>
+                    <td>${mod.min_tier ? `<span class="tier-badge tier-${mod.min_tier}">${mod.min_tier}</span>` : 'All'}</td>
+                    <td>${mod.min_business_role || 'All'}</td>
+                    <td>
+                        <span class="status-badge ${mod.is_active ? 'status-active' : 'status-suspended'}">
+                            ${mod.is_active ? 'Active' : 'Disabled'}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm btn-secondary" onclick="editModule('${mod.id}')">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render admins
+        function renderAdmins() {
+            const tbody = document.getElementById('adminsTableBody');
+
+            if (admins.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No platform admins found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = admins.map(admin => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(admin.user?.display_name || admin.user?.email || 'Unknown')}</strong>
+                        ${admin.user?.email ? `<br><small style="color: var(--text-secondary);">${escapeHtml(admin.user.email)}</small>` : ''}
+                    </td>
+                    <td><span class="role-badge role-${admin.role}">${admin.role}</span></td>
+                    <td>${admin.granted_by_user?.display_name || admin.granted_by_user?.email || '-'}</td>
+                    <td>
+                        <span class="status-badge ${admin.is_active ? 'status-active' : 'status-suspended'}">
+                            ${admin.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm btn-secondary" onclick="toggleAdminStatus('${admin.id}', ${!admin.is_active})">
+                            ${admin.is_active ? 'Disable' : 'Enable'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render config
+        function renderConfig() {
+            if (!platformConfig) return;
+
+            document.getElementById('configPlatformName').value = platformConfig.platform_name || 'Insight 360';
+            document.getElementById('configDefaultTier').value = platformConfig.default_tier || 'starter';
+            document.getElementById('configTrialDays').value = platformConfig.trial_duration_days || 14;
+            document.getElementById('configMaintenance').checked = platformConfig.maintenance_mode || false;
+            document.getElementById('configStripe').checked = platformConfig.stripe_enabled || false;
+            document.getElementById('configMaintenanceMsg').value = platformConfig.maintenance_message || '';
+
+            // Show/hide maintenance banner
+            const banner = document.getElementById('maintenanceBanner');
+            banner.classList.toggle('hidden', !platformConfig.maintenance_mode);
+        }
+
+        // Save platform config
+        async function savePlatformConfig() {
+            const token = localStorage.getItem('insight360_token');
+
+            const config = {
+                platform_name: document.getElementById('configPlatformName').value,
+                default_tier: document.getElementById('configDefaultTier').value,
+                trial_duration_days: parseInt(document.getElementById('configTrialDays').value),
+                maintenance_mode: document.getElementById('configMaintenance').checked,
+                stripe_enabled: document.getElementById('configStripe').checked,
+                maintenance_message: document.getElementById('configMaintenanceMsg').value
+            };
+
+            try {
+                const response = await fetch('/api/platform/config', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    showToast('Platform configuration saved', 'success');
+                    platformConfig = config;
+                    renderConfig();
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Failed to save', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to save configuration', 'error');
+            }
+        }
+
+        // Show change tier modal
+        async function showChangeTierModal(orgId, currentTier) {
+            const tierOptions = tiers.map(t =>
+                ({ label: t.name, value: t.id, description: t.description })
+            );
+
+            if (typeof ModalService !== 'undefined') {
+                const result = await ModalService.form({
+                    title: 'Change Organization Tier',
+                    fields: [
+                        {
+                            name: 'tier',
+                            label: 'New Tier',
+                            type: 'select',
+                            value: currentTier,
+                            options: tierOptions
+                        }
+                    ],
+                    submitText: 'Change Tier'
+                });
+
+                if (result && result.tier) {
+                    await changeTier(orgId, result.tier);
+                }
+            }
+        }
+
+        // Change organization tier
+        async function changeTier(orgId, newTier) {
+            const token = localStorage.getItem('insight360_token');
+
+            try {
+                const response = await fetch(`/api/platform/organizations/${orgId}/tier`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ tier: newTier })
+                });
+
+                if (response.ok) {
+                    showToast('Organization tier updated', 'success');
+                    await loadAllData();
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Failed to change tier', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to change tier', 'error');
+            }
+        }
+
+        // Refresh data
+        async function refreshData() {
+            await loadAllData();
+            showToast('Data refreshed', 'success');
+        }
+
+        // Utility functions
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString();
+        }
+
+        function showToast(message, type = 'info') {
+            // Simple toast implementation
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--info)'};
+                color: white; border-radius: 8px; z-index: 9999; animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Placeholder functions for edit actions
+        function editTier(tierId) {
+            showToast('Tier editing coming soon', 'info');
+        }
+
+        function editModule(moduleId) {
+            showToast('Module editing coming soon', 'info');
+        }
+
+        function showAddAdminModal() {
+            showToast('Add admin functionality coming soon', 'info');
+        }
+
+        function toggleAdminStatus(adminId, newStatus) {
+            showToast('Admin status toggle coming soon', 'info');
+        }
+
+        function toggleMaintenance(enabled) {
+            document.getElementById('configMaintenance').checked = enabled;
+            savePlatformConfig();
+        }
+    </script>
+</body>
+</html>

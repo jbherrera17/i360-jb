@@ -35,6 +35,44 @@ const TL_AGENTS = {
 module.exports = function(supabase) {
     const router = express.Router();
 
+    // Phase 44: Module access middleware for Thought Leadership
+    router.use(async (req, res, next) => {
+        try {
+            const userId = req.userId || req.headers['x-user-id'];
+            const orgId = req.headers['x-org-id'];
+
+            if (!userId) {
+                return next();
+            }
+
+            const { data: canAccess, error } = await supabase
+                .rpc('can_access_module', {
+                    p_user_id: userId,
+                    p_module_id: 'thought_leadership',
+                    p_org_id: orgId || null
+                });
+
+            if (error) {
+                console.error('Module access check error:', error);
+                return next();
+            }
+
+            if (canAccess === false) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Thought Leadership requires a Business tier or higher subscription',
+                    module: 'thought_leadership',
+                    upgrade_required: true
+                });
+            }
+
+            next();
+        } catch (err) {
+            console.error('Module access middleware error:', err);
+            next();
+        }
+    });
+
     // ============================================================================
     // PROFILE MANAGEMENT ENDPOINTS
     // ============================================================================

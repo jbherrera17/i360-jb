@@ -149,6 +149,15 @@ const HelpRegistry = {
         '/admin-client-users': {
             file: '/api/docs/admin-client-users-user-guide.md',
             title: 'Client Portal Users Help'
+        },
+        // Enterprise Multi-Tenancy (Phase 44)
+        '/admin-platform': {
+            file: '/api/docs/admin-platform-user-guide.md',
+            title: 'Platform Administration Help'
+        },
+        '/admin-tier-setup': {
+            file: '/api/docs/admin-tier-setup-user-guide.md',
+            title: 'Tier Setup Help'
         }
     },
 

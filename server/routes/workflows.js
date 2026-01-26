@@ -169,11 +169,35 @@ router.post('/', async (req, res) => {
         const userId = getUserId(req);
         const workflowData = req.body;
 
+        // Check organization resource limits (Phase 44)
+        const orgId = req.headers['x-org-id'] || workflowData.org_id;
+        if (orgId) {
+            const { data: limits, error: limitError } = await supabase
+                .rpc('check_org_limits', {
+                    p_org_id: orgId,
+                    p_resource_type: 'workflows'
+                });
+
+            if (!limitError && limits && limits[0] && !limits[0].within_limits) {
+                return res.status(403).json({
+                    success: false,
+                    error: `Workflow limit reached (${limits[0].current_count}/${limits[0].max_allowed})`,
+                    details: {
+                        current: limits[0].current_count,
+                        max: limits[0].max_allowed,
+                        usage_percent: limits[0].usage_percent
+                    },
+                    upgrade_required: true
+                });
+            }
+        }
+
         const { data, error } = await supabase
             .from('workflows')
             .insert({
                 ...workflowData,
                 user_id: userId,
+                org_id: orgId || null,  // Phase 44: Associate with organization
                 is_system: false
             })
             .select()

@@ -42,6 +42,48 @@ module.exports = function(supabase) {
         console.error('Failed to initialize storage:', err);
     });
 
+    // Phase 44: Module access middleware for Research Studio
+    // Checks if user's tier and role allow access to this module
+    router.use(async (req, res, next) => {
+        try {
+            const userId = req.userId || req.headers['x-user-id'];
+            const orgId = req.headers['x-org-id'];
+
+            // Skip check if no user context (will fail auth later anyway)
+            if (!userId) {
+                return next();
+            }
+
+            // Check module access using database function
+            const { data: canAccess, error } = await supabase
+                .rpc('can_access_module', {
+                    p_user_id: userId,
+                    p_module_id: 'research_studio',
+                    p_org_id: orgId || null
+                });
+
+            if (error) {
+                console.error('Module access check error:', error);
+                // Don't block on database errors
+                return next();
+            }
+
+            if (canAccess === false) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Research Studio requires a Business tier or higher subscription',
+                    module: 'research_studio',
+                    upgrade_required: true
+                });
+            }
+
+            next();
+        } catch (err) {
+            console.error('Module access middleware error:', err);
+            next(); // Don't block on errors
+        }
+    });
+
     // ============================================================================
     // STUDIOS CRUD ENDPOINTS
     // ============================================================================
