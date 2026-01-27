@@ -14,6 +14,7 @@ const { assembleContext, estimateTokens } = require('../services/contextInjectio
 const { executeAgent, streamAgent } = require('../services/agentService');
 const { generateSignedEmbedUrl } = require('../services/mindstudioService');
 const { canEditAgent, canDeleteAgent } = require('../middleware/auth');
+const { buildAgentAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
 
 /**
  * Agent Routes Factory
@@ -33,6 +34,8 @@ module.exports = function(supabase) {
      */
     router.get('/', async (req, res) => {
         try {
+            const userId = req.userId || req.headers['x-user-id'];
+            const orgId = req.headers['x-org-id'];
             const {
                 category,
                 suite,
@@ -62,6 +65,25 @@ module.exports = function(supabase) {
             let query = supabase
                 .from('agent_summary')
                 .select('*');
+
+            // === PHASE 45: Apply access control filter ===
+            if (userId) {
+                const accessCtx = await getUserAccessContext(supabase, userId);
+                if (accessCtx) {
+                    query = buildAgentAccessFilter(query, accessCtx);
+                }
+            } else {
+                // Anonymous users: public agents only
+                query = query.eq('visibility', 'public');
+            }
+            // === END PHASE 45 ===
+
+            // === PHASE 46: Organization filtering ===
+            if (orgId) {
+                // Show agents belonging to this org OR system agents (no org)
+                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+            // === END PHASE 46 ===
 
             // Apply filters
             if (category && category !== 'all') {
@@ -109,9 +131,16 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // === PHASE 45: Filter system agents by module access ===
+            let filteredData = data || [];
+            if (userId && orgId && filteredData.length > 0) {
+                filteredData = await filterByModuleAccess(supabase, filteredData, userId, orgId);
+            }
+            // === END PHASE 45 ===
+
             res.json({
                 success: true,
-                data: data || [],
+                data: filteredData,
                 pagination: {
                     total: count,
                     limit: parseInt(limit),
@@ -121,9 +150,9 @@ module.exports = function(supabase) {
 
         } catch (error) {
             console.error('Error listing agents:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     });

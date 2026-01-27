@@ -360,6 +360,101 @@ module.exports = function(supabase) {
     });
 
     /**
+     * POST /api/platform/modules
+     * Create a new platform module
+     */
+    router.post('/modules', requireAdminWrite, async (req, res) => {
+        try {
+            const {
+                id,
+                name,
+                description,
+                icon,
+                route_path,
+                min_tier,
+                min_business_role,
+                requires_modules,
+                category,
+                nav_group,
+                display_order,
+                is_active,
+                is_beta
+            } = req.body;
+
+            // Validate required fields
+            if (!id || !name) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Module ID and name are required'
+                });
+            }
+
+            // Validate ID format (lowercase, underscores only)
+            if (!/^[a-z][a-z0-9_]*$/.test(id)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Module ID must start with a letter and contain only lowercase letters, numbers, and underscores'
+                });
+            }
+
+            // Get max display_order if not provided
+            let orderValue = display_order;
+            if (orderValue === undefined) {
+                const { data: maxOrder } = await supabase
+                    .from('platform_modules')
+                    .select('display_order')
+                    .order('display_order', { ascending: false })
+                    .limit(1)
+                    .single();
+                orderValue = (maxOrder?.display_order || 0) + 10;
+            }
+
+            const insertData = {
+                id,
+                name,
+                description: description || null,
+                icon: icon || 'puzzle',
+                route_path: route_path || null,
+                min_tier: min_tier || 'starter',
+                min_business_role: min_business_role || null,
+                requires_modules: requires_modules || null,
+                category: category || 'tools',
+                nav_group: nav_group || null,
+                display_order: orderValue,
+                is_active: is_active !== false,
+                is_beta: is_beta || false
+            };
+
+            const { data, error } = await supabase
+                .from('platform_modules')
+                .insert(insertData)
+                .select()
+                .single();
+
+            if (error) {
+                if (error.code === '23505') {
+                    return res.status(409).json({
+                        success: false,
+                        error: 'A module with this ID already exists'
+                    });
+                }
+                throw error;
+            }
+
+            res.status(201).json({
+                success: true,
+                data
+            });
+        } catch (error) {
+            console.error('Error creating module:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * PUT /api/platform/modules/:id
      * Update a platform module
      */
@@ -410,6 +505,140 @@ module.exports = function(supabase) {
             });
         } catch (error) {
             console.error('Error updating module:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * DELETE /api/platform/modules/:id
+     * Delete or deactivate a platform module
+     * By default, soft-deletes (sets is_active = false)
+     * Use ?hard=true for permanent deletion
+     */
+    router.delete('/modules/:id', requireAdminWrite, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { hard } = req.query;
+
+            // Check if module exists
+            const { data: existing, error: checkError } = await supabase
+                .from('platform_modules')
+                .select('id, name')
+                .eq('id', id)
+                .single();
+
+            if (checkError || !existing) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Module not found'
+                });
+            }
+
+            if (hard === 'true') {
+                // Hard delete - permanently remove
+                const { error } = await supabase
+                    .from('platform_modules')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                res.json({
+                    success: true,
+                    message: `Module "${existing.name}" permanently deleted`
+                });
+            } else {
+                // Soft delete - deactivate
+                const { data, error } = await supabase
+                    .from('platform_modules')
+                    .update({ is_active: false })
+                    .eq('id', id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                res.json({
+                    success: true,
+                    message: `Module "${existing.name}" deactivated`,
+                    data
+                });
+            }
+        } catch (error) {
+            console.error('Error deleting module:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/platform/tiers/:id/modules
+     * Get modules available for a specific tier
+     * Returns modules where min_tier allows access for this tier
+     */
+    router.get('/tiers/:id/modules', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { include_inactive } = req.query;
+
+            // Define tier hierarchy (higher index = higher tier)
+            const tierHierarchy = ['starter', 'business', 'enterprise', 'agency'];
+            const tierIndex = tierHierarchy.indexOf(id);
+
+            if (tierIndex === -1) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid tier ID'
+                });
+            }
+
+            // Get all modules
+            let query = supabase
+                .from('platform_modules')
+                .select('*')
+                .order('category')
+                .order('display_order');
+
+            if (include_inactive !== 'true') {
+                query = query.eq('is_active', true);
+            }
+
+            const { data: modules, error } = await query;
+
+            if (error) throw error;
+
+            // Filter modules available for this tier
+            const availableModules = (modules || []).filter(module => {
+                const moduleMinTierIndex = tierHierarchy.indexOf(module.min_tier);
+                // Module is available if the requested tier is >= module's min_tier
+                return tierIndex >= moduleMinTierIndex;
+            });
+
+            // Group by category
+            const grouped = availableModules.reduce((acc, module) => {
+                const cat = module.category || 'other';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(module);
+                return acc;
+            }, {});
+
+            res.json({
+                success: true,
+                data: {
+                    tier_id: id,
+                    tier_name: id.charAt(0).toUpperCase() + id.slice(1),
+                    modules: availableModules,
+                    by_category: grouped,
+                    total_count: availableModules.length
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching tier modules:', error);
             res.status(500).json({
                 success: false,
                 error: error.message

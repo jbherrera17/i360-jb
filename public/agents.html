@@ -52,6 +52,13 @@
             /* Layout */
             --nav-height: 60px;
             --sidebar-width: 260px;
+
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
         }
 
         [data-theme="dark"] {
@@ -83,11 +90,146 @@
             min-height: 100vh;
         }
 
-        /* Agent Layout - Three panel design */
+        /* Agent Layout - Two panel design with toolbar */
         .agent-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Horizontal Filter Toolbar - Two rows */
+        .filter-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .toolbar-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .toolbar-stats {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .toolbar-stat {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .toolbar-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .toolbar-stat-label {
+            color: var(--text-secondary);
+        }
+
+        .toolbar-chips {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .toolbar-chip {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .toolbar-chip i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .toolbar-filters {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex: 1;
+        }
+
+        .toolbar-filter {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            min-width: 130px;
+        }
+
+        .toolbar-filter:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .toolbar-actions {
+            margin-left: auto;
+        }
+
+        .toolbar-search {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .toolbar-search i {
+            color: var(--text-muted);
+            width: 20px;
+            height: 20px;
+        }
+
+        .toolbar-search input {
+            width: 200px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .toolbar-search input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Two Panel Content Area */
+        .panels-container {
             display: flex;
             flex: 1;
             overflow: hidden;
+            padding: var(--spacing-lg);
+            gap: var(--spacing-lg);
+            background: var(--bg-primary);
         }
 
         /* Navigation Sidebar (injected by navigation.js) */
@@ -264,14 +406,9 @@
             font-size: inherit;
         }
 
-        /* Filter Panel */
+        /* Filter Panel - REMOVED, now using toolbar */
         .filter-panel {
-            width: 310px;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            padding: 1.5rem;
-            overflow-y: auto;
-            flex-shrink: 0;
+            display: none;
         }
 
         .sidebar-section {
@@ -383,34 +520,29 @@
             overflow: hidden;
         }
 
-        /* Agent List */
+        /* Agent List - Card-based layout */
         .agent-list {
-            width: 310px;
-            min-width: 270px;
-            border-right: 1px solid var(--border);
+            flex: 3;
+            min-width: 600px;
             display: flex;
             flex-direction: column;
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
             position: relative;
+            overflow: hidden;
         }
 
-        .list-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
+        .agent-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: var(--spacing-md);
         }
 
-        .list-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .list-count {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
+        /* list-header removed - now using toolbar */
 
         .btn {
             display: inline-flex;
@@ -447,33 +579,45 @@
             padding: 0.5rem;
         }
 
-        .agent-items {
-            flex: 1;
-            overflow-y: auto;
-        }
-
         .agent-item {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border-light);
+            padding: var(--spacing-lg);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
             display: flex;
-            gap: 0.875rem;
+            flex-direction: column;
+            gap: var(--spacing-sm);
         }
 
         .agent-item:hover {
-            background: var(--bg-hover);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
         }
 
         .agent-item.selected {
-            background: var(--bg-tertiary);
-            border-left: 3px solid var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+        }
+
+        .agent-card-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
         }
 
         .agent-icon {
-            font-size: 1.75rem;
-            width: 44px;
-            height: 44px;
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -482,26 +626,60 @@
             flex-shrink: 0;
         }
 
-        .agent-info {
-            flex: 1;
-            min-width: 0;
-        }
-
         .agent-name {
             font-weight: 600;
+            font-size: 1rem;
             color: var(--text-primary);
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        }
+
+        .agent-card-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+            flex-shrink: 0;
+        }
+
+        .agent-card-actions .btn {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .agent-card-actions .btn-icon {
+            padding: 0.4rem;
+        }
+
+        .agent-card-actions .btn i {
+            width: 14px;
+            height: 14px;
         }
 
         .agent-meta {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            font-size: 0.75rem;
             color: var(--text-muted);
+        }
+
+        .agent-meta-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xs);
+        }
+
+        .agent-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .agent-meta-item i {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
         }
 
         .platform-badge {
@@ -663,24 +841,25 @@
             flex-direction: column;
         }
 
-        /* Right Panel - Details (always visible like context.html Preview) */
+        /* Right Panel - Details */
         .details-panel {
-            width: 320px;
-            min-width: 250px;
-            max-width: 600px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 380px;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             position: relative;
-            flex-shrink: 0;
         }
 
         .details-panel .panel-header {
-            padding: 1rem;
+            padding: var(--spacing-md) var(--spacing-lg);
             border-bottom: 1px solid var(--border);
             background: var(--bg-tertiary);
+            border-radius: 12px 12px 0 0;
         }
 
         .details-panel .panel-header h2 {
@@ -689,13 +868,13 @@
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--spacing-sm);
         }
 
         .details-content {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem;
+            padding: var(--spacing-lg);
         }
 
         .details-placeholder {
@@ -742,13 +921,13 @@
         }
 
         .details-panel .info-grid {
-            gap: 0.75rem;
+            gap: var(--spacing-sm);
         }
 
         .details-panel .info-item {
             background: var(--bg-tertiary);
-            border-radius: 10px;
-            padding: 0.875rem;
+            border-radius: 12px;
+            padding: var(--spacing-md);
             text-align: center;
         }
 
@@ -1291,9 +1470,27 @@
         /* Toast Notifications handled by ModalService */
 
         /* Responsive - hide details panel on smaller screens */
+        @media (max-width: 1400px) {
+            .toolbar-filters {
+                flex-wrap: wrap;
+            }
+            .toolbar-filter {
+                min-width: 110px;
+            }
+            .agent-card-actions .btn:not(.btn-icon) span {
+                display: none;
+            }
+        }
+
         @media (max-width: 1200px) {
             .details-panel {
                 display: none;
+            }
+            .toolbar-row {
+                flex-wrap: wrap;
+            }
+            .toolbar-chips {
+                order: 2;
             }
         }
 
@@ -1302,19 +1499,45 @@
                 display: none;
             }
 
-            .agent-list {
-                width: 290px;
-            }
-
             .resize-handle,
             .details-resize-handle {
                 display: none;
             }
+
+            .agent-card-actions {
+                flex-wrap: wrap;
+            }
         }
 
         @media (max-width: 768px) {
+            .filter-toolbar {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+            .toolbar-stats {
+                display: none;
+            }
+            .toolbar-chips {
+                display: none;
+            }
+            .toolbar-search input {
+                width: 150px;
+            }
+            .toolbar-filters {
+                gap: var(--spacing-xs);
+            }
+            .toolbar-filter {
+                min-width: 100px;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.5rem;
+            }
+
             .agent-list {
                 width: 100%;
+                min-width: unset;
+            }
+
+            .agent-description {
+                -webkit-line-clamp: 1;
             }
 
             .detail-panel {
@@ -1853,109 +2076,89 @@
 
             <!-- Agent Layout Container -->
             <div class="agent-layout">
-                <!-- Filter Panel -->
-                <aside class="filter-panel">
-            <!-- Stats -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">Overview</div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="statTotal">0</div>
-                        <div class="stat-label">Total Agents</div>
+                <!-- Horizontal Filter Toolbar -->
+                <div class="filter-toolbar">
+                    <!-- Row 1: Stats, Filters, New Agent Button -->
+                    <div class="toolbar-row">
+                        <div class="toolbar-stats">
+                            <div class="toolbar-stat">
+                                <span class="toolbar-stat-value" id="statTotal">0</span>
+                                <span class="toolbar-stat-label">Total</span>
+                            </div>
+                            <div class="toolbar-stat">
+                                <span class="toolbar-stat-value" id="statActive">0</span>
+                                <span class="toolbar-stat-label">Active</span>
+                            </div>
+                        </div>
+
+                        <div class="toolbar-filters">
+                            <select class="toolbar-filter" id="filterDepartment">
+                                <option value="">All Departments</option>
+                            </select>
+                            <select class="toolbar-filter" id="filterSuite">
+                                <option value="">All Systems</option>
+                                <option value="align">Align 120</option>
+                                <option value="strategy">Strategy 120</option>
+                                <option value="execute">Execute 120</option>
+                            </select>
+                            <select class="toolbar-filter" id="filterCategory">
+                                <option value="">All Categories</option>
+                            </select>
+                            <select class="toolbar-filter" id="filterStatus">
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Archived</option>
+                                <option value="">All Status</option>
+                            </select>
+                            <select class="toolbar-filter" id="filterPlatform">
+                                <option value="">All Platforms</option>
+                                <option value="custom">Native</option>
+                                <option value="mindstudio">MindStudio</option>
+                                <option value="llm">LLM Direct</option>
+                            </select>
+                        </div>
+
+                        <div class="toolbar-actions">
+                            <button class="btn btn-primary" id="btnNewAgent">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                New Agent
+                            </button>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="statActive">0</div>
-                        <div class="stat-label">Active</div>
+
+                    <!-- Row 2: Platform Chips, Search -->
+                    <div class="toolbar-row">
+                        <div class="toolbar-chips">
+                            <div class="toolbar-chip" id="chipMindStudio">
+                                <i data-lucide="box"></i>
+                                <span>MindStudio</span>
+                                <span class="toolbar-stat-value" id="statMindStudio">0</span>
+                            </div>
+                            <div class="toolbar-chip" id="chipPickAxe">
+                                <i data-lucide="pickaxe"></i>
+                                <span>PickAxe</span>
+                                <span class="toolbar-stat-value" id="statPickAxe">0</span>
+                            </div>
+                        </div>
+
+                        <div class="toolbar-search">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="searchInput" placeholder="Search">
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="statMindStudio">0</div>
-                        <div class="stat-label">MindStudio</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="statPickAxe">0</div>
-                        <div class="stat-label">PickAxe</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Search -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">Search</div>
-                <div class="search-wrapper">
-                    <i data-lucide="search"></i>
-                    <input type="text" class="search-input" id="searchInput" placeholder="Search agents...">
-                </div>
-            </div>
-
-            <!-- Filters -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">Filters</div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Department</label>
-                    <select class="filter-select" id="filterDepartment">
-                        <option value="">All Departments</option>
-                    </select>
                 </div>
 
-                <div class="filter-group">
-                    <label class="filter-label">i360 System</label>
-                    <select class="filter-select" id="filterSuite">
-                        <option value="">All i360 Systems</option>
-                        <option value="align">Align 120</option>
-                        <option value="strategy">Strategy 120</option>
-                        <option value="execute">Execute 120</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Category</label>
-                    <select class="filter-select" id="filterCategory">
-                        <option value="">All Categories</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Status</label>
-                    <select class="filter-select" id="filterStatus">
-                        <option value="active" selected>Active</option>
-                        <option value="inactive">Archived</option>
-                        <option value="">All Status</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Platform</label>
-                    <select class="filter-select" id="filterPlatform">
-                        <option value="">All Platforms</option>
-                        <option value="custom">Custom (Native)</option>
-                        <option value="mindstudio">MindStudio</option>
-                        <option value="llm">LLM Direct</option>
-                    </select>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Content -->
-        <div class="content">
-            <!-- Agent List -->
+                <!-- Two Panel Content Area -->
+                <div class="panels-container">
+            <!-- Agent List Panel -->
             <div class="agent-list" id="agentListPanel">
-                <div class="list-header">
-                    <div>
-                        <span class="list-title">Agents</span>
-                        <span class="list-count" id="listCount">(0)</span>
-                    </div>
-                    <button class="btn btn-primary" id="btnNewAgent">
-                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                        New Agent
-                    </button>
-                </div>
                 <div class="agent-items" id="agentList">
                     <!-- Agent items will be rendered here -->
                     <div class="loading">
                         <div class="spinner"></div>
                     </div>
                 </div>
+                <!-- Hidden count for JS -->
+                <span id="listCount" style="display:none;">(0)</span>
                 <!-- Resize Handle -->
                 <div class="resize-handle" id="resizeHandle"></div>
             </div>
@@ -2093,7 +2296,7 @@
                     </div>
                 </div>
             </div> <!-- Close details-panel -->
-        </div> <!-- Close content -->
+                </div> <!-- Close panels-container -->
             </div> <!-- Close agent-layout -->
         </main> <!-- Close main-content -->
     </div> <!-- Close app-container -->
@@ -2492,22 +2695,53 @@
                 const suiteLabel = suiteLabels[agent.suite] || agent.suite || '—';
                 const cat = categories.find(c => c.id === agent.category || c.name === agent.category);
                 const categoryLabel = cat?.display_name || cat?.name || agent.category || '—';
+                const platform = agent.type === 'mindstudio' ? 'MindStudio' : agent.type === 'llm' ? 'LLM' : 'Native';
+                const llmModel = agent.llm_model || '—';
                 return `
                 <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}"
                      data-id="${agent.id}">
-                    <div class="agent-icon">${iconHtml}</div>
-                    <div class="agent-info">
-                        <div class="agent-name">${agent.name}</div>
-                        <div class="agent-meta">
-                            <span class="suite-badge ${agent.suite || ''}">${suiteLabel}</span>
-                            <span class="category-badge">${categoryLabel}</span>
-                            <span class="status-badge ${status}">${status}</span>
-                            ${systemBadge}
+                    <div class="agent-card-header">
+                        <div class="agent-card-title">
+                            <div class="agent-icon">${iconHtml}</div>
+                            <span class="agent-name">${agent.name}</span>
+                        </div>
+                        <div class="agent-card-actions">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); launchAgentById('${agent.id}')">
+                                <i data-lucide="play"></i>
+                                Run Agent
+                            </button>
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); editAgentById('${agent.id}')">
+                                <i data-lucide="edit-2"></i>
+                                Edit
+                            </button>
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); duplicateAgentById('${agent.id}')" title="Duplicate">
+                                <i data-lucide="copy"></i>
+                                Duplicate
+                            </button>
+                            <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); deleteAgentById('${agent.id}')" title="Delete">
+                                <i data-lucide="trash-2"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="agent-usage">
-                        <i data-lucide="activity" style="width:12px;height:12px;"></i>
-                        ${agent.usage_count || 0}
+                    <div class="agent-meta">
+                        <span class="suite-badge ${agent.suite || ''}">${suiteLabel}</span>
+                        <span class="category-badge">${categoryLabel}</span>
+                        <span class="status-badge ${status}">${status}</span>
+                        ${systemBadge}
+                    </div>
+                    <div class="agent-meta-row">
+                        <span class="agent-meta-item" title="Platform">
+                            <i data-lucide="cpu"></i>
+                            ${platform}
+                        </span>
+                        <span class="agent-meta-item" title="Model">
+                            <i data-lucide="brain"></i>
+                            ${llmModel}
+                        </span>
+                        <span class="agent-meta-item" title="Usage">
+                            <i data-lucide="activity"></i>
+                            ${agent.usage_count || 0}
+                        </span>
                     </div>
                 </div>
             `;
@@ -2515,11 +2749,14 @@
 
             lucide.createIcons();
 
-            // Add click handlers
+            // Add click handlers for card selection
             agentList.querySelectorAll('.agent-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const id = item.dataset.id;
-                    selectAgent(id);
+                item.addEventListener('click', (e) => {
+                    // Only select if not clicking on buttons
+                    if (!e.target.closest('button')) {
+                        const id = item.dataset.id;
+                        selectAgent(id);
+                    }
                 });
             });
         }
@@ -3809,9 +4046,47 @@
         // Event Listeners
         // =========================================================================
 
+        // Helper functions for card action buttons
+        function launchAgentById(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (agent) {
+                agentDialog.open({
+                    agentId: agent.id,
+                    title: agent.name,
+                    subtitle: agent.description || 'Ready to assist'
+                });
+            }
+        }
+
+        function editAgentById(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (agent) {
+                selectAgent(agentId);
+                openModal(agent);
+            }
+        }
+
+        function duplicateAgentById(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (agent) {
+                selectAgent(agentId);
+                duplicateAgent(agentId);
+            }
+        }
+
+        function deleteAgentById(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (agent) {
+                selectAgent(agentId);
+                deleteAgent(agentId);
+            }
+        }
+
         // Theme toggle is now handled by the sidebar navigation (sidebarThemeToggle)
         document.getElementById('btnNewAgent').addEventListener('click', () => openModal());
-        document.getElementById('btnNewAgentEmpty').addEventListener('click', () => openModal());
+        if (document.getElementById('btnNewAgentEmpty')) {
+            document.getElementById('btnNewAgentEmpty').addEventListener('click', () => openModal());
+        }
         // Modal close buttons are now handled by ModalService (data-action="close")
 
         document.getElementById('btnEdit').addEventListener('click', () => {

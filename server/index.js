@@ -63,6 +63,7 @@ const clientPortalRoutes = require('./routes/clientPortal');
 const agencyAnalyticsRoutes = require('./routes/agencyAnalytics');
 const platformAdminRoutes = require('./routes/platformAdmin');
 const modulesRoutes = require('./routes/modules');
+const resourceAccessRoutes = require('./routes/resourceAccess');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
 
@@ -419,6 +420,9 @@ function initializeServices() {
         app.use('/api/platform', platformAdminRoutes(supabase));
         app.use('/api/modules', modulesRoutes(supabase));
 
+        // Phase 45: Resource Access Control
+        app.use('/api/resource-access', resourceAccessRoutes(supabase));
+
         // Initialize module access middleware for use in other routes
         const moduleAccess = createModuleAccessMiddleware(supabase);
         app.set('moduleAccess', moduleAccess);
@@ -427,6 +431,7 @@ function initializeServices() {
         console.log('  ✅ Agency Customization routes registered (Phase 41)');
         console.log('  ✅ Client Portal routes registered (Phase 42)');
         console.log('  ✅ Enterprise Multi-Tenancy routes registered (Phase 44)');
+        console.log('  ✅ Resource Access Control routes registered (Phase 45)');
         console.log('  ✅ Agency Analytics routes registered (Phase 43)');
         console.log('  ✅ Connection Management routes registered (Phase 40)');
         console.log('  ✅ Users routes registered');

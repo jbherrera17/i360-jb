@@ -178,6 +178,14 @@ module.exports = function(supabase) {
                 query = query.eq('is_public', true);
             }
 
+            // === PHASE 46: Organization filtering ===
+            const orgId = req.headers['x-org-id'];
+            if (orgId) {
+                // Show actions belonging to this org OR system actions (no org)
+                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+            // === END PHASE 46 ===
+
             // Filter by department via junction table
             if (departmentActionIds !== null) {
                 if (departmentActionIds.length > 0) {

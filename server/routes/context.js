@@ -23,6 +23,7 @@ const express = require('express');
 const router = express.Router();
 const { randomUUID: uuidv4 } = require('crypto');
 const { getUserId } = require('../utils/auth');
+const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
 
 // ============================================
 // ASSET TYPE DEFINITIONS
@@ -517,6 +518,8 @@ router.delete('/types/:key', async (req, res) => {
 router.get('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
+        const userId = getUserId(req);
+        const orgId = req.headers['x-org-id'];
         const {
             type,
             search,
@@ -535,6 +538,25 @@ router.get('/assets', async (req, res) => {
             .select('*')
             .order(sort, { ascending: order === 'asc' })
             .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+        // === PHASE 45: Apply access control filter ===
+        if (userId) {
+            const accessCtx = await getUserAccessContext(supabase, userId);
+            if (accessCtx) {
+                query = buildResourceAccessFilter(query, accessCtx);
+            }
+        } else {
+            // Anonymous users: public assets only
+            query = query.eq('visibility', 'public');
+        }
+        // === END PHASE 45 ===
+
+        // === PHASE 46: Organization filtering ===
+        if (orgId) {
+            // Show resources belonging to this org OR system resources (no org)
+            query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+        }
+        // === END PHASE 46 ===
 
         // Filter by type
         if (type) {

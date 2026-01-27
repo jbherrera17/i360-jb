@@ -260,6 +260,52 @@
             gap: 0.5rem;
         }
 
+        /* Module grid styles */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .module-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .module-item i {
+            width: 14px;
+            height: 14px;
+            color: var(--primary);
+        }
+
+        .module-item.disabled {
+            opacity: 0.5;
+        }
+
+        .module-count {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        .modules-category {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .modules-category:first-child {
+            margin-top: 0;
+        }
+
         .access-denied {
             display: flex;
             flex-direction: column;
@@ -357,6 +403,7 @@
         let tiers = [];
         let originalTiers = [];
         let hasChanges = false;
+        let tierModules = {}; // { tierId: { modules: [], by_category: {} } }
 
         const FEATURE_LABELS = {
             white_label: 'White Label',
@@ -431,12 +478,68 @@
                 tiers = data.data || [];
                 originalTiers = JSON.parse(JSON.stringify(tiers));
 
+                // Load modules for each tier
+                await loadTierModules();
+
                 renderTiers();
                 renderComparison();
             } catch (error) {
                 console.error('Error loading tiers:', error);
                 showToast('Failed to load tiers', 'error');
             }
+        }
+
+        async function loadTierModules() {
+            const token = localStorage.getItem('insight360_token');
+            for (const tier of tiers) {
+                try {
+                    const response = await fetch(`/api/platform/tiers/${tier.id}/modules`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        tierModules[tier.id] = data.data || { modules: [], by_category: {} };
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load modules for tier ${tier.id}:`, error);
+                    tierModules[tier.id] = { modules: [], by_category: {} };
+                }
+            }
+        }
+
+        function renderTierModules(tierId) {
+            const data = tierModules[tierId];
+            if (!data || !data.by_category || Object.keys(data.by_category).length === 0) {
+                return '<div style="color: var(--text-muted); font-size: 0.75rem;">No modules configured</div>';
+            }
+
+            const categoryLabels = {
+                core: 'Core',
+                tools: 'Tools',
+                suites: 'Suites',
+                admin: 'Administration',
+                other: 'Other'
+            };
+
+            let html = '';
+            for (const [category, modules] of Object.entries(data.by_category)) {
+                if (modules.length === 0) continue;
+
+                html += `<div class="modules-category">${categoryLabels[category] || category}</div>`;
+                html += '<div class="modules-grid">';
+                for (const module of modules) {
+                    html += `
+                        <div class="module-item" title="${escapeHtml(module.description || '')}">
+                            <i data-lucide="${module.icon || 'puzzle'}"></i>
+                            <span>${escapeHtml(module.name)}</span>
+                            ${module.is_beta ? '<span style="color: var(--warning); font-size: 0.6rem;">BETA</span>' : ''}
+                        </div>
+                    `;
+                }
+                html += '</div>';
+            }
+
+            return html || '<div style="color: var(--text-muted); font-size: 0.75rem;">No modules available</div>';
         }
 
         function renderTiers() {
@@ -484,6 +587,14 @@
                                     `;
                                 }).join('')}
                             </div>
+                        </div>
+
+                        <div class="tier-section">
+                            <div class="tier-section-title">
+                                Modules Included
+                                <span class="module-count">${tierModules[tier.id]?.total_count || 0}</span>
+                            </div>
+                            ${renderTierModules(tier.id)}
                         </div>
                     </div>
 

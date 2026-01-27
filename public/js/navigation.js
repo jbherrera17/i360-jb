@@ -88,6 +88,7 @@ const navConfig = {
             adminOnly: true,
             items: [
                 { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
+                { href: '/admin-resource-access.html', icon: 'shield-check', label: 'Resource Access' },
                 { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' }
             ]
         }

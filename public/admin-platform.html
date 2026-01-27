@@ -502,6 +502,21 @@
                                 <i data-lucide="puzzle"></i>
                                 Platform Modules
                             </h3>
+                            <button class="btn btn-primary" onclick="showCreateModuleModal()">
+                                <i data-lucide="plus"></i>
+                                Create Module
+                            </button>
+                        </div>
+
+                        <div class="search-bar">
+                            <input type="text" class="search-input" id="moduleSearch" placeholder="Search modules...">
+                            <select class="filter-select" id="moduleCategoryFilter" onchange="filterModules()">
+                                <option value="">All Categories</option>
+                                <option value="core">Core</option>
+                                <option value="tools">Tools</option>
+                                <option value="suites">Suites</option>
+                                <option value="admin">Admin</option>
+                            </select>
                         </div>
 
                         <table class="data-table">
@@ -864,38 +879,15 @@
 
         // Render modules
         function renderModules() {
-            const tbody = document.getElementById('modulesTableBody');
+            // Apply any existing filters
+            filterModules();
 
-            if (modules.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No modules found</td></tr>';
-                return;
+            // Setup search input listener if not already done
+            const searchInput = document.getElementById('moduleSearch');
+            if (searchInput && !searchInput.dataset.listenerAdded) {
+                searchInput.addEventListener('input', filterModules);
+                searchInput.dataset.listenerAdded = 'true';
             }
-
-            tbody.innerHTML = modules.map(mod => `
-                <tr>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="${mod.icon || 'circle'}" style="width: 16px; height: 16px;"></i>
-                            <strong>${escapeHtml(mod.name)}</strong>
-                            ${mod.is_beta ? '<span class="tier-badge" style="background: var(--info); color: white;">Beta</span>' : ''}
-                        </div>
-                        <small style="color: var(--text-secondary);">${mod.route_path}</small>
-                    </td>
-                    <td>${mod.category}</td>
-                    <td>${mod.min_tier ? `<span class="tier-badge tier-${mod.min_tier}">${mod.min_tier}</span>` : 'All'}</td>
-                    <td>${mod.min_business_role || 'All'}</td>
-                    <td>
-                        <span class="status-badge ${mod.is_active ? 'status-active' : 'status-suspended'}">
-                            ${mod.is_active ? 'Active' : 'Disabled'}
-                        </span>
-                    </td>
-                    <td class="actions-cell">
-                        <button class="btn btn-sm btn-secondary" onclick="editModule('${mod.id}')">Edit</button>
-                    </td>
-                </tr>
-            `).join('');
-
-            lucide.createIcons();
         }
 
         // Render admins
@@ -1127,6 +1119,191 @@
                     console.error('Error updating tier:', error);
                     showToast('Failed to update tier', 'error');
                 }
+            }
+        }
+
+        // Create new platform module
+        async function showCreateModuleModal() {
+            // Build tier options for select
+            const tierOptions = [
+                { label: 'Starter (All Tiers)', value: 'starter' },
+                { label: 'Business', value: 'business' },
+                { label: 'Enterprise', value: 'enterprise' },
+                { label: 'Agency', value: 'agency' }
+            ];
+
+            const result = await ModalService.form({
+                title: 'Create New Module',
+                width: 550,
+                fields: [
+                    {
+                        name: 'id',
+                        label: 'Module ID',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'e.g., my_module (lowercase, underscores only)'
+                    },
+                    { name: 'name', label: 'Display Name', type: 'text', required: true },
+                    { name: 'description', label: 'Description', type: 'textarea' },
+                    {
+                        name: 'category',
+                        label: 'Category',
+                        type: 'select',
+                        value: 'tools',
+                        options: [
+                            { label: 'Core', value: 'core' },
+                            { label: 'Tools', value: 'tools' },
+                            { label: 'Suites', value: 'suites' },
+                            { label: 'Admin', value: 'admin' }
+                        ]
+                    },
+                    {
+                        name: 'min_tier',
+                        label: 'Minimum Tier Required',
+                        type: 'select',
+                        value: 'starter',
+                        options: tierOptions
+                    },
+                    {
+                        name: 'min_business_role',
+                        label: 'Minimum Business Role',
+                        type: 'select',
+                        value: '',
+                        options: [
+                            { label: 'No Requirement', value: '' },
+                            { label: 'Individual Contributor', value: 'ic' },
+                            { label: 'Supervisor', value: 'supervisor' },
+                            { label: 'Manager', value: 'manager' },
+                            { label: 'Director', value: 'director' },
+                            { label: 'Executive', value: 'executive' }
+                        ]
+                    },
+                    { name: 'route_path', label: 'Route Path', type: 'text', placeholder: 'e.g., /my-module' },
+                    { name: 'icon', label: 'Icon (Lucide name)', type: 'text', value: 'puzzle', placeholder: 'e.g., puzzle, settings, chart-bar' },
+                    { name: 'nav_group', label: 'Navigation Group', type: 'text', placeholder: 'e.g., tools, admin' },
+                    { name: 'is_beta', label: 'Beta Feature', type: 'checkbox', value: false }
+                ],
+                submitText: 'Create Module'
+            });
+
+            if (result && result.id && result.name) {
+                try {
+                    const token = localStorage.getItem('insight360_token');
+                    // Convert empty strings to null
+                    if (result.min_business_role === '') result.min_business_role = null;
+                    if (result.route_path === '') result.route_path = null;
+                    if (result.nav_group === '') result.nav_group = null;
+
+                    const response = await fetch('/api/platform/modules', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(result)
+                    });
+
+                    if (response.ok) {
+                        showToast('Module created successfully', 'success');
+                        await loadAllData();
+                    } else {
+                        const data = await response.json();
+                        showToast(data.error || 'Failed to create module', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error creating module:', error);
+                    showToast('Failed to create module', 'error');
+                }
+            }
+        }
+
+        // Filter modules based on search and category
+        function filterModules() {
+            const search = document.getElementById('moduleSearch')?.value?.toLowerCase() || '';
+            const category = document.getElementById('moduleCategoryFilter')?.value || '';
+
+            const filtered = modules.filter(m => {
+                const matchesSearch = !search ||
+                    m.name?.toLowerCase().includes(search) ||
+                    m.id?.toLowerCase().includes(search) ||
+                    m.description?.toLowerCase().includes(search);
+                const matchesCategory = !category || m.category === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            renderFilteredModules(filtered);
+        }
+
+        // Render filtered modules
+        function renderFilteredModules(filteredModules) {
+            const tbody = document.getElementById('modulesTableBody');
+
+            if (filteredModules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No modules found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredModules.map(mod => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="${mod.icon || 'circle'}" style="width: 16px; height: 16px;"></i>
+                            <strong>${escapeHtml(mod.name)}</strong>
+                            ${mod.is_beta ? '<span class="tier-badge" style="background: var(--info); color: white;">Beta</span>' : ''}
+                        </div>
+                        <small style="color: var(--text-secondary);">${mod.id} ${mod.route_path ? `• ${mod.route_path}` : ''}</small>
+                    </td>
+                    <td>${mod.category || 'other'}</td>
+                    <td>${mod.min_tier ? `<span class="tier-badge tier-${mod.min_tier}">${mod.min_tier}</span>` : 'All'}</td>
+                    <td>${mod.min_business_role || 'All'}</td>
+                    <td>
+                        <span class="status-badge ${mod.is_active ? 'status-active' : 'status-suspended'}">
+                            ${mod.is_active ? 'Active' : 'Disabled'}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm btn-secondary" onclick="editModule('${mod.id}')">Edit</button>
+                        <button class="btn btn-sm btn-secondary" onclick="deleteModule('${mod.id}')" title="Deactivate">
+                            <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Delete/deactivate module
+        async function deleteModule(moduleId) {
+            const module = modules.find(m => m.id === moduleId);
+            if (!module) return;
+
+            const confirmed = await ModalService.confirm({
+                title: 'Deactivate Module',
+                message: `Are you sure you want to deactivate "${module.name}"? This will hide it from users.`,
+                confirmText: 'Deactivate',
+                confirmClass: 'btn-danger'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const token = localStorage.getItem('insight360_token');
+                const response = await fetch(`/api/platform/modules/${moduleId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showToast('Module deactivated', 'success');
+                    await loadAllData();
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Failed to deactivate module', 'error');
+                }
+            } catch (error) {
+                console.error('Error deactivating module:', error);
+                showToast('Failed to deactivate module', 'error');
             }
         }
 

@@ -158,6 +158,16 @@ const HelpRegistry = {
         '/admin-tier-setup': {
             file: '/api/docs/admin-tier-setup-user-guide.md',
             title: 'Tier Setup Help'
+        },
+        // Phase 45: Resource Access Control
+        '/admin-resource-access': {
+            file: '/api/docs/admin-resource-access-user-guide.md',
+            title: 'Resource Access Management Help'
+        },
+        // Phase 46: Administrator
+        '/administrator': {
+            file: '/api/docs/administrator-user-guide.md',
+            title: 'Administrator Help'
         }
     },
 

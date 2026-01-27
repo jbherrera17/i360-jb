@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Access Management - Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .resource-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: var(--spacing-md);
+        }
+
+        .resource-tab {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+
+        .resource-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .resource-tab.active {
+            color: var(--primary);
+            background: var(--primary-subtle);
+        }
+
+        .resource-tab .badge {
+            margin-left: var(--spacing-xs);
+            padding: 2px 6px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        .resource-tab.active .badge {
+            background: var(--primary);
+            color: white;
+        }
+
+        .filters-row {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            min-width: 150px;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            align-items: center;
+        }
+
+        .bulk-actions .select-all-checkbox {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .bulk-actions .selected-count {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .bulk-actions .bulk-buttons {
+            margin-left: auto;
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .resource-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .resource-table th,
+        .resource-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .resource-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .resource-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        .resource-name {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .resource-name .icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resource-name .name-text {
+            font-weight: 500;
+        }
+
+        .resource-name .type-badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+        }
+
+        .visibility-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .visibility-badge.private {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .visibility-badge.team {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .visibility-badge.organization {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .visibility-badge.public {
+            background: rgba(168, 85, 247, 0.15);
+            color: #a855f7;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .system-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border-radius: var(--radius-sm);
+        }
+
+        .action-btn {
+            padding: 6px 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--primary);
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .summary-card {
+            padding: var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card .card-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .summary-card .visibility-counts {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .summary-card .count-item {
+            text-align: center;
+        }
+
+        .summary-card .count-item .count {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .summary-card .count-item .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .templates-section {
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-xl);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .templates-section h3 {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .template-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .template-card {
+            padding: var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-card .template-name {
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .template-card .template-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-select,
+            .search-input {
+                width: 100%;
+                max-width: none;
+            }
+
+            .bulk-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .bulk-actions .bulk-buttons {
+                margin-left: 0;
+                margin-top: var(--spacing-md);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="shield-check" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Resource Access Management
+                    </h1>
+                    <p class="header-subtitle">Manage visibility and access controls for agents, skills, context assets, and workflows</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadTierSettings()">
+                        <i data-lucide="settings"></i>
+                        Tier Settings
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <!-- Summary Cards -->
+                <div class="summary-cards" id="summaryCards">
+                    <div class="summary-card">
+                        <div class="card-title">Agents</div>
+                        <div class="visibility-counts" id="agentCounts">
+                            <div class="count-item"><div class="count">-</div><div class="label">Private</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Org</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Public</div></div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-title">Skills</div>
+                        <div class="visibility-counts" id="skillCounts">
+                            <div class="count-item"><div class="count">-</div><div class="label">Private</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Org</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Public</div></div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-title">Context Assets</div>
+                        <div class="visibility-counts" id="contextCounts">
+                            <div class="count-item"><div class="count">-</div><div class="label">Private</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Org</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Public</div></div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-title">Workflows</div>
+                        <div class="visibility-counts" id="workflowCounts">
+                            <div class="count-item"><div class="count">-</div><div class="label">Private</div></div>
+                            <div class="count-item"><div class="count">-</div><div class="label">Public</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resource Type Tabs -->
+                <div class="resource-tabs">
+                    <button class="resource-tab active" data-type="all" onclick="switchTab('all')">
+                        All Resources <span class="badge" id="allCount">0</span>
+                    </button>
+                    <button class="resource-tab" data-type="agent" onclick="switchTab('agent')">
+                        <i data-lucide="bot" style="width:16px;height:16px;"></i>
+                        Agents <span class="badge" id="agentTabCount">0</span>
+                    </button>
+                    <button class="resource-tab" data-type="skill" onclick="switchTab('skill')">
+                        <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+                        Skills <span class="badge" id="skillTabCount">0</span>
+                    </button>
+                    <button class="resource-tab" data-type="context_asset" onclick="switchTab('context_asset')">
+                        <i data-lucide="database" style="width:16px;height:16px;"></i>
+                        Context Assets <span class="badge" id="contextTabCount">0</span>
+                    </button>
+                    <button class="resource-tab" data-type="workflow" onclick="switchTab('workflow')">
+                        <i data-lucide="git-branch" style="width:16px;height:16px;"></i>
+                        Workflows <span class="badge" id="workflowTabCount">0</span>
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-row">
+                    <select class="form-input filter-select" id="visibilityFilter" onchange="applyFilters()">
+                        <option value="all">All Visibility</option>
+                        <option value="private">Private</option>
+                        <option value="team">Team</option>
+                        <option value="organization">Organization</option>
+                        <option value="public">Public</option>
+                    </select>
+                    <select class="form-input filter-select" id="departmentFilter" onchange="applyFilters()">
+                        <option value="">All Departments</option>
+                    </select>
+                    <input type="text" class="form-input search-input" id="searchInput" placeholder="Search resources..." oninput="debounceSearch()">
+                </div>
+
+                <!-- Bulk Actions -->
+                <div class="bulk-actions">
+                    <label class="select-all-checkbox">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        <span>Select All</span>
+                    </label>
+                    <span class="selected-count" id="selectedCount">0 selected</span>
+                    <div class="bulk-buttons">
+                        <select class="form-input" id="bulkVisibility" style="min-width: 150px;">
+                            <option value="">Set Visibility...</option>
+                            <option value="private">Private</option>
+                            <option value="team">Team</option>
+                            <option value="organization">Organization</option>
+                            <option value="public">Public</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="applyBulkVisibility()" id="applyBulkBtn" disabled>
+                            Apply to Selected
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resources Table -->
+                <div class="table-container">
+                    <table class="resource-table">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"></th>
+                                <th>Resource</th>
+                                <th>Type</th>
+                                <th>Visibility</th>
+                                <th>Department</th>
+                                <th>Min Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resourcesTableBody">
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <i data-lucide="loader" class="spin" style="width:32px;height:32px;"></i>
+                                    <p>Loading resources...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Onboarding Templates Section -->
+                <div class="templates-section">
+                    <h3>
+                        <i data-lucide="package" style="width:20px;height:20px;color:var(--primary);"></i>
+                        Onboarding Templates
+                    </h3>
+                    <p style="color: var(--text-muted); margin-bottom: var(--spacing-lg);">
+                        Quickly configure resource visibility for new organizations based on their subscription tier.
+                    </p>
+                    <div class="template-cards" id="templateCards">
+                        <!-- Templates will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let currentTab = 'all';
+        let resources = [];
+        let departments = [];
+        let roleRequirements = {};
+        let selectedIds = new Set();
+        let searchTimeout;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            await Promise.all([
+                loadSummary(),
+                loadDepartments(),
+                loadRoleRequirements(),
+                loadTemplates(),
+                loadResources()
+            ]);
+        });
+
+        // API Helpers
+        function getHeaders() {
+            const token = localStorage.getItem('auth_token') || getCookie('auth_token');
+            const orgId = localStorage.getItem('selected_org_id');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : '',
+                'x-org-id': orgId || ''
+            };
+        }
+
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? match[2] : null;
+        }
+
+        // Load summary counts
+        async function loadSummary() {
+            try {
+                const response = await fetch('/api/resource-access/summary', { headers: getHeaders() });
+                const result = await response.json();
+                if (result.success) {
+                    updateSummaryCounts(result.data);
+                }
+            } catch (error) {
+                console.error('Error loading summary:', error);
+            }
+        }
+
+        function updateSummaryCounts(data) {
+            // Update summary cards
+            updateCountCard('agentCounts', data.agents);
+            updateCountCard('skillCounts', data.skills);
+            updateCountCard('contextCounts', data.context_assets);
+
+            // Workflows have different structure (private/public only)
+            const workflowEl = document.getElementById('workflowCounts');
+            if (workflowEl && data.workflows) {
+                workflowEl.innerHTML = `
+                    <div class="count-item"><div class="count">${data.workflows.private || 0}</div><div class="label">Private</div></div>
+                    <div class="count-item"><div class="count">${data.workflows.public || 0}</div><div class="label">Public</div></div>
+                `;
+            }
+        }
+
+        function updateCountCard(elementId, counts) {
+            const el = document.getElementById(elementId);
+            if (!el || !counts) return;
+            el.innerHTML = `
+                <div class="count-item"><div class="count">${counts.private || 0}</div><div class="label">Private</div></div>
+                <div class="count-item"><div class="count">${counts.organization || 0}</div><div class="label">Org</div></div>
+                <div class="count-item"><div class="count">${counts.public || 0}</div><div class="label">Public</div></div>
+            `;
+        }
+
+        // Load departments for filter
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments', { headers: getHeaders() });
+                const result = await response.json();
+                if (result.success) {
+                    departments = result.data || [];
+                    const select = document.getElementById('departmentFilter');
+                    select.innerHTML = '<option value="">All Departments</option>' +
+                        departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        // Load role requirements
+        async function loadRoleRequirements() {
+            try {
+                const response = await fetch('/api/resource-access/role-requirements', { headers: getHeaders() });
+                const result = await response.json();
+                if (result.success) {
+                    roleRequirements = {};
+                    (result.data || []).forEach(r => {
+                        roleRequirements[`${r.resource_type}:${r.resource_id}`] = r.min_business_role;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading role requirements:', error);
+            }
+        }
+
+        // Load templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/resource-access/templates', { headers: getHeaders() });
+                const result = await response.json();
+                if (result.success) {
+                    renderTemplates(result.data);
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        function renderTemplates(templates) {
+            const container = document.getElementById('templateCards');
+            if (!templates || templates.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted);">No templates available</p>';
+                return;
+            }
+            container.innerHTML = templates.map(t => `
+                <div class="template-card" onclick="applyTemplate('${t.id}')">
+                    <div class="template-name">${t.name}</div>
+                    <div class="template-desc">${t.description}</div>
+                </div>
+            `).join('');
+        }
+
+        // Load resources
+        async function loadResources() {
+            try {
+                const params = new URLSearchParams();
+                if (currentTab !== 'all') params.append('type', currentTab);
+
+                const visibility = document.getElementById('visibilityFilter').value;
+                if (visibility !== 'all') params.append('visibility', visibility);
+
+                const department = document.getElementById('departmentFilter').value;
+                if (department) params.append('department_id', department);
+
+                const search = document.getElementById('searchInput').value;
+                if (search) params.append('search', search);
+
+                const response = await fetch(`/api/resource-access/resources?${params}`, { headers: getHeaders() });
+                const result = await response.json();
+
+                if (result.success) {
+                    resources = result.data || [];
+                    renderResources();
+                    updateTabCounts();
+                }
+            } catch (error) {
+                console.error('Error loading resources:', error);
+                showToast('Failed to load resources', 'error');
+            }
+        }
+
+        function renderResources() {
+            const tbody = document.getElementById('resourcesTableBody');
+
+            if (resources.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i data-lucide="inbox" style="width:48px;height:48px;"></i>
+                            <p>No resources found</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            tbody.innerHTML = resources.map(r => {
+                const roleKey = `${r.resource_type}:${r.id}`;
+                const minRole = roleRequirements[roleKey] || '';
+                const deptName = r.department_id ? (departments.find(d => d.id === r.department_id)?.name || 'Unknown') : '-';
+                const typeIcon = getTypeIcon(r.resource_type);
+                const isSelected = selectedIds.has(r.id);
+
+                return `
+                    <tr>
+                        <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${r.id}')"></td>
+                        <td>
+                            <div class="resource-name">
+                                <div class="icon">${typeIcon}</div>
+                                <div>
+                                    <div class="name-text">${r.name || 'Unnamed'}</div>
+                                    ${r.is_system ? '<span class="system-badge">System</span>' : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge">${formatType(r.resource_type)}</span></td>
+                        <td><span class="visibility-badge ${r.visibility || 'private'}">${formatVisibility(r.visibility)}</span></td>
+                        <td>${deptName}</td>
+                        <td>${minRole ? `<span class="role-badge">${formatRole(minRole)}</span>` : '-'}</td>
+                        <td>
+                            <button class="action-btn" onclick="editResource('${r.resource_type}', '${r.id}')" title="Edit visibility">
+                                <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                'agent': '<i data-lucide="bot" style="width:16px;height:16px;color:var(--primary);"></i>',
+                'skill': '<i data-lucide="sparkles" style="width:16px;height:16px;color:#f59e0b;"></i>',
+                'context_asset': '<i data-lucide="database" style="width:16px;height:16px;color:#22c55e;"></i>',
+                'workflow': '<i data-lucide="git-branch" style="width:16px;height:16px;color:#8b5cf6;"></i>'
+            };
+            return icons[type] || '<i data-lucide="file" style="width:16px;height:16px;"></i>';
+        }
+
+        function formatType(type) {
+            const names = {
+                'agent': 'Agent',
+                'skill': 'Skill',
+                'context_asset': 'Context',
+                'workflow': 'Workflow'
+            };
+            return names[type] || type;
+        }
+
+        function formatVisibility(visibility) {
+            const names = {
+                'private': 'Private',
+                'team': 'Team',
+                'organization': 'Organization',
+                'public': 'Public'
+            };
+            return names[visibility] || 'Private';
+        }
+
+        function formatRole(role) {
+            const names = {
+                'ic': 'IC',
+                'supervisor': 'Supervisor',
+                'manager': 'Manager',
+                'director': 'Director',
+                'executive': 'Executive'
+            };
+            return names[role] || role;
+        }
+
+        function updateTabCounts() {
+            const counts = { all: 0, agent: 0, skill: 0, context_asset: 0, workflow: 0 };
+
+            resources.forEach(r => {
+                counts.all++;
+                if (counts.hasOwnProperty(r.resource_type)) {
+                    counts[r.resource_type]++;
+                }
+            });
+
+            document.getElementById('allCount').textContent = counts.all;
+            document.getElementById('agentTabCount').textContent = counts.agent;
+            document.getElementById('skillTabCount').textContent = counts.skill;
+            document.getElementById('contextTabCount').textContent = counts.context_asset;
+            document.getElementById('workflowTabCount').textContent = counts.workflow;
+        }
+
+        // Tab switching
+        function switchTab(type) {
+            currentTab = type;
+            document.querySelectorAll('.resource-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.type === type);
+            });
+            loadResources();
+        }
+
+        // Filters
+        function applyFilters() {
+            loadResources();
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadResources();
+            }, 300);
+        }
+
+        // Selection
+        function toggleSelect(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+            } else {
+                selectedIds.add(id);
+            }
+            updateSelectedCount();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            if (selectAll) {
+                resources.forEach(r => selectedIds.add(r.id));
+            } else {
+                selectedIds.clear();
+            }
+            renderResources();
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = `${selectedIds.size} selected`;
+            document.getElementById('applyBulkBtn').disabled = selectedIds.size === 0;
+        }
+
+        // Bulk update
+        async function applyBulkVisibility() {
+            const visibility = document.getElementById('bulkVisibility').value;
+            if (!visibility) {
+                showToast('Please select a visibility level', 'warning');
+                return;
+            }
+
+            if (selectedIds.size === 0) {
+                showToast('No resources selected', 'warning');
+                return;
+            }
+
+            const selectedResources = resources
+                .filter(r => selectedIds.has(r.id))
+                .map(r => ({ type: r.resource_type, id: r.id }));
+
+            try {
+                const response = await fetch('/api/resource-access/bulk-update', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ resources: selectedResources, visibility })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message || 'Updated successfully', 'success');
+                    selectedIds.clear();
+                    document.getElementById('selectAll').checked = false;
+                    await Promise.all([loadSummary(), loadResources()]);
+                } else {
+                    showToast(result.error || 'Update failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error applying bulk visibility:', error);
+                showToast('Failed to update resources', 'error');
+            }
+        }
+
+        // Edit single resource
+        async function editResource(type, id) {
+            const resource = resources.find(r => r.id === id);
+            if (!resource) return;
+
+            const roleKey = `${type}:${id}`;
+            const currentRole = roleRequirements[roleKey] || '';
+
+            const result = await ModalService.form({
+                title: 'Edit Resource Visibility',
+                width: 450,
+                fields: [
+                    {
+                        name: 'visibility',
+                        label: 'Who can see this resource?',
+                        type: 'select',
+                        value: resource.visibility || 'private',
+                        options: [
+                            { value: 'private', label: 'Private - Only owner' },
+                            { value: 'team', label: 'Team - Department members' },
+                            { value: 'organization', label: 'Organization - All org members' },
+                            { value: 'public', label: 'Public - Everyone' }
+                        ],
+                        required: true
+                    },
+                    {
+                        name: 'department_id',
+                        label: 'Assign to Department (optional)',
+                        type: 'select',
+                        value: resource.department_id || '',
+                        options: [
+                            { value: '', label: 'No department' },
+                            ...departments.map(d => ({ value: d.id, label: d.name }))
+                        ]
+                    },
+                    {
+                        name: 'min_business_role',
+                        label: 'Minimum Role Required (optional)',
+                        type: 'select',
+                        value: currentRole,
+                        options: [
+                            { value: '', label: 'No requirement' },
+                            { value: 'ic', label: 'Individual Contributor' },
+                            { value: 'supervisor', label: 'Supervisor' },
+                            { value: 'manager', label: 'Manager' },
+                            { value: 'director', label: 'Director' },
+                            { value: 'executive', label: 'Executive' }
+                        ]
+                    }
+                ],
+                submitText: 'Update'
+            });
+
+            if (result) {
+                try {
+                    // Update visibility via bulk update (single resource)
+                    const updateData = {
+                        resources: [{ type, id }],
+                        visibility: result.visibility
+                    };
+                    if (result.department_id !== undefined) {
+                        updateData.department_id = result.department_id || null;
+                    }
+
+                    await fetch('/api/resource-access/bulk-update', {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify(updateData)
+                    });
+
+                    // Update role requirement if changed
+                    if (result.min_business_role !== currentRole) {
+                        await fetch('/api/resource-access/role-requirement', {
+                            method: 'POST',
+                            headers: getHeaders(),
+                            body: JSON.stringify({
+                                resource_type: type,
+                                resource_id: id,
+                                min_business_role: result.min_business_role || null
+                            })
+                        });
+                    }
+
+                    showToast('Resource updated', 'success');
+                    await Promise.all([loadSummary(), loadRoleRequirements(), loadResources()]);
+                } catch (error) {
+                    console.error('Error updating resource:', error);
+                    showToast('Failed to update resource', 'error');
+                }
+            }
+        }
+
+        // Apply template
+        async function applyTemplate(templateId) {
+            const confirmed = await ModalService.confirm({
+                title: 'Apply Template',
+                message: `This will update visibility settings for system resources based on the "${templateId}" template. Continue?`,
+                confirmText: 'Apply Template',
+                confirmClass: 'btn-primary'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch('/api/resource-access/apply-template', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ template_id: templateId })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message || 'Template applied', 'success');
+                    await Promise.all([loadSummary(), loadResources()]);
+                } else {
+                    showToast(result.error || 'Failed to apply template', 'error');
+                }
+            } catch (error) {
+                console.error('Error applying template:', error);
+                showToast('Failed to apply template', 'error');
+            }
+        }
+
+        // Tier settings
+        async function loadTierSettings() {
+            try {
+                const response = await fetch('/api/resource-access/tier-settings', { headers: getHeaders() });
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const tier = result.data;
+                    await ModalService.alert({
+                        title: 'Tier Visibility Settings',
+                        message: `
+                            <div style="text-align: left;">
+                                <p><strong>Tier:</strong> ${tier.tier_name || tier.tier_id || 'Unknown'}</p>
+                                <p><strong>Default Visibility:</strong> ${formatVisibility(tier.default_resource_visibility || 'private')}</p>
+                                <p><strong>Allow Public Resources:</strong> ${tier.allow_public_resources ? 'Yes' : 'No'}</p>
+                            </div>
+                        `
+                    });
+                } else {
+                    showToast('Could not load tier settings', 'warning');
+                }
+            } catch (error) {
+                console.error('Error loading tier settings:', error);
+                showToast('Failed to load tier settings', 'error');
+            }
+        }
+
+        // Toast helper
+        function showToast(message, type = 'info') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, type);
+            } else {
+                console.log(`[${type}] ${message}`);
+            }
+        }
+    </script>
+</body>
+</html>

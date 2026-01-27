@@ -12,6 +12,7 @@
 
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
+const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
 
 /**
  * Skills Routes Factory
@@ -31,6 +32,8 @@ module.exports = function(supabase) {
      */
     router.get('/', async (req, res) => {
         try {
+            const userId = req.userId || req.headers['x-user-id'];
+            const orgId = req.headers['x-org-id'];
             const {
                 category,
                 suite,
@@ -48,6 +51,25 @@ module.exports = function(supabase) {
             let query = supabase
                 .from('skill_summary')
                 .select('*');
+
+            // === PHASE 45: Apply access control filter ===
+            if (userId) {
+                const accessCtx = await getUserAccessContext(supabase, userId);
+                if (accessCtx) {
+                    query = buildResourceAccessFilter(query, accessCtx);
+                }
+            } else {
+                // Anonymous users: public skills only
+                query = query.eq('visibility', 'public');
+            }
+            // === END PHASE 45 ===
+
+            // === PHASE 46: Organization filtering ===
+            if (orgId) {
+                // Show skills belonging to this org OR system skills (no org)
+                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+            // === END PHASE 46 ===
 
             // Apply filters
             if (category && category !== 'all') {

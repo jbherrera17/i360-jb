@@ -47,6 +47,14 @@ router.get('/', async (req, res) => {
             query = query.or('is_public.eq.true,user_id.is.null');
         }
 
+        // === PHASE 46: Organization filtering ===
+        const orgId = req.headers['x-org-id'];
+        if (orgId) {
+            // Show workflows belonging to this org OR system workflows (no org)
+            query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+        }
+        // === END PHASE 46 ===
+
         // Optional filters
         if (category) query = query.eq('category', category);
         if (suite) query = query.eq('suite', suite);

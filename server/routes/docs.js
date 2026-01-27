@@ -66,7 +66,11 @@ const ALLOWED_DOCS = [
     'admin-client-users-user-guide.md',
     // Enterprise Multi-Tenancy (Phase 44)
     'admin-platform-user-guide.md',
-    'admin-tier-setup-user-guide.md'
+    'admin-tier-setup-user-guide.md',
+    // Resource Access Control (Phase 45)
+    'admin-resource-access-user-guide.md',
+    // Phase 46: Administrator
+    'administrator-user-guide.md'
 ];
 
 /**
