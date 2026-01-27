@@ -229,6 +229,95 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Setup Checklist */
+        .setup-checklist {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .setup-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .setup-item.completed {
+            opacity: 0.7;
+        }
+
+        .setup-item.pending {
+            cursor: pointer;
+            border-color: var(--border);
+        }
+
+        .setup-item.pending:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        .setup-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .setup-item-icon i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .setup-item.completed .setup-item-icon {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .setup-item.pending .setup-item-icon {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .setup-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .setup-item-title {
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .setup-item-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .setup-item.completed .setup-item-status {
+            color: var(--success);
+        }
+
+        .setup-item-arrow {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .setup-item-arrow i {
+            width: 16px;
+            height: 16px;
+        }
     </style>
 </head>
 <body>
@@ -264,6 +353,10 @@
             <select id="org-select" onchange="switchOrganization()">
                 <option value="">Loading...</option>
             </select>
+            <div id="platform-admin-toggle" style="display: none; align-items: center; gap: 0.5rem; margin-left: auto;">
+                <input type="checkbox" id="show-all-orgs" onchange="toggleShowAllOrgs()" style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="show-all-orgs" style="font-size: 0.85rem; cursor: pointer; white-space: nowrap;">Show all orgs</label>
+            </div>
             <button class="btn btn-primary" onclick="showCreateOrgModal()">
                 <i data-lucide="plus"></i>
                 New Organization
@@ -287,6 +380,22 @@
             <div class="stat-card workflows">
                 <div class="stat-value" id="stat-workflows">-</div>
                 <div class="stat-label">Workflows</div>
+            </div>
+        </div>
+
+        <!-- Onboarding Progress -->
+        <div class="settings-section" id="onboarding-section" style="margin-bottom: 2rem;">
+            <div class="settings-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Setup Progress</h2>
+                <div id="onboarding-progress-badge" style="font-size: 0.9rem; font-weight: 600;"></div>
+            </div>
+            <div class="settings-section-body">
+                <div class="onboarding-progress-bar" style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
+                    <div id="onboarding-progress-fill" style="height: 100%; background: var(--primary); transition: width 0.3s; width: 0%;"></div>
+                </div>
+                <div id="onboarding-checklist" class="setup-checklist">
+                    <!-- Populated by JavaScript -->
+                </div>
             </div>
         </div>
 
@@ -398,6 +507,8 @@
         let organizations = [];
         let currentOrg = null;
         let userRole = null;
+        let isPlatformAdmin = false;
+        let showAllOrgs = false;
 
         // Get auth token from localStorage or cookie
         function getAuthToken() {
@@ -443,8 +554,39 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            await checkPlatformAdmin();
             await loadOrganizations();
         });
+
+        // Check if user is a platform admin
+        async function checkPlatformAdmin() {
+            try {
+                const response = await authFetch('/api/platform/config');
+                if (response.ok) {
+                    isPlatformAdmin = true;
+                    showPlatformAdminToggle();
+                }
+            } catch (error) {
+                // Not a platform admin, that's fine
+                isPlatformAdmin = false;
+            }
+        }
+
+        // Show platform admin toggle
+        function showPlatformAdminToggle() {
+            const container = document.getElementById('platform-admin-toggle');
+            if (container) {
+                container.style.display = 'flex';
+            }
+        }
+
+        // Toggle show all organizations
+        async function toggleShowAllOrgs() {
+            showAllOrgs = document.getElementById('show-all-orgs').checked;
+            // Preserve current selection
+            const currentOrgId = currentOrg?.id || document.getElementById('org-select').value;
+            await loadOrganizations(currentOrgId);
+        }
 
         // Show/hide loading
         function showLoading() {
@@ -456,19 +598,30 @@
         }
 
         // Load organizations list
-        async function loadOrganizations() {
+        async function loadOrganizations(preserveOrgId = null) {
             try {
                 showLoading();
-                const response = await authFetch('/api/organizations');
+
+                // Use platform API if admin and toggle is on
+                const endpoint = (isPlatformAdmin && showAllOrgs)
+                    ? '/api/platform/organizations'
+                    : '/api/organizations';
+
+                const response = await authFetch(endpoint);
                 const result = await response.json();
 
                 if (result.success) {
                     organizations = result.data;
                     populateOrgSelect();
 
-                    // Load first org or saved preference
-                    const savedOrgId = localStorage.getItem('currentOrgId');
-                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+                    // Determine which org to load: preserved > saved > first
+                    const savedOrgId = preserveOrgId || localStorage.getItem('currentOrgId');
+                    let orgToLoad = organizations.find(o => o.id === savedOrgId);
+
+                    // If not found in new list, use first org
+                    if (!orgToLoad && organizations.length > 0) {
+                        orgToLoad = organizations[0];
+                    }
 
                     if (orgToLoad) {
                         document.getElementById('org-select').value = orgToLoad.id;
@@ -486,9 +639,11 @@
         // Populate org select dropdown
         function populateOrgSelect() {
             const select = document.getElementById('org-select');
-            select.innerHTML = organizations.map(org =>
-                `<option value="${org.id}">${org.name}${org.settings?.is_personal ? ' (Personal)' : ''}</option>`
-            ).join('');
+            select.innerHTML = organizations.map(org => {
+                // Detect personal orgs from settings or slug pattern
+                const isPersonal = org.settings?.is_personal || org.slug?.startsWith('personal-');
+                return `<option value="${org.id}">${org.name}${isPersonal ? ' (Personal)' : ''}</option>`;
+            }).join('');
         }
 
         // Switch organization
@@ -509,8 +664,13 @@
             try {
                 showLoading();
 
+                // Use platform API if admin and viewing all orgs
+                const endpoint = (isPlatformAdmin && showAllOrgs)
+                    ? `/api/platform/organizations/${orgId}`
+                    : `/api/organizations/${orgId}`;
+
                 // Load org details
-                const orgResponse = await authFetch(`/api/organizations/${orgId}`);
+                const orgResponse = await authFetch(endpoint);
                 const orgResult = await orgResponse.json();
 
                 if (!orgResult.success) {
@@ -557,8 +717,9 @@
                     btn.disabled = !isAdmin;
                 });
 
-                // Load stats
+                // Load stats and setup progress
                 await loadStats(orgId);
+                await loadSetupProgress(orgId);
 
             } catch (error) {
                 console.error('Error loading organization:', error);
@@ -579,9 +740,177 @@
                     document.getElementById('stat-clients').textContent = result.data.clients;
                     document.getElementById('stat-agents').textContent = result.data.agents;
                     document.getElementById('stat-workflows').textContent = result.data.workflows;
+                } else {
+                    // Show placeholders if stats can't be loaded (e.g., platform admin viewing non-member org)
+                    document.getElementById('stat-members').textContent = '-';
+                    document.getElementById('stat-clients').textContent = '-';
+                    document.getElementById('stat-agents').textContent = '-';
+                    document.getElementById('stat-workflows').textContent = '-';
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
+                // Show placeholders on error
+                document.getElementById('stat-members').textContent = '-';
+                document.getElementById('stat-clients').textContent = '-';
+                document.getElementById('stat-agents').textContent = '-';
+                document.getElementById('stat-workflows').textContent = '-';
+            }
+        }
+
+        // Setup checklist items
+        const setupItems = [
+            {
+                id: 'org-created',
+                title: 'Organization Created',
+                icon: 'building-2',
+                link: null, // Already on this page
+                check: (data) => !!data.org
+            },
+            {
+                id: 'tier-configured',
+                title: 'Subscription Tier',
+                icon: 'layers',
+                link: isPlatformAdmin ? 'admin-platform.html' : null,
+                check: (data) => data.org?.subscription_tier && data.org.subscription_tier !== 'none' && data.org.subscription_tier !== 'free'
+            },
+            {
+                id: 'admin-assigned',
+                title: 'Admin User',
+                icon: 'user-check',
+                link: 'admin-org-members.html',
+                check: (data) => data.members?.some(m => m.role === 'admin' || m.role === 'owner')
+            },
+            {
+                id: 'departments-created',
+                title: 'Departments',
+                icon: 'git-branch',
+                link: 'admin-departments.html',
+                check: (data) => data.departments?.length > 0
+            },
+            {
+                id: 'roles-defined',
+                title: 'Roles Defined',
+                icon: 'shield',
+                link: 'roles.html',
+                check: (data) => data.roles?.length > 0
+            },
+            {
+                id: 'users-invited',
+                title: 'Team Members',
+                icon: 'users',
+                link: 'admin-org-members.html',
+                check: (data) => data.members?.length > 1
+            },
+            {
+                id: 'branding-configured',
+                title: 'Branding',
+                icon: 'palette',
+                link: null, // Already on this page
+                check: (data) => !!(data.org?.settings?.logo_url || data.org?.settings?.primary_color)
+            },
+            {
+                id: 'resources-assigned',
+                title: 'Resources',
+                icon: 'puzzle',
+                link: 'admin-resource-access.html',
+                check: (data) => data.hasResources
+            }
+        ];
+
+        // Load setup progress data
+        async function loadSetupProgress(orgId) {
+            const token = getAuthToken();
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'x-org-id': orgId
+            };
+
+            const setupData = {
+                org: currentOrg,
+                members: [],
+                departments: [],
+                roles: [],
+                hasResources: false
+            };
+
+            try {
+                // Load data in parallel
+                const [membersRes, deptsRes, rolesRes, agentsRes] = await Promise.allSettled([
+                    fetch('/api/org-members', { headers }),
+                    fetch('/api/departments', { headers }),
+                    fetch('/api/department-roles', { headers }),
+                    fetch('/api/agents?limit=1', { headers })
+                ]);
+
+                if (membersRes.status === 'fulfilled' && membersRes.value?.ok) {
+                    const data = await membersRes.value.json();
+                    setupData.members = data.data || [];
+                }
+
+                if (deptsRes.status === 'fulfilled' && deptsRes.value?.ok) {
+                    const data = await deptsRes.value.json();
+                    setupData.departments = data.data || data.departments || [];
+                }
+
+                if (rolesRes.status === 'fulfilled' && rolesRes.value?.ok) {
+                    const data = await rolesRes.value.json();
+                    setupData.roles = data.data || [];
+                }
+
+                if (agentsRes.status === 'fulfilled' && agentsRes.value?.ok) {
+                    const data = await agentsRes.value.json();
+                    setupData.hasResources = (data.data?.length || 0) > 0;
+                }
+
+            } catch (error) {
+                console.error('Error loading setup data:', error);
+            }
+
+            renderSetupProgress(setupData);
+        }
+
+        // Render setup progress
+        function renderSetupProgress(data) {
+            const results = setupItems.map(item => ({
+                ...item,
+                completed: item.check(data)
+            }));
+
+            const completed = results.filter(r => r.completed).length;
+            const total = results.length;
+            const percentage = Math.round((completed / total) * 100);
+
+            // Update progress bar and badge
+            document.getElementById('onboarding-progress-fill').style.width = `${percentage}%`;
+            document.getElementById('onboarding-progress-badge').innerHTML =
+                percentage === 100
+                    ? '<span style="color: var(--success);">✓ Complete</span>'
+                    : `<span style="color: var(--text-secondary);">${completed}/${total} completed</span>`;
+
+            // Render checklist items
+            const container = document.getElementById('onboarding-checklist');
+            container.innerHTML = results.map(item => `
+                <div class="setup-item ${item.completed ? 'completed' : 'pending'}"
+                     ${!item.completed && item.link ? `onclick="window.location.href='${item.link}'"` : ''}>
+                    <div class="setup-item-icon">
+                        <i data-lucide="${item.completed ? 'check' : item.icon}"></i>
+                    </div>
+                    <div class="setup-item-content">
+                        <div class="setup-item-title">${item.title}</div>
+                        <div class="setup-item-status">${item.completed ? 'Configured' : 'Not configured'}</div>
+                    </div>
+                    ${!item.completed && item.link ? `
+                        <div class="setup-item-arrow">
+                            <i data-lucide="chevron-right"></i>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
             }
         }
 

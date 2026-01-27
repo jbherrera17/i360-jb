@@ -958,6 +958,7 @@ module.exports = function(supabase) {
                         org_type,
                         subscription_tier,
                         subscription_status,
+                        settings,
                         created_at,
                         is_active
                     `);
@@ -1011,6 +1012,46 @@ module.exports = function(supabase) {
             });
         } catch (error) {
             console.error('Error fetching organizations:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/platform/organizations/:id
+     * Get a single organization's details (admin view)
+     */
+    router.get('/organizations/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data, error } = await supabase
+                .from('organizations')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Organization not found'
+                    });
+                }
+                throw error;
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    ...data,
+                    member_role: 'platform_admin' // Platform admin viewing
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching organization:', error);
             res.status(500).json({
                 success: false,
                 error: error.message
@@ -1094,6 +1135,437 @@ module.exports = function(supabase) {
         }
     });
 
+    // ============================================
+    // USER MANAGEMENT
+    // ============================================
+
+    /**
+     * GET /api/platform/users
+     * List all users with status and organization memberships
+     */
+    router.get('/users', async (req, res) => {
+        try {
+            const { status, org_id, search, limit = 50, offset = 0 } = req.query;
+
+            // Try to use platform_users_overview view first
+            let query = supabase
+                .from('platform_users_overview')
+                .select('*');
+
+            if (status) {
+                query = query.eq('status', status);
+            }
+
+            if (search) {
+                query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+            }
+
+            query = query
+                .order('created_at', { ascending: false })
+                .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+            let { data, error } = await query;
+
+            // Fallback if view doesn't exist
+            if (error && (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('schema cache'))) {
+                console.log('platform_users_overview view not found, using fallback query');
+
+                // First try with status columns (Phase 47 deployed)
+                let fallbackQuery = supabase
+                    .from('users')
+                    .select('id, email, display_name, role, status, suspended_at, suspended_reason, created_at, updated_at');
+
+                if (status) {
+                    fallbackQuery = fallbackQuery.eq('status', status);
+                }
+
+                if (search) {
+                    fallbackQuery = fallbackQuery.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+                }
+
+                fallbackQuery = fallbackQuery
+                    .order('created_at', { ascending: false })
+                    .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+                let fallbackResult = await fallbackQuery;
+
+                // If status column doesn't exist, try without it (Phase 47 not deployed)
+                if (fallbackResult.error && (fallbackResult.error.message?.includes('status') || fallbackResult.error.message?.includes('does not exist'))) {
+                    console.log('Status column not found, using basic user query');
+
+                    let basicQuery = supabase
+                        .from('users')
+                        .select('id, email, display_name, role, created_at, updated_at');
+
+                    if (search) {
+                        basicQuery = basicQuery.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+                    }
+
+                    basicQuery = basicQuery
+                        .order('created_at', { ascending: false })
+                        .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+                    fallbackResult = await basicQuery;
+                }
+
+                if (fallbackResult.error) throw fallbackResult.error;
+
+                // Fetch organization memberships for each user
+                data = await Promise.all((fallbackResult.data || []).map(async (user) => {
+                    const { data: memberships } = await supabase
+                        .from('organization_members')
+                        .select(`
+                            org_id,
+                            role,
+                            status,
+                            organization:organizations!inner(id, name, slug, settings)
+                        `)
+                        .eq('user_id', user.id);
+
+                    const orgs = (memberships || []).map(m => ({
+                        org_id: m.org_id,
+                        org_name: m.organization?.name,
+                        org_slug: m.organization?.slug,
+                        member_role: m.role,
+                        member_status: m.status,
+                        is_personal: m.organization?.settings?.is_personal || m.organization?.slug?.startsWith('personal-')
+                    }));
+
+                    return {
+                        ...user,
+                        // Ensure status fields have defaults if Phase 47 not deployed
+                        status: user.status || 'active',
+                        suspended_at: user.suspended_at || null,
+                        suspended_reason: user.suspended_reason || null,
+                        organizations: orgs,
+                        active_org_count: orgs.filter(o => o.member_status === 'active').length,
+                        is_platform_admin: false // Would need separate query
+                    };
+                }));
+
+                error = null;
+            }
+
+            if (error) throw error;
+
+            // Filter by org_id if provided (post-filter since it's in JSON)
+            let filteredData = data || [];
+            if (org_id) {
+                filteredData = filteredData.filter(user => {
+                    const orgs = user.organizations || [];
+                    return orgs.some(o => o.org_id === org_id);
+                });
+            }
+
+            res.json({
+                success: true,
+                data: filteredData,
+                pagination: {
+                    limit: parseInt(limit),
+                    offset: parseInt(offset),
+                    total: filteredData.length
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/platform/users/suspended
+     * Get only suspended users
+     */
+    router.get('/users/suspended', async (req, res) => {
+        try {
+            const { search, limit = 50, offset = 0 } = req.query;
+
+            let query = supabase
+                .from('users')
+                .select('id, email, display_name, role, status, suspended_at, suspended_reason, created_at')
+                .eq('status', 'suspended')
+                .order('suspended_at', { ascending: false });
+
+            if (search) {
+                query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+            }
+
+            query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+            const { data, error } = await query;
+
+            // If status column doesn't exist, return empty (Phase 47 not deployed)
+            if (error && (error.message?.includes('status') || error.message?.includes('does not exist'))) {
+                return res.json({
+                    success: true,
+                    data: [],
+                    message: 'User status feature requires Phase 47 migration',
+                    pagination: { limit: parseInt(limit), offset: parseInt(offset), total: 0 }
+                });
+            }
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data: data || [],
+                pagination: {
+                    limit: parseInt(limit),
+                    offset: parseInt(offset),
+                    total: data?.length || 0
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching suspended users:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/platform/users/:id
+     * Get a single user's details with org memberships
+     */
+    router.get('/users/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            // Get user
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (userError) {
+                if (userError.code === 'PGRST116') {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'User not found'
+                    });
+                }
+                throw userError;
+            }
+
+            // Get org memberships
+            const { data: memberships } = await supabase
+                .from('organization_members')
+                .select(`
+                    org_id,
+                    role,
+                    status,
+                    joined_at,
+                    organization:organizations!inner(id, name, slug, settings, subscription_tier)
+                `)
+                .eq('user_id', id);
+
+            // Check if platform admin
+            const { data: platformAdmin } = await supabase
+                .from('platform_admins')
+                .select('role, is_active')
+                .eq('user_id', id)
+                .single();
+
+            res.json({
+                success: true,
+                data: {
+                    ...user,
+                    organizations: (memberships || []).map(m => ({
+                        org_id: m.org_id,
+                        org_name: m.organization?.name,
+                        org_slug: m.organization?.slug,
+                        subscription_tier: m.organization?.subscription_tier,
+                        member_role: m.role,
+                        member_status: m.status,
+                        joined_at: m.joined_at,
+                        is_personal: m.organization?.settings?.is_personal || m.organization?.slug?.startsWith('personal-')
+                    })),
+                    platform_admin: platformAdmin ? {
+                        role: platformAdmin.role,
+                        is_active: platformAdmin.is_active
+                    } : null
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * PUT /api/platform/users/:id/status
+     * Change a user's status (suspend, reactivate, etc.)
+     */
+    router.put('/users/:id/status', requireAdminWrite, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { status, reason } = req.body;
+
+            if (!status || !['active', 'suspended', 'inactive', 'pending_deletion'].includes(status)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Valid status required: active, suspended, inactive, pending_deletion'
+                });
+            }
+
+            const updateData = {
+                status,
+                updated_at: new Date().toISOString()
+            };
+
+            // Set suspended fields based on action
+            if (status === 'suspended') {
+                updateData.suspended_at = new Date().toISOString();
+                updateData.suspended_reason = reason || 'Suspended by platform admin';
+            } else if (status === 'active') {
+                // Clear suspension info when reactivating
+                updateData.suspended_at = null;
+                updateData.suspended_reason = null;
+            }
+
+            const { data, error } = await supabase
+                .from('users')
+                .update(updateData)
+                .eq('id', id)
+                .select()
+                .single();
+
+            // If status column doesn't exist (Phase 47 not deployed)
+            if (error && (error.message?.includes('status') || error.message?.includes('does not exist'))) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'User status management requires Phase 47 migration. Please run db/phase47-user-status.sql'
+                });
+            }
+
+            if (error) throw error;
+
+            // Log the action
+            console.log(`User ${id} status changed to ${status} by admin ${req.userId}${reason ? `: ${reason}` : ''}`);
+
+            res.json({
+                success: true,
+                data,
+                message: `User ${status === 'active' ? 'reactivated' : status}`
+            });
+        } catch (error) {
+            console.error('Error updating user status:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/platform/users/:id/add-to-org
+     * Add a user to an organization
+     */
+    router.post('/users/:id/add-to-org', requireAdminWrite, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { org_id, role = 'consultant' } = req.body;
+
+            if (!org_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Organization ID is required'
+                });
+            }
+
+            // Check if already a member
+            const { data: existing } = await supabase
+                .from('organization_members')
+                .select('id, status')
+                .eq('user_id', id)
+                .eq('org_id', org_id)
+                .single();
+
+            if (existing) {
+                if (existing.status === 'active') {
+                    return res.status(409).json({
+                        success: false,
+                        error: 'User is already a member of this organization'
+                    });
+                }
+
+                // Reactivate membership
+                const { data, error } = await supabase
+                    .from('organization_members')
+                    .update({ status: 'active', role })
+                    .eq('id', existing.id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Also reactivate user if suspended
+                await supabase
+                    .from('users')
+                    .update({
+                        status: 'active',
+                        suspended_at: null,
+                        suspended_reason: null
+                    })
+                    .eq('id', id)
+                    .eq('status', 'suspended');
+
+                return res.json({
+                    success: true,
+                    data,
+                    message: 'Membership reactivated'
+                });
+            }
+
+            // Create new membership
+            const { data, error } = await supabase
+                .from('organization_members')
+                .insert({
+                    user_id: id,
+                    org_id,
+                    role,
+                    status: 'active',
+                    invited_by: req.userId,
+                    joined_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Reactivate user if suspended
+            await supabase
+                .from('users')
+                .update({
+                    status: 'active',
+                    suspended_at: null,
+                    suspended_reason: null
+                })
+                .eq('id', id)
+                .eq('status', 'suspended');
+
+            res.json({
+                success: true,
+                data,
+                message: 'User added to organization'
+            });
+        } catch (error) {
+            console.error('Error adding user to org:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
     /**
      * GET /api/platform/stats
      * Get platform-wide statistics
@@ -1123,6 +1595,20 @@ module.exports = function(supabase) {
                 .from('users')
                 .select('*', { count: 'exact', head: true });
 
+            // Get user status breakdown (graceful fallback if status column doesn't exist)
+            let userStatusCounts = { active: totalUsers || 0 };
+            const { data: userStatusData, error: userStatusError } = await supabase
+                .from('users')
+                .select('status');
+
+            if (!userStatusError && userStatusData) {
+                userStatusCounts = userStatusData.reduce((acc, u) => {
+                    const status = u.status || 'active';
+                    acc[status] = (acc[status] || 0) + 1;
+                    return acc;
+                }, {});
+            }
+
             const { count: totalClients } = await supabase
                 .from('clients')
                 .select('*', { count: 'exact', head: true })
@@ -1139,7 +1625,10 @@ module.exports = function(supabase) {
                         total: totalOrgs || 0,
                         by_tier: tierStats
                     },
-                    users: totalUsers || 0,
+                    users: {
+                        total: totalUsers || 0,
+                        by_status: userStatusCounts
+                    },
                     clients: totalClients || 0,
                     agents: totalAgents || 0
                 }

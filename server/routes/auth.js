@@ -134,10 +134,10 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Get user profile with role
+            // Get user profile with role and status
             const { data: profile, error: profileError } = await supabase
                 .from('users')
-                .select('id, email, display_name, role, preferences')
+                .select('id, email, display_name, role, preferences, status, suspended_reason')
                 .eq('id', data.user.id)
                 .single();
 
@@ -148,7 +148,31 @@ module.exports = function(supabase) {
                     console.log('User profile not found in public.users, using defaults for:', email);
                 }
             } else {
-                console.log('Login profile loaded:', { email, role: profile?.role, hasProfile: !!profile });
+                console.log('Login profile loaded:', { email, role: profile?.role, status: profile?.status, hasProfile: !!profile });
+            }
+
+            // Check if user account is suspended or inactive
+            if (profile?.status && profile.status !== 'active') {
+                // Sign out the user since we're rejecting the login
+                await supabase.auth.signOut();
+
+                let errorMessage = 'Your account is not active.';
+                if (profile.status === 'suspended') {
+                    errorMessage = profile.suspended_reason
+                        ? `Your account has been suspended: ${profile.suspended_reason}`
+                        : 'Your account has been suspended. Please contact support.';
+                } else if (profile.status === 'inactive') {
+                    errorMessage = 'Your account is inactive. Please contact support to reactivate.';
+                } else if (profile.status === 'pending_deletion') {
+                    errorMessage = 'Your account is scheduled for deletion. Please contact support if this is an error.';
+                }
+
+                return res.status(403).json({
+                    success: false,
+                    error: errorMessage,
+                    code: 'ACCOUNT_NOT_ACTIVE',
+                    status: profile.status
+                });
             }
 
             const userResponse = {

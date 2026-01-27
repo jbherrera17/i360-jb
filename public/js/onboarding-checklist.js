@@ -78,7 +78,10 @@ const OnboardingChecklist = {
     // State
     orgId: null,
     orgData: null,
+    organizations: [],
     container: null,
+    isPlatformAdmin: false,
+    showAllOrgs: false,
 
     /**
      * Initialize the checklist
@@ -87,7 +90,19 @@ const OnboardingChecklist = {
      */
     async init(container, orgId = null) {
         this.container = container;
-        this.orgId = orgId || localStorage.getItem('selected_org_id');
+        // Check multiple localStorage keys for compatibility
+        this.orgId = orgId || localStorage.getItem('selected_org_id') || localStorage.getItem('currentOrgId');
+
+        // Check if user is a platform admin
+        await this.checkPlatformAdmin();
+
+        // Always load organizations list for the selector
+        await this.loadOrganizations();
+
+        if (!this.orgId && this.organizations.length > 0) {
+            // Auto-select first org if none selected
+            this.orgId = this.organizations[0].id;
+        }
 
         if (!this.orgId) {
             this.renderNoOrg();
@@ -96,6 +111,80 @@ const OnboardingChecklist = {
 
         await this.loadOrgData();
         this.render();
+    },
+
+    /**
+     * Check if user is a platform admin
+     */
+    async checkPlatformAdmin() {
+        const token = localStorage.getItem('insight360_token');
+        if (!token) {
+            this.isPlatformAdmin = false;
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/platform/config', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            this.isPlatformAdmin = response.ok;
+        } catch (error) {
+            this.isPlatformAdmin = false;
+        }
+    },
+
+    /**
+     * Toggle show all organizations
+     */
+    async toggleShowAllOrgs(checked) {
+        this.showAllOrgs = checked;
+        await this.loadOrganizations();
+        // Reset selection if current org is no longer in list
+        if (!this.organizations.find(o => o.id === this.orgId)) {
+            this.orgId = this.organizations[0]?.id || null;
+        }
+        if (this.orgId) {
+            await this.loadOrgData();
+            this.render();
+        } else {
+            this.renderNoOrg();
+        }
+    },
+
+    /**
+     * Load organizations list for selector
+     */
+    async loadOrganizations() {
+        const token = localStorage.getItem('insight360_token');
+        if (!token) {
+            this.organizations = [];
+            return;
+        }
+
+        try {
+            // Use platform API if admin and toggle is on
+            const endpoint = (this.isPlatformAdmin && this.showAllOrgs)
+                ? '/api/platform/organizations'
+                : '/api/organizations';
+
+            const response = await fetch(endpoint, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.organizations = result.data || [];
+            }
+        } catch (error) {
+            console.error('Error loading organizations:', error);
+            this.organizations = [];
+        }
     },
 
     /**
@@ -108,10 +197,15 @@ const OnboardingChecklist = {
             'x-org-id': this.orgId
         };
 
+        // Use platform API for org details if admin and showing all orgs
+        const orgEndpoint = (this.isPlatformAdmin && this.showAllOrgs)
+            ? `/api/platform/organizations/${this.orgId}`
+            : `/api/organizations/${this.orgId}`;
+
         try {
             // Load data in parallel
             const [orgRes, membersRes, deptsRes, rolesRes, agentsRes] = await Promise.allSettled([
-                fetch(`/api/organizations/${this.orgId}`, { headers }),
+                fetch(orgEndpoint, { headers }),
                 fetch('/api/org-members', { headers }),
                 fetch('/api/departments', { headers }),
                 fetch('/api/department-roles', { headers }),
@@ -176,6 +270,54 @@ const OnboardingChecklist = {
     },
 
     /**
+     * Render organization selector
+     */
+    renderOrgSelector() {
+        if (this.organizations.length === 0 && !this.isPlatformAdmin) return '';
+
+        const platformToggle = this.isPlatformAdmin ? `
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+                <input type="checkbox" id="onboarding-show-all-orgs"
+                    ${this.showAllOrgs ? 'checked' : ''}
+                    onchange="OnboardingChecklist.toggleShowAllOrgs(this.checked)"
+                    style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="onboarding-show-all-orgs" style="font-size: 0.85rem; cursor: pointer; white-space: nowrap;">Show all orgs</label>
+            </div>
+        ` : '';
+
+        return `
+            <div class="onboarding-org-selector">
+                <label for="onboarding-org-select">Organization:</label>
+                <select id="onboarding-org-select" onchange="OnboardingChecklist.handleOrgChange(this.value)">
+                    ${this.organizations.map(org => {
+                        // Detect personal orgs from settings or slug pattern
+                        const isPersonal = org.settings?.is_personal || org.slug?.startsWith('personal-');
+                        return `
+                            <option value="${org.id}" ${org.id === this.orgId ? 'selected' : ''}>
+                                ${this.escapeHtml(org.name)}${isPersonal ? ' (Personal)' : ''}
+                            </option>
+                        `;
+                    }).join('')}
+                </select>
+                ${platformToggle}
+            </div>
+        `;
+    },
+
+    /**
+     * Handle organization change from selector
+     */
+    async handleOrgChange(orgId) {
+        if (!orgId) return;
+        this.orgId = orgId;
+        // Save to both keys for compatibility
+        localStorage.setItem('selected_org_id', orgId);
+        localStorage.setItem('currentOrgId', orgId);
+        await this.loadOrgData();
+        this.render();
+    },
+
+    /**
      * Render the checklist
      */
     render() {
@@ -187,6 +329,9 @@ const OnboardingChecklist = {
 
         this.container.innerHTML = `
             <div class="onboarding-checklist">
+                <!-- Organization Selector -->
+                ${this.renderOrgSelector()}
+
                 <!-- Progress Header -->
                 <div class="checklist-header">
                     <div class="checklist-title">
@@ -275,19 +420,34 @@ const OnboardingChecklist = {
     renderNoOrg() {
         if (!this.container) return;
 
-        this.container.innerHTML = `
-            <div class="onboarding-checklist no-org">
-                <div class="no-org-message">
-                    <i data-lucide="building-2"></i>
-                    <h3>No Organization Selected</h3>
-                    <p>Select an organization to view onboarding progress, or create a new one.</p>
-                    <a href="admin-org-settings.html" class="btn btn-primary">
-                        <i data-lucide="plus"></i>
-                        Create Organization
-                    </a>
+        // If we have organizations, show selector
+        if (this.organizations.length > 0) {
+            this.container.innerHTML = `
+                <div class="onboarding-checklist">
+                    ${this.renderOrgSelector()}
+                    <div class="no-org-message" style="margin-top: 2rem;">
+                        <i data-lucide="building-2"></i>
+                        <h3>Select an Organization</h3>
+                        <p>Choose an organization above to view its onboarding progress.</p>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // No organizations exist
+            this.container.innerHTML = `
+                <div class="onboarding-checklist no-org">
+                    <div class="no-org-message">
+                        <i data-lucide="building-2"></i>
+                        <h3>No Organization Selected</h3>
+                        <p>Select an organization to view onboarding progress, or create a new one.</p>
+                        <a href="admin-org-settings.html" class="btn btn-primary">
+                            <i data-lucide="plus"></i>
+                            Create Organization
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
 
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();

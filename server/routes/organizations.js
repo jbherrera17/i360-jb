@@ -311,6 +311,31 @@ module.exports = function(supabase) {
                 });
             }
 
+            // Get org name for the suspension reason
+            const { data: orgDetails } = await supabase
+                .from('organizations')
+                .select('name')
+                .eq('id', id)
+                .single();
+
+            const orgName = orgDetails?.name || 'Unknown';
+
+            // Suspend orphaned users before deleting the org
+            // This finds users who only belong to this org and suspends them
+            const { data: suspendedUsers, error: suspendError } = await supabase
+                .rpc('suspend_orphaned_users', {
+                    p_org_id: id,
+                    p_reason: `Organization "${orgName}" was deleted`
+                });
+
+            if (suspendError) {
+                console.warn('Warning: Could not suspend orphaned users:', suspendError);
+                // Continue with deletion even if suspension fails
+            } else if (suspendedUsers && suspendedUsers.length > 0) {
+                console.log(`Suspended ${suspendedUsers.length} orphaned users from org ${orgName}:`,
+                    suspendedUsers.map(u => u.email));
+            }
+
             const { error } = await supabase
                 .from('organizations')
                 .delete()
@@ -320,7 +345,8 @@ module.exports = function(supabase) {
 
             res.json({
                 success: true,
-                message: 'Organization deleted'
+                message: 'Organization deleted',
+                suspended_users: suspendedUsers?.length || 0
             });
         } catch (error) {
             console.error('Error deleting organization:', error);
