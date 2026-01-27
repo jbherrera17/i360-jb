@@ -1466,6 +1466,116 @@ module.exports = function(supabase) {
     });
 
     /**
+     * POST /api/platform/users
+     * Create a new user (Platform Admin only)
+     */
+    router.post('/users', requireAdminWrite, async (req, res) => {
+        try {
+            const { email, password, display_name, org_id, role } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Email and password are required'
+                });
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid email format'
+                });
+            }
+
+            // Validate password length
+            if (password.length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Password must be at least 6 characters'
+                });
+            }
+
+            // Create user in Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true, // Auto-confirm email
+                user_metadata: {
+                    display_name: display_name || email.split('@')[0]
+                }
+            });
+
+            if (authError) {
+                console.error('Auth error creating user:', authError);
+                return res.status(400).json({
+                    success: false,
+                    error: authError.message
+                });
+            }
+
+            const userId = authData.user.id;
+
+            // Create user record in users table
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .insert({
+                    id: userId,
+                    email,
+                    display_name: display_name || email.split('@')[0],
+                    status: 'active',
+                    default_org_id: org_id || null
+                })
+                .select()
+                .single();
+
+            if (userError) {
+                console.error('Error creating user record:', userError);
+                // User was created in auth but not in users table - try to clean up
+                await supabase.auth.admin.deleteUser(userId);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to create user record: ' + userError.message
+                });
+            }
+
+            // If org_id provided, add user to organization
+            if (org_id) {
+                const { error: memberError } = await supabase
+                    .from('organization_members')
+                    .insert({
+                        user_id: userId,
+                        org_id,
+                        role: role || 'consultant',
+                        status: 'active',
+                        invited_by: req.userId,
+                        joined_at: new Date().toISOString()
+                    });
+
+                if (memberError) {
+                    console.error('Error adding user to org:', memberError);
+                    // User created, just org membership failed - log but continue
+                }
+            }
+
+            console.log(`User ${email} created by admin ${req.userId}`);
+
+            res.status(201).json({
+                success: true,
+                data: userData,
+                message: 'User created successfully'
+            });
+        } catch (error) {
+            console.error('Error creating user:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * POST /api/platform/users/:id/add-to-org
      * Add a user to an organization
      */
