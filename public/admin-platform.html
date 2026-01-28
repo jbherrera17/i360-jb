@@ -908,8 +908,10 @@
             tbody.innerHTML = organizations.map(org => `
                 <tr>
                     <td>
-                        <strong>${escapeHtml(org.name)}</strong>
-                        <br><small style="color: var(--text-secondary);">${escapeHtml(org.slug)}</small>
+                        <a href="#" onclick="navigateToOrgSettings('${org.id}'); return false;" style="text-decoration: none; color: inherit;">
+                            <strong style="color: var(--primary); cursor: pointer;">${escapeHtml(org.name)}</strong>
+                            <br><small style="color: var(--text-secondary);">${escapeHtml(org.slug)}</small>
+                        </a>
                     </td>
                     <td><span class="tier-badge tier-${org.subscription_tier}">${org.subscription_tier}</span></td>
                     <td><span class="status-badge status-${org.subscription_status}">${org.subscription_status}</span></td>
@@ -1153,6 +1155,12 @@
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             return new Date(dateStr).toLocaleDateString();
+        }
+
+        // Navigate to Organization Settings for a specific org
+        function navigateToOrgSettings(orgId) {
+            localStorage.setItem('currentOrgId', orgId);
+            window.location.href = '/admin-org-settings.html';
         }
 
         function showToast(message, type = 'info') {
@@ -1630,6 +1638,9 @@
                                     Suspend
                                 </button>
                             `}
+                            <button class="btn btn-sm btn-secondary" onclick="showAddToOrgModal('${user.id}', '${escapeHtml(user.display_name || user.email)}')" title="Add to Organization">
+                                <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
+                            </button>
                             <button class="btn btn-sm btn-secondary" onclick="showUserDetails('${user.id}')" title="View Details">
                                 <i data-lucide="eye" style="width: 12px; height: 12px;"></i>
                             </button>
@@ -1876,6 +1887,74 @@
             } catch (error) {
                 console.error('Error reactivating user:', error);
                 showToast('Failed to reactivate user', 'error');
+            }
+        }
+
+        // Show Add to Organization modal
+        async function showAddToOrgModal(userId, userName) {
+            // Build org options from cached orgs
+            const orgOptions = organizations.map(org => ({
+                value: org.id,
+                label: org.name
+            }));
+
+            if (orgOptions.length === 0) {
+                showToast('No organizations available', 'error');
+                return;
+            }
+
+            const result = await ModalService.form({
+                title: `Add ${userName} to Organization`,
+                fields: [
+                    {
+                        name: 'org_id',
+                        label: 'Organization',
+                        type: 'select',
+                        required: true,
+                        options: orgOptions
+                    },
+                    {
+                        name: 'role',
+                        label: 'Role',
+                        type: 'select',
+                        options: [
+                            { value: 'consultant', label: 'Consultant' },
+                            { value: 'admin', label: 'Admin' },
+                            { value: 'owner', label: 'Owner' }
+                        ]
+                    }
+                ],
+                submitText: 'Add to Organization',
+                submitClass: 'btn-primary'
+            });
+
+            if (!result || !result.org_id) return;
+
+            try {
+                const token = localStorage.getItem('insight360_token');
+                const response = await fetch(`/api/platform/users/${userId}/add-to-org`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        org_id: result.org_id,
+                        role: result.role || 'consultant'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast('User added to organization', 'success');
+                    await loadAllData();
+                } else {
+                    showToast(data.error || 'Failed to add user to organization', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding user to org:', error);
+                showToast('Failed to add user to organization', 'error');
             }
         }
     </script>

@@ -475,6 +475,38 @@
                 </div>
             </div>
 
+            <!-- Team Members (Full Width) -->
+            <div class="settings-section" id="members-section" style="grid-column: 1 / -1;">
+                <div class="settings-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Team Members</h2>
+                    <a href="/admin-org-members.html" class="btn btn-secondary btn-sm">
+                        <i data-lucide="users"></i>
+                        Manage Members
+                    </a>
+                </div>
+                <div class="settings-section-body">
+                    <div id="members-list" style="overflow-x: auto;">
+                        <p style="color: var(--text-muted);">Loading members...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients (Full Width - Agency Only) -->
+            <div class="settings-section" id="clients-section" style="grid-column: 1 / -1; display: none;">
+                <div class="settings-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Clients</h2>
+                    <a href="/admin-clients.html" class="btn btn-secondary btn-sm">
+                        <i data-lucide="building"></i>
+                        Manage Clients
+                    </a>
+                </div>
+                <div class="settings-section-body">
+                    <div id="clients-list" style="overflow-x: auto;">
+                        <p style="color: var(--text-muted);">Loading clients...</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Danger Zone -->
             <div class="settings-section danger-zone" id="danger-zone" style="grid-column: 1 / -1; display: none;">
                 <div class="settings-section-header">
@@ -706,6 +738,14 @@
                     dangerZone.style.display = 'none';
                 }
 
+                // Show clients section only for agency tier
+                const clientsSection = document.getElementById('clients-section');
+                if (tier === 'agency') {
+                    clientsSection.style.display = 'block';
+                } else {
+                    clientsSection.style.display = 'none';
+                }
+
                 // Disable forms for non-admins
                 const isAdmin = ['owner', 'admin'].includes(userRole);
                 document.querySelectorAll('#general-form input, #branding-form input').forEach(input => {
@@ -717,9 +757,13 @@
                     btn.disabled = !isAdmin;
                 });
 
-                // Load stats and setup progress
+                // Load stats, setup progress, members, and clients
                 await loadStats(orgId);
                 await loadSetupProgress(orgId);
+                await loadOrgMembers(orgId);
+                if (tier === 'agency') {
+                    await loadOrgClients(orgId);
+                }
 
             } catch (error) {
                 console.error('Error loading organization:', error);
@@ -771,7 +815,7 @@
                 title: 'Subscription Tier',
                 icon: 'layers',
                 link: isPlatformAdmin ? 'admin-platform.html' : null,
-                check: (data) => data.org?.subscription_tier && data.org.subscription_tier !== 'none' && data.org.subscription_tier !== 'free'
+                check: (data) => data.org?.subscription_tier && data.org.subscription_tier !== 'none'
             },
             {
                 id: 'admin-assigned',
@@ -799,7 +843,7 @@
                 title: 'Team Members',
                 icon: 'users',
                 link: 'admin-org-members.html',
-                check: (data) => data.members?.length > 1
+                check: (data) => data.members?.length >= 1
             },
             {
                 id: 'branding-configured',
@@ -837,7 +881,7 @@
             try {
                 // Load data in parallel
                 const [membersRes, deptsRes, rolesRes, agentsRes] = await Promise.allSettled([
-                    fetch('/api/org-members', { headers }),
+                    fetch(`/api/org-members/${orgId}`, { headers }),
                     fetch('/api/departments', { headers }),
                     fetch('/api/department-roles', { headers }),
                     fetch('/api/agents?limit=1', { headers })
@@ -914,6 +958,154 @@
             }
         }
 
+        // Load organization members
+        async function loadOrgMembers(orgId) {
+            const container = document.getElementById('members-list');
+            const token = getAuthToken();
+
+            try {
+                const response = await fetch(`/api/org-members/${orgId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'x-org-id': orgId
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load members');
+                }
+
+                const result = await response.json();
+                const members = result.data || [];
+
+                if (members.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted);">No team members found.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Name</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Email</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Role</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Status</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${members.map(m => `
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.75rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem;">
+                                                ${(m.display_name || m.email || '?').charAt(0).toUpperCase()}
+                                            </div>
+                                            <span>${escapeHtml(m.display_name || '-')}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 0.75rem; color: var(--text-secondary);">${escapeHtml(m.email || '-')}</td>
+                                    <td style="padding: 0.75rem;">
+                                        <span class="status-badge status-${m.role === 'owner' ? 'active' : m.role === 'admin' ? 'warning' : 'default'}" style="text-transform: capitalize;">
+                                            ${m.role || 'member'}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.75rem;">
+                                        <span class="status-badge status-${m.status === 'active' ? 'active' : 'inactive'}">
+                                            ${m.status || 'unknown'}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.75rem; color: var(--text-secondary);">
+                                        ${m.joined_at ? new Date(m.joined_at).toLocaleDateString() : '-'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading members:', error);
+                container.innerHTML = '<p style="color: var(--text-muted);">Unable to load team members.</p>';
+            }
+        }
+
+        // Load organization clients (for agency tier)
+        async function loadOrgClients(orgId) {
+            const container = document.getElementById('clients-list');
+            const token = getAuthToken();
+
+            try {
+                const response = await fetch(`/api/clients?org_id=${orgId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'x-org-id': orgId
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load clients');
+                }
+
+                const result = await response.json();
+                const clients = result.data || [];
+
+                if (clients.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted);">No clients found. Add clients to get started.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Client Name</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Industry</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Status</th>
+                                <th style="text-align: left; padding: 0.75rem; font-weight: 600;">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${clients.map(c => `
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.75rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem;">
+                                                ${(c.name || '?').charAt(0).toUpperCase()}
+                                            </div>
+                                            <strong>${escapeHtml(c.name || '-')}</strong>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 0.75rem; color: var(--text-secondary);">${escapeHtml(c.industry || '-')}</td>
+                                    <td style="padding: 0.75rem;">
+                                        <span class="status-badge status-${c.status === 'active' ? 'active' : 'inactive'}">
+                                            ${c.status || 'unknown'}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.75rem; color: var(--text-secondary);">
+                                        ${c.created_at ? new Date(c.created_at).toLocaleDateString() : '-'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                container.innerHTML = '<p style="color: var(--text-muted);">Unable to load clients.</p>';
+            }
+        }
+
+        // Escape HTML for safe display
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
         // Form submissions
         document.getElementById('general-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -964,6 +1156,8 @@
                 if (result.success) {
                     ModalService.toast({ message: 'Branding updated successfully', type: 'success' });
                     currentOrg.settings = settings;
+                    // Refresh setup progress to reflect branding status
+                    await loadSetupProgress(currentOrg.id);
                 } else {
                     throw new Error(result.error);
                 }

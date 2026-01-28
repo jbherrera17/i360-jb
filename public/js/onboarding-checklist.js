@@ -51,11 +51,11 @@ const OnboardingChecklist = {
         },
         {
             id: 'users-invited',
-            title: 'Team Members Invited',
-            description: 'Additional team members added',
+            title: 'Team Members',
+            description: 'At least one team member configured',
             icon: 'users',
             link: 'admin-org-members.html',
-            check: (data) => data.members?.length > 1
+            check: (data) => data.members?.length >= 1
         },
         {
             id: 'branding-configured',
