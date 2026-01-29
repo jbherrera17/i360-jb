@@ -70,7 +70,9 @@ const ALLOWED_DOCS = [
     // Resource Access Control (Phase 45)
     'admin-resource-access-user-guide.md',
     // Phase 46: Administrator
-    'administrator-user-guide.md'
+    'administrator-user-guide.md',
+    // Phase 48: Integrations
+    'integrations-user-guide.md'
 ];
 
 /**

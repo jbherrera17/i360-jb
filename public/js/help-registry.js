@@ -168,6 +168,11 @@ const HelpRegistry = {
         '/administrator': {
             file: '/api/docs/administrator-user-guide.md',
             title: 'Administrator Help'
+        },
+        // Phase 48: Integrations
+        '/integrations': {
+            file: '/api/docs/integrations-user-guide.md',
+            title: 'Integrations Help'
         }
     },
 

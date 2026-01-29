@@ -274,6 +274,7 @@ module.exports = function(supabase) {
                 max_monthly_api_calls,
                 max_storage_gb,
                 features,
+                integration_addons,
                 allow_self_upgrade,
                 is_active
             } = req.body;
@@ -295,6 +296,7 @@ module.exports = function(supabase) {
             if (max_monthly_api_calls !== undefined) updateData.max_monthly_api_calls = max_monthly_api_calls;
             if (max_storage_gb !== undefined) updateData.max_storage_gb = max_storage_gb;
             if (features !== undefined) updateData.features = features;
+            if (integration_addons !== undefined) updateData.integration_addons = integration_addons;
             if (allow_self_upgrade !== undefined) updateData.allow_self_upgrade = allow_self_upgrade;
             if (is_active !== undefined) updateData.is_active = is_active;
 

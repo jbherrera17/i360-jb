@@ -64,6 +64,9 @@ const agencyAnalyticsRoutes = require('./routes/agencyAnalytics');
 const platformAdminRoutes = require('./routes/platformAdmin');
 const modulesRoutes = require('./routes/modules');
 const resourceAccessRoutes = require('./routes/resourceAccess');
+const integrationsRoutes = require('./routes/integrations');
+const webhooksRoutes = require('./routes/webhooks');
+const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
 
@@ -165,7 +168,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/admin-department-ai', '/admin-department-ai.html',
     '/admin-okr-capabilities', '/admin-okr-capabilities.html',
     '/my-capabilities', '/my-capabilities.html',
-    '/client-comparison', '/client-comparison.html'];
+    '/client-comparison', '/client-comparison.html',
+    '/integrations', '/integrations.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -423,6 +427,11 @@ function initializeServices() {
         // Phase 45: Resource Access Control
         app.use('/api/resource-access', resourceAccessRoutes(supabase));
 
+        // Phase 48: Integrations
+        app.use('/api/integrations', integrationsRoutes(supabase));
+        app.use('/api/webhooks', webhooksRoutes(supabase));
+        integrationRegistry.initializeProviders();
+
         // Initialize module access middleware for use in other routes
         const moduleAccess = createModuleAccessMiddleware(supabase);
         app.set('moduleAccess', moduleAccess);
@@ -432,6 +441,8 @@ function initializeServices() {
         console.log('  ✅ Client Portal routes registered (Phase 42)');
         console.log('  ✅ Enterprise Multi-Tenancy routes registered (Phase 44)');
         console.log('  ✅ Resource Access Control routes registered (Phase 45)');
+        console.log('  ✅ Integrations routes registered (Phase 48)');
+        console.log('  ✅ Webhooks routes registered (Phase 48)');
         console.log('  ✅ Agency Analytics routes registered (Phase 43)');
         console.log('  ✅ Connection Management routes registered (Phase 40)');
         console.log('  ✅ Users routes registered');

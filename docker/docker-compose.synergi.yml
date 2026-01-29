@@ -1,0 +1,78 @@
+# Synergi Internal Tools - Docker Compose
+# EspoCRM and Strapi for Synergi's own operations (not client-facing)
+#
+# Usage:
+#   docker compose -f docker/docker-compose.synergi.yml up -d
+
+services:
+  espocrm:
+    image: espocrm/espocrm:latest
+    container_name: synergi-espocrm
+    ports:
+      - "8080:80"
+    environment:
+      ESPOCRM_DATABASE_HOST: espocrm-db
+      ESPOCRM_DATABASE_USER: espocrm
+      ESPOCRM_DATABASE_PASSWORD: ${ESPOCRM_DB_PASSWORD:-espocrm_password}
+      ESPOCRM_DATABASE_NAME: espocrm
+      ESPOCRM_ADMIN_USERNAME: admin
+      ESPOCRM_ADMIN_PASSWORD: ${ESPOCRM_ADMIN_PASSWORD:-admin}
+      ESPOCRM_SITE_URL: ${ESPOCRM_SITE_URL:-http://localhost:8080}
+    volumes:
+      - espocrm-data:/var/www/html
+    depends_on:
+      - espocrm-db
+    restart: unless-stopped
+
+  espocrm-db:
+    image: mysql:8.0
+    container_name: synergi-espocrm-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ESPOCRM_DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: espocrm
+      MYSQL_USER: espocrm
+      MYSQL_PASSWORD: ${ESPOCRM_DB_PASSWORD:-espocrm_password}
+    volumes:
+      - espocrm-db-data:/var/lib/mysql
+    restart: unless-stopped
+
+  strapi:
+    build:
+      context: ./strapi
+      dockerfile: Dockerfile
+    container_name: synergi-strapi
+    ports:
+      - "1337:1337"
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: strapi-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: ${STRAPI_DB_PASSWORD:-strapi_password}
+      DATABASE_SSL: "false"
+      ADMIN_JWT_SECRET: ${STRAPI_JWT_SECRET:-change-me-in-production}
+      APP_KEYS: ${STRAPI_APP_KEYS:-key1,key2,key3,key4}
+      API_TOKEN_SALT: ${STRAPI_API_TOKEN_SALT:-change-me-salt}
+    volumes:
+      - strapi-data:/opt/app
+    depends_on:
+      - strapi-db
+    restart: unless-stopped
+
+  strapi-db:
+    image: postgres:15-alpine
+    container_name: synergi-strapi-db
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: ${STRAPI_DB_PASSWORD:-strapi_password}
+    volumes:
+      - strapi-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  espocrm-data:
+  espocrm-db-data:
+  strapi-data:
+  strapi-db-data:

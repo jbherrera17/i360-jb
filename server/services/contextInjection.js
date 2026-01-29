@@ -305,10 +305,79 @@ async function getAvailableContext(agentId, supabase) {
     }
 }
 
+/**
+ * Inject Google Workspace context for a user (emails, calendar, files)
+ * Called when an agent has googleContext enabled in its config
+ */
+async function injectGoogleContext(userId, agentConfig, supabase) {
+    try {
+        const integrationRegistry = require('./integrations');
+        const credentialManager = require('./integrations/credentialManager');
+
+        const provider = integrationRegistry.getProvider('google', supabase);
+        if (!provider) return null;
+
+        const credentials = await credentialManager.getCredentials(
+            supabase, userId, 'google',
+            provider.refreshAccessToken.bind(provider)
+        );
+        if (!credentials) return null;
+
+        const googleConfig = agentConfig.googleContext || {};
+        const contextParts = [];
+
+        if (googleConfig.gmail !== false) {
+            try {
+                const result = await provider.gmail.getRecent(credentials.accessToken, {
+                    maxResults: googleConfig.gmailCount || 10,
+                    query: googleConfig.gmailQuery || ''
+                });
+                const formatted = provider.gmail.formatForContext(result.messages);
+                contextParts.push(`## Recent Emails\n${formatted}`);
+            } catch (err) {
+                console.error('[GoogleContext] Gmail fetch failed:', err.message);
+            }
+        }
+
+        if (googleConfig.calendar !== false) {
+            try {
+                const result = await provider.calendar.getUpcoming(credentials.accessToken, {
+                    maxResults: googleConfig.calendarCount || 5
+                });
+                const formatted = provider.calendar.formatForContext(result.events);
+                contextParts.push(`## Upcoming Events\n${formatted}`);
+            } catch (err) {
+                console.error('[GoogleContext] Calendar fetch failed:', err.message);
+            }
+        }
+
+        if (googleConfig.drive) {
+            try {
+                const result = await provider.drive.listFiles(credentials.accessToken, {
+                    maxResults: googleConfig.driveCount || 10,
+                    query: googleConfig.driveQuery || ''
+                });
+                const formatted = provider.drive.formatForContext(result.files);
+                contextParts.push(`## Recent Files\n${formatted}`);
+            } catch (err) {
+                console.error('[GoogleContext] Drive fetch failed:', err.message);
+            }
+        }
+
+        return contextParts.length > 0
+            ? `# Google Workspace Context\n\n${contextParts.join('\n\n')}`
+            : null;
+    } catch (error) {
+        console.error('[GoogleContext] Injection failed:', error.message);
+        return null;
+    }
+}
+
 module.exports = {
     assembleContext,
     getAvailableContext,
     estimateTokens,
     formatAsset,
-    truncateContent
+    truncateContent,
+    injectGoogleContext
 };

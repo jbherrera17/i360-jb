@@ -161,6 +161,16 @@ function createTestApp(options = {}) {
     app.use('/api/analytics', agencyAnalyticsRoutes(mockSupabase));
   }
 
+  if (routes.includes('integrations')) {
+    const integrationsRoutes = require('../../server/routes/integrations');
+    app.use('/api/integrations', integrationsRoutes(mockSupabase));
+  }
+
+  if (routes.includes('webhooks')) {
+    const webhooksRoutes = require('../../server/routes/webhooks');
+    app.use('/api/webhooks', webhooksRoutes(mockSupabase));
+  }
+
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Test app error:', err);

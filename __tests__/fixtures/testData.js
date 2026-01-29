@@ -217,12 +217,56 @@ const createMockResponse = () => {
 
 const createMockNext = () => jest.fn();
 
+// Test Integration Providers
+const testProviders = {
+  google: {
+    id: 'provider-google-001',
+    slug: 'google',
+    name: 'Google Workspace',
+    category: 'productivity',
+    auth_type: 'oauth2',
+    addon_category: 'productivity',
+    base_monthly_price: 99.00,
+    capabilities: { entities: ['emails', 'files', 'events'], operations: ['read', 'write'], features: ['oauth'] },
+    status: 'active'
+  },
+  salesforce: {
+    id: 'provider-sf-001',
+    slug: 'salesforce',
+    name: 'Salesforce',
+    category: 'crm',
+    auth_type: 'oauth2',
+    addon_category: 'client_system',
+    base_monthly_price: 299.00,
+    capabilities: { entities: ['contacts', 'accounts'], operations: ['read', 'write', 'sync'], features: ['oauth'] },
+    status: 'active'
+  }
+};
+
+// Test User Integrations
+const testIntegrations = {
+  googleConnected: {
+    id: 'user-int-001',
+    user_id: 'regular-user-001',
+    provider_id: 'provider-google-001',
+    org_id: 'org-001',
+    external_email: 'user@gmail.com',
+    status: 'active',
+    last_sync_at: '2026-01-15T10:00:00Z',
+    error_count: 0,
+    token_expires_at: new Date(Date.now() + 3600000).toISOString(),
+    integration_providers: testProviders.google
+  }
+};
+
 module.exports = {
   testUsers,
   testAgents,
   testContextAssets,
   testContextMappings,
   testTokens,
+  testProviders,
+  testIntegrations,
   createMockRequest,
   createMockResponse,
   createMockNext

@@ -66,7 +66,8 @@ const navConfig = {
                 { href: '/research-studio.html', icon: 'book-open-text', label: 'Research Studio' },
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
                 { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
-                { href: '/guides.html', icon: 'book-open', label: 'Guides' }
+                { href: '/guides.html', icon: 'book-open', label: 'Guides' },
+                { href: '/integrations.html', icon: 'plug', label: 'Integrations' }
             ]
         },
         {

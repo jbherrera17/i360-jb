@@ -405,6 +405,17 @@
         let hasChanges = false;
         let tierModules = {}; // { tierId: { modules: [], by_category: {} } }
 
+        const ADDON_CATEGORIES = {
+            productivity: 'Productivity (Google, Microsoft, Slack)',
+            client_system: 'Client Systems (Salesforce, HubSpot)'
+        };
+
+        const ADDON_FIELDS = {
+            monthly_price: { label: 'Price/mo ($)', step: '0.01' },
+            api_call_limit: { label: 'API Calls' },
+            user_limit: { label: 'Users' }
+        };
+
         const FEATURE_LABELS = {
             white_label: 'White Label',
             custom_branding: 'Custom Branding',
@@ -590,6 +601,29 @@
                         </div>
 
                         <div class="tier-section">
+                            <div class="tier-section-title">Integration Addon Pricing</div>
+                            ${Object.entries(ADDON_CATEGORIES).map(([catKey, catLabel]) => {
+                                const addon = tier.integration_addons?.[catKey] || {};
+                                return `
+                                    <div style="margin-bottom: 0.75rem;">
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">${catLabel}</div>
+                                        <div class="limit-grid">
+                                            ${Object.entries(ADDON_FIELDS).map(([field, meta]) => `
+                                                <div class="limit-item">
+                                                    <span class="limit-label">${meta.label}</span>
+                                                    <input type="number" class="limit-input"
+                                                           value="${addon[field] || 0}"
+                                                           ${meta.step ? 'step="' + meta.step + '"' : ''}
+                                                           onchange="updateAddon('${tier.id}', '${catKey}', '${field}', this.value)">
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <div class="tier-section">
                             <div class="tier-section-title">
                                 Modules Included
                                 <span class="module-count">${tierModules[tier.id]?.total_count || 0}</span>
@@ -634,14 +668,38 @@
                 </tr>
             `).join('');
 
+            // Integration addon comparison
+            const addonRows = Object.entries(ADDON_CATEGORIES).map(([catKey, catLabel]) => `
+                <tr>
+                    <td><strong>${catLabel}</strong></td>
+                    ${tiers.map(tier => {
+                        const addon = tier.integration_addons?.[catKey];
+                        if (!addon || addon.monthly_price === 0) return '<td style="color: var(--text-muted);">N/A</td>';
+                        return `<td>$${addon.monthly_price}/mo<br><span style="font-size:0.75rem;color:var(--text-secondary);">${(addon.api_call_limit||0).toLocaleString()} calls, ${addon.user_limit||0} users</span></td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+
             tbody.innerHTML = `
                 <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Resource Limits</td></tr>
                 ${limitRows}
                 <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Features</td></tr>
                 ${featureRows}
+                <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Integration Addons</td></tr>
+                ${addonRows}
             `;
 
             lucide.createIcons();
+        }
+
+        function updateAddon(tierId, category, field, value) {
+            const tier = tiers.find(t => t.id === tierId);
+            if (tier) {
+                if (!tier.integration_addons) tier.integration_addons = {};
+                if (!tier.integration_addons[category]) tier.integration_addons[category] = {};
+                tier.integration_addons[category][field] = field === 'monthly_price' ? parseFloat(value) || 0 : parseInt(value) || 0;
+                hasChanges = true;
+            }
         }
 
         function updateTier(tierId, field, value) {
@@ -696,6 +754,7 @@
                             max_research_studios: tier.max_research_studios,
                             max_monthly_api_calls: tier.max_monthly_api_calls,
                             features: tier.features,
+                            integration_addons: tier.integration_addons,
                             allow_self_upgrade: tier.allow_self_upgrade
                         })
                     });
