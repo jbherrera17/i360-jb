@@ -315,17 +315,13 @@ module.exports = function(supabase) {
                 userRoleLevelNum = roleData?.level || 1;
             }
 
-            // Parallel fetch all cards
-            const [contextAssets, agents, actions, workflows, briefing] = await Promise.all([
-                // Context Assets - filtered by department (or global)
+            // Parallel fetch all cards — filtered by department and role
+            const [contextAssets, agents, actions, skills, workflows, briefing] = await Promise.all([
                 getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum),
-                // Agents - filtered by department (via junction) and role
                 getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum),
-                // Actions - filtered by department (via junction)
-                getFilteredActions(supabase, deptId, limitNum),
-                // Workflows - filtered by department and role
+                getFilteredActions(supabase, deptId, userRoleLevelNum, limitNum),
+                getFilteredSkills(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limitNum),
-                // Briefing - user's latest
                 getLatestBriefing(supabase, userId)
             ]);
 
@@ -341,6 +337,7 @@ module.exports = function(supabase) {
                     contextAssets,
                     agents,
                     actions,
+                    skills,
                     workflows,
                     briefing,
                     strategyOverview
@@ -520,10 +517,12 @@ module.exports = function(supabase) {
     }
 
     /**
-     * Get actions filtered by department
+     * Get actions filtered by department and role
      */
-    async function getFilteredActions(supabase, deptId, limit) {
+    async function getFilteredActions(supabase, deptId, userRoleLevelNum, limit) {
         try {
+            let actions = [];
+
             if (deptId) {
                 // Get actions mapped to user's department
                 const { data: deptActions, error } = await supabase
@@ -536,26 +535,118 @@ module.exports = function(supabase) {
                     .eq('department_id', deptId)
                     .order('is_primary', { ascending: false })
                     .order('priority', { ascending: true })
-                    .limit(limit);
+                    .limit(limit * 2);
 
                 if (error) throw error;
 
-                return (deptActions || [])
+                actions = (deptActions || [])
                     .filter(da => da.action && da.action.status === 'active')
                     .map(da => da.action);
+            } else {
+                // No department - get general execute actions
+                const { data: allActions, error } = await supabase
+                    .from('actions')
+                    .select('id, name, slug, description, suite, status')
+                    .eq('status', 'active')
+                    .eq('suite', 'execute')
+                    .limit(limit * 2);
+
+                if (error) throw error;
+                actions = allActions || [];
             }
 
-            // No department - get general execute actions
-            const { data: actions, error } = await supabase
-                .from('actions')
-                .select('id, name, slug, description, suite, status')
-                .eq('status', 'active')
-                .eq('suite', 'execute')
-                .limit(limit);
+            // Role filter via action_roles.role_level
+            const filtered = [];
+            for (const action of actions) {
+                const { data: roleReqs } = await supabase
+                    .from('action_roles')
+                    .select('role_level')
+                    .eq('action_id', action.id)
+                    .not('role_level', 'is', null);
 
-            return actions || [];
+                if (!roleReqs?.length) {
+                    filtered.push(action);
+                    continue;
+                }
+
+                const { data: levels } = await supabase
+                    .from('business_role_levels')
+                    .select('level')
+                    .in('id', roleReqs.map(r => r.role_level));
+
+                const minLevel = Math.min(...(levels || []).map(l => l.level));
+                if (userRoleLevelNum >= minLevel) {
+                    filtered.push(action);
+                }
+            }
+
+            return filtered.slice(0, limit);
         } catch (error) {
             console.error('Error in getFilteredActions:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get skills filtered by department and role
+     */
+    async function getFilteredSkills(supabase, deptId, userRoleLevelNum, limit) {
+        try {
+            const { data: skills, error } = await supabase
+                .from('skills')
+                .select('id, name, display_name, description, icon, color, category, suite')
+                .eq('status', 'active')
+                .order('usage_count', { ascending: false })
+                .limit(limit * 2);
+
+            if (error) throw error;
+
+            // Department filter via skill_departments junction
+            let deptFiltered = [];
+            for (const skill of (skills || [])) {
+                const { data: deptMappings } = await supabase
+                    .from('skill_departments')
+                    .select('department_id')
+                    .eq('skill_id', skill.id);
+
+                // No department mappings = global (accessible to all depts)
+                if (!deptMappings?.length) {
+                    deptFiltered.push(skill);
+                    continue;
+                }
+
+                if (deptId && deptMappings.some(m => m.department_id === deptId)) {
+                    deptFiltered.push(skill);
+                }
+            }
+
+            // Role filter via skill_roles junction
+            const filtered = [];
+            for (const skill of deptFiltered) {
+                const { data: roleReqs } = await supabase
+                    .from('skill_roles')
+                    .select('role_level')
+                    .eq('skill_id', skill.id);
+
+                if (!roleReqs?.length) {
+                    filtered.push(skill);
+                    continue;
+                }
+
+                const { data: levels } = await supabase
+                    .from('business_role_levels')
+                    .select('level')
+                    .in('id', roleReqs.map(r => r.role_level));
+
+                const minLevel = Math.min(...(levels || []).map(l => l.level));
+                if (userRoleLevelNum >= minLevel) {
+                    filtered.push(skill);
+                }
+            }
+
+            return filtered.slice(0, limit);
+        } catch (error) {
+            console.error('Error in getFilteredSkills:', error);
             return [];
         }
     }

@@ -1275,6 +1275,37 @@
                             </div>
                         </div>
 
+                        <!-- Phase 50: Skills Card -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3><i data-lucide="wand-2"></i> Skills</h3>
+                                <a href="/skills.html" style="font-size: 0.8rem; color: var(--primary);">View All</a>
+                            </div>
+                            <div class="section-content">
+                                ${(personalizedCards.skills || []).length > 0 ? `
+                                    <div class="action-list">
+                                        ${personalizedCards.skills.slice(0, 5).map(s => `
+                                            <div class="action-item" onclick="window.location.href='/skills.html?skill=${s.name}'">
+                                                <div class="action-item-icon" style="${s.color ? `color:${s.color}` : ''}">
+                                                    <i data-lucide="${s.icon || 'wand-2'}"></i>
+                                                </div>
+                                                <div class="action-item-info">
+                                                    <div class="action-item-name">${s.display_name || s.name}</div>
+                                                    <div class="action-item-suite">${s.category || 'skill'}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i data-lucide="wand-2"></i></div>
+                                        <p>No skills available</p>
+                                        <a href="/skills.html" style="color: var(--primary);">Browse skills</a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
                         <!-- Phase 37: Daily Briefing Card -->
                         <div class="section-card" style="grid-column: span 2;">
                             <div class="section-header">

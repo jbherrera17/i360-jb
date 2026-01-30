@@ -648,7 +648,85 @@ async function initNavigation() {
 
     // Update active nav item and scroll into view
     updateActiveNavItem();
+
+    // Show impersonation banner if active
+    showImpersonationBanner();
 }
+
+/**
+ * Show/hide impersonation banner across all pages
+ */
+function showImpersonationBanner() {
+    // Remove existing banner
+    const existing = document.getElementById('impersonation-banner');
+    if (existing) existing.remove();
+
+    const data = localStorage.getItem('insight360_impersonation');
+    if (!data) return;
+
+    try {
+        const imp = JSON.parse(data);
+        const banner = document.createElement('div');
+        banner.id = 'impersonation-banner';
+        banner.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            color: #000; padding: 8px 20px; display: flex;
+            align-items: center; justify-content: center; gap: 12px;
+            font-weight: 600; font-size: 0.85rem;
+        `;
+        banner.innerHTML = `
+            <span>Acting as <strong>${imp.role}</strong> in <strong>${imp.org_name}</strong></span>
+            <button onclick="endImpersonationGlobal()" style="
+                background: rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.3);
+                color: #000; padding: 4px 12px; border-radius: 4px; cursor: pointer;
+                font-weight: 600; font-size: 0.8rem;
+            ">End Session</button>
+        `;
+        document.body.prepend(banner);
+
+        // Push content down
+        document.body.style.paddingTop = '40px';
+    } catch (e) {
+        console.warn('Failed to parse impersonation state');
+    }
+}
+
+/**
+ * End impersonation from any page via the banner
+ */
+async function endImpersonationGlobal() {
+    try {
+        const token = (() => {
+            const cookies = document.cookie.split(';');
+            for (const c of cookies) {
+                const [n, v] = c.trim().split('=');
+                if (n === 'auth_token') return v;
+            }
+            return localStorage.getItem('insight360_token');
+        })();
+
+        await fetch('/api/auth/impersonate', {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        localStorage.removeItem('insight360_impersonation');
+        const banner = document.getElementById('impersonation-banner');
+        if (banner) banner.remove();
+        document.body.style.paddingTop = '';
+
+        // Reload page to refresh context
+        window.location.reload();
+    } catch (e) {
+        console.error('Failed to end impersonation:', e);
+    }
+}
+
+// Listen for impersonation changes from profile page
+window.addEventListener('impersonationChanged', (e) => {
+    showImpersonationBanner();
+});
 
 /**
  * Refresh navigation with latest modules from API

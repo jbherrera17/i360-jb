@@ -1,6 +1,6 @@
 # Insight 360 Pricing Strategy
 
-**Version:** 1.0 | **Date:** January 2026 | **Classification:** Internal - Confidential
+**Version:** 2.0 | **Date:** Wednesday, January 29, 2026 | **Classification:** Internal - Confidential
 
 ---
 
@@ -38,14 +38,16 @@ The strategy balances **value capture**, **market penetration**, and **channel e
 
 ## Product Packaging
 
-### Tier Structure
+### Tier Structure (Implemented)
 
-| Tier | Target | Core Capability |
-|------|--------|-----------------|
-| **Starter** | SMB, Teams | Essential AI chat + basic context |
-| **Professional** | Mid-Market | Full Align/Strategy/Execute framework |
-| **Enterprise** | Large Organizations | Advanced governance, unlimited scale |
-| **Agency** | Consultancies | Multi-client management, white-label |
+| Tier | Sort | Monthly | Annual | Members | Clients | Agents | Workflows |
+|------|:----:|--------:|-------:|--------:|--------:|-------:|----------:|
+| **Starter** | 1 | $29 | $290 | 3 | 0 | 5 | 3 |
+| **Business** | 2 | $99 | $990 | 10 | 0 | 25 | 15 |
+| **Enterprise** | 3 | $299 | $2,990 | 100 | 0 | 100 | 50 |
+| **Agency** | 4 | $499 | $4,990 | 50 | 100 | 200 | 100 |
+
+> **Note:** These are the base platform prices implemented in `subscription_tiers`. The aspirational pricing in the Direct Sales and Agency Sales sections below represents target pricing for the go-to-market launch, which may differ from the database-seeded defaults.
 
 ---
 
@@ -58,40 +60,56 @@ The strategy balances **value capture**, **market penetration**, and **channel e
 
 | Component | Included |
 |-----------|----------|
-| **Users** | Up to 10 |
+| **Users** | Up to 3 |
 | **AI Models** | Claude Haiku, GPT-4o Mini |
 | **Context Assets** | 25 |
-| **Agents** | 10 pre-built |
-| **Workflows** | 5 |
-| **Chat History** | 30 days |
+| **Agents** | 5 pre-built |
+| **Skills** | 10 |
+| **Workflows** | 3 |
+| **Research Studios** | 1 |
+| **API Calls** | 500/month |
+| **Storage** | 1 GB |
 | **Support** | Email (business hours) |
+| **Integrations** | Not available |
 
-**Pricing:**
+**Pricing (Implemented):**
+- Monthly: **$29/month**
+- Annual: **$290/year** ($24.17/month)
+
+**Target Launch Pricing:**
 - Monthly: **$299/month**
 - Annual: **$249/month** (billed annually, 17% savings)
 
 ---
 
-#### Professional Plan
-**Target:** Mid-size companies, full transformation journey
+#### Business Plan
+**Target:** Growing teams, mid-size companies, full transformation journey
 
 | Component | Included |
 |-----------|----------|
-| **Users** | Up to 50 |
+| **Users** | Up to 10 |
 | **AI Models** | All Claude, GPT-4o, Gemini |
-| **Context Assets** | Unlimited |
-| **Agents** | Full library (40+) |
-| **Workflows** | Unlimited |
+| **Context Assets** | 150 |
+| **Agents** | 25 (full library) |
+| **Skills** | 50 |
+| **Workflows** | 15 |
 | **Align 120** | Full access |
 | **Strategy 120** | Full access |
-| **Execute 120** | 5 departments |
-| **Research Studio** | 3 studios |
+| **Execute 120** | Full access |
+| **Research Studios** | 5 |
 | **Briefings** | Daily automated |
-| **Chat History** | 1 year |
+| **API Calls** | 5,000/month |
+| **Storage** | 10 GB |
+| **Custom Branding** | Yes |
+| **API Access** | Yes |
+| **Advanced Analytics** | Yes |
 | **Support** | Priority email + chat |
-| **Onboarding** | Guided setup session |
 
-**Pricing:**
+**Pricing (Implemented):**
+- Monthly: **$99/month**
+- Annual: **$990/year** ($82.50/month)
+
+**Target Launch Pricing:**
 - Monthly: **$999/month**
 - Annual: **$799/month** (billed annually, 20% savings)
 
@@ -99,6 +117,8 @@ The strategy balances **value capture**, **market penetration**, and **channel e
 - Additional users: $25/user/month
 - Additional departments: $100/dept/month
 - Premium models (Opus): $200/month
+- Productivity integrations (Google Workspace): $49/month
+- Client system integrations (CRM): $149/month
 
 ---
 
@@ -107,31 +127,45 @@ The strategy balances **value capture**, **market penetration**, and **channel e
 
 | Component | Included |
 |-----------|----------|
-| **Users** | Unlimited |
+| **Users** | Up to 100 |
 | **AI Models** | All models including Opus 4.5 |
-| **Context Assets** | Unlimited |
-| **Agents** | Full library + custom |
-| **Workflows** | Unlimited + custom development |
+| **Context Assets** | 500 |
+| **Agents** | 100 (full library + custom) |
+| **Skills** | 200 |
+| **Workflows** | 50 + custom development |
 | **All 120 Modules** | Full access, all features |
 | **Parthenon Governance** | Full organizational modeling |
 | **Integrity Monitoring** | Complete dashboard |
-| **Research Studios** | Unlimited |
+| **Research Studios** | 20 |
 | **Thought Leadership** | Full platform |
+| **API Calls** | 50,000/month |
+| **Storage** | 100 GB |
 | **API Access** | Full API with rate limits |
 | **SSO/SAML** | Included |
+| **Custom Branding** | Yes |
+| **Advanced Analytics** | Yes |
+| **Priority Support** | Yes |
 | **Audit Logging** | Advanced compliance |
 | **Data Residency** | Region selection |
 | **Support** | 24/7 + dedicated CSM |
 | **Training** | Custom training program |
 | **SLA** | 99.9% uptime guarantee |
 
-**Pricing:**
+**Pricing (Implemented):**
+- Monthly: **$299/month**
+- Annual: **$2,990/year** ($249.17/month)
+
+**Target Launch Pricing:**
 - Starting at **$3,500/month** (annual commitment)
 - Custom pricing based on:
   - Number of departments
   - API usage volume
   - Custom development needs
   - Support requirements
+
+**Integration Add-Ons:**
+- Productivity integrations (Google Workspace): $99/month (25K API calls, 50 users)
+- Client system integrations (CRM): $299/month (100K API calls, 100 users)
 
 **Typical Enterprise Deal:** $50,000 - $250,000 ARR
 
@@ -146,7 +180,32 @@ The strategy balances **value capture**, **market penetration**, and **channel e
 | **Custom Workflow Development** | $1,500/workflow | Complex workflow automation |
 | **Context Library Setup** | $3,000 - $10,000 | Full context asset population |
 | **Executive Training** | $2,500/session | Leadership alignment workshop |
-| **Advanced Integration** | $5,000 - $25,000 | Custom integrations |
+| **Custom Integration Build** | $2,500 setup + $199/month | Custom provider development |
+
+### Integration Add-Ons (Implemented)
+
+Integrations are billable add-ons gated by subscription tier. Pricing is admin-configurable per tier via the Platform Admin tier setup page.
+
+| Add-On Category | Starter | Business | Enterprise | Agency |
+|-----------------|:-------:|:--------:|:----------:|:------:|
+| **Productivity** (Google Workspace, Microsoft 365, Slack) | — | $49/mo | $99/mo | $99/mo |
+| **Client Systems** (Salesforce, HubSpot, CRM) | — | $149/mo | $299/mo | $299/mo |
+| **API Call Limit (Productivity)** | — | 5,000 | 25,000 | 50,000 |
+| **API Call Limit (Client Systems)** | — | 10,000 | 100,000 | 200,000 |
+| **User Limit (Productivity)** | — | 5 | 50 | 50 |
+| **User Limit (Client Systems)** | — | 10 | 100 | 200 |
+
+**Per-Provider Base Pricing (from provider registry):**
+
+| Provider | Category | Base Price | Auth | Status |
+|----------|----------|-----------|------|--------|
+| Google Workspace | Productivity | $99/mo | OAuth2 | Active |
+| Microsoft 365 | Productivity | $99/mo | OAuth2 | Beta |
+| Slack | Communication | $99/mo | OAuth2 | Beta |
+| Salesforce | CRM | $299/mo | OAuth2 | Active |
+| HubSpot | CRM | $299/mo | OAuth2 | Active |
+| EspoCRM | CRM | Free | API Key | Active (internal) |
+| Strapi CMS | CMS | Free | API Key | Active (internal) |
 
 ---
 
@@ -189,7 +248,7 @@ The strategy balances **value capture**, **market penetration**, and **channel e
 
 #### Partner Pricing (Off List)
 
-**Professional Plan - Partner Sell:**
+**Business Plan - Partner Sell:**
 - List: $999/month
 - Silver: $799/month (20% off) → Partner sells at $899-999
 - Gold: $699/month (30% off) → Partner sells at $849-999
@@ -275,70 +334,46 @@ Partners embedding i360 capabilities in their products:
 
 The Agency tier enables consulting firms, digital agencies, and advisory practices to use Insight 360 to serve their own clients at scale.
 
-### Agency Pricing Structure
+### Agency Pricing Structure (Implemented)
 
-#### Agency Starter
-**Target:** Small consultancies, solo practitioners
+The Agency tier is a single implemented tier with the highest resource limits and full white-label capabilities. Manual approval is required (no self-upgrade).
 
 | Component | Included |
 |-----------|----------|
-| **Agency Users** | Up to 5 |
-| **Client Organizations** | Up to 5 |
+| **Agency Users** | Up to 50 |
+| **Client Organizations** | Up to 100 |
 | **Client Portal Users** | Unlimited |
-| **Branding** | Custom logo |
-| **Analytics** | Basic dashboard |
-| **Assessments** | Align 120 only |
-
-**Pricing:**
-- **$499/month** (annual commitment)
-- Per additional client: $75/month
-
----
-
-#### Agency Professional
-**Target:** Growing agencies, regional consultancies
-
-| Component | Included |
-|-----------|----------|
-| **Agency Users** | Up to 15 |
-| **Client Organizations** | Up to 25 |
-| **Client Portal Users** | Unlimited |
-| **Branding** | Full white-label |
-| **Analytics** | Full agency dashboard |
-| **All 120 Modules** | Complete framework |
-| **Report Templates** | Customizable |
-| **Client Comparison** | Cross-client analysis |
-
-**Pricing:**
-- **$1,499/month** (annual commitment)
-- Per additional client: $50/month
-- Volume discount: 20% off for 50+ clients
-
----
-
-#### Agency Enterprise
-**Target:** Large consultancies, national/global firms
-
-| Component | Included |
-|-----------|----------|
-| **Agency Users** | Unlimited |
-| **Client Organizations** | Unlimited |
-| **Client Portal** | Full customization |
-| **Branding** | Complete white-label |
-| **Analytics** | Advanced + API |
-| **All Modules** | Full platform |
-| **Multi-Region** | Data residency options |
+| **Agents** | 200 |
+| **Skills** | 500 |
+| **Workflows** | 100 |
+| **Context Assets** | 1,000 |
+| **Research Studios** | 50 |
+| **API Calls** | 100,000/month |
+| **Storage** | 500 GB |
+| **White-Label** | Full branding |
+| **Custom Branding** | Yes |
 | **API Access** | Full programmatic access |
-| **Custom Development** | Included hours |
-| **Dedicated Support** | Named CSM |
+| **SSO** | Yes |
+| **Priority Support** | Yes |
+| **Advanced Analytics** | Yes |
+| **Client Portal** | Full customization |
+| **All Modules** | Full platform |
 
-**Pricing:**
-- Starting at **$4,999/month**
-- Custom pricing based on:
-  - Client volume
-  - Geographic distribution
-  - Custom requirements
-  - Support needs
+**Pricing (Implemented):**
+- Monthly: **$499/month**
+- Annual: **$4,990/year** ($415.83/month)
+
+**Integration Add-Ons:**
+- Productivity integrations: $99/month (50K API calls, 50 users)
+- Client system integrations: $299/month (200K API calls, 200 users)
+
+**Target Launch Pricing (aspirational sub-tiers):**
+
+| Sub-Tier | Target | Price | Clients |
+|----------|--------|-------|---------|
+| Agency Starter | Solo practitioners | $499/mo | Up to 5 |
+| Agency Professional | Regional consultancies | $1,499/mo | Up to 25 |
+| Agency Enterprise | National/global firms | $4,999/mo | Unlimited |
 
 ---
 
@@ -375,13 +410,16 @@ Agencies can bill their clients using various models:
 
 | Item | Monthly | Annual |
 |------|---------|--------|
-| **Platform Cost (Professional)** | $1,499 | $17,988 |
+| **Platform Cost (Agency tier)** | $499 | $4,990 |
+| **CRM Integration Add-On** | $299 | $3,588 |
+| **Productivity Integration Add-On** | $99 | $1,188 |
+| **Total Platform Cost** | $897 | $9,766 |
 | **Average Revenue per Client** | $3,000 | $36,000 |
 | **Total Client Revenue (20)** | $60,000 | $720,000 |
-| **Gross Margin** | 97.5% | 97.5% |
-| **Net Profit on Platform** | $58,501 | $702,012 |
+| **Gross Margin** | 98.5% | 98.6% |
+| **Net Profit on Platform** | $59,103 | $710,234 |
 
-**Key Insight:** Platform cost is ~2.5% of potential client revenue, enabling 40x+ margin on software costs.
+**Key Insight:** Platform cost is ~1.5% of potential client revenue, enabling 65x+ margin on software costs at implemented pricing.
 
 ---
 
@@ -553,7 +591,24 @@ Agencies can deliver (and fully retain revenue from):
 
 ---
 
-## Appendix A: Pricing Calculator Inputs
+## Appendix A: Implemented Tier Feature Matrix
+
+Source: `subscription_tiers` table (`db/phase44-enterprise-multitenancy.sql`)
+
+| Feature | Starter | Business | Enterprise | Agency |
+|---------|:-------:|:--------:|:----------:|:------:|
+| White Label | — | — | — | ✅ |
+| Custom Branding | — | ✅ | ✅ | ✅ |
+| API Access | — | ✅ | ✅ | ✅ |
+| SSO | — | — | ✅ | ✅ |
+| Priority Support | — | — | ✅ | ✅ |
+| Advanced Analytics | — | ✅ | ✅ | ✅ |
+| Client Portal | — | — | — | ✅ |
+| Self-Upgrade | ✅ | ✅ | ✅ | Manual |
+
+---
+
+## Appendix B: Pricing Calculator Inputs (Original)
 
 ### Usage-Based Factors
 
@@ -575,7 +630,7 @@ Agencies can deliver (and fully retain revenue from):
 
 ---
 
-## Appendix B: Competitive Pricing Reference
+## Appendix C: Competitive Pricing Reference
 
 | Competitor | Pricing Model | Comparable Tier |
 |------------|---------------|-----------------|
@@ -589,7 +644,7 @@ Agencies can deliver (and fully retain revenue from):
 
 ---
 
-## Appendix C: Agency ROI Calculator
+## Appendix D: Agency ROI Calculator
 
 ### Input Variables
 - Number of clients served
@@ -604,11 +659,11 @@ Agencies can deliver (and fully retain revenue from):
 |----------|-------|
 | Clients | 15 |
 | Monthly retainer | $3,000 |
-| Platform cost | $1,499 |
+| Platform cost (Agency + integrations) | $897 |
 | **Monthly Revenue** | $45,000 |
-| **Monthly Cost** | $1,499 |
-| **Gross Margin** | 96.7% |
-| **Annual Platform ROI** | 2,900% |
+| **Monthly Cost** | $897 |
+| **Gross Margin** | 98.0% |
+| **Annual Platform ROI** | 4,916% |
 
 ---
 

@@ -394,7 +394,9 @@ function initializeServices() {
         app.use('/api/align120', align120Routes(supabase));
         app.use('/api/strategy120', strategy120Routes(supabase));
         app.use('/api/execute120', execute120Routes(supabase));
-        app.use('/api/auth', authRoutes(supabase));
+        const authRouter = authRoutes(supabase);
+        app.locals.impersonationStore = authRouter.impersonationStore;
+        app.use('/api/auth', authRouter);
         app.use('/api/onboarding', onboardingRoutes(supabase));
         app.use('/api/business-roles', businessRolesRoutes);
         app.use('/api/departments', departmentsRoutes);

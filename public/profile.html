@@ -239,6 +239,22 @@
             color: #6b7280;
         }
 
+        .role-badge.platform-admin {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .org-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
         /* Onboarding Progress */
         .onboarding-progress {
             display: flex;
@@ -576,6 +592,22 @@
                                     </select>
                                 </div>
 
+                                <div class="form-group">
+                                    <label class="form-label">Organization</label>
+                                    <div class="org-name" id="orgName">
+                                        <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                                        <span>—</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" id="platformAdminGroup" style="display:none;">
+                                    <label class="form-label">Platform Role</label>
+                                    <div class="role-badge platform-admin" id="platformAdminBadge">
+                                        <i data-lucide="crown" style="width:16px;height:16px;"></i>
+                                        <span id="platformAdminLabel">Platform Administrator</span>
+                                    </div>
+                                </div>
+
                                 <div class="form-group full-width">
                                     <span class="member-since">
                                         <i data-lucide="calendar"></i>
@@ -611,6 +643,59 @@
                                 <input type="checkbox" id="darkModeToggle" checked>
                                 <span class="toggle-slider"></span>
                             </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Act As Card (Platform Admins Only) -->
+                <div class="profile-card" id="actAsCard" style="display:none;">
+                    <div class="profile-card-header">
+                        <h2><i data-lucide="user-cog"></i> Act As (Impersonation)</h2>
+                    </div>
+                    <div class="profile-card-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                            Temporarily switch your organization and role context for testing. All actions will use the impersonated context.
+                        </p>
+
+                        <!-- Active impersonation banner -->
+                        <div id="activeImpersonation" style="display:none; padding: 1rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <strong style="color: #f59e0b;">Currently Acting As:</strong>
+                                    <span id="impersonationInfo" style="margin-left: 0.5rem;"></span>
+                                </div>
+                                <button class="btn btn-danger" onclick="endImpersonation()" style="padding: 0.5rem 1rem;">
+                                    <i data-lucide="x-circle" style="width:16px;height:16px;"></i> End Session
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Impersonation form -->
+                        <div id="impersonationForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Organization</label>
+                                    <select class="form-select" id="impersonateOrg">
+                                        <option value="">Select an organization...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Role</label>
+                                    <select class="form-select" id="impersonateRole">
+                                        <option value="">Select a role...</option>
+                                        <option value="owner">Owner</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="consultant">Consultant</option>
+                                        <option value="viewer">Viewer</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions" style="justify-content: flex-start;">
+                                <button type="button" class="btn btn-primary" onclick="startImpersonation()" id="startImpersonateBtn">
+                                    <i data-lucide="play"></i> Start Impersonation
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -677,6 +762,7 @@
             setupAvatarPicker();
             setupThemeToggle();
             setupForm();
+            await initActAs();
         });
 
         // Get auth token
@@ -760,6 +846,25 @@
             const roleBadge = document.getElementById('roleBadge');
             roleLabel.textContent = (profile.role || 'user').charAt(0).toUpperCase() + (profile.role || 'user').slice(1);
             roleBadge.className = `role-badge ${profile.role || 'user'}`;
+
+            // Update organization
+            const orgNameEl = document.getElementById('orgName');
+            if (profile.organization && profile.organization.name) {
+                orgNameEl.querySelector('span').textContent = profile.organization.name;
+            } else {
+                orgNameEl.querySelector('span').textContent = 'No organization';
+            }
+
+            // Update platform admin status
+            const platformAdminGroup = document.getElementById('platformAdminGroup');
+            if (profile.is_platform_admin) {
+                platformAdminGroup.style.display = '';
+                const label = document.getElementById('platformAdminLabel');
+                const roleMap = { super_admin: 'Super Administrator', admin: 'Platform Administrator', support: 'Platform Support' };
+                label.textContent = roleMap[profile.platform_admin_role] || 'Platform Administrator';
+            } else {
+                platformAdminGroup.style.display = 'none';
+            }
 
             // Update avatar
             updateAvatarDisplay(profile.avatar_url);
@@ -996,10 +1101,20 @@
             toastMessage.textContent = message;
             toast.className = `toast ${type}`;
 
-            // Update icon
-            const icon = toast.querySelector('i');
-            icon.setAttribute('data-lucide', type === 'success' ? 'check-circle' : 'alert-circle');
-            lucide.createIcons();
+            // Update icon (lucide replaces <i> with <svg>, so handle both)
+            let icon = toast.querySelector('i');
+            if (!icon) {
+                // Replace existing SVG with a fresh <i> tag
+                const svg = toast.querySelector('svg');
+                if (svg) {
+                    icon = document.createElement('i');
+                    svg.replaceWith(icon);
+                }
+            }
+            if (icon) {
+                icon.setAttribute('data-lucide', type === 'success' ? 'check-circle' : 'alert-circle');
+                lucide.createIcons();
+            }
 
             toast.classList.add('show');
 
@@ -1126,6 +1241,124 @@
             } catch (error) {
                 console.error('Error disconnecting platform:', error);
                 showToast('Failed to disconnect: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // IMPERSONATION (Platform Admin "Act As")
+        // ============================================
+
+        async function initActAs() {
+            if (!currentProfile?.is_platform_admin) return;
+
+            // Show the card
+            document.getElementById('actAsCard').style.display = '';
+
+            // Load orgs for dropdown
+            try {
+                const token = getAuthToken();
+                const response = await fetch('/api/auth/impersonate/orgs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const select = document.getElementById('impersonateOrg');
+                    (result.data || []).forEach(org => {
+                        const option = document.createElement('option');
+                        option.value = org.id;
+                        option.textContent = `${org.name} (${org.subscription_tier})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load orgs for Act As:', e);
+            }
+
+            // Check for active impersonation
+            await refreshImpersonationState();
+        }
+
+        async function refreshImpersonationState() {
+            try {
+                const token = getAuthToken();
+                const response = await fetch('/api/auth/impersonate', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                const activeDiv = document.getElementById('activeImpersonation');
+                const formDiv = document.getElementById('impersonationForm');
+
+                if (result.success && result.data) {
+                    activeDiv.style.display = '';
+                    formDiv.style.display = 'none';
+                    const info = document.getElementById('impersonationInfo');
+                    info.textContent = `${result.data.role} in ${result.data.org_name}`;
+                    // Store in localStorage for navigation banner
+                    localStorage.setItem('insight360_impersonation', JSON.stringify(result.data));
+                    window.dispatchEvent(new CustomEvent('impersonationChanged', { detail: result.data }));
+                } else {
+                    activeDiv.style.display = 'none';
+                    formDiv.style.display = '';
+                    localStorage.removeItem('insight360_impersonation');
+                    window.dispatchEvent(new CustomEvent('impersonationChanged', { detail: null }));
+                }
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Failed to check impersonation state:', e);
+            }
+        }
+
+        async function startImpersonation() {
+            const orgId = document.getElementById('impersonateOrg').value;
+            const role = document.getElementById('impersonateRole').value;
+
+            if (!orgId || !role) {
+                showToast('Select both an organization and role', 'error');
+                return;
+            }
+
+            try {
+                const token = getAuthToken();
+                const response = await fetch('/api/auth/impersonate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ org_id: orgId, role })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(`Now acting as ${role} in ${result.data.org_name}`, 'success');
+                    await refreshImpersonationState();
+                } else {
+                    showToast(result.error || 'Failed to start impersonation', 'error');
+                }
+            } catch (e) {
+                console.error('Failed to start impersonation:', e);
+                showToast('Failed to start impersonation', 'error');
+            }
+        }
+
+        async function endImpersonation() {
+            try {
+                const token = getAuthToken();
+                const response = await fetch('/api/auth/impersonate', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Impersonation ended', 'success');
+                    await refreshImpersonationState();
+                }
+            } catch (e) {
+                console.error('Failed to end impersonation:', e);
+                showToast('Failed to end impersonation', 'error');
             }
         }
 

@@ -292,6 +292,77 @@ async function canCreatePublicResources(supabase, orgId) {
     return tier?.allow_public_resources === true;
 }
 
+/**
+ * Filter resources by business role level
+ * Phase 50: Generic role-based filtering for any resource type
+ *
+ * Checks the {resourceType}_roles junction table for minimum role requirements.
+ * Resources with no role mappings are accessible to all roles.
+ *
+ * @param {Object} supabase - Supabase client
+ * @param {Array} resources - Array of resource objects (must have .id)
+ * @param {string} userId - User ID to look up business role
+ * @param {string} resourceType - 'agent', 'skill', 'workflow', or 'action'
+ * @returns {Array} Filtered resources the user's role can access
+ */
+async function filterByBusinessRole(supabase, resources, userId, resourceType) {
+    if (!resources || resources.length === 0) return resources;
+    if (!userId) return resources;
+
+    // Look up user's business role level
+    const { data: user } = await supabase
+        .from('users')
+        .select('business_role')
+        .eq('id', userId)
+        .single();
+
+    if (!user?.business_role) return resources; // No role = no filtering
+
+    const { data: roleData } = await supabase
+        .from('business_role_levels')
+        .select('level')
+        .eq('id', user.business_role)
+        .single();
+
+    const userLevel = roleData?.level || 1;
+
+    // Determine junction table and FK column
+    const junctionTable = `${resourceType}_roles`;
+    const fkColumn = `${resourceType}_id`;
+    const roleColumn = 'role_level';
+
+    const filtered = [];
+    for (const resource of resources) {
+        const { data: roleReqs } = await supabase
+            .from(junctionTable)
+            .select(roleColumn)
+            .eq(fkColumn, resource.id);
+
+        // No role requirements = accessible to all
+        if (!roleReqs?.length) {
+            filtered.push(resource);
+            continue;
+        }
+
+        const { data: levels } = await supabase
+            .from('business_role_levels')
+            .select('level')
+            .in('id', roleReqs.map(r => r[roleColumn]).filter(Boolean));
+
+        if (!levels?.length) {
+            filtered.push(resource);
+            continue;
+        }
+
+        const minLevel = Math.min(...levels.map(l => l.level));
+        if (userLevel >= minLevel) {
+            filtered.push(resource);
+        }
+    }
+
+    return filtered;
+}
+
 module.exports = {
     buildResourceAccessFilter,
     buildAgentAccessFilter,
@@ -299,6 +370,7 @@ module.exports = {
     getUserAccessContext,
     canAccessResource,
     filterByModuleAccess,
+    filterByBusinessRole,
     getVisibilityCounts,
     isValidVisibility,
     getDefaultVisibility,

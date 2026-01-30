@@ -1,6 +1,6 @@
 # Insight 360 Platform Briefing
 
-**Version:** 3.30 | **Date:** January 2026 | **Classification:** Internal/Partner
+**Version:** 3.32 | **Date:** Wednesday, January 29, 2026 | **Classification:** Internal/Partner
 
 ---
 
@@ -402,12 +402,21 @@ Unique to Insight 360 - organizational integrity metrics:
 
 ### Data Protection
 
-- **Row-Level Security (RLS)** - Database-enforced multi-tenancy
-- **Encryption** - Data at rest and in transit
+- **Row-Level Security (RLS)** - Database-enforced multi-tenancy on all tables
+- **SECURITY INVOKER Views** - All database views execute with caller's permissions
+- **Encryption** - Data at rest and in transit; AES-256-GCM for integration credentials
 - **Token Hashing** - SHA-256 for sensitive tokens
 - **Session Management** - Secure session handling with expiry
+- **Zero Linter Warnings** - Supabase database linter reports 0 security issues
 
-### Access Control
+### Access Control (Four-Layer Model)
+
+| Layer | Check | Applied To |
+|-------|-------|------------|
+| **1. Account Status** | active/suspended/inactive | Login gate |
+| **2. Tier** | Organization's subscription tier | Module access |
+| **3. Module** | can_access_module() RPC | Feature routes |
+| **4. Visibility** | private/team/org/public | Resource filtering |
 
 - **RBAC** - Role-based access control (Admin, Manager, Member, Viewer)
 - **Feature Flags** - Granular feature enablement
@@ -453,6 +462,23 @@ Unique to Insight 360 - organizational integrity metrics:
 
 ## Integration Capabilities
 
+### External Integrations Framework
+
+Insight 360 includes a pluggable integration architecture for connecting to external systems:
+
+| Category | Providers | Auth |
+|----------|-----------|------|
+| **Productivity** | Google Workspace (Gmail, Drive, Calendar) | Per-user OAuth2 |
+| **CRM** | Salesforce, HubSpot, Generic CRM | OAuth2 / API Key |
+| **Internal Tools** | EspoCRM, Strapi CMS | API Key |
+
+**Integration Features:**
+- **Credential Manager** — AES-256-GCM encryption, automatic token refresh
+- **Sync Engine** — Full and incremental background sync
+- **Webhook Handler** — Signature-verified incoming webhooks
+- **Google Context Injection** — Agents access Gmail, Calendar, and Drive at runtime
+- **Add-On Pricing** — Tier-gated integration billing (Business, Enterprise, Enterprise Plus)
+
 ### Native Integrations
 
 | Service | Capability |
@@ -485,10 +511,10 @@ Unique to Insight 360 - organizational integrity metrics:
 | **Route Files** | 42 |
 | **Pre-built Agents** | 40+ |
 | **Context Asset Types** | 72 |
-| **Database Tables** | 95+ |
+| **Database Tables** | 100+ |
 | **Frontend Pages** | 50 |
 | **Supported LLM Models** | 15+ |
-| **Development Phases** | 48+ |
+| **Development Phases** | 50 |
 
 ---
 
@@ -605,21 +631,28 @@ Unique to Insight 360 - organizational integrity metrics:
 
 ### User-Driven Development
 
-Insight 360 maintains a **robust roadmap prioritized by end user requests**. Feature development is guided by direct customer feedback, ensuring the platform evolves to meet real-world needs rather than hypothetical use cases. This approach has driven 48+ development phases, each delivering tangible value to users.
+Insight 360 maintains a **robust roadmap prioritized by end user requests**. Feature development is guided by direct customer feedback, ensuring the platform evolves to meet real-world needs rather than hypothetical use cases. This approach has driven 50 development phases, each delivering tangible value to users.
+
+### Recently Completed
+
+| Phase | Version | Feature |
+|-------|---------|---------|
+| **49** | v3.31 | External Integrations Framework — Provider registry, OAuth, sync engine, webhooks, add-on pricing |
+| **50** | v3.32 | Database Security Hardening — All views SECURITY INVOKER, RLS on all tables, orphaned view cleanup |
 
 ### Upcoming Phases (2026)
 
 | Phase | Focus Area | Key Features |
 |-------|------------|--------------|
-| **49** | Skills ZIP Import | ZIP file upload, SKILL.md parsing, batch import, binary storage |
-| **50** | Advanced White-Label | Custom domains, branded emails, custom login pages, DNS verification |
-| **51** | Client Self-Service | Self-service onboarding, billing integration, usage dashboards, support portal |
-| **52** | Mobile Optimization | Responsive client portal, PWA support, push notifications, offline access |
+| **51** | Skills ZIP Import | ZIP file upload, SKILL.md parsing, batch import, binary storage |
+| **52** | Advanced White-Label | Custom domains, branded emails, custom login pages, DNS verification |
+| **53** | Client Self-Service | Self-service onboarding, billing integration, usage dashboards, support portal |
+| **54** | Mobile Optimization | Responsive client portal, PWA support, push notifications, offline access |
 
 ### Future Considerations
 
 - **Advanced Analytics** - Predictive modeling, anomaly detection
-- **Enhanced Integrations** - Salesforce, HubSpot, Slack
+- **Microsoft 365 Integration** - Framework ready, provider not yet built
 - **AI Model Fine-tuning** - Custom model training on client data
 - **Voice Interface** - Voice-first interaction mode
 - **Expanded Industry Templates** - Vertical-specific configurations
@@ -639,7 +672,7 @@ Insight 360 represents a new category of enterprise software: the **Values-Based
 
 Whether deploying internally or serving clients as an agency, Insight 360 provides the foundation for responsible, effective AI transformation.
 
-**Current Production Readiness Score: 10.0/10** — The platform has achieved enterprise-grade maturity across all functional areas through 48+ development phases.
+**Current Production Readiness Score: 10.0/10** — The platform has achieved enterprise-grade maturity across all functional areas through 50 development phases.
 
 ---
 

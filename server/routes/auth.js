@@ -1185,24 +1185,69 @@ module.exports = function(supabase) {
                 });
             }
 
-            const { data: profile, error } = await supabase
-                .from('users')
-                .select(`
-                    id,
-                    email,
-                    display_name,
-                    avatar_url,
-                    role,
-                    department_id,
-                    preferences,
-                    created_at,
-                    updated_at,
-                    department:departments!users_department_id_fkey(id, name, icon, color)
-                `)
-                .eq('id', user.id)
-                .single();
+            // Try with default_org_id first, fall back without it if column doesn't exist
+            let profile = null;
+            let error = null;
+            const fullSelect = `
+                id, email, display_name, avatar_url, role, department_id,
+                default_org_id, preferences, created_at, updated_at,
+                department:departments!users_department_id_fkey(id, name, icon, color)
+            `;
+            const basicSelect = `
+                id, email, display_name, avatar_url, role, department_id,
+                preferences, created_at, updated_at,
+                department:departments!users_department_id_fkey(id, name, icon, color)
+            `;
 
-            if (error && error.code !== 'PGRST116') throw error;
+            ({ data: profile, error } = await supabase
+                .from('users')
+                .select(fullSelect)
+                .eq('id', user.id)
+                .single());
+
+            // If the query failed (e.g. default_org_id column missing), retry without it
+            if (error && error.code !== 'PGRST116') {
+                console.warn('Full profile query failed, retrying without org fields:', error.message);
+                ({ data: profile, error } = await supabase
+                    .from('users')
+                    .select(basicSelect)
+                    .eq('id', user.id)
+                    .single());
+                if (error && error.code !== 'PGRST116') throw error;
+            }
+
+            // Fetch organization separately (safely - table may not exist)
+            let organization = null;
+            if (profile?.default_org_id) {
+                try {
+                    const { data: org } = await supabase
+                        .from('organizations')
+                        .select('id, name, slug')
+                        .eq('id', profile.default_org_id)
+                        .single();
+                    organization = org || null;
+                } catch (e) {
+                    console.warn('Could not fetch organization:', e.message);
+                }
+            }
+
+            // Check platform admin status (safely - table may not exist)
+            let is_platform_admin = false;
+            let platform_admin_role = null;
+            try {
+                const { data: adminRecord } = await supabase
+                    .from('platform_admins')
+                    .select('role')
+                    .eq('user_id', user.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                if (adminRecord) {
+                    is_platform_admin = true;
+                    platform_admin_role = adminRecord.role;
+                }
+            } catch (e) {
+                console.warn('Could not check platform admin status:', e.message);
+            }
 
             // If profile doesn't exist, return basic info from auth
             if (!profile) {
@@ -1217,14 +1262,17 @@ module.exports = function(supabase) {
                         department_id: null,
                         preferences: {},
                         created_at: user.created_at,
-                        department: null
+                        department: null,
+                        organization: null,
+                        is_platform_admin,
+                        platform_admin_role
                     }
                 });
             }
 
             res.json({
                 success: true,
-                data: profile
+                data: { ...profile, organization, is_platform_admin, platform_admin_role }
             });
 
         } catch (error) {
@@ -1235,6 +1283,187 @@ module.exports = function(supabase) {
             });
         }
     });
+
+    // ============================================
+    // IMPERSONATION (Platform Admin "Act As")
+    // ============================================
+
+    // In-memory impersonation store (ephemeral, clears on restart)
+    const impersonationStore = new Map();
+
+    /**
+     * POST /api/auth/impersonate
+     * Start impersonating an org/role (platform admins only)
+     */
+    router.post('/impersonate', async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            const token = authHeader.substring(7);
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+            if (authError || !user) {
+                return res.status(401).json({ success: false, error: 'Invalid token' });
+            }
+
+            // Verify platform admin
+            const { data: adminRecord } = await supabase
+                .from('platform_admins')
+                .select('role')
+                .eq('user_id', user.id)
+                .eq('is_active', true)
+                .maybeSingle();
+
+            if (!adminRecord) {
+                return res.status(403).json({ success: false, error: 'Platform admin access required' });
+            }
+
+            const { org_id, role } = req.body;
+            if (!org_id || !role) {
+                return res.status(400).json({ success: false, error: 'org_id and role are required' });
+            }
+
+            // Validate org exists
+            const { data: org } = await supabase
+                .from('organizations')
+                .select('id, name, slug, subscription_tier')
+                .eq('id', org_id)
+                .single();
+
+            if (!org) {
+                return res.status(404).json({ success: false, error: 'Organization not found' });
+            }
+
+            const validRoles = ['owner', 'admin', 'consultant', 'viewer', 'user'];
+            if (!validRoles.includes(role)) {
+                return res.status(400).json({ success: false, error: `Invalid role. Must be: ${validRoles.join(', ')}` });
+            }
+
+            // Store impersonation
+            impersonationStore.set(user.id, {
+                org_id: org.id,
+                org_name: org.name,
+                org_slug: org.slug,
+                subscription_tier: org.subscription_tier,
+                role,
+                started_at: new Date().toISOString(),
+                real_user_id: user.id
+            });
+
+            console.log(`[Impersonation] Platform admin ${user.id} now acting as ${role} in ${org.name}`);
+
+            res.json({
+                success: true,
+                data: impersonationStore.get(user.id)
+            });
+        } catch (error) {
+            console.error('Impersonate error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/auth/impersonate
+     * Get current impersonation state
+     */
+    router.get('/impersonate', async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            const token = authHeader.substring(7);
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+            if (authError || !user) {
+                return res.status(401).json({ success: false, error: 'Invalid token' });
+            }
+
+            const state = impersonationStore.get(user.id) || null;
+            res.json({ success: true, data: state });
+        } catch (error) {
+            console.error('Get impersonation error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * DELETE /api/auth/impersonate
+     * Stop impersonating
+     */
+    router.delete('/impersonate', async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            const token = authHeader.substring(7);
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+            if (authError || !user) {
+                return res.status(401).json({ success: false, error: 'Invalid token' });
+            }
+
+            const wasImpersonating = impersonationStore.has(user.id);
+            impersonationStore.delete(user.id);
+
+            if (wasImpersonating) {
+                console.log(`[Impersonation] Platform admin ${user.id} ended impersonation`);
+            }
+
+            res.json({ success: true, data: { ended: wasImpersonating } });
+        } catch (error) {
+            console.error('End impersonation error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * GET /api/auth/impersonate/orgs
+     * List all organizations (platform admins only, for the Act As dropdown)
+     */
+    router.get('/impersonate/orgs', async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            const token = authHeader.substring(7);
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+            if (authError || !user) {
+                return res.status(401).json({ success: false, error: 'Invalid token' });
+            }
+
+            // Verify platform admin
+            const { data: adminRecord } = await supabase
+                .from('platform_admins')
+                .select('role')
+                .eq('user_id', user.id)
+                .eq('is_active', true)
+                .maybeSingle();
+
+            if (!adminRecord) {
+                return res.status(403).json({ success: false, error: 'Platform admin access required' });
+            }
+
+            const { data: orgs } = await supabase
+                .from('organizations')
+                .select('id, name, slug, subscription_tier, is_active')
+                .eq('is_active', true)
+                .order('name');
+
+            res.json({ success: true, data: orgs || [] });
+        } catch (error) {
+            console.error('List orgs error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // Export impersonation store for middleware access
+    router.impersonationStore = impersonationStore;
 
     return router;
 };

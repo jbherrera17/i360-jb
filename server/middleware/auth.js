@@ -86,14 +86,29 @@ async function authenticate(req, res, next) {
                 try {
                     const { data: profile } = await supabase
                         .from('users')
-                        .select('role')
+                        .select('role, default_org_id')
                         .eq('id', user.id)
                         .single();
 
                     req.userRole = profile?.role || 'user';
+                    req.orgId = profile?.default_org_id || null;
                 } catch (profileError) {
                     console.warn('Could not fetch user role:', profileError.message);
-                    req.userRole = 'user'; // Default to user role
+                    req.userRole = 'user';
+                }
+
+                // Check for active impersonation (platform admin "Act As")
+                const impersonationStore = req.app?.locals?.impersonationStore;
+                if (impersonationStore) {
+                    const impersonation = impersonationStore.get(user.id);
+                    if (impersonation) {
+                        req.realUserRole = req.userRole;
+                        req.realOrgId = req.orgId;
+                        req.userRole = impersonation.role;
+                        req.orgId = impersonation.org_id;
+                        req.isImpersonating = true;
+                        req.impersonation = impersonation;
+                    }
                 }
             }
         } catch (error) {
