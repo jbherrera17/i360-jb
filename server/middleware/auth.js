@@ -23,7 +23,9 @@ async function authenticate(req, res, next) {
         '/api/auth/reset-password'
     ];
 
-    if (publicPaths.some(path => req.path.startsWith(path))) {
+    // Use originalUrl since middleware is mounted at /api
+    const requestPath = req.originalUrl || req.path;
+    if (publicPaths.some(path => requestPath.startsWith(path))) {
         return next();
     }
 
