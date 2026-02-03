@@ -38,7 +38,7 @@ module.exports = function(supabase) {
     // Phase 44: Module access middleware for Thought Leadership
     router.use(async (req, res, next) => {
         try {
-            const userId = req.userId || req.headers['x-user-id'];
+            const userId = req.userId || req.userId;
             const orgId = req.headers['x-org-id'];
 
             if (!userId) {
@@ -83,7 +83,7 @@ module.exports = function(supabase) {
      */
     router.get('/profile', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -111,7 +111,7 @@ module.exports = function(supabase) {
      */
     router.post('/profile', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -164,7 +164,7 @@ module.exports = function(supabase) {
      */
     router.put('/profile/setup-step', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -198,7 +198,7 @@ module.exports = function(supabase) {
      */
     router.get('/profile/status', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -242,7 +242,7 @@ module.exports = function(supabase) {
      */
     router.get('/pillars', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -269,7 +269,7 @@ module.exports = function(supabase) {
      */
     router.post('/pillars', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -337,7 +337,7 @@ module.exports = function(supabase) {
      */
     router.put('/pillars/:id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -371,7 +371,7 @@ module.exports = function(supabase) {
      */
     router.delete('/pillars/:id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -403,7 +403,7 @@ module.exports = function(supabase) {
      */
     router.post('/visibility/research', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -467,7 +467,7 @@ module.exports = function(supabase) {
      */
     router.get('/visibility/history', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -502,7 +502,7 @@ module.exports = function(supabase) {
      */
     router.get('/visibility/latest', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -546,7 +546,7 @@ module.exports = function(supabase) {
      */
     router.get('/calendar', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             const { source = 'notion', status, pillar, start_date, end_date } = req.query;
 
             // Try Notion first if configured, with fallback to local database
@@ -594,7 +594,7 @@ module.exports = function(supabase) {
      */
     router.post('/calendar', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -664,7 +664,7 @@ module.exports = function(supabase) {
      */
     router.put('/calendar/:id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -719,7 +719,7 @@ module.exports = function(supabase) {
      */
     router.delete('/calendar/:id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -766,7 +766,7 @@ module.exports = function(supabase) {
      */
     router.post('/calendar/:id/sync', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             const { id } = req.params;
             const { direction = 'to_notion' } = req.body;
 
@@ -836,7 +836,7 @@ module.exports = function(supabase) {
      */
     router.post('/calendar/sync-all', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -952,7 +952,7 @@ module.exports = function(supabase) {
      */
     router.post('/generate/research', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1013,7 +1013,7 @@ Format as structured markdown with clear sections.`;
      */
     router.post('/generate/article', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1145,7 +1145,7 @@ Write the complete article now, following the Voice DNA exactly. Include:
      */
     router.post('/generate/linkedin', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1278,7 +1278,7 @@ Generate all 5 posts now in JSON format:
      */
     router.post('/generate/package', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1597,7 +1597,7 @@ Generate all 5 posts in JSON format:
      */
     router.post('/generate/image', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1698,7 +1698,7 @@ Generate all 5 posts in JSON format:
      */
     router.get('/images/:calendar_entry_id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1723,7 +1723,7 @@ Generate all 5 posts in JSON format:
      */
     router.put('/images/:calendar_entry_id/current/:image_id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1777,7 +1777,7 @@ Generate all 5 posts in JSON format:
      */
     router.post('/publish/schedule', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1863,7 +1863,7 @@ Generate all 5 posts in JSON format:
      */
     router.post('/publish/now', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1915,7 +1915,7 @@ Generate all 5 posts in JSON format:
      */
     router.get('/publish/scheduled', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1948,7 +1948,7 @@ Generate all 5 posts in JSON format:
      */
     router.delete('/publish/:id', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -1981,7 +1981,7 @@ Generate all 5 posts in JSON format:
      */
     router.get('/publish/history', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -2020,7 +2020,7 @@ Generate all 5 posts in JSON format:
      */
     router.get('/outputs', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -2058,7 +2058,7 @@ Generate all 5 posts in JSON format:
      */
     router.post('/outputs', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }

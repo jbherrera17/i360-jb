@@ -576,9 +576,13 @@
                                 ${Object.entries(LIMIT_LABELS).map(([key, label]) => `
                                     <div class="limit-item">
                                         <span class="limit-label">${label}</span>
-                                        <input type="number" class="limit-input"
-                                               value="${tier[key] || 0}"
-                                               onchange="updateTier('${tier.id}', '${key}', this.value)">
+                                        ${tier[key] === -1 ? `
+                                            <span class="limit-input" style="text-align:center; color: var(--success); font-weight: 600;">Unlimited</span>
+                                        ` : `
+                                            <input type="number" class="limit-input"
+                                                   value="${tier[key] || 0}"
+                                                   onchange="updateTier('${tier.id}', '${key}', this.value)">
+                                        `}
                                     </div>
                                 `).join('')}
                             </div>
@@ -653,7 +657,7 @@
             const limitRows = Object.entries(LIMIT_LABELS).map(([key, label]) => `
                 <tr>
                     <td><strong>${label}</strong></td>
-                    ${tiers.map(tier => `<td>${tier[key] || 0}</td>`).join('')}
+                    ${tiers.map(tier => `<td>${tier[key] === -1 ? '<span style="color: var(--success);">∞</span>' : (tier[key] || 0)}</td>`).join('')}
                 </tr>
             `).join('');
 

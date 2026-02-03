@@ -1,0 +1,51 @@
+{
+  "env": {
+    "node": true,
+    "es2021": true,
+    "browser": true,
+    "jest": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "globals": {
+    "lucide": "readonly",
+    "ModalService": "readonly",
+    "ModalBase": "readonly",
+    "FormModal": "readonly",
+    "ChatModal": "readonly",
+    "ContentModal": "readonly",
+    "ConfirmModal": "readonly",
+    "AlertModal": "readonly",
+    "PromptModal": "readonly",
+    "AgentModal": "readonly",
+    "CreateAssetModal": "readonly",
+    "HelpModal": "readonly",
+    "HelpRegistry": "readonly",
+    "Sanitize": "readonly",
+    "marked": "readonly",
+    "hljs": "readonly",
+    "Prism": "readonly",
+    "Chart": "readonly",
+    "showToast": "readonly",
+    "getSelectedModel": "readonly",
+    "LoadingMessages": "readonly",
+    "DraggableMixin": "readonly",
+    "ResizableMixin": "readonly",
+    "FullscreenMixin": "readonly",
+    "PersistenceMixin": "readonly",
+    "streamTimeout": "readonly",
+    "escapeHtml": "readonly"
+  },
+  "ignorePatterns": ["node_modules/", "coverage/", "playwright-report/"],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "no-case-declarations": "warn",
+    "no-prototype-builtins": "warn",
+    "no-useless-escape": "warn",
+    "no-constant-condition": "warn",
+    "no-redeclare": "warn"
+  }
+}

@@ -29,7 +29,7 @@ module.exports = function(supabase) {
      */
     router.get('/linkedin/authorize', (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -110,7 +110,7 @@ module.exports = function(supabase) {
      */
     router.delete('/linkedin/disconnect', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -132,7 +132,7 @@ module.exports = function(supabase) {
      */
     router.get('/linkedin/status', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
             if (!userId) {
                 return res.status(401).json({ error: 'User ID required' });
             }
@@ -171,7 +171,7 @@ module.exports = function(supabase) {
      */
     router.get('/connections', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.userId;
 
             // Available platforms info (always returned)
             const availablePlatforms = [

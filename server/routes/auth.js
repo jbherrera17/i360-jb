@@ -16,6 +16,7 @@
 
 const express = require('express');
 const cache = require('../services/cacheService');
+const { validateBody, loginSchema, registerSchema, resetPasswordSchema } = require('../middleware/validate');
 
 /**
  * Auth Routes Factory
@@ -33,23 +34,9 @@ module.exports = function(supabase) {
      * POST /api/auth/register
      * Create a new user account
      */
-    router.post('/register', async (req, res) => {
+    router.post('/register', validateBody(registerSchema), async (req, res) => {
         try {
             const { email, password, display_name } = req.body;
-
-            if (!email || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Email and password are required'
-                });
-            }
-
-            if (password.length < 6) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Password must be at least 6 characters'
-                });
-            }
 
             // Create user in Supabase Auth
             const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -109,16 +96,9 @@ module.exports = function(supabase) {
      * POST /api/auth/login
      * Login with email and password
      */
-    router.post('/login', async (req, res) => {
+    router.post('/login', validateBody(loginSchema), async (req, res) => {
         try {
             const { email, password } = req.body;
-
-            if (!email || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Email and password are required'
-                });
-            }
 
             // Authenticate with Supabase
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -189,6 +169,18 @@ module.exports = function(supabase) {
             // Cache token validation result
             cache.cacheTokenValidation(data.session.access_token, { user: data.user });
 
+            // Set auth cookie with security flags (httpOnly prevents JS access)
+            const isProduction = process.env.NODE_ENV === 'production';
+            const cookieOptions = [
+                `auth_token=${data.session.access_token}`,
+                'Path=/',
+                'HttpOnly',
+                'SameSite=Lax',
+                `Max-Age=${7 * 24 * 60 * 60}`, // 7 days
+                isProduction ? 'Secure' : ''
+            ].filter(Boolean).join('; ');
+            res.setHeader('Set-Cookie', cookieOptions);
+
             res.json({
                 success: true,
                 session: {
@@ -252,23 +244,9 @@ module.exports = function(supabase) {
      * POST /api/auth/reset-password
      * Reset password with token (called after user clicks email link)
      */
-    router.post('/reset-password', async (req, res) => {
+    router.post('/reset-password', validateBody(resetPasswordSchema), async (req, res) => {
         try {
             const { access_token, new_password } = req.body;
-
-            if (!new_password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'New password is required'
-                });
-            }
-
-            if (new_password.length < 6) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Password must be at least 6 characters'
-                });
-            }
 
             let currentUser = null;
 
@@ -370,6 +348,9 @@ module.exports = function(supabase) {
                     console.error('Logout error:', error);
                 }
             }
+
+            // Clear auth cookie
+            res.setHeader('Set-Cookie', 'auth_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
 
             res.json({
                 success: true,

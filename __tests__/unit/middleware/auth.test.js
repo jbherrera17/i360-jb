@@ -52,7 +52,6 @@ describe('Auth Middleware', () => {
         '/api/health',
         '/api/status',
         '/api/chat/models',
-        '/api/context',
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/forgot-password',
@@ -101,15 +100,15 @@ describe('Auth Middleware', () => {
         expect(req.isAnonymous).toBe(true);
       });
 
-      test('should use x-user-id header for simple auth', async () => {
+      test('should NOT accept x-user-id header (security fix)', async () => {
         req.path = '/api/agents';
         req.headers['x-user-id'] = 'test-user-123';
 
         await authenticate(req, res, next);
 
         expect(next).toHaveBeenCalled();
-        expect(req.userId).toBe('test-user-123');
-        expect(req.isAnonymous).toBe(false);
+        expect(req.userId).toBeNull();
+        expect(req.isAnonymous).toBe(true);
       });
     });
 

@@ -188,6 +188,7 @@ module.exports = function(supabase) {
                 return res.json({
                     success: true,
                     data: [
+                        { id: 'platform', name: 'Platform', description: 'Internal platform tier with unlimited resources', max_members: -1, max_clients: -1, max_agents: -1, display_order: 0 },
                         { id: 'starter', name: 'Starter', description: 'For individuals and small teams', max_members: 3, max_clients: 0, max_agents: 5 },
                         { id: 'business', name: 'Business', description: 'For growing teams', max_members: 10, max_clients: 0, max_agents: 25 },
                         { id: 'enterprise', name: 'Enterprise', description: 'For large organizations', max_members: 100, max_clients: 0, max_agents: 100 },

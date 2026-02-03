@@ -145,7 +145,7 @@ module.exports = function(supabase) {
     router.post('/role-requirement', async (req, res) => {
         try {
             const { resource_type, resource_id, min_business_role } = req.body;
-            const userId = req.userId || req.headers['x-user-id'];
+            const userId = req.userId;
             const orgId = req.headers['x-org-id'];
 
             if (!resource_type || !resource_id) {

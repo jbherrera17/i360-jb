@@ -46,7 +46,7 @@ module.exports = function(supabase) {
     // Checks if user's tier and role allow access to this module
     router.use(async (req, res, next) => {
         try {
-            const userId = req.userId || req.headers['x-user-id'];
+            const userId = req.userId || req.userId;
             const orgId = req.headers['x-org-id'];
 
             // Skip check if no user context (will fail auth later anyway)
@@ -94,7 +94,7 @@ module.exports = function(supabase) {
      */
     router.get('/', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'] || null;
+            const userId = req.userId || null;
             const { includeArchived, limit, offset } = req.query;
 
             const result = await studioService.listStudios(userId, {
@@ -127,7 +127,7 @@ module.exports = function(supabase) {
      */
     router.post('/', async (req, res) => {
         try {
-            const userId = req.headers['x-user-id'] || null;
+            const userId = req.userId || null;
             const { title, description, settings } = req.body;
 
             if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -162,7 +162,7 @@ module.exports = function(supabase) {
     router.get('/:id', async (req, res) => {
         try {
             const { id } = req.params;
-            const userId = req.headers['x-user-id'] || null;
+            const userId = req.userId || null;
 
             const studio = await studioService.getStudio(id, userId);
 

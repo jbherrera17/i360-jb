@@ -62,7 +62,7 @@ describe('Auth Routes Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Email and password are required');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return 400 when password is missing', async () => {
@@ -72,7 +72,7 @@ describe('Auth Routes Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Email and password are required');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return 400 when password is too short', async () => {
@@ -82,7 +82,7 @@ describe('Auth Routes Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Password must be at least 6 characters');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return 400 when signup fails', async () => {
@@ -156,7 +156,7 @@ describe('Auth Routes Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Email and password are required');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return 401 for invalid credentials', async () => {
@@ -299,7 +299,7 @@ describe('Auth Routes Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('New password is required');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return 400 when password is too short', async () => {
@@ -309,7 +309,7 @@ describe('Auth Routes Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Password must be at least 6 characters');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return 400 for invalid reset token', async () => {

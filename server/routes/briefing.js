@@ -23,7 +23,7 @@ module.exports = function(supabase) {
 
     // Get user ID from auth middleware (req.userId is set by middleware/auth.js)
     const getUser = (req) => {
-        return req.userId || req.headers['x-user-id'] || process.env.DEFAULT_USER_ID;
+        return req.userId || process.env.DEFAULT_USER_ID;
     };
 
     // Helper to require authentication - returns 401 if no user

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//Users/jbh17/**)"
+      "Read(//Users/jbh17/**)",
+      "Bash(gh auth status:*)"
     ]
   }
 }

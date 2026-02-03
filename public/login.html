@@ -696,13 +696,9 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Store token in localStorage and cookie
+                    // Store token in localStorage (cookie is now set by server with httpOnly flag)
                     localStorage.setItem('insight360_token', data.session.access_token);
                     localStorage.setItem('insight360_user', JSON.stringify(data.user));
-
-                    // Set auth_token cookie for server-side authentication
-                    const maxAge = 60 * 60 * 24 * 7; // 7 days
-                    document.cookie = 'auth_token=' + data.session.access_token + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
 
                     currentUser = data.user;
 

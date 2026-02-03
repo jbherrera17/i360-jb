@@ -949,16 +949,16 @@
                             $${tier.price_monthly || 0}/mo or $${tier.price_yearly || 0}/yr
                         </div>
                         <div>
-                            <strong>Members:</strong> ${tier.max_members}
+                            <strong>Members:</strong> ${tier.max_members === -1 ? 'Unlimited' : tier.max_members}
                         </div>
                         <div>
-                            <strong>Clients:</strong> ${tier.max_clients}
+                            <strong>Clients:</strong> ${tier.max_clients === -1 ? 'Unlimited' : tier.max_clients}
                         </div>
                         <div>
-                            <strong>Agents:</strong> ${tier.max_agents}
+                            <strong>Agents:</strong> ${tier.max_agents === -1 ? 'Unlimited' : tier.max_agents}
                         </div>
                         <div>
-                            <strong>Workflows:</strong> ${tier.max_workflows}
+                            <strong>Workflows:</strong> ${tier.max_workflows === -1 ? 'Unlimited' : tier.max_workflows}
                         </div>
                     </div>
 

@@ -6,6 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
+const { validateBody, chatMessageSchema, chatStreamSchema } = require('../middleware/validate');
 
 // Import LLM services
 const anthropic = require('../services/anthropic');
@@ -142,7 +143,7 @@ router.get('/models/all', (_req, res) => {
  * For agent chat: { message, agent_id, context? }
  * For direct chat: { message, model?, systemPrompt? }
  */
-router.post('/', async (req, res) => {
+router.post('/', validateBody(chatMessageSchema), async (req, res) => {
     try {
         const { message, agent_id, context, model, systemPrompt } = req.body;
 
@@ -247,7 +248,7 @@ router.post('/', async (req, res) => {
  * Send a message and get a response (non-streaming, supports multimodal)
  * Automatically injects Higgins persona with JB Brand Voice DNA
  */
-router.post('/message', async (req, res) => {
+router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
     try {
         const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt, skipHiggins = false } = req.body;
 
@@ -353,7 +354,7 @@ router.post('/message', async (req, res) => {
  * Send a message and stream the response (supports multimodal content)
  * Automatically injects Higgins persona with JB Brand Voice DNA
  */
-router.post('/stream', async (req, res) => {
+router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
     try {
         const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt, skipHiggins = false } = req.body;
 
@@ -415,6 +416,20 @@ router.post('/stream', async (req, res) => {
         // Flush headers immediately to establish SSE connection
         res.flushHeaders();
 
+        // Track client disconnect to stop wasting LLM tokens
+        let clientDisconnected = false;
+        req.on('close', () => {
+            clientDisconnected = true;
+        });
+
+        // Stream timeout - prevent hung connections (2 minutes max)
+        const streamTimeout = setTimeout(() => {
+            if (!res.writableEnded) {
+                res.write(`data: ${JSON.stringify({ type: 'error', error: 'Stream timeout' })}\n\n`);
+                res.end();
+            }
+        }, 120000);
+
         let stream;
 
         if (provider === 'anthropic') {
@@ -467,6 +482,11 @@ router.post('/stream', async (req, res) => {
 
         // Stream the response
         for await (const chunk of stream) {
+            // Stop streaming if client disconnected (saves LLM tokens)
+            if (clientDisconnected) {
+                console.warn('Client disconnected during stream, aborting');
+                break;
+            }
             if (chunk.type === 'text') {
                 res.write(`data: ${JSON.stringify({ type: 'content', text: chunk.content })}\n\n`);
             } else if (chunk.type === 'content') {
@@ -481,21 +501,27 @@ router.post('/stream', async (req, res) => {
                 res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             }
         }
-        
-        res.write('data: [DONE]\n\n');
-        res.end();
+
+        clearTimeout(streamTimeout);
+        if (!clientDisconnected) {
+            res.write('data: [DONE]\n\n');
+            res.end();
+        }
         
     } catch (error) {
+        clearTimeout(streamTimeout);
         console.error('Stream error:', error);
-        
+
         // If headers already sent, send error as SSE
         if (res.headersSent) {
-            res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
-            res.end();
+            if (!res.writableEnded) {
+                res.write(`data: ${JSON.stringify({ type: 'error', error: process.env.NODE_ENV === 'production' ? 'Stream error occurred' : error.message })}\n\n`);
+                res.end();
+            }
         } else {
-            res.status(500).json({ 
-                success: false, 
-                error: error.message 
+            res.status(500).json({
+                success: false,
+                error: process.env.NODE_ENV === 'production' ? 'Stream error occurred' : error.message
             });
         }
     }

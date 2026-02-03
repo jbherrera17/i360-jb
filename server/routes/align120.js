@@ -28,7 +28,7 @@ module.exports = function(supabase) {
     // Business tier and above required for this module
     router.use(async (req, res, next) => {
         try {
-            const userId = req.userId || req.headers['x-user-id'];
+            const userId = req.userId;
             const orgId = req.headers['x-org-id'];
 
             // Skip check if no user context (will fail auth later anyway)

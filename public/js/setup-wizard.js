@@ -217,9 +217,9 @@ const SetupWizard = {
                             ${this.formData.tier === tier.id ? '<i data-lucide="check-circle" class="tier-check"></i>' : ''}
                         </div>
                         <div class="tier-option-limits">
-                            <div><strong>${tier.max_members || 0}</strong> Members</div>
-                            <div><strong>${tier.max_agents || 0}</strong> Agents</div>
-                            ${tier.max_clients ? `<div><strong>${tier.max_clients}</strong> Clients</div>` : ''}
+                            <div><strong>${tier.max_members === -1 ? 'Unlimited' : (tier.max_members || 0)}</strong> Members</div>
+                            <div><strong>${tier.max_agents === -1 ? 'Unlimited' : (tier.max_agents || 0)}</strong> Agents</div>
+                            ${tier.max_clients ? `<div><strong>${tier.max_clients === -1 ? 'Unlimited' : tier.max_clients}</strong> Clients</div>` : ''}
                         </div>
                         ${tier.description ? `<div class="tier-option-description">${tier.description}</div>` : ''}
                     </div>

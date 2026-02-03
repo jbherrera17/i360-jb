@@ -16,6 +16,54 @@
  */
 
 require('dotenv').config();
+
+// ============================================
+// ENVIRONMENT VALIDATION
+// ============================================
+function validateEnvironment() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const environment = process.env.ENVIRONMENT || (isProduction ? 'production' : 'development');
+    const isDeployed = environment === 'production' || environment === 'staging';
+    const errors = [];
+    const warnings = [];
+
+    // Always required
+    if (!process.env.SUPABASE_URL) errors.push('SUPABASE_URL is required');
+    if (!process.env.SUPABASE_ANON_KEY) errors.push('SUPABASE_ANON_KEY is required');
+
+    // Required in production or staging
+    if (isDeployed) {
+        if (!process.env.SUPABASE_SERVICE_KEY) errors.push('SUPABASE_SERVICE_KEY is required in ' + environment);
+        if (!process.env.ALLOWED_ORIGINS) errors.push('ALLOWED_ORIGINS is required in ' + environment);
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+            errors.push('At least one LLM API key (ANTHROPIC_API_KEY or OPENAI_API_KEY) is required');
+        }
+        if (process.env.DEV_AUTH_BYPASS === 'true') {
+            errors.push('DEV_AUTH_BYPASS must not be "true" in ' + environment);
+        }
+    }
+
+    // Warnings (non-fatal)
+    if (!isDeployed && !process.env.ANTHROPIC_API_KEY) {
+        warnings.push('ANTHROPIC_API_KEY not set - Claude models unavailable');
+    }
+
+    console.log(`\n🌐 Environment: ${environment} (NODE_ENV=${process.env.NODE_ENV || 'undefined'})`);
+    warnings.forEach(w => console.warn(`⚠️  ${w}`));
+
+    if (errors.length > 0) {
+        console.error('\n❌ Environment validation failed:');
+        errors.forEach(e => console.error(`   - ${e}`));
+        if (isDeployed) {
+            console.error(`\nServer cannot start in ${environment} with missing configuration.\n`);
+            process.exit(1);
+        } else {
+            console.warn('\n⚠️  Running in development mode with missing config. Some features will be unavailable.\n');
+        }
+    }
+}
+validateEnvironment();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -112,6 +160,12 @@ app.use(helmet({
                 "https://vimeo.com"
             ]
         }
+    },
+    // HSTS: enforce HTTPS for 1 year, include subdomains
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
     }
 }));
 
@@ -135,7 +189,21 @@ app.use(compression({
 }));
 
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    origin: function(origin, callback) {
+        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim());
+        // In production, require explicit ALLOWED_ORIGINS
+        if (process.env.NODE_ENV === 'production' && (!allowedOrigins || allowedOrigins.length === 0)) {
+            return callback(new Error('ALLOWED_ORIGINS must be configured in production'));
+        }
+        // Allow requests with no origin (server-to-server, curl, mobile apps)
+        if (!origin) return callback(null, true);
+        // In development without ALLOWED_ORIGINS, allow all
+        if (!allowedOrigins || allowedOrigins.length === 0) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true
 }));
 
@@ -143,8 +211,8 @@ app.use(cors({
 // BODY PARSING
 // ============================================
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================
 // PAGE AUTHENTICATION (before static files)

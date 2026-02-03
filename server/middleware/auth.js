@@ -17,7 +17,6 @@ async function authenticate(req, res, next) {
         '/api/health',
         '/api/status',
         '/api/chat/models',
-        '/api/context',  // Phase 3: Allow context access during development
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/forgot-password',
@@ -27,17 +26,24 @@ async function authenticate(req, res, next) {
     if (publicPaths.some(path => req.path.startsWith(path))) {
         return next();
     }
-    
+
     // Get Supabase client from request
     const supabase = req.supabase;
-    
-    // If no Supabase configured, allow anonymous access
+
+    // If no Supabase configured in production, reject all requests
     if (!supabase) {
+        if (process.env.NODE_ENV === 'production') {
+            return res.status(503).json({
+                success: false,
+                error: 'Authentication service unavailable',
+                code: 'AUTH_UNAVAILABLE'
+            });
+        }
         req.userId = null;
         req.isAnonymous = true;
         return next();
     }
-    
+
     // Check for authorization header
     const authHeader = req.headers.authorization;
 
@@ -47,15 +53,15 @@ async function authenticate(req, res, next) {
     const cookieToken = cookieTokenMatch ? cookieTokenMatch[1] : null;
 
     if (!authHeader && !cookieToken) {
-        // Check for user ID header (simple auth for development)
-        const userId = req.headers['x-user-id'];
-        if (userId) {
-            req.userId = userId;
-            req.isAnonymous = false;
-            return next();
+        // In production, reject unauthenticated API requests
+        if (process.env.NODE_ENV === 'production') {
+            return res.status(401).json({
+                success: false,
+                error: 'Authentication required',
+                code: 'AUTH_REQUIRED'
+            });
         }
-
-        // Allow anonymous access but mark it
+        // In development, allow anonymous access for testing
         req.userId = null;
         req.isAnonymous = true;
         return next();
@@ -74,6 +80,13 @@ async function authenticate(req, res, next) {
 
             if (error) {
                 console.warn('Auth token verification failed:', error.message);
+                if (process.env.NODE_ENV === 'production') {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid or expired token',
+                        code: 'TOKEN_INVALID'
+                    });
+                }
                 req.userId = null;
                 req.userRole = null;
                 req.isAnonymous = true;
@@ -113,6 +126,13 @@ async function authenticate(req, res, next) {
             }
         } catch (error) {
             console.error('Auth error:', error);
+            if (process.env.NODE_ENV === 'production') {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication failed',
+                    code: 'AUTH_ERROR'
+                });
+            }
             req.userId = null;
             req.userRole = null;
             req.isAnonymous = true;

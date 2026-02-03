@@ -34,7 +34,7 @@ module.exports = function(supabase) {
      */
     router.get('/', async (req, res) => {
         try {
-            const userId = req.userId || req.headers['x-user-id'];
+            const userId = req.userId;
             const orgId = req.headers['x-org-id'];
             const {
                 category,
