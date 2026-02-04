@@ -19,38 +19,19 @@ const navConfig = {
     // Primary items - always visible at top level
     primary: [
         { href: '/chat.html', icon: 'graduation-cap', label: 'Higgins' },
-        { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
-        { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
-        { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' }
+        { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' },
+        { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
     ],
 
     // Grouped items - collapsible categories
     groups: [
         {
-            id: 'dashboards',
-            label: 'Dashboards',
-            icon: 'gauge',
+            id: 'ai-systems',
+            label: 'AI 360 Systems',
+            icon: 'cpu',
             items: [
-                { href: '/company-dashboard.html', icon: 'building', label: 'Company' },
-                { href: '/strategy-governance.html', icon: 'shield-check', label: 'Governance' },
-                { href: '/integrity.html', icon: 'activity', label: 'Integrity' }
-            ]
-        },
-        {
-            id: 'strategy',
-            label: 'I360 Systems',
-            icon: 'target',
-            items: [
-                { href: '/align120.html', icon: 'compass', label: 'Align 120' },
-                { href: '/strategy.html', icon: 'milestone', label: 'Strategy (S2E)' },
-                { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
-            ]
-        },
-        {
-            id: 'components',
-            label: 'Components',
-            icon: 'puzzle',
-            items: [
+                { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
+                { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' },
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
@@ -59,15 +40,27 @@ const navConfig = {
             ]
         },
         {
-            id: 'tools',
-            label: 'Modules',
-            icon: 'wrench',
+            id: 'dashboards',
+            label: 'Dashboards',
+            icon: 'gauge',
             items: [
+                { href: '/', icon: 'layout-dashboard', label: 'Dashboard' },
+                { href: '/company-dashboard.html', icon: 'building', label: 'Company Dashboard' },
+                { href: '/integrity.html', icon: 'activity', label: 'Integrity Dashboard' },
+                { href: '/strategy-governance.html', icon: 'shield-check', label: 'Strategy Governance' }
+            ]
+        },
+        {
+            id: 'modules',
+            label: 'Modules',
+            icon: 'boxes',
+            items: [
+                { href: '/align120.html', icon: 'compass', label: 'Align 120' },
+                { href: '/strategy.html', icon: 'milestone', label: 'Strategy (S2E)' },
                 { href: '/research-studio.html', icon: 'book-open-text', label: 'Research Studio' },
-                { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
                 { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
-                { href: '/guides.html', icon: 'book-open', label: 'Guides' },
-                { href: '/integrations.html', icon: 'plug', label: 'Integrations' }
+                { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
+                { href: '/guides.html', icon: 'book-open', label: 'Guides' }
             ]
         },
         {
@@ -90,7 +83,7 @@ const navConfig = {
             items: [
                 { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
                 { href: '/admin-resource-access.html', icon: 'shield-check', label: 'Resource Access' },
-                { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' }
+                { href: '/integrations.html', icon: 'plug', label: 'Integrations' }
             ]
         }
     ]
@@ -156,16 +149,32 @@ function convertModulesToNavConfig(modulesData) {
     // Map nav_group to our group structure
     const groupMap = {
         'primary': { id: 'primary', label: 'Primary', items: [] },
+        'ai-systems': { id: 'ai-systems', label: 'AI 360 Systems', icon: 'cpu', items: [] },
         'dashboards': { id: 'dashboards', label: 'Dashboards', icon: 'gauge', items: [] },
-        'systems': { id: 'systems', label: 'I360 Systems', icon: 'target', items: [] },
-        'components': { id: 'components', label: 'Components', icon: 'puzzle', items: [] },
-        'tools': { id: 'tools', label: 'Modules', icon: 'wrench', items: [] },
+        'modules': { id: 'modules', label: 'Modules', icon: 'boxes', items: [] },
         'agency': { id: 'agency', label: 'Agency', icon: 'building', items: [] },
         'admin': { id: 'admin', label: 'Administration', icon: 'settings', items: [] }
     };
 
+    // Map old nav_group names to new ones (for backward compatibility with DB)
+    const groupAliases = {
+        'systems': 'ai-systems',
+        'components': 'ai-systems',
+        'tools': 'modules'
+    };
+
+    // Groups to exclude from navigation (sub-pages accessed from other pages)
+    const excludedGroups = ['admin-sub'];
+
     // Convert modules to nav items
     modules.forEach(module => {
+        let group = module.nav_group || 'other';
+
+        // Skip excluded groups (these are sub-pages, not main nav items)
+        if (excludedGroups.includes(group)) {
+            return;
+        }
+
         const navItem = {
             href: module.route_path,
             icon: module.icon || 'circle',
@@ -174,12 +183,16 @@ function convertModulesToNavConfig(modulesData) {
             isBeta: module.is_beta
         };
 
-        const group = module.nav_group || 'other';
+        // Resolve aliases
+        if (groupAliases[group]) {
+            group = groupAliases[group];
+        }
+
         if (groupMap[group]) {
             groupMap[group].items.push(navItem);
         } else {
-            // Add to components as fallback
-            groupMap.components.items.push(navItem);
+            // Add to ai-systems as fallback
+            groupMap['ai-systems'].items.push(navItem);
         }
     });
 

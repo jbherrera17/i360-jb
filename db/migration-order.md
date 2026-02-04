@@ -78,6 +78,7 @@ Each section must complete before moving to the next.
 62. `phase49-integration-addon-pricing.sql`
 63. `phase50-role-based-resources.sql`
 64. `phase52-platform-tier.sql`
+65. `phase53-navigation-restructure.sql`
 
 ## RLS & Security Fixes (run after all schemas)
 

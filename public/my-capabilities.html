@@ -366,6 +366,32 @@
         let capabilities = [];
         let currentFilter = 'all';
 
+        // Auth helper - get headers with token
+        function getAuthHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('insight360_token');
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            const orgId = localStorage.getItem('insight360_org_id');
+            if (orgId) {
+                headers['x-org-id'] = orgId;
+            }
+            return headers;
+        }
+
+        // Auth-aware fetch wrapper
+        async function authFetch(url, options = {}) {
+            const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+            const response = await fetch(url, { ...options, headers });
+            if (response.status === 401) {
+                // Redirect to login if unauthorized
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Authentication required');
+            }
+            return response;
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -374,7 +400,7 @@
 
         async function loadCapabilities() {
             try {
-                const response = await fetch('/api/connections/capabilities');
+                const response = await authFetch('/api/connections/capabilities');
                 const result = await response.json();
 
                 if (result.success) {

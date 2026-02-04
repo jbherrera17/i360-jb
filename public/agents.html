@@ -2407,6 +2407,9 @@
                 const platform = document.getElementById('filterPlatform').value;
                 const search = document.getElementById('searchInput').value;
 
+                // Request all agents (API defaults to 50)
+                params.append('limit', '500');
+
                 if (department) params.append('department_id', department);
                 if (suite) params.append('suite', suite);
                 if (status) params.append('active', status === 'active' ? 'true' : 'false');

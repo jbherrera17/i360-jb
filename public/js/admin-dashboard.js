@@ -34,7 +34,7 @@ const AdminDashboard = {
                 fetch('/api/platform/stats', { headers }).catch(() => null),
                 fetch('/api/users', { headers }),
                 fetch('/api/organizations', { headers }).catch(() => null),
-                fetch('/api/agents', { headers })
+                fetch('/api/agents/stats', { headers })
             ]);
 
             this.stats = {
@@ -67,7 +67,8 @@ const AdminDashboard = {
             if (agentsRes.status === 'fulfilled' && agentsRes.value?.ok) {
                 const data = await agentsRes.value.json();
                 if (data.data) {
-                    this.stats.agents = data.data.length || this.stats.agents;
+                    // Use total_agents from /api/agents/stats endpoint
+                    this.stats.agents = data.data.total_agents || this.stats.agents;
                 }
             }
 
