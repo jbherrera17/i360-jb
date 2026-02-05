@@ -171,6 +171,16 @@ function createTestApp(options = {}) {
     app.use('/api/webhooks', webhooksRoutes(mockSupabase));
   }
 
+  if (routes.includes('soul-config')) {
+    const soulConfigRoutes = require('../../server/routes/soulConfig');
+    app.use('/api/soul-config', soulConfigRoutes(mockSupabase));
+  }
+
+  if (routes.includes('platform')) {
+    const platformRoutes = require('../../server/routes/platform');
+    app.use('/api/platform', platformRoutes(mockSupabase));
+  }
+
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Test app error:', err);
@@ -338,6 +348,121 @@ const mockResponses = {
     mockSupabase.auth.signInWithPassword.mockResolvedValue({
       data: { user: null, session: null },
       error: { message: errorMessage }
+    });
+  },
+
+  /**
+   * Setup soul configuration list response
+   */
+  soulConfigList: (mockSupabase, configs = []) => {
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'soul_configurations') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          is: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({
+            data: configs,
+            error: null
+          })
+        };
+      }
+      return createMockSupabase().from(table);
+    });
+  },
+
+  /**
+   * Setup single soul configuration response
+   */
+  singleSoulConfig: (mockSupabase, config) => {
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'soul_configurations') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          is: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({
+            data: config,
+            error: null
+          })
+        };
+      }
+      return createMockSupabase().from(table);
+    });
+  },
+
+  /**
+   * Setup ethical lenses response
+   */
+  ethicalLenses: (mockSupabase, lenses = []) => {
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'ethical_lenses') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({
+            data: lenses,
+            error: null
+          })
+        };
+      }
+      return createMockSupabase().from(table);
+    });
+  },
+
+  /**
+   * Setup module access check (RPC)
+   */
+  moduleAccessAllowed: (mockSupabase, allowed = true) => {
+    mockSupabase.rpc.mockImplementation((funcName, params) => {
+      if (funcName === 'can_access_module') {
+        return Promise.resolve({ data: allowed, error: null });
+      }
+      if (funcName === 'is_platform_admin') {
+        return Promise.resolve({ data: false, error: null });
+      }
+      if (funcName === 'check_org_limits') {
+        return Promise.resolve({
+          data: [{ within_limits: true, current_count: 5, max_allowed: 25, usage_percent: 20 }],
+          error: null
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+  },
+
+  /**
+   * Setup resource limit check (RPC)
+   */
+  resourceLimitCheck: (mockSupabase, withinLimits = true, current = 5, max = 25) => {
+    mockSupabase.rpc.mockImplementation((funcName) => {
+      if (funcName === 'check_org_limits') {
+        return Promise.resolve({
+          data: [{
+            within_limits: withinLimits,
+            current_count: current,
+            max_allowed: max,
+            usage_percent: Math.round((current / max) * 100)
+          }],
+          error: null
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+  },
+
+  /**
+   * Setup platform admin check
+   */
+  platformAdminCheck: (mockSupabase, isAdmin = true, role = 'super_admin') => {
+    mockSupabase.rpc.mockImplementation((funcName) => {
+      if (funcName === 'is_platform_admin') {
+        return Promise.resolve({ data: isAdmin, error: null });
+      }
+      if (funcName === 'get_platform_admin_role') {
+        return Promise.resolve({ data: role, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
     });
   }
 };

@@ -59,6 +59,32 @@ module.exports = function(supabase) {
         }
     });
 
+    // ============================================================================
+    // STATIC ROUTES (must be defined before /:id to avoid conflict)
+    // ============================================================================
+
+    /**
+     * GET /api/soul-config/ethical-lenses
+     * Get all ethical lenses (SCU Framework)
+     */
+    router.get('/ethical-lenses', async (req, res) => {
+        try {
+            const lenses = await ethicalContextService.getEthicalLenses();
+
+            res.json({
+                success: true,
+                data: lenses,
+                count: lenses.length
+            });
+        } catch (error) {
+            console.error('Error getting ethical lenses:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
     /**
      * GET /api/soul-config/:id
      * Get a specific soul configuration
@@ -434,28 +460,6 @@ module.exports = function(supabase) {
     // ============================================================================
     // ETHICAL FRAMEWORK ENDPOINTS
     // ============================================================================
-
-    /**
-     * GET /api/soul-config/ethical-lenses
-     * Get all ethical lenses (SCU Framework)
-     */
-    router.get('/ethical-lenses', async (req, res) => {
-        try {
-            const lenses = await ethicalContextService.getEthicalLenses();
-
-            res.json({
-                success: true,
-                data: lenses,
-                count: lenses.length
-            });
-        } catch (error) {
-            console.error('Error getting ethical lenses:', error);
-            res.status(500).json({
-                success: false,
-                error: error.message
-            });
-        }
-    });
 
     /**
      * POST /api/soul-config/detect-stakes
