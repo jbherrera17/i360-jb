@@ -47,9 +47,11 @@ const OPENAI_MODELS = {
         vision: true,
         tier: 'flagship'
     },
-    'gpt-5.2-pro': {
-        name: 'GPT-5.2 Pro',
-        description: 'Most accurate answers for difficult questions',
+    // Note: gpt-5.2-pro is NOT a chat model (requires completions API)
+    // Use gpt-5.2 for chat - it auto-redirects gpt-5.2-pro requests
+    'gpt-5.2-codex': {
+        name: 'GPT-5.2 Codex',
+        description: 'Optimized for code generation and understanding',
         maxTokens: 128000,
         contextWindow: 400000,
         vision: true,
@@ -119,9 +121,9 @@ const IMAGE_MODELS = {
     'gpt-image-1.5': {
         name: 'GPT Image 1.5',
         description: 'Latest image generation with better instruction-following',
-        sizes: ['1024x1024', '1024x1792', '1792x1024'],
-        qualities: ['standard', 'hd'],
-        styles: ['vivid', 'natural'],
+        sizes: ['1024x1024', '1024x1536', '1536x1024', 'auto'], // GPT Image 1.5 specific sizes
+        qualities: ['low', 'medium', 'high', 'auto'],
+        styles: [], // GPT Image doesn't support style parameter
         default: true
     },
     'dall-e-3': {
@@ -144,7 +146,8 @@ const IMAGE_MODELS = {
 const MODEL_ALIASES = {
     'gpt-5.2': 'gpt-5.2',
     'gpt-5.2-chat-latest': 'gpt-5.2-chat-latest',
-    'gpt-5.2-pro': 'gpt-5.2-pro',
+    'gpt-5.2-codex': 'gpt-5.2-codex',
+    'gpt-5.2-pro': 'gpt-5.2', // gpt-5.2-pro is NOT a chat model, redirect to gpt-5.2
     'gpt-4o': 'gpt-4o',
     'gpt-4o-mini': 'gpt-4o-mini',
     'gpt-4-turbo': 'gpt-4-turbo',
@@ -152,6 +155,7 @@ const MODEL_ALIASES = {
     'o1-mini': 'o1-mini',
     // Convenience aliases
     'gpt5': 'gpt-5.2',
+    'gpt5-pro': 'gpt-5.2', // gpt-5.2-pro is NOT a chat model
     'gpt4': 'gpt-4-turbo',
     'gpt4o': 'gpt-4o',
     'gpt4-mini': 'gpt-4o-mini'
@@ -625,7 +629,45 @@ async function textToSpeech(text, options = {}) {
 }
 
 /**
- * Generate an image using DALL-E
+ * Normalize size parameter to model-specific format
+ * Handles user-friendly terms like "16:9", "9:16", "square", "landscape", "portrait"
+ */
+function normalizeImageSize(size, model) {
+    const isGptImage = model.startsWith('gpt-image');
+
+    // User-friendly aliases
+    const aliases = {
+        '16:9': isGptImage ? '1536x1024' : '1792x1024',
+        '9:16': isGptImage ? '1024x1536' : '1024x1792',
+        'landscape': isGptImage ? '1536x1024' : '1792x1024',
+        'portrait': isGptImage ? '1024x1536' : '1024x1792',
+        'square': '1024x1024',
+        '1:1': '1024x1024',
+        'auto': isGptImage ? 'auto' : '1024x1024'
+    };
+
+    // Check aliases first
+    const lowerSize = size?.toLowerCase();
+    if (aliases[lowerSize]) {
+        return aliases[lowerSize];
+    }
+
+    // Map DALL-E sizes to GPT Image sizes if needed
+    if (isGptImage) {
+        const gptImageSizeMap = {
+            '1792x1024': '1536x1024', // landscape
+            '1024x1792': '1024x1536', // portrait
+        };
+        if (gptImageSizeMap[size]) {
+            return gptImageSizeMap[size];
+        }
+    }
+
+    return size || '1024x1024';
+}
+
+/**
+ * Generate an image using OpenAI image models
  */
 async function generateImage(prompt, options = {}) {
     if (!client) {
@@ -633,8 +675,8 @@ async function generateImage(prompt, options = {}) {
     }
 
     const {
-        model = 'dall-e-3',
-        size = '1024x1024',
+        model = 'gpt-image-1.5',
+        size: rawSize = '1024x1024',
         quality = 'standard',
         style = 'vivid',
         n = 1,
@@ -646,6 +688,9 @@ async function generateImage(prompt, options = {}) {
         throw new Error(`Unknown image model: ${model}. Available: ${Object.keys(IMAGE_MODELS).join(', ')}`);
     }
 
+    // Normalize size (handles aliases and cross-model mapping)
+    const size = normalizeImageSize(rawSize, model);
+
     // Validate size
     if (!modelInfo.sizes.includes(size)) {
         throw new Error(`Invalid size for ${model}: ${size}. Available: ${modelInfo.sizes.join(', ')}`);
@@ -655,17 +700,30 @@ async function generateImage(prompt, options = {}) {
         const requestParams = {
             model,
             prompt,
-            n: model === 'dall-e-3' ? 1 : Math.min(n, 10), // DALL-E 3 only supports n=1
-            size,
-            response_format: responseFormat === 'base64' ? 'b64_json' : 'url'
+            size
         };
 
-        // DALL-E 3 specific options
-        if (model === 'dall-e-3') {
+        // GPT Image models (gpt-image-1.5, etc.) have different API than DALL-E
+        const isGptImage = model.startsWith('gpt-image');
+
+        if (isGptImage) {
+            // GPT Image models: use 'low', 'medium', 'high', 'auto' for quality
+            requestParams.n = 1;
+            // Map DALL-E quality values to GPT Image values
+            const qualityMap = { 'standard': 'medium', 'hd': 'high' };
+            requestParams.quality = qualityMap[quality] || quality || 'auto';
+        } else if (model === 'dall-e-3') {
+            // DALL-E 3: supports quality, style, response_format
+            requestParams.n = 1;
             requestParams.quality = quality;
+            requestParams.response_format = responseFormat === 'base64' ? 'b64_json' : 'url';
             if (modelInfo.styles.includes(style)) {
                 requestParams.style = style;
             }
+        } else {
+            // DALL-E 2: supports n, response_format
+            requestParams.n = Math.min(n, 10);
+            requestParams.response_format = responseFormat === 'base64' ? 'b64_json' : 'url';
         }
 
         const response = await client.images.generate(requestParams);

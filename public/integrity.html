@@ -223,15 +223,15 @@
                 <div class="empty-state">
                     <div class="empty-state-icon"><i data-lucide="shield" style="width: 48px; height: 48px;"></i></div>
                     <h2>Set Up Your Integrity Dashboard</h2>
-                    <p>Start by configuring your foundation assets: Bright Lines and Values Map. These form the basis for measuring your organization's integrity posture.</p>
+                    <p>Start by configuring your Soul Configuration to define your organization's values and bright lines. These form the basis for measuring your integrity posture.</p>
                     <div class="empty-state-actions">
                         <button class="btn-primary" onclick="startSetup()">
-                            <i data-lucide="play" style="width: 18px; height: 18px;"></i>
-                            Start Setup Wizard
+                            <i data-lucide="heart" style="width: 18px; height: 18px;"></i>
+                            Soul Configuration Wizard
                         </button>
-                        <button class="btn-secondary" onclick="window.location.href='/context.html'">
-                            <i data-lucide="database" style="width: 18px; height: 18px;"></i>
-                            Configure Assets Manually
+                        <button class="btn-secondary" onclick="window.location.href='/soul-configuration.html'">
+                            <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                            Manage Soul Config
                         </button>
                     </div>
                 </div>
@@ -549,8 +549,29 @@
         }
 
         function startSetup() {
-            // Launch setup wizard - could open a modal or navigate to setup page
-            window.location.href = '/context.html?setup=integrity';
+            // Launch Soul Configuration wizard for setting up values and bright lines
+            window.location.href = '/soul-wizard.html';
+        }
+
+        // Fetch soul-based integrity metrics
+        async function fetchSoulMetrics() {
+            try {
+                const profileRes = await fetch('/api/user-profile');
+                const profileData = await profileRes.json();
+                const orgId = profileData.user?.org_id;
+
+                if (!orgId) return null;
+
+                const response = await fetch(`/api/soul-config/integrity-metrics/${orgId}?days=30`);
+                const data = await response.json();
+
+                if (data.success) {
+                    return data.data;
+                }
+            } catch (error) {
+                console.log('Soul metrics not available:', error.message);
+            }
+            return null;
         }
 
         function createAsset(assetType) {

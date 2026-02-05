@@ -641,6 +641,76 @@ router.post('/with-search', async (req, res) => {
 });
 
 /**
+ * POST /api/chat/image/generate
+ * Generate an image using OpenAI's image models
+ */
+router.post('/image/generate', async (req, res) => {
+    try {
+        const { prompt, model = 'gpt-image-1.5', size = '1792x1024', quality = 'standard', style = 'vivid' } = req.body;
+
+        if (!prompt) {
+            return res.status(400).json({
+                success: false,
+                error: 'Prompt is required'
+            });
+        }
+
+        if (!openai.isAvailable()) {
+            return res.status(503).json({
+                success: false,
+                error: 'OpenAI service not available. Check API key configuration.'
+            });
+        }
+
+        console.log(`[Image Generation] Generating image with ${model}: "${prompt.substring(0, 50)}..."`);
+
+        const result = await openai.generateImage(prompt, {
+            model,
+            size,
+            quality,
+            style
+        });
+
+        res.json({
+            success: true,
+            images: result.images,
+            model: result.model,
+            modelName: result.modelName,
+            prompt: prompt
+        });
+
+    } catch (error) {
+        console.error('Image generation error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/chat/image/models
+ * Get available image generation models
+ */
+router.get('/image/models', (req, res) => {
+    if (!openai.isAvailable()) {
+        return res.json({
+            success: true,
+            models: [],
+            available: false
+        });
+    }
+
+    const models = openai.getImageModels();
+    res.json({
+        success: true,
+        models,
+        available: true,
+        default: 'gpt-image-1.5'
+    });
+});
+
+/**
  * POST /api/chat/voice/transcribe
  * Transcribe audio to text
  */

@@ -81,9 +81,7 @@ const navConfig = {
             icon: 'settings',
             adminOnly: true,
             items: [
-                { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
-                { href: '/admin-resource-access.html', icon: 'shield-check', label: 'Resource Access' },
-                { href: '/integrations.html', icon: 'plug', label: 'Integrations' }
+                { href: '/administrator.html', icon: 'shield', label: 'Administrator' }
             ]
         }
     ]

@@ -94,13 +94,15 @@ const OPENAI_MODELS = {
         capabilities: ['vision', 'image_gen'],
         tier: 'flagship'
     },
-    'gpt-5.2-pro': {
-        name: 'GPT-5.2 Pro',
+    // Note: gpt-5.2-pro is NOT a chat model - use gpt-5.2 instead
+    // The service layer redirects gpt-5.2-pro requests to gpt-5.2
+    'gpt-5.2-codex': {
+        name: 'GPT-5.2 Codex',
         provider: 'openai',
-        description: 'Most accurate answers for difficult questions',
+        description: 'Optimized for code generation and understanding',
         maxTokens: 128000,
         contextWindow: 400000,
-        capabilities: ['vision', 'reasoning', 'image_gen'],
+        capabilities: ['vision', 'reasoning'],
         tier: 'premium'
     },
     // GPT-4o Family
@@ -352,7 +354,7 @@ function getProvider(modelId) {
     if (modelId.startsWith('claude')) return 'anthropic';
     if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('dall-e')) return 'openai';
     if (modelId.startsWith('sonar') || modelId.startsWith('pplx') || modelId.startsWith('perplexity')) return 'perplexity';
-    if (modelId.startsWith('gemini')) return 'google';
+    if (modelId.startsWith('gemini') || modelId.startsWith('nano-banana')) return 'google';
     return ALL_MODELS[modelId]?.provider || 'anthropic';
 }
 

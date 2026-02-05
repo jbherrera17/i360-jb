@@ -109,35 +109,6 @@ const AdminDashboard = {
                     ${this.renderStatCard('activity', 'API Health', this.stats.apiHealth === 'good' ? 'Good' : 'Issues', 'System status', this.stats.apiHealth)}
                 </div>
 
-                <div class="dashboard-grid">
-                    <!-- Quick Actions -->
-                    <div class="dashboard-section">
-                        <h3 class="section-title">
-                            <i data-lucide="zap"></i>
-                            Quick Actions
-                        </h3>
-                        <div class="quick-actions">
-                            ${this.renderQuickAction('user-plus', 'Add User', 'admin.html?action=add-user', 'Invite a new team member')}
-                            ${this.renderQuickAction('building-2', 'Create Organization', 'admin-org-settings.html', 'Set up a new organization')}
-                            ${this.renderQuickAction('users', 'Manage Members', 'admin-org-members.html', 'View and manage team members')}
-                            ${this.renderQuickAction('shield', 'Resource Access', 'admin-resource-access.html', 'Configure resource visibility')}
-                            ${this.renderQuickAction('puzzle', 'Configure Modules', 'admin-platform.html', 'Manage platform modules')}
-                            ${this.renderQuickAction('layers', 'Tier Settings', 'admin-tier-setup.html', 'Configure subscription tiers')}
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity -->
-                    <div class="dashboard-section">
-                        <h3 class="section-title">
-                            <i data-lucide="clock"></i>
-                            Recent Activity
-                        </h3>
-                        <div class="activity-list">
-                            ${this.renderActivityList()}
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Alerts Section -->
                 <div class="dashboard-alerts" id="dashboardAlerts">
                     ${this.renderAlerts()}

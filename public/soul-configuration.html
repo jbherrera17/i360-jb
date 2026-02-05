@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soul Configuration | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Soul Configuration Management Styles */
+        .soul-layout {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-xl);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Config Card */
+        .config-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .config-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .config-card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .config-card-title h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .config-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .config-status.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .config-status.draft {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .config-status.inactive {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        /* Hierarchy Tree */
+        .hierarchy-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .hierarchy-level {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .hierarchy-connector {
+            width: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 0.5rem;
+        }
+
+        .hierarchy-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .hierarchy-line {
+            width: 2px;
+            flex: 1;
+            background: var(--border);
+            margin-top: 4px;
+        }
+
+        .hierarchy-content {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .hierarchy-content.platform {
+            border-left: 3px solid var(--primary);
+        }
+
+        .hierarchy-content.organization {
+            border-left: 3px solid #10b981;
+        }
+
+        .hierarchy-content.department {
+            border-left: 3px solid #f59e0b;
+        }
+
+        .hierarchy-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .hierarchy-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .hierarchy-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Version History */
+        .version-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .version-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .version-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .version-number.current {
+            background: var(--primary);
+            color: white;
+        }
+
+        .version-content {
+            flex: 1;
+        }
+
+        .version-summary {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .version-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .version-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Values Grid */
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .value-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .value-card.non-negotiable {
+            border-left: 3px solid var(--danger);
+        }
+
+        .value-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .value-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .value-priority {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .value-meaning {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .value-behaviors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .value-behavior {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 4px;
+        }
+
+        /* Bright Lines */
+        .bright-lines-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .bright-line-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--danger);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .bright-line-card.platform {
+            border-left-color: var(--primary);
+        }
+
+        .bright-line-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .bright-line-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bright-line-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            opacity: 0.5;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Soul.md Preview */
+        .soul-md-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .soul-md-container pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="heart" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Soul Configuration
+                    </h1>
+                    <p class="header-subtitle">Manage your organization's values, ethics, and AI persona</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <a href="/soul-wizard.html" class="btn btn-primary">
+                        <i data-lucide="plus"></i> New Configuration
+                    </a>
+                </div>
+            </header>
+
+            <div class="soul-layout">
+                <!-- Stats Overview -->
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-values">-</div>
+                        <div class="stat-label">Core Values</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-bright-lines">-</div>
+                        <div class="stat-label">Bright Lines</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-completeness">-</div>
+                        <div class="stat-label">Completeness</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-version">-</div>
+                        <div class="stat-label">Version</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="overview" onclick="switchTab('overview')">
+                        <i data-lucide="layout-dashboard"></i> Overview
+                    </button>
+                    <button class="tab" data-tab="values" onclick="switchTab('values')">
+                        <i data-lucide="gem"></i> Values
+                    </button>
+                    <button class="tab" data-tab="bright-lines" onclick="switchTab('bright-lines')">
+                        <i data-lucide="shield-alert"></i> Bright Lines
+                    </button>
+                    <button class="tab" data-tab="voice" onclick="switchTab('voice')">
+                        <i data-lucide="mic"></i> Voice
+                    </button>
+                    <button class="tab" data-tab="history" onclick="switchTab('history')">
+                        <i data-lucide="history"></i> History
+                    </button>
+                    <button class="tab" data-tab="soul-md" onclick="switchTab('soul-md')">
+                        <i data-lucide="file-text"></i> Soul.md
+                    </button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-panel active" id="tab-overview">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="layers" style="color: var(--primary);"></i>
+                                <h3>Configuration Hierarchy</h3>
+                            </div>
+                            <span class="config-status active" id="config-status">
+                                <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                                Active
+                            </span>
+                        </div>
+
+                        <div class="hierarchy-tree" id="hierarchy-tree">
+                            <!-- Hierarchy loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Values Tab -->
+                <div class="tab-panel" id="tab-values">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="gem" style="color: var(--primary);"></i>
+                                <h3>Core Values</h3>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="editValues()">
+                                <i data-lucide="edit-2"></i> Edit
+                            </button>
+                        </div>
+
+                        <div class="values-grid" id="values-grid">
+                            <!-- Values loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bright Lines Tab -->
+                <div class="tab-panel" id="tab-bright-lines">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="shield-alert" style="color: var(--danger);"></i>
+                                <h3>Bright Lines (Non-Negotiables)</h3>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="editBrightLines()">
+                                <i data-lucide="edit-2"></i> Edit
+                            </button>
+                        </div>
+
+                        <div class="bright-lines-section" id="platform-lines">
+                            <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
+                                <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+                                Platform Level (Immutable)
+                            </h4>
+                            <!-- Platform lines loaded dynamically -->
+                        </div>
+
+                        <div class="bright-lines-section" id="org-lines">
+                            <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
+                                <i data-lucide="building-2" style="width: 14px; height: 14px;"></i>
+                                Organization Level
+                            </h4>
+                            <!-- Org lines loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Voice Tab -->
+                <div class="tab-panel" id="tab-voice">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="mic" style="color: var(--primary);"></i>
+                                <h3>Voice & Persona</h3>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="editVoice()">
+                                <i data-lucide="edit-2"></i> Edit
+                            </button>
+                        </div>
+
+                        <div id="voice-content">
+                            <!-- Voice config loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-panel" id="tab-history">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="history" style="color: var(--primary);"></i>
+                                <h3>Version History</h3>
+                            </div>
+                        </div>
+
+                        <div class="version-list" id="version-list">
+                            <!-- Versions loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Soul.md Tab -->
+                <div class="tab-panel" id="tab-soul-md">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="file-text" style="color: var(--primary);"></i>
+                                <h3>Soul.md Preview</h3>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-secondary btn-sm" onclick="regenerateSoulMd()">
+                                    <i data-lucide="refresh-cw"></i> Regenerate
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportSoulMd()">
+                                    <i data-lucide="download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="soul-md-container">
+                            <pre id="soul-md-content">Loading...</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let currentConfig = null;
+        let orgId = null;
+        let configId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Get org context
+            try {
+                const response = await fetch('/api/user-profile');
+                const data = await response.json();
+                if (data.user && data.user.org_id) {
+                    orgId = data.user.org_id;
+                }
+            } catch (e) {
+                console.error('Failed to get user profile:', e);
+            }
+
+            await loadConfiguration();
+        });
+
+        // Load configuration
+        async function loadConfiguration() {
+            try {
+                // Get active org-level config
+                const response = await fetch(`/api/soul-config?scope_type=organization&org_id=${orgId}&is_active=true`);
+                const data = await response.json();
+
+                if (!data.success || !data.data || data.data.length === 0) {
+                    showEmptyState();
+                    return;
+                }
+
+                currentConfig = data.data[0];
+                configId = currentConfig.id;
+
+                updateStats();
+                renderHierarchy();
+                renderValues();
+                renderBrightLines();
+                renderVoice();
+                loadVersionHistory();
+                loadSoulMd();
+
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+                showToast('Failed to load configuration', 'error');
+            }
+        }
+
+        function showEmptyState() {
+            document.querySelector('.stats-grid').innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <i data-lucide="heart-off" class="empty-state-icon"></i>
+                    <h3>No Soul Configuration Found</h3>
+                    <p>Create your organization's soul configuration to define values, ethics, and AI persona.</p>
+                    <a href="/soul-wizard.html" class="btn btn-primary" style="margin-top: 1rem;">
+                        <i data-lucide="plus"></i> Create Soul Configuration
+                    </a>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-values').textContent = (currentConfig.values || []).length;
+            document.getElementById('stat-bright-lines').textContent = (currentConfig.bright_lines || []).length;
+            document.getElementById('stat-completeness').textContent = `${currentConfig.completeness_score || 0}%`;
+            document.getElementById('stat-version').textContent = `v${currentConfig.version || 1}`;
+
+            // Update status badge
+            const statusEl = document.getElementById('config-status');
+            if (currentConfig.is_draft) {
+                statusEl.className = 'config-status draft';
+                statusEl.innerHTML = '<i data-lucide="edit" style="width: 14px; height: 14px;"></i> Draft';
+            } else if (currentConfig.is_active) {
+                statusEl.className = 'config-status active';
+                statusEl.innerHTML = '<i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Active';
+            } else {
+                statusEl.className = 'config-status inactive';
+                statusEl.innerHTML = '<i data-lucide="circle" style="width: 14px; height: 14px;"></i> Inactive';
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderHierarchy() {
+            const tree = document.getElementById('hierarchy-tree');
+            const identity = currentConfig.identity || {};
+
+            tree.innerHTML = `
+                <div class="hierarchy-level">
+                    <div class="hierarchy-connector">
+                        <div class="hierarchy-dot"></div>
+                        <div class="hierarchy-line"></div>
+                    </div>
+                    <div class="hierarchy-content platform">
+                        <div class="hierarchy-label">Platform Level</div>
+                        <div class="hierarchy-name">Synergi AI Platform</div>
+                        <div class="hierarchy-meta">
+                            <span>6 Immutable Bright Lines</span>
+                            <span>SCU Ethics Framework</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hierarchy-level">
+                    <div class="hierarchy-connector">
+                        <div class="hierarchy-dot" style="background: #10b981;"></div>
+                        <div class="hierarchy-line"></div>
+                    </div>
+                    <div class="hierarchy-content organization">
+                        <div class="hierarchy-label">Organization Level</div>
+                        <div class="hierarchy-name">${currentConfig.organization_name || 'Your Organization'}</div>
+                        <div class="hierarchy-meta">
+                            <span>${(currentConfig.values || []).length} Values</span>
+                            <span>${(currentConfig.bright_lines || []).filter(bl => bl.level !== 'platform').length} Bright Lines</span>
+                            <span>Completeness: ${currentConfig.completeness_score || 0}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hierarchy-level">
+                    <div class="hierarchy-connector">
+                        <div class="hierarchy-dot" style="background: #f59e0b;"></div>
+                    </div>
+                    <div class="hierarchy-content department">
+                        <div class="hierarchy-label">AI Persona</div>
+                        <div class="hierarchy-name">${identity.name || 'Higgins'}</div>
+                        <div class="hierarchy-meta">
+                            <span>Role: ${identity.role || 'Chief of Staff AI'}</span>
+                            <span>Archetype: ${identity.archetype || 'Trusted Butler'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderValues() {
+            const grid = document.getElementById('values-grid');
+            const values = currentConfig.values || [];
+
+            if (values.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><p>No values defined yet.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = values.map(v => `
+                <div class="value-card ${v.non_negotiable ? 'non-negotiable' : ''}">
+                    <div class="value-header">
+                        <span class="value-name">
+                            ${v.non_negotiable ? '<i data-lucide="star" style="width: 14px; height: 14px; color: var(--danger);"></i>' : ''}
+                            ${v.name}
+                        </span>
+                        <span class="value-priority">${v.priority || 'medium'}</span>
+                    </div>
+                    ${v.meaning ? `<div class="value-meaning">${v.meaning}</div>` : ''}
+                    ${v.behaviors && v.behaviors.length > 0 ? `
+                        <div class="value-behaviors">
+                            ${v.behaviors.map(b => `<span class="value-behavior">${b}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderBrightLines() {
+            const platformContainer = document.getElementById('platform-lines');
+            const orgContainer = document.getElementById('org-lines');
+            const lines = currentConfig.bright_lines || [];
+
+            const platformLines = lines.filter(bl => bl.level === 'platform');
+            const orgLines = lines.filter(bl => bl.level !== 'platform');
+
+            // Platform lines
+            if (platformLines.length > 0) {
+                platformContainer.innerHTML = `
+                    <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
+                        <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+                        Platform Level (Immutable)
+                    </h4>
+                    ${platformLines.map(bl => `
+                        <div class="bright-line-card platform">
+                            <div class="bright-line-header">
+                                <span class="bright-line-name">
+                                    <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                                    ${bl.name}
+                                </span>
+                                <span class="bright-line-badge">Platform</span>
+                            </div>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${bl.description || ''}</p>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            // Org lines
+            if (orgLines.length > 0) {
+                orgContainer.innerHTML = `
+                    <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
+                        <i data-lucide="building-2" style="width: 14px; height: 14px;"></i>
+                        Organization Level
+                    </h4>
+                    ${orgLines.map(bl => `
+                        <div class="bright-line-card">
+                            <div class="bright-line-header">
+                                <span class="bright-line-name">
+                                    <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
+                                    ${bl.name}
+                                </span>
+                            </div>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${bl.description || ''}</p>
+                            ${bl.test_question ? `<p style="margin: 0.5rem 0 0 0; font-style: italic; font-size: 0.85rem; color: var(--text-muted);">Test: "${bl.test_question}"</p>` : ''}
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                orgContainer.innerHTML = `
+                    <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
+                        <i data-lucide="building-2" style="width: 14px; height: 14px;"></i>
+                        Organization Level
+                    </h4>
+                    <div class="empty-state" style="padding: 1.5rem;"><p>No organization bright lines defined.</p></div>
+                `;
+            }
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderVoice() {
+            const container = document.getElementById('voice-content');
+            const identity = currentConfig.identity || {};
+            const voice = currentConfig.voice || {};
+
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h4 style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                            AI Persona
+                        </h4>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
+                            <p style="margin: 0 0 0.5rem 0;"><strong>Name:</strong> ${identity.name || 'Higgins'}</p>
+                            <p style="margin: 0 0 0.5rem 0;"><strong>Role:</strong> ${identity.role || 'Chief of Staff AI'}</p>
+                            <p style="margin: 0;"><strong>Archetype:</strong> ${identity.archetype || 'Trusted Butler'}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="volume-2" style="width: 16px; height: 16px;"></i>
+                            Tone & Voice
+                        </h4>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
+                            ${voice.tone && voice.tone.length > 0 ? `
+                                <p style="margin: 0 0 0.5rem 0;"><strong>Tone:</strong> ${voice.tone.join(', ')}</p>
+                            ` : ''}
+                            ${voice.use_words && voice.use_words.length > 0 ? `
+                                <p style="margin: 0 0 0.5rem 0;"><strong>Use:</strong> ${voice.use_words.join(', ')}</p>
+                            ` : ''}
+                            ${voice.avoid && voice.avoid.length > 0 ? `
+                                <p style="margin: 0;"><strong>Avoid:</strong> ${voice.avoid.join(', ')}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function loadVersionHistory() {
+            try {
+                const response = await fetch(`/api/soul-config/${configId}/versions`);
+                const data = await response.json();
+
+                if (!data.success) throw new Error(data.error);
+
+                const list = document.getElementById('version-list');
+                const versions = data.data || [];
+
+                if (versions.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><p>No version history available.</p></div>';
+                    return;
+                }
+
+                list.innerHTML = versions.map((v, idx) => `
+                    <div class="version-item">
+                        <div class="version-number ${idx === 0 ? 'current' : ''}">v${v.version}</div>
+                        <div class="version-content">
+                            <div class="version-summary">${v.change_summary || 'Configuration update'}</div>
+                            <div class="version-meta">
+                                ${new Date(v.changed_at).toLocaleString()}
+                                ${v.changed_sections && v.changed_sections.length > 0 ? ` - Changed: ${v.changed_sections.join(', ')}` : ''}
+                            </div>
+                        </div>
+                        <div class="version-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="viewVersion(${v.version})" title="View">
+                                <i data-lucide="eye"></i>
+                            </button>
+                            ${idx > 0 ? `
+                                <button class="btn btn-secondary btn-sm" onclick="rollbackToVersion(${v.version})" title="Rollback">
+                                    <i data-lucide="rotate-ccw"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading version history:', error);
+            }
+        }
+
+        async function loadSoulMd() {
+            try {
+                const response = await fetch(`/api/soul-config/${configId}/export`);
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.markdown) {
+                    document.getElementById('soul-md-content').textContent = data.data.markdown;
+                }
+            } catch (error) {
+                console.error('Error loading soul.md:', error);
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Actions
+        function editValues() {
+            window.location.href = `/soul-wizard.html?edit=${configId}&step=2`;
+        }
+
+        function editBrightLines() {
+            window.location.href = `/soul-wizard.html?edit=${configId}&step=3`;
+        }
+
+        function editVoice() {
+            window.location.href = `/soul-wizard.html?edit=${configId}&step=5`;
+        }
+
+        async function regenerateSoulMd() {
+            try {
+                const response = await fetch(`/api/soul-config/${configId}/export`);
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.markdown) {
+                    document.getElementById('soul-md-content').textContent = data.data.markdown;
+                    showToast('Soul.md regenerated', 'success');
+                }
+            } catch (error) {
+                showToast('Failed to regenerate', 'error');
+            }
+        }
+
+        async function exportSoulMd() {
+            try {
+                const markdown = document.getElementById('soul-md-content').textContent;
+                const blob = new Blob([markdown], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'soul.md';
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('soul.md exported', 'success');
+            } catch (error) {
+                showToast('Failed to export', 'error');
+            }
+        }
+
+        async function viewVersion(version) {
+            showToast(`Viewing version ${version}`, 'info');
+            // Could open a modal with version diff
+        }
+
+        async function rollbackToVersion(version) {
+            if (!confirm(`Are you sure you want to rollback to version ${version}? This will create a new version.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/soul-config/${configId}/rollback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ version })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast(`Rolled back to version ${version}`, 'success');
+                    await loadConfiguration();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showToast('Rollback failed: ' + error.message, 'error');
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? '#10b981' : 'var(--primary)'};
+                color: white;
+                border-radius: 8px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soul Configuration Wizard | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Soul Wizard Layout */
+        .wizard-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: var(--spacing-xl);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Progress Indicator */
+        .wizard-progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .wizard-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .wizard-step:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .wizard-step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .wizard-step-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .wizard-step.active {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        .wizard-step.active .wizard-step-number {
+            background: var(--primary);
+            color: white;
+        }
+
+        .wizard-step.active .wizard-step-label {
+            color: var(--text-primary);
+        }
+
+        .wizard-step.completed .wizard-step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .wizard-step.completed .wizard-step-label {
+            color: var(--text-primary);
+        }
+
+        .step-connector {
+            width: 20px;
+            height: 2px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-connector.completed {
+            background: #10b981;
+        }
+
+        /* Step Panel */
+        .step-panel {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        .panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .panel-header-content {
+            flex: 1;
+        }
+
+        .panel-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .panel-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+        }
+
+        .panel-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Styles */
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Value Item */
+        .value-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .value-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .value-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .value-item-header input {
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            padding: 0.25rem 0;
+        }
+
+        .value-item-header input:focus {
+            outline: none;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .value-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .value-controls select {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        .value-controls button {
+            padding: 0.35rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .value-controls button:hover {
+            color: var(--danger);
+        }
+
+        /* Bright Line Item */
+        .bright-line-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--danger);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .bright-line-item.platform {
+            border-left-color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .bright-line-item.platform::after {
+            content: 'Platform (Immutable)';
+            font-size: 0.7rem;
+            color: var(--primary);
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
+
+        /* Tag Input */
+        .tag-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            min-height: 44px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .tag-input-container input {
+            border: none;
+            outline: none;
+            background: transparent;
+            flex: 1;
+            min-width: 100px;
+            font-size: 0.95rem;
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Completeness Indicator */
+        .completeness-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .completeness-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .completeness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b, #10b981);
+            transition: width 0.3s ease;
+        }
+
+        .completeness-score {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 50px;
+        }
+
+        /* Import Section */
+        .import-section {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .import-section p {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Preview Section */
+        .preview-section {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .preview-section pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="heart" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Soul Configuration Wizard
+                    </h1>
+                    <p class="header-subtitle">Define your organization's values, bright lines, and AI persona</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="wizard-layout">
+                <!-- Progress Indicator -->
+                <div class="wizard-progress">
+                    <div class="wizard-step active" data-step="1" onclick="goToStep(1)">
+                        <div class="wizard-step-number">1</div>
+                        <span class="wizard-step-label">Profile</span>
+                    </div>
+                    <div class="step-connector"></div>
+
+                    <div class="wizard-step" data-step="2" onclick="goToStep(2)">
+                        <div class="wizard-step-number">2</div>
+                        <span class="wizard-step-label">Values</span>
+                    </div>
+                    <div class="step-connector"></div>
+
+                    <div class="wizard-step" data-step="3" onclick="goToStep(3)">
+                        <div class="wizard-step-number">3</div>
+                        <span class="wizard-step-label">Bright Lines</span>
+                    </div>
+                    <div class="step-connector"></div>
+
+                    <div class="wizard-step" data-step="4" onclick="goToStep(4)">
+                        <div class="wizard-step-number">4</div>
+                        <span class="wizard-step-label">Guardrails</span>
+                    </div>
+                    <div class="step-connector"></div>
+
+                    <div class="wizard-step" data-step="5" onclick="goToStep(5)">
+                        <div class="wizard-step-number">5</div>
+                        <span class="wizard-step-label">Voice</span>
+                    </div>
+                    <div class="step-connector"></div>
+
+                    <div class="wizard-step" data-step="6" onclick="goToStep(6)">
+                        <div class="wizard-step-number">6</div>
+                        <span class="wizard-step-label">Domain</span>
+                    </div>
+                    <div class="step-connector"></div>
+
+                    <div class="wizard-step" data-step="7" onclick="goToStep(7)">
+                        <div class="wizard-step-number">7</div>
+                        <span class="wizard-step-label">Review</span>
+                    </div>
+                </div>
+
+                <!-- Completeness Indicator -->
+                <div class="completeness-indicator">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Completeness:</span>
+                    <div class="completeness-bar">
+                        <div class="completeness-fill" id="completeness-fill" style="width: 0%"></div>
+                    </div>
+                    <span class="completeness-score" id="completeness-score">0%</span>
+                </div>
+
+                <!-- Step 1: Organization Profile -->
+                <div class="step-panel active" id="step-1">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="building-2"></i> Organization Profile</h2>
+                            <p>Basic information about your organization and its mission</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <!-- Import Option -->
+                        <div class="import-section">
+                            <p><i data-lucide="download"></i> Import from existing data</p>
+                            <div class="btn-group">
+                                <button class="btn btn-secondary btn-sm" onclick="importFromStrategicFoundations()">
+                                    <i data-lucide="target"></i> From Strategic Foundations
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="importFromAlign120()">
+                                    <i data-lucide="compass"></i> From Align 120
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Organization Name *</label>
+                                <input type="text" id="org-name" placeholder="Acme Corporation">
+                            </div>
+                            <div class="form-group">
+                                <label>Industry</label>
+                                <select id="org-industry">
+                                    <option value="">Select industry...</option>
+                                    <option value="technology">Technology</option>
+                                    <option value="healthcare">Healthcare</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="manufacturing">Manufacturing</option>
+                                    <option value="retail">Retail</option>
+                                    <option value="education">Education</option>
+                                    <option value="consulting">Consulting</option>
+                                    <option value="nonprofit">Non-Profit</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Mission Statement</div>
+                            <div class="form-group">
+                                <textarea id="org-mission" placeholder="What is your organization's purpose? Why does it exist?"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Vision Statement</div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <textarea id="org-vision" placeholder="What future are you working toward? Where will you be in 3-5 years?"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Vision Horizon</label>
+                                    <select id="org-vision-horizon">
+                                        <option value="3">3 years</option>
+                                        <option value="5" selected>5 years</option>
+                                        <option value="10">10 years</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <div></div>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Continue to Values <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Core Values -->
+                <div class="step-panel" id="step-2">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="gem"></i> Core Values</h2>
+                            <p>Define your organization's core values with observable behaviors</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <!-- Import Option -->
+                        <div class="import-section">
+                            <p><i data-lucide="sparkles"></i> Discovered values from Align 120 assessment</p>
+                            <div id="discovered-values-container">
+                                <p style="color: var(--text-muted); font-style: italic;">
+                                    No discovered values available. Complete Align 120 Module 2 to see values from assessment.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <span>Defined Values</span>
+                                <button class="btn btn-secondary btn-sm" style="margin-left: auto;" onclick="addValue()">
+                                    <i data-lucide="plus"></i> Add Value
+                                </button>
+                            </div>
+                            <div class="value-list" id="values-list">
+                                <!-- Values added dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Continue to Bright Lines <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Bright Lines -->
+                <div class="step-panel" id="step-3">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="shield-alert"></i> Bright Lines</h2>
+                            <p>Non-negotiable boundaries that must never be crossed</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-section">
+                            <div class="form-section-title">Platform Bright Lines (Immutable)</div>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                                These are platform-level protections that apply to all organizations and cannot be changed.
+                            </p>
+                            <div id="platform-bright-lines">
+                                <!-- Platform bright lines loaded from API -->
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <span>Organization Bright Lines</span>
+                                <button class="btn btn-secondary btn-sm" style="margin-left: auto;" onclick="addBrightLine()">
+                                    <i data-lucide="plus"></i> Add Bright Line
+                                </button>
+                            </div>
+                            <div id="org-bright-lines">
+                                <!-- Org bright lines added dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Continue to Guardrails <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Guardrails -->
+                <div class="step-panel" id="step-4">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="shield-check"></i> Guardrails</h2>
+                            <p>Behavioral guidelines by category</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-section">
+                            <div class="form-section-title"><i data-lucide="message-square"></i> Communication Guardrails</div>
+                            <div class="form-group">
+                                <label>Rules for how AI should communicate</label>
+                                <div class="tag-input-container" id="guardrails-communication">
+                                    <input type="text" placeholder="Type and press Enter to add...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title"><i data-lucide="git-branch"></i> Decision Guardrails</div>
+                            <div class="form-group">
+                                <label>Rules for when to escalate or seek human review</label>
+                                <div class="tag-input-container" id="guardrails-decision">
+                                    <input type="text" placeholder="Type and press Enter to add...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title"><i data-lucide="target"></i> Scope Guardrails</div>
+                            <div class="form-group">
+                                <label>Boundaries of AI authority and action</label>
+                                <div class="tag-input-container" id="guardrails-scope">
+                                    <input type="text" placeholder="Type and press Enter to add...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title"><i data-lucide="heart-handshake"></i> Emotional Guardrails</div>
+                            <div class="form-group">
+                                <label>How to handle distress and sensitive topics</label>
+                                <div class="tag-input-container" id="guardrails-emotional">
+                                    <input type="text" placeholder="Type and press Enter to add...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Continue to Voice <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Voice & Persona -->
+                <div class="step-panel" id="step-5">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="mic"></i> Voice & Persona</h2>
+                            <p>Define your AI assistant's personality and brand voice</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-section">
+                            <div class="form-section-title">AI Persona</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Assistant Name</label>
+                                    <input type="text" id="persona-name" value="Higgins" placeholder="Higgins">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role Description</label>
+                                    <input type="text" id="persona-role" value="Chief of Staff AI" placeholder="Chief of Staff AI">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Archetype</label>
+                                    <select id="persona-archetype">
+                                        <option value="trusted_butler" selected>Trusted Butler</option>
+                                        <option value="strategic_advisor">Strategic Advisor</option>
+                                        <option value="helpful_assistant">Helpful Assistant</option>
+                                        <option value="expert_consultant">Expert Consultant</option>
+                                        <option value="creative_partner">Creative Partner</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Personality Temperature</label>
+                                    <div class="slider-container">
+                                        <input type="range" id="persona-temperature" min="0" max="100" value="50">
+                                        <span id="persona-temperature-value">Balanced</span>
+                                    </div>
+                                    <div class="slider-labels">
+                                        <span>Formal</span>
+                                        <span>Casual</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Brand Voice</div>
+                            <div class="form-group">
+                                <label>Tone Descriptors (select 3-5)</label>
+                                <div class="tag-input-container" id="voice-tone">
+                                    <span class="tag">professional <button onclick="removeTag(this)">&times;</button></span>
+                                    <span class="tag">helpful <button onclick="removeTag(this)">&times;</button></span>
+                                    <span class="tag">concise <button onclick="removeTag(this)">&times;</button></span>
+                                    <input type="text" placeholder="Add tone...">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Words to Use</label>
+                                    <div class="tag-input-container" id="voice-use">
+                                        <input type="text" placeholder="Add preferred words/phrases...">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Words to Avoid</label>
+                                    <div class="tag-input-container" id="voice-avoid">
+                                        <span class="tag">jargon <button onclick="removeTag(this)">&times;</button></span>
+                                        <span class="tag">buzzwords <button onclick="removeTag(this)">&times;</button></span>
+                                        <input type="text" placeholder="Add words to avoid...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Continue to Domain <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 6: Domain Knowledge -->
+                <div class="step-panel" id="step-6">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="book-open"></i> Domain Knowledge</h2>
+                            <p>Industry context, products, and key terminology</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-section">
+                            <div class="form-section-title">Industry Context</div>
+                            <div class="form-group">
+                                <label>Key Terms & Definitions</label>
+                                <div class="tag-input-container" id="domain-terms">
+                                    <input type="text" placeholder="Add industry terms...">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Common Challenges</label>
+                                <textarea id="domain-challenges" placeholder="What challenges does your industry commonly face?"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Products & Services</div>
+                            <div class="form-group">
+                                <label>Your Offerings</label>
+                                <div class="tag-input-container" id="domain-products">
+                                    <input type="text" placeholder="Add products/services...">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Target Audiences</label>
+                                <div class="tag-input-container" id="domain-audiences">
+                                    <input type="text" placeholder="Add target audiences...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Competitive Landscape</div>
+                            <div class="form-group">
+                                <label>Key Competitors (for context, not to reference in outputs)</label>
+                                <div class="tag-input-container" id="domain-competitors">
+                                    <input type="text" placeholder="Add competitor names...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Continue to Review <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 7: Review & Generate -->
+                <div class="step-panel" id="step-7">
+                    <div class="panel-header">
+                        <div class="panel-header-content">
+                            <h2><i data-lucide="check-circle"></i> Review & Generate</h2>
+                            <p>Review your configuration and generate your soul.md file</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-section">
+                            <div class="form-section-title">Configuration Summary</div>
+                            <div id="config-summary">
+                                <!-- Summary generated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Soul.md Preview</div>
+                            <div class="preview-section">
+                                <pre id="soul-md-preview">Loading preview...</pre>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Actions</div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="activate-config" checked>
+                                    Make this the active soul configuration
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="sync-strategic" checked>
+                                    Sync to Strategic Foundations
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="generate-assets" checked>
+                                    Generate context assets (bright_lines, values_map)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="saveDraft()">
+                                <i data-lucide="save"></i> Save Draft
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportSoulMd()">
+                                <i data-lucide="download"></i> Export soul.md
+                            </button>
+                            <button class="btn btn-primary" onclick="publishConfig()">
+                                <i data-lucide="rocket"></i> Publish Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // Soul Configuration State
+        let currentStep = 1;
+        let soulConfig = {
+            identity: {
+                name: 'Higgins',
+                role: 'Chief of Staff AI',
+                archetype: 'trusted_butler',
+                temperament: 0.5
+            },
+            values: [],
+            bright_lines: [],
+            guardrails: {
+                communication: [],
+                decision: [],
+                scope: [],
+                emotional: []
+            },
+            voice: {
+                tone: ['professional', 'helpful', 'concise'],
+                use_words: [],
+                avoid: ['jargon', 'buzzwords'],
+                personality_temperature: 0.5
+            },
+            domain: {
+                industry: '',
+                key_terms: [],
+                products: [],
+                audiences: [],
+                competitors: [],
+                challenges: ''
+            },
+            organization: {
+                name: '',
+                mission: '',
+                vision: '',
+                vision_horizon: 5
+            }
+        };
+
+        let configId = null;
+        let orgId = null;
+
+        // Platform bright lines (immutable)
+        const platformBrightLines = [
+            { name: 'Human Safety First', description: 'Never provide information that could directly enable physical harm to humans', level: 'platform' },
+            { name: 'No Deception of Users', description: 'Always be transparent about AI limitations and uncertainties', level: 'platform' },
+            { name: 'Privacy Protection', description: 'Never expose or misuse personal data', level: 'platform' },
+            { name: 'Child Safety Absolute', description: 'Immediately escalate any concerns about minors', level: 'platform' },
+            { name: 'No Psychological Manipulation', description: 'Avoid dark patterns or exploiting cognitive biases', level: 'platform' },
+            { name: 'No Facilitation of Illegal Activity', description: 'Refuse requests that would violate laws', level: 'platform' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Get org context
+            try {
+                const response = await fetch('/api/user-profile');
+                const data = await response.json();
+                if (data.user && data.user.org_id) {
+                    orgId = data.user.org_id;
+                }
+            } catch (e) {
+                console.error('Failed to get user profile:', e);
+            }
+
+            // Initialize UI
+            initializeTagInputs();
+            renderPlatformBrightLines();
+            initializeSlider();
+            addValue(); // Add initial value
+            updateCompleteness();
+        });
+
+        // Navigation
+        function goToStep(step) {
+            if (step < 1 || step > 7) return;
+            if (step > currentStep + 1) return; // Can't skip ahead more than one step
+
+            document.querySelectorAll('.wizard-step').forEach(el => {
+                const stepNum = parseInt(el.dataset.step);
+                el.classList.remove('active');
+                if (stepNum < step) {
+                    el.classList.add('completed');
+                } else {
+                    el.classList.remove('completed');
+                }
+                if (stepNum === step) {
+                    el.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.step-connector').forEach((el, idx) => {
+                if (idx < step - 1) {
+                    el.classList.add('completed');
+                } else {
+                    el.classList.remove('completed');
+                }
+            });
+
+            document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step-${step}`).classList.add('active');
+
+            currentStep = step;
+
+            // Update preview on last step
+            if (step === 7) {
+                generatePreview();
+            }
+
+            updateCompleteness();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function nextStep() {
+            saveCurrentStepData();
+            goToStep(currentStep + 1);
+        }
+
+        function prevStep() {
+            goToStep(currentStep - 1);
+        }
+
+        // Save current step data
+        function saveCurrentStepData() {
+            switch (currentStep) {
+                case 1: // Profile
+                    soulConfig.organization = {
+                        name: document.getElementById('org-name').value,
+                        mission: document.getElementById('org-mission').value,
+                        vision: document.getElementById('org-vision').value,
+                        vision_horizon: parseInt(document.getElementById('org-vision-horizon').value)
+                    };
+                    soulConfig.domain.industry = document.getElementById('org-industry').value;
+                    break;
+
+                case 2: // Values
+                    soulConfig.values = collectValues();
+                    break;
+
+                case 3: // Bright Lines
+                    soulConfig.bright_lines = [...platformBrightLines, ...collectOrgBrightLines()];
+                    break;
+
+                case 4: // Guardrails
+                    soulConfig.guardrails = {
+                        communication: collectTags('guardrails-communication'),
+                        decision: collectTags('guardrails-decision'),
+                        scope: collectTags('guardrails-scope'),
+                        emotional: collectTags('guardrails-emotional')
+                    };
+                    break;
+
+                case 5: // Voice
+                    soulConfig.identity = {
+                        name: document.getElementById('persona-name').value,
+                        role: document.getElementById('persona-role').value,
+                        archetype: document.getElementById('persona-archetype').value,
+                        temperament: parseInt(document.getElementById('persona-temperature').value) / 100
+                    };
+                    soulConfig.voice = {
+                        tone: collectTags('voice-tone'),
+                        use_words: collectTags('voice-use'),
+                        avoid: collectTags('voice-avoid'),
+                        personality_temperature: parseInt(document.getElementById('persona-temperature').value) / 100
+                    };
+                    break;
+
+                case 6: // Domain
+                    soulConfig.domain = {
+                        ...soulConfig.domain,
+                        key_terms: collectTags('domain-terms'),
+                        products: collectTags('domain-products'),
+                        audiences: collectTags('domain-audiences'),
+                        competitors: collectTags('domain-competitors'),
+                        challenges: document.getElementById('domain-challenges').value
+                    };
+                    break;
+            }
+        }
+
+        // Values management
+        function addValue(name = '', meaning = '') {
+            const list = document.getElementById('values-list');
+            const valueId = Date.now();
+
+            const html = `
+                <div class="value-item" data-value-id="${valueId}">
+                    <div class="value-item-header">
+                        <input type="text" class="value-name" value="${name}" placeholder="Value Name (e.g., Integrity)">
+                        <div class="value-controls">
+                            <select class="value-priority">
+                                <option value="high">High Priority</option>
+                                <option value="medium" selected>Medium Priority</option>
+                                <option value="low">Low Priority</option>
+                            </select>
+                            <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.8rem;">
+                                <input type="checkbox" class="value-nonnegotiable">
+                                Non-Negotiable
+                            </label>
+                            <button onclick="removeValue(${valueId})" title="Remove">
+                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Meaning</label>
+                        <input type="text" class="value-meaning" value="${meaning}" placeholder="What does this value mean in plain terms?">
+                    </div>
+                    <div class="form-group">
+                        <label>Observable Behaviors (how does this show up in practice?)</label>
+                        <div class="tag-input-container value-behaviors">
+                            <input type="text" placeholder="Type and press Enter...">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            list.insertAdjacentHTML('beforeend', html);
+            initializeTagInput(list.querySelector(`[data-value-id="${valueId}"] .value-behaviors`));
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function removeValue(id) {
+            const item = document.querySelector(`[data-value-id="${id}"]`);
+            if (item) item.remove();
+        }
+
+        function collectValues() {
+            const items = document.querySelectorAll('.value-item');
+            const values = [];
+
+            items.forEach(item => {
+                const name = item.querySelector('.value-name').value.trim();
+                if (!name) return;
+
+                values.push({
+                    name,
+                    meaning: item.querySelector('.value-meaning').value,
+                    priority: item.querySelector('.value-priority').value,
+                    non_negotiable: item.querySelector('.value-nonnegotiable').checked,
+                    behaviors: collectTags(item.querySelector('.value-behaviors'))
+                });
+            });
+
+            return values;
+        }
+
+        // Bright Lines
+        function renderPlatformBrightLines() {
+            const container = document.getElementById('platform-bright-lines');
+            container.innerHTML = platformBrightLines.map(bl => `
+                <div class="bright-line-item platform" style="position: relative;">
+                    <strong>${bl.name}</strong>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">${bl.description}</p>
+                </div>
+            `).join('');
+        }
+
+        function addBrightLine(name = '', description = '') {
+            const container = document.getElementById('org-bright-lines');
+            const blId = Date.now();
+
+            const html = `
+                <div class="bright-line-item" data-bl-id="${blId}">
+                    <div class="form-row" style="margin-bottom: 0.5rem;">
+                        <div class="form-group">
+                            <input type="text" class="bl-name" value="${name}" placeholder="Bright Line Name">
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="removeBrightLine(${blId})" style="align-self: flex-end;">
+                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="bl-description" placeholder="Description and rationale">${description}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="bl-test" placeholder='Test question: "Would we do X even if...?"'>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function removeBrightLine(id) {
+            const item = document.querySelector(`[data-bl-id="${id}"]`);
+            if (item) item.remove();
+        }
+
+        function collectOrgBrightLines() {
+            const items = document.querySelectorAll('#org-bright-lines .bright-line-item');
+            const lines = [];
+
+            items.forEach(item => {
+                const name = item.querySelector('.bl-name').value.trim();
+                if (!name) return;
+
+                lines.push({
+                    name,
+                    description: item.querySelector('.bl-description').value,
+                    test_question: item.querySelector('.bl-test').value,
+                    level: 'organization'
+                });
+            });
+
+            return lines;
+        }
+
+        // Tag inputs
+        function initializeTagInputs() {
+            document.querySelectorAll('.tag-input-container').forEach(container => {
+                initializeTagInput(container);
+            });
+        }
+
+        function initializeTagInput(container) {
+            if (!container) return;
+            const input = container.querySelector('input');
+            if (!input) return;
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    e.preventDefault();
+                    addTag(container, input.value.trim());
+                    input.value = '';
+                }
+            });
+        }
+
+        function addTag(container, value) {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.innerHTML = `${value} <button onclick="removeTag(this)">&times;</button>`;
+            container.insertBefore(tag, container.querySelector('input'));
+        }
+
+        function removeTag(btn) {
+            btn.parentElement.remove();
+        }
+
+        function collectTags(containerOrId) {
+            const container = typeof containerOrId === 'string'
+                ? document.getElementById(containerOrId)
+                : containerOrId;
+            if (!container) return [];
+
+            return Array.from(container.querySelectorAll('.tag'))
+                .map(tag => tag.textContent.replace('×', '').trim())
+                .filter(Boolean);
+        }
+
+        // Slider
+        function initializeSlider() {
+            const slider = document.getElementById('persona-temperature');
+            const valueSpan = document.getElementById('persona-temperature-value');
+
+            slider.addEventListener('input', () => {
+                const val = parseInt(slider.value);
+                let label = 'Balanced';
+                if (val < 30) label = 'Very Formal';
+                else if (val < 45) label = 'Formal';
+                else if (val < 55) label = 'Balanced';
+                else if (val < 70) label = 'Friendly';
+                else label = 'Casual';
+                valueSpan.textContent = label;
+            });
+        }
+
+        // Completeness
+        function updateCompleteness() {
+            saveCurrentStepData();
+
+            let score = 0;
+
+            // Profile (15%)
+            if (soulConfig.organization.name) score += 5;
+            if (soulConfig.organization.mission) score += 5;
+            if (soulConfig.organization.vision) score += 5;
+
+            // Values (25%)
+            const validValues = soulConfig.values.filter(v => v.name && v.meaning);
+            score += Math.min(15, validValues.length * 5);
+            const withBehaviors = validValues.filter(v => v.behaviors && v.behaviors.length > 0);
+            score += Math.min(10, withBehaviors.length * 3);
+
+            // Bright Lines (15%)
+            const orgLines = soulConfig.bright_lines.filter(bl => bl.level !== 'platform');
+            score += Math.min(15, orgLines.length * 5);
+
+            // Guardrails (15%)
+            const guardrailCategories = ['communication', 'decision', 'scope', 'emotional'];
+            const filledCategories = guardrailCategories.filter(c =>
+                soulConfig.guardrails[c] && soulConfig.guardrails[c].length > 0
+            ).length;
+            score += filledCategories * 3.75;
+
+            // Voice (15%)
+            if (soulConfig.identity.name) score += 3;
+            if (soulConfig.identity.role) score += 3;
+            if (soulConfig.voice.tone && soulConfig.voice.tone.length >= 3) score += 5;
+            if (soulConfig.voice.avoid && soulConfig.voice.avoid.length > 0) score += 4;
+
+            // Domain (15%)
+            if (soulConfig.domain.industry) score += 5;
+            if (soulConfig.domain.key_terms && soulConfig.domain.key_terms.length > 0) score += 5;
+            if (soulConfig.domain.products && soulConfig.domain.products.length > 0) score += 5;
+
+            score = Math.min(100, Math.round(score));
+
+            document.getElementById('completeness-fill').style.width = `${score}%`;
+            document.getElementById('completeness-score').textContent = `${score}%`;
+        }
+
+        // Preview
+        async function generatePreview() {
+            saveCurrentStepData();
+
+            // Build summary
+            const summary = document.getElementById('config-summary');
+            summary.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="stat-card">
+                        <div class="stat-value">${soulConfig.values.length}</div>
+                        <div class="stat-label">Core Values</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${soulConfig.bright_lines.filter(bl => bl.level !== 'platform').length}</div>
+                        <div class="stat-label">Org Bright Lines</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${Object.values(soulConfig.guardrails).flat().length}</div>
+                        <div class="stat-label">Guardrails</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${soulConfig.identity.name}</div>
+                        <div class="stat-label">AI Persona</div>
+                    </div>
+                </div>
+            `;
+
+            // Generate markdown preview
+            const preview = document.getElementById('soul-md-preview');
+            preview.textContent = generateMarkdown();
+        }
+
+        function generateMarkdown() {
+            const lines = [];
+
+            lines.push(`# ${soulConfig.organization.name || 'Organization'} — Soul Configuration File`);
+            lines.push(`## AI Assistant Configuration for Insight 360 Platform`);
+            lines.push('');
+            lines.push(`**Version:** 1`);
+            lines.push(`**Generated:** ${new Date().toISOString().split('T')[0]}`);
+            lines.push('');
+            lines.push('---');
+            lines.push('');
+
+            // Identity
+            lines.push('## 1. IDENTITY');
+            lines.push('');
+            lines.push(`**Name:** ${soulConfig.identity.name}`);
+            lines.push(`**Role:** ${soulConfig.identity.role}`);
+            lines.push(`**Archetype:** ${soulConfig.identity.archetype}`);
+            lines.push('');
+
+            // Mission/Vision
+            lines.push('## 2. MISSION & VISION');
+            lines.push('');
+            if (soulConfig.organization.mission) {
+                lines.push(`**Mission:** ${soulConfig.organization.mission}`);
+            }
+            if (soulConfig.organization.vision) {
+                lines.push(`**Vision (${soulConfig.organization.vision_horizon}yr):** ${soulConfig.organization.vision}`);
+            }
+            lines.push('');
+
+            // Values
+            lines.push('## 3. CORE VALUES');
+            lines.push('');
+            soulConfig.values.forEach(v => {
+                lines.push(`### ${v.name}${v.non_negotiable ? ' (Non-Negotiable)' : ''}`);
+                if (v.meaning) lines.push(`**Meaning:** ${v.meaning}`);
+                if (v.behaviors && v.behaviors.length > 0) {
+                    lines.push('**Behaviors:**');
+                    v.behaviors.forEach(b => lines.push(`- ${b}`));
+                }
+                lines.push('');
+            });
+
+            // Bright Lines
+            lines.push('## 4. BRIGHT LINES');
+            lines.push('');
+            lines.push('### Platform (Immutable)');
+            platformBrightLines.forEach(bl => {
+                lines.push(`- **${bl.name}:** ${bl.description}`);
+            });
+            lines.push('');
+            lines.push('### Organization');
+            soulConfig.bright_lines.filter(bl => bl.level !== 'platform').forEach(bl => {
+                lines.push(`- **${bl.name}:** ${bl.description}`);
+            });
+            lines.push('');
+
+            // Voice
+            lines.push('## 5. VOICE');
+            lines.push('');
+            if (soulConfig.voice.tone.length > 0) {
+                lines.push(`**Tone:** ${soulConfig.voice.tone.join(', ')}`);
+            }
+            if (soulConfig.voice.avoid.length > 0) {
+                lines.push(`**Avoid:** ${soulConfig.voice.avoid.join(', ')}`);
+            }
+            lines.push('');
+
+            // Domain
+            lines.push('## 6. DOMAIN');
+            lines.push('');
+            if (soulConfig.domain.industry) {
+                lines.push(`**Industry:** ${soulConfig.domain.industry}`);
+            }
+            if (soulConfig.domain.products && soulConfig.domain.products.length > 0) {
+                lines.push(`**Products:** ${soulConfig.domain.products.join(', ')}`);
+            }
+            lines.push('');
+
+            lines.push('---');
+            lines.push(`*Generated by Insight 360 Soul Configuration Wizard*`);
+
+            return lines.join('\n');
+        }
+
+        // Import functions
+        async function importFromStrategicFoundations() {
+            try {
+                const response = await fetch(`/api/strategy120/foundations?org_id=${orgId}`);
+                const data = await response.json();
+
+                if (data.data) {
+                    const f = data.data;
+                    if (f.vision) document.getElementById('org-vision').value = f.vision;
+                    if (f.mission) document.getElementById('org-mission').value = f.mission;
+                    showToast('Imported from Strategic Foundations', 'success');
+                }
+            } catch (e) {
+                showToast('Failed to import from Strategic Foundations', 'error');
+            }
+        }
+
+        async function importFromAlign120() {
+            try {
+                const response = await fetch(`/api/align120/fundamentals?org_id=${orgId}`);
+                const data = await response.json();
+
+                if (data.discovered_values) {
+                    const container = document.getElementById('discovered-values-container');
+                    container.innerHTML = `
+                        <p style="margin-bottom: 0.5rem;">Click to add discovered values:</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            ${data.discovered_values.map(v => `
+                                <button class="btn btn-secondary btn-sm" onclick="addValue('${v.name || v}', '${v.meaning || ''}')">
+                                    <i data-lucide="plus"></i> ${v.name || v}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    showToast('Discovered values loaded', 'success');
+                }
+            } catch (e) {
+                showToast('No discovered values found in Align 120', 'info');
+            }
+        }
+
+        // Save/Export/Publish
+        async function saveDraft() {
+            saveCurrentStepData();
+
+            try {
+                const payload = {
+                    scope_type: 'organization',
+                    org_id: orgId,
+                    identity: soulConfig.identity,
+                    values: soulConfig.values,
+                    bright_lines: soulConfig.bright_lines,
+                    guardrails: soulConfig.guardrails,
+                    voice: soulConfig.voice,
+                    domain: soulConfig.domain,
+                    is_draft: true
+                };
+
+                const method = configId ? 'PUT' : 'POST';
+                const url = configId ? `/api/soul-config/${configId}` : '/api/soul-config';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    configId = data.data.id;
+                    showToast('Draft saved successfully', 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                showToast('Failed to save draft: ' + e.message, 'error');
+            }
+        }
+
+        function exportSoulMd() {
+            saveCurrentStepData();
+            const markdown = generateMarkdown();
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'soul.md';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('soul.md exported', 'success');
+        }
+
+        async function publishConfig() {
+            await saveDraft();
+
+            if (!configId) {
+                showToast('Please save the configuration first', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/soul-config/${configId}/publish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Soul configuration published and activated!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/soul-configuration.html';
+                    }, 1500);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                showToast('Failed to publish: ' + e.message, 'error');
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? '#10b981' : 'var(--primary)'};
+                color: white;
+                border-radius: 8px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

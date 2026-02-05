@@ -15,9 +15,9 @@ const logger = require('./logger');
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
 // Circuit breaker for Gemini API
-const circuitBreaker = new CircuitBreaker({
+const circuitBreaker = new CircuitBreaker('gemini', {
     failureThreshold: 3,
-    resetTimeout: 30000
+    timeout: 30000
 });
 
 // API key storage
@@ -222,7 +222,7 @@ async function chat(options) {
     try {
         const response = await withRetry(
             async () => {
-                return circuitBreaker.call(async () => {
+                return circuitBreaker.execute(async () => {
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: {

@@ -586,6 +586,7 @@
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('digm', this)">DIGM Layers</button>
                 <button class="tab-btn" onclick="switchTab('values', this)">Values & Principles</button>
+                <button class="tab-btn" onclick="switchTab('ethics', this)">Ethical Lenses</button>
                 <button class="tab-btn" onclick="switchTab('conflicts', this)">Conflicts</button>
                 <button class="tab-btn" onclick="switchTab('escalation', this)">Escalation Rules</button>
             </div>
@@ -612,6 +613,21 @@
                     </button>
                 </div>
                 <div class="values-grid" id="values-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ethics Tab (SCU Framework) -->
+            <div class="tab-content" id="tab-ethics">
+                <div class="section-header">
+                    <h2 class="section-title">SCU Ethical Lenses</h2>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">
+                        Santa Clara University Framework for Ethical Decision Making
+                    </p>
+                </div>
+                <div class="ethics-framework" id="ethics-lenses">
                     <div class="loading">
                         <div class="spinner"></div>
                     </div>
@@ -976,9 +992,103 @@
             switch (tab) {
                 case 'digm': loadDIGM(); break;
                 case 'values': loadValues(); break;
+                case 'ethics': loadEthicalLenses(); break;
                 case 'conflicts': loadConflicts(); break;
                 case 'escalation': loadEscalation(); break;
             }
+        }
+
+        // Load Ethical Lenses (SCU Framework)
+        async function loadEthicalLenses() {
+            const container = document.getElementById('ethics-lenses');
+
+            try {
+                const response = await fetch('/api/soul-config/ethical-lenses');
+                const data = await response.json();
+
+                if (!data.success || !data.data || data.data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="padding: 2rem; text-align: center;">
+                            <i data-lucide="scale" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                            <p style="margin-top: 1rem;">No ethical lenses configured.</p>
+                        </div>
+                    `;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                const lenses = data.data;
+                container.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        ${lenses.map(lens => `
+                            <div class="digm-layer-card" style="border-left: 3px solid ${getLensColor(lens.short_name)};">
+                                <div class="digm-layer-header">
+                                    <div class="digm-layer-icon" style="background: ${getLensColor(lens.short_name)}20; color: ${getLensColor(lens.short_name)};">
+                                        <i data-lucide="${getLensIcon(lens.short_name)}" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <h3 class="digm-layer-name">${lens.name}</h3>
+                                </div>
+                                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0.75rem 0;">
+                                    ${lens.description}
+                                </p>
+                                <div style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: 6px; margin-top: 0.75rem;">
+                                    <strong style="font-size: 0.85rem; color: var(--text-muted);">Key Question:</strong>
+                                    <p style="margin: 0.25rem 0 0 0; font-style: italic; color: var(--text-primary);">
+                                        "${lens.key_question}"
+                                    </p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;">
+                        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin: 0 0 1rem 0;">
+                            <i data-lucide="list-ordered" style="width: 20px; height: 20px;"></i>
+                            5-Step Decision Framework
+                        </h3>
+                        <ol style="margin: 0; padding-left: 1.5rem; color: var(--text-muted);">
+                            <li style="margin-bottom: 0.5rem;"><strong>Identify Ethical Issues:</strong> What values are in tension? Who is affected?</li>
+                            <li style="margin-bottom: 0.5rem;"><strong>Get the Facts:</strong> What do we know? What don't we know?</li>
+                            <li style="margin-bottom: 0.5rem;"><strong>Evaluate Through Lenses:</strong> Apply all six ethical perspectives</li>
+                            <li style="margin-bottom: 0.5rem;"><strong>Choose & Test:</strong> Reversibility, Publicity, Golden Rule tests</li>
+                            <li><strong>Implement & Reflect:</strong> Execute and learn from the outcome</li>
+                        </ol>
+                    </div>
+                `;
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading ethical lenses:', error);
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem; text-align: center;">
+                        <p style="color: var(--danger);">Failed to load ethical lenses</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getLensColor(shortName) {
+            const colors = {
+                'rights': '#6366f1',
+                'justice': '#f59e0b',
+                'utilitarian': '#10b981',
+                'common_good': '#3b82f6',
+                'virtue': '#8b5cf6',
+                'care_ethics': '#ec4899'
+            };
+            return colors[shortName] || '#6366f1';
+        }
+
+        function getLensIcon(shortName) {
+            const icons = {
+                'rights': 'shield',
+                'justice': 'scale',
+                'utilitarian': 'bar-chart-2',
+                'common_good': 'users',
+                'virtue': 'star',
+                'care_ethics': 'heart'
+            };
+            return icons[shortName] || 'eye';
         }
 
         // Modal handlers using ModalService

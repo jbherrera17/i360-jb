@@ -79,6 +79,7 @@ Each section must complete before moving to the next.
 63. `phase50-role-based-resources.sql`
 64. `phase52-platform-tier.sql`
 65. `phase53-navigation-restructure.sql`
+66. `phase54-soul-configuration.sql` — Soul Configuration & Human Values System (SCU Framework)
 
 ## RLS & Security Fixes (run after all schemas)
 

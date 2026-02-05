@@ -173,6 +173,19 @@ const HelpRegistry = {
         '/integrations': {
             file: '/api/docs/integrations-user-guide.md',
             title: 'Integrations Help'
+        },
+        // Phase 54: Soul Configuration
+        '/soul-wizard': {
+            file: '/api/docs/soul-configuration-user-guide.md',
+            title: 'Soul Configuration Help'
+        },
+        '/soul-configuration': {
+            file: '/api/docs/soul-configuration-user-guide.md',
+            title: 'Soul Configuration Help'
+        },
+        '/synerginexus': {
+            file: '/api/docs/synerginexus-user-guide.md',
+            title: 'SynergiNexus Help'
         }
     },
 

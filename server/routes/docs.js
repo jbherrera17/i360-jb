@@ -72,7 +72,9 @@ const ALLOWED_DOCS = [
     // Phase 46: Administrator
     'administrator-user-guide.md',
     // Phase 48: Integrations
-    'integrations-user-guide.md'
+    'integrations-user-guide.md',
+    // Phase 54: Soul Configuration
+    'soul-configuration-user-guide.md'
 ];
 
 /**

@@ -114,6 +114,7 @@ const modulesRoutes = require('./routes/modules');
 const resourceAccessRoutes = require('./routes/resourceAccess');
 const integrationsRoutes = require('./routes/integrations');
 const webhooksRoutes = require('./routes/webhooks');
+const soulConfigRoutes = require('./routes/soulConfig');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -501,6 +502,9 @@ function initializeServices() {
         app.use('/api/integrations', integrationsRoutes(supabase));
         app.use('/api/webhooks', webhooksRoutes(supabase));
         integrationRegistry.initializeProviders();
+
+        // Phase 54: Soul Configuration & Human Values System
+        app.use('/api/soul-config', soulConfigRoutes(supabase));
 
         // Initialize module access middleware for use in other routes
         const moduleAccess = createModuleAccessMiddleware(supabase);

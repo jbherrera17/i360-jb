@@ -151,6 +151,51 @@ router.get('/stats', requirePlatformAdmin(), handler);
 - `admin-platform.html` - Platform admin dashboard (Synergi only)
 - `admin-tier-setup.html` - Tier configuration and limits
 
+### Soul Configuration & SCU Ethics Framework (Phase 54)
+
+Defines organizational values, bright lines, and ethical decision-making through the Santa Clara University Ethics Framework integration.
+
+**Soul Configuration Hierarchy:**
+```
+Platform (Synergi - immutable bright lines)
+    └── Organization (values, guardrails, voice)
+            └── Department (emphasis overrides)
+                    └── Agent (persona tweaks)
+```
+
+**SCU Ethics Framework (6 Lenses):**
+- Rights, Justice, Utilitarian, Common Good, Virtue, Care Ethics
+
+**Key Database Tables (Phase 54):**
+- `soul_configurations` - Master config with hierarchy
+- `soul_config_versions` - Version history and rollback
+- `ethical_lenses` - SCU framework lenses
+- `ethical_evaluations` - Decision audit trail
+- `values_alignment_audits` - Stated vs discovered values
+- `bright_line_incidents` - Violation tracking
+
+**Key Services (`server/services/`):**
+- `soulConfigService.js` - CRUD, inheritance, soul.md generation
+- `ethicalContextService.js` - Stakes detection, ethical context assembly
+- `valuesAlignmentService.js` - Values audit and drift detection
+
+**Routes:**
+- `/api/soul-config/*` - Soul configuration CRUD, versions, export
+- `/api/soul-config/ethical/*` - Lenses, stakes, analysis
+- `/api/soul-config/values-alignment/*` - Audits
+
+**Admin Pages:**
+- `soul-wizard.html` - 7-step wizard for creating soul configurations
+- `soul-configuration.html` - Management UI with version history
+
+**Completeness Score Components (100%):**
+- Organization Profile: 15%
+- Core Values: 25%
+- Bright Lines: 15%
+- Guardrails: 15%
+- Voice: 15%
+- Domain: 15%
+
 ## Frontend Development Guidelines
 
 **IMPORTANT:** When creating or modifying HTML pages in `public/`, follow these patterns for consistency:
@@ -419,7 +464,7 @@ Optional: `BRAVE_SEARCH_API_KEY`, `TAVILY_API_KEY`, `PERPLEXITY_API_KEY`, `GOOGL
 
 In Supabase SQL Editor:
 1. Run `db/schema.sql`
-2. Run phase schemas as needed (`phase3-schema.sql` through `phase44-enterprise-multitenancy.sql`)
+2. Run phase schemas as needed (`phase3-schema.sql` through `phase54-soul-configuration.sql`)
 3. Run `db/seed.sql` for starter agents
 
 **Phase 44 Migration:** Run `db/phase44-enterprise-multitenancy.sql` to enable:
@@ -427,6 +472,13 @@ In Supabase SQL Editor:
 - Module-based access control
 - Platform admin roles
 - Dynamic navigation based on tier/role
+
+**Phase 54 Migration:** Run `db/phase54-soul-configuration.sql` to enable:
+- Soul configuration hierarchy with inheritance
+- SCU Ethics Framework (6 lenses)
+- Values alignment audits
+- Bright line incident tracking
+- Ethical evaluation logging
 
 ## Documentation
 
