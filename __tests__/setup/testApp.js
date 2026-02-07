@@ -181,6 +181,11 @@ function createTestApp(options = {}) {
     app.use('/api/platform', platformRoutes(mockSupabase));
   }
 
+  if (routes.includes('modules')) {
+    const modulesRoutes = require('../../server/routes/modules');
+    app.use('/api/modules', modulesRoutes(mockSupabase));
+  }
+
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Test app error:', err);

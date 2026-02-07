@@ -9,11 +9,24 @@
 // ANTHROPIC (CLAUDE) MODELS
 // ============================================================================
 const ANTHROPIC_MODELS = {
-    // Claude 4.5 Family (Latest)
+    // Claude 4.6 Family (Latest - February 2026)
+    'claude-opus-4-6-20260205': {
+        name: 'Claude Opus 4.6',
+        provider: 'anthropic',
+        description: 'Most capable - 1M context, agent teams, adaptive thinking',
+        maxTokens: 128000,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'pdf', 'tool_use', 'reasoning', 'agent_teams', 'context_compaction'],
+        tier: 'premium',
+        supportsEffort: true,
+        effortLevels: ['low', 'medium', 'high', 'max'],
+        default: true
+    },
+    // Claude 4.5 Family
     'claude-opus-4-5-20251101': {
         name: 'Claude Opus 4.5',
         provider: 'anthropic',
-        description: 'Most intelligent model - maximum capability with practical performance',
+        description: 'Deep reasoning - maximum capability with practical performance',
         maxTokens: 8192,
         contextWindow: 200000,
         capabilities: ['vision', 'pdf', 'tool_use'],
@@ -27,8 +40,7 @@ const ANTHROPIC_MODELS = {
         maxTokens: 8192,
         contextWindow: 200000,
         capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'default',
-        default: true
+        tier: 'standard'
     },
     'claude-haiku-4-5-20251001': {
         name: 'Claude Haiku 4.5',
