@@ -25,6 +25,7 @@ router.get('/admin/all', async (req, res) => {
             department_id,
             business_role,
             user_id,
+            org_id,
             search
         } = req.query;
 
@@ -34,6 +35,7 @@ router.get('/admin/all', async (req, res) => {
             departmentId: department_id,
             businessRole: business_role,
             userId: user_id,
+            orgId: org_id,
             search
         });
 

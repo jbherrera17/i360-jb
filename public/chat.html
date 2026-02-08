@@ -58,6 +58,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            max-height: 100vh;
             overflow: hidden;
         }
 
@@ -78,9 +79,11 @@
         }
 
         .chat-history-panel .conversation-list {
-            flex: 1;
+            flex: 1 1 auto;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 0.5rem;
+            min-height: 0;
         }
 
         .chat-history-panel .conversation-item {
@@ -112,12 +115,24 @@
 
         .chat-history-panel .conversation-meta {
             display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .chat-history-panel .conversation-info {
+            display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-        .chat-history-panel .conversation-date {
+        .chat-history-panel .conversation-user {
             font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .chat-history-panel .conversation-date {
+            font-size: 0.7rem;
             color: var(--text-muted);
         }
 
@@ -167,6 +182,55 @@
         .chat-history-panel .empty-conversations p {
             font-size: 0.85rem;
             margin: 0;
+        }
+
+        /* Admin filter controls */
+        .conversation-filters {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+        }
+
+        .conversation-filters .filter-row {
+            margin-bottom: 0.5rem;
+        }
+
+        .conversation-filters .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .conversation-filters .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .conversation-filters .filter-toggle input {
+            accent-color: var(--primary);
+        }
+
+        .conversation-filters select {
+            width: 100%;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Organization badge in conversation list */
+        .chat-history-panel .conversation-org {
+            font-size: 0.65rem;
+            color: var(--primary);
+            background: var(--primary-soft);
+            padding: 0.1rem 0.35rem;
+            border-radius: var(--radius-sm);
+            margin-left: 0.25rem;
         }
 
         /* Responsive: hide right panel on smaller screens */
@@ -321,6 +385,20 @@
                 <button onclick="startNewChat()" class="btn-icon" title="New Chat">
                     <i data-lucide="plus"></i>
                 </button>
+            </div>
+            <!-- Admin filter controls (hidden by default, shown for platform admins) -->
+            <div id="adminConversationFilters" class="conversation-filters" style="display: none;">
+                <div class="filter-row">
+                    <label class="filter-toggle">
+                        <input type="checkbox" id="showAllConversations" onchange="toggleAdminView()">
+                        <span>Show all conversations</span>
+                    </label>
+                </div>
+                <div class="filter-row" id="orgFilterRow" style="display: none;">
+                    <select id="orgFilter" onchange="filterByOrganization()">
+                        <option value="">All Organizations</option>
+                    </select>
+                </div>
             </div>
             <div id="conversationList" class="conversation-list">
                 <!-- Populated by JS -->

@@ -195,15 +195,24 @@ const filePreview = document.getElementById('filePreview');
 const voiceInputBtn = document.getElementById('voiceInputBtn');
 const statusText = document.getElementById('statusText');
 
+// Admin state
+let isPlatformAdmin = false;
+let showAllConversations = false;
+let organizations = [];
+let selectedOrgFilter = '';
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
     // Initialize icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
-    
+
     // Load available models
     await loadModels();
+
+    // Check if user is platform admin
+    await checkPlatformAdmin();
 
     // Load saved conversations
     await loadConversations();
@@ -217,6 +226,87 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Auto-resize textarea
     setupTextareaResize();
 });
+
+/**
+ * Check if current user is a platform admin
+ */
+async function checkPlatformAdmin() {
+    try {
+        const response = await fetch('/api/platform/admin/verify', {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        isPlatformAdmin = response.ok;
+
+        if (isPlatformAdmin) {
+            // Show admin filter controls
+            const filterControls = document.getElementById('adminConversationFilters');
+            if (filterControls) {
+                filterControls.style.display = 'block';
+            }
+            // Load organizations for filter
+            await loadOrganizations();
+        }
+    } catch (error) {
+        isPlatformAdmin = false;
+    }
+}
+
+/**
+ * Load organizations for admin filter
+ */
+async function loadOrganizations() {
+    try {
+        const response = await fetch('/api/platform/organizations');
+        const data = await response.json();
+
+        if (data.success && data.data) {
+            organizations = data.data;
+            const orgSelect = document.getElementById('orgFilter');
+            if (orgSelect) {
+                orgSelect.innerHTML = '<option value="">All Organizations</option>' +
+                    organizations.map(org =>
+                        `<option value="${org.id}">${escapeHtml(org.name)}</option>`
+                    ).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading organizations:', error);
+    }
+}
+
+/**
+ * Toggle between user's conversations and all conversations (admin)
+ */
+async function toggleAdminView() {
+    const checkbox = document.getElementById('showAllConversations');
+    showAllConversations = checkbox?.checked || false;
+
+    // Show/hide org filter
+    const orgFilterRow = document.getElementById('orgFilterRow');
+    if (orgFilterRow) {
+        orgFilterRow.style.display = showAllConversations ? 'block' : 'none';
+    }
+
+    // Reset org filter when toggling off
+    if (!showAllConversations) {
+        selectedOrgFilter = '';
+        const orgSelect = document.getElementById('orgFilter');
+        if (orgSelect) orgSelect.value = '';
+    }
+
+    await loadConversations();
+}
+
+/**
+ * Filter conversations by organization (admin)
+ */
+async function filterByOrganization() {
+    const orgSelect = document.getElementById('orgFilter');
+    selectedOrgFilter = orgSelect?.value || '';
+    await loadConversations();
+}
 
 /**
  * Load available models from API
@@ -1079,11 +1169,24 @@ function buildMultimodalContent(text, files) {
  */
 async function loadConversations() {
     try {
-        const response = await fetch('/api/conversations?limit=20');
+        let url;
+        if (isPlatformAdmin && showAllConversations) {
+            // Admin view - get all conversations
+            url = '/api/conversations/admin/all?limit=50';
+            if (selectedOrgFilter) {
+                url += `&org_id=${selectedOrgFilter}`;
+            }
+        } else {
+            // Normal user view - get own conversations
+            url = '/api/conversations?limit=50';
+        }
+
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.success) {
-            conversations = data.conversations;
+            // Admin endpoint returns data array, user endpoint returns conversations array
+            conversations = data.conversations || data.data || [];
             renderConversationList();
         }
     } catch (error) {
@@ -1107,13 +1210,25 @@ function renderConversationList() {
         return;
     }
 
-    conversationList.innerHTML = conversations.map(conv => `
+    conversationList.innerHTML = conversations.map(conv => {
+        // Get user display name if available
+        const userName = conv.users?.display_name || conv.users?.email || '';
+        const userDisplay = userName ? `<span class="conversation-user">${escapeHtml(userName)}</span>` : '';
+
+        // Get org name for admin view
+        const orgName = conv.users?.organization?.name || '';
+        const orgDisplay = (showAllConversations && orgName) ? `<span class="conversation-org">${escapeHtml(orgName)}</span>` : '';
+
+        return `
         <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}"
              onclick="loadConversation('${conv.id}')"
              data-id="${conv.id}">
-            <div class="conversation-title">${escapeHtml(conv.title)}</div>
+            <div class="conversation-title">${escapeHtml(conv.title)}${orgDisplay}</div>
             <div class="conversation-meta">
-                <span class="conversation-date">${formatDate(conv.updated_at)}</span>
+                <div class="conversation-info">
+                    ${userDisplay}
+                    <span class="conversation-date">${formatDate(conv.updated_at)}</span>
+                </div>
                 <div class="conversation-actions">
                     <button class="conversation-action" onclick="renameConversation('${conv.id}', event)" title="Rename">
                         <i data-lucide="pencil"></i>
@@ -1124,7 +1239,7 @@ function renderConversationList() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     lucide.createIcons();
 }
@@ -1134,25 +1249,32 @@ function renderConversationList() {
  */
 async function loadConversation(conversationId) {
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`);
+        // Use admin endpoint if viewing all conversations as admin
+        const endpoint = (isPlatformAdmin && showAllConversations)
+            ? `/api/conversations/admin/${conversationId}`
+            : `/api/conversations/${conversationId}`;
+        const response = await fetch(endpoint);
         const data = await response.json();
 
-        if (data.success && data.conversation) {
+        // Admin endpoint returns data, user endpoint returns conversation
+        const conversation = data.conversation || data.data;
+
+        if (data.success && conversation) {
             currentConversationId = conversationId;
-            conversationHistory = data.conversation.messages.map(m => ({
+            conversationHistory = conversation.messages.map(m => ({
                 role: m.role,
                 content: m.content
             }));
 
             // Update model if conversation has one
-            if (data.conversation.model && modelSelect) {
-                currentModel = data.conversation.model;
+            if (conversation.model && modelSelect) {
+                currentModel = conversation.model;
                 modelSelect.value = currentModel;
                 updateModelIndicator();
             }
 
             // Render messages
-            renderMessages(data.conversation.messages);
+            renderMessages(conversation.messages);
 
             // Update conversation list to show active
             renderConversationList();
@@ -1387,22 +1509,29 @@ function escapeHtml(text) {
 }
 
 /**
- * Helper: Format date
+ * Helper: Format date as day and date (e.g., "Mon, Feb 7")
  */
 function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    // Get day name abbreviated
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    return date.toLocaleDateString();
+    const dayName = days[date.getDay()];
+    const monthName = months[date.getMonth()];
+    const dayOfMonth = date.getDate();
+    const year = date.getFullYear();
+    const currentYear = now.getFullYear();
+
+    // If same year, don't show year
+    if (year === currentYear) {
+        return `${dayName}, ${monthName} ${dayOfMonth}`;
+    }
+
+    // Different year, include year
+    return `${dayName}, ${monthName} ${dayOfMonth}, ${year}`;
 }
 
 /**

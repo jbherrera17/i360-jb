@@ -45,13 +45,14 @@ async function createConversation(data = {}) {
 /**
  * Get all conversations (most recent first)
  * @param {object} options - Query options
- * @returns {array} List of conversations
+ * @returns {array} List of conversations with user info
  */
 async function getConversations(options = {}) {
     const {
         limit = 50,
         offset = 0,
-        userId = null
+        userId = null,
+        includeUserInfo = true
     } = options;
 
     let query = supabase
@@ -62,7 +63,8 @@ async function getConversations(options = {}) {
             model,
             metadata,
             created_at,
-            updated_at
+            updated_at,
+            user_id
         `)
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -72,14 +74,38 @@ async function getConversations(options = {}) {
         query = query.eq('user_id', userId);
     }
 
-    const { data, error } = await query;
+    const { data: conversations, error } = await query;
 
     if (error) {
         console.error('Error fetching conversations:', error);
         throw new Error(`Failed to fetch conversations: ${error.message}`);
     }
 
-    return data || [];
+    if (!conversations || conversations.length === 0) {
+        return [];
+    }
+
+    // Optionally include user info
+    if (includeUserInfo) {
+        const userIds = [...new Set(conversations.map(c => c.user_id).filter(Boolean))];
+
+        if (userIds.length > 0) {
+            const { data: users } = await supabase
+                .from('users')
+                .select('id, email, display_name')
+                .in('id', userIds);
+
+            if (users) {
+                const userMap = new Map(users.map(u => [u.id, u]));
+                return conversations.map(conv => ({
+                    ...conv,
+                    users: conv.user_id ? userMap.get(conv.user_id) : null
+                }));
+            }
+        }
+    }
+
+    return conversations;
 }
 
 /**
@@ -264,7 +290,7 @@ function generateTitle(firstMessage) {
 }
 
 /**
- * Get all conversations for admin (with user and department info)
+ * Get all conversations for admin (with user, department, and org info)
  * @param {object} options - Query options
  * @returns {array} List of conversations with user details
  */
@@ -275,6 +301,7 @@ async function getAdminConversations(options = {}) {
         departmentId = null,
         businessRole = null,
         userId = null,
+        orgId = null,
         search = null
     } = options;
 
@@ -315,7 +342,7 @@ async function getAdminConversations(options = {}) {
         // Get unique user IDs
         const userIds = [...new Set(conversations.map(c => c.user_id).filter(Boolean))];
 
-        // Fetch user info separately
+        // Fetch user info separately (including org_id)
         let users = [];
         if (userIds.length > 0) {
             const { data: userData, error: userError } = await supabase
@@ -325,7 +352,8 @@ async function getAdminConversations(options = {}) {
                     email,
                     display_name,
                     business_role,
-                    department_id
+                    department_id,
+                    org_id
                 `)
                 .in('id', userIds);
 
@@ -348,11 +376,27 @@ async function getAdminConversations(options = {}) {
             }
         }
 
+        // Fetch organization info
+        const orgIds = [...new Set(users.map(u => u.org_id).filter(Boolean))];
+        let organizations = [];
+        if (orgIds.length > 0) {
+            const { data: orgData, error: orgError } = await supabase
+                .from('organizations')
+                .select('id, name')
+                .in('id', orgIds);
+
+            if (!orgError && orgData) {
+                organizations = orgData;
+            }
+        }
+
         // Create lookup maps
         const deptMap = new Map(departments.map(d => [d.id, d]));
+        const orgMap = new Map(organizations.map(o => [o.id, o]));
         const userMap = new Map(users.map(u => [u.id, {
             ...u,
-            departments: u.department_id ? deptMap.get(u.department_id) : null
+            departments: u.department_id ? deptMap.get(u.department_id) : null,
+            organization: u.org_id ? orgMap.get(u.org_id) : null
         }]));
 
         // Merge data
@@ -362,6 +406,10 @@ async function getAdminConversations(options = {}) {
         }));
 
         // Apply filters
+        if (orgId) {
+            result = result.filter(c => c.users?.org_id === orgId);
+        }
+
         if (departmentId) {
             result = result.filter(c => c.users?.department_id === departmentId);
         }
