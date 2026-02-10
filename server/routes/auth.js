@@ -792,6 +792,65 @@ module.exports = function(supabase) {
     });
 
     /**
+     * POST /api/auth/users/:id/reset-password
+     * Admin: Reset a user's password
+     */
+    router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { new_password } = req.body;
+
+            if (!new_password || new_password.length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Password must be at least 6 characters'
+                });
+            }
+
+            // Verify user exists
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select('id, email')
+                .eq('id', id)
+                .single();
+
+            if (userError || !user) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'User not found'
+                });
+            }
+
+            // Update password via Supabase admin API
+            const { error: authError } = await supabase.auth.admin.updateUserById(id, {
+                password: new_password
+            });
+
+            if (authError) {
+                console.error('Admin password reset error:', authError);
+                return res.status(500).json({
+                    success: false,
+                    error: authError.message || 'Failed to reset password'
+                });
+            }
+
+            console.log(`Password reset by admin for user: ${user.email}`);
+
+            res.json({
+                success: true,
+                message: 'Password has been reset successfully'
+            });
+
+        } catch (error) {
+            console.error('Admin password reset error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * DELETE /api/auth/users/:id
      * Admin: Delete a user
      */
