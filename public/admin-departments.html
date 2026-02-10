@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Management | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
+        .header-actions { display: flex; gap: 0.75rem; }
+
+        /* Departments Grid */
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .dept-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .dept-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .dept-card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dept-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dept-icon i {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .dept-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dept-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dept-tagline {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dept-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .dept-status.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .dept-status.inactive {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        .dept-card-body {
+            padding: 1.25rem;
+        }
+
+        .dept-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .dept-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .dept-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .dept-meta-item i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .dept-card-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-primary);
+        }
+
+        /* Color Preview */
+        .color-preview {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Search Bar */
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .search-input i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            min-width: 150px;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Department Management</h1>
+                <p class="header-subtitle">Manage your organization's department structure</p>
+            </div>
+            <div class="header-actions">
+                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                    <i data-lucide="help-circle"></i>
+                </button>
+                <button class="btn btn-secondary" onclick="loadDepartments()">
+                    <i data-lucide="refresh-cw"></i>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" id="add-dept-btn" onclick="showDepartmentModal()">
+                    <i data-lucide="plus"></i>
+                    Add Department
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="search-input">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-input" placeholder="Search departments..." oninput="filterDepartments()">
+            </div>
+            <select class="filter-select" id="status-filter" onchange="filterDepartments()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+
+        <!-- Departments Grid -->
+        <div class="departments-grid" id="departments-grid">
+            <div class="empty-state">
+                <i data-lucide="git-branch"></i>
+                <h3>Loading departments...</h3>
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // State
+        let departments = [];
+        let filteredDepartments = [];
+        let editingDeptId = null;
+
+        // Available icons for departments
+        const DEPT_ICONS = [
+            'building-2', 'briefcase', 'code-2', 'palette', 'megaphone',
+            'bar-chart-3', 'users', 'shield', 'heart', 'globe',
+            'cpu', 'book-open', 'rocket', 'target', 'zap',
+            'git-branch', 'layers', 'settings', 'database', 'headphones'
+        ];
+
+        // Get auth token from localStorage or cookie
+        function getAuthToken() {
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        // Authenticated fetch helper
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                'Authorization': `Bearer ${token}`
+            };
+            const response = await fetch(url, { ...options, headers });
+
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+
+            return response;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            lucide.createIcons();
+            await loadDepartments();
+        });
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            try {
+                showLoading();
+                const response = await authFetch('/api/departments');
+                const result = await response.json();
+
+                if (result.success) {
+                    departments = result.data || [];
+                    filterDepartments();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                showToast('Failed to load departments', 'error');
+                departments = [];
+                filterDepartments();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Filter departments
+        function filterDepartments() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('status-filter').value;
+
+            filteredDepartments = departments.filter(dept => {
+                const matchesSearch = !search ||
+                    dept.name.toLowerCase().includes(search) ||
+                    (dept.description && dept.description.toLowerCase().includes(search)) ||
+                    (dept.tagline && dept.tagline.toLowerCase().includes(search));
+
+                const isActive = dept.is_active !== false;
+                const matchesStatus = !status ||
+                    (status === 'active' && isActive) ||
+                    (status === 'inactive' && !isActive);
+
+                return matchesSearch && matchesStatus;
+            });
+
+            // Sort by sort_order then name
+            filteredDepartments.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name));
+
+            renderDepartments();
+        }
+
+        // Render departments grid
+        function renderDepartments() {
+            const grid = document.getElementById('departments-grid');
+
+            if (filteredDepartments.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="git-branch"></i>
+                        <h3>${departments.length === 0 ? 'No Departments Yet' : 'No Matching Departments'}</h3>
+                        <p>${departments.length === 0 ? 'Create your first department to organize your team.' : 'Try adjusting your search or filters.'}</p>
+                        ${departments.length === 0 ? '<button class="btn btn-primary" onclick="showDepartmentModal()"><i data-lucide="plus"></i> Add Department</button>' : ''}
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = filteredDepartments.map(dept => {
+                const color = dept.color || '#6366f1';
+                const icon = dept.icon || 'building-2';
+                const isActive = dept.is_active !== false;
+                const createdDate = dept.created_at
+                    ? new Date(dept.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+
+                return `
+                    <div class="dept-card">
+                        <div class="dept-card-header">
+                            <div class="dept-icon" style="background: ${color};">
+                                <i data-lucide="${icon}"></i>
+                            </div>
+                            <div class="dept-info">
+                                <div class="dept-name">${dept.name}</div>
+                                ${dept.tagline ? `<div class="dept-tagline">${dept.tagline}</div>` : ''}
+                            </div>
+                            <span class="dept-status ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span>
+                        </div>
+                        <div class="dept-card-body">
+                            ${dept.description ? `<div class="dept-description">${dept.description}</div>` : '<div class="dept-description" style="color: var(--text-muted); font-style: italic;">No description</div>'}
+                            <div class="dept-meta">
+                                <div class="dept-meta-item">
+                                    <i data-lucide="palette"></i>
+                                    <span class="color-preview" style="background: ${color};"></span>
+                                </div>
+                                <div class="dept-meta-item">
+                                    <i data-lucide="arrow-up-down"></i>
+                                    Order: ${dept.sort_order || 0}
+                                </div>
+                                ${createdDate ? `
+                                    <div class="dept-meta-item">
+                                        <i data-lucide="calendar"></i>
+                                        ${createdDate}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="dept-card-footer">
+                            <button class="btn btn-sm btn-secondary" onclick="editDepartment('${dept.id}')">
+                                <i data-lucide="edit-2"></i>
+                                Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDepartment('${dept.id}', '${dept.name.replace(/'/g, "\\'")}')">
+                                <i data-lucide="trash-2"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Show department modal (create or edit)
+        async function showDepartmentModal(dept = null) {
+            editingDeptId = dept?.id || null;
+
+            const iconOptions = DEPT_ICONS.map(icon => ({
+                value: icon,
+                label: icon.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            }));
+
+            const fields = [
+                {
+                    name: 'name',
+                    label: 'Department Name',
+                    type: 'text',
+                    required: true,
+                    placeholder: 'e.g., Marketing, Engineering, Sales',
+                    value: dept?.name || ''
+                },
+                {
+                    name: 'description',
+                    label: 'Description',
+                    type: 'textarea',
+                    placeholder: 'What does this department do?',
+                    value: dept?.description || ''
+                },
+                {
+                    name: 'tagline',
+                    label: 'Tagline',
+                    type: 'text',
+                    placeholder: 'Short tagline for the department',
+                    value: dept?.tagline || ''
+                },
+                {
+                    name: 'icon',
+                    label: 'Icon',
+                    type: 'select',
+                    options: iconOptions,
+                    value: dept?.icon || 'building-2'
+                },
+                {
+                    name: 'color',
+                    label: 'Color',
+                    type: 'color',
+                    value: dept?.color || '#6366f1'
+                },
+                {
+                    name: 'sort_order',
+                    label: 'Sort Order',
+                    type: 'number',
+                    placeholder: '0',
+                    value: dept?.sort_order ?? 0,
+                    help: 'Lower numbers appear first'
+                }
+            ];
+
+            if (dept) {
+                fields.push({
+                    name: 'is_active',
+                    label: 'Status',
+                    type: 'select',
+                    options: [
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' }
+                    ],
+                    value: String(dept.is_active !== false)
+                });
+            }
+
+            const result = await ModalService.form({
+                title: dept ? 'Edit Department' : 'Add New Department',
+                fields,
+                submitText: dept ? 'Save Changes' : 'Create Department',
+                cancelText: 'Cancel',
+                width: 500
+            });
+
+            if (result) {
+                await saveDepartment(result);
+            }
+        }
+
+        // Edit department
+        function editDepartment(deptId) {
+            const dept = departments.find(d => d.id === deptId);
+            if (dept) {
+                showDepartmentModal(dept);
+            }
+        }
+
+        // Save department (create or update)
+        async function saveDepartment(formData) {
+            if (!formData.name || !formData.name.trim()) {
+                showToast('Department name is required', 'error');
+                return;
+            }
+
+            const deptData = {
+                name: formData.name.trim(),
+                description: formData.description?.trim() || '',
+                tagline: formData.tagline?.trim() || '',
+                icon: formData.icon || 'building-2',
+                color: formData.color || '#6366f1',
+                sort_order: parseInt(formData.sort_order) || 0
+            };
+
+            if (editingDeptId && formData.is_active !== undefined) {
+                deptData.is_active = formData.is_active === 'true';
+            }
+
+            try {
+                showLoading();
+                const url = editingDeptId ? `/api/departments/${editingDeptId}` : '/api/departments';
+                const method = editingDeptId ? 'PUT' : 'POST';
+
+                const response = await authFetch(url, {
+                    method,
+                    body: JSON.stringify(deptData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast(editingDeptId ? 'Department updated successfully' : 'Department created successfully', 'success');
+                    editingDeptId = null;
+                    await loadDepartments();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error saving department:', error);
+                showToast(error.message || 'Failed to save department', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete department
+        async function deleteDepartment(deptId, name) {
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Department',
+                message: `Are you sure you want to delete "${name}"?\n\nThis action cannot be undone. Users and resources assigned to this department will be unassigned.`,
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger',
+                cancelText: 'Cancel'
+            });
+            if (!confirmed) return;
+
+            try {
+                showLoading();
+                const response = await authFetch(`/api/departments/${deptId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Department deleted successfully', 'success');
+                    await loadDepartments();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting department:', error);
+                showToast(error.message || 'Failed to delete department', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            if (typeof ModalService !== 'undefined' && ModalService.toast) {
+                ModalService.toast({ message, type });
+                return;
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add toast animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

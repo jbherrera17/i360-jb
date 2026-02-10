@@ -124,6 +124,11 @@ const HelpRegistry = {
             file: '/api/docs/client-comparison-user-guide.md',
             title: 'Client Comparison Help'
         },
+        // Department Management
+        '/admin-departments': {
+            file: '/api/docs/departments-user-guide.md',
+            title: 'Department Management Help'
+        },
         // Agency Foundation (Phase 39)
         '/admin-org-settings': {
             file: '/api/docs/admin-org-settings-user-guide.md',
