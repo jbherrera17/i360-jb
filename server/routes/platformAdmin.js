@@ -1138,6 +1138,57 @@ module.exports = function(supabase) {
         }
     });
 
+    /**
+     * DELETE /api/platform/organizations/:id
+     * Delete an organization (platform admin only)
+     */
+    router.delete('/organizations/:id', requireAdminWrite, async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            // Check if org exists
+            const { data: org, error: orgError } = await supabase
+                .from('organizations')
+                .select('id, name, is_platform_owner')
+                .eq('id', id)
+                .single();
+
+            if (orgError || !org) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Organization not found'
+                });
+            }
+
+            // Cannot delete platform owner org
+            if (org.is_platform_owner) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Cannot delete the platform owner organization'
+                });
+            }
+
+            // Delete the organization (cascades to members, etc.)
+            const { error: deleteError } = await supabase
+                .from('organizations')
+                .delete()
+                .eq('id', id);
+
+            if (deleteError) throw deleteError;
+
+            res.json({
+                success: true,
+                message: `Organization "${org.name}" deleted successfully`
+            });
+        } catch (error) {
+            console.error('Error deleting organization:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
     // ============================================
     // USER MANAGEMENT
     // ============================================
@@ -1169,9 +1220,9 @@ module.exports = function(supabase) {
 
             let { data, error } = await query;
 
-            // Fallback if view doesn't exist
-            if (error && (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('schema cache'))) {
-                console.log('platform_users_overview view not found, using fallback query');
+            // Fallback if view doesn't exist or permission denied
+            if (error && (error.code === '42P01' || error.code === '42501' || error.message?.includes('does not exist') || error.message?.includes('schema cache') || error.message?.includes('permission denied'))) {
+                console.log('platform_users_overview unavailable, using fallback query:', error.message);
 
                 // First try with status columns (Phase 47 deployed)
                 let fallbackQuery = supabase

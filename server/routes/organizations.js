@@ -168,7 +168,7 @@ module.exports = function(supabase) {
                     name,
                     slug: orgSlug,
                     owner_id: userId,
-                    subscription_tier: 'free',
+                    subscription_tier: 'starter',
                     subscription_status: 'active',
                     settings: settings || {}
                 })

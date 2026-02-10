@@ -446,11 +446,16 @@
                             <input type="text" class="search-input" id="orgSearch" placeholder="Search organizations...">
                             <select class="filter-select" id="tierFilter">
                                 <option value="">All Tiers</option>
+                                <option value="platform">Platform</option>
                                 <option value="starter">Starter</option>
                                 <option value="business">Business</option>
                                 <option value="enterprise">Enterprise</option>
                                 <option value="agency">Agency</option>
                             </select>
+                            <button class="btn btn-primary" onclick="showCreateOrgModal()">
+                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                Create Organization
+                            </button>
                             <select class="filter-select" id="statusFilter">
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
@@ -922,6 +927,11 @@
                         <button class="btn btn-sm btn-secondary" onclick="showChangeTierModal('${org.id}', '${org.subscription_tier}')">
                             Change Tier
                         </button>
+                        ${!org.is_platform_owner ? `
+                        <button class="btn btn-sm btn-danger" onclick="confirmDeleteOrg('${org.id}', '${escapeHtml(org.name)}')" title="Delete Organization">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        ` : ''}
                     </td>
                 </tr>
             `).join('');
@@ -1135,6 +1145,119 @@
                 }
             } catch (error) {
                 showToast('Failed to change tier', 'error');
+            }
+        }
+
+        // Show create organization modal
+        async function showCreateOrgModal() {
+            if (typeof ModalService === 'undefined') {
+                showToast('Modal service not loaded', 'error');
+                return;
+            }
+
+            const result = await ModalService.form({
+                title: 'Create New Organization',
+                fields: [
+                    {
+                        name: 'name',
+                        label: 'Organization Name',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'Enter organization name'
+                    },
+                    {
+                        name: 'slug',
+                        label: 'Slug (optional)',
+                        type: 'text',
+                        placeholder: 'auto-generated if empty'
+                    },
+                    {
+                        name: 'tier',
+                        label: 'Subscription Tier',
+                        type: 'select',
+                        value: 'starter',
+                        options: tiers.map(t => ({ label: t.name, value: t.id }))
+                    }
+                ],
+                submitText: 'Create Organization'
+            });
+
+            if (result && result.name) {
+                await createOrganization(result.name, result.slug, result.tier);
+            }
+        }
+
+        // Create organization
+        async function createOrganization(name, slug, tier) {
+            const token = localStorage.getItem('insight360_token');
+
+            try {
+                const response = await fetch('/api/organizations', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, slug: slug || undefined })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    // If tier is different from default, update it
+                    if (tier && tier !== 'starter') {
+                        await changeTier(data.data.id, tier);
+                    }
+                    showToast('Organization created successfully', 'success');
+                    await loadAllData();
+                } else {
+                    showToast(data.error || 'Failed to create organization', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to create organization', 'error');
+            }
+        }
+
+        // Confirm delete organization
+        async function confirmDeleteOrg(orgId, orgName) {
+            if (typeof ModalService === 'undefined') {
+                showToast('Modal service not loaded', 'error');
+                return;
+            }
+
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Organization',
+                message: `Are you sure you want to delete "${orgName}"?\n\nThis will permanently delete:\n• All organization members\n• All agents and workflows\n• All associated data\n\nThis action cannot be undone.`,
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+
+            if (confirmed) {
+                await deleteOrganization(orgId);
+            }
+        }
+
+        // Delete organization
+        async function deleteOrganization(orgId) {
+            const token = localStorage.getItem('insight360_token');
+
+            try {
+                const response = await fetch(`/api/platform/organizations/${orgId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    showToast('Organization deleted', 'success');
+                    await loadAllData();
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Failed to delete organization', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to delete organization', 'error');
             }
         }
 
