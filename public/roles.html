@@ -945,11 +945,11 @@
                 </select>
                 <select class="filter-select" id="level-filter" onchange="filterRoles()">
                     <option value="">All Levels</option>
-                    <option value="executive">Executive</option>
-                    <option value="director">Director</option>
-                    <option value="manager">Manager</option>
-                    <option value="supervisor">Supervisor</option>
                     <option value="ic">Individual Contributor</option>
+                    <option value="manager">Manager</option>
+                    <option value="director">Director</option>
+                    <option value="vp">Vice President</option>
+                    <option value="c-level">C-Level Executive</option>
                 </select>
             </div>
 
@@ -1085,14 +1085,15 @@
             }
         }
 
-        // Populate department filters
+        // Populate department filter on main page
         function populateDepartmentFilters() {
             const filterSelect = document.getElementById('department-filter');
-            const formSelect = document.getElementById('role-department');
+            if (!filterSelect) return;
 
+            // Reset to just the "All Departments" option
+            filterSelect.innerHTML = '<option value="">All Departments</option>';
             departments.forEach(dept => {
                 filterSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-                formSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
             });
         }
 
@@ -1783,11 +1784,11 @@
 
         function formatLevel(level) {
             const levels = {
-                executive: 'Executive',
-                director: 'Director',
+                ic: 'Individual Contributor',
                 manager: 'Manager',
-                supervisor: 'Supervisor',
-                ic: 'IC'
+                director: 'Director',
+                vp: 'Vice President',
+                'c-level': 'C-Level Executive'
             };
             return levels[level] || level;
         }

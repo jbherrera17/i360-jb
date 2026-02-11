@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Read(//Users/jbh17/**)",
-      "Bash(gh auth status:*)"
+      "Bash(gh auth status:*)",
+      "Bash(git rebase:*)"
     ]
   }
 }

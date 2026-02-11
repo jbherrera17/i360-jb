@@ -2,7 +2,7 @@
 
 **Purpose:** Complete guide for onboarding a new organization onto the Insight 360 multi-tenant platform.
 **Audience:** Platform administrators (Synergi), system administrators (org-level), client success managers.
-**Last Updated:** February 10, 2026 | Version 2.0
+**Last Updated:** February 10, 2026 | Version 2.1
 
 ---
 
@@ -544,17 +544,22 @@ Platform Dept-Agent Mappings (11)
 
 Run after Phases 1-4 are complete:
 
-### Onboarding Tab Check
+### Setup Progress Check
 
-Go to Administrator → Onboarding tab. All 8 items should be complete:
-- [x] Organization Created
-- [x] Admin User Assigned
-- [x] Subscription Tier Configured
-- [x] Departments Created
-- [x] Roles Defined
-- [x] Team Members
-- [x] Branding Configured
-- [x] Resources Configured
+Go to **Organization Settings** (`/admin-org-settings.html`). The Setup Progress panel shows 8 items. All should show "Configured" (green checkmark):
+
+| # | Item | Check Logic | API Source | Links To |
+|---|------|------------|------------|----------|
+| 1 | **Organization Created** | Org record exists | Current org data | *(stays on page)* |
+| 2 | **Subscription Tier** | Tier is set and not `none` | Current org data | `admin-platform.html` (platform admins only) |
+| 3 | **Admin User** | At least one member with `admin` or `owner` role | `GET /api/org-members/:orgId` | `admin-org-members.html` |
+| 4 | **Departments** | At least one department exists | `GET /api/departments` | `admin-departments.html` |
+| 5 | **Roles Defined** | At least one department role/title exists | `GET /api/roles` | `roles.html` |
+| 6 | **Team Members** | At least one org member exists | `GET /api/org-members/:orgId` | `admin-org-members.html` |
+| 7 | **Branding** | Logo URL or primary color is set in org settings | Current org data | *(stays on page)* |
+| 8 | **Resources** | At least one agent exists | `GET /api/agents?limit=1` | `admin-resource-access.html` |
+
+All data is loaded in parallel via `Promise.allSettled`, so individual failures don't block other checks.
 
 ### Functional Spot Checks
 
@@ -595,4 +600,4 @@ The following platform changes are needed to support this process:
 ---
 
 *This document supersedes setup-guide.md and client-onboarding-steps.md.*
-*Version: 2.0 | February 2026*
+*Version: 2.1 | February 2026*

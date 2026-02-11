@@ -883,7 +883,7 @@
                 const [membersRes, deptsRes, rolesRes, agentsRes] = await Promise.allSettled([
                     fetch(`/api/org-members/${orgId}`, { headers }),
                     fetch('/api/departments', { headers }),
-                    fetch('/api/department-roles', { headers }),
+                    fetch('/api/roles', { headers }),
                     fetch('/api/agents?limit=1', { headers })
                 ]);
 
