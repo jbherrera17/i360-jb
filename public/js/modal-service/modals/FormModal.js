@@ -27,9 +27,15 @@ class FormModal extends ModalBase {
             className: `i360-form-modal ${options.className || ''}`.trim()
         });
 
+        // Build initial values from field definitions if not explicitly provided
+        const fieldValues = {};
+        (options.fields || []).forEach(f => {
+            if (f.value !== undefined) fieldValues[f.name] = f.value;
+        });
+
         this.formOptions = {
             fields: options.fields || [],
-            values: options.values || {},
+            values: { ...fieldValues, ...(options.values || {}) },
             submitText: options.submitText || 'Submit',
             cancelText: options.cancelText || 'Cancel',
             onSubmit: options.onSubmit,
