@@ -82,18 +82,22 @@ async function transcribe(audio, options = {}) {
     if (!isAvailable()) {
         throw new Error('Voice service not available');
     }
-    
+
     const {
         model = 'gpt-4o-transcribe',
         language = null,
-        prompt = null
+        prompt = null,
+        filename = 'audio.webm',
+        mimeType = 'audio/webm'
     } = options;
-    
+
     try {
         const result = await openaiService.transcribeAudio(audio, {
             model,
             language,
-            prompt
+            prompt,
+            filename,
+            mimeType
         });
         
         return {

@@ -710,22 +710,185 @@ router.get('/image/models', (req, res) => {
     });
 });
 
+// ============================================
+// VOICE ENDPOINTS
+// ============================================
+
+const multer = require('multer');
+const voiceService = require('../services/voice');
+
+// Initialize voice service
+if (process.env.OPENAI_API_KEY) {
+    voiceService.initialize();
+}
+
+// Configure multer for audio uploads (memory storage, 10MB limit)
+const audioUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
+
 /**
  * POST /api/chat/voice/transcribe
- * Transcribe audio to text
+ * Transcribe audio to text using OpenAI STT
  */
-router.post('/voice/transcribe', async (req, res) => {
+router.post('/voice/transcribe', audioUpload.single('audio'), async (req, res) => {
     try {
-        // This would use OpenAI's Whisper API
-        // For now, return a placeholder
+        if (!voiceService.isAvailable()) {
+            return res.status(503).json({
+                success: false,
+                error: 'Voice service not available - OpenAI API key required'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'No audio file provided. Send as multipart/form-data with field name "audio"'
+            });
+        }
+
+        const model = req.body.model || 'gpt-4o-transcribe';
+
+        const result = await voiceService.transcribe(req.file.buffer, {
+            model,
+            filename: req.file.originalname || 'audio.webm',
+            mimeType: req.file.mimetype || 'audio/webm'
+        });
+
         res.json({
-            success: false,
-            error: 'Voice transcription not yet implemented'
+            success: true,
+            text: result.text,
+            model: result.model,
+            modelName: result.modelName
         });
     } catch (error) {
+        console.error('Voice transcription error:', error);
         res.status(500).json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/chat/voice/tts
+ * Convert text to speech using OpenAI TTS
+ */
+router.post('/voice/tts', async (req, res) => {
+    try {
+        if (!voiceService.isAvailable()) {
+            return res.status(503).json({
+                success: false,
+                error: 'Voice service not available'
+            });
+        }
+
+        const { text, voice = 'nova', speed = 1.0, model = 'gpt-4o-mini-tts', instructions = null } = req.body;
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Text is required'
+            });
+        }
+
+        // Limit text length to prevent abuse
+        const maxLen = 4096;
+        const trimmedText = text.length > maxLen ? text.substring(0, maxLen) : text;
+
+        const result = await voiceService.speak(trimmedText, {
+            model,
+            voice,
+            speed: Math.max(0.25, Math.min(4.0, speed)),
+            instructions
+        });
+
+        res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': result.audio.length,
+            'X-Voice': result.voice,
+            'X-Model': result.model
+        });
+        res.send(result.audio);
+    } catch (error) {
+        console.error('Voice TTS error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/chat/voice/voices
+ * Get available voices and models
+ */
+router.get('/voice/voices', (req, res) => {
+    res.json({
+        success: true,
+        available: voiceService.isAvailable(),
+        voices: voiceService.getVoices(),
+        models: {
+            stt: voiceService.getSTTModels(),
+            tts: voiceService.getTTSModels()
+        }
+    });
+});
+
+/**
+ * GET /api/chat/voice/config
+ * Get voice configuration for the chat frontend
+ * Returns admin-configured defaults and enabled status
+ */
+router.get('/voice/config', async (req, res) => {
+    try {
+        // Try to load platform config for voice settings
+        let voiceConfig = {
+            stt_enabled: true,
+            tts_enabled: true,
+            default_stt_model: 'gpt-4o-transcribe',
+            default_tts_model: 'gpt-4o-mini-tts',
+            default_voice: 'nova',
+            default_speed: 1.0,
+            max_duration: 120,
+            tts_instructions: ''
+        };
+
+        // Check if supabase is available and load config
+        const supabase = req.app?.locals?.supabase;
+        if (supabase) {
+            const { data } = await supabase
+                .from('platform_config')
+                .select('feature_flags')
+                .limit(1)
+                .single();
+
+            if (data?.feature_flags?.voice) {
+                voiceConfig = { ...voiceConfig, ...data.feature_flags.voice };
+            }
+        }
+
+        res.json({
+            success: true,
+            available: voiceService.isAvailable(),
+            config: voiceConfig
+        });
+    } catch (error) {
+        // Return defaults on error
+        res.json({
+            success: true,
+            available: voiceService.isAvailable(),
+            config: {
+                stt_enabled: true,
+                tts_enabled: true,
+                default_stt_model: 'gpt-4o-transcribe',
+                default_tts_model: 'gpt-4o-mini-tts',
+                default_voice: 'nova',
+                default_speed: 1.0,
+                max_duration: 120,
+                tts_instructions: ''
+            }
         });
     }
 });

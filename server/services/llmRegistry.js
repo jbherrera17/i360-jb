@@ -136,24 +136,63 @@ const OPENAI_MODELS = {
         capabilities: ['vision', 'image_gen'],
         tier: 'efficient'
     },
-    // O-Series Reasoning Models
-    'o1': {
-        name: 'o1',
+    // GPT-5.3 Family (February 2026)
+    'gpt-5.3-codex': {
+        name: 'GPT-5.3 Codex',
         provider: 'openai',
-        description: 'Advanced reasoning model - complex analysis and math',
+        description: 'Most capable agentic coding model - real-world software engineering',
+        maxTokens: 128000,
+        contextWindow: 400000,
+        capabilities: ['vision', 'reasoning'],
+        tier: 'flagship',
+        apiNote: 'Phased API rollout - may not be available to all developers yet'
+    },
+    // O-Series Reasoning Models (Latest)
+    'o3': {
+        name: 'o3',
+        provider: 'openai',
+        description: 'Powerful reasoning - math, science, coding, and visual reasoning',
         maxTokens: 100000,
         contextWindow: 200000,
         capabilities: ['vision', 'reasoning'],
         tier: 'reasoning'
     },
+    'o3-pro': {
+        name: 'o3-pro',
+        provider: 'openai',
+        description: 'Extended reasoning - more compute for consistently better answers',
+        maxTokens: 100000,
+        contextWindow: 200000,
+        capabilities: ['vision', 'reasoning'],
+        tier: 'reasoning'
+    },
+    'o4-mini': {
+        name: 'o4-mini',
+        provider: 'openai',
+        description: 'Fast reasoning - efficient performance in coding and visual tasks',
+        maxTokens: 100000,
+        contextWindow: 200000,
+        capabilities: ['vision', 'reasoning'],
+        tier: 'reasoning'
+    },
+    // Legacy O-Series
+    'o1': {
+        name: 'o1',
+        provider: 'openai',
+        description: 'Previous reasoning model - complex analysis and math',
+        maxTokens: 100000,
+        contextWindow: 200000,
+        capabilities: ['vision', 'reasoning'],
+        tier: 'legacy'
+    },
     'o1-mini': {
         name: 'o1-mini',
         provider: 'openai',
-        description: 'Fast reasoning - great for math and coding',
+        description: 'Previous fast reasoning model',
         maxTokens: 65536,
         contextWindow: 128000,
         capabilities: ['reasoning'],
-        tier: 'reasoning'
+        tier: 'legacy'
     },
     // Legacy
     'gpt-4-turbo': {
@@ -364,7 +403,7 @@ function getModel(modelId) {
 function getProvider(modelId) {
     if (!modelId) return 'anthropic';
     if (modelId.startsWith('claude')) return 'anthropic';
-    if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('dall-e')) return 'openai';
+    if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('o3') || modelId.startsWith('o4') || modelId.startsWith('dall-e')) return 'openai';
     if (modelId.startsWith('sonar') || modelId.startsWith('pplx') || modelId.startsWith('perplexity')) return 'perplexity';
     if (modelId.startsWith('gemini') || modelId.startsWith('nano-banana')) return 'google';
     return ALL_MODELS[modelId]?.provider || 'anthropic';

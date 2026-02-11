@@ -26,9 +26,20 @@ const OPENAI_RETRY_CONFIG = {
     backoffMultiplier: 2,
 };
 
-// Available OpenAI models (December 2025)
+// Available OpenAI models (February 2026)
 const OPENAI_MODELS = {
-    // GPT-5.2 Family (Latest - December 2025)
+    // GPT-5.3 Family (Latest - February 2026)
+    'gpt-5.3-codex': {
+        name: 'GPT-5.3 Codex',
+        description: 'Most capable agentic coding model - real-world software engineering',
+        maxTokens: 128000,
+        contextWindow: 400000,
+        vision: true,
+        reasoning: true,
+        tier: 'flagship',
+        apiNote: 'Phased API rollout - may not be available to all developers yet'
+    },
+    // GPT-5.2 Family
     'gpt-5.2': {
         name: 'GPT-5.2 Thinking',
         description: 'Best for structured work like coding and planning',
@@ -47,8 +58,6 @@ const OPENAI_MODELS = {
         vision: true,
         tier: 'flagship'
     },
-    // Note: gpt-5.2-pro is NOT a chat model (requires completions API)
-    // Use gpt-5.2 for chat - it auto-redirects gpt-5.2-pro requests
     'gpt-5.2-codex': {
         name: 'GPT-5.2 Codex',
         description: 'Optimized for code generation and understanding',
@@ -86,24 +95,52 @@ const OPENAI_MODELS = {
         audio: true,
         tier: 'audio'
     },
-    // O-Series Reasoning Models
-    'o1': {
-        name: 'o1',
-        description: 'Advanced reasoning model - complex analysis and math',
+    // O-Series Reasoning Models (Latest)
+    'o3': {
+        name: 'o3',
+        description: 'Powerful reasoning - math, science, coding, and visual reasoning',
         maxTokens: 100000,
         contextWindow: 200000,
         vision: true,
         reasoning: true,
         tier: 'reasoning'
     },
+    'o3-pro': {
+        name: 'o3-pro',
+        description: 'Extended reasoning - more compute for consistently better answers',
+        maxTokens: 100000,
+        contextWindow: 200000,
+        vision: true,
+        reasoning: true,
+        tier: 'reasoning'
+    },
+    'o4-mini': {
+        name: 'o4-mini',
+        description: 'Fast reasoning - efficient performance in coding and visual tasks',
+        maxTokens: 100000,
+        contextWindow: 200000,
+        vision: true,
+        reasoning: true,
+        tier: 'reasoning'
+    },
+    // Legacy O-Series
+    'o1': {
+        name: 'o1',
+        description: 'Previous reasoning model - complex analysis and math',
+        maxTokens: 100000,
+        contextWindow: 200000,
+        vision: true,
+        reasoning: true,
+        tier: 'legacy'
+    },
     'o1-mini': {
         name: 'o1-mini',
-        description: 'Fast reasoning - great for math and coding',
+        description: 'Previous fast reasoning model',
         maxTokens: 65536,
         contextWindow: 128000,
         vision: false,
         reasoning: true,
-        tier: 'reasoning'
+        tier: 'legacy'
     },
     // Legacy
     'gpt-4-turbo': {
@@ -144,6 +181,7 @@ const IMAGE_MODELS = {
 
 // Model aliases
 const MODEL_ALIASES = {
+    'gpt-5.3-codex': 'gpt-5.3-codex',
     'gpt-5.2': 'gpt-5.2',
     'gpt-5.2-chat-latest': 'gpt-5.2-chat-latest',
     'gpt-5.2-codex': 'gpt-5.2-codex',
@@ -151,6 +189,9 @@ const MODEL_ALIASES = {
     'gpt-4o': 'gpt-4o',
     'gpt-4o-mini': 'gpt-4o-mini',
     'gpt-4-turbo': 'gpt-4-turbo',
+    'o3': 'o3',
+    'o3-pro': 'o3-pro',
+    'o4-mini': 'o4-mini',
     'o1': 'o1',
     'o1-mini': 'o1-mini',
     // Convenience aliases
@@ -555,26 +596,35 @@ async function* streamChat(options) {
 
 /**
  * Transcribe audio to text
+ * @param {Buffer|File} audioInput - Audio data (Buffer from multer or File-like object)
+ * @param {Object} options - { model, language, prompt, filename, mimeType }
  */
-async function transcribeAudio(audioBuffer, options = {}) {
+async function transcribeAudio(audioInput, options = {}) {
     if (!client) {
         throw new Error('OpenAI client not initialized');
     }
-    
+
     const {
         model = 'gpt-4o-transcribe',
         language = null,
-        prompt = null
+        prompt = null,
+        filename = 'audio.webm',
+        mimeType = 'audio/webm'
     } = options;
-    
+
     try {
-        const response = await client.audio.transcriptions.create({
-            file: audioBuffer,
-            model,
-            language,
-            prompt
-        });
-        
+        // OpenAI SDK v6 expects a File-like object with name property
+        let file = audioInput;
+        if (Buffer.isBuffer(audioInput)) {
+            file = new File([audioInput], filename, { type: mimeType });
+        }
+
+        const requestParams = { file, model };
+        if (language) requestParams.language = language;
+        if (prompt) requestParams.prompt = prompt;
+
+        const response = await client.audio.transcriptions.create(requestParams);
+
         return {
             text: response.text,
             model

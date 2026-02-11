@@ -436,6 +436,7 @@
                     <button class="tab" data-tab="tiers">Subscription Tiers</button>
                     <button class="tab" data-tab="modules">Modules</button>
                     <button class="tab" data-tab="admins">Platform Admins</button>
+                    <button class="tab" data-tab="voice">Voice</button>
                     <button class="tab" data-tab="config">Configuration</button>
                 </div>
 
@@ -648,6 +649,151 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Voice Configuration Tab -->
+                <div class="tab-content" id="tab-voice">
+                    <div class="section">
+                        <!-- Voice Service Status -->
+                        <div class="config-card">
+                            <div class="config-card-header">
+                                <span class="config-card-title">
+                                    <i data-lucide="mic" style="width:18px;height:18px;color:var(--primary);"></i>
+                                    Voice Service Status
+                                </span>
+                                <span id="voiceServiceStatus" class="status-badge status-active">Checking...</span>
+                            </div>
+                            <div id="voiceServiceInfo" style="color:var(--text-secondary);font-size:0.875rem;">
+                                Loading voice service status...
+                            </div>
+                        </div>
+
+                        <!-- Voice Feature Controls -->
+                        <div class="config-card" style="margin-top:1.5rem;">
+                            <div class="config-card-header">
+                                <span class="config-card-title">Voice Feature Controls</span>
+                                <button class="btn btn-primary btn-sm" onclick="saveVoiceConfig()">
+                                    <i data-lucide="save"></i>
+                                    Save
+                                </button>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="voiceEnabled" checked> Enable Voice Input (STT)
+                                    </label>
+                                    <small style="color:var(--text-secondary);display:block;margin-top:0.25rem;">Allow users to use microphone for speech-to-text in Higgins chat</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="voiceTTSEnabled" checked> Enable Voice Output (TTS)
+                                    </label>
+                                    <small style="color:var(--text-secondary);display:block;margin-top:0.25rem;">Allow users to hear AI responses read aloud</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STT Model Configuration -->
+                        <div class="config-card" style="margin-top:1.5rem;">
+                            <div class="config-card-header">
+                                <span class="config-card-title">Speech-to-Text (STT) Settings</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Default STT Model</label>
+                                    <select id="voiceSTTModel">
+                                        <option value="gpt-4o-transcribe">GPT-4o Transcribe (Most Accurate)</option>
+                                        <option value="gpt-4o-mini-transcribe">GPT-4o Mini Transcribe (Fast)</option>
+                                        <option value="whisper-1">Whisper (Legacy/Budget)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Audio Duration (seconds)</label>
+                                    <input type="number" id="voiceMaxDuration" value="120" min="10" max="600">
+                                    <small style="color:var(--text-secondary);display:block;margin-top:0.25rem;">Maximum recording length before auto-stop</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TTS Configuration -->
+                        <div class="config-card" style="margin-top:1.5rem;">
+                            <div class="config-card-header">
+                                <span class="config-card-title">Text-to-Speech (TTS) Settings</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Default TTS Model</label>
+                                    <select id="voiceTTSModel">
+                                        <option value="gpt-4o-mini-tts">GPT-4o Mini TTS (Steerable)</option>
+                                        <option value="tts-1">TTS-1 (Standard)</option>
+                                        <option value="tts-1-hd">TTS-1 HD (High Quality)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Default Voice</label>
+                                    <select id="voiceDefaultVoice">
+                                        <option value="alloy">Alloy - Neutral and balanced</option>
+                                        <option value="echo">Echo - Warm and conversational</option>
+                                        <option value="fable">Fable - British and narrative</option>
+                                        <option value="onyx">Onyx - Deep and authoritative</option>
+                                        <option value="nova" selected>Nova - Friendly and energetic</option>
+                                        <option value="shimmer">Shimmer - Clear and expressive</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Default Speed</label>
+                                    <input type="range" id="voiceDefaultSpeed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="document.getElementById('speedDisplay').textContent = this.value + 'x'">
+                                    <small style="color:var(--text-secondary);display:block;margin-top:0.25rem;">Speed: <span id="speedDisplay">1.0x</span></small>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top:1rem;">
+                                <label>TTS Voice Instructions</label>
+                                <textarea id="voiceTTSInstructions" rows="2" placeholder="e.g., Speak in a professional, calm tone. Pause briefly between sentences."></textarea>
+                                <small style="color:var(--text-secondary);display:block;margin-top:0.25rem;">Custom instructions for GPT-4o Mini TTS model (steerable voice only)</small>
+                            </div>
+                        </div>
+
+                        <!-- Voice Preview -->
+                        <div class="config-card" style="margin-top:1.5rem;">
+                            <div class="config-card-header">
+                                <span class="config-card-title">Voice Preview</span>
+                            </div>
+                            <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+                                <input type="text" id="voicePreviewText" value="Hello! I'm your AI assistant. How can I help you today?" style="flex:1;min-width:200px;">
+                                <button class="btn btn-secondary" onclick="previewVoice()" id="voicePreviewBtn">
+                                    <i data-lucide="play" style="width:16px;height:16px;"></i>
+                                    Preview
+                                </button>
+                                <button class="btn btn-secondary" onclick="stopVoicePreview()" id="voiceStopBtn" style="display:none;">
+                                    <i data-lucide="square" style="width:16px;height:16px;"></i>
+                                    Stop
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Available Voices Reference -->
+                        <div class="config-card" style="margin-top:1.5rem;">
+                            <div class="config-card-header">
+                                <span class="config-card-title">Available Voices</span>
+                            </div>
+                            <table class="data-table" style="margin-top:0;">
+                                <thead>
+                                    <tr>
+                                        <th>Voice</th>
+                                        <th>Character</th>
+                                        <th>Preview</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="voicesTableBody">
+                                    <tr><td colspan="3" class="empty-state">Loading voices...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -868,6 +1014,7 @@
                     const data = await configRes.json();
                     platformConfig = data.data || {};
                     renderConfig();
+                    loadVoiceData();
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -935,6 +1082,184 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        // ============================================
+        // VOICE ADMIN FUNCTIONS
+        // ============================================
+
+        let voiceConfig = {};
+        let previewAudio = null;
+
+        async function loadVoiceData() {
+            const token = localStorage.getItem('insight360_token');
+            try {
+                // Load voice service status and available voices
+                const voicesRes = await fetch('/api/chat/voice/voices', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const voicesData = await voicesRes.json();
+
+                // Update service status
+                const statusEl = document.getElementById('voiceServiceStatus');
+                const infoEl = document.getElementById('voiceServiceInfo');
+                if (voicesData.available) {
+                    statusEl.textContent = 'Active';
+                    statusEl.className = 'status-badge status-active';
+                    infoEl.innerHTML = `Voice service is running. STT models: ${voicesData.models.stt.length}, TTS models: ${voicesData.models.tts.length}, Voices: ${voicesData.voices.length}`;
+                } else {
+                    statusEl.textContent = 'Unavailable';
+                    statusEl.className = 'status-badge status-suspended';
+                    infoEl.innerHTML = 'Voice service is not available. Ensure OPENAI_API_KEY is configured.';
+                }
+
+                // Render voices table
+                if (voicesData.voices && voicesData.voices.length > 0) {
+                    document.getElementById('voicesTableBody').innerHTML = voicesData.voices.map(v => `
+                        <tr>
+                            <td><strong>${v.name}</strong> <code style="font-size:0.75rem;color:var(--text-secondary);">${v.id}</code></td>
+                            <td>${v.description}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="previewVoiceById('${v.id}')">
+                                    <i data-lucide="play" style="width:14px;height:14px;"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+
+                // Load saved voice config from platform config feature_flags
+                if (platformConfig && platformConfig.feature_flags) {
+                    voiceConfig = platformConfig.feature_flags.voice || {};
+                }
+                renderVoiceConfig();
+
+            } catch (error) {
+                console.error('Error loading voice data:', error);
+                document.getElementById('voiceServiceStatus').textContent = 'Error';
+                document.getElementById('voiceServiceStatus').className = 'status-badge status-suspended';
+            }
+        }
+
+        function renderVoiceConfig() {
+            document.getElementById('voiceEnabled').checked = voiceConfig.stt_enabled !== false;
+            document.getElementById('voiceTTSEnabled').checked = voiceConfig.tts_enabled !== false;
+            document.getElementById('voiceSTTModel').value = voiceConfig.default_stt_model || 'gpt-4o-transcribe';
+            document.getElementById('voiceMaxDuration').value = voiceConfig.max_duration || 120;
+            document.getElementById('voiceTTSModel').value = voiceConfig.default_tts_model || 'gpt-4o-mini-tts';
+            document.getElementById('voiceDefaultVoice').value = voiceConfig.default_voice || 'nova';
+            document.getElementById('voiceDefaultSpeed').value = voiceConfig.default_speed || 1.0;
+            document.getElementById('speedDisplay').textContent = (voiceConfig.default_speed || 1.0) + 'x';
+            document.getElementById('voiceTTSInstructions').value = voiceConfig.tts_instructions || '';
+        }
+
+        async function saveVoiceConfig() {
+            const token = localStorage.getItem('insight360_token');
+
+            const newVoiceConfig = {
+                stt_enabled: document.getElementById('voiceEnabled').checked,
+                tts_enabled: document.getElementById('voiceTTSEnabled').checked,
+                default_stt_model: document.getElementById('voiceSTTModel').value,
+                max_duration: parseInt(document.getElementById('voiceMaxDuration').value),
+                default_tts_model: document.getElementById('voiceTTSModel').value,
+                default_voice: document.getElementById('voiceDefaultVoice').value,
+                default_speed: parseFloat(document.getElementById('voiceDefaultSpeed').value),
+                tts_instructions: document.getElementById('voiceTTSInstructions').value
+            };
+
+            // Merge into feature_flags
+            const featureFlags = (platformConfig && platformConfig.feature_flags) ? { ...platformConfig.feature_flags } : {};
+            featureFlags.voice = newVoiceConfig;
+
+            try {
+                const response = await fetch('/api/platform/config', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ feature_flags: featureFlags })
+                });
+
+                if (response.ok) {
+                    showToast('Voice configuration saved', 'success');
+                    voiceConfig = newVoiceConfig;
+                    if (platformConfig) {
+                        platformConfig.feature_flags = featureFlags;
+                    }
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Failed to save voice config', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to save voice configuration', 'error');
+            }
+        }
+
+        async function previewVoice() {
+            const text = document.getElementById('voicePreviewText').value;
+            const voice = document.getElementById('voiceDefaultVoice').value;
+            const speed = parseFloat(document.getElementById('voiceDefaultSpeed').value);
+            await playTTSPreview(text, voice, speed);
+        }
+
+        async function previewVoiceById(voiceId) {
+            const text = document.getElementById('voicePreviewText').value || 'Hello! I am your AI assistant.';
+            const speed = parseFloat(document.getElementById('voiceDefaultSpeed').value) || 1.0;
+            await playTTSPreview(text, voiceId, speed);
+        }
+
+        async function playTTSPreview(text, voice, speed) {
+            const token = localStorage.getItem('insight360_token');
+
+            // Stop any existing playback
+            stopVoicePreview();
+
+            document.getElementById('voicePreviewBtn').style.display = 'none';
+            document.getElementById('voiceStopBtn').style.display = 'inline-flex';
+
+            try {
+                const response = await fetch('/api/chat/voice/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text,
+                        voice,
+                        speed,
+                        model: document.getElementById('voiceTTSModel').value
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('TTS request failed');
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                previewAudio = new Audio(audioUrl);
+                previewAudio.onended = () => {
+                    stopVoicePreview();
+                    URL.revokeObjectURL(audioUrl);
+                };
+                previewAudio.play();
+            } catch (error) {
+                showToast('Voice preview failed: ' + error.message, 'error');
+                stopVoicePreview();
+            }
+        }
+
+        function stopVoicePreview() {
+            if (previewAudio) {
+                previewAudio.pause();
+                previewAudio.currentTime = 0;
+                previewAudio = null;
+            }
+            document.getElementById('voicePreviewBtn').style.display = 'inline-flex';
+            document.getElementById('voiceStopBtn').style.display = 'none';
         }
 
         // Render tiers

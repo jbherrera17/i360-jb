@@ -11,8 +11,18 @@ const { randomUUID: uuidv4 } = require('crypto');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
 const axios = require('axios');
-const { JSDOM } = require('jsdom');
-const { Readability } = require('@mozilla/readability');
+// Lazy-loaded to avoid jsdom ESM/require hang on Node.js 24
+let JSDOM = null;
+let Readability = null;
+
+function loadJsdom() {
+    if (!JSDOM) {
+        JSDOM = require('jsdom').JSDOM;
+    }
+    if (!Readability) {
+        Readability = require('@mozilla/readability').Readability;
+    }
+}
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -268,6 +278,7 @@ async function processUrlSource(url, studioId) {
 
     if (contentType.includes('text/html')) {
         // Parse HTML and extract article content
+        loadJsdom();
         const dom = new JSDOM(response.data, { url });
         const reader = new Readability(dom.window.document);
         const article = reader.parse();

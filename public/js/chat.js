@@ -2762,3 +2762,376 @@ async function saveAsSnippet() {
         alert('Failed to save: ' + error.message);
     }
 }
+
+// ============================================
+// VOICE INPUT / OUTPUT MODULE
+// ============================================
+
+(function() {
+    // DOM elements
+    const voiceInputBtn = document.getElementById('voiceInputBtn');
+    const voiceModal = document.getElementById('voiceModal');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const stopRecordingBtn = document.getElementById('stopRecording');
+    const cancelRecordingBtn = document.getElementById('cancelRecording');
+    const voicePlayback = document.getElementById('voicePlayback');
+    const playResponseBtn = document.getElementById('playResponseBtn');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const chatInputEl = document.getElementById('chatInput');
+    const enableVoiceEl = document.getElementById('enableVoice');
+
+    // State
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingStream = null;
+    let currentAudio = null;
+    let isPlaying = false;
+    let lastAssistantText = '';
+    let adminConfig = null;
+
+    // Load admin voice configuration
+    async function loadVoiceConfig() {
+        try {
+            const res = await fetch('/api/chat/voice/config');
+            const data = await res.json();
+            if (data.success) {
+                adminConfig = data.config;
+                // Apply admin defaults
+                if (!data.available || !adminConfig.stt_enabled) {
+                    if (voiceInputBtn) voiceInputBtn.style.display = 'none';
+                }
+                if (!data.available || !adminConfig.tts_enabled) {
+                    if (voicePlayback) voicePlayback.classList.add('hidden');
+                }
+                // Set default voice from admin config if no user preference
+                if (!localStorage.getItem('insight360-voice') && adminConfig.default_voice && voiceSelect) {
+                    voiceSelect.value = adminConfig.default_voice;
+                }
+            }
+        } catch (e) {
+            // Use defaults if config unavailable
+        }
+    }
+    loadVoiceConfig();
+
+    // Load saved voice preference
+    const savedVoice = localStorage.getItem('insight360-voice');
+    if (savedVoice && voiceSelect) {
+        voiceSelect.value = savedVoice;
+    }
+
+    // Save voice preference on change
+    if (voiceSelect) {
+        voiceSelect.addEventListener('change', () => {
+            localStorage.setItem('insight360-voice', voiceSelect.value);
+        });
+    }
+
+    // ---- RECORDING ----
+
+    if (voiceInputBtn) {
+        voiceInputBtn.addEventListener('click', startRecording);
+    }
+
+    if (stopRecordingBtn) {
+        stopRecordingBtn.addEventListener('click', stopRecording);
+    }
+
+    if (cancelRecordingBtn) {
+        cancelRecordingBtn.addEventListener('click', cancelRecording);
+    }
+
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            recordingStream = stream;
+            audioChunks = [];
+
+            // Prefer webm/opus, fallback to whatever browser supports
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : MediaRecorder.isTypeSupported('audio/webm')
+                    ? 'audio/webm'
+                    : '';
+
+            mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                // Stream cleanup happens in stop/cancel handlers
+            };
+
+            mediaRecorder.start(100); // collect data every 100ms
+
+            // Show modal
+            if (voiceModal) voiceModal.classList.remove('hidden');
+            if (voiceStatus) voiceStatus.textContent = 'Listening...';
+
+        } catch (err) {
+            console.error('Microphone access error:', err);
+            if (err.name === 'NotAllowedError') {
+                showToast('Microphone access denied. Please allow microphone permission.', 'error');
+            } else {
+                showToast('Could not access microphone: ' + err.message, 'error');
+            }
+        }
+    }
+
+    async function stopRecording() {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+        // Update UI
+        if (voiceStatus) voiceStatus.textContent = 'Transcribing...';
+        if (stopRecordingBtn) stopRecordingBtn.disabled = true;
+
+        // Wait for final data
+        await new Promise(resolve => {
+            mediaRecorder.onstop = resolve;
+            mediaRecorder.stop();
+        });
+
+        // Stop mic stream
+        if (recordingStream) {
+            recordingStream.getTracks().forEach(t => t.stop());
+            recordingStream = null;
+        }
+
+        // Build blob and send
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunks, { type: mimeType });
+        audioChunks = [];
+
+        if (audioBlob.size < 1000) {
+            // Too short to be useful
+            hideVoiceModal();
+            showToast('Recording too short. Please try again.', 'error');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'm4a' : 'wav';
+            formData.append('audio', audioBlob, `recording.${ext}`);
+
+            const response = await fetch('/api/chat/voice/transcribe', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.text) {
+                // Insert transcribed text into chat input
+                if (chatInputEl) {
+                    chatInputEl.value = data.text;
+                    chatInputEl.focus();
+                    // Auto-resize textarea
+                    chatInputEl.style.height = 'auto';
+                    chatInputEl.style.height = chatInputEl.scrollHeight + 'px';
+                }
+                showToast('Voice transcribed', 'success');
+            } else {
+                showToast(data.error || 'Transcription failed', 'error');
+            }
+        } catch (err) {
+            console.error('Transcription request error:', err);
+            showToast('Failed to transcribe: ' + err.message, 'error');
+        }
+
+        hideVoiceModal();
+    }
+
+    function cancelRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (recordingStream) {
+            recordingStream.getTracks().forEach(t => t.stop());
+            recordingStream = null;
+        }
+        audioChunks = [];
+        hideVoiceModal();
+    }
+
+    function hideVoiceModal() {
+        if (voiceModal) voiceModal.classList.add('hidden');
+        if (stopRecordingBtn) stopRecordingBtn.disabled = false;
+        if (voiceStatus) voiceStatus.textContent = 'Listening...';
+    }
+
+    // ---- PLAYBACK ----
+
+    if (playResponseBtn) {
+        playResponseBtn.addEventListener('click', togglePlayback);
+    }
+
+    async function togglePlayback() {
+        if (isPlaying && currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+            isPlaying = false;
+            updatePlayButton(false);
+            return;
+        }
+
+        if (!lastAssistantText) {
+            showToast('No response to read aloud', 'error');
+            return;
+        }
+
+        // Strip markdown for cleaner speech
+        const cleanText = lastAssistantText
+            .replace(/```[\s\S]*?```/g, ' code block ')
+            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/\*(.*?)\*/g, '$1')
+            .replace(/#{1,6}\s/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/[`~]/g, '')
+            .trim();
+
+        if (!cleanText) {
+            showToast('No text content to read', 'error');
+            return;
+        }
+
+        const voice = voiceSelect?.value || adminConfig?.default_voice || 'nova';
+        const speed = adminConfig?.default_speed || 1.0;
+        const model = adminConfig?.default_tts_model || 'gpt-4o-mini-tts';
+
+        try {
+            updatePlayButton(true);
+            setStatus('Generating speech...');
+
+            const ttsBody = { text: cleanText, voice, speed, model };
+            if (adminConfig?.tts_instructions) {
+                ttsBody.instructions = adminConfig.tts_instructions;
+            }
+
+            const response = await fetch('/api/chat/voice/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ttsBody)
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({ error: 'TTS failed' }));
+                throw new Error(err.error || 'TTS request failed');
+            }
+
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            currentAudio = new Audio(audioUrl);
+
+            currentAudio.onended = () => {
+                isPlaying = false;
+                updatePlayButton(false);
+                URL.revokeObjectURL(audioUrl);
+                setStatus('Ready');
+            };
+
+            currentAudio.onerror = () => {
+                isPlaying = false;
+                updatePlayButton(false);
+                URL.revokeObjectURL(audioUrl);
+                showToast('Audio playback error', 'error');
+                setStatus('Ready');
+            };
+
+            isPlaying = true;
+            currentAudio.play();
+            setStatus('Playing response...');
+
+        } catch (err) {
+            console.error('TTS error:', err);
+            isPlaying = false;
+            updatePlayButton(false);
+            showToast('Text-to-speech failed: ' + err.message, 'error');
+            setStatus('Ready');
+        }
+    }
+
+    function updatePlayButton(playing) {
+        if (!playResponseBtn) return;
+        const icon = playResponseBtn.querySelector('i');
+        if (icon) {
+            icon.setAttribute('data-lucide', playing ? 'square' : 'volume-2');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    // ---- INTEGRATION WITH CHAT ----
+
+    // Track last assistant response for TTS
+    // Override the global conversationHistory push to capture assistant messages
+    const origPush = Array.prototype.push;
+    const historyRef = typeof conversationHistory !== 'undefined' ? conversationHistory : null;
+
+    if (historyRef) {
+        // Use a MutationObserver on the chat messages container to detect new assistant messages
+    }
+
+    // Observe new assistant messages to capture text and show playback controls
+    const chatMessagesEl = document.getElementById('chatMessages');
+    if (chatMessagesEl) {
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === 1 && node.classList?.contains('message-assistant')) {
+                        // Extract text from the assistant message content
+                        const contentDiv = node.querySelector('.message-content');
+                        if (contentDiv) {
+                            // Use a small delay to let streaming finish
+                            setTimeout(() => {
+                                lastAssistantText = contentDiv.textContent || '';
+                                // Show playback controls if voice is enabled
+                                if (enableVoiceEl?.checked && voicePlayback) {
+                                    voicePlayback.classList.remove('hidden');
+                                }
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        });
+        observer.observe(chatMessagesEl, { childList: true });
+    }
+
+    // Also listen for streaming completion to capture final text
+    // We hook into the global isStreaming state change
+    let streamCheckInterval = null;
+    const origSetStatus = typeof setStatus === 'function' ? setStatus : null;
+
+    // Poll for streaming completion and capture final assistant text
+    if (chatMessagesEl) {
+        setInterval(() => {
+            if (typeof isStreaming !== 'undefined' && !isStreaming && enableVoiceEl?.checked) {
+                const messages = chatMessagesEl.querySelectorAll('.message-assistant .message-content');
+                if (messages.length > 0) {
+                    const lastMsg = messages[messages.length - 1];
+                    const text = lastMsg.textContent || '';
+                    if (text && text !== lastAssistantText) {
+                        lastAssistantText = text;
+                        if (voicePlayback) voicePlayback.classList.remove('hidden');
+                    }
+                }
+            }
+        }, 1000);
+    }
+
+    // Hide playback when voice is toggled off
+    if (enableVoiceEl) {
+        enableVoiceEl.addEventListener('change', () => {
+            if (!enableVoiceEl.checked) {
+                if (voicePlayback) voicePlayback.classList.add('hidden');
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                    isPlaying = false;
+                }
+            }
+        });
+    }
+})();
