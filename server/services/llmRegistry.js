@@ -9,7 +9,7 @@
 // ANTHROPIC (CLAUDE) MODELS
 // ============================================================================
 const ANTHROPIC_MODELS = {
-    // Claude 4.6 Family (Latest - February 2026)
+    // Claude 4.6 Family (Latest - February 2026) - NOT YET RELEASED
     'claude-opus-4-6-20260205': {
         name: 'Claude Opus 4.6',
         provider: 'anthropic',
@@ -20,7 +20,7 @@ const ANTHROPIC_MODELS = {
         tier: 'premium',
         supportsEffort: true,
         effortLevels: ['low', 'medium', 'high', 'max'],
-        default: true
+        default: false  // Model not yet available - changed to false
     },
     // Claude 4.5 Family
     'claude-opus-4-5-20251101': {
@@ -40,7 +40,8 @@ const ANTHROPIC_MODELS = {
         maxTokens: 8192,
         contextWindow: 200000,
         capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'standard'
+        tier: 'standard',
+        default: true  // Set as default - actually available model
     },
     'claude-haiku-4-5-20251001': {
         name: 'Claude Haiku 4.5',
