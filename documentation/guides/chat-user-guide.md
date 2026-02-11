@@ -1,7 +1,7 @@
 # Higgins User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 13, 2026
+**Last Updated:** Tuesday, February 10, 2026
 
 ---
 
@@ -11,10 +11,11 @@ Higgins is your AI guide to Insight 360. Named after the patient teacher from "M
 
 **What makes Higgins special:**
 - **i360 Expertise**: Higgins knows the system inside and out and can guide you through features
-- **Model flexibility**: Switch between Claude, GPT, and Perplexity models mid-conversation
+- **Model flexibility**: Switch between Claude, GPT, Gemini, and Perplexity models mid-conversation
 - **Real-time information**: Enable web search for current data
-- **Voice interaction**: Speak naturally and hear responses
+- **Voice output**: Hear responses read aloud with multiple voice options
 - **File analysis**: Upload documents, images, and PDFs for AI review
+- **Image generation**: Request AI-generated images directly in chat
 - **Consistent voice**: Higgins responds with a warm, values-driven personality regardless of which model you select
 
 ---
@@ -24,10 +25,11 @@ Higgins is your AI guide to Insight 360. Named after the patient teacher from "M
 | Feature | Description |
 |---------|-------------|
 | **i360 Help** | Ask how to use any feature, module, or workflow |
-| **Multi-Model Chat** | Choose from Claude (Opus, Sonnet, Haiku), GPT, and Perplexity |
+| **Multi-Model Chat** | Choose from Claude, GPT, Gemini, and Perplexity families |
 | **Web Search** | Query the internet for real-time information |
-| **Voice I/O** | Speak messages and hear AI responses |
-| **File Upload** | Analyze images, PDFs, and documents |
+| **Voice Output** | Hear AI responses read aloud |
+| **File Upload** | Analyze images, PDFs, code files, and documents |
+| **Image Generation** | Generate images from text descriptions |
 | **Conversations** | Save, organize, and revisit past chats |
 | **Streaming** | See responses as they're generated in real-time |
 | **Smart Scrolling** | Messages stay visible as content grows |
@@ -74,15 +76,16 @@ Ask Higgins anything about Insight 360:
 - "Where can I find the Agent Library?"
 - "How do I map context to an agent?"
 
-Higgins will provide clear, step-by-step guidance.
+Higgins will provide clear, step-by-step guidance. Higgins automatically has access to i360 feature documentation and knowledge assets, so answers are informed by the actual platform capabilities.
 
 ### Choosing a Model
 
 1. Click the **Model Selector** dropdown (top of chat)
-2. Browse available models:
-   - **Claude Models**: Opus 4.5 (most capable), Sonnet 4.5 (balanced), Haiku 4.5 (fast)
-   - **GPT Models**: GPT-4o, GPT-5.2, o1 (reasoning)
-   - **Perplexity**: Sonar Pro (with built-in web search)
+2. Browse available models by provider:
+   - **Claude**: Opus 4.6 (most capable, 1M context), Opus 4.5, Sonnet 4.5 (balanced), Haiku 4.5 (fast)
+   - **OpenAI**: GPT-5.2, GPT-5.2 Instant, GPT-5.2 Codex, GPT-4o, o1 (reasoning), o1-mini
+   - **Perplexity**: Sonar Pro, Sonar, Sonar Reasoning Pro, Deep Research
+   - **Gemini**: Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash
 3. Click to select
 4. Your next message will use the selected model
 5. You can switch models anytime—the conversation continues seamlessly
@@ -99,23 +102,27 @@ Higgins will provide clear, step-by-step guidance.
    - "Find recent articles about AI regulation"
 4. The AI will search the web and include sources in its response
 
-### Using Voice Input/Output
+**Note:** Perplexity models have built-in search included with every response, so they always return citations and current information without needing to toggle the search button.
+
+### Using Voice Output
 
 **Enabling Voice:**
 1. Toggle the **Voice** button (microphone icon) to ON
-2. Grant microphone permission if prompted
+2. When voice is enabled, responses are read aloud
 
-**Speaking a Message:**
-1. Click the microphone button in the input area
-2. Speak your message clearly
-3. Click again to stop recording
-4. Your speech is transcribed and sent
-
-**Hearing Responses:**
-1. When voice is enabled, responses are read aloud
-2. Choose a voice profile from settings:
+**Choosing a Voice:**
+1. Select a voice profile from the voice dropdown:
    - Nova, Alloy, Echo, Fable, Onyx, Shimmer
-3. Click the speaker icon on any message to replay
+2. Click the speaker icon on any message to replay
+
+### Generating Images
+
+Higgins can generate images on request:
+1. Ask for an image: "Create a landscape image of a mountain sunset" or "Generate an illustration of a coffee shop"
+2. Specify size preference: 16:9 (landscape), 9:16 (portrait), or 1:1 (square)
+3. Higgins uses GPT Image 1.5 to generate the image
+4. The response shows both your original prompt and the AI-revised prompt used for generation
+5. You can copy the revised prompt to modify and regenerate
 
 ### Uploading Files
 
@@ -124,6 +131,7 @@ Higgins will provide clear, step-by-step guidance.
    - **Images**: PNG, JPG, GIF, WebP
    - **Documents**: PDF, TXT, MD
    - **Data**: CSV, JSON
+   - **Code**: Various programming language files
 3. The file appears as a preview
 4. Type your question about the file
 5. Send—Higgins analyzes the content
@@ -155,6 +163,14 @@ Higgins will provide clear, step-by-step guidance.
 1. Drag the divider between chat and conversation list
 2. Your preference is saved automatically
 
+### Admin Conversation Management (Platform Admins Only)
+
+Platform admins have additional conversation capabilities:
+1. Toggle "View All Conversations" to see conversations across organizations
+2. Use the organization filter dropdown to narrow by specific organization
+3. View conversation statistics and usage patterns
+4. Access any conversation for support and oversight purposes
+
 ---
 
 ## Tips for Best Results
@@ -163,11 +179,13 @@ Higgins will provide clear, step-by-step guidance.
 
 | Task | Recommended Model |
 |------|-------------------|
-| Complex reasoning, strategy | Claude Opus 4.5 |
+| Complex reasoning, strategy | Claude Opus 4.6 |
 | General conversation, writing | Claude Sonnet 4.5 (default) |
 | Quick questions, brainstorming | Claude Haiku 4.5 |
-| Code generation | Claude Sonnet 4.5 or GPT-4o |
-| Research with citations | Perplexity Sonar Pro |
+| Code generation | Claude Sonnet 4.5 or GPT-5.2 Codex |
+| Research with citations | Perplexity Sonar Pro or Deep Research |
+| Advanced reasoning | o1 or Sonar Reasoning Pro |
+| Fast responses | Gemini 3 Flash or GPT-5.2 Instant |
 
 ### Asking Higgins for Help
 
@@ -179,11 +197,12 @@ Higgins will provide clear, step-by-step guidance.
 - Be specific: "Latest iPhone 16 reviews" vs. "iPhone news"
 - Include timeframes: "AI news from this week"
 - Search is best for facts, not opinions
+- Use Perplexity models for always-on search with automatic citations
 
 ### Voice Tips
-- Speak clearly in a quiet environment
-- Pause briefly before and after speaking
-- Voice works best for conversational queries
+- Choose a voice that matches your preference from the 6 available options
+- Click the speaker icon on any message to replay it
+- Voice output works best for shorter, conversational responses
 
 ### File Analysis Tips
 - Use high-resolution images for better analysis
@@ -220,9 +239,9 @@ Higgins will provide clear, step-by-step guidance.
 - Try refreshing the page
 
 **Voice not working:**
-- Ensure microphone permissions are granted
+- Voice output requires the Voice service to be online (check System Status)
 - Check browser compatibility (Chrome recommended)
-- Verify Voice service is online in System Status
+- Try selecting a different voice profile
 
 **File upload fails:**
 - Check file size (max varies by type)
@@ -232,4 +251,9 @@ Higgins will provide clear, step-by-step guidance.
 **Web search returns no results:**
 - Check that Search service is online
 - Try rephrasing your query
-- Some queries may be blocked by content filters
+- Consider using a Perplexity model for built-in search capabilities
+
+**Image generation not working:**
+- Image generation requires an OpenAI API key
+- Ensure the GPT Image model is available
+- Try simplifying your image description

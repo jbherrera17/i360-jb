@@ -1,7 +1,7 @@
 # Actions User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** Tuesday, February 10, 2026
 
 ---
 
@@ -13,6 +13,7 @@ Actions are composable building blocks for AI-powered automation. They bridge th
 - **Composability**: Combine actions into workflows
 - **Reusability**: Write once, use everywhere
 - **Accountability**: Track every execution
+- **Organizational alignment**: Link actions to Parthenon elements (OKRs, departments, processes)
 
 Actions turn AI from a conversation partner into a capable assistant that can take real steps.
 
@@ -24,11 +25,12 @@ The Actions interface enables:
 
 | Feature | Description |
 |---------|-------------|
-| **Browse** | Explore available actions |
-| **Execute** | Run actions with parameters |
-| **Create** | Define new custom actions |
-| **Test** | Validate actions before production |
-| **Track** | View execution history |
+| **Browse** | Explore available actions by suite and department |
+| **Execute** | Run actions with text input, powered by AI |
+| **Create** | Create new actions from templates |
+| **Edit** | Modify action name, description, suite, status, and department |
+| **Delete** | Archive actions (soft delete) |
+| **Track** | View execution history and statistics |
 
 ---
 
@@ -43,20 +45,22 @@ The Actions interface enables:
    - Description
    - Suite badge
    - Execution count
-   - Status
+   - Status (active/draft/archived)
 
 ### Filtering Actions
 
 **By Suite:**
 1. Use the suite tabs:
-   - **All**: Every action
-   - **Align**: Values-focused actions
-   - **Strategy**: Planning actions
-   - **Execute**: Production actions
+   - **All Actions**: Every action
+   - **Align 120**: Values and alignment-focused actions
+   - **Strategy 120**: Planning and analysis actions
+   - **Execute 120**: Production-ready execution actions
+2. Tab badges show count of actions in each suite
 
-**By Status:**
-1. Toggle **Active Only** to filter
-2. Or show all including disabled
+**By Department:**
+1. Use the department filter dropdown
+2. Select a department to see only its actions
+3. Actions without a department show under "All"
 
 **By Search:**
 1. Type in the search box
@@ -67,140 +71,86 @@ The Actions interface enables:
 1. Click any action card
 2. The detail modal shows:
    - Full description
-   - Input parameters
-   - Output format
+   - Suite assignment
+   - Status
    - Execution history
-   - Configuration options
 
 ### Executing an Action
 
-**From the Library:**
-1. Click an action card
-2. Click **Execute**
-3. Fill in required parameters
-4. Click **Run**
-5. View the results
-
-**Parameter Types:**
-- **Text**: Free-form input
-- **Number**: Numeric values
-- **Boolean**: Yes/No toggles
-- **Select**: Choose from options
-- **JSON**: Structured data
+1. Click an action card to open it
+2. Click **Run Action**
+3. Enter your input in the text area (supports multi-line and markdown)
+4. Click **Execute**
+5. View the AI-generated results
+6. Results show: output content, duration, model used, and status
 
 ### Viewing Execution History
 
 1. Open action details
-2. Click the **History** tab
-3. See all past executions:
+2. View recent executions listed with:
    - Timestamp
-   - Input parameters
-   - Output/result
    - Duration
    - Status (success/failure)
-4. Click any execution to see full details
 
-### Creating a New Action
+### Creating an Action from a Template
 
-1. Click **Create Action**
-2. Fill in basic info:
-   - **Name**: Action identifier
-   - **Display Name**: Friendly name
-   - **Description**: What it does
-   - **Suite**: Align, Strategy, or Execute
-   - **Category**: Action type
-3. Define parameters:
-   - Add input parameters
-   - Specify types and requirements
-   - Set default values
-4. Configure execution:
-   - Define the action logic
-   - Set output format
-   - Configure error handling
-5. Click **Save**
-
-### Testing an Action
-
-1. Open action details
-2. Click **Test**
-3. Enter test parameters
-4. Click **Run Test**
-5. Review results
-6. Check for errors
-7. Iterate until satisfied
+1. Click **New Action** button
+2. Select a template from the modal
+3. Optionally assign to a department
+4. Click **Create Action**
+5. Your new action is created with template defaults and is ready to execute
 
 ### Editing an Action
 
-1. Open action details
-2. Click **Edit**
-3. Modify configuration
-4. Save changes
-5. Test the updated action
+1. Find your action (you can only edit actions you own)
+2. Click the **Edit** button (pencil icon)
+3. Update:
+   - **Name**: Action identifier
+   - **Description**: What it does
+   - **Suite**: Align, Strategy, or Execute
+   - **Status**: Active, Draft, or Archived
+   - **Department**: Assign to a department
+4. Click **Save Changes**
 
-### Exporting/Importing Actions
+### Deleting an Action
 
-**Export:**
-1. Open action details
-2. Click **Export**
-3. Download as JSON
-
-**Import:**
-1. Click **Import Action**
-2. Upload JSON file
-3. Review configuration
-4. Save to library
+1. Find your action (you can only delete actions you own)
+2. Click the **Delete** button (trash icon)
+3. Confirm deletion
+4. Action is archived (soft-deleted and can be recovered)
 
 ---
 
-## Action Components
+## Action Execution
 
-### Input Parameters
+### How Actions Work
 
-Define what the action needs:
+When you execute an action:
+1. Your text input is sent to the AI model (Claude)
+2. The action's configuration defines how the AI processes your input
+3. Results are returned with the AI-generated output
+4. Execution metadata (duration, tokens, status) is recorded
 
-```json
-{
-  "parameters": [
-    {
-      "name": "content",
-      "type": "text",
-      "required": true,
-      "description": "Content to process"
-    },
-    {
-      "name": "format",
-      "type": "select",
-      "options": ["markdown", "html", "plain"],
-      "default": "markdown"
-    }
-  ]
-}
-```
+### Execution Statistics
 
-### Output Format
+The dashboard shows:
+- **Total Actions**: Number of actions created
+- **Total Executions**: Number of times actions have been run
+- **Success Rate**: Percentage of executions that completed successfully
 
-Define what the action returns:
+---
 
-```json
-{
-  "output": {
-    "type": "object",
-    "properties": {
-      "result": "string",
-      "metadata": "object",
-      "status": "string"
-    }
-  }
-}
-```
+## Parthenon Context Integration
 
-### Execution Logic
+Actions can be connected to organizational Parthenon elements:
 
-How the action operates:
-- AI-powered processing
-- API integrations
-- Data transformations
-- Multi-step workflows
+- **OKRs**: Goals and objectives this action supports
+- **Departments**: Teams that use this action
+- **Processes**: Workflows this action executes
+- **Roles**: Who can use this action and associated permissions
+- **Context Assets**: Business knowledge assets injected during execution
+
+These connections enable context-aware action execution with organizational intelligence.
 
 ---
 
@@ -231,17 +181,16 @@ Actions that produce outputs:
 
 ## Tips for Best Results
 
-### Creating Effective Actions
-- Define clear inputs and outputs
-- Handle edge cases
-- Include validation
-- Document thoroughly
-
 ### Executing Actions
-- Verify required parameters
-- Use test mode first
-- Check execution history
+- Provide clear, specific input text
+- Review execution results carefully
+- Check execution history for patterns
 - Monitor for errors
+
+### Organizing Actions
+- Assign actions to the correct suite
+- Use department assignment for organizational clarity
+- Set status to Draft while developing, Active when production-ready
 
 ### Composing Workflows
 - Start with simple actions
@@ -258,29 +207,31 @@ Actions that produce outputs:
 | Parthenon Guide | Organizational processes | [parthenon-user-guide.md](./parthenon-user-guide.md) |
 | Agents Guide | Agents that use actions | [agents-user-guide.md](./agents-user-guide.md) |
 | Skills Guide | Skills vs. actions | [skills-user-guide.md](./skills-user-guide.md) |
+| Workflow Guide | Combining actions into workflows | [workflow-user-guide.md](./workflow-user-guide.md) |
 
 ---
 
 ## Troubleshooting
 
 **Action execution fails:**
-- Check all required parameters
-- Verify parameter types
-- Review error message
-- Check action configuration
+- Verify the AI service is online (Dashboard → System Status)
+- Check your input for clarity
+- Review the error message for details
+- Try with simpler input first
 
 **Unexpected output:**
-- Verify input parameters
-- Check action logic
-- Test with different inputs
-- Review execution history
+- Verify your input is clear and specific
+- Try rephrasing your request
+- Review execution history for patterns
 
 **Can't create action:**
-- All required fields must be filled
-- Name must be unique
-- Parameters must be valid
+- Check if your organization has reached its action limit (subscription tier dependent)
+- Select a template to create from
+
+**Can't edit or delete an action:**
+- You can only edit/delete actions you created
+- System actions are protected from modification
 
 **History not loading:**
-- Check database connection
+- Check database connection (Dashboard → System Status)
 - Refresh the page
-- Verify action ID

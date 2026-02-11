@@ -1,7 +1,7 @@
 # Agent Library User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** Tuesday, February 10, 2026
 
 ---
 
@@ -11,8 +11,9 @@ Agents are specialized AI assistants configured for specific tasks. Instead of e
 
 - **Role definition**: Who the agent is and how it behaves
 - **Instructions**: Step-by-step guidance for consistent outputs
-- **Context awareness**: Knowledge about your business
+- **Context awareness**: Knowledge about your business via context injection
 - **Skill integration**: Specialized capabilities
+- **Introduction messages**: Automatic greeting shown at the start of each conversation
 
 Think of agents as expert team members you can call on instantly—each one trained for a specific job.
 
@@ -24,12 +25,13 @@ The Agent Library lets you:
 
 | Action | Description |
 |--------|-------------|
-| **Browse** | Explore all available agents by category and suite |
+| **Browse** | Explore all available agents by category, suite, and department |
 | **Search** | Find agents by name or description |
-| **Run** | Execute agents with custom input |
-| **Create** | Build new agents for your needs |
+| **Run** | Execute agents with custom input via the Agent Runner |
+| **Create** | Build new native or MindStudio agents |
 | **Edit** | Modify agent configurations |
-| **Export** | Share agents with others |
+| **Duplicate** | Copy an agent to create variants while preserving lineage |
+| **Delete** | Remove agents you no longer need |
 
 ---
 
@@ -44,6 +46,7 @@ The Agent Library lets you:
    - Description
    - Category badge
    - Suite indicator (Align/Strategy/Execute)
+   - Source type badge (Native, MindStudio)
    - Usage count
 
 ### Filtering Agents
@@ -60,16 +63,19 @@ The Agent Library lets you:
 2. Select a category (e.g., Content, Analysis, Operations)
 3. Only matching agents appear
 
+**By Department:**
+1. Use the department filter dropdown
+2. Select a department to see only its agents
+3. Agents without a department assignment appear under "All"
+
 **By Status:**
-1. Toggle "Active Only" to hide disabled agents
-2. Or show all agents including inactive ones
+1. Filter by Active or All to show/hide disabled agents
 
 ### Searching for Agents
 
 1. Click the search box
-2. Type keywords (name, description, or capability)
+2. Type keywords (name or description)
 3. Results filter in real-time
-4. Press Enter or click a result
 
 ### Running an Agent
 
@@ -77,30 +83,37 @@ The Agent Library lets you:
 1. Find the agent you want
 2. Click the agent card to open details
 3. Click the **Run** button
-4. Enter your input/prompt
-5. Click **Execute**
-6. View the agent's response
+4. You'll be taken to the Agent Runner page
+5. Enter your input/prompt
+6. Click **Execute**
+7. View the agent's streaming response
 
 **From Agent Runner:**
 1. Click **Run** on any agent
-2. Opens dedicated agent runner interface
+2. Opens dedicated Agent Runner interface
 3. Provides full-screen interaction space
 4. Shows conversation history with that agent
+
+**Runtime Options:**
+- **Model Override**: Switch the model at execution time without changing the agent's default
+- **On-Demand Context**: Include additional context assets for a specific execution
+- **Session Tracking**: Conversations maintain session continuity
 
 ### Viewing Agent Details
 
 1. Click any agent card
 2. The detail modal shows:
    - Full description
+   - Introduction message (shown at chat start)
    - System prompt (what the agent knows)
-   - Required context types
-   - Optional context types
+   - Context injection mappings (Always, On-Demand, Conditional)
    - Conversation starters (example prompts)
    - Usage statistics
-   - Version history
+   - Execution history
 
 ### Creating a New Agent
 
+**Native (LLM) Agent:**
 1. Click **Create New Agent** button
 2. Fill in the form:
    - **Name**: Descriptive agent name
@@ -108,14 +121,39 @@ The Agent Library lets you:
    - **Description**: What the agent does
    - **Category**: Select from list
    - **Suite**: Align, Strategy, or Execute
+   - **Introduction**: Greeting shown at the start of each conversation
    - **System Prompt**: Instructions for the AI
-   - **Model**: Which AI model to use
+   - **Model**: Which AI model to use (Claude, GPT, Gemini, Perplexity)
    - **Temperature**: Creativity level (0-1)
-3. Configure context requirements:
-   - Required: Must have these context types
-   - Optional: Uses if available
-4. Add conversation starters (optional)
-5. Click **Save Agent**
+   - **Max Tokens**: Maximum response length (default 4096)
+3. Add conversation starters (optional)
+4. Click **Save Agent**
+
+**MindStudio Agent:**
+1. Click **Create New Agent** and select the MindStudio type
+2. Provide the MindStudio App ID or Workflow ID
+3. Configure the agent metadata (name, icon, description, category, suite)
+4. MindStudio agents execute via external workflows with embedded iframe support
+
+### Configuring Context Injection
+
+Context is managed separately from agent creation, using injection modes:
+
+1. Open the agent's detail view
+2. Navigate to the context mappings section
+3. Add context assets with one of three injection modes:
+   - **Always**: Included in every execution automatically
+   - **On-Demand**: Included only when explicitly requested at runtime
+   - **Conditional**: Included based on keyword matching in the user's input
+4. Set priority ordering and max tokens per asset
+5. Preview how context will be assembled
+
+### Configuring Guardrails
+
+Agents support optional safety guardrails:
+- **Max context tokens**: Limit how much context is injected
+- **Allowed/Blocked topics**: Control which subjects the agent can discuss
+- **Output format constraints**: Enforce specific response structures
 
 ### Editing an Agent
 
@@ -125,12 +163,13 @@ The Agent Library lets you:
 4. Click **Save Changes**
 5. Changes take effect immediately
 
-### Exporting an Agent
+### Duplicating an Agent
 
 1. Open agent details
-2. Click **Export**
-3. Download as JSON file
-4. Share with teammates or import elsewhere
+2. Click **Duplicate**
+3. A copy is created with lineage tracking (linked to the original)
+4. Edit the copy to customize it for a different use case
+5. The duplicate starts with its own usage statistics
 
 ### Deleting an Agent
 
@@ -138,6 +177,8 @@ The Agent Library lets you:
 2. Click **Delete**
 3. Confirm the deletion
 4. Agent is permanently removed
+
+**Note:** System agents are protected from deletion by non-admin users.
 
 ---
 
@@ -169,9 +210,11 @@ Agents that take action and produce outputs:
 - Provide clear, specific input
 - Include relevant context in your prompt
 - Use conversation starters as templates
+- Try overriding the model at runtime for different results
 
 ### Creating Effective Agents
 - Write detailed system prompts
+- Add a welcoming introduction message
 - Be specific about the agent's role
 - Include examples in the instructions
 - Set appropriate temperature:
@@ -182,6 +225,7 @@ Agents that take action and produce outputs:
 ### Organizing Your Agents
 - Use categories consistently
 - Choose appropriate suites
+- Assign agents to departments for organizational clarity
 - Write clear descriptions for discoverability
 
 ---
@@ -199,21 +243,27 @@ Agents that take action and produce outputs:
 ## Troubleshooting
 
 **Agent not responding:**
-- Check that the agent's model is available
+- Check that the agent's model is available (Dashboard → System Status)
 - Verify the agent is set to Active
 - Try a simpler prompt first
+- Check if the LLM provider is experiencing issues
 
 **Agent gives unexpected results:**
 - Review the system prompt for accuracy
 - Check temperature setting
-- Ensure required context is provided
+- Verify context injection mappings are configured correctly
+- Try switching the model override at runtime
 
 **Can't find an agent:**
-- Clear all filters
-- Check if "Active Only" is hiding it
+- Clear all filters (suite, category, department)
 - Use search with different keywords
 
 **Agent creation fails:**
 - All required fields must be filled
-- Name must be unique
-- System prompt is required
+- System prompt is required for native agents
+- Check if your organization has reached its agent limit (subscription tier dependent)
+
+**MindStudio agent not loading:**
+- Verify the MindStudio App ID is correct
+- Ensure the MindStudio service is available
+- Check that the workflow has not been deleted on MindStudio's side

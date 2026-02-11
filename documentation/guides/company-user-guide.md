@@ -1,19 +1,19 @@
 # Company Dashboard User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 31, 2025
+**Last Updated:** Tuesday, February 10, 2026
 
 ---
 
 ## Why Company Dashboard Is Important
 
-The Company Dashboard provides a unified view of organizational health and OKR progress. It also displays your Company Profile data generated from Align 120 assessments. Instead of checking multiple systems, get the complete picture in one place:
+The Company Dashboard provides a unified view of organizational health and OKR progress. Instead of checking multiple systems, get the complete picture in one place:
 
 - **At-a-glance health**: See overall progress instantly
 - **Department comparison**: Understand relative performance
 - **Early warning**: Identify issues before they escalate
 - **Activity tracking**: Know what's happening across the organization
-- **Align 120 outputs**: View AI maturity, team readiness, and corporate alignment scores
+- **Multi-tenant support**: Filter by organization or client (for agency model)
 
 ---
 
@@ -23,11 +23,11 @@ The Company Dashboard displays:
 
 | Feature | Description |
 |---------|-------------|
-| **Summary Stats** | Key metrics at a glance |
-| **OKR Health** | Progress distribution across status |
+| **Summary Stats** | Key metrics at a glance (OKRs, progress, departments, roles, processes) |
+| **OKR Health** | Progress distribution across status categories |
 | **Department Scorecard** | Performance by organizational unit |
-| **Attention Items** | Issues requiring focus |
-| **Recent Activity** | Latest changes across the system |
+| **Attention Items** | Up to 5 issues requiring focus |
+| **Recent Activity** | Latest 5 changes across the system |
 
 ---
 
@@ -36,9 +36,10 @@ The Company Dashboard displays:
 ### Viewing the Dashboard
 
 1. Navigate to **Company Dashboard** in the sidebar
-2. View the filter bar at the top
-3. See summary statistics row
-4. Review main dashboard grid below
+2. If available, use the organization/client selectors at the top
+3. View the filter bar with department, period, and quarter options
+4. See summary statistics row
+5. Review main dashboard grid below
 
 ### Understanding Summary Statistics
 
@@ -46,13 +47,23 @@ The top row shows five key metrics:
 
 | Metric | Description |
 |--------|-------------|
-| **Total OKRs** | Count of all OKRs (filtered) |
-| **Avg Progress** | Mean progress percentage |
+| **Total OKRs** | Count of all OKRs (reflects active filters) |
+| **Avg Progress** | Mean progress percentage across OKRs |
 | **Departments** | Number of active departments |
 | **Roles Defined** | Total roles across organization |
 | **Processes** | Documented process count |
 
 ### Filtering the View
+
+**By Organization** (if multi-tenant):
+1. Select an organization from the organization switcher dropdown
+2. Dashboard updates to show only that organization's data
+3. All metrics and departments update accordingly
+
+**By Client** (if using Agency model):
+1. Select a client from the client selector dropdown
+2. Dashboard filters to show only that client's data
+3. Useful for agencies managing multiple clients
 
 **By Department:**
 1. Click the Department dropdown
@@ -77,7 +88,7 @@ The top row shows five key metrics:
 
 **Filter Indicator:**
 - "Filtered" badge appears when filters are active
-- Helps you know the view is not complete data
+- Helps you know the view is not showing complete data
 
 ### Reading OKR Health
 
@@ -86,16 +97,17 @@ The OKR Health section shows progress distribution:
 **Status Categories:**
 | Status | Progress | Color |
 |--------|----------|-------|
+| **Completed** | 100% or status=completed | Purple |
 | **On Track** | 70%+ | Green |
 | **At Risk** | 40-69% | Yellow |
 | **Behind** | <40% | Red |
-| **Completed** | 100% | Purple |
 
 **Progress Distribution Bar:**
-- Visual representation of the split
-- Green segment = high progress
-- Yellow segment = medium progress
-- Red segment = low progress
+- Visual representation of the split across categories
+- Green segment (70-100%) = high progress
+- Yellow segment (40-69%) = medium progress
+- Red segment (0-39%) = low progress
+- Segments show percentage labels when > 10% of total
 
 ### Using Department Scorecard
 
@@ -113,23 +125,23 @@ Each department card shows:
 
 ### Reviewing Attention Items
 
-The Needs Attention panel highlights issues:
+The Needs Attention panel highlights up to 5 issues:
 
 **Critical Items (Red):**
-- OKRs behind schedule (<40% progress)
+- Up to 3 OKRs behind schedule (<40% progress, active status)
 - Immediate action needed
 
 **Warning Items (Yellow):**
-- OKRs at risk (40-69% progress)
+- Up to 2 OKRs at risk (40-69% progress, active status)
 - May miss targets without intervention
 
 **Info Items (Blue):**
-- Departments without OKRs
+- Departments without OKRs (shown only if fewer than 5 critical+warning items)
 - Organizational gaps to address
 
 ### Monitoring Recent Activity
 
-The Activity panel shows latest changes:
+The Activity panel shows the latest 5 changes across the system:
 - **OKR** creation (green icon)
 - **Process** documentation (yellow icon)
 - **Role** definitions (blue icon)
@@ -138,7 +150,7 @@ The Activity panel shows latest changes:
 Each entry shows:
 - What was created
 - The item name
-- Time since creation
+- Time since creation (e.g., "2 hours ago")
 
 ---
 
@@ -150,12 +162,12 @@ Each entry shows:
 - Scan activity for surprises
 
 ### Weekly Review
-- Compare department performance
+- Compare department performance via the scorecard
 - Identify patterns in at-risk OKRs
 - Check trend in overall progress
 
 ### Monthly Analysis
-- Use filters to review by period
+- Use filters to review by period and quarter
 - Compare Q-over-Q performance
 - Identify consistently struggling areas
 
@@ -163,25 +175,7 @@ Each entry shows:
 - Start broad, then narrow
 - Compare departments one at a time
 - Use quarter filter for seasonal patterns
-
----
-
-## Connection to Align 120
-
-The Company Dashboard displays outputs from your Align 120 assessments:
-
-| Metric | Source Module |
-|--------|---------------|
-| AI Maturity Score | Module 1: AI Audit & Assessment |
-| Team Readiness | Module 3: Team UpSkilling |
-| Corporate Alignment | Module 5: Corporate Alignment |
-| Align 120 Progress | Session completion status |
-
-**To update these scores:**
-1. Navigate to **Align 120** in the sidebar
-2. Start or resume a session
-3. Complete the relevant module
-4. Return to Company Dashboard to see updated data
+- Use organization/client selectors for multi-tenant views
 
 ---
 
@@ -189,7 +183,7 @@ The Company Dashboard displays outputs from your Align 120 assessments:
 
 | Document | Description | Location |
 |----------|-------------|----------|
-| Align 120 Guide | Foundation & readiness assessment | [align120-user-guide.md](./align120-user-guide.md) |
+| Align 120 Guide | Foundation and readiness assessment | [align120-user-guide.md](./align120-user-guide.md) |
 | Parthenon Guide | Manage OKRs and processes | [parthenon-user-guide.md](./parthenon-user-guide.md) |
 | Strategy Guide | Strategic framework | [strategy-user-guide.md](./strategy-user-guide.md) |
 | Dashboard Guide | Main system dashboard | [dashboard-user-guide.md](./dashboard-user-guide.md) |
@@ -202,18 +196,25 @@ The Company Dashboard displays outputs from your Align 120 assessments:
 - Check Parthenon for configured OKRs
 - Verify departments exist
 - Ensure data has been entered
+- Check organization/client selection
 
 **Filter not working:**
 - Verify filter selection
-- Check that matching data exists
-- Try Reset button
+- Check that matching data exists for the selected period/quarter
+- Try the Reset button
 
 **Scores seem wrong:**
-- Confirm OKR progress is updated
+- Confirm OKR progress is up to date
 - Check for recently added items
-- Verify filter isn't excluding data
+- Verify filters aren't excluding data
+- Note: Completed OKRs (100%) are grouped separately from On Track
 
 **Activity list empty:**
 - No recent changes in system
 - Check data creation dates
-- May be filtered to empty set
+- May be filtered to empty set by organization/client selection
+
+**Dashboard shows stale data:**
+- Try clicking Reset filters and wait for reload
+- Organization or client change may require a moment to refresh
+- Check browser developer console for error messages

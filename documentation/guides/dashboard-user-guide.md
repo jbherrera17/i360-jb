@@ -1,7 +1,7 @@
 # Dashboard User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** Tuesday, February 10, 2026
 
 ---
 
@@ -10,8 +10,9 @@
 The Dashboard is your command center for the entire Insight 360 ecosystem. Instead of navigating through multiple screens to understand your AI system's status, the Dashboard gives you an instant overview of:
 
 - Which services are online and ready
-- Your available AI models
+- Your available AI models and their real-time availability
 - Quick access to common tasks
+- Onboarding progress and getting started resources
 - Recent agent activity
 - Overall system health
 
@@ -21,27 +22,61 @@ Think of it as mission control—one glance tells you everything you need to kno
 
 ## What It Does
 
-The Dashboard provides four key functions:
+The Dashboard provides six key sections:
 
 | Section | Purpose |
 |---------|---------|
-| **System Status** | Shows which services (Claude, GPT, Voice, Search, Database) are operational |
+| **Getting Started** | Onboarding resources and quick links to create context assets, build skills, and configure agents |
+| **Onboarding Progress** | Track your setup completion (profile, feature tour, first workflow) |
+| **System Status** | Shows which services (Claude, GPT, Gemini, Voice, Search, Database) are operational |
 | **Quick Actions** | One-click access to Chat, Voice Chat, Web Search, and File Analysis |
-| **Available Models** | Displays all AI models you can use with their capabilities |
+| **Available Models** | Displays all AI models you can use with their tier classification |
 | **Recent Agents** | Shows your most-used agents for quick re-access |
+| **LLM Provider Status** | Real-time availability checks for Claude, GPT, Gemini, and Perplexity |
 
 ---
 
 ## Step by Step Use
 
+### Completing Your Onboarding
+
+If you see a "Complete Your Setup" card on the dashboard:
+
+1. The card shows your progress (e.g., "2/3" completed)
+2. It tracks three key setup steps:
+   - Set up your profile
+   - Take the feature tour
+   - Run your first workflow
+3. Click **Continue Setup** to launch the onboarding wizard
+4. Complete any remaining steps to unlock full platform access
+5. You can dismiss the card anytime by clicking the X button
+
+The **Getting Started** card at the top provides quick links to:
+- Read "How To Use Insight 360" documentation
+- Create Context Assets
+- Build Skills
+- Configure Agents
+
 ### Checking System Status
 
-1. Look at the **System Status** card in the top-left
-2. Each service shows a colored indicator:
-   - **Green checkmark**: Service is online and ready
-   - **Yellow circle**: Service is available but may have limitations
-   - **Red X**: Service is offline or not configured
-3. The overall status badge shows "All Systems Go" when everything is working
+1. Look at the **System Status** card
+2. Each of the 6 services shows a status indicator:
+   - **Green checkmark (Ready)**: Service is configured and available
+   - **Gray circle (Offline)**: Service is not configured or unavailable
+3. Services monitored: Claude (Anthropic), GPT (OpenAI), Gemini (Google), Voice (TTS/STT), Web Search, and Database
+4. The overall status badge shows "All Systems Operational" when everything is working
+
+### Monitoring LLM Provider Availability
+
+1. Find the **LLM Provider Status** card on the dashboard
+2. Each provider shows its current availability:
+   - **Available**: Provider is online and responding
+   - **Deprecated**: Provider version is deprecated but still functional
+   - **Unavailable**: Provider is currently offline
+   - **Auth Error**: API key is invalid or expired
+   - **Rate Limited**: Provider is temporarily rate limiting requests
+3. Admins can click **Check Now** to manually trigger availability checks
+4. The card shows when the last check was performed (e.g., "5 minutes ago")
 
 ### Using Quick Actions
 
@@ -68,33 +103,33 @@ The Dashboard provides four key functions:
 
 1. Find the **Available Models** card
 2. Each model shows:
-   - Model name (e.g., "Claude Sonnet 4.5")
-   - Provider (Anthropic or OpenAI)
-   - Capabilities (chat, vision, code, etc.)
+   - Model name (e.g., "Claude Opus 4.6")
+   - Provider (Anthropic, OpenAI, Google, Perplexity)
+   - Tier classification (Premium, Flagship, Standard, Efficient, Fast, Reasoning, Experimental)
 3. The number badge shows total available models
+4. Models are grouped by provider for easy browsing
 
 ### Accessing Recent Agents
 
-1. Look at the **Recent Agents** section on the right
+1. Look at the **Recent Agents** section
 2. Shows your 5 most recently used agents
 3. Each agent displays:
    - Icon and name
-   - Usage count
-   - Last used timestamp
-4. Click any agent to run it immediately
-5. Use the **Quick Launch** dropdown for the full agent list
+   - Source type badge (Native, MindStudio, Pickaxe)
+   - Usage count (number of runs)
+4. Click any agent to open the Agent Runner page where you can execute it
 
 ### Navigating to Other Sections
 
 Use the left sidebar to access any module:
-- **Chat**: Multi-LLM conversations
+- **Higgins**: Multi-LLM chat assistant
 - **Agents**: Browse and manage agents
 - **Context**: Business knowledge assets
 - **Skills**: Reusable AI capabilities
 - **Parthenon**: Organizational structure
 - **Actions**: Composable web actions
 - **Briefing**: Daily AI briefings
-- **Strategy**: Strategy-to-Execution
+- **Strategy**: Strategy-to-Execution pipeline
 - **Governance**: Strategy monitoring
 - **Integrity**: Values alignment metrics
 
@@ -108,13 +143,14 @@ Use the left sidebar to access any module:
 
 ### Monitor Service Health
 - Check the Dashboard at the start of your session
-- If a service shows red, some features may be unavailable
+- If a service shows offline, some features may be unavailable
+- Use the LLM Provider Status for detailed provider monitoring
 - Contact your administrator if services remain offline
 
 ### Customize Your Workflow
 - The Recent Agents list adapts to your usage patterns
 - Frequently used agents appear at the top
-- Use Quick Launch for less common agents
+- Complete onboarding steps to get the most out of the platform
 
 ---
 
@@ -124,7 +160,7 @@ Use the left sidebar to access any module:
 |----------|-------------|----------|
 | Chat User Guide | Full chat interface documentation | [chat-user-guide.md](./chat-user-guide.md) |
 | Agents User Guide | Agent library management | [agents-user-guide.md](./agents-user-guide.md) |
-| System Health | Technical health monitoring | [health-api.md](./health-api.md) |
+| Onboarding Guide | Step-by-step setup process | [onboarding-guide.md](./onboarding-guide.md) |
 
 ---
 
@@ -136,9 +172,20 @@ Use the left sidebar to access any module:
 - Restart the server if needed
 
 **No models available:**
-- Ensure Anthropic and/or OpenAI API keys are set
+- Ensure Anthropic, OpenAI, and/or Google API keys are set
 - Check the server console for initialization errors
 
 **Recent Agents not loading:**
 - Verify Supabase is connected (check System Status)
 - Agents require database connectivity
+
+**LLM Provider shows "Auth Error":**
+- Verify API keys are correct in `.env`
+- Check if the provider has revoked access
+- Try clicking "Check Now" (admin only) to re-verify
+- Contact the provider to ensure API access is active
+
+**Onboarding card keeps appearing:**
+- Complete the setup steps shown in the card
+- Or click the X button to dismiss and continue later
+- Progress is saved automatically
