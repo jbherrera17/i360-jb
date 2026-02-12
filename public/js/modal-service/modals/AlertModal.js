@@ -9,7 +9,8 @@ class AlertModal extends ModalBase {
      * Create an alert modal
      * @param {Object} options - Alert options
      * @param {string} options.title - Alert title
-     * @param {string} options.message - Alert message
+     * @param {string} options.message - Alert message (plain text, escaped by default)
+     * @param {boolean} [options.html=false] - If true, message is rendered as HTML (use with trusted content only)
      * @param {string} [options.buttonText='OK'] - Button text
      * @param {string} [options.type='info'] - Alert type: info, success, warning, error
      * @param {Function} [options.onClose] - Callback when closed
@@ -26,6 +27,7 @@ class AlertModal extends ModalBase {
 
         this.alertOptions = {
             message: options.message || '',
+            html: options.html || false,
             buttonText: options.buttonText || 'OK',
             type: options.type || 'info',
             onClose: options.onClose
@@ -46,7 +48,7 @@ class AlertModal extends ModalBase {
         this.elements.body.innerHTML = `
             <div class="i360-alert-content">
                 ${icon ? `<div class="i360-alert-icon">${icon}</div>` : ''}
-                <div class="i360-alert-message">${this._escapeHtml(this.alertOptions.message)}</div>
+                <div class="i360-alert-message">${this.alertOptions.html ? this.alertOptions.message : this._escapeHtml(this.alertOptions.message)}</div>
             </div>
         `;
 

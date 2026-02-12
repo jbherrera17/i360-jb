@@ -281,7 +281,7 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Check owner role
+            // Check owner role or platform admin
             const { data: membership } = await supabase
                 .from('organization_members')
                 .select('role')
@@ -290,10 +290,20 @@ module.exports = function(supabase) {
                 .eq('status', 'active')
                 .single();
 
-            if (!membership || membership.role !== 'owner') {
+            const isOwner = membership && membership.role === 'owner';
+
+            // Platform admins can delete any organization
+            let isPlatformAdmin = false;
+            if (!isOwner) {
+                const { data: adminCheck } = await supabase
+                    .rpc('is_platform_admin', { p_user_id: userId });
+                isPlatformAdmin = !!adminCheck;
+            }
+
+            if (!isOwner && !isPlatformAdmin) {
                 return res.status(403).json({
                     success: false,
-                    error: 'Owner access required'
+                    error: 'Owner or platform admin access required'
                 });
             }
 

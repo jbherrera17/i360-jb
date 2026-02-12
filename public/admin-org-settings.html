@@ -730,9 +730,9 @@
                 document.getElementById('brand-color').value = settings.primary_color || '#6366f1';
                 document.getElementById('logo-url').value = settings.logo_url || '';
 
-                // Show danger zone only for owner (non-personal org)
+                // Show danger zone for org owners or platform admins (non-personal orgs)
                 const dangerZone = document.getElementById('danger-zone');
-                if (userRole === 'owner' && !settings.is_personal) {
+                if ((userRole === 'owner' || isPlatformAdmin) && !settings.is_personal) {
                     dangerZone.style.display = 'block';
                 } else {
                     dangerZone.style.display = 'none';
@@ -746,8 +746,8 @@
                     clientsSection.style.display = 'none';
                 }
 
-                // Disable forms for non-admins
-                const isAdmin = ['owner', 'admin'].includes(userRole);
+                // Disable forms for non-admins (platform admins always have access)
+                const isAdmin = isPlatformAdmin || ['owner', 'admin'].includes(userRole);
                 document.querySelectorAll('#general-form input, #branding-form input').forEach(input => {
                     if (input.id !== 'org-slug') {
                         input.disabled = !isAdmin;
