@@ -28,18 +28,6 @@ const ANTHROPIC_RETRY_CONFIG = {
 
 // Available Claude models (November 2025)
 const CLAUDE_MODELS = {
-    // Claude 4.6 Family (Latest - February 2026)
-    'claude-opus-4-6-20260205': {
-        name: 'Claude Opus 4.6',
-        description: 'Most capable - 1M context, agent teams, adaptive thinking',
-        maxTokens: 128000,
-        contextWindow: 1000000,
-        vision: true,
-        tier: 'opus',
-        supportsEffort: true,
-        effortLevels: ['low', 'medium', 'high', 'max'],
-        default: true
-    },
     // Claude 4.5 Family
     'claude-opus-4-5-20251101': {
         name: 'Claude Opus 4.5',
@@ -56,7 +44,8 @@ const CLAUDE_MODELS = {
         maxTokens: 8192,
         contextWindow: 200000,
         vision: true,
-        tier: 'sonnet'
+        tier: 'sonnet',
+        default: true
     },
     'claude-haiku-4-5-20251001': {
         name: 'Claude Haiku 4.5',
@@ -96,7 +85,6 @@ const CLAUDE_MODELS = {
 
 // Model aliases for convenience
 const MODEL_ALIASES = {
-    'claude-opus-4.6': 'claude-opus-4-6-20260205',
     'claude-opus-4.5': 'claude-opus-4-5-20251101',
     'claude-sonnet-4.5': 'claude-sonnet-4-5-20250929',
     'claude-haiku-4.5': 'claude-haiku-4-5-20251001',
@@ -104,7 +92,7 @@ const MODEL_ALIASES = {
     'claude-sonnet-4': 'claude-sonnet-4-20250514',
     'claude-opus-4': 'claude-opus-4-20250514',
     // Default aliases
-    'claude-opus': 'claude-opus-4-6-20260205',
+    'claude-opus': 'claude-opus-4-5-20251101',
     'claude-sonnet': 'claude-sonnet-4-5-20250929',
     'claude-haiku': 'claude-haiku-4-5-20251001'
 };
@@ -138,7 +126,7 @@ function initialize(apiKey, searchSvc = null) {
  * Resolve model alias to actual model ID
  */
 function resolveModel(modelInput) {
-    if (!modelInput) return 'claude-opus-4-6-20260205';
+    if (!modelInput) return 'claude-sonnet-4-5-20250929';
     
     const normalized = modelInput.toLowerCase();
     

@@ -33,23 +33,45 @@ function validateEnvironment() {
 
     // Required in production or staging
     if (isDeployed) {
-        if (!process.env.SUPABASE_SERVICE_KEY) errors.push('SUPABASE_SERVICE_KEY is required in ' + environment);
-        if (!process.env.ALLOWED_ORIGINS) errors.push('ALLOWED_ORIGINS is required in ' + environment);
+        if (!process.env.SUPABASE_SERVICE_KEY) {
+            errors.push('SUPABASE_SERVICE_KEY is required in ' + environment);
+            errors.push('  → Get this from Supabase Dashboard > Project Settings > API');
+        }
+        if (!process.env.ALLOWED_ORIGINS) {
+            errors.push('ALLOWED_ORIGINS is required in ' + environment);
+            errors.push('  → Set to your domain (e.g., https://your-app.railway.app)');
+        }
         if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
-            errors.push('At least one LLM API key (ANTHROPIC_API_KEY or OPENAI_API_KEY) is required');
+            errors.push('At least one LLM API key is required:');
+            errors.push('  → ANTHROPIC_API_KEY (for Claude models)');
+            errors.push('  → OPENAI_API_KEY (for GPT models)');
         }
         if (process.env.DEV_AUTH_BYPASS === 'true') {
             errors.push('DEV_AUTH_BYPASS must not be "true" in ' + environment);
         }
     }
 
-    // Warnings (non-fatal)
-    if (!isDeployed && !process.env.ANTHROPIC_API_KEY) {
-        warnings.push('ANTHROPIC_API_KEY not set - Claude models unavailable');
+    // Warnings (non-fatal) - Optional services
+    if (!isDeployed) {
+        if (!process.env.ANTHROPIC_API_KEY) {
+            warnings.push('ANTHROPIC_API_KEY not set - Claude models unavailable');
+        }
+        if (!process.env.GOOGLE_API_KEY) {
+            warnings.push('GOOGLE_API_KEY not set - Gemini models unavailable');
+        }
+        if (!process.env.PERPLEXITY_API_KEY) {
+            warnings.push('PERPLEXITY_API_KEY not set - Perplexity search unavailable');
+        }
+        if (!process.env.BRAVE_SEARCH_API_KEY && !process.env.TAVILY_API_KEY && !process.env.SERPER_API_KEY) {
+            warnings.push('No search API keys set - Web search unavailable');
+        }
     }
 
     console.log(`\n🌐 Environment: ${environment} (NODE_ENV=${process.env.NODE_ENV || 'undefined'})`);
-    warnings.forEach(w => console.warn(`⚠️  ${w}`));
+    if (warnings.length > 0) {
+        console.log('\n⚠️  Optional services not configured:');
+        warnings.forEach(w => console.log(`   ${w}`));
+    }
 
     if (errors.length > 0) {
         console.error('\n❌ Environment validation failed:');
@@ -347,6 +369,8 @@ app.use((req, res, next) => {
 const serviceStatus = {
     anthropic: false,
     openai: false,
+    perplexity: false,
+    gemini: false,
     search: false,
     voice: false,
     supabase: false
@@ -367,6 +391,7 @@ function initializeServices() {
             console.log('  ✅ Claude (Anthropic) - Ready');
         } catch (error) {
             console.log('  ❌ Claude (Anthropic) - Failed:', error.message);
+            console.log('     Check that ANTHROPIC_API_KEY is valid and has sufficient credits');
         }
     } else {
         console.log('  ⚪ Claude (Anthropic) - No API key');
@@ -385,6 +410,7 @@ function initializeServices() {
             console.log('  ✅ Voice (OpenAI Audio) - Ready');
         } catch (error) {
             console.log('  ❌ GPT (OpenAI) - Failed:', error.message);
+            console.log('     Check that OPENAI_API_KEY is valid and has sufficient credits');
         }
     } else {
         console.log('  ⚪ GPT (OpenAI) - No API key');
@@ -401,14 +427,32 @@ function initializeServices() {
             console.log('  ✅ Perplexity (Sonar) - Ready');
         } catch (error) {
             console.log('  ❌ Perplexity (Sonar) - Failed:', error.message);
+            console.log('     Check that PERPLEXITY_API_KEY is valid and has sufficient credits');
         }
     } else {
         console.log('  ⚪ Perplexity (Sonar) - No API key');
     }
 
+    // Initialize Google Gemini
+    if (process.env.GOOGLE_API_KEY) {
+        try {
+            const geminiService = require('./services/gemini');
+            if (typeof geminiService.initialize === 'function') {
+                geminiService.initialize(process.env.GOOGLE_API_KEY);
+            }
+            serviceStatus.gemini = true;
+            console.log('  ✅ Gemini (Google) - Ready');
+        } catch (error) {
+            console.log('  ❌ Gemini (Google) - Failed:', error.message);
+            console.log('     Check that GOOGLE_API_KEY is valid and not expired');
+        }
+    } else {
+        console.log('  ⚪ Gemini (Google) - No API key');
+    }
+
     // Initialize Web Search
-    const searchApiKey = process.env.BRAVE_SEARCH_API_KEY || 
-                         process.env.TAVILY_API_KEY || 
+    const searchApiKey = process.env.BRAVE_SEARCH_API_KEY ||
+                         process.env.TAVILY_API_KEY ||
                          process.env.SERPER_API_KEY;
     if (searchApiKey) {
         try {
@@ -425,10 +469,13 @@ function initializeServices() {
                             process.env.TAVILY_API_KEY ? 'Tavily' : 'Serper';
             console.log(`  ✅ Web Search (${provider}) - Ready`);
         } catch (error) {
+            const provider = process.env.BRAVE_SEARCH_API_KEY ? 'BRAVE_SEARCH_API_KEY' :
+                            process.env.TAVILY_API_KEY ? 'TAVILY_API_KEY' : 'SERPER_API_KEY';
             console.log('  ❌ Web Search - Failed:', error.message);
+            console.log(`     Check that ${provider} is valid and has sufficient credits`);
         }
     } else {
-        console.log('  ⚪ Web Search - No API key');
+        console.log('  ⚪ Web Search - No API key (set BRAVE_SEARCH_API_KEY, TAVILY_API_KEY, or SERPER_API_KEY)');
     }
 
     // Initialize Supabase

@@ -34,9 +34,14 @@ const perplexity = new OpenAI({
     baseURL: 'https://api.perplexity.ai'
 });
 
-// Initialize Gemini
+// Initialize Gemini (with error handling to prevent server crashes)
 if (process.env.GOOGLE_API_KEY) {
-    gemini.initialize(process.env.GOOGLE_API_KEY);
+    try {
+        gemini.initialize(process.env.GOOGLE_API_KEY);
+    } catch (error) {
+        console.error('⚠️  Gemini initialization failed in agentService:', error.message);
+        console.error('   Gemini models will be unavailable for agent execution');
+    }
 }
 
 // Valid Claude model mappings for legacy model names
@@ -48,7 +53,6 @@ const CLAUDE_MODEL_ALIASES = {
     'claude-3-sonnet': 'claude-sonnet-4-20250514',
     'claude-3-haiku': 'claude-haiku-4-5-20251001',
     // Short aliases (matching anthropic.js)
-    'claude-opus-4.6': 'claude-opus-4-6-20260205',
     'claude-opus-4.5': 'claude-opus-4-5-20251101',
     'claude-sonnet-4.5': 'claude-sonnet-4-5-20250929',
     'claude-haiku-4.5': 'claude-haiku-4-5-20251001',
@@ -57,16 +61,15 @@ const CLAUDE_MODEL_ALIASES = {
     'claude-opus-4': 'claude-opus-4-20250514',
     'claude-haiku-4': 'claude-haiku-4-5-20251001',
     // Default convenience aliases
-    'claude-opus': 'claude-opus-4-6-20260205',
+    'claude-opus': 'claude-opus-4-5-20251101',
     'claude-sonnet': 'claude-sonnet-4-5-20250929',
     'claude-haiku': 'claude-haiku-4-5-20251001'
 };
 
-const DEFAULT_CLAUDE_MODEL = 'claude-opus-4-6-20260205';
+const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
 
 // All valid current Claude models
 const VALID_CLAUDE_MODELS = [
-    'claude-opus-4-6-20260205',
     'claude-opus-4-5-20251101',
     'claude-sonnet-4-5-20250929',
     'claude-haiku-4-5-20251001',

@@ -466,6 +466,199 @@ const ChartRenderer = (function() {
         return chartInstances.get(containerId);
     }
 
+    // ========================================================================
+    // CHAT AUTO-DETECTION
+    // ========================================================================
+
+    // Chart types that this renderer handles (radar is handled by radarChart.js)
+    const SUPPORTED_TYPES = ['bar', 'line', 'area', 'pie', 'doughnut', 'donut', 'combo'];
+
+    /**
+     * Parse chart JSON from message content
+     * Looks for JSON code blocks containing chart configuration
+     * @param {string} html - Message innerHTML
+     * @returns {Object|null} Chart config or null
+     */
+    function parseChartData(html) {
+        // Look for JSON code blocks with chart or chart_config markers
+        const jsonMatch = html.match(/```(?:json)?\s*\n(\{[\s\S]*?"(?:chart|chart_config|chartConfig|visualization)"[\s\S]*?\})\s*\n```/);
+
+        if (jsonMatch) {
+            try {
+                const data = JSON.parse(jsonMatch[1]);
+                return data.chart || data.chart_config || data.chartConfig || data.visualization || data;
+            } catch (e) {
+                // Try extracting from code element (marked renders code blocks as <pre><code>)
+            }
+        }
+
+        // Also try parsing from rendered <code> elements
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const codeBlocks = temp.querySelectorAll('pre code');
+        for (const code of codeBlocks) {
+            const text = code.textContent || '';
+            if (text.includes('"type"') && text.includes('"labels"')) {
+                try {
+                    const data = JSON.parse(text);
+                    const chartData = data.chart || data.chart_config || data.chartConfig || data.visualization || data;
+                    if (chartData && chartData.type && SUPPORTED_TYPES.includes(chartData.type)) {
+                        return chartData;
+                    }
+                } catch (e) {
+                    // Not valid JSON, skip
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Render a chart from parsed data using the appropriate helper
+     * @param {HTMLElement} container - Container element
+     * @param {Object} chartData - Parsed chart data
+     * @returns {Chart|null} Chart instance
+     */
+    function renderFromData(container, chartData) {
+        const type = chartData.type;
+
+        // Normalize donut → doughnut
+        if (type === 'donut' || type === 'doughnut') {
+            return donutChart(container, {
+                title: chartData.title,
+                labels: chartData.labels || chartData.data?.labels || [],
+                data: chartData.data?.datasets?.[0]?.data || chartData.values || chartData.data || [],
+                cutout: chartData.cutout || 50
+            });
+        }
+
+        if (type === 'pie') {
+            return pieChart(container, {
+                title: chartData.title,
+                labels: chartData.labels || chartData.data?.labels || [],
+                data: chartData.data?.datasets?.[0]?.data || chartData.values || chartData.data || []
+            });
+        }
+
+        if (type === 'bar') {
+            return barChart(container, {
+                title: chartData.title,
+                labels: chartData.labels || chartData.data?.labels || [],
+                datasets: chartData.datasets || chartData.data?.datasets || [],
+                horizontal: chartData.horizontal || false,
+                stacked: chartData.stacked || false
+            });
+        }
+
+        if (type === 'line') {
+            return lineChart(container, {
+                title: chartData.title,
+                labels: chartData.labels || chartData.data?.labels || [],
+                datasets: chartData.datasets || chartData.data?.datasets || [],
+                smooth: chartData.smooth !== false,
+                fill: chartData.fill || false
+            });
+        }
+
+        if (type === 'area') {
+            return areaChart(container, {
+                title: chartData.title,
+                labels: chartData.labels || chartData.data?.labels || [],
+                datasets: chartData.datasets || chartData.data?.datasets || [],
+                smooth: chartData.smooth !== false
+            });
+        }
+
+        if (type === 'combo') {
+            return comboChart(container, {
+                title: chartData.title,
+                labels: chartData.labels || chartData.data?.labels || [],
+                barDatasets: chartData.barDatasets || [],
+                lineDatasets: chartData.lineDatasets || []
+            });
+        }
+
+        // Fallback: try rendering as raw Chart.js config
+        if (chartData.data && chartData.options) {
+            return render(container, chartData);
+        }
+
+        return null;
+    }
+
+    /**
+     * Process a message element and render any embedded charts
+     * @param {HTMLElement} messageEl - Message content element
+     */
+    function processMessage(messageEl) {
+        // Skip if already processed
+        if (messageEl.dataset.chartProcessed) return;
+
+        const chartData = parseChartData(messageEl.innerHTML);
+
+        if (chartData && chartData.type && SUPPORTED_TYPES.includes(chartData.type)) {
+            // Create chart container
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-render-container';
+            chartContainer.id = `chart-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            chartContainer.style.cssText = 'max-width: 600px; height: 350px; margin: 20px auto; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 12px;';
+
+            // Find the JSON code block and replace it with the chart
+            const codeBlock = Array.from(messageEl.querySelectorAll('pre code')).find(code => {
+                const text = code.textContent || '';
+                return text.includes('"type"') && text.includes('"labels"');
+            });
+
+            if (codeBlock) {
+                codeBlock.parentElement.replaceWith(chartContainer);
+            } else {
+                messageEl.appendChild(chartContainer);
+            }
+
+            // Render the chart
+            renderFromData(chartContainer, chartData);
+            messageEl.dataset.chartProcessed = 'true';
+        }
+    }
+
+    /**
+     * Initialize auto-detection for chat messages
+     * @param {string} containerSelector - Selector for messages container
+     */
+    function init(containerSelector = '#chatMessages') {
+        const container = document.querySelector(containerSelector);
+        if (!container) {
+            console.warn('ChartRenderer: Container not found:', containerSelector);
+            return;
+        }
+
+        // Process existing messages
+        container.querySelectorAll('.message-content').forEach(processMessage);
+
+        // Watch for new messages
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.classList?.contains('message-content')) {
+                            processMessage(node);
+                        } else {
+                            node.querySelectorAll?.('.message-content')?.forEach(processMessage);
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(container, {
+            childList: true,
+            subtree: true
+        });
+
+        console.log('ChartRenderer: Auto-detection initialized for chat');
+    }
+
     // Public API
     return {
         // Core
@@ -479,6 +672,12 @@ const ChartRenderer = (function() {
         pieChart,
         donutChart,
         comboChart,
+
+        // Chat auto-detection
+        init,
+        parseChartData,
+        processMessage,
+        renderFromData,
 
         // API integration
         fetchChart,

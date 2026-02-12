@@ -6,6 +6,18 @@
 
 ---
 
+## Status Legend
+
+Throughout this document, each feature or step is annotated with its current implementation status:
+
+| Symbol | Meaning |
+|--------|---------|
+| **BUILT** | Fully implemented and working in the codebase |
+| **PARTIAL** | Some infrastructure exists but not fully wired up |
+| **TO BUILD** | Not yet implemented — described as target state |
+
+---
+
 ## Architecture Context
 
 Insight 360 is a **multi-tenant platform**. One deployed instance serves all organizations. There are no per-org schema migrations, no per-org seed data, and no per-org infrastructure.
@@ -14,6 +26,7 @@ Insight 360 is a **multi-tenant platform**. One deployed instance serves all org
 - Database schema and migrations
 - API keys and environment configuration
 - Platform seed data: 6 departments, 18 context asset types, 4 BSC perspectives, 23 agents, 5 workflows, 11 dept-agent mappings
+- 36 platform modules with tier-based access control
 
 **What lives at the organization level (independent):**
 - Cloned departments (customizable copies of platform departments)
@@ -28,6 +41,27 @@ Insight 360 is a **multi-tenant platform**. One deployed instance serves all org
 
 **Clone Model:** When an organization is provisioned, the platform's standard departments, workflows, and dept-agent mappings are **cloned** into org-scoped copies. The org owns these copies and can rename, customize, or delete them without affecting other organizations or the platform templates.
 
+**Multi-Tenancy Schema Support (Phase 39):** The following tables have `org_id` columns and are ready for org-scoped data: `agents`, `workflows`, `skills`, `context_assets`, `departments`, `okrs`, `conversations`, `company_profiles`, `align120_sessions`. The `department_agents` junction table does not have a direct `org_id` but is org-scoped through its `department_id` and `agent_id` references.
+
+> **Note:** `strategic_foundations` currently has `user_id` only and lacks `org_id`. This needs a migration to support multi-tenant org-scoped strategic foundations.
+
+---
+
+## Platform Seed Data Inventory
+
+| Category | Count | Source File | Details |
+|----------|-------|-------------|---------|
+| **Departments** | 6 | `db/seeds/master-seed.sql` | Sales, Marketing, Operations, Finance, HR, Executive — each with description, icon, color, tagline, metrics (3 per dept), quick_prompts (4 per dept) |
+| **Context Asset Types** | 18 | `db/seeds/master-seed.sql` | 8 core (Company Description, Why We Win, Products, Pain Points, Voice DNA, ICP, Core Values, Custom Processes) + 10 extended (Competitors, Case Studies, FAQs, Team Bios, Industry Context, Terminology, Templates, Pricing, Brand Guidelines, Personas) |
+| **BSC Perspectives** | 4 | `db/seeds/master-seed.sql` | Financial, Customer, Internal Process, Learning & Growth |
+| **Utility Agents** | 8 | `db/seed.sql` | Daily Briefer, Email Triager, Research Assistant, Meeting Prep, First Principles Thinker, Code Reviewer, Writing Coach, Strategic Advisor |
+| **Suite Agents** | 15 | `db/seeds/master-seed.sql` | 5 Align (Values Excavator, Process Miner, Unit Economics Analyst, Brand Strategist, Stakeholder Mapper) + 5 Strategy (Strategy Analyst, Risk Sentinel, Scenario Modeler, Market Intelligence Agent, Decision Support Agent) + 5 Execute (Campaign Strategist, Proposal Generator, Process Documenter, Executive Communicator, Financial Analyst) |
+| **Workflows** | 5 | `db/seeds/master-seed.sql` | Campaign Strategy Builder (Marketing, 5 steps), Proposal Builder (Sales, 4 steps), SOP Creator (Operations, 4 steps), Board Meeting Prep (Executive, 5 steps), Investment Analysis (Finance, 5 steps) |
+| **Dept-Agent Mappings** | 11 | `db/seeds/master-seed.sql` | Sales: 1, Marketing: 2, Operations: 2, Finance: 2, HR: 1, Executive: 3 |
+| **Subscription Tiers** | 4 | `db/phase44-enterprise-multitenancy.sql` | Starter ($29/mo), Business ($99/mo), Enterprise ($299/mo), Agency ($499/mo) |
+| **Platform Modules** | 36 | `db/phase44-enterprise-multitenancy.sql` | Dashboard, core systems, strategy pipeline, tools, agency, admin modules |
+| **SCU Ethics Lenses** | 6 | `db/phase54-soul-configuration.sql` | Rights, Justice, Utilitarian, Common Good, Virtue, Care Ethics |
+
 ---
 
 ## Roles
@@ -37,6 +71,89 @@ Insight 360 is a **multi-tenant platform**. One deployed instance serves all org
 | **Platform Administrator** | Synergi | Provisions orgs, assigns system admins, manages tiers, maintains platform seed data |
 | **System Administrator** | Organization | Runs setup wizard, manages departments/agents/workflows, invites users |
 | **End User** | Organization | Uses chat, runs workflows, creates context assets |
+
+**Organization Member Roles** (in `organization_members` table): **BUILT**
+- `owner` — Full control including billing
+- `admin` — Manage members, clients, and configuration
+- `consultant` — Work with clients and content
+- `viewer` — Read-only access
+
+**Business Role Levels** (in `business_role_levels` table): **BUILT**
+- `ic` (Individual Contributor), `manager`, `director`, `vp`, `c-level`
+
+---
+
+## Current State (What Exists Today)
+
+### Existing Setup Wizard — **BUILT** (`public/js/setup-wizard.js`)
+
+The current wizard has **5 steps**:
+
+| Step | Title | What It Does |
+|------|-------|-------------|
+| 1 | Organization Details | Collects org name, slug, description |
+| 2 | Select Tier | Shows 4 subscription tiers with member/agent limits |
+| 3 | Admin User | Collects admin email and name (invitation email is **TODO — not sent**) |
+| 4 | Departments | Optional: select from 5 hardcoded defaults or add custom |
+| 5 | Complete | Review summary, create org via `POST /api/organizations` |
+
+**On completion**, the wizard:
+1. Creates the org via `POST /api/organizations` (creates org record + owner membership)
+2. Creates each selected department via `POST /api/departments` with `x-org-id` header
+3. Redirects to `admin-org-settings.html`
+
+**Current wizard gaps:**
+- Department defaults are hardcoded as 5 basic names (Marketing, Sales, Engineering, Operations, Human Resources) — these **do not match** the 6 enriched seed departments (Sales, Marketing, Operations, Finance, HR, Executive) and lack taglines, metrics, quick_prompts
+- No company profile or strategic foundations step
+- No context asset population step
+- No soul configuration step
+- No branding step
+- No clone cascade of platform data (departments, workflows, dept-agent mappings)
+- Admin invitation email is TODO
+
+### Existing Onboarding Checklist — **BUILT** (`public/js/onboarding-checklist.js`)
+
+8-item checklist with org selector and platform admin toggle:
+
+| Item | Check Condition | Links To |
+|------|-----------------|----------|
+| Organization Created | Org record exists | `admin-org-settings.html` |
+| Admin User Assigned | Member with role admin or owner | `admin-org-members.html` |
+| Subscription Tier Configured | Tier is not 'none' | `admin-tier-setup.html` |
+| Departments Created | At least 1 department | `admin-org-settings.html#departments` |
+| Roles Defined | At least 1 role | `admin-org-settings.html#roles` |
+| Team Members | At least 1 member | `admin-org-members.html` |
+| Branding Configured | Logo URL or primary color set | `admin-org-customization.html` |
+| Resources Configured | At least 1 agent accessible | `admin-resource-access.html` |
+
+### Existing Platform Admin Features — **BUILT** (`server/routes/platformAdmin.js`)
+
+- `GET /api/platform/config` — Platform configuration
+- `PUT /api/platform/config` — Update configuration
+- `GET /api/platform/organizations` — List all organizations
+- `GET /api/platform/organizations/:id` — Org details
+- `GET /api/platform/tiers` — List subscription tiers
+- Platform admin roles: `super_admin`, `admin`, `support`
+
+### Department Management — **BUILT** (`server/routes/departments.js`, `public/admin-departments.html`)
+
+Full CRUD API with fields: name, description, icon, color, tagline, metrics (JSONB), quick_prompts (TEXT[]), sort_order, is_active, org_id.
+
+### Soul Configuration — **BUILT** (Phase 54)
+
+Complete implementation including:
+- Hierarchy: platform → organization → department → client → agent
+- 8 sections: identity, values, bright_lines, guardrails, voice, domain, stakeholders, escalation
+- Version history, cloning between scopes, ethical evaluations
+- 7-step wizard at `/soul-wizard.html`
+- Completeness scoring (0-100%)
+- SCU Ethics Framework (6 lenses)
+
+### Module Access Control — **BUILT** (Phase 44)
+
+- 36 platform modules with tier-based access
+- `can_access_module()`, `get_user_modules()`, `check_org_limits()` functions
+- Dynamic navigation based on tier + role
 
 ---
 
@@ -95,34 +212,34 @@ The client must provide the following **before** their organization is created. 
 
 ### 1.2 Platform Administrator Actions
 
-> **Mode: Automated (from signup/provisioning)**
+> **Status: PARTIAL — Org creation is BUILT, admin invitation is TO BUILD**
 
-When the client signs up or the platform admin provisions the org:
+The platform admin runs the Setup Wizard from the Administrator page to create the organization:
 
-| Action | Mode | What Happens |
-|--------|------|-------------|
-| Create organization record | **Automated** | Org name, slug, owner_id set from signup |
-| Assign subscription tier | **Automated** | Tier set from plan selection |
-| Create owner membership | **Automated** | Signup user becomes org owner |
-| Assign system administrator | **Manual** | Platform admin adds the client's designated system admin |
+| Action | Status | What Happens |
+|--------|--------|-------------|
+| Create organization record | **BUILT** | `POST /api/organizations` creates org with name, slug, tier, owner membership |
+| Assign subscription tier | **BUILT** | Set from tier selection in wizard Step 2 |
+| Create owner membership | **BUILT** | Wizard runner becomes org owner automatically |
+| Assign system administrator | **TO BUILD** | Platform admin should add the client's designated system admin and send invitation email |
 
 #### Assigning the System Administrator
 
-> **Status: Manual**
+> **Status: PARTIAL** — Member management page exists, but invitation email is not yet implemented
 
 1. Go to **Administrator** → **Team Members** (`/admin-org-members.html`)
 2. Select the new organization
 3. Click **Invite Member**
 4. Enter the system admin's name and email from the checklist (items #8 and #9)
 5. Set role to **admin**
-6. The system admin will receive access and can begin the Setup Wizard
+6. The system admin will receive access and can begin configuration
 
 ### 1.3 Platform Data Cloning
 
-> **Mode: Automated (on org provisioning)**
-> This is the clone step — platform templates are copied into org-scoped records.
+> **Status: TO BUILD — The clone service does not exist yet.**
+> The schema supports org-scoped data (`org_id` on departments, workflows, agents, etc. via Phase 39), but no automated cloning occurs on org provisioning today.
 
-When an organization is provisioned, the following platform resources are cloned:
+When an organization is provisioned, the following platform resources should be cloned:
 
 | Resource | Platform Source | What Gets Cloned | Org Can Customize |
 |----------|---------------|-------------------|-------------------|
@@ -134,9 +251,10 @@ When an organization is provisioned, the following platform resources are cloned
 | **Agents (23)** | *Not cloned — referenced initially* | Org accesses platform public agents via dept-agent mappings | Can clone individual agents later for prompt customization |
 
 **Clone cascade logic:**
-1. Clone all 6 platform departments → set `org_id` on each copy
+1. Clone all 6 platform departments → set `org_id` on each copy, clear `user_id`
 2. Clone all 5 platform workflows → set `org_id`, update `department_id` to point to cloned departments
-3. Clone all 11 dept-agent mappings → update `department_id` to point to cloned departments, keep `agent_id` pointing to platform agents
+3. Clone all workflow steps → update `workflow_id` to point to cloned workflows
+4. Clone all 11 dept-agent mappings → update `department_id` to point to cloned departments, keep `agent_id` pointing to platform agents
 
 **Result:** The org starts with a full working set of departments, workflows, and agent mappings that it owns and can freely customize.
 
@@ -145,7 +263,7 @@ When an organization is provisioned, the following platform resources are cloned
 ## Phase 2: Organization Setup Wizard
 
 > **Who:** System Administrator (the client's designated admin)
-> **Mode: Wizard-guided**
+> **Status: TO BUILD — Target design for the enhanced 6-step wizard. Current wizard is 5 steps (see Current State section above).**
 > **Location:** Administrator → Setup tab
 
 The system admin logs in and runs the Setup Wizard. The wizard uses pre-deployment checklist data where available and prompts for anything missing.
@@ -168,8 +286,8 @@ The system admin logs in and runs the Setup Wizard. The wizard uses pre-deployme
 | Core values | Checklist #13 | Yes |
 
 **What this creates:**
-- `company_profiles` record linked to the org
-- `strategic_foundations` record linked to the org
+- `company_profiles` record linked to the org (table has `org_id` — **BUILT**)
+- `strategic_foundations` record (table currently has `user_id` only — **needs `org_id` migration**)
 
 ### Step 2: Department Setup
 
@@ -190,14 +308,14 @@ The wizard presents the 6 cloned departments in a checklist/card view. For each 
 **What the admin sees for each department:**
 
 ```
-┌─────────────────────────────────────────────┐
-│ [✓] Sales                            [Edit] │
-│     "Close deals and drive revenue growth"  │
-│     Metrics: Pipeline Value, Win Rate,      │
-│              Deals Closed                   │
-│     Agents: Proposal Generator              │
-│     Workflow: Proposal Builder              │
-└─────────────────────────────────────────────┘
++---------------------------------------------+
+| [x] Sales                            [Edit] |
+|     "Close deals and drive revenue growth"   |
+|     Metrics: Pipeline Value, Win Rate,       |
+|              Deals Closed                    |
+|     Agents: Proposal Generator               |
+|     Workflow: Proposal Builder               |
++---------------------------------------------+
 ```
 
 Disabled departments and their associated workflows/agent mappings are soft-deleted (marked inactive), not removed — they can be re-enabled later.
@@ -226,13 +344,13 @@ The wizard walks through the 8 core context asset types and prompts the admin to
 - Context quality directly correlates with AI output quality
 
 **What this creates:**
-- `context_assets` records linked to the org, one per type
+- `context_assets` records linked to the org (table has `org_id` — **BUILT**), one per type
 
 ### Step 4: Soul Configuration
 
 > **Pre-filled from:** Checklist #11-13 (vision, mission, values are reused)
 
-The wizard embeds the Soul Configuration flow (currently a separate 7-step wizard at `/soul-wizard.html`):
+The wizard embeds the Soul Configuration flow (the existing 7-step wizard at `/soul-wizard.html` — **BUILT**):
 
 | Sub-step | What to Configure | Pre-filled? |
 |----------|-------------------|-------------|
@@ -256,8 +374,8 @@ The wizard embeds the Soul Configuration flow (currently a separate 7-step wizar
 - "Flag potential compliance issues in regulated industries"
 
 **What this creates:**
-- `soul_configurations` record linked to the org
-- `ethical_lenses` configuration (uses platform defaults)
+- `soul_configurations` record linked to the org (scope_type: 'organization' — **BUILT**)
+- Inherits platform bright lines automatically
 
 ### Step 5: Branding
 
@@ -270,7 +388,7 @@ The wizard embeds the Soul Configuration flow (currently a separate 7-step wizar
 | Secondary color | Accent color (optional) |
 
 **What this creates:**
-- Updates `organizations.settings` with branding configuration
+- Updates `organizations.branding` JSONB field (column exists — **BUILT**)
 
 ### Step 6: Review & Complete
 
@@ -294,7 +412,7 @@ The wizard shows a summary of everything configured:
 ## Phase 3: User Setup
 
 > **Who:** System Administrator
-> **Mode: Manual**
+> **Status: BUILT** — Member management page and role assignment exist
 
 ### 3.1 Invite Team Members
 
@@ -304,7 +422,7 @@ For each team member from Checklist #22 (or gathered post-deployment):
 
 1. Click **Invite Member**
 2. Enter name and email
-3. Assign role:
+3. Assign org membership role:
 
 | Role | Access Level | Typical User |
 |------|-------------|--------------|
@@ -314,6 +432,7 @@ For each team member from Checklist #22 (or gathered post-deployment):
 | `viewer` | Read-only access | Stakeholders, observers |
 
 4. Assign to department
+5. Set business role level (ic, manager, director, vp, c-level)
 
 ### 3.2 Verify Admin Access
 
@@ -339,24 +458,24 @@ Confirm admin users can:
 ## Phase 4: Agent & Workflow Review
 
 > **Who:** System Administrator (with department leads)
-> **Mode: Manual**
+> **Status: BUILT** — Agent management, department pages, and workflow execution exist. This phase is manual review.
 
 ### 4.1 Review Inherited Agents
 
 Platform agents are accessible to the org through dept-agent mappings. Review with department leads:
 
-**Per Department:**
+**Per Department (from seed data):**
 
 | Department | Featured Agents | Workflow |
 |-----------|----------------|----------|
-| Sales | Proposal Generator | Proposal Builder |
-| Marketing | Campaign Strategist, Brand Strategist | Campaign Strategy Builder |
-| Operations | Process Documenter, Process Miner | SOP Creator |
-| Finance | Financial Analyst, Unit Economics Analyst | Investment Analysis |
-| HR | Values Excavator | *(none — consider creating)* |
-| Executive | Executive Communicator, Strategy Analyst, Stakeholder Mapper | Board Meeting Prep |
+| Sales | Proposal Generator | Proposal Builder (4 steps) |
+| Marketing | Campaign Strategist, Brand Strategist | Campaign Strategy Builder (5 steps) |
+| Operations | Process Documenter, Process Miner | SOP Creator (4 steps) |
+| Finance | Financial Analyst, Unit Economics Analyst | Investment Analysis (5 steps) |
+| HR | Values Excavator | *(no workflow — consider creating)* |
+| Executive | Executive Communicator, Strategy Analyst, Stakeholder Mapper | Board Meeting Prep (5 steps) |
 
-**Cross-department agents** (available to all via chat):
+**Cross-department utility agents** (available to all via chat):
 Daily Briefer, Email Triager, Research Assistant, Meeting Prep, First Principles Thinker, Code Reviewer, Writing Coach, Strategic Advisor
 
 For each department, confirm:
@@ -406,7 +525,7 @@ Common additions:
 ## Phase 5: Strategic Setup (Optional)
 
 > **Who:** System Administrator + Leadership Team
-> **Mode: Manual**
+> **Status: BUILT** — Align 120, Strategy 120, Execute 120 pages and APIs all exist
 > For organizations using the full Strategy-to-Execution pipeline.
 
 ### 5.1 Strategic Themes
@@ -444,7 +563,7 @@ For each of the 4 BSC perspectives (inherited from platform), set 2-3 objectives
 ## Phase 6: Training & Handoff
 
 > **Who:** Client Success Manager
-> **Mode: Manual**
+> **Status: Manual process** — Platform features exist, training materials need preparation
 
 ### 6.1 Training Sessions
 
@@ -459,7 +578,7 @@ For each of the 4 BSC perspectives (inherited from platform), set 2-3 objectives
 
 - [ ] Platform URL and login instructions
 - [ ] System admin credentials confirmed working
-- [ ] In-app help available (help button on every page)
+- [ ] In-app help available (help button on every page — **BUILT**, with user guides served via `/api/docs/`)
 - [ ] Support contact information provided
 
 ### 6.3 Adoption KPIs (First 30 Days)
@@ -485,31 +604,31 @@ For each of the 4 BSC perspectives (inherited from platform), set 2-3 objectives
 
 ## Appendix A: Automation Status Matrix
 
-| Item | Mode | Trigger |
-|------|------|---------|
-| Organization record | **Automated** | Client signup / plan selection |
-| Subscription tier | **Automated** | Plan selection |
-| Owner membership | **Automated** | Signup |
-| System admin assignment | **Manual** | Platform admin invites from checklist |
-| Department cloning (6, enriched) | **Automated** | Org provisioning |
-| Workflow cloning (5, with steps) | **Automated** | Org provisioning |
-| Dept-agent mapping cloning (11) | **Automated** | Org provisioning |
-| Context asset types (18) | **Inherited** | Global platform reference, not cloned |
-| BSC perspectives (4) | **Inherited** | Global platform reference, not cloned |
-| Platform agents (23) | **Inherited** | Global platform reference, not cloned |
-| Company profile | **Wizard** | Setup Wizard Step 1 |
-| Strategic foundations | **Wizard** | Setup Wizard Step 1 |
-| Department customization | **Wizard** | Setup Wizard Step 2 |
-| Context asset instances (8 core) | **Wizard** | Setup Wizard Step 3 |
-| Soul configuration | **Wizard** | Setup Wizard Step 4 |
-| Branding | **Wizard** | Setup Wizard Step 5 |
-| User accounts | **Manual** | System admin invites in Phase 3 |
-| Role assignments | **Manual** | System admin sets in Phase 3 |
-| Agent customization | **Manual** | Phase 4 review |
-| Workflow customization | **Manual** | Phase 4 review |
-| Strategic themes | **Manual** | Phase 5 (optional) |
-| BSC objectives | **Manual** | Phase 5 (optional) |
-| OKRs | **Manual** | Phase 5 (optional) |
+| Item | Target Mode | Current Status | Trigger |
+|------|-------------|----------------|---------|
+| Organization record | **Automated** | **BUILT** | Setup Wizard → `POST /api/organizations` |
+| Subscription tier | **Automated** | **BUILT** | Wizard Step 2 tier selection |
+| Owner membership | **Automated** | **BUILT** | Created automatically on org creation |
+| System admin assignment | **Manual** | **PARTIAL** — member add works, invitation email is TODO | Platform admin invites from checklist |
+| Department cloning (6, enriched) | **Automated** | **TO BUILD** — current wizard creates basic dept names only | Org provisioning clone service |
+| Workflow cloning (5, with steps) | **Automated** | **TO BUILD** | Org provisioning clone service |
+| Dept-agent mapping cloning (11) | **Automated** | **TO BUILD** | Org provisioning clone service |
+| Context asset types (18) | **Inherited** | **BUILT** — global types, no cloning needed | Platform reference |
+| BSC perspectives (4) | **Inherited** | **BUILT** — global perspectives, no cloning needed | Platform reference |
+| Platform agents (23) | **Inherited** | **BUILT** — public agents accessible via dept-agent mappings | Platform reference |
+| Company profile | **Wizard** | **TO BUILD** — wizard step doesn't exist yet | Setup Wizard Step 1 (target) |
+| Strategic foundations | **Wizard** | **TO BUILD** — wizard step doesn't exist; table also needs `org_id` migration | Setup Wizard Step 1 (target) |
+| Department customization | **Wizard** | **TO BUILD** — current wizard only offers basic name selection | Setup Wizard Step 2 (target) |
+| Context asset instances (8 core) | **Wizard** | **TO BUILD** — wizard step doesn't exist yet | Setup Wizard Step 3 (target) |
+| Soul configuration | **Wizard** | **PARTIAL** — soul wizard exists (`/soul-wizard.html`) but not integrated into setup wizard | Setup Wizard Step 4 (target) |
+| Branding | **Wizard** | **TO BUILD** — wizard step doesn't exist; `organizations.branding` column exists | Setup Wizard Step 5 (target) |
+| User accounts | **Manual** | **BUILT** — member management page works | System admin invites in Phase 3 |
+| Role assignments | **Manual** | **BUILT** — org roles + business roles work | System admin sets in Phase 3 |
+| Agent customization | **Manual** | **BUILT** — agent CRUD and cloning work | Phase 4 review |
+| Workflow customization | **Manual** | **BUILT** — workflow CRUD works | Phase 4 review |
+| Strategic themes | **Manual** | **BUILT** — Strategy 120 page works | Phase 5 (optional) |
+| BSC objectives | **Manual** | **BUILT** — BSC management works | Phase 5 (optional) |
+| OKRs | **Manual** | **BUILT** — OKR management works | Phase 5 (optional) |
 
 ---
 
@@ -519,23 +638,25 @@ For each of the 4 BSC perspectives (inherited from platform), set 2-3 objectives
 |----------|-------|-----|
 | **Departments** | Clone | Orgs rename, adjust metrics, add custom depts — must be independent |
 | **Workflows** | Clone | Steps reference cloned dept IDs; orgs customize steps and prompts |
+| **Workflow Steps** | Clone | Steps belong to cloned workflows; orgs customize input fields and agent references |
 | **Dept-Agent Mappings** | Clone | Reference cloned dept IDs; orgs add/remove agent mappings |
 | **Agents** | Reference (clone on customize) | Most orgs use standard agents as-is; only clone when prompt needs tuning |
 | **Context Asset Types** | Reference | Type definitions are universal; orgs create instances of these types |
 | **BSC Perspectives** | Reference | Four standard perspectives are universal |
+| **SCU Ethics Lenses** | Reference | Six lenses are universal |
 
 **Clone cascade on org provisioning:**
 
 ```
 Platform Departments (6)
-    ├── Clone → Org Departments (org_id set)
-    │
+    +-- Clone --> Org Departments (org_id set, user_id null)
+    |
 Platform Workflows (5)
-    ├── Clone → Org Workflows (org_id set, department_id → cloned dept)
-    │   └── Clone → Org Workflow Steps (workflow_id → cloned workflow)
-    │
+    +-- Clone --> Org Workflows (org_id set, department_id --> cloned dept)
+    |   +-- Clone --> Org Workflow Steps (workflow_id --> cloned workflow)
+    |
 Platform Dept-Agent Mappings (11)
-    └── Clone → Org Dept-Agent Mappings (department_id → cloned dept, agent_id → platform agent)
+    +-- Clone --> Org Dept-Agent Mappings (department_id --> cloned dept, agent_id --> platform agent)
 ```
 
 ---
@@ -544,22 +665,17 @@ Platform Dept-Agent Mappings (11)
 
 Run after Phases 1-4 are complete:
 
-### Setup Progress Check
+### Onboarding Tab Check
 
-Go to **Organization Settings** (`/admin-org-settings.html`). The Setup Progress panel shows 8 items. All should show "Configured" (green checkmark):
-
-| # | Item | Check Logic | API Source | Links To |
-|---|------|------------|------------|----------|
-| 1 | **Organization Created** | Org record exists | Current org data | *(stays on page)* |
-| 2 | **Subscription Tier** | Tier is set and not `none` | Current org data | `admin-platform.html` (platform admins only) |
-| 3 | **Admin User** | At least one member with `admin` or `owner` role | `GET /api/org-members/:orgId` | `admin-org-members.html` |
-| 4 | **Departments** | At least one department exists | `GET /api/departments` | `admin-departments.html` |
-| 5 | **Roles Defined** | At least one department role/title exists | `GET /api/roles` | `roles.html` |
-| 6 | **Team Members** | At least one org member exists | `GET /api/org-members/:orgId` | `admin-org-members.html` |
-| 7 | **Branding** | Logo URL or primary color is set in org settings | Current org data | *(stays on page)* |
-| 8 | **Resources** | At least one agent exists | `GET /api/agents?limit=1` | `admin-resource-access.html` |
-
-All data is loaded in parallel via `Promise.allSettled`, so individual failures don't block other checks.
+Go to Administrator → Onboarding tab. All 8 items should be complete:
+- [x] Organization Created
+- [x] Admin User Assigned
+- [x] Subscription Tier Configured
+- [x] Departments Created
+- [x] Roles Defined
+- [x] Team Members
+- [x] Branding Configured
+- [x] Resources Configured
 
 ### Functional Spot Checks
 
@@ -579,23 +695,41 @@ All data is loaded in parallel via `Promise.allSettled`, so individual failures 
 
 ## Appendix D: Implementation Requirements
 
-The following platform changes are needed to support this process:
+The following platform changes are needed to fully support this process. Items are ordered by priority.
 
 ### Must Build
 
-1. **Clone service** — API endpoint or database function that clones platform departments, workflows (with steps), and dept-agent mappings into org-scoped records on provisioning
-2. **Enhanced Setup Wizard** — Rewrite the 5-step wizard as a 6-step wizard (Company Foundation → Departments → Context → Soul Config → Branding → Review)
-3. **Pre-fill from checklist** — Wizard accepts pre-deployment data and pre-fills fields
-4. **Department customization UI in wizard** — Card-based view of cloned departments with enable/disable, rename, edit metrics inline
-5. **Context population step** — Guided walkthrough of 8 core asset types with skip-and-remind
-6. **Soul config embed** — Integrate soul wizard into setup wizard or link seamlessly
+1. **Clone service** — API endpoint or database function that clones platform departments (with all enriched fields), workflows (with all steps), and dept-agent mappings into org-scoped records on provisioning.
+   - *Starting point:* Schema supports `org_id` on all relevant tables (Phase 39). Soul config already has a clone endpoint (`POST /api/soul-config/:id/clone`). Use as pattern.
+   - *Key logic:* Clone cascade — departments first, then workflows with remapped `department_id`, then dept-agent mappings with remapped `department_id`.
+
+2. **Enhanced Setup Wizard** — Rewrite the current 5-step wizard (`public/js/setup-wizard.js`) as a 6-step wizard (Company Foundation → Departments → Context → Soul Config → Branding → Review).
+   - *Starting point:* Current wizard handles org creation, tier selection, and basic department selection. Extend from here.
+   - *Key change:* Department step must present cloned enriched departments (with taglines, metrics, quick prompts) instead of 5 hardcoded names.
+
+3. **Department customization UI in wizard** — Card-based view of cloned departments with enable/disable, rename, edit metrics inline, reorder.
+   - *Starting point:* `admin-departments.html` has department card rendering and CRUD. Adapt for inline wizard editing.
+
+4. **Context population step** — Guided walkthrough of 8 core asset types with skip-and-remind.
+   - *Starting point:* Context asset CRUD exists (`server/routes/context.js`, `public/context.html`). Need a guided sequential UI.
+
+5. **Soul config integration** — Embed the soul wizard (`/soul-wizard.html`) into the setup wizard or link seamlessly with pre-filled data from Step 1.
+   - *Starting point:* Soul wizard is fully built with 7 steps. Need integration point to pass company profile data.
+
+6. **`strategic_foundations` org_id migration** — Add `org_id` column to `strategic_foundations` table for multi-tenant support.
+   - *Starting point:* Follow the Phase 39 pattern used for other tables.
 
 ### Nice to Have
 
-7. **Automated admin invitation email** — Send email on system admin assignment
-8. **Pre-deployment intake form** — Web form that captures checklist items and feeds into provisioning
-9. **Clone-on-customize for agents** — One-click clone of a platform agent into org namespace when editing
-10. **Progress persistence** — Allow wizard to be saved mid-flow and resumed later
+7. **Automated admin invitation email** — Send email on system admin assignment (currently TODO in setup wizard).
+
+8. **Pre-deployment intake form** — Web form that captures checklist items and feeds into provisioning.
+
+9. **Clone-on-customize for agents** — One-click clone of a platform agent into org namespace when editing.
+
+10. **Progress persistence** — Allow wizard to be saved mid-flow and resumed later.
+
+11. **Pre-fill from checklist** — Wizard accepts pre-deployment data and pre-fills fields from intake form.
 
 ---
 

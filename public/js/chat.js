@@ -153,6 +153,7 @@ ${promptSection}
 `;
                 if (contentDiv) {
                     contentDiv.innerHTML = formatMessage(responseContent);
+                    contentDiv.dataset.rawContent = responseContent;
                 }
 
                 // Add to history
@@ -225,6 +226,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Auto-resize textarea
     setupTextareaResize();
+
+    // Initialize chart auto-detection for chat messages
+    if (typeof ChartRenderer !== 'undefined' && ChartRenderer.init) {
+        ChartRenderer.init('#chatMessages');
+    }
+    if (typeof RadarChart !== 'undefined' && RadarChart.init) {
+        RadarChart.init('#chatMessages');
+    }
 });
 
 /**
@@ -625,6 +634,7 @@ Only include sources when you reference specific external information. For gener
 
             if (contentDiv) {
                 contentDiv.innerHTML = formatMessage(fullResponse);
+                contentDiv.dataset.rawContent = fullResponse;
             }
         } else {
             // Streaming SSE response
@@ -682,6 +692,11 @@ Only include sources when you reference specific external information. For gener
                     autoScrollIfNearBottom();
                 }
             }
+        }
+
+        // Store raw markdown on the content element for export/copy
+        if (contentDiv) {
+            contentDiv.dataset.rawContent = fullResponse;
         }
 
         // Add to history
@@ -759,6 +774,14 @@ function addMessage(role, content, isLoading = false, autoScroll = true) {
             <div class="message-content">${messageContent}</div>
         </div>
     `;
+
+    // Store raw markdown on the content element for export/copy
+    if (content && !isLoading) {
+        const contentEl = messageDiv.querySelector('.message-content');
+        if (contentEl) {
+            contentEl.dataset.rawContent = content;
+        }
+    }
 
     // Initialize icons for the copy button
     lucide.createIcons();
@@ -1393,11 +1416,23 @@ async function copyMessage(button) {
 
     if (!contentDiv) return;
 
-    // Get text content (strips HTML)
-    const text = contentDiv.innerText;
+    // Use raw markdown if available (preserves formatting in markdown-aware editors)
+    const rawMarkdown = contentDiv.dataset.rawContent || contentDiv.innerText;
+    const html = contentDiv.innerHTML;
 
     try {
-        await navigator.clipboard.writeText(text);
+        // Write both HTML and plain text (markdown) to clipboard
+        // HTML enables rich paste in Word/Google Docs; markdown enables clean paste in code editors
+        try {
+            const clipboardItem = new ClipboardItem({
+                'text/html': new Blob([html], { type: 'text/html' }),
+                'text/plain': new Blob([rawMarkdown], { type: 'text/plain' })
+            });
+            await navigator.clipboard.write([clipboardItem]);
+        } catch (clipErr) {
+            // Fallback for browsers that don't support ClipboardItem
+            await navigator.clipboard.writeText(rawMarkdown);
+        }
 
         // Visual feedback - change icon temporarily
         // Lucide replaces <i> with <svg>, so we need to handle both cases
@@ -2115,6 +2150,18 @@ const artifactModalHtml = `
                     <i data-lucide="chevron-right"></i>
                 </div>
             </div>
+            <div class="artifact-option" onclick="exportAsDocument('xlsx')">
+                <div class="artifact-option-icon">
+                    <i data-lucide="table"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Export as Excel</div>
+                    <div class="artifact-option-desc">Download tables as .xlsx spreadsheet</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -2140,7 +2187,8 @@ function openArtifactModal(button) {
 
     if (!contentDiv) return;
 
-    currentArtifactContent = contentDiv.innerText;
+    // Use stored raw markdown if available, otherwise fall back to innerText
+    currentArtifactContent = contentDiv.dataset.rawContent || contentDiv.innerText;
     currentArtifactHtmlContent = contentDiv.innerHTML; // Store HTML for PDF export
     currentArtifactMessageEl = messageDiv;
 
@@ -2487,6 +2535,68 @@ async function exportAsDocument(format) {
             `;
             const blob = new Blob([htmlContent], { type: 'application/msword' });
             downloadBlob(blob, `${filename}.doc`);
+        } else if (format === 'xlsx') {
+            // Export tables as Excel spreadsheet using SheetJS
+            if (typeof XLSX === 'undefined') {
+                alert('Excel export library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            const workbook = XLSX.utils.book_new();
+            const htmlContent = currentArtifactHtmlContent || formatContentForPrint(currentArtifactContent);
+
+            // Parse HTML to find tables
+            const temp = document.createElement('div');
+            temp.innerHTML = htmlContent;
+            const tables = temp.querySelectorAll('table');
+
+            if (tables.length === 0) {
+                // No HTML tables found — try parsing markdown tables from raw content
+                const mdTables = extractMarkdownTables(currentArtifactContent);
+                if (mdTables.length === 0) {
+                    alert('No tables found in this response. Excel export works best with tabular data.');
+                    return;
+                }
+                mdTables.forEach((table, i) => {
+                    const ws = XLSX.utils.aoa_to_sheet(table.rows);
+                    // Auto-size columns
+                    ws['!cols'] = table.rows[0].map((_, colIdx) => ({
+                        wch: Math.max(...table.rows.map(row => (row[colIdx] || '').toString().length), 10)
+                    }));
+                    const sheetName = table.title || `Sheet${i + 1}`;
+                    XLSX.utils.book_append_sheet(workbook, ws, sheetName.slice(0, 31));
+                });
+            } else {
+                tables.forEach((table, i) => {
+                    const ws = XLSX.utils.table_to_sheet(table);
+                    // Auto-size columns based on content
+                    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+                    const cols = [];
+                    for (let c = range.s.c; c <= range.e.c; c++) {
+                        let maxLen = 10;
+                        for (let r = range.s.r; r <= range.e.r; r++) {
+                            const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                            if (cell && cell.v) maxLen = Math.max(maxLen, cell.v.toString().length);
+                        }
+                        cols.push({ wch: Math.min(maxLen + 2, 50) });
+                    }
+                    ws['!cols'] = cols;
+                    const sheetName = `Sheet${i + 1}`;
+                    XLSX.utils.book_append_sheet(workbook, ws, sheetName);
+                });
+            }
+
+            // Also add a full text sheet with the complete response
+            const textWs = XLSX.utils.aoa_to_sheet([
+                ['Higgins AI Response'],
+                [`Generated: ${new Date().toLocaleString()}`],
+                [''],
+                ...currentArtifactContent.split('\n').map(line => [line])
+            ]);
+            textWs['!cols'] = [{ wch: 100 }];
+            XLSX.utils.book_append_sheet(workbook, textWs, 'Full Response');
+
+            XLSX.writeFile(workbook, `${filename}.xlsx`);
         }
 
         closeArtifactModal();
@@ -2662,6 +2772,37 @@ function cleanHtmlForPrint(html) {
     });
 
     return temp.innerHTML;
+}
+
+/**
+ * Extract markdown tables from raw text content
+ * Returns array of { title, rows } where rows is array of arrays
+ */
+function extractMarkdownTables(text) {
+    const tables = [];
+    const tableRegex = /(?:^|\n)(?:#+\s*(.+)\n+)?(\|.+\|)\n(\|[\s:-]+\|)\n((?:\|.+\|\n?)+)/gm;
+    let match;
+
+    while ((match = tableRegex.exec(text)) !== null) {
+        const title = match[1] ? match[1].trim() : null;
+        const headerRow = match[2];
+        const bodyText = match[4];
+
+        // Parse header cells
+        const headers = headerRow.split('|').filter(c => c.trim() !== '').map(c => c.trim());
+
+        // Parse body rows
+        const bodyRows = bodyText.trim().split('\n').map(row =>
+            row.split('|').filter(c => c.trim() !== '').map(c => c.trim().replace(/\*\*/g, ''))
+        );
+
+        tables.push({
+            title,
+            rows: [headers, ...bodyRows]
+        });
+    }
+
+    return tables;
 }
 
 /**

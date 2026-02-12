@@ -18,18 +18,30 @@ const llmRegistry = require('../services/llmRegistry');
 // Import Higgins service for persona and knowledge injection
 const higginsService = require('../services/higginsService');
 
-// Initialize services with API keys
+// Initialize services with error handling to prevent crashes
 if (process.env.ANTHROPIC_API_KEY) {
     anthropic.initialize(process.env.ANTHROPIC_API_KEY);
 }
 if (process.env.OPENAI_API_KEY && openai.initialize) {
-    openai.initialize(process.env.OPENAI_API_KEY);
+    try {
+        openai.initialize(process.env.OPENAI_API_KEY);
+    } catch (error) {
+        console.error('⚠️  OpenAI initialization failed in chat route:', error.message);
+    }
 }
 if (process.env.PERPLEXITY_API_KEY) {
-    perplexity.initialize(process.env.PERPLEXITY_API_KEY);
+    try {
+        perplexity.initialize(process.env.PERPLEXITY_API_KEY);
+    } catch (error) {
+        console.error('⚠️  Perplexity initialization failed in chat route:', error.message);
+    }
 }
 if (process.env.GOOGLE_API_KEY) {
-    gemini.initialize(process.env.GOOGLE_API_KEY);
+    try {
+        gemini.initialize(process.env.GOOGLE_API_KEY);
+    } catch (error) {
+        console.error('⚠️  Gemini initialization failed in chat route:', error.message);
+    }
 }
 
 // Use centralized registry for provider detection
