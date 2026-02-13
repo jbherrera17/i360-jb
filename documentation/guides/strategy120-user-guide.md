@@ -1,7 +1,7 @@
 # Strategy 120 User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 1, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -53,9 +53,11 @@ Strategy 120 organizes AI agents into functional categories:
    - Click a category to filter agents
    - "All Agents" shows the complete list
    - Badge numbers show agent count per category
+   - **Department Filter**: Select a department from the dropdown to scope agents and portfolio data to a specific department
 
-2. **Main Panel**: Four tabs for different functions
+2. **Main Panel**: Five tabs for different functions
    - **Agents**: Browse and chat with AI agents
+   - **Portfolio**: Align 120 integration, BSC performance, and initiative pipeline
    - **Initiatives**: Track strategic initiatives
    - **Decisions**: Log strategic decisions
    - **Intelligence**: Manage intelligence briefs
@@ -70,11 +72,47 @@ Strategy 120 organizes AI agents into functional categories:
 
 **Chatting with Agents:**
 1. Click **Chat** on any agent card
-2. The chat modal opens with context loaded
+2. The AgentDialogService opens a full-featured agent dialog with the agent's context pre-loaded
 3. Type your question or request
-4. The agent responds with strategic guidance
-5. Continue the conversation as needed
+4. The agent responds with strategic guidance via streaming
+5. Continue the conversation with full chat history, markdown rendering, and copy support
 6. Click X to close when finished
+
+### Using the Portfolio Tab
+
+The Portfolio tab provides a strategic overview that bridges Align 120 assessment insights with your Strategy 120 planning.
+
+**Align 120 Integration:**
+1. Click the **Import Insights** button at the top of the Portfolio tab
+2. The Align 120 Import Modal opens, showing available completed sessions
+3. Select a session to import its assessment outputs (values, maturity scores, brand voice, etc.)
+4. Imported insights populate the Portfolio view and provide context to your strategic agents
+
+**BSC Perspective Performance:**
+- A scores grid displays Balanced Scorecard performance across four perspectives: Financial, Customer, Internal Process, and Learning & Growth
+- Each perspective shows a performance score derived from linked OKRs and initiative progress
+- Use these scores to identify strategic gaps and prioritize investments
+
+**Portfolio Summary Cards:**
+- **Active Initiatives**: Count of in-progress strategic initiatives
+- **Decisions Logged**: Total decisions recorded in the decision log
+- **Intel Briefs**: Number of intelligence briefs created
+- **Linked OKRs**: Count of OKRs connected to strategic initiatives
+
+**Initiative Pipeline:**
+- A visual pipeline displays all initiatives with color-coded status bars
+- Status colors indicate stage: planning (blue), in-progress (amber), completed (green), at-risk (red)
+- Click any initiative bar to view details or navigate to the Initiatives tab
+
+### Align 120 Import Modal
+
+When you click **Import Insights** on the Portfolio tab:
+
+1. The modal displays all completed Align 120 sessions for your organization
+2. Each session card shows company name, completion date, and module summary
+3. Select a session and click **Import** to pull in assessment data
+4. Imported data includes: company profile, values, maturity score, brand voice, stakeholder map, and governance RACI
+5. Insights are linked to the current Strategy 120 session for agent context enrichment
 
 ### Managing Initiatives
 
@@ -128,9 +166,7 @@ Strategy 120 agents work best when connected to your S2E foundation:
 
 ## Navigation
 
-- **Back to S2E**: Return to Strategy-to-Execution module
-- **Help**: Open this guide (click ? button)
-- **Theme Toggle**: Switch between dark and light modes
+- **Help**: Open this guide (click the help button in the page header)
 
 ---
 
@@ -160,7 +196,3 @@ Strategy 120 agents work best when connected to your S2E foundation:
 **Category counts showing zero:**
 - Agents may need to be seeded in the database
 - Check Supabase connection status
-
-**Theme toggle not working:**
-- Clear browser cache
-- Refresh the page

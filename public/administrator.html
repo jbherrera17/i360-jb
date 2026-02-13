@@ -441,6 +441,152 @@
             color: var(--success);
         }
 
+        /* "You're Ready!" Banner */
+        .checklist-ready-banner {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .checklist-ready-banner.all-complete {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .ready-banner-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .checklist-ready-banner.all-complete .ready-banner-icon {
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .ready-banner-icon i {
+            width: 24px;
+            height: 24px;
+            color: var(--primary);
+        }
+
+        .checklist-ready-banner.all-complete .ready-banner-icon i {
+            color: var(--success);
+        }
+
+        .ready-banner-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .ready-banner-message {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Priority Group Sections */
+        .checklist-group {
+            margin-bottom: 1rem;
+        }
+
+        .checklist-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .checklist-group-header:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        .checklist-group.group-complete .checklist-group-header {
+            opacity: 0.7;
+        }
+
+        .group-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .group-toggle-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .group-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .checklist-group.required .group-icon { color: var(--error, #ef4444); }
+        .checklist-group.recommended .group-icon { color: var(--warning, #f59e0b); }
+        .checklist-group.optional .group-icon { color: var(--text-muted); }
+
+        .group-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .group-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        .group-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .group-done-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--success);
+        }
+
+        .group-progress-bar {
+            width: 80px;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .group-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+            border-radius: 3px;
+        }
+
+        .checklist-group .checklist-items {
+            padding-left: 1rem;
+            margin-top: 0.5rem;
+        }
+
         /* Onboarding Organization Selector */
         .onboarding-org-selector {
             display: flex;
@@ -550,6 +696,7 @@
         .admin-card-icon.indigo { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
         .admin-card-icon.pink { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
         .admin-card-icon.cyan { background: rgba(34, 211, 238, 0.15); color: #22d3ee; }
+        .admin-card-icon.amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 
         .admin-card-title { font-size: 1.1rem; font-weight: 600; }
         .admin-card-description { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
@@ -716,11 +863,7 @@
                     </button>
                     <button class="admin-tab" data-tab="onboarding" onclick="switchTab('onboarding')">
                         <i data-lucide="list-checks"></i>
-                        Onboarding
-                    </button>
-                    <button class="admin-tab" data-tab="daily-ops" onclick="switchTab('daily-ops')">
-                        <i data-lucide="calendar-check"></i>
-                        Daily Ops
+                        Onboarding Status
                     </button>
                 </div>
 
@@ -737,6 +880,26 @@
                             <h2>Platform Administration</h2>
                         </div>
                         <div class="admin-grid" style="margin-bottom: 2rem;">
+                            <div class="admin-card" onclick="switchTab('setup')">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon green">
+                                        <i data-lucide="sparkles"></i>
+                                    </div>
+                                    <div class="admin-card-title">Setup New Organization</div>
+                                </div>
+                                <div class="admin-card-description">Launch the setup wizard to create and configure a new organization</div>
+                            </div>
+
+                            <div class="admin-card" onclick="switchTab('onboarding')">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon blue">
+                                        <i data-lucide="list-checks"></i>
+                                    </div>
+                                    <div class="admin-card-title">Onboarding Status</div>
+                                </div>
+                                <div class="admin-card-description">Track onboarding progress and checklist completion for organizations</div>
+                            </div>
+
                             <a href="/admin-platform.html" class="admin-card">
                                 <div class="admin-card-header">
                                     <div class="admin-card-icon indigo">
@@ -786,7 +949,63 @@
                                 </div>
                                 <div class="admin-card-description">Define organizational values and ethics</div>
                             </a>
+
+                            <a href="/admin-agent-categories.html" class="admin-card">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon amber">
+                                        <i data-lucide="tags"></i>
+                                    </div>
+                                    <div class="admin-card-title">Agent Categories</div>
+                                </div>
+                                <div class="admin-card-description">Manage agent category taxonomy and organization</div>
+                            </a>
+
+                            <a href="/admin.html" class="admin-card">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon blue">
+                                        <i data-lucide="users"></i>
+                                    </div>
+                                    <div class="admin-card-title">User Management</div>
+                                </div>
+                                <div class="admin-card-description">Manage user accounts, roles, and permissions</div>
+                            </a>
+
+                            <a href="/admin-org-members.html" class="admin-card">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon green">
+                                        <i data-lucide="users"></i>
+                                    </div>
+                                    <div class="admin-card-title">Team Members</div>
+                                </div>
+                                <div class="admin-card-description">Manage organization team members and permissions</div>
+                            </a>
+
+                            <div class="admin-card" onclick="showConversationsPanel()">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon indigo">
+                                        <i data-lucide="message-square"></i>
+                                    </div>
+                                    <div class="admin-card-title">Conversations</div>
+                                </div>
+                                <div class="admin-card-description">View and manage all user conversations</div>
+                                <div id="conversationCount" class="admin-card-badge">Loading...</div>
+                            </div>
+
+                            <div class="admin-card" onclick="showSessionsPanel()">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon purple">
+                                        <i data-lucide="clipboard-list"></i>
+                                    </div>
+                                    <div class="admin-card-title">Align 120 Sessions</div>
+                                </div>
+                                <div class="admin-card-description">View and manage all Align 120 sessions</div>
+                                <div id="sessionCount" class="admin-card-badge">Loading...</div>
+                            </div>
                         </div>
+
+                        <!-- Expandable Panels (for Conversations & Sessions) -->
+                        <div id="conversationsPanel" style="display: none; margin-bottom: 1.5rem;"></div>
+                        <div id="sessionsPanel" style="display: none; margin-bottom: 1.5rem;"></div>
                     </div>
 
                     <!-- System Management -->
@@ -872,25 +1091,6 @@
                             <div class="admin-card-description">Configure business roles</div>
                         </a>
 
-                        <a href="/admin.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon purple">
-                                    <i data-lucide="user-plus"></i>
-                                </div>
-                                <div class="admin-card-title">User Management</div>
-                            </div>
-                            <div class="admin-card-description">Manage team members and invitations</div>
-                        </a>
-
-                        <a href="/admin-org-members.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon cyan">
-                                    <i data-lucide="users"></i>
-                                </div>
-                                <div class="admin-card-title">Team Members</div>
-                            </div>
-                            <div class="admin-card-description">View and manage team members</div>
-                        </a>
                     </div>
 
                     <!-- Content & Assets -->
@@ -943,61 +1143,6 @@
                     <div id="onboardingContainer">
                         <p style="color: var(--text-muted);">Loading onboarding checklist...</p>
                     </div>
-                </div>
-
-                <!-- Daily Ops Tab -->
-                <div class="tab-content" id="tab-daily-ops">
-                    <div class="section-header">
-                        <i data-lucide="users"></i>
-                        <h2>User & Access Management</h2>
-                    </div>
-                    <div class="admin-grid" style="margin-bottom: 2rem;">
-                        <a href="/admin.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon blue">
-                                    <i data-lucide="users"></i>
-                                </div>
-                                <div class="admin-card-title">User Management</div>
-                            </div>
-                            <div class="admin-card-description">Manage user accounts, roles, and permissions</div>
-                        </a>
-
-                        <a href="/admin-org-members.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon green">
-                                    <i data-lucide="users"></i>
-                                </div>
-                                <div class="admin-card-title">Team Members</div>
-                            </div>
-                            <div class="admin-card-description">Manage organization team members and permissions</div>
-                        </a>
-
-                        <div class="admin-card" onclick="showConversationsPanel()">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon indigo">
-                                    <i data-lucide="message-square"></i>
-                                </div>
-                                <div class="admin-card-title">Conversations</div>
-                            </div>
-                            <div class="admin-card-description">View and manage all user conversations</div>
-                            <div id="conversationCount" class="admin-card-badge">Loading...</div>
-                        </div>
-
-                        <div class="admin-card" onclick="showSessionsPanel()">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon purple">
-                                    <i data-lucide="clipboard-list"></i>
-                                </div>
-                                <div class="admin-card-title">Align 120 Sessions</div>
-                            </div>
-                            <div class="admin-card-description">View and manage all Align 120 sessions</div>
-                            <div id="sessionCount" class="admin-card-badge">Loading...</div>
-                        </div>
-                    </div>
-
-                    <!-- Expandable Panels -->
-                    <div id="conversationsPanel" style="display: none; margin-bottom: 1.5rem;"></div>
-                    <div id="sessionsPanel" style="display: none; margin-bottom: 1.5rem;"></div>
                 </div>
 
             </div>

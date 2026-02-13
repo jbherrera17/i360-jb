@@ -801,63 +801,108 @@
             }
         }
 
-        // Setup checklist items
+        // Setup checklist items - consistent with OnboardingChecklist (onboarding-checklist.js)
         const setupItems = [
+            // === REQUIRED ===
             {
                 id: 'org-created',
                 title: 'Organization Created',
                 icon: 'building-2',
-                link: null, // Already on this page
+                link: null,
+                priority: 'required',
                 check: (data) => !!data.org
             },
             {
-                id: 'tier-configured',
-                title: 'Subscription Tier',
-                icon: 'layers',
-                link: isPlatformAdmin ? 'admin-platform.html' : null,
-                check: (data) => data.org?.subscription_tier && data.org.subscription_tier !== 'none'
-            },
-            {
                 id: 'admin-assigned',
-                title: 'Admin User',
+                title: 'Admin User Assigned',
                 icon: 'user-check',
                 link: 'admin-org-members.html',
+                priority: 'required',
                 check: (data) => data.members?.some(m => m.role === 'admin' || m.role === 'owner')
             },
             {
+                id: 'tier-configured',
+                title: 'Subscription Tier Configured',
+                icon: 'layers',
+                link: isPlatformAdmin ? 'admin-platform.html' : null,
+                priority: 'required',
+                check: (data) => data.org?.subscription_tier && data.org.subscription_tier !== 'none'
+            },
+            {
+                id: 'soul-config',
+                title: 'Soul Configuration',
+                icon: 'heart',
+                link: 'soul-configuration.html',
+                priority: 'required',
+                check: (data) => !!data.soulConfig
+            },
+            {
                 id: 'departments-created',
-                title: 'Departments',
+                title: 'Departments Created',
                 icon: 'git-branch',
                 link: 'admin-departments.html',
+                priority: 'required',
                 check: (data) => data.departments?.length > 0
             },
+            {
+                id: 'users-invited',
+                title: 'Invite Team Members',
+                icon: 'users',
+                link: 'admin-org-members.html',
+                priority: 'required',
+                check: (data) => data.members?.length >= 2
+            },
+
+            // === RECOMMENDED ===
             {
                 id: 'roles-defined',
                 title: 'Roles Defined',
                 icon: 'shield',
                 link: 'roles.html',
+                priority: 'recommended',
                 check: (data) => data.roles?.length > 0
             },
             {
-                id: 'users-invited',
-                title: 'Team Members',
-                icon: 'users',
-                link: 'admin-org-members.html',
-                check: (data) => data.members?.length >= 1
-            },
-            {
                 id: 'branding-configured',
-                title: 'Branding',
+                title: 'Branding Configured',
                 icon: 'palette',
-                link: null, // Already on this page
+                link: null,
+                priority: 'recommended',
                 check: (data) => !!(data.org?.settings?.logo_url || data.org?.settings?.primary_color)
             },
             {
+                id: 'first-agent',
+                title: 'First Agent Created',
+                icon: 'bot',
+                link: 'agents.html',
+                priority: 'recommended',
+                check: (data) => data.agentCount > 0
+            },
+            {
+                id: 'context-assets',
+                title: 'Context Assets Added',
+                icon: 'file-text',
+                link: 'context.html',
+                priority: 'recommended',
+                check: (data) => data.contextCount > 0
+            },
+
+            // === OPTIONAL ===
+            {
                 id: 'resources-assigned',
-                title: 'Resources',
+                title: 'Resources Configured',
                 icon: 'puzzle',
                 link: 'admin-resource-access.html',
+                priority: 'optional',
                 check: (data) => data.hasResources
+            },
+            {
+                id: 'first-conversation',
+                title: 'First Conversation',
+                icon: 'message-circle',
+                link: 'chat.html',
+                priority: 'optional',
+                check: (data) => data.hasConversations
             }
         ];
 
@@ -875,16 +920,23 @@
                 members: [],
                 departments: [],
                 roles: [],
-                hasResources: false
+                agentCount: 0,
+                contextCount: 0,
+                hasResources: false,
+                soulConfig: null,
+                hasConversations: false
             };
 
             try {
                 // Load data in parallel
-                const [membersRes, deptsRes, rolesRes, agentsRes] = await Promise.allSettled([
+                const [membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes] = await Promise.allSettled([
                     fetch(`/api/org-members/${orgId}`, { headers }),
                     fetch('/api/departments', { headers }),
                     fetch('/api/roles', { headers }),
-                    fetch('/api/agents?limit=1', { headers })
+                    fetch('/api/agents?limit=100', { headers }),
+                    fetch('/api/context?limit=1', { headers }),
+                    fetch(`/api/soul-config?org_id=${orgId}&scope=organization`, { headers }),
+                    fetch('/api/conversations?limit=1', { headers })
                 ]);
 
                 if (membersRes.status === 'fulfilled' && membersRes.value?.ok) {
@@ -904,7 +956,26 @@
 
                 if (agentsRes.status === 'fulfilled' && agentsRes.value?.ok) {
                     const data = await agentsRes.value.json();
-                    setupData.hasResources = (data.data?.length || 0) > 0;
+                    const agents = data.data || [];
+                    setupData.agentCount = agents.length;
+                    setupData.hasResources = agents.length > 0;
+                }
+
+                if (contextRes.status === 'fulfilled' && contextRes.value?.ok) {
+                    const data = await contextRes.value.json();
+                    setupData.contextCount = (data.data || []).length;
+                }
+
+                if (soulRes.status === 'fulfilled' && soulRes.value?.ok) {
+                    const data = await soulRes.value.json();
+                    const config = data.data || data;
+                    setupData.soulConfig = (config && (config.identity || config.values)) ? config : null;
+                }
+
+                if (convoRes.status === 'fulfilled' && convoRes.value?.ok) {
+                    const data = await convoRes.value.json();
+                    const convos = data.data || data.conversations || [];
+                    setupData.hasConversations = convos.length > 0;
                 }
 
             } catch (error) {
@@ -913,6 +984,13 @@
 
             renderSetupProgress(setupData);
         }
+
+        // Priority group definitions
+        const priorityGroups = [
+            { key: 'required', label: 'Required', color: 'var(--error, #ef4444)' },
+            { key: 'recommended', label: 'Recommended', color: 'var(--warning, #f59e0b)' },
+            { key: 'optional', label: 'Optional', color: 'var(--text-muted)' }
+        ];
 
         // Render setup progress
         function renderSetupProgress(data) {
@@ -924,33 +1002,55 @@
             const completed = results.filter(r => r.completed).length;
             const total = results.length;
             const percentage = Math.round((completed / total) * 100);
+            const requiredDone = results.filter(r => r.priority === 'required').every(r => r.completed);
 
             // Update progress bar and badge
             document.getElementById('onboarding-progress-fill').style.width = `${percentage}%`;
             document.getElementById('onboarding-progress-badge').innerHTML =
                 percentage === 100
                     ? '<span style="color: var(--success);">✓ Complete</span>'
-                    : `<span style="color: var(--text-secondary);">${completed}/${total} completed</span>`;
+                    : requiredDone
+                        ? `<span style="color: var(--primary);">✓ Ready — ${completed}/${total} completed</span>`
+                        : `<span style="color: var(--text-secondary);">${completed}/${total} completed</span>`;
 
-            // Render checklist items
+            // Group by priority
+            const grouped = {};
+            for (const group of priorityGroups) {
+                grouped[group.key] = results.filter(r => r.priority === group.key);
+            }
+
+            // Render grouped checklist items
             const container = document.getElementById('onboarding-checklist');
-            container.innerHTML = results.map(item => `
-                <div class="setup-item ${item.completed ? 'completed' : 'pending'}"
-                     ${!item.completed && item.link ? `onclick="window.location.href='${item.link}'"` : ''}>
-                    <div class="setup-item-icon">
-                        <i data-lucide="${item.completed ? 'check' : item.icon}"></i>
-                    </div>
-                    <div class="setup-item-content">
-                        <div class="setup-item-title">${item.title}</div>
-                        <div class="setup-item-status">${item.completed ? 'Configured' : 'Not configured'}</div>
-                    </div>
-                    ${!item.completed && item.link ? `
-                        <div class="setup-item-arrow">
-                            <i data-lucide="chevron-right"></i>
+            container.innerHTML = priorityGroups.map(group => {
+                const items = grouped[group.key];
+                if (!items || items.length === 0) return '';
+                const groupCompleted = items.filter(r => r.completed).length;
+                return `
+                    <div style="grid-column: 1 / -1; margin-bottom: 0.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; color: ${group.color}; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <span>${group.label}</span>
+                            <span style="font-weight: 400; color: var(--text-muted);">${groupCompleted}/${items.length}</span>
                         </div>
-                    ` : ''}
-                </div>
-            `).join('');
+                    </div>
+                    ${items.map(item => `
+                        <div class="setup-item ${item.completed ? 'completed' : 'pending'}"
+                             ${!item.completed && item.link ? `onclick="window.location.href='${item.link}'"` : ''}>
+                            <div class="setup-item-icon">
+                                <i data-lucide="${item.completed ? 'check' : item.icon}"></i>
+                            </div>
+                            <div class="setup-item-content">
+                                <div class="setup-item-title">${item.title}</div>
+                                <div class="setup-item-status">${item.completed ? 'Configured' : 'Not configured'}</div>
+                            </div>
+                            ${!item.completed && item.link ? `
+                                <div class="setup-item-arrow">
+                                    <i data-lucide="chevron-right"></i>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                `;
+            }).join('');
 
             // Re-initialize icons
             if (typeof lucide !== 'undefined') {

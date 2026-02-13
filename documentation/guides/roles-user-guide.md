@@ -1,7 +1,7 @@
 # Title Management User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 11, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -56,8 +56,8 @@ System titles are automatically tagged with all domain-related tags for their de
 ## Accessing Title Management
 
 1. Log into Insight 360
-2. In the sidebar, find **SynergiNexus** section
-3. Click **Title Management**
+2. Navigate to the **Administrator** hub page
+3. Click **Title Management** (or go directly to `/roles.html`)
 
 ---
 
@@ -67,9 +67,9 @@ System titles are automatically tagged with all domain-related tags for their de
 
 Summary statistics at the top:
 - **Total Titles**: All titles in the system
-- **Departments**: Number of departments covered
-- **Levels**: Title levels in use
-- **With Tags**: Titles that have tags assigned
+- **Responsibilities**: Number of responsibilities defined
+- **Templates**: Pre-built role templates available
+- **Users Assigned**: Users currently assigned to titles
 
 ### Tabs
 
@@ -140,6 +140,18 @@ You can have multiple titles:
 ---
 
 ## For Administrators
+
+### Using Templates
+
+The page header includes a **Templates** button that opens a modal with pre-built role templates.
+
+1. Click the **Templates** button in the header
+2. Browse available role templates by department
+3. Select a template to pre-fill a new title with recommended settings (level, tags, responsibilities)
+4. Customize the pre-filled values as needed
+5. Save the new title
+
+This is the fastest way to set up standard positions across departments.
 
 ### Creating a Title
 

@@ -52,35 +52,44 @@
             background: var(--primary);
         }
 
-        /* Right panel for conversation history */
+        /* Right panel for conversation history - matches details-panel pattern */
         .chat-history-panel {
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            max-height: 100vh;
             overflow: hidden;
+            margin: var(--spacing-lg, 1.5rem) var(--spacing-lg, 1.5rem) var(--spacing-lg, 1.5rem) 0;
+            height: calc(100vh - 3rem);
+            position: relative;
         }
 
         .chat-history-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem;
+            padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
             border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            border-radius: 12px 12px 0 0;
             flex-shrink: 0;
         }
 
         .chat-history-header h3 {
             margin: 0;
-            font-size: 0.95rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .chat-history-panel .conversation-list {
-            flex: 1 1 auto;
+            flex: 1;
+            max-height: none;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 0.5rem;
@@ -124,17 +133,24 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 0.75rem;
         }
 
         .chat-history-panel .conversation-user {
             font-size: 0.75rem;
             color: var(--text-secondary);
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
 
         .chat-history-panel .conversation-date {
             font-size: 0.7rem;
             color: var(--text-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .chat-history-panel .conversation-actions {

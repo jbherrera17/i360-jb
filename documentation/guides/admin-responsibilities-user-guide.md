@@ -1,7 +1,7 @@
 # Responsibilities Management User Guide
 
 **For:** Insight 360 Administrators
-**Last Updated:** January 21, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 

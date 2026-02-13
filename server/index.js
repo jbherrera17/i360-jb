@@ -161,7 +161,7 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://cdn.sheetjs.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "blob:", "https:"],
             mediaSrc: ["'self'", "blob:", "https:"],
@@ -171,6 +171,8 @@ app.use(helmet({
                 "https://api.openai.com",
                 "https://*.supabase.co",
                 "https://unpkg.com",
+                "https://cdn.jsdelivr.net",
+                "https://cdn.sheetjs.com",
                 "https://api.mindstudio.ai"
             ],
             frameSrc: [

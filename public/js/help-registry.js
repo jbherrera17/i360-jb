@@ -188,9 +188,34 @@ const HelpRegistry = {
             file: '/api/docs/soul-configuration-user-guide.md',
             title: 'Soul Configuration Help'
         },
+        // Agent Categories
+        '/admin-agent-categories': {
+            file: '/api/docs/admin-agent-categories-user-guide.md',
+            title: 'Agent Categories Help'
+        },
         '/synerginexus': {
             file: '/api/docs/synerginexus-user-guide.md',
             title: 'SynergiNexus Help'
+        },
+        // Thought Leadership
+        '/thought-leadership': {
+            file: '/api/docs/thought-leadership-user-guide.md',
+            title: 'Thought Leadership Help'
+        },
+        // Tag Management
+        '/tags': {
+            file: '/api/docs/tags-user-guide.md',
+            title: 'Tag Management Help'
+        },
+        // Title Management
+        '/roles': {
+            file: '/api/docs/roles-user-guide.md',
+            title: 'Title Management Help'
+        },
+        // Workflows
+        '/workflows': {
+            file: '/api/docs/workflow-user-guide.md',
+            title: 'Workflows Help'
         }
     },
 

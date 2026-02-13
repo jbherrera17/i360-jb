@@ -1,7 +1,7 @@
 # Higgins User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -13,7 +13,7 @@ Higgins is your AI guide to Insight 360. Named after the patient teacher from "M
 - **i360 Expertise**: Higgins knows the system inside and out and can guide you through features
 - **Model flexibility**: Switch between Claude, GPT, Gemini, and Perplexity models mid-conversation
 - **Real-time information**: Enable web search for current data
-- **Voice output**: Hear responses read aloud with multiple voice options
+- **Voice I/O**: Dictate messages with speech-to-text and hear responses read aloud
 - **File analysis**: Upload documents, images, and PDFs for AI review
 - **Image generation**: Request AI-generated images directly in chat
 - **Consistent voice**: Higgins responds with a warm, values-driven personality regardless of which model you select
@@ -27,7 +27,9 @@ Higgins is your AI guide to Insight 360. Named after the patient teacher from "M
 | **i360 Help** | Ask how to use any feature, module, or workflow |
 | **Multi-Model Chat** | Choose from Claude, GPT, Gemini, and Perplexity families |
 | **Web Search** | Query the internet for real-time information |
+| **Voice Input** | Dictate messages using speech-to-text |
 | **Voice Output** | Hear AI responses read aloud |
+| **Charts & Data** | View interactive charts and data visualizations in responses |
 | **File Upload** | Analyze images, PDFs, code files, and documents |
 | **Image Generation** | Generate images from text descriptions |
 | **Conversations** | Save, organize, and revisit past chats |
@@ -64,8 +66,12 @@ All links in Higgins responses (including those in tables and markdown) automati
 ### Starting a Chat with Higgins
 
 1. Click **Higgins** in the sidebar (or use Dashboard Quick Action)
-2. You'll see the welcome message with quick action buttons
-3. Type your message in the input box at the bottom
+2. You'll see the welcome message with four quick action buttons:
+   - **Explain simply** — Get plain-language explanations
+   - **Write code** — Generate or debug code
+   - **Analyze doc** — Upload and analyze documents
+   - **Search web** — Find current information online
+3. Click a quick action or type your own message in the input box at the bottom
 4. Press **Enter** or click the send button
 
 ### Getting i360 Help
@@ -104,16 +110,27 @@ Higgins will provide clear, step-by-step guidance. Higgins automatically has acc
 
 **Note:** Perplexity models have built-in search included with every response, so they always return citations and current information without needing to toggle the search button.
 
-### Using Voice Output
+### Using Voice
+
+Enabling the Voice toggle activates both voice input (speech-to-text) and voice output (text-to-speech).
 
 **Enabling Voice:**
 1. Toggle the **Voice** button (microphone icon) to ON
-2. When voice is enabled, responses are read aloud
+2. This enables the full voice subsystem
 
-**Choosing a Voice:**
-1. Select a voice profile from the voice dropdown:
+**Voice Input (Speech-to-Text):**
+1. When voice is enabled, a microphone button appears in the input area
+2. Click the microphone button to start recording
+3. A recording modal appears showing "Listening..." status
+4. Speak your message naturally
+5. Click **Stop** to end recording — your speech is transcribed into the message input
+6. Click **Cancel** to discard the recording
+
+**Voice Output (Text-to-Speech):**
+1. When voice is enabled, responses are automatically read aloud
+2. Select a voice profile from the voice dropdown:
    - Nova, Alloy, Echo, Fable, Onyx, Shimmer
-2. Click the speaker icon on any message to replay
+3. Click the speaker icon on any message to replay
 
 ### Generating Images
 
@@ -124,14 +141,20 @@ Higgins can generate images on request:
 4. The response shows both your original prompt and the AI-revised prompt used for generation
 5. You can copy the revised prompt to modify and regenerate
 
+### Charts and Data Visualizations
+
+Higgins can generate interactive charts and data visualizations within responses:
+1. Ask for data analysis: "Show me a chart of quarterly revenue" or "Create a radar chart comparing departments"
+2. Charts render directly in the conversation as interactive visualizations
+3. Supported chart types include bar charts, radar charts, and other data displays
+
 ### Uploading Files
 
 1. Click the **Attach** button (paperclip icon)
 2. Select a file from your computer:
-   - **Images**: PNG, JPG, GIF, WebP
-   - **Documents**: PDF, TXT, MD
-   - **Data**: CSV, JSON
-   - **Code**: Various programming language files
+   - **Images**: PNG, JPG, GIF, WebP (and other image formats)
+   - **Documents**: PDF, DOCX, TXT, MD
+   - **Data**: CSV
 3. The file appears as a preview
 4. Type your question about the file
 5. Send—Higgins analyzes the content

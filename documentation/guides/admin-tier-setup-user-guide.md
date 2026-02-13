@@ -1,7 +1,7 @@
 # Tier Setup User Guide
 
 **For:** Synergi Platform Administrators
-**Last Updated:** January 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -18,7 +18,7 @@ The Tier Setup page allows platform administrators to configure subscription tie
 | **Configure Tier Limits** | Set maximum members, agents, workflows, skills per tier |
 | **Manage Features** | Enable/disable features like SSO, white-label, API access |
 | **Compare Tiers** | View side-by-side comparison of all tier capabilities |
-| **Preview Changes** | See how limit changes affect existing organizations |
+| **View Module Access** | See which platform modules are accessible at each tier |
 
 ---
 
@@ -36,15 +36,17 @@ The Tier Setup page allows platform administrators to configure subscription tie
 ### Modifying Tier Limits
 
 1. Find the tier you want to modify
-2. Click **Edit** on the tier card
-3. Adjust the resource limits:
+2. Click **Edit** on the tier card to switch it to edit mode — labels become inline input fields
+3. Adjust the resource limits directly in the inline inputs:
    - **Max Members**: Team size limit
    - **Max Clients**: Client records (Agency only)
    - **Max Agents**: AI agent configurations
    - **Max Workflows**: Automated workflow definitions
    - **Max Skills**: Custom skill templates
    - **Max Context Assets**: Knowledge base items
-4. Click **Save** to apply changes
+   - **Max Research Studios**: Research studio instances
+   - **Max Monthly API Calls**: API call quota per month
+4. Click **Save** to apply changes, or **Cancel** to discard edits
 5. Changes take effect immediately for all organizations on that tier
 
 ### Managing Tier Features
@@ -55,23 +57,29 @@ The Tier Setup page allows platform administrators to configure subscription tie
    - **API Access**: External API connectivity
    - **Priority Support**: Escalated support queue
    - **Custom Modules**: Additional module configuration
+   - **Advanced Analytics**: Enhanced reporting and analytics dashboards
+   - **Client Portal**: Client-facing portal access (Agency tier)
 2. Toggle features on/off as needed
 3. Click **Save All Changes** to persist
 
 ### Using the Comparison Table
 
-1. Scroll down to the **Tier Comparison** section
+1. Scroll down to the **Feature Comparison** section
 2. View all tiers side-by-side with their limits and features
 3. Use this table when explaining upgrade benefits to customers
-4. Export the comparison as PDF for sales materials
 
-### Checking Impact of Changes
+### Viewing Module Access per Tier
 
-1. Before saving major limit changes, click **Preview Impact**
-2. View how many organizations are affected:
-   - Organizations currently under the new limit
-   - Organizations currently over the new limit
-3. Organizations over the limit will see upgrade prompts but existing resources remain functional
+Each tier card includes a **Module Access** section showing which platform modules are available at that subscription level.
+
+| Tier | Accessible Modules |
+|------|--------------------|
+| **Starter** | Dashboard, Higgins, Agents, Briefing |
+| **Business** | All Starter + Align120, Strategy120, Execute120, Research Studio, Thought Leadership |
+| **Enterprise** | All Business + Soul Configuration, SynergiNexus, Advanced Analytics |
+| **Agency** | All Enterprise + Agency Dashboard, Client Portal, White-Label Branding |
+
+Module access is controlled via the `platform_modules` and `org_module_access` tables. Changes to tier module assignments affect all organizations on that tier.
 
 ---
 
@@ -80,7 +88,6 @@ The Tier Setup page allows platform administrators to configure subscription tie
 - Make limit increases during business hours for immediate customer benefit
 - Make limit decreases with advance notice to affected organizations
 - Keep a reasonable gap between tier limits to encourage upgrades
-- Document the reasoning for limit changes in the change log
 - Test feature toggles on a test organization before rolling out globally
 
 ---
@@ -88,24 +95,28 @@ The Tier Setup page allows platform administrators to configure subscription tie
 ## Tier Configuration Reference
 
 ### Starter Tier (Default)
-- 3 members, 5 agents, 3 workflows
-- Basic modules: Dashboard, Higgins, Agents, Briefing
-- No SSO, API, or white-label
+- 3 members, 0 clients, 5 agents, 3 workflows, 10 skills, 50 context assets
+- 1 research studio, 1,000 monthly API calls
+- Features: None (no SSO, API, white-label, advanced analytics, or client portal)
+- Modules: Dashboard, Higgins, Agents, Briefing
 
 ### Business Tier
-- 10 members, 25 agents, 15 workflows
-- Adds: Align120, Strategy, Research Studio, Thought Leadership
-- API access included
+- 10 members, 0 clients, 25 agents, 15 workflows, 50 skills, 200 context assets
+- 3 research studios, 10,000 monthly API calls
+- Features: API access, advanced analytics
+- Modules: All Starter + Align120, Strategy120, Execute120, Research Studio, Thought Leadership
 
 ### Enterprise Tier
-- 100 members, 100 agents, 50 workflows
-- Adds: SSO integration, priority support
-- Full module access except Agency features
+- 100 members, 0 clients, 100 agents, 50 workflows, 200 skills, 1,000 context assets
+- 10 research studios, 100,000 monthly API calls
+- Features: SSO, API access, priority support, advanced analytics
+- Modules: All Business + Soul Configuration, SynergiNexus
 
 ### Agency Tier
-- 50 members, 100 clients, 200 agents, 100 workflows
-- Adds: White-label branding, client portal
-- Full module access including Agency Dashboard
+- 50 members, 100 clients, 200 agents, 100 workflows, 500 skills, 2,000 context assets
+- 20 research studios, 200,000 monthly API calls
+- Features: SSO, API access, white-label, priority support, advanced analytics, client portal
+- Modules: All Enterprise + Agency Dashboard, Client Portal, White-Label Branding
 
 ---
 

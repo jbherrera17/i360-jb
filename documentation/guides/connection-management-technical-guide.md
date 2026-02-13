@@ -1,7 +1,7 @@
 # Connection Management Technical Guide
 
 **For:** Insight 360 Developers
-**Last Updated:** January 21, 2026
+**Last Updated:** Wednesday, February 12, 2026
 **Phase:** 40 - Connection Management Infrastructure
 
 ---
@@ -107,7 +107,7 @@ CREATE TABLE user_ai_assignments (
 
 #### User Capabilities
 ```
-GET /api/connections/my-capabilities
+GET /api/connections/capabilities
 Returns: All AI capabilities accessible to the current user
 
 Response:
@@ -207,7 +207,7 @@ SELECT * FROM okr_supporting_capabilities WHERE okr_id = 'okr-uuid';
 **Purpose:** User dashboard showing accessible AI tools
 
 **API Calls:**
-- `GET /api/connections/my-capabilities`
+- `GET /api/connections/capabilities`
 
 **Key Elements:**
 - Summary cards (counts by type)
@@ -299,7 +299,7 @@ module.exports = function(supabase) {
     const router = express.Router();
 
     // My capabilities
-    router.get('/my-capabilities', async (req, res) => {...});
+    router.get('/capabilities', async (req, res) => {...});
 
     // Responsibility AI mappings
     router.get('/responsibilities/:id/ai', async (req, res) => {...});
@@ -327,7 +327,7 @@ Test files should cover:
 describe('Connection Management', () => {
     it('should return user capabilities from all sources', async () => {
         const res = await request(app)
-            .get('/api/connections/my-capabilities')
+            .get('/api/connections/capabilities')
             .set('Authorization', `Bearer ${testToken}`);
 
         expect(res.body.success).toBe(true);

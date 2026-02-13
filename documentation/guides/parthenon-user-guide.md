@@ -1,7 +1,7 @@
 # Parthenon User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -342,4 +342,4 @@ When you interact with agents or chat:
 
 **Can't delete a role or process:**
 - Items are soft-deleted by default (archived)
-- Use `?hard=true` parameter for permanent deletion (admin only)
+- Contact an administrator for permanent deletion if needed

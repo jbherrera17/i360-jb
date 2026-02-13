@@ -1,7 +1,7 @@
 # Align 120 User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 31, 2025
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 

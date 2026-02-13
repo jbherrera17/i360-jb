@@ -1,7 +1,7 @@
 # My AI Capabilities User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 21, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -12,7 +12,8 @@ My Capabilities is your personalized dashboard showing all AI tools you can acce
 - **Role**: Your business role level determines base access
 - **Department**: Department assignments provide additional tools
 - **Responsibilities**: Selected duties unlock recommended capabilities
-- **Individual Assignments**: Custom access granted by administrators
+- **Direct Assignments**: Custom access granted by administrators
+- **Tag Matches**: Access via matching tags between your titles and AI tools
 
 Think of it as your personal AI toolkit—everything you're authorized to use in one place.
 
@@ -35,7 +36,7 @@ The My Capabilities page lets you:
 
 ### Viewing Your Capabilities
 
-1. Click **My Capabilities** in the sidebar under Admin
+1. Click **My Capabilities** in the sidebar (top-level navigation item)
 2. View the summary cards showing counts by type:
    - Agents you can use
    - Skills available to you
@@ -45,8 +46,8 @@ The My Capabilities page lets you:
 
 ### Filtering Capabilities
 
-1. Use the **Filter** dropdown at the top
-2. Select a capability type:
+1. Use the **filter chips** (pill-shaped buttons) at the top
+2. Click a capability type:
    - **All** - Show everything
    - **Agents** - AI assistants
    - **Skills** - Reusable skill definitions
@@ -64,7 +65,8 @@ Each capability card shows:
   - `Role` - Via your business role level
   - `Department` - Via department assignment
   - `Responsibility` - Via selected duties
-  - `Individual` - Direct assignment
+  - `Direct` - Direct assignment
+  - `Tag Match` - Access via matching tags
 
 ### Using a Capability
 
@@ -94,8 +96,9 @@ When you view this page, Insight 360:
 1. Queries your user profile for role and department
 2. Retrieves all junction table mappings (agent_roles, skill_roles, etc.)
 3. Checks responsibility-AI recommendations
-4. Applies any individual assignments (grants/revokes)
-5. Aggregates into a unified capability list
+4. Matches your tags against AI tool tags
+5. Applies any direct assignments (grants/revokes)
+6. Aggregates into a unified capability list
 
 ---
 

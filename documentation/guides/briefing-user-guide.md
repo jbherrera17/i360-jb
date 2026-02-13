@@ -1,7 +1,7 @@
 # Briefing User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -61,8 +61,8 @@ The Briefing interface provides:
 
 **Quick Navigation:**
 1. Use the arrow buttons next to the date
-2. Click left arrow for previous day
-3. Click right arrow for next day
+2. Click the left arrow to navigate to the History tab (to view past briefings)
+3. The right arrow returns to the current day's briefing
 
 **Full History:**
 1. Click the **History** tab
@@ -84,7 +84,6 @@ The Briefing interface provides:
 2. Each section shows:
    - Section name with icon badge
    - Assigned agent name
-   - Enabled/disabled status
 3. Click edit (pencil icon) to modify settings
 4. Click delete (trash icon) to remove
 
@@ -93,10 +92,10 @@ The Briefing interface provides:
 1. Click **Add Section** button
 2. Enter section details:
    - **Section Name**: Display title (e.g., "Market Intelligence")
-   - **Agent**: Choose from available agents (use category filter to narrow)
+   - **Category Filter**: Narrow the agent list by category
+   - **Agent**: Choose from available agents
    - **Prompt Template**: Optional custom prompt for the agent
    - **Icon**: Lucide icon name (e.g., "trending-up") - defaults to "file-text" if invalid
-   - **Enabled**: Whether to include in generation
 3. Click **Save Section**
 4. Section appears in the list
 
@@ -110,15 +109,6 @@ When selecting an agent for a section:
    - **Dot**: Relevant agent for your department
 4. Select "All Categories" to see all available agents
 5. Featured agents appear first for easy selection
-
-### Enabling and Disabling Sections
-
-You can temporarily disable a section without deleting it:
-1. In the Configuration tab, edit a section
-2. Toggle the enabled state
-3. Disabled sections are skipped during briefing generation
-4. Re-enable anytime to include in future briefings
-5. Useful for seasonal changes or testing
 
 ### Editing an Existing Section
 
@@ -147,8 +137,6 @@ Each section is powered by an agent and generates content based on:
 | **Agent** | AI agent that generates content |
 | **Prompt Template** | Custom instructions for the agent |
 | **Icon** | Visual identifier (Lucide icon name) |
-| **Enabled** | Whether to include in generation |
-| **Slug** | Auto-generated unique identifier |
 
 **Section Status During Generation:**
 - **Completed**: Successfully generated content
@@ -171,7 +159,7 @@ Each section is powered by an agent and generates content based on:
 - Choose agents that match section topics
 - Provide clear, actionable prompt templates
 - Test different agents to find the best fit
-- Ensure at least one section has an agent assigned and is enabled
+- Ensure at least one section has an agent assigned
 
 ### Scheduling Strategy
 - Schedule before your work starts
@@ -203,14 +191,13 @@ Each section is powered by an agent and generates content based on:
 ## Troubleshooting
 
 **Briefing not generating:**
-- Check that at least one section is configured and enabled
+- Check that at least one section is configured
 - Verify that sections have agents assigned to them
 - Ensure the assigned agents are active
 - Check browser console for error messages
 - Verify network connectivity
 
 **Missing sections in output:**
-- Verify the section is enabled in Configuration
 - Verify an agent is assigned to the section
 - Check the agent is active
 - Review the prompt template for clarity
@@ -219,7 +206,7 @@ Each section is powered by an agent and generates content based on:
 **Automatic briefings not running:**
 - Confirm schedule is enabled (toggle switch in Configuration)
 - Verify time and timezone settings are correct
-- Check that at least one section exists and is enabled
+- Check that at least one section exists
 - Note: The scheduler must be running on the server
 
 **Slow generation:**

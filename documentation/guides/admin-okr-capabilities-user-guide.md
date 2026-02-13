@@ -1,7 +1,7 @@
 # OKR Supporting Capabilities User Guide
 
 **For:** Insight 360 Users and Administrators
-**Last Updated:** January 21, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -35,7 +35,7 @@ The OKR Capabilities page lets you:
 
 ### Accessing OKR Capabilities
 
-1. Go to **Strategy 120** or your OKR dashboard
+1. Go to **Strategy (S2E)** or your OKR dashboard
 2. Find the OKR you want to analyze
 3. Click **View Capabilities** or the link icon
 
@@ -51,7 +51,6 @@ The header shows:
 The Key Results section lists:
 - Each key result title
 - Progress bar and percentage
-- Current vs. target values
 
 ### Viewing Supporting Actions
 
@@ -61,7 +60,6 @@ The **Supporting Actions** section shows:
   - **Supports**: Helps achieve the objective
   - **Measures**: Tracks progress on key results
   - **Drives**: Directly impacts outcomes
-  - **Reports**: Generates reports on progress
 - Action description
 
 ### Viewing Supporting Workflows

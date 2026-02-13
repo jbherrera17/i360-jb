@@ -1,7 +1,7 @@
 # Prompt Transformer Guide
 
 **Version:** 1.0.0
-**Date:** 2025-12-30
+**Last Updated:** Wednesday, February 12, 2026
 **Module:** Prompt-to-Asset Pipeline
 
 ---

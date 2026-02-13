@@ -1,7 +1,7 @@
 # Tag Management User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 11, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -47,8 +47,8 @@ Work activities and responsibilities.
 ## Accessing Tag Management
 
 1. Log into Insight 360
-2. In the sidebar, find **SynergiNexus** section
-3. Click **Tag Management**
+2. Navigate to the **Administrator** hub page
+3. Click **Tag Management** (or go directly to `/tags.html`)
 
 ---
 
@@ -73,7 +73,7 @@ Filter tags by category:
 ### View Modes
 
 - **Grid View**: Cards showing tag details
-- **List View**: Compact table format
+- **Hierarchy View**: Tree icon toggle that shows parent-child tag relationships
 
 ---
 
@@ -90,7 +90,6 @@ Filter tags by category:
 - Category (skill, domain, function)
 - Parent tag (if hierarchical)
 - Description
-- Usage count (how many titles use it)
 
 ### Understanding Tag Hierarchy
 
@@ -109,6 +108,21 @@ marketing (domain)
 - Inherit parent tag properties
 - Better filtering and matching
 
+### Page Tabs
+
+The tag management page has two tabs:
+
+**Browse Tags** (default)
+- Grid or hierarchy view of all tags
+- Filter by category
+- Search by name
+
+**Tag Hierarchy**
+- Displays tags in a parent-child tree view
+- Visually shows how tags are nested under their parents
+- Useful for understanding the full tag structure at a glance
+- Expand/collapse branches to navigate the hierarchy
+
 ### Searching Tags
 
 1. Use the search box
@@ -121,13 +135,13 @@ marketing (domain)
 
 ### Add a New Tag
 
-1. Click **Add Tag** button
+1. Click **New Tag** button
 2. Fill in the form:
    - **Name**: Short, lowercase, hyphenated (e.g., "data-analysis")
    - **Category**: skill, domain, or function
    - **Parent**: Optional, select parent tag for hierarchy
    - **Description**: Brief explanation of the tag
-3. Click **Create**
+3. Click **Create Tag**
 
 ### Naming Guidelines
 
@@ -157,16 +171,14 @@ marketing (domain)
 1. Find the tag in the grid
 2. Click the edit icon (pencil)
 3. Update fields as needed
-4. Click **Save**
+4. Click **Save Changes**
 
 **What You Can Change:**
 - Name
+- Category (via dropdown in the edit modal)
 - Description
 - Parent tag
 - Active status
-
-**What You Cannot Change:**
-- Category (create new tag instead)
 
 ### Deactivating Tags
 
@@ -246,7 +258,7 @@ Tags are assigned to titles, not directly to users. See [Title Management Guide]
 
 ## Permissions
 
-| Title | View | Create | Edit | Delete |
+| Role | View | Create | Edit | Delete |
 |------|------|--------|------|--------|
 | User | ✓ | - | - | - |
 | Dept Admin | ✓ | - | - | - |

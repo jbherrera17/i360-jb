@@ -66,6 +66,19 @@ module.exports = function(supabase) {
 
 
     // ============================================
+    // ADMIN VERIFICATION
+    // ============================================
+
+    /**
+     * GET /api/platform/admin/verify
+     * Lightweight check — if this returns 200, the user is a platform admin.
+     * The requirePlatformAdmin middleware (applied to all routes) handles the 401/403.
+     */
+    router.get('/admin/verify', (req, res) => {
+        res.json({ success: true, role: req.platformAdminRole });
+    });
+
+    // ============================================
     // PLATFORM CONFIGURATION
     // ============================================
 

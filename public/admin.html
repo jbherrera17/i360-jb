@@ -1239,10 +1239,6 @@
                     <i data-lucide="briefcase" style="width:16px;height:16px;margin-right:0.5rem;"></i>
                     Business Role Defaults
                 </button>
-                <button class="tab-btn" data-tab="categories">
-                    <i data-lucide="tags" style="width:16px;height:16px;margin-right:0.5rem;"></i>
-                    Agent Categories
-                </button>
             </div>
 
             <!-- Users Tab Content -->
@@ -1313,30 +1309,6 @@
                 </div>
             </div>
 
-            <!-- Agent Categories Tab Content -->
-            <div class="tab-content" id="categoriesTab">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <p style="color: var(--text-secondary); margin: 0;">
-                        Manage agent categories used throughout the platform. Categories organize agents by function.
-                    </p>
-                    <button class="btn btn-primary" onclick="openAddCategoryModal()">
-                        <i data-lucide="plus" style="width:18px;height:18px;"></i>
-                        Add Category
-                    </button>
-                </div>
-                <div class="table-container">
-                    <div class="table-header">
-                        <span class="table-title">Agent Categories</span>
-                        <span id="categoryTotal" style="color: var(--text-secondary);"></span>
-                    </div>
-                    <div id="categoriesTableContent">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            Loading categories...
-                        </div>
-                    </div>
-                </div>
-            </div>
 
         </div>
     </div>
@@ -1354,15 +1326,12 @@
         let businessRoles = [];
         let businessRoleDefaults = [];
         let departments = [];
-        let agentCategories = [];
-        let editingCategoryId = null;
         let organizations = [];
         let clients = [];
         let currentUserFilter = 'all'; // 'all', 'platform', 'agency', 'client'
 
         // Modal instances (ModalService)
         let userModal = null;
-        let categoryModal = null;
         let roadmapModal = null;
 
         // ============================================================================
@@ -1868,296 +1837,11 @@
                 loadBusinessRoleDefaults();
             }
 
-            // Load categories if switching to that tab
-            if (tabName === 'categories' && agentCategories.length === 0) {
-                loadAgentCategories();
-            }
         }
 
         async function loadBusinessRoleDefaults() {
             await fetchBusinessRoleDefaults();
             renderBusinessRolesGrid();
-        }
-
-        // ============================================================================
-        // Agent Categories Functions
-        // ============================================================================
-        async function fetchAgentCategories() {
-            try {
-                const response = await fetch('/api/agents/categories/all', {
-                    headers: getAuthHeaders()
-                });
-                const data = await response.json();
-                if (data.success) {
-                    agentCategories = data.data;
-                    return agentCategories;
-                }
-                return [];
-            } catch (error) {
-                console.error('Error fetching agent categories:', error);
-                return [];
-            }
-        }
-
-        async function loadAgentCategories() {
-            await fetchAgentCategories();
-            renderCategoriesTable();
-        }
-
-        function renderCategoriesTable() {
-            const tableContent = document.getElementById('categoriesTableContent');
-            const categoryTotal = document.getElementById('categoryTotal');
-
-            if (agentCategories.length === 0) {
-                tableContent.innerHTML = `
-                    <div class="empty-state">
-                        <i data-lucide="tags" class="empty-icon"></i>
-                        <p>No categories found</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
-            categoryTotal.textContent = `${agentCategories.length} categor${agentCategories.length !== 1 ? 'ies' : 'y'}`;
-
-            tableContent.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Key</th>
-                            <th>Description</th>
-                            <th>Sort Order</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${agentCategories.map(cat => `
-                            <tr style="${!cat.is_active ? 'opacity: 0.5;' : ''}">
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                        <span style="font-size: 1.5rem;">${cat.icon || '📁'}</span>
-                                        <div>
-                                            <div style="font-weight: 600;">${cat.display_name}</div>
-                                            <div style="font-size: 0.8rem; color: ${cat.color || 'var(--text-muted)'};">●</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><code style="background: var(--bg-tertiary); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${cat.key}</code></td>
-                                <td style="color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cat.description || '-'}</td>
-                                <td>${cat.sort_order || '-'}</td>
-                                <td>
-                                    <span class="role-badge ${cat.is_active ? 'user' : 'viewer'}">${cat.is_active ? 'Active' : 'Inactive'}</span>
-                                </td>
-                                <td>
-                                    <div class="actions-cell">
-                                        <button class="icon-btn" onclick="openEditCategoryModal('${cat.id}')" title="Edit category">
-                                            <i data-lucide="pencil" style="width:16px;height:16px;"></i>
-                                        </button>
-                                        <button class="icon-btn danger" onclick="handleDeleteCategory('${cat.id}')" title="Deactivate category">
-                                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            lucide.createIcons();
-        }
-
-        function buildCategoryFormContent(category = null) {
-            const isEdit = !!category;
-            return `
-                <form id="categoryForm">
-                    <input type="hidden" id="categoryId" value="${isEdit ? category.id : ''}">
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="categoryKey">Key *</label>
-                            <input type="text" id="categoryKey" class="form-input" placeholder="e.g., assessment" value="${isEdit ? (category.key || '') : ''}" required>
-                            <small style="color: var(--text-muted); font-size: 0.8rem;">Lowercase, no spaces (used internally)</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="categoryDisplayName">Display Name *</label>
-                            <input type="text" id="categoryDisplayName" class="form-input" placeholder="e.g., Assessment" value="${isEdit ? (category.display_name || '') : ''}" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="categoryDescription">Description</label>
-                        <input type="text" id="categoryDescription" class="form-input" placeholder="Brief description of this category" value="${isEdit ? (category.description || '') : ''}">
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="categoryIcon">Icon (Emoji)</label>
-                            <input type="text" id="categoryIcon" class="form-input" placeholder="📋" maxlength="4" value="${isEdit ? (category.icon || '') : ''}">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="categoryColor">Color</label>
-                            <input type="color" id="categoryColor" class="form-input" value="${isEdit ? (category.color || '#6366f1') : '#6366f1'}" style="height: 42px; padding: 4px;">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="categorySortOrder">Sort Order</label>
-                            <input type="number" id="categorySortOrder" class="form-input" placeholder="1" min="1" max="99" value="${isEdit ? (category.sort_order || '') : ''}">
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="categoryActiveGroup" style="display: ${isEdit ? 'block' : 'none'};">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="categoryIsActive" ${!isEdit || category.is_active ? 'checked' : ''}>
-                            <span>Active</span>
-                        </label>
-                    </div>
-                </form>
-            `;
-        }
-
-        function openAddCategoryModal() {
-            editingCategoryId = null;
-            categoryModal = ModalService.create({
-                title: 'Add Category',
-                content: buildCategoryFormContent(),
-                footer: `
-                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
-                    <button class="i360-btn i360-btn-primary" id="saveCategoryBtn">Save Category</button>
-                `,
-                width: 520,
-                draggable: true,
-                resizable: true,
-                onOpen: () => {
-                    lucide.createIcons();
-                    document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
-                }
-            });
-            categoryModal.open();
-        }
-
-        function openEditCategoryModal(categoryId) {
-            const category = agentCategories.find(c => c.id === categoryId);
-            if (!category) return;
-
-            editingCategoryId = categoryId;
-            categoryModal = ModalService.create({
-                title: 'Edit Category',
-                content: buildCategoryFormContent(category),
-                footer: `
-                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
-                    <button class="i360-btn i360-btn-primary" id="saveCategoryBtn">Save Category</button>
-                `,
-                width: 520,
-                draggable: true,
-                resizable: true,
-                onOpen: () => {
-                    lucide.createIcons();
-                    document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
-                }
-            });
-            categoryModal.open();
-        }
-
-        function closeCategoryModal() {
-            if (categoryModal) {
-                categoryModal.close();
-                categoryModal = null;
-            }
-            editingCategoryId = null;
-        }
-
-        async function handleSaveCategory() {
-            const key = document.getElementById('categoryKey').value.trim();
-            const displayName = document.getElementById('categoryDisplayName').value.trim();
-            const description = document.getElementById('categoryDescription').value.trim();
-            const icon = document.getElementById('categoryIcon').value.trim();
-            const color = document.getElementById('categoryColor').value;
-            const sortOrder = parseInt(document.getElementById('categorySortOrder').value) || 99;
-            const isActive = document.getElementById('categoryIsActive')?.checked ?? true;
-
-            if (!key || !displayName) {
-                ModalService.error('Key and Display Name are required');
-                return;
-            }
-
-            try {
-                let response;
-                if (editingCategoryId) {
-                    response = await fetch(`/api/agents/categories/${editingCategoryId}`, {
-                        method: 'PUT',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({
-                            key,
-                            display_name: displayName,
-                            description,
-                            icon,
-                            color,
-                            sort_order: sortOrder,
-                            is_active: isActive
-                        })
-                    });
-                } else {
-                    response = await fetch('/api/agents/categories', {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({
-                            key,
-                            display_name: displayName,
-                            description,
-                            icon,
-                            color,
-                            sort_order: sortOrder
-                        })
-                    });
-                }
-
-                const data = await response.json();
-                if (data.success) {
-                    ModalService.toast({ message: editingCategoryId ? 'Category updated' : 'Category created', type: 'success' });
-                    closeCategoryModal();
-                    await loadAgentCategories();
-                } else {
-                    ModalService.error(data.error || 'Failed to save category');
-                }
-            } catch (error) {
-                console.error('Error saving category:', error);
-                ModalService.error('Failed to save category');
-            }
-        }
-
-        async function handleDeleteCategory(categoryId) {
-            const confirmed = await ModalService.confirm({
-                title: 'Deactivate Category',
-                message: 'Are you sure you want to deactivate this category? Agents using it will still work but the category won\'t appear in dropdowns.',
-                type: 'warning',
-                confirmText: 'Deactivate',
-                cancelText: 'Cancel'
-            });
-
-            if (!confirmed) return;
-
-            try {
-                const response = await fetch(`/api/agents/categories/${categoryId}`, {
-                    method: 'DELETE',
-                    headers: getAuthHeaders()
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    ModalService.toast({ message: 'Category deactivated', type: 'success' });
-                    await loadAgentCategories();
-                } else {
-                    ModalService.error(data.error || 'Failed to deactivate category');
-                }
-            } catch (error) {
-                console.error('Error deleting category:', error);
-                ModalService.error('Failed to deactivate category');
-            }
         }
 
         function populateDepartmentDropdown() {

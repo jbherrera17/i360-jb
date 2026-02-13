@@ -1,7 +1,7 @@
 # Prompt Transformer User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -23,14 +23,13 @@ Without the Transformer, you would need to manually restructure prompts each tim
 
 ## What It Does
 
-The Prompt Transformer analyzes your system prompts and converts them into one of five structured output types:
+The Prompt Transformer analyzes your system prompts and converts them into one of four structured output types:
 
 | Output Type | What It Creates | Use Case |
 |-------------|-----------------|----------|
 | **Claude Skill** | A reusable workflow in Markdown format | Automating multi-step tasks in Claude Code |
 | **Voice DNA** | A JSON profile of communication style | Maintaining consistent brand voice across content |
 | **ICP (Ideal Customer Profile)** | A JSON profile of target audience | Tailoring messaging to specific customer segments |
-| **Business Profile** | A JSON profile of company positioning | Grounding agents in accurate business context |
 | **Insight 360 Agent** | A configured AI agent | Creating specialized assistants in the Command Center |
 
 ### How It Works
@@ -48,7 +47,7 @@ The Prompt Transformer analyzes your system prompts and converts them into one o
 ### Accessing the Transformer
 
 1. Open Insight 360 in your browser: `http://localhost:3000`
-2. Click **Prompt Transformer** in the left sidebar (between Skills and Briefing)
+2. Click **Prompt Transformer** in the left sidebar under the **AI 360 Systems** section
 3. You'll see a split-panel interface: input on the left, output on the right
 
 ### Transforming a Prompt
@@ -104,7 +103,7 @@ Examine the transformed result:
 2. Click **Save to Insight 360**
 3. The asset is now stored in the appropriate location:
    - Skills → `skills` table
-   - Voice DNA/ICP/Business Profile → `context_assets` table
+   - Voice DNA/ICP → `context_assets` table
    - Agents → `agents` table
 
 ### Keyboard Shortcuts
@@ -170,12 +169,8 @@ Always check the transformed output before saving. The AI extraction is good but
 
 | Document | Description | Location |
 |----------|-------------|----------|
-| Prompt Transformer Guide | Full technical documentation with API reference | [prompt-transformer-guide.md](./prompt-transformer-guide.md) |
-| Transformation Rules | Detection logic and output schemas | [prompt-transformation-rules.md](./prompt-transformation-rules.md) |
-| Skills System | How skills work in Insight 360 | [skills/](./skills/) |
-| Context Assets (Phase 3) | Context asset types and API | [phase3/](./phase3/) |
-| Agent Configuration | Setting up and managing agents | [agents.md](./agents.md) |
-| Blueprint v2-21 | Latest system architecture | [blueprints/I360 Blueprint v2-21.md](./blueprints/I360%20Blueprint%20v2-21.md) |
+| Prompt Transformer Technical Guide | Full technical documentation with API reference | [prompt-transformer-technical-guide.md](./prompt-transformer-technical-guide.md) |
+| Agent Configuration | Setting up and managing agents | [agents-user-guide.md](./agents-user-guide.md) |
 
 ---
 

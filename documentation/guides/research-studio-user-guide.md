@@ -1,7 +1,7 @@
 # Research Studio - User Guide
 
-**Version:** 1.0.0
-**Last Updated:** 2026-01-20
+**Version:** 1.1.0
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -137,8 +137,8 @@ After receiving an answer, you'll see follow-up suggestions based on the respons
 
 | Type | Description | Best For |
 |------|-------------|----------|
+| **Audio** | Podcast-style overview | Learning on the go |
 | **Report** | Detailed analysis with sections | Comprehensive reviews |
-| **Summary** | Brief overview of key points | Quick understanding |
 | **Flashcards** | Q&A study cards | Learning & memorization |
 | **Quiz** | Multiple choice test | Self-assessment |
 | **Mind Map** | Concept hierarchy | Visualizing relationships |

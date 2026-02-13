@@ -1,7 +1,7 @@
 # Context Assets User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -63,7 +63,7 @@ You can drag the dividers between panels to resize them. Your panel width prefer
 
 **By Type:**
 1. Click the type dropdown
-2. Select an asset type from the full list of 21+ types (see Asset Types section below)
+2. Select an asset type from the full list of 31 types (see Asset Types section below)
 
 **By Department:**
 1. Use the department filter dropdown
@@ -181,34 +181,54 @@ If dependencies exist, you'll be warned before deletion to prevent broken refere
 
 ## Asset Types
 
-Context Assets support 21+ types organized into categories:
+Context Assets support 31 types organized into categories:
 
-### Core Types
-| Type | Description |
-|------|-------------|
-| `company_description` | Company overview, mission, and purpose |
-| `why_we_win` | Competitive advantages and differentiators |
-| `products` | Product and service descriptions |
-| `pain_points` | Customer pain points and challenges |
-| `voice_dna` | Brand voice, tone, and communication style |
-| `icp` | Ideal Customer Profiles and personas |
-| `core_values` | Company values and principles |
-| `custom_processes` | Business workflows and procedures |
+### Core Types (9)
+| Type | Icon | Description |
+|------|------|-------------|
+| `company_description` | 🏢 | Company overview, mission, and purpose |
+| `why_we_win` | 🏆 | Competitive advantages and differentiators |
+| `products` | 📦 | Product and service descriptions |
+| `product_suite` | 📦 | Full product suite documentation |
+| `pain_points` | 🎯 | Customer pain points and challenges |
+| `voice_dna` | 🎤 | Brand voice, tone, and communication style |
+| `icp` | 👤 | Ideal Customer Profiles |
+| `core_values` | 💎 | Company values and principles |
+| `custom_processes` | ⚙️ | Business workflows and procedures |
 
-### Extended Types
-| Type | Description |
-|------|-------------|
-| `case_studies` | Customer success stories |
-| `competitors` | Competitive landscape analysis |
-| `faqs` | Frequently asked questions |
-| `team_bios` | Team member profiles |
-| `industry_trends` | Industry insights and trends |
-| `testimonials` | Customer testimonials and reviews |
-| `pricing` | Pricing structures and tiers |
-| `partnerships` | Partner ecosystem information |
-| `compliance` | Regulatory and compliance data |
-| `brand_assets` | Visual brand guidelines |
-| `custom` | Any other structured knowledge |
+### Extended Types (14)
+| Type | Icon | Description |
+|------|------|-------------|
+| `competitors` | ⚔️ | Competitor analysis |
+| `competitive_landscape` | ⚔️ | Broader competitive landscape |
+| `case_studies` | 📖 | Customer success stories |
+| `faqs` | ❓ | Frequently asked questions |
+| `team_bios` | 👥 | Team member profiles |
+| `industry_context` | 🌐 | Industry insights and context |
+| `industry_baseline` | 🌐 | Industry baseline metrics |
+| `terminology` | 📚 | Industry-specific terminology |
+| `templates` | 📝 | Reusable content templates |
+| `pricing` | 💰 | Pricing structures and tiers |
+| `brand_guidelines` | 🎨 | Visual brand guidelines and standards |
+| `personas` | 🎭 | Detailed customer personas |
+| `positioning` | 📍 | Market positioning statements |
+| `strategic_plan` | 🗺️ | Strategic planning documents |
+
+### Integrity Types (6)
+| Type | Icon | Description |
+|------|------|-------------|
+| `bright_lines` | 🚫 | Ethical boundaries that must not be crossed |
+| `values_map` | 🗺️ | Organizational values mapping |
+| `close_call_log` | 📋 | Near-violation incident records |
+| `intervention_metrics` | 📊 | Ethics intervention measurements |
+| `trust_velocity_metrics` | 📈 | Trust-building velocity tracking |
+| `integrity_yield` | ✅ | Overall integrity yield scores |
+
+### Specialty Types (2)
+| Type | Icon | Description |
+|------|------|-------------|
+| `thought_leadership_topics` | 💡 | Thought leadership topic definitions |
+| `i360_knowledge` | 📖 | Insight 360 platform knowledge base |
 
 ### Example: company_description
 ```json

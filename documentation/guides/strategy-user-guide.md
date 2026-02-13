@@ -1,7 +1,7 @@
 # Strategy-to-Execution (S2E) User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -53,7 +53,7 @@ The S2E workflow follows five sequential steps:
 4. Enter your **Mission Statement**:
    - Why does your organization exist?
    - What value do you create?
-5. Set the **Planning Period** (e.g., "2025-2027")
+5. Set the **Planning Period** (e.g., "2026-2028")
 6. Select your **Vision Horizon** (1-3, 3-5, or 5-10 years)
 7. Add **Core Values**:
    - Click "Add Core Value"

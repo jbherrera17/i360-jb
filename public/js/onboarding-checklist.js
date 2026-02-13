@@ -1,20 +1,31 @@
 /**
  * Onboarding Checklist Component
  * Phase 46: Administrator Page Reorganization
+ * Updated Phase 54i: Priority-grouped items with "You're Ready!" state
  *
  * Tracks onboarding progress for organizations.
- * Shows checklist of setup tasks with completion status.
+ * Groups items into Required, Recommended, and Optional sections.
+ * Required items must all complete to reach "You're Ready!" state.
  */
 
 const OnboardingChecklist = {
-    // Checklist items with check functions
+    // Priority group definitions
+    priorityGroups: [
+        { key: 'required', label: 'Required', icon: 'alert-circle', description: 'Must complete to unlock your organization' },
+        { key: 'recommended', label: 'Recommended', icon: 'star', description: 'Strongly suggested for best results' },
+        { key: 'optional', label: 'Optional', icon: 'sparkles', description: 'Enhance your experience when ready' }
+    ],
+
+    // Checklist items with priority and check functions
     checklistItems: [
+        // === REQUIRED ===
         {
             id: 'org-created',
             title: 'Organization Created',
             description: 'Basic organization information configured',
             icon: 'building-2',
             link: 'admin-org-settings.html',
+            priority: 'required',
             check: (data) => !!data.organization
         },
         {
@@ -23,6 +34,7 @@ const OnboardingChecklist = {
             description: 'At least one admin user configured',
             icon: 'user-check',
             link: 'admin-org-members.html',
+            priority: 'required',
             check: (data) => data.members?.some(m => m.role === 'admin' || m.role === 'owner')
         },
         {
@@ -31,7 +43,17 @@ const OnboardingChecklist = {
             description: 'Appropriate tier selected for organization',
             icon: 'layers',
             link: 'admin-tier-setup.html',
+            priority: 'required',
             check: (data) => data.organization?.subscription_tier && data.organization.subscription_tier !== 'none'
+        },
+        {
+            id: 'soul-config',
+            title: 'Soul Configuration',
+            description: 'Values, ethics, and voice configured for the organization',
+            icon: 'heart',
+            link: 'soul-configuration.html',
+            priority: 'required',
+            check: (data) => !!data.soulConfig
         },
         {
             id: 'departments-created',
@@ -39,23 +61,28 @@ const OnboardingChecklist = {
             description: 'At least one department set up',
             icon: 'git-branch',
             link: 'admin-org-settings.html#departments',
+            priority: 'required',
             check: (data) => data.departments?.length > 0
         },
         {
-            id: 'roles-defined',
-            title: 'Roles Defined',
-            description: 'Department roles configured',
-            icon: 'shield',
-            link: 'admin-org-settings.html#roles',
-            check: (data) => data.roles?.length > 0
-        },
-        {
             id: 'users-invited',
-            title: 'Team Members',
-            description: 'At least one team member configured',
+            title: 'Invite Team Members',
+            description: 'At least one team member added to the organization',
             icon: 'users',
             link: 'admin-org-members.html',
-            check: (data) => data.members?.length >= 1
+            priority: 'required',
+            check: (data) => data.members?.length >= 2
+        },
+
+        // === RECOMMENDED ===
+        {
+            id: 'roles-defined',
+            title: 'Roles Defined',
+            description: 'Department roles configured for team structure',
+            icon: 'shield',
+            link: 'admin-org-settings.html#roles',
+            priority: 'recommended',
+            check: (data) => data.roles?.length > 0
         },
         {
             id: 'branding-configured',
@@ -63,15 +90,46 @@ const OnboardingChecklist = {
             description: 'Organization logo and colors set',
             icon: 'palette',
             link: 'admin-org-customization.html',
+            priority: 'recommended',
             check: (data) => !!data.organization?.logo_url || !!data.organization?.primary_color
         },
         {
+            id: 'first-agent',
+            title: 'First Agent Created',
+            description: 'Create or configure your first AI agent',
+            icon: 'bot',
+            link: 'agents.html',
+            priority: 'recommended',
+            check: (data) => data.agentCount > 0
+        },
+        {
+            id: 'context-assets',
+            title: 'Context Assets Added',
+            description: 'Upload documents, URLs, or knowledge for agents to use',
+            icon: 'file-text',
+            link: 'context.html',
+            priority: 'recommended',
+            check: (data) => data.contextCount > 0
+        },
+
+        // === OPTIONAL ===
+        {
             id: 'resources-assigned',
             title: 'Resources Configured',
-            description: 'Agents or skills assigned to organization',
+            description: 'Agents or skills assigned to departments',
             icon: 'puzzle',
             link: 'admin-resource-access.html',
+            priority: 'optional',
             check: (data) => data.hasResources
+        },
+        {
+            id: 'first-conversation',
+            title: 'First Conversation',
+            description: 'Start a chat with Higgins to explore the platform',
+            icon: 'message-circle',
+            link: 'chat.html',
+            priority: 'optional',
+            check: (data) => data.hasConversations
         }
     ],
 
@@ -82,6 +140,7 @@ const OnboardingChecklist = {
     container: null,
     isPlatformAdmin: false,
     showAllOrgs: false,
+    collapsedGroups: { optional: true },
 
     /**
      * Initialize the checklist
@@ -92,6 +151,12 @@ const OnboardingChecklist = {
         this.container = container;
         // Check multiple localStorage keys for compatibility
         this.orgId = orgId || localStorage.getItem('selected_org_id') || localStorage.getItem('currentOrgId');
+
+        // Restore collapsed state
+        try {
+            const saved = localStorage.getItem('onboarding_collapsed_groups');
+            if (saved) this.collapsedGroups = JSON.parse(saved);
+        } catch (e) { /* ignore */ }
 
         // Check if user is a platform admin
         await this.checkPlatformAdmin();
@@ -204,12 +269,15 @@ const OnboardingChecklist = {
 
         try {
             // Load data in parallel
-            const [orgRes, membersRes, deptsRes, rolesRes, agentsRes] = await Promise.allSettled([
+            const [orgRes, membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes] = await Promise.allSettled([
                 fetch(orgEndpoint, { headers }),
                 fetch('/api/org-members', { headers }),
                 fetch('/api/departments', { headers }),
                 fetch('/api/department-roles', { headers }),
-                fetch('/api/agents?limit=1', { headers })
+                fetch('/api/agents?limit=100', { headers }),
+                fetch('/api/context?limit=1', { headers }),
+                fetch(`/api/soul-config?org_id=${this.orgId}&scope=organization`, { headers }),
+                fetch('/api/conversations?limit=1', { headers })
             ]);
 
             this.orgData = {
@@ -217,7 +285,11 @@ const OnboardingChecklist = {
                 members: [],
                 departments: [],
                 roles: [],
-                hasResources: false
+                agentCount: 0,
+                contextCount: 0,
+                hasResources: false,
+                soulConfig: null,
+                hasConversations: false
             };
 
             if (orgRes.status === 'fulfilled' && orgRes.value?.ok) {
@@ -242,7 +314,28 @@ const OnboardingChecklist = {
 
             if (agentsRes.status === 'fulfilled' && agentsRes.value?.ok) {
                 const data = await agentsRes.value.json();
-                this.orgData.hasResources = (data.data?.length || 0) > 0;
+                const agents = data.data || [];
+                this.orgData.agentCount = agents.length;
+                this.orgData.hasResources = agents.length > 0;
+            }
+
+            if (contextRes.status === 'fulfilled' && contextRes.value?.ok) {
+                const data = await contextRes.value.json();
+                const items = data.data || [];
+                this.orgData.contextCount = items.length;
+            }
+
+            if (soulRes.status === 'fulfilled' && soulRes.value?.ok) {
+                const data = await soulRes.value.json();
+                const config = data.data || data;
+                // Consider soul config present if it has at least identity or values
+                this.orgData.soulConfig = (config && (config.identity || config.values)) ? config : null;
+            }
+
+            if (convoRes.status === 'fulfilled' && convoRes.value?.ok) {
+                const data = await convoRes.value.json();
+                const convos = data.data || data.conversations || [];
+                this.orgData.hasConversations = convos.length > 0;
             }
 
         } catch (error) {
@@ -261,12 +354,49 @@ const OnboardingChecklist = {
     },
 
     /**
-     * Get completion percentage
+     * Get items grouped by priority
+     */
+    getGroupedResults() {
+        const results = this.evaluateChecklist();
+        const groups = {};
+        for (const group of this.priorityGroups) {
+            groups[group.key] = results.filter(r => r.priority === group.key);
+        }
+        return groups;
+    },
+
+    /**
+     * Get completion stats for a priority group
+     */
+    getGroupStats(items) {
+        const completed = items.filter(r => r.completed).length;
+        return { completed, total: items.length, percentage: items.length ? Math.round((completed / items.length) * 100) : 100 };
+    },
+
+    /**
+     * Check if all required items are complete
+     */
+    isReady() {
+        const results = this.evaluateChecklist();
+        return results.filter(r => r.priority === 'required').every(r => r.completed);
+    },
+
+    /**
+     * Get overall completion percentage
      */
     getCompletionPercentage() {
         const results = this.evaluateChecklist();
         const completed = results.filter(r => r.completed).length;
         return Math.round((completed / results.length) * 100);
+    },
+
+    /**
+     * Toggle group collapse
+     */
+    toggleGroup(groupKey) {
+        this.collapsedGroups[groupKey] = !this.collapsedGroups[groupKey];
+        localStorage.setItem('onboarding_collapsed_groups', JSON.stringify(this.collapsedGroups));
+        this.render();
     },
 
     /**
@@ -323,9 +453,11 @@ const OnboardingChecklist = {
     render() {
         if (!this.container) return;
 
-        const results = this.evaluateChecklist();
-        const completed = results.filter(r => r.completed).length;
+        const grouped = this.getGroupedResults();
         const percentage = this.getCompletionPercentage();
+        const allResults = this.evaluateChecklist();
+        const totalCompleted = allResults.filter(r => r.completed).length;
+        const ready = this.isReady();
 
         this.container.innerHTML = `
             <div class="onboarding-checklist">
@@ -361,31 +493,88 @@ const OnboardingChecklist = {
                     <div class="progress-fill" style="width: ${percentage}%"></div>
                 </div>
                 <div class="checklist-summary">
-                    ${completed} of ${results.length} tasks completed
+                    ${totalCompleted} of ${allResults.length} tasks completed
                 </div>
 
-                <!-- Checklist Items -->
-                <div class="checklist-items">
-                    ${results.map(item => this.renderChecklistItem(item)).join('')}
-                </div>
+                ${ready ? this.renderReadyBanner() : ''}
 
-                ${percentage === 100 ? `
-                    <div class="checklist-complete-message">
-                        <i data-lucide="party-popper"></i>
-                        <span>Congratulations! Onboarding is complete.</span>
-                    </div>
-                ` : `
+                <!-- Priority Groups -->
+                ${this.priorityGroups.map(group => {
+                    const items = grouped[group.key];
+                    if (!items || items.length === 0) return '';
+                    return this.renderPriorityGroup(group, items);
+                }).join('')}
+
+                ${!ready ? `
                     <div class="checklist-help">
                         <i data-lucide="info"></i>
-                        <span>Click on incomplete items to configure them.</span>
+                        <span>Complete all required items to unlock your organization. Click incomplete items to configure them.</span>
                     </div>
-                `}
+                ` : ''}
             </div>
         `;
 
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+    },
+
+    /**
+     * Render the "You're Ready!" banner
+     */
+    renderReadyBanner() {
+        const percentage = this.getCompletionPercentage();
+        const allDone = percentage === 100;
+
+        return `
+            <div class="checklist-ready-banner${allDone ? ' all-complete' : ''}">
+                <div class="ready-banner-icon">
+                    <i data-lucide="${allDone ? 'party-popper' : 'rocket'}"></i>
+                </div>
+                <div class="ready-banner-content">
+                    <div class="ready-banner-title">${allDone ? 'Onboarding Complete!' : "You're Ready!"}</div>
+                    <div class="ready-banner-message">
+                        ${allDone
+                            ? 'Congratulations! All onboarding tasks are complete. Your organization is fully configured.'
+                            : 'All required items are done. Your organization is ready to use! Complete recommended and optional items to get the most out of the platform.'
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Render a priority group section
+     */
+    renderPriorityGroup(group, items) {
+        const stats = this.getGroupStats(items);
+        const isCollapsed = this.collapsedGroups[group.key];
+        const allComplete = stats.completed === stats.total;
+
+        return `
+            <div class="checklist-group ${group.key}${allComplete ? ' group-complete' : ''}">
+                <div class="checklist-group-header" onclick="OnboardingChecklist.toggleGroup('${group.key}')">
+                    <div class="group-header-left">
+                        <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="group-toggle-icon"></i>
+                        <i data-lucide="${group.icon}" class="group-icon"></i>
+                        <span class="group-label">${group.label}</span>
+                        <span class="group-count">${stats.completed}/${stats.total}</span>
+                    </div>
+                    <div class="group-header-right">
+                        ${allComplete ? '<i data-lucide="check-circle" class="group-done-icon"></i>' : ''}
+                        <div class="group-progress-bar">
+                            <div class="group-progress-fill" style="width: ${stats.percentage}%"></div>
+                        </div>
+                    </div>
+                </div>
+                ${!isCollapsed ? `
+                    <div class="checklist-items">
+                        ${items.map(item => this.renderChecklistItem(item)).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
     },
 
     /**

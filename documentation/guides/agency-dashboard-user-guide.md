@@ -1,7 +1,7 @@
 # Agency Dashboard User Guide
 
 **For:** Insight 360 Agency Users
-**Last Updated:** January 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -18,7 +18,8 @@ The Agency Dashboard provides a comprehensive overview of your organization's cl
 | **Overview Stats** | Total clients, sessions, average maturity, and active portal users |
 | **Client Health Grid** | Visual overview of all clients with health indicators |
 | **Maturity Distribution** | Breakdown of clients by AI maturity level |
-| **Needs Attention** | Clients with declining scores or dormant engagement |
+| **Needs Attention** | Clients with low health scores or dormant engagement |
+| **Export** | Download client data as CSV or JSON |
 | **Multi-Org Support** | Switch between organizations you manage |
 
 ---
@@ -30,9 +31,9 @@ The Agency Dashboard provides a comprehensive overview of your organization's cl
 1. Select your organization from the dropdown at the top
 2. View the summary cards showing key metrics:
    - Total clients in your organization
-   - Align 120 sessions completed
+   - Completed Sessions
    - Average AI maturity score
-   - Active client portal users
+   - Portal Users
 
 ### Monitoring Client Health
 
@@ -42,11 +43,10 @@ The Agency Dashboard provides a comprehensive overview of your organization's cl
    - Maturity and readiness scores
    - Last session date
    - Health score indicator
-3. Click a client to view their details
 
 ### Understanding Maturity Distribution
 
-1. The donut chart shows how clients are distributed across maturity levels:
+1. The horizontal bar chart shows how clients are distributed across maturity levels:
    - **Nascent** (0-20): Just starting AI journey
    - **Emerging** (21-40): Early adoption
    - **Developing** (41-60): Building capabilities
@@ -57,10 +57,17 @@ The Agency Dashboard provides a comprehensive overview of your organization's cl
 
 1. The "Needs Attention" section highlights clients that may need proactive outreach
 2. Criteria for flagging:
-   - No activity in 90+ days
-   - Declining maturity or readiness scores
-   - Low portal engagement
-3. Click "View" to drill into client details
+   - Health score below 50
+   - Engagement status is "dormant"
+3. Click "View" to navigate to the client list page (/admin-clients.html)
+
+### Exporting Data
+
+1. Click the **Export** button in the dashboard header
+2. Choose your preferred format:
+   - **CSV**: Spreadsheet-compatible format for Excel, Google Sheets, etc.
+   - **JSON**: Structured data format for programmatic use
+3. The export includes client metrics, health scores, and engagement data for the selected organization
 
 ---
 

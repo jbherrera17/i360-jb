@@ -1,7 +1,7 @@
 # Strategy Governance User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** December 30, 2025
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -40,7 +40,7 @@ The Governance Dashboard provides:
    - **Alignment Score**: OKR-to-objective linkage
    - **Execution Score**: Progress against targets
    - **Learning Score**: Improvement and adaptation
-   - **Overall Health**: Combined weighted average
+   - **Overall Health**: Simple average of all three scores
 3. Each card shows:
    - Current score (0-100%)
    - Trend indicator (up/down/stable)
@@ -54,6 +54,20 @@ The Governance Dashboard provides:
 | **60-79%** | Adequate | Monitor and optimize |
 | **40-59%** | Gaps | Active improvement needed |
 | **0-39%** | Critical | Immediate attention required |
+
+### Refreshing Governance Data
+
+1. Click the **Refresh** button in the page header
+2. The page reloads the latest health check data, observations, recommendations, and history
+3. Use this after generating a new health check or if data appears stale
+
+### No Strategic Foundation State
+
+If your organization has not yet set up a strategic foundation (objectives, OKRs, etc.), the Governance page displays a "No Strategic Foundation" message. In this state:
+
+- Health scores are not available
+- The Generate Health Check button is disabled
+- You must first complete your strategic setup via the Strategy (S2E) module before governance monitoring can begin
 
 ### Generating a Health Check
 
@@ -140,19 +154,21 @@ The Governance Dashboard provides:
 
 ## Health Score Components
 
-### Alignment Score (30% weight)
+The Overall Health Score is calculated as a **simple average** of the three component scores with equal weighting (33.3% each): `(Alignment + Execution + Learning) / 3`, rounded to the nearest whole number.
+
+### Alignment Score
 Measures how well OKRs connect to strategic objectives:
 - % of OKRs with strategic links
 - Quality of link descriptions
 - Coverage across objectives
 
-### Execution Score (40% weight)
+### Execution Score
 Measures progress and delivery:
 - OKR progress percentages
 - On-time completion rates
 - Status distribution
 
-### Learning Score (30% weight)
+### Learning Score
 Measures adaptation and improvement:
 - Feedback incorporation
 - Objective updates

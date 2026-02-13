@@ -1,21 +1,20 @@
 # Administrator User Guide
 
 **For:** Insight 360 Organization Administrators
-**Last Updated:** January 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
 ## Overview
 
-The Administrator page is your central hub for managing your Insight 360 organization. It provides a workflow-based interface organized into five tabs:
+The Administrator page is your central hub for managing your Insight 360 organization. It provides a workflow-based interface organized into four tabs:
 
 | Tab | Purpose |
 |-----|---------|
-| **Dashboard** | Quick overview of system status, quick actions, and recent activity |
+| **Dashboard** | System status, quick actions, recent activity, and admin navigation cards |
 | **Setup** | Step-by-step wizard for configuring new organizations |
 | **Onboarding** | Checklist to guide you through complete organization setup |
 | **Daily Ops** | Day-to-day user management, conversations, and sessions |
-| **Maintenance** | System administration, platform settings, and content management |
 
 ---
 
@@ -163,9 +162,9 @@ Click to expand and view Align 120 strategy sessions:
 
 ---
 
-## Maintenance Tab
+## Dashboard Admin Cards
 
-Access administrative tools organized by category.
+Below the status overview and quick actions, the Dashboard tab displays navigation cards organized by category for quick access to all admin functions.
 
 ### Platform Administration
 *(Visible to Platform Admins only)*
@@ -175,6 +174,9 @@ Access administrative tools organized by category.
 | **Platform Dashboard** | Manage all organizations and global settings |
 | **Tier Configuration** | Configure subscription tiers and limits |
 | **Resource Access** | Configure resource visibility settings |
+| **Integrations** | Manage external service integrations |
+| **Soul Configuration** | Configure organizational values and ethics |
+| **Agent Categories** | Define and manage agent category taxonomy |
 
 ### System Management
 
@@ -192,6 +194,8 @@ Access administrative tools organized by category.
 | **Departments** | Configure department structure |
 | **Clients** | Manage agency clients |
 | **Title Management** | Configure business roles |
+| **User Management** | Administer user accounts |
+| **Team Members** | Manage organization team members |
 
 ### Content & Assets
 

@@ -1,7 +1,7 @@
 # Client Comparison User Guide
 
 **For:** Agency Administrators and Consultants
-**Last Updated:** January 21, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -26,8 +26,7 @@ The Client Comparison page lets you:
 |--------|-------------|
 | **View Summary** | See aggregate stats across all clients |
 | **Compare Progress** | Compare OKR and health scores |
-| **Filter by Status** | Focus on active, inactive, or archived clients |
-| **Export** | Generate cross-client reports |
+| **Export** | Generate cross-client reports *(Planned)* |
 | **Navigate** | Click through to individual client dashboards |
 
 ---
@@ -36,7 +35,7 @@ The Client Comparison page lets you:
 
 ### Accessing Client Comparison
 
-1. Click **Client Comparison** in the Admin section of the sidebar
+1. Click **Client Comparison** in the Agency section of the sidebar
 2. Ensure you have an organization selected (use the org switcher if needed)
 
 ### Understanding Summary Cards
@@ -47,8 +46,8 @@ The top row shows four summary metrics:
 |------|---------------|
 | **Total Clients** | Count of all clients in your organization |
 | **Active Clients** | Clients with "active" status |
-| **Avg OKR Progress** | Average OKR completion across all clients |
-| **Avg Health Score** | Average strategic health score |
+| **Avg OKR Progress** | Average OKR completion across all clients *(currently placeholder/demo data)* |
+| **Avg Health Score** | Average strategic health score *(currently placeholder/demo data)* |
 
 ### Reading the Comparison Table
 
@@ -58,8 +57,8 @@ The table shows one row per client:
 |--------|-------------|
 | **Client** | Name with status indicator (green=active, gray=inactive, red=archived) |
 | **Status** | Current client status |
-| **OKR Progress** | Progress bar and percentage |
-| **Health Score** | Health indicator bar and percentage |
+| **OKR Progress** | Progress bar and percentage *(currently placeholder/demo data)* |
+| **Health Score** | Health indicator bar and percentage *(currently placeholder/demo data)* |
 | **Active Workflows** | Number of running workflows |
 | **Last Activity** | Time since last recorded activity |
 | **Actions** | Link to client's dashboard |
@@ -82,29 +81,18 @@ If you manage multiple organizations:
 2. Select the organization to view
 3. The table refreshes with that org's clients
 
-### Exporting Reports
+### Exporting Reports *(Planned)*
 
-1. Click **Export Report**
-2. Select the format (PDF or CSV)
-3. The report downloads with current comparison data
+The Export Report button is present but export functionality is not yet implemented. Clicking it will display a "coming soon" message. Full export support is planned for a future release.
 
 ---
 
-## Charts Section
+## Charts Section *(Planned)*
 
-### Client Distribution by Status
+The chart areas are present on the page but currently display "Chart visualization coming soon" placeholder text. When implemented, they will include:
 
-The pie chart shows:
-- Percentage of active clients
-- Percentage of inactive clients
-- Percentage of archived clients
-
-### OKR Progress Trend
-
-The line chart shows:
-- OKR progress over time
-- Trends across your client portfolio
-- Seasonal patterns
+- **Client Distribution by Status** - A pie chart showing percentages of active, inactive, and archived clients
+- **OKR Progress Trend** - A line chart showing OKR progress over time across your client portfolio
 
 ---
 
@@ -121,10 +109,9 @@ Look for:
 ### Prioritizing Attention
 
 Use this page to:
-1. Sort by OKR progress to find lowest performers
-2. Check health scores for strategic alignment issues
-3. Review last activity for disengaged clients
-4. Balance attention across your portfolio
+1. Check health scores for strategic alignment issues
+2. Review last activity for disengaged clients
+3. Balance attention across your portfolio
 
 ### Using for Client Reviews
 
@@ -138,15 +125,16 @@ This page is excellent for:
 
 ## What's Happening Behind the Scenes
 
-The comparison view queries:
+The comparison view retrieves data from:
 
 1. `clients` table for client list and status
 2. `company_profiles` for each client's profile
-3. OKR progress from `okrs` table aggregations
-4. Health scores from `health_checks` and strategy data
-5. Activity timestamps from various execution tables
 
-Data is aggregated per client for the comparison view.
+Some metrics are planned to query from the database but are currently generated client-side with placeholder data:
+
+- OKR progress (planned: `okrs` table aggregations)
+- Health scores (planned: `health_checks` and strategy data)
+- Activity timestamps (planned: various execution tables)
 
 ---
 

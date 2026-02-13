@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Categories - Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .categories-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .categories-table thead th {
+            text-align: left;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .categories-table tbody td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .categories-table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .category-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .category-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+        }
+
+        .category-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .icon-preview-area {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xs);
+        }
+
+        .icon-preview-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+
+        .icon-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: var(--spacing-xs);
+        }
+
+        .icon-chip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-chip:hover {
+            border-color: var(--primary);
+            background: var(--bg-secondary);
+        }
+
+        .icon-chip.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .icon-chip svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .category-name {
+            font-weight: 600;
+        }
+
+        .category-key {
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .category-desc {
+            color: var(--text-muted);
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-badge.inactive {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            padding: 6px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--primary);
+        }
+
+        .icon-btn.danger:hover {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .table-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .table-count {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-muted);
+            gap: var(--spacing-md);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="tags" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Agent Categories
+                    </h1>
+                    <p class="header-subtitle">Manage agent categories used throughout the platform. Categories organize agents by function.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-primary" onclick="openAddCategoryModal()">
+                        <i data-lucide="plus" style="width:18px;height:18px;"></i>
+                        Add Category
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <div class="table-container">
+                    <div class="table-header">
+                        <span class="table-title">Agent Categories</span>
+                        <span id="categoryTotal" class="table-count"></span>
+                    </div>
+                    <div id="categoriesTableContent">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading categories...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ModalService must load before inline scripts that use it -->
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // ============================================================================
+        // Common Lucide Icons for Categories
+        // ============================================================================
+        const COMMON_ICONS = [
+            'compass', 'target', 'zap', 'lightbulb', 'shield', 'brain',
+            'bar-chart-3', 'file-text', 'message-circle', 'star', 'heart',
+            'user', 'code', 'database', 'globe', 'calendar', 'clock',
+            'mail', 'search', 'bot', 'sparkles', 'megaphone', 'briefcase',
+            'cog', 'layers', 'trending-up', 'book-open', 'pen-tool',
+            'headphones', 'users', 'building-2', 'rocket', 'palette',
+            'microscope', 'graduation-cap', 'scale', 'calculator', 'wrench'
+        ];
+
+        // ============================================================================
+        // State Management
+        // ============================================================================
+        let agentCategories = [];
+        let editingCategoryId = null;
+        let categoryModal = null;
+
+        // ============================================================================
+        // Auth
+        // ============================================================================
+        function getAuthHeaders() {
+            const token = localStorage.getItem('insight360_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        // ============================================================================
+        // Initialization
+        // ============================================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (typeof ModalServiceLoader !== 'undefined') await ModalServiceLoader.load();
+
+            await loadAgentCategories();
+        });
+
+        // ============================================================================
+        // Agent Categories Functions
+        // ============================================================================
+        async function fetchAgentCategories() {
+            try {
+                const response = await fetch('/api/agents/categories/all', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    agentCategories = data.data;
+                    return agentCategories;
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching agent categories:', error);
+                return [];
+            }
+        }
+
+        async function loadAgentCategories() {
+            await fetchAgentCategories();
+            renderCategoriesTable();
+        }
+
+        function renderCategoriesTable() {
+            const tableContent = document.getElementById('categoriesTableContent');
+            const categoryTotal = document.getElementById('categoryTotal');
+
+            if (agentCategories.length === 0) {
+                tableContent.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="tags" style="width:48px;height:48px;"></i>
+                        <p>No categories found</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            categoryTotal.textContent = `${agentCategories.length} categor${agentCategories.length !== 1 ? 'ies' : 'y'}`;
+
+            tableContent.innerHTML = `
+                <table class="categories-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Key</th>
+                            <th>Description</th>
+                            <th>Sort Order</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${agentCategories.map(cat => `
+                            <tr style="${!cat.is_active ? 'opacity: 0.5;' : ''}">
+                                <td>
+                                    <div class="category-name-cell">
+                                        <div class="category-icon" style="color: ${cat.color || 'var(--primary)'};">
+                                            <i data-lucide="${cat.icon || 'folder'}"></i>
+                                        </div>
+                                        <div>
+                                            <div class="category-name">${cat.display_name}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Fira Code', monospace;">${cat.icon || 'folder'}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><code class="category-key">${cat.key}</code></td>
+                                <td class="category-desc">${cat.description || '-'}</td>
+                                <td>${cat.sort_order || '-'}</td>
+                                <td>
+                                    <span class="status-badge ${cat.is_active ? 'active' : 'inactive'}">${cat.is_active ? 'Active' : 'Inactive'}</span>
+                                </td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <button class="icon-btn" onclick="openEditCategoryModal('${cat.id}')" title="Edit category">
+                                            <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="icon-btn danger" onclick="handleDeleteCategory('${cat.id}')" title="Deactivate category">
+                                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            lucide.createIcons();
+        }
+
+        // ============================================================================
+        // Category Form
+        // ============================================================================
+        function buildCategoryFormContent(category = null) {
+            const isEdit = !!category;
+            return `
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId" value="${isEdit ? category.id : ''}">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="categoryKey">Key *</label>
+                            <input type="text" id="categoryKey" class="form-input" placeholder="e.g., assessment" value="${isEdit ? (category.key || '') : ''}" required>
+                            <small style="color: var(--text-muted); font-size: 0.8rem;">Lowercase, no spaces (used internally)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="categoryDisplayName">Display Name *</label>
+                            <input type="text" id="categoryDisplayName" class="form-input" placeholder="e.g., Assessment" value="${isEdit ? (category.display_name || '') : ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="categoryDescription">Description</label>
+                        <input type="text" id="categoryDescription" class="form-input" placeholder="Brief description of this category" value="${isEdit ? (category.description || '') : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="categoryIcon">Icon (Lucide)</label>
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <input type="text" id="categoryIcon" class="form-input" placeholder="e.g., compass" value="${isEdit ? (category.icon || '') : ''}" oninput="updateIconPreview()">
+                            </div>
+                            <div class="icon-preview-box" id="iconPreviewBox" style="color: ${isEdit ? (category.color || '#6366f1') : '#6366f1'};">
+                                <i data-lucide="${isEdit && category.icon ? category.icon : 'folder'}" id="iconPreviewSvg"></i>
+                            </div>
+                        </div>
+                        <div class="icon-suggestions" id="iconSuggestions">
+                            ${COMMON_ICONS.map(ic => `
+                                <div class="icon-chip ${isEdit && category.icon === ic ? 'selected' : ''}" onclick="selectIcon('${ic}')" title="${ic}">
+                                    <i data-lucide="${ic}"></i>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="categoryColor">Color</label>
+                            <input type="color" id="categoryColor" class="form-input" value="${isEdit ? (category.color || '#6366f1') : '#6366f1'}" style="height: 42px; padding: 4px;" oninput="updateIconPreview()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="categorySortOrder">Sort Order</label>
+                            <input type="number" id="categorySortOrder" class="form-input" placeholder="1" min="1" max="99" value="${isEdit ? (category.sort_order || '') : ''}">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="categoryActiveGroup" style="display: ${isEdit ? 'block' : 'none'};">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="categoryIsActive" ${!isEdit || category.is_active ? 'checked' : ''}>
+                            <span>Active</span>
+                        </label>
+                    </div>
+                </form>
+            `;
+        }
+
+        // ============================================================================
+        // Modal Operations
+        // ============================================================================
+        function openAddCategoryModal() {
+            editingCategoryId = null;
+            categoryModal = ModalService.create({
+                title: 'Add Category',
+                content: buildCategoryFormContent(),
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveCategoryBtn">Save Category</button>
+                `,
+                width: 520,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
+                    updateIconPreview();
+                }
+            });
+            categoryModal.open();
+        }
+
+        function openEditCategoryModal(categoryId) {
+            const category = agentCategories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            editingCategoryId = categoryId;
+            categoryModal = ModalService.create({
+                title: 'Edit Category',
+                content: buildCategoryFormContent(category),
+                footer: `
+                    <button class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
+                    <button class="i360-btn i360-btn-primary" id="saveCategoryBtn">Save Category</button>
+                `,
+                width: 520,
+                draggable: true,
+                resizable: true,
+                onOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
+                    updateIconPreview();
+                }
+            });
+            categoryModal.open();
+        }
+
+        function closeCategoryModal() {
+            if (categoryModal) {
+                categoryModal.close();
+                categoryModal = null;
+            }
+            editingCategoryId = null;
+        }
+
+        // ============================================================================
+        // CRUD Operations
+        // ============================================================================
+        async function handleSaveCategory() {
+            const key = document.getElementById('categoryKey').value.trim();
+            const displayName = document.getElementById('categoryDisplayName').value.trim();
+            const description = document.getElementById('categoryDescription').value.trim();
+            const icon = document.getElementById('categoryIcon').value.trim();
+            const color = document.getElementById('categoryColor').value;
+            const sortOrder = parseInt(document.getElementById('categorySortOrder').value) || 99;
+            const isActive = document.getElementById('categoryIsActive')?.checked ?? true;
+
+            if (!key || !displayName) {
+                ModalService.error('Key and Display Name are required');
+                return;
+            }
+
+            try {
+                let response;
+                if (editingCategoryId) {
+                    response = await fetch(`/api/agents/categories/${editingCategoryId}`, {
+                        method: 'PUT',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({
+                            key,
+                            display_name: displayName,
+                            description,
+                            icon,
+                            color,
+                            sort_order: sortOrder,
+                            is_active: isActive
+                        })
+                    });
+                } else {
+                    response = await fetch('/api/agents/categories', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({
+                            key,
+                            display_name: displayName,
+                            description,
+                            icon,
+                            color,
+                            sort_order: sortOrder
+                        })
+                    });
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    ModalService.toast({ message: editingCategoryId ? 'Category updated' : 'Category created', type: 'success' });
+                    closeCategoryModal();
+                    await loadAgentCategories();
+                } else {
+                    ModalService.error(data.error || 'Failed to save category');
+                }
+            } catch (error) {
+                console.error('Error saving category:', error);
+                ModalService.error('Failed to save category');
+            }
+        }
+
+        // ============================================================================
+        // Icon Preview & Selection
+        // ============================================================================
+        function updateIconPreview() {
+            const iconName = document.getElementById('categoryIcon')?.value.trim() || 'folder';
+            const color = document.getElementById('categoryColor')?.value || '#6366f1';
+            const previewBox = document.getElementById('iconPreviewBox');
+            if (!previewBox) return;
+
+            previewBox.style.color = color;
+            previewBox.innerHTML = `<i data-lucide="${iconName}"></i>`;
+            lucide.createIcons({ nodes: [previewBox] });
+
+            // Update chip selection
+            document.querySelectorAll('.icon-chip').forEach(chip => {
+                chip.classList.toggle('selected', chip.getAttribute('title') === iconName);
+            });
+        }
+
+        function selectIcon(iconName) {
+            const input = document.getElementById('categoryIcon');
+            if (input) {
+                input.value = iconName;
+                updateIconPreview();
+            }
+        }
+
+        async function handleDeleteCategory(categoryId) {
+            const confirmed = await ModalService.confirm({
+                title: 'Deactivate Category',
+                message: 'Are you sure you want to deactivate this category? Agents using it will still work but the category won\'t appear in dropdowns.',
+                type: 'warning',
+                confirmText: 'Deactivate',
+                cancelText: 'Cancel'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`/api/agents/categories/${categoryId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    ModalService.toast({ message: 'Category deactivated', type: 'success' });
+                    await loadAgentCategories();
+                } else {
+                    ModalService.error(data.error || 'Failed to deactivate category');
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                ModalService.error('Failed to deactivate category');
+            }
+        }
+    </script>
+</body>
+</html>

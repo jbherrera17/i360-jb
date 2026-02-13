@@ -1,7 +1,7 @@
 # Agent Library User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -52,7 +52,7 @@ The Agent Library lets you:
 ### Filtering Agents
 
 **By Suite:**
-1. Use the suite tabs at the top:
+1. Use the suite filter chips at the top:
    - **All**: Show every agent
    - **Align**: Values and alignment agents
    - **Strategy**: Planning and strategy agents

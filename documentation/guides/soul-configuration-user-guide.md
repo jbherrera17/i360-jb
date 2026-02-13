@@ -1,7 +1,7 @@
 # Soul Configuration User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** February 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -133,13 +133,15 @@ The completeness score (0-100%) indicates how fully your configuration is define
 | 50-69% | Moderate | Several sections need work |
 | Below 50% | Needs Work | Major sections missing |
 
-**Score Breakdown:**
+**Score Breakdown (Wizard - 6 sections):**
 - Organization Profile: 15%
 - Core Values: 25%
 - Bright Lines: 15%
 - Guardrails: 15%
 - Voice: 15%
 - Domain: 15%
+
+**Note:** The database trigger (`calculate_soul_completeness`) uses an 8-section formula at 12.5% each, which includes Stakeholders and Escalation in addition to the six sections above. This means the completeness score shown in the database may differ slightly from the wizard's 6-section coverage calculation.
 
 ---
 

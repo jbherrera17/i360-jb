@@ -1,7 +1,7 @@
 # SynergiNexus User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 9, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -132,7 +132,7 @@ Monitor and resolve governance conflicts.
 
 | Level | Color | Meaning |
 |-------|-------|---------|
-| Low | Gray | Minor issue, low risk |
+| Low | Blue | Minor issue, low risk |
 | Medium | Yellow | Moderate concern |
 | High | Orange | Significant issue |
 | Critical | Red | Urgent, values at risk |
@@ -140,12 +140,9 @@ Monitor and resolve governance conflicts.
 **Resolving a Conflict:**
 1. Click on a conflict to view details
 2. Review the description and context
-3. Choose action:
-   - **Resolve**: Issue addressed, add notes
-   - **Dismiss**: Not a real conflict, explain why
-   - **Escalate**: Needs higher authority
-4. Add resolution notes
-5. Click Save
+3. Click the **Resolve** button
+4. In the resolution modal dialog, enter your resolution notes explaining how the conflict was addressed
+5. Click Save to close the conflict
 
 ### Escalation Rules Tab
 
@@ -164,6 +161,44 @@ Configure how conflicts are routed by severity.
 | **Resolver Level** | Who handles (Dept Admin, System Admin, Super Admin) |
 | **Auto-Escalate After** | Hours before auto-escalation |
 | **Notification Channels** | How to alert (Email, In-App, Slack, SMS) |
+
+### Ethical Lenses Tab
+
+View and apply the SCU (Santa Clara University) Ethics Framework to AI governance decisions.
+
+**What You See:**
+- Six ethical lens cards, each representing a distinct moral perspective
+- A 5-Step Decision Framework for structured ethical analysis
+- Integration status showing how lenses connect to your soul configuration
+
+**The 6 SCU Framework Lenses:**
+
+| Lens | Core Question | Focus |
+|------|---------------|-------|
+| **Rights** | "What rights are at stake?" | Protecting individual dignity, privacy, autonomy, and freedom of choice |
+| **Justice** | "Is this fair to all involved?" | Equal treatment, fair processes, and equitable distribution of benefits and burdens |
+| **Utilitarian** | "What produces the greatest good?" | Maximizing overall well-being and minimizing harm across all stakeholders |
+| **Common Good** | "What serves the community?" | Shared conditions that benefit everyone — trust, safety, sustainability |
+| **Virtue** | "What would a person of integrity do?" | Character-based reasoning — honesty, courage, compassion, faithfulness |
+| **Care Ethics** | "Who is vulnerable and how do we protect them?" | Prioritizing relationships, responsibility, and care for those most affected |
+
+**The 5-Step Decision Framework:**
+
+1. **Recognize**: Identify that an ethical issue exists and which values are in tension
+2. **Gather Facts**: Collect relevant information about the situation, stakeholders, and potential impacts
+3. **Evaluate Alternatives**: Apply each of the 6 lenses to generate different perspectives on the decision
+4. **Make a Decision**: Choose the course of action that best balances the insights from all lenses
+5. **Reflect**: After implementation, review the outcome and capture lessons learned
+
+**How Ethical Lenses Integrate with Soul Configuration:**
+
+Ethical lenses work alongside your soul configuration to provide a complete governance framework:
+
+- **Soul Configuration** defines your organization's values, bright lines, and guardrails
+- **Ethical Lenses** provide structured frameworks for evaluating decisions when values conflict
+- When agents encounter high-stakes decisions, the system automatically applies relevant lenses based on the stakes detected by the `ethicalContextService`
+- Ethical evaluations are logged in the `ethical_evaluations` table for audit and review
+- Lenses complement the DIGM model by adding moral reasoning at the **Reasoning** and **Alternatives** touchpoints
 
 ---
 

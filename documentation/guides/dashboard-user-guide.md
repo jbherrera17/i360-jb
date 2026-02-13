@@ -1,7 +1,7 @@
 # Dashboard User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -22,7 +22,7 @@ Think of it as mission control—one glance tells you everything you need to kno
 
 ## What It Does
 
-The Dashboard provides six key sections:
+The Dashboard provides seven key sections:
 
 | Section | Purpose |
 |---------|---------|
@@ -115,23 +115,50 @@ The **Getting Started** card at the top provides quick links to:
 2. Shows your 5 most recently used agents
 3. Each agent displays:
    - Icon and name
-   - Source type badge (Native, MindStudio, Pickaxe)
+   - Source type badge (Native, MindStudio)
    - Usage count (number of runs)
 4. Click any agent to open the Agent Runner page where you can execute it
 
 ### Navigating to Other Sections
 
-Use the left sidebar to access any module:
-- **Higgins**: Multi-LLM chat assistant
-- **Agents**: Browse and manage agents
-- **Context**: Business knowledge assets
-- **Skills**: Reusable AI capabilities
-- **Parthenon**: Organizational structure
-- **Actions**: Composable web actions
-- **Briefing**: Daily AI briefings
-- **Strategy**: Strategy-to-Execution pipeline
-- **Governance**: Strategy monitoring
-- **Integrity**: Values alignment metrics
+Use the left sidebar to access modules. The sidebar is organized into groups:
+
+**Primary (always visible):**
+- **Higgins** - Multi-LLM chat assistant
+- **My Capabilities** - Your available AI tools
+- **Execute 120** - Execution tracking
+
+**AI 360 Systems:**
+- **Agent Library** - Browse and manage agents
+- **Strategy Agents** - AI-powered strategy agents
+- **Context Assets** - Business knowledge assets
+- **Actions** - Composable web actions
+- **Skills** - Reusable AI capabilities
+- **Workflows** - Automated workflow sequences
+- **Prompt Transformer** - Prompt engineering tools
+
+**Dashboards:**
+- **Dashboard** - System overview (this page)
+- **Company Dashboard** - Organization-wide metrics
+- **Integrity Dashboard** - Values alignment metrics
+- **Strategy Governance** - Strategy monitoring
+
+**Modules:**
+- **Align 120** - Alignment framework
+- **Strategy (S2E)** - Strategy-to-Execution pipeline
+- **Research Studio** - AI-powered research
+- **Thought Leadership** - Content generation
+- **Briefing** - Daily AI briefings
+- **Guides** - Documentation and guides
+
+**Agency (admin only):**
+- **Agency Dashboard** - Agency overview
+- **Customization** - White-label settings
+- **Portal Users** - Client portal user management
+- **Client Comparison** - Cross-client analytics
+
+**Administration (admin only):**
+- **Administrator** - Platform administration hub
 
 ---
 

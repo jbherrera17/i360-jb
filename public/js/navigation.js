@@ -316,6 +316,11 @@ function getUserInitials(user) {
  * Handle user logout
  */
 async function handleLogout() {
+    // Destroy session timeout to prevent warning after manual logout
+    if (typeof SessionTimeout !== 'undefined') {
+        SessionTimeout.destroy();
+    }
+
     try {
         // Call logout API
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -325,6 +330,7 @@ async function handleLogout() {
     // Clear local storage
     localStorage.removeItem('insight360_user');
     localStorage.removeItem('insight360_token');
+    localStorage.removeItem('insight360_last_activity');
     // Redirect to login
     window.location.href = '/login.html';
 }
@@ -662,6 +668,37 @@ async function initNavigation() {
 
     // Show impersonation banner if active
     showImpersonationBanner();
+
+    // Initialize session timeout (skip on login page)
+    if (!window.location.pathname.includes('/login')) {
+        _loadSessionTimeout();
+    }
+}
+
+/**
+ * Dynamically load and initialize session timeout
+ * @private
+ */
+function _loadSessionTimeout() {
+    var token = localStorage.getItem('insight360_token');
+    if (!token) return;
+
+    if (typeof SessionTimeout !== 'undefined') {
+        SessionTimeout.init();
+        return;
+    }
+
+    var script = document.createElement('script');
+    script.src = '/js/session-timeout.js';
+    script.onload = function () {
+        if (typeof SessionTimeout !== 'undefined') {
+            SessionTimeout.init();
+        }
+    };
+    script.onerror = function () {
+        console.warn('SessionTimeout: Failed to load session-timeout.js');
+    };
+    document.head.appendChild(script);
 }
 
 /**

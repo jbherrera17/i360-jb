@@ -2,7 +2,7 @@
 
 **For:** Developers and System Administrators
 **Version:** 3.0
-**Last Updated:** January 9, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -52,10 +52,12 @@ Returns summary counts for all governance components.
 {
   "success": true,
   "data": {
-    "digm": { "total_configs": 13, "by_layer": {...} },
-    "values": { "total": 10, "non_negotiable": 6 },
-    "principles": { "total": 15, "by_type": {...} },
-    "conflicts": { "total": 0, "pending": 0, "critical": 0 }
+    "summary": {
+      "digm_configs": 13,
+      "governance_values": 10,
+      "governance_principles": 15,
+      "open_conflicts": 0
+    }
   }
 }
 ```
@@ -192,14 +194,14 @@ Logs a new conflict.
 **Body:**
 ```json
 {
-  "conflict_description": "string (required)",
-  "values_involved": ["uuid", "uuid"],
+  "description": "string (required)",
+  "context": { "note": "string" },
   "severity": "low|medium|high|critical"
 }
 ```
 
 ```
-PUT /conflicts/:id
+PUT /conflicts/:id/resolve
 ```
 Updates conflict status/resolution.
 
@@ -232,6 +234,43 @@ Updates escalation rule for a severity level.
   "notification_channels": ["email", "in_app", "slack"]
 }
 ```
+
+### Ethical Lenses (SCU Framework)
+
+The platform integrates the Santa Clara University (SCU) Ethics Framework, providing six ethical lenses for evaluating AI decisions and outputs.
+
+```
+GET /api/soul-config/ethical-lenses
+```
+Returns all available ethical lenses.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    { "id": "uuid", "name": "Rights", "description": "Respects and protects individual rights" },
+    { "id": "uuid", "name": "Justice", "description": "Ensures fair and equitable treatment" },
+    { "id": "uuid", "name": "Utilitarian", "description": "Maximizes overall benefit and minimizes harm" },
+    { "id": "uuid", "name": "Common Good", "description": "Promotes conditions beneficial to all" },
+    { "id": "uuid", "name": "Virtue", "description": "Aligns with character traits we value" },
+    { "id": "uuid", "name": "Care Ethics", "description": "Prioritizes relationships and responsibilities of care" }
+  ]
+}
+```
+
+**SCU Lens Descriptions:**
+
+| Lens | Key Question |
+|------|-------------|
+| **Rights** | Does this respect the rights and dignity of all affected parties? |
+| **Justice** | Is this fair and equitable across all stakeholders? |
+| **Utilitarian** | Does this produce the greatest good for the greatest number? |
+| **Common Good** | Does this contribute to the well-being of the community as a whole? |
+| **Virtue** | Does this reflect the character and values we aspire to? |
+| **Care Ethics** | Does this honor our responsibilities to those who depend on us? |
+
+These lenses are used by the `ethicalContextService.js` to evaluate stakes in AI decisions and generate ethical context that is injected into agent prompts when high-stakes situations are detected.
 
 ---
 
@@ -398,7 +437,7 @@ All API endpoints require valid session:
 | `Invalid layer` | Layer not in allowed list | Use: identity, cognitive, voice, adaptation |
 | `Config not found` | Key doesn't exist | Check layer and key combination |
 | `Value not found` | Invalid value UUID | Verify UUID exists |
-| `conflict_description is required` | Missing required field | Include description in request |
+| `description is required` | Missing required field | Include description in request |
 
 ---
 

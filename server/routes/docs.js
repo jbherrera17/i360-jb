@@ -16,8 +16,7 @@ const DOCS_DIR = path.join(__dirname, '../../documentation/guides');
 // Allowed documentation files (whitelist for security)
 const ALLOWED_DOCS = [
     'prompt-transformer-user-guide.md',
-    'prompt-transformer-guide.md',
-    'prompt-transformation-rules.md',
+    'prompt-transformer-technical-guide.md',
     'dashboard-user-guide.md',
     'chat-user-guide.md',
     'agents-user-guide.md',
@@ -75,7 +74,18 @@ const ALLOWED_DOCS = [
     // Phase 48: Integrations
     'integrations-user-guide.md',
     // Phase 54: Soul Configuration
-    'soul-configuration-user-guide.md'
+    'soul-configuration-user-guide.md',
+    // Agent Categories
+    'admin-agent-categories-user-guide.md',
+    // Thought Leadership
+    'thought-leadership-user-guide.md',
+    'thought-leadership-technical-guide.md',
+    // Workflow Technical Guide
+    'workflow-technical-guide.md',
+    // Onboarding
+    'onboarding-guide.md',
+    // Strategy 120 Technical Guide
+    'strategy120-technical-guide.md'
 ];
 
 /**

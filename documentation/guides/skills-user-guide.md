@@ -1,7 +1,7 @@
 # Skills User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Tuesday, February 10, 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -53,14 +53,14 @@ The Skills interface lets you:
 ### Filtering Skills
 
 **By Suite:**
-1. Click the suite tabs:
+1. Click the suite filter chips:
    - **All**: Every skill
    - **Align**: Values and brand skills
    - **Strategy**: Planning and analysis skills
    - **Execute**: Production and action skills
 
 **By Category:**
-1. Use the category dropdown
+1. Use the category filter buttons
 2. Categories are loaded dynamically from the database
 3. Common categories include: Content, Voice, Workflow, Analysis, Design
 

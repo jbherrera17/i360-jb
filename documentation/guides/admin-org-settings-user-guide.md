@@ -1,7 +1,7 @@
 # Organization Settings User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 2026
+**Last Updated:** Wednesday, February 12, 2026
 
 ---
 
@@ -18,7 +18,7 @@ Organization Settings is your central hub for managing how your team operates wi
 | **View Organizations** | See all organizations you belong to |
 | **Switch Organizations** | Change context between different organizations |
 | **Edit Settings** | Update organization name, slug, and branding |
-| **Manage Branding** | Set brand colors for consistent appearance |
+| **Manage Branding** | Set brand color and logo for consistent appearance |
 | **View Statistics** | See member count and activity metrics |
 | **Track Setup Progress** | Monitor onboarding checklist completion |
 | **Delete Organization** | Remove an organization (owner only, non-personal only) |
@@ -33,6 +33,13 @@ Organization Settings is your central hub for managing how your team operates wi
 2. Use the organization dropdown at the top to see all your organizations
 3. Personal workspaces are marked with "(Personal)"
 4. Your current role is shown next to each organization
+
+### Creating a New Organization
+
+1. Click the **New Organization** button in the page header
+2. Enter the organization name in the dialog
+3. Click **Create** to provision the new organization
+4. The new organization will appear in your organization dropdown
 
 ### Switching Organizations
 
@@ -69,9 +76,10 @@ Click any incomplete item to navigate to the relevant page for setup.
 
 1. Select the organization you want to edit
 2. Update the **Organization Name** field
-3. Optionally change the **Slug** (URL-friendly identifier)
+3. The **Slug** field is read-only and cannot be changed (it is automatically derived from the organization name)
 4. Set a **Brand Color** using the color picker
-5. Click **Save Changes**
+5. Optionally enter a **Logo URL** to display your organization's logo throughout the interface
+6. Click **Save Changes**
 
 **Note:** Only owners and admins can edit organization settings.
 
@@ -79,9 +87,11 @@ Click any incomplete item to navigate to the relevant page for setup.
 
 The stats panel shows:
 - **Members**: Total number of team members
-- **Clients**: Number of clients managed (if agency features enabled)
+- **Clients**: Number of clients managed (agency-tier organizations only)
 - **Agents**: Number of AI agents created
 - **Workflows**: Number of automated workflows
+
+**Note:** The Clients statistic and any Clients section only appear for agency-tier organizations. Other subscription tiers will not see client-related information.
 
 ### Deleting an Organization
 
@@ -113,6 +123,7 @@ The stats panel shows:
 
 | Role | View Settings | Edit Settings | Delete Org |
 |------|---------------|---------------|------------|
+| **Platform Admin** | Yes (all orgs) | Yes (all orgs) | Yes |
 | **Owner** | Yes | Yes | Yes |
 | **Admin** | Yes | Yes | No |
 | **Consultant** | Yes | No | No |
@@ -123,8 +134,8 @@ The stats panel shows:
 ## Tips & Best Practices
 
 - **Use descriptive names**: Choose organization names that clearly identify the team or purpose
-- **Set brand colors**: Brand colors appear throughout the interface for visual consistency
-- **Keep slugs simple**: Slugs should be lowercase, URL-friendly (e.g., "acme-corp")
+- **Set brand color**: Your brand color appears throughout the interface for visual consistency
+- **Slugs are automatic**: The slug is generated from your organization name and is read-only
 - **Personal vs Team**: Use personal workspace for individual work; create organizations for team collaboration
 - **Complete onboarding**: Follow the Setup Progress checklist to ensure your organization is fully configured
 - **Before deleting**: Ensure team members are added to other organizations first if needed
@@ -139,6 +150,6 @@ The stats panel shows:
 | Don't see Danger Zone | Only organization owners can delete organizations |
 | Can't delete personal workspace | Personal workspaces cannot be deleted by design |
 | Changes not saving | Check your internet connection and try refreshing the page |
-| Slug already taken | Choose a different URL-friendly identifier |
+| Slug field is grayed out | The slug is read-only and automatically derived from the organization name |
 | Setup Progress not updating | Refresh the page after making changes on other pages |
 | User suspended after org deleted | Contact platform admin to reactivate and assign to new org |
