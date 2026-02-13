@@ -1846,6 +1846,7 @@
 
         function populateDepartmentDropdown() {
             const select = document.getElementById('userDepartment');
+            if (!select) return; // Element only exists when modal is open
             select.innerHTML = '<option value="">-- Select Department --</option>';
             departments.forEach(dept => {
                 const option = document.createElement('option');
@@ -1871,8 +1872,26 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
+        function buildBusinessRoleOptions(selectedRole = '') {
+            const currentRole = selectedRole || 'ic';
+            // Use dynamic businessRoles from API if available, otherwise fallback
+            const roles = businessRoles.length > 0 ? businessRoles : [
+                { id: 'ic', name: 'Individual Contributor' },
+                { id: 'supervisor', name: 'Supervisor' },
+                { id: 'manager', name: 'Manager' },
+                { id: 'director', name: 'Director' },
+                { id: 'executive', name: 'Executive' }
+            ];
+            // Sort by level ascending (ic=1 first, executive=5 last)
+            const sorted = [...roles].sort((a, b) => (a.level || 0) - (b.level || 0));
+            return sorted.map(r =>
+                `<option value="${r.id}" ${r.id === currentRole ? 'selected' : ''}>${escapeHtml(r.name)}</option>`
+            ).join('');
+        }
+
         function buildUserFormContent(user = null) {
             const isEdit = !!user;
+            // For edit mode, prefer unifiedUser for complete assignment data
             const unifiedUser = isEdit ? unifiedUsers.find(u => u.id === user.id) : null;
 
             return `
@@ -1921,11 +1940,7 @@
                         <div class="form-group">
                             <label class="form-label" for="userBusinessRole">Business Role</label>
                             <select id="userBusinessRole" class="form-select">
-                                <option value="ic" ${isEdit && (user.business_role === 'ic' || !user.business_role) ? 'selected' : ''}>Individual Contributor</option>
-                                <option value="supervisor" ${isEdit && user.business_role === 'supervisor' ? 'selected' : ''}>Supervisor</option>
-                                <option value="manager" ${isEdit && user.business_role === 'manager' ? 'selected' : ''}>Manager</option>
-                                <option value="director" ${isEdit && user.business_role === 'director' ? 'selected' : ''}>Director</option>
-                                <option value="executive" ${isEdit && user.business_role === 'executive' ? 'selected' : ''}>Executive</option>
+                                ${buildBusinessRoleOptions(isEdit ? user.business_role : '')}
                             </select>
                         </div>
 
@@ -2100,9 +2115,8 @@
                 });
                 showToast('Platform admin added');
                 await loadData();
-                // Refresh the modal
-                const user = users.find(u => u.id === userId);
-                if (user) openEditModal(userId);
+                // Refresh the modal with updated data
+                openEditModal(userId);
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -2117,8 +2131,7 @@
                 });
                 showToast('Platform admin removed');
                 await loadData();
-                const user = users.find(u => u.id === userId);
-                if (user) openEditModal(userId);
+                openEditModal(userId);
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -2149,8 +2162,7 @@
                 });
                 showToast('Organization membership added');
                 await loadData();
-                const user = users.find(u => u.id === userId);
-                if (user) openEditModal(userId);
+                openEditModal(userId);
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -2165,8 +2177,7 @@
                 });
                 showToast('Organization membership removed');
                 await loadData();
-                const user = users.find(u => u.id === userId);
-                if (user) openEditModal(userId);
+                openEditModal(userId);
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -2193,7 +2204,8 @@
         }
 
         function openEditModal(userId) {
-            const user = users.find(u => u.id === userId);
+            // Prefer unifiedUsers (has assignments data), fallback to users
+            const user = unifiedUsers.find(u => u.id === userId) || users.find(u => u.id === userId);
             if (!user) return;
 
             // Close existing modal if open
@@ -2409,25 +2421,28 @@
         // Data Loading
         // ============================================================================
         async function loadData() {
+            // Use allSettled so partial failures don't block rendering
+            const results = await Promise.allSettled([
+                fetchUsers(),
+                fetchUnifiedUsers(),
+                fetchRolesSummary(),
+                fetchBusinessRoles(),
+                fetchDepartments(),
+                fetchOrganizations()
+            ]);
+
+            // Log any failures
+            const labels = ['users', 'unifiedUsers', 'rolesSummary', 'businessRoles', 'departments', 'organizations'];
+            results.forEach((r, i) => {
+                if (r.status === 'rejected') console.error(`Failed to fetch ${labels[i]}:`, r.reason);
+            });
+
             try {
-                const [usersData, unifiedData, summary, roles, depts, orgs] = await Promise.all([
-                    fetchUsers(),
-                    fetchUnifiedUsers(),
-                    fetchRolesSummary(),
-                    fetchBusinessRoles(),
-                    fetchDepartments(),
-                    fetchOrganizations()
-                ]);
-                try {
-                    renderUsersTable();
-                    updateAssignmentStats();
-                    populateDepartmentDropdown();
-                } catch (renderError) {
-                    console.error('Render error:', renderError);
-                }
-            } catch (error) {
-                console.error('loadData fetch error:', error);
-                // Don't show error toast - data already loaded, just render issues
+                renderUsersTable();
+                updateAssignmentStats();
+                populateDepartmentDropdown();
+            } catch (renderError) {
+                console.error('Render error:', renderError);
             }
         }
 

@@ -604,7 +604,7 @@ module.exports = function(supabase) {
      */
     router.post('/users', requireAdmin, async (req, res) => {
         try {
-            const { email, password, display_name, role, org_id, org_role } = req.body;
+            const { email, password, display_name, role, business_role, department_id, org_id, org_role } = req.body;
 
             if (!email || !password) {
                 return res.status(400).json({
@@ -667,15 +667,19 @@ module.exports = function(supabase) {
 
             // Insert user profile into users table with specified role
             if (authData.user) {
+                const profileData = {
+                    id: authData.user.id,
+                    email: authData.user.email,
+                    display_name: display_name || email.split('@')[0],
+                    role: userRole,
+                    default_org_id: org_id || null
+                };
+                if (business_role) profileData.business_role = business_role;
+                if (department_id) profileData.department_id = department_id;
+
                 const { error: profileError } = await supabase
                     .from('users')
-                    .upsert({
-                        id: authData.user.id,
-                        email: authData.user.email,
-                        display_name: display_name || email.split('@')[0],
-                        role: userRole,
-                        default_org_id: org_id || null
-                    });
+                    .upsert(profileData);
 
                 if (profileError) {
                     console.error('Profile creation error:', profileError);
