@@ -105,11 +105,25 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Fetch tier features if org has a subscription tier
+            let tier_features = {};
+            if (data.subscription_tier) {
+                const { data: tierData } = await supabase
+                    .from('subscription_tiers')
+                    .select('features')
+                    .eq('id', data.subscription_tier)
+                    .single();
+                if (tierData?.features) {
+                    tier_features = tierData.features;
+                }
+            }
+
             res.json({
                 success: true,
                 data: {
                     ...data,
-                    member_role: membership.role
+                    member_role: membership.role,
+                    tier_features
                 }
             });
         } catch (error) {

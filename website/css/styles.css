@@ -4,7 +4,7 @@
    ============================================ */
 
 /* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Unbounded:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ============================================
    CSS Variables - Brand System
@@ -20,10 +20,15 @@
     --color-secondary-dark: #9668b8;
     --color-accent-dark: #c67856;
 
-    /* Light variants for backgrounds */
-    --color-primary-light: #e8f4fa;
-    --color-secondary-light: #f5eef9;
-    --color-accent-light: #fdf3ef;
+    /* Light variants (brand light palette) */
+    --color-primary-light: #85ecf8;
+    --color-secondary-light: #f0d4fa;
+    --color-accent-light: #ffe7ba;
+
+    /* Ultra-light tints for large background areas */
+    --color-primary-tint: #e0f9fd;
+    --color-secondary-tint: #faf0fd;
+    --color-accent-tint: #fff5e6;
 
     /* Neutral Colors - Light Theme */
     --color-white: #ffffff;
@@ -46,8 +51,8 @@
     --gradient-subtle: linear-gradient(180deg, var(--color-white) 0%, var(--color-gray-50) 100%);
 
     /* Typography */
-    --font-heading: 'Unbounded', sans-serif;
-    --font-body: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading: 'Roboto', sans-serif;
+    --font-body: 'Poppins', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
     /* Spacing - Generous Apple-style */
     --spacing-xs: 0.25rem;
@@ -487,7 +492,7 @@ p {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
-    background: var(--color-primary-light);
+    background: var(--color-primary-tint);
     padding: var(--spacing-sm) var(--spacing-lg);
     border-radius: var(--radius-full);
     font-size: 0.875rem;
@@ -582,7 +587,7 @@ p {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-accent-light);
+    background: var(--color-accent-tint);
     border-radius: var(--radius-lg);
     margin: 0 auto var(--spacing-lg);
     color: var(--color-accent-dark);
@@ -797,7 +802,7 @@ p {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-primary-light);
+    background: var(--color-primary-tint);
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-lg);
     color: var(--color-primary-dark);

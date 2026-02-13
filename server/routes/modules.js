@@ -65,6 +65,116 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/modules/usage
+     * Get resource usage, limits, warnings, and blocks for the current org.
+     * Used by the usage-nudge frontend to show upgrade prompts.
+     */
+    router.get('/usage', async (req, res) => {
+        try {
+            const userId = req.userId;
+            const orgId = req.headers['x-org-id'] || req.query.org_id;
+
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            if (!orgId) {
+                return res.status(400).json({ success: false, error: 'Organization ID required (x-org-id header)' });
+            }
+
+            // Get org's current tier
+            const { data: orgData, error: orgError } = await supabase
+                .from('organizations')
+                .select('subscription_tier')
+                .eq('id', orgId)
+                .single();
+
+            if (orgError || !orgData) {
+                return res.status(404).json({ success: false, error: 'Organization not found' });
+            }
+
+            const currentTier = orgData.subscription_tier;
+
+            // Get tier details
+            const { data: tierData } = await supabase
+                .from('subscription_tiers')
+                .select('id, name, display_order, tier_group, allow_self_upgrade')
+                .eq('id', currentTier)
+                .single();
+
+            // Get next upgrade tier (same tier_group, next display_order)
+            let nextTier = null;
+            if (tierData) {
+                const { data: nextTierData } = await supabase
+                    .from('subscription_tiers')
+                    .select('id, name, price_monthly, display_order')
+                    .eq('is_active', true)
+                    .eq('tier_group', tierData.tier_group || 'standard')
+                    .gt('display_order', tierData.display_order)
+                    .order('display_order')
+                    .limit(1)
+                    .single();
+
+                nextTier = nextTierData || null;
+            }
+
+            // Check limits for all resource types
+            const resourceTypes = [
+                'members', 'clients', 'agents', 'workflows',
+                'skills', 'context_assets', 'research_studios'
+            ];
+
+            const limits = {};
+            const warnings = [];
+            const blocks = [];
+
+            for (const resourceType of resourceTypes) {
+                const { data, error } = await supabase
+                    .rpc('check_org_limits', {
+                        p_org_id: orgId,
+                        p_resource_type: resourceType
+                    });
+
+                if (!error && data?.[0]) {
+                    const info = data[0];
+                    limits[resourceType] = info;
+
+                    const pct = info.usage_percent || 0;
+                    if (pct >= 100) {
+                        blocks.push({
+                            resource: resourceType,
+                            current: info.current_count,
+                            max: info.max_allowed,
+                            percent: pct
+                        });
+                    } else if (pct >= 80) {
+                        warnings.push({
+                            resource: resourceType,
+                            current: info.current_count,
+                            max: info.max_allowed,
+                            percent: pct
+                        });
+                    }
+                }
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    tier: tierData ? { id: tierData.id, name: tierData.name, allow_self_upgrade: tierData.allow_self_upgrade } : { id: currentTier, name: currentTier },
+                    limits,
+                    warnings,
+                    blocks,
+                    next_tier: nextTier
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching usage data:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
      * GET /api/modules/all
      * Get all platform modules (for admin display)
      */

@@ -3,26 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Insight 360 pricing - Simple, transparent pricing designed for small and mid-sized businesses. Invest in outcomes, not tools.">
-    <title>Pricing - Insight 360</title>
+    <meta name="description" content="Synergi AI Insight 360 pricing - Simple, transparent pricing designed for small and mid-sized businesses. Invest in outcomes, not tools.">
+    <title>Pricing - Insight 360 | Synergi AI</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2377bde0'/><circle cx='50' cy='50' r='25' fill='%23b78bd3'/><circle cx='50' cy='50' r='10' fill='%23dc9171'/></svg>">
+    <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon.png">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        /* Pricing page enhancements */
+        .navbar-brand .brand-logo {
+            height: 44px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient-primary);
+            color: var(--color-white);
+            padding: var(--spacing-xs) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .pricing-card.featured::before {
+            display: none;
+        }
+
+        .custom-price {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-gray-900);
+            line-height: 1;
+        }
+
+        .tier-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .tier-indicator.blue {
+            background: var(--color-primary-tint);
+            color: var(--color-primary-dark);
+        }
+
+        .tier-indicator.purple {
+            background: var(--color-secondary-tint);
+            color: var(--color-secondary-dark);
+        }
+
+        .tier-indicator.coral {
+            background: var(--color-accent-tint);
+            color: var(--color-accent-dark);
+        }
+
+        .tier-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .tier-indicator.blue .dot { background: var(--color-primary); }
+        .tier-indicator.purple .dot { background: var(--color-secondary); }
+        .tier-indicator.coral .dot { background: var(--color-accent); }
+
+        .addons-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        .addon-card {
+            background: var(--color-white);
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            text-align: center;
+            transition: var(--transition-base);
+        }
+
+        .addon-card:hover {
+            border-color: var(--color-primary-light);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .addon-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-lg);
+            margin: 0 auto var(--spacing-lg);
+        }
+
+        .addon-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .addon-price {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-top: var(--spacing-md);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: left;
+            border-bottom: 1px solid var(--color-gray-200);
+            font-size: 0.9375rem;
+        }
+
+        .comparison-table th {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            color: var(--color-gray-900);
+            background: var(--color-gray-50);
+        }
+
+        .comparison-table td:first-child {
+            color: var(--color-gray-700);
+            font-weight: 500;
+        }
+
+        .comparison-table td:not(:first-child) {
+            text-align: center;
+            color: var(--color-gray-600);
+        }
+
+        .check-icon {
+            display: inline-flex;
+            width: 20px;
+            height: 20px;
+            color: var(--color-primary);
+        }
+
+        .economics-card {
+            background: linear-gradient(135deg, var(--color-primary-tint), var(--color-secondary-tint));
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-3xl);
+            text-align: center;
+            margin-top: var(--spacing-3xl);
+        }
+
+        .economics-stats {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-3xl);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-xl);
+        }
+
+        .economics-stat .value {
+            font-family: var(--font-heading);
+            font-size: 2.25rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .economics-stat .label {
+            font-size: 0.875rem;
+            color: var(--color-gray-600);
+            margin-top: var(--spacing-xs);
+        }
+
+        .footer-brand-logo {
+            height: 48px;
+            width: auto;
+            max-width: 240px;
+            object-fit: contain;
+            margin-bottom: var(--spacing-lg);
+            filter: brightness(0) invert(1);
+        }
+
+        @media (max-width: 1024px) {
+            .addons-grid {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .economics-stats {
+                gap: var(--spacing-xl);
+            }
+
+            .economics-stat .value {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
 </head>
 <body class="pricing-page">
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="container">
             <a href="index.html" class="navbar-brand">
-                <svg class="logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="18" stroke="#77bde0" stroke-width="2" fill="none"/>
-                    <circle cx="20" cy="20" r="12" stroke="#b78bd3" stroke-width="2" fill="none"/>
-                    <circle cx="20" cy="20" r="6" fill="#dc9171"/>
-                </svg>
-                <span class="brand-name">Insight<span>360</span></span>
+                <img src="assets/synergi-logo-horizontal.png"
+                     alt="Synergi AI"
+                     class="brand-logo">
             </a>
 
             <div class="navbar-menu" id="navbarMenu">
@@ -81,6 +289,10 @@
                 <!-- Starter Plan -->
                 <div class="pricing-card fade-in">
                     <div class="pricing-header">
+                        <span class="tier-indicator blue">
+                            <span class="dot"></span>
+                            Starter
+                        </span>
                         <div class="pricing-name">Starter</div>
                         <div class="pricing-desc">For small teams exploring AI</div>
                         <div class="pricing-price">
@@ -126,6 +338,10 @@
                 <div class="pricing-card featured fade-in delay-1">
                     <div class="pricing-badge">Most Popular</div>
                     <div class="pricing-header">
+                        <span class="tier-indicator purple">
+                            <span class="dot"></span>
+                            Professional
+                        </span>
                         <div class="pricing-name">Professional</div>
                         <div class="pricing-desc">For mid-size companies transforming with AI</div>
                         <div class="pricing-price">
@@ -186,6 +402,10 @@
                 <!-- Enterprise Plan -->
                 <div class="pricing-card fade-in delay-2">
                     <div class="pricing-header">
+                        <span class="tier-indicator coral">
+                            <span class="dot"></span>
+                            Enterprise
+                        </span>
                         <div class="pricing-name">Enterprise</div>
                         <div class="pricing-desc">For large organizations at scale</div>
                         <div class="pricing-price">
@@ -254,6 +474,10 @@
                 <!-- Agency Starter -->
                 <div class="pricing-card fade-in" style="background: var(--color-white);">
                     <div class="pricing-header">
+                        <span class="tier-indicator blue">
+                            <span class="dot"></span>
+                            Agency
+                        </span>
                         <div class="pricing-name">Agency Starter</div>
                         <div class="pricing-desc">For small consultancies</div>
                         <div class="pricing-price">
@@ -299,6 +523,10 @@
                 <div class="pricing-card featured fade-in delay-1" style="background: var(--color-white);">
                     <div class="pricing-badge">Best Value</div>
                     <div class="pricing-header">
+                        <span class="tier-indicator purple">
+                            <span class="dot"></span>
+                            Agency
+                        </span>
                         <div class="pricing-name">Agency Professional</div>
                         <div class="pricing-desc">For growing agencies</div>
                         <div class="pricing-price">
@@ -350,6 +578,10 @@
                 <!-- Agency Enterprise -->
                 <div class="pricing-card fade-in delay-2" style="background: var(--color-white);">
                     <div class="pricing-header">
+                        <span class="tier-indicator coral">
+                            <span class="dot"></span>
+                            Agency
+                        </span>
                         <div class="pricing-name">Agency Enterprise</div>
                         <div class="pricing-desc">For large consultancies</div>
                         <div class="pricing-price">
@@ -392,23 +624,23 @@
             </div>
 
             <!-- Agency Economics Callout -->
-            <div style="margin-top: var(--spacing-3xl); background: linear-gradient(135deg, var(--color-primary-light), var(--color-secondary-light)); border-radius: var(--radius-xl); padding: var(--spacing-2xl); text-align: center;">
+            <div class="economics-card">
                 <h3 style="margin-bottom: var(--spacing-md); color: var(--color-gray-900);">Agency Economics That Make Sense</h3>
-                <p style="font-size: 1.125rem; color: var(--color-gray-700); max-width: 700px; margin: 0 auto var(--spacing-xl);">
+                <p style="font-size: 1.125rem; color: var(--color-gray-700); max-width: 700px; margin: 0 auto;">
                     Platform cost is typically <strong>2-3%</strong> of potential client revenue. Agencies using Insight 360 see <strong>40x+ margin</strong> on software costs.
                 </p>
-                <div style="display: flex; justify-content: center; gap: var(--spacing-2xl); flex-wrap: wrap;">
-                    <div>
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary-dark);">97%+</div>
-                        <div style="font-size: 0.875rem; color: var(--color-gray-600);">Gross margin potential</div>
+                <div class="economics-stats">
+                    <div class="economics-stat">
+                        <div class="value" style="color: var(--color-primary-dark);">97%+</div>
+                        <div class="label">Gross margin potential</div>
                     </div>
-                    <div>
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-secondary-dark);">$3K-10K</div>
-                        <div style="font-size: 0.875rem; color: var(--color-gray-600);">Typical monthly client fee</div>
+                    <div class="economics-stat">
+                        <div class="value" style="color: var(--color-secondary-dark);">$3K-10K</div>
+                        <div class="label">Typical monthly client fee</div>
                     </div>
-                    <div>
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-accent-dark);">~$50</div>
-                        <div style="font-size: 0.875rem; color: var(--color-gray-600);">Your cost per client</div>
+                    <div class="economics-stat">
+                        <div class="value" style="color: var(--color-accent-dark);">~$50</div>
+                        <div class="label">Your cost per client</div>
                     </div>
                 </div>
             </div>
@@ -424,36 +656,36 @@
                 <p>Get the most out of Insight 360 with expert guidance.</p>
             </div>
 
-            <div class="grid grid-3">
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="addons-grid">
+                <div class="addon-card fade-in">
+                    <div class="addon-icon" style="background: var(--color-primary-tint);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-dark)" stroke-width="2">
                             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                             <path d="M2 17l10 5 10-5"/>
                             <path d="M2 12l10 5 10-5"/>
                         </svg>
                     </div>
                     <h4>Implementation Package</h4>
-                    <p style="margin-bottom: var(--spacing-md);">Guided setup, data migration, and team training to get you running fast.</p>
-                    <span style="font-size: 1.125rem; font-weight: 600; color: var(--color-primary-dark);">$5,000 - $15,000</span>
+                    <p style="margin-bottom: 0; font-size: 1rem; color: var(--color-gray-500);">Guided setup, data migration, and team training to get you running fast.</p>
+                    <div class="addon-price" style="color: var(--color-primary-dark);">$5,000 - $15,000</div>
                 </div>
 
-                <div class="feature-card fade-in delay-1">
-                    <div class="feature-icon" style="background: var(--color-secondary-light);">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#9668b8" stroke-width="2">
+                <div class="addon-card fade-in delay-1">
+                    <div class="addon-icon" style="background: var(--color-secondary-tint);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary-dark)" stroke-width="2">
                             <circle cx="12" cy="12" r="3"/>
                             <path d="M12 1v6m0 6v6"/>
                             <path d="M1 12h6m6 0h6"/>
                         </svg>
                     </div>
                     <h4>Custom Agent Development</h4>
-                    <p style="margin-bottom: var(--spacing-md);">Bespoke AI agents tailored to your specific workflows and use cases.</p>
-                    <span style="font-size: 1.125rem; font-weight: 600; color: var(--color-secondary-dark);">$2,500/agent</span>
+                    <p style="margin-bottom: 0; font-size: 1rem; color: var(--color-gray-500);">Bespoke AI agents tailored to your specific workflows and use cases.</p>
+                    <div class="addon-price" style="color: var(--color-secondary-dark);">$2,500/agent</div>
                 </div>
 
-                <div class="feature-card fade-in delay-2">
-                    <div class="feature-icon" style="background: var(--color-accent-light);">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#c67856" stroke-width="2">
+                <div class="addon-card fade-in delay-2">
+                    <div class="addon-icon" style="background: var(--color-accent-tint);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-dark)" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -461,8 +693,8 @@
                         </svg>
                     </div>
                     <h4>Executive Training</h4>
-                    <p style="margin-bottom: var(--spacing-md);">Leadership alignment workshop to ensure AI transformation success.</p>
-                    <span style="font-size: 1.125rem; font-weight: 600; color: var(--color-accent-dark);">$2,500/session</span>
+                    <p style="margin-bottom: 0; font-size: 1rem; color: var(--color-gray-500);">Leadership alignment workshop to ensure AI transformation success.</p>
+                    <div class="addon-price" style="color: var(--color-accent-dark);">$2,500/session</div>
                 </div>
             </div>
         </div>
@@ -479,8 +711,8 @@
 
             <div class="grid grid-3">
                 <div class="solution-card fade-in" style="background: var(--color-white);">
-                    <div class="solution-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <div class="solution-icon" style="background: var(--color-primary-tint);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-dark)" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M16 8l-8 8M8 8l8 8"/>
                         </svg>
@@ -492,8 +724,8 @@
                 </div>
 
                 <div class="solution-card fade-in delay-1" style="background: var(--color-white);">
-                    <div class="solution-icon" style="background: var(--color-secondary-light);">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9668b8" stroke-width="2">
+                    <div class="solution-icon" style="background: var(--color-secondary-tint);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary-dark)" stroke-width="2">
                             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                             <path d="M2 17l10 5 10-5"/>
                             <path d="M2 12l10 5 10-5"/>
@@ -506,8 +738,8 @@
                 </div>
 
                 <div class="solution-card fade-in delay-2" style="background: var(--color-white);">
-                    <div class="solution-icon" style="background: var(--color-accent-light);">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c67856" stroke-width="2">
+                    <div class="solution-icon" style="background: var(--color-accent-tint);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-dark)" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -554,23 +786,23 @@
                         <h4 style="color: var(--color-primary-dark); margin-bottom: var(--spacing-md);">With Insight 360</h4>
                         <ul style="list-style: none; padding: 0;">
                             <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                 All AI models in one platform
                             </li>
                             <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                 Context always loaded automatically
                             </li>
                             <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                 Built-in strategic frameworks
                             </li>
                             <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                 Values-based AI governance
                             </li>
                             <li style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; color: var(--color-gray-600);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a9bc7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                 Platform pays for itself in first assessment
                             </li>
                         </ul>
@@ -685,14 +917,9 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <div class="logo-wrapper">
-                        <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="20" cy="20" r="18" stroke="#77bde0" stroke-width="2" fill="none"/>
-                            <circle cx="20" cy="20" r="12" stroke="#b78bd3" stroke-width="2" fill="none"/>
-                            <circle cx="20" cy="20" r="6" fill="#dc9171"/>
-                        </svg>
-                        <span class="brand-name">Insight<span>360</span></span>
-                    </div>
+                    <img src="assets/synergi-logo-horizontal.png"
+                         alt="Synergi AI"
+                         class="footer-brand-logo">
                     <p>Human Brilliance. Amplified by AI.</p>
                     <p class="footer-tagline">"Built by SMBs, for SMBs."</p>
                 </div>

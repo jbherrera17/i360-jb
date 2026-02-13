@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/agent-dialog.css">
+    <link rel="stylesheet" href="/css/usage-nudge.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -2362,6 +2363,7 @@
     <!-- ModalService must load before inline scripts that use it -->
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/agent-dialog-service.js"></script>
+    <script src="/js/usage-nudge.js"></script>
 
     <script>
         // Initialize Lucide icons
@@ -2582,6 +2584,9 @@
 
         async function saveAgent(agentData) {
             try {
+                // Guard new creation against plan limits
+                if (!editingAgent && !(await UsageNudge.checkBeforeCreate('agents'))) return;
+
                 const method = editingAgent ? 'PUT' : 'POST';
                 const url = editingAgent ? `/api/agents/${editingAgent.id}` : '/api/agents';
 
@@ -4282,6 +4287,7 @@
         async function init() {
             initTheme();
             initPanelResize();
+            UsageNudge.init();
             await Promise.all([
                 fetchDepartments(),
                 fetchCategories(),

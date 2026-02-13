@@ -742,8 +742,10 @@ function addMessage(role, content, isLoading = false, autoScroll = true) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
 
-    const avatar = role === 'user' ? '👤' : '<img src="/assets/25-08-20 - Higgins Mona Lisa Smile-T.png" alt="Higgins" class="higgins-avatar">';
-    const label = role === 'user' ? 'You' : 'Higgins';
+    const _assistantName = (typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins';
+    const _assistantAvatar = (typeof BrandingService !== 'undefined') ? BrandingService.getAssistantAvatar() : '/assets/25-08-20 - Higgins Mona Lisa Smile-T.png';
+    const avatar = role === 'user' ? '👤' : `<img src="${_assistantAvatar}" alt="${_assistantName}" class="higgins-avatar">`;
+    const label = role === 'user' ? 'You' : _assistantName;
 
     // Loading spinner HTML for assistant messages
     const loadingSpinner = `
@@ -1498,8 +1500,8 @@ function showWelcomeMessage() {
                 <div class="welcome-icon">
                     <i data-lucide="graduation-cap"></i>
                 </div>
-                <h2>Welcome to Higgins</h2>
-                <p>I'm your AI guide to Insight 360, powered by the model you select above. Ask me anything about the system, or let me help with any other task.</p>
+                <h2>Welcome to ${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'}</h2>
+                <p>I'm your AI guide to ${(typeof BrandingService !== 'undefined') ? BrandingService.getAppName() : 'Insight 360'}, powered by the model you select above. Ask me anything about the system, or let me help with any other task.</p>
                 <div class="quick-actions">
                     <button onclick="insertPrompt('How do I create a context asset?')" class="quick-action">
                         <i data-lucide="help-circle"></i>
@@ -2237,7 +2239,8 @@ async function exportAsDocument(format) {
     }
 
     const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `higgins-response-${timestamp}`;
+    const _exportName = (typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName().toLowerCase().replace(/\s+/g, '-') : 'higgins';
+    const filename = `${_exportName}-response-${timestamp}`;
 
     try {
         if (format === 'markdown') {
@@ -2500,7 +2503,7 @@ async function exportAsDocument(format) {
                             <div class="document-meta">
                                 <div class="brand">
                                     <div class="brand-icon"></div>
-                                    <span>Insight 360 | Higgins AI Assistant</span>
+                                    <span>${(typeof BrandingService !== 'undefined') ? BrandingService.getAppName() : 'Insight 360'} | ${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} AI Assistant</span>
                                 </div>
                                 <div class="date">${dateStr}</div>
                             </div>
@@ -2525,9 +2528,9 @@ async function exportAsDocument(format) {
             // For DOCX, create a simple HTML-based download that Word can open
             const htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-                <head><meta charset='utf-8'><title>Higgins Response</title></head>
+                <head><meta charset='utf-8'><title>${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} Response</title></head>
                 <body style="font-family: Calibri, sans-serif; font-size: 11pt; line-height: 1.5;">
-                <h1>Higgins Response</h1>
+                <h1>${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} Response</h1>
                 <p><small>Generated: ${new Date().toLocaleString()}</small></p>
                 <hr>
                 ${formatContentForPrint(currentArtifactContent)}
@@ -2588,7 +2591,7 @@ async function exportAsDocument(format) {
 
             // Also add a full text sheet with the complete response
             const textWs = XLSX.utils.aoa_to_sheet([
-                ['Higgins AI Response'],
+                [`${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} AI Response`],
                 [`Generated: ${new Date().toLocaleString()}`],
                 [''],
                 ...currentArtifactContent.split('\n').map(line => [line])
@@ -2852,7 +2855,7 @@ async function saveAsContextAsset() {
                 name: name,
                 type: 'knowledge',
                 content: currentArtifactContent,
-                description: 'Saved from Higgins conversation',
+                description: `Saved from ${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} conversation`,
                 is_active: true
             })
         });

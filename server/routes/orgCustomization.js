@@ -284,6 +284,94 @@ module.exports = function(supabase) {
             delete brandingData.org_id;
             delete brandingData.created_at;
 
+            // Validation: color fields must be valid hex
+            const colorFields = ['primary_color', 'secondary_color', 'accent_color', 'text_color', 'background_color', 'sidebar_color'];
+            const hexRegex = /^#[0-9a-fA-F]{6}$/;
+            for (const field of colorFields) {
+                if (brandingData[field] && !hexRegex.test(brandingData[field])) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Invalid color value for ${field}. Must be a hex color like #6366f1`
+                    });
+                }
+            }
+
+            // Validation: URL fields must be valid URLs or empty
+            const urlFields = ['logo_url', 'logo_dark_url', 'favicon_url', 'ai_assistant_avatar_url'];
+            for (const field of urlFields) {
+                if (brandingData[field] && brandingData[field].trim()) {
+                    try {
+                        new URL(brandingData[field]);
+                    } catch {
+                        return res.status(400).json({
+                            success: false,
+                            error: `Invalid URL for ${field}`
+                        });
+                    }
+                }
+            }
+
+            // Validation: font fields must be from allowed list
+            const allowedFonts = ['Inter', 'Source Sans 3', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Nunito', 'Raleway', 'Orbitron'];
+            for (const field of ['heading_font', 'body_font']) {
+                if (brandingData[field] && !allowedFonts.includes(brandingData[field])) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Invalid font: ${brandingData[field]}. Allowed: ${allowedFonts.join(', ')}`
+                    });
+                }
+            }
+
+            // Tier enforcement: strip white_label-only fields if org doesn't have that feature
+            const { data: org } = await supabase
+                .from('organizations')
+                .select('subscription_tier')
+                .eq('id', orgId)
+                .single();
+
+            if (org?.subscription_tier) {
+                const { data: tierData } = await supabase
+                    .from('subscription_tiers')
+                    .select('features')
+                    .eq('id', org.subscription_tier)
+                    .single();
+
+                const features = tierData?.features || {};
+
+                // white_label fields require white_label feature
+                if (!features.white_label) {
+                    delete brandingData.ai_assistant_name;
+                    delete brandingData.ai_assistant_avatar_url;
+                    delete brandingData.report_header_html;
+                    delete brandingData.report_footer_html;
+                    delete brandingData.report_css;
+                    delete brandingData.report_cover_template;
+                    delete brandingData.email_from_name;
+                    delete brandingData.email_from_address;
+                    delete brandingData.email_signature_html;
+                    delete brandingData.email_header_html;
+                    delete brandingData.email_footer_html;
+                    delete brandingData.portal_welcome_message;
+                    delete brandingData.portal_custom_css;
+                }
+
+                // custom_branding fields require custom_branding feature
+                if (!features.custom_branding) {
+                    delete brandingData.app_name;
+                    delete brandingData.app_tagline;
+                    delete brandingData.logo_url;
+                    delete brandingData.logo_dark_url;
+                    delete brandingData.favicon_url;
+                    delete brandingData.primary_color;
+                    delete brandingData.secondary_color;
+                    delete brandingData.accent_color;
+                    delete brandingData.sidebar_color;
+                    delete brandingData.heading_font;
+                    delete brandingData.body_font;
+                    delete brandingData.font_size_base;
+                }
+            }
+
             const { data, error } = await supabase
                 .from('org_branding')
                 .upsert({
@@ -298,6 +386,24 @@ module.exports = function(supabase) {
                 .single();
 
             if (error) throw error;
+
+            // Sync primary_color and logo_url back to organizations.settings for backward compat
+            if (brandingData.primary_color || brandingData.logo_url) {
+                const { data: currentOrg } = await supabase
+                    .from('organizations')
+                    .select('settings')
+                    .eq('id', orgId)
+                    .single();
+
+                const settings = currentOrg?.settings || {};
+                if (brandingData.primary_color) settings.primary_color = brandingData.primary_color;
+                if (brandingData.logo_url) settings.logo_url = brandingData.logo_url;
+
+                await supabase
+                    .from('organizations')
+                    .update({ settings, updated_at: new Date().toISOString() })
+                    .eq('id', orgId);
+            }
 
             res.json({
                 success: true,

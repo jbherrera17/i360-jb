@@ -83,12 +83,15 @@ function renderTypeIcon(icon) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Context Admin initializing...');
-    
+
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
-    
+
+    // Initialize usage nudge (soft-limit warnings)
+    if (typeof UsageNudge !== 'undefined') UsageNudge.init();
+
     // Load data
     await loadAssetTypes();
     await loadDepartments();
@@ -520,6 +523,8 @@ async function saveAsset() {
             });
             showNotification('Asset updated successfully', 'success');
         } else {
+            // Guard new creation against plan limits
+            if (typeof UsageNudge !== 'undefined' && !(await UsageNudge.checkBeforeCreate('context_assets'))) return;
             // Create new
             result = await apiCall('/api/context/assets', {
                 method: 'POST',

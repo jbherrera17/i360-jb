@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/usage-nudge.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -795,6 +796,7 @@
     <!-- Help Modal -->
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
+    <script src="/js/usage-nudge.js"></script>
 
     <script>
         // State
@@ -888,6 +890,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            UsageNudge.init();
 
             // Load departments first for dropdown
             await loadDepartments();
@@ -1403,6 +1406,9 @@
             }
 
             try {
+                // Guard new creation against plan limits
+                if (!workflow.id && !(await UsageNudge.checkBeforeCreate('workflows'))) return;
+
                 const token = getAuthToken();
                 const method = workflow.id ? 'PUT' : 'POST';
                 const url = workflow.id ? `/api/workflows/${workflow.id}` : '/api/workflows';

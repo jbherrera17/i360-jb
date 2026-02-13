@@ -687,6 +687,9 @@ async function initNavigation() {
     if (!window.location.pathname.includes('/login')) {
         _loadSessionTimeout();
     }
+
+    // Load and apply org branding (non-blocking)
+    _loadBrandingService();
 }
 
 /**
@@ -954,6 +957,29 @@ function scrollActiveItemIntoView(activeItem) {
  * Toggle theme between dark and light
  * This is the main theme toggle function used throughout the app
  */
+/**
+ * Dynamically load BrandingService and apply org branding
+ * @private
+ */
+function _loadBrandingService() {
+    if (typeof BrandingService !== 'undefined') {
+        BrandingService.load();
+        return;
+    }
+
+    var script = document.createElement('script');
+    script.src = '/js/branding-service.js';
+    script.onload = function() {
+        if (typeof BrandingService !== 'undefined') {
+            BrandingService.load();
+        }
+    };
+    script.onerror = function() {
+        console.warn('BrandingService: Failed to load branding-service.js');
+    };
+    document.head.appendChild(script);
+}
+
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -963,6 +989,11 @@ function toggleTheme() {
 
     // Update toggle icon
     updateThemeToggleIcon();
+
+    // Swap light/dark logos if branding is loaded
+    if (typeof BrandingService !== 'undefined') {
+        BrandingService.updateSidebar();
+    }
 }
 
 // Apply saved theme immediately (before DOMContentLoaded)

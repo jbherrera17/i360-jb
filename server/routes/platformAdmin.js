@@ -602,11 +602,14 @@ module.exports = function(supabase) {
             const { id } = req.params;
             const { include_inactive } = req.query;
 
-            // Define tier hierarchy (higher index = higher tier)
-            const tierHierarchy = ['starter', 'business', 'enterprise', 'agency'];
-            const tierIndex = tierHierarchy.indexOf(id);
+            // Look up the requested tier's display_order from DB
+            const { data: requestedTier, error: tierError } = await supabase
+                .from('subscription_tiers')
+                .select('id, display_order')
+                .eq('id', id)
+                .single();
 
-            if (tierIndex === -1) {
+            if (tierError || !requestedTier) {
                 return res.status(400).json({
                     success: false,
                     error: 'Invalid tier ID'
@@ -628,11 +631,21 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Build a map of tier display_orders for filtering
+            const { data: allTiers } = await supabase
+                .from('subscription_tiers')
+                .select('id, display_order')
+                .eq('is_active', true);
+
+            const tierOrderMap = {};
+            (allTiers || []).forEach(t => { tierOrderMap[t.id] = t.display_order; });
+
             // Filter modules available for this tier
             const availableModules = (modules || []).filter(module => {
-                const moduleMinTierIndex = tierHierarchy.indexOf(module.min_tier);
-                // Module is available if the requested tier is >= module's min_tier
-                return tierIndex >= moduleMinTierIndex;
+                if (!module.min_tier) return true; // No min_tier = available to all
+                const moduleMinOrder = tierOrderMap[module.min_tier];
+                if (moduleMinOrder === undefined) return true; // Unknown tier = allow
+                return requestedTier.display_order >= moduleMinOrder;
             });
 
             // Group by category
@@ -1059,11 +1072,25 @@ module.exports = function(supabase) {
                 throw error;
             }
 
+            // Fetch tier features
+            let tier_features = {};
+            if (data.subscription_tier) {
+                const { data: tierData } = await supabase
+                    .from('subscription_tiers')
+                    .select('features')
+                    .eq('id', data.subscription_tier)
+                    .single();
+                if (tierData?.features) {
+                    tier_features = tierData.features;
+                }
+            }
+
             res.json({
                 success: true,
                 data: {
                     ...data,
-                    member_role: 'platform_admin' // Platform admin viewing
+                    member_role: 'platform_admin', // Platform admin viewing
+                    tier_features
                 }
             });
         } catch (error) {
@@ -1092,7 +1119,7 @@ module.exports = function(supabase) {
             }
 
             // Valid tiers (fallback if table doesn't exist)
-            const validTiers = ['starter', 'business', 'enterprise', 'agency', 'free', 'pro'];
+            const validTiers = ['starter', 'business', 'enterprise', 'agency', 'agency_starter', 'agency_professional', 'agency_enterprise', 'free', 'pro'];
 
             // Try to validate tier from database
             const { data: tierData, error: tierError } = await supabase
@@ -1124,8 +1151,8 @@ module.exports = function(supabase) {
                 updateData.subscription_status = status;
             }
 
-            // If upgrading to agency tier, set org_type
-            if (tier === 'agency') {
+            // If upgrading to any agency tier, set org_type
+            if (tier.startsWith('agency')) {
                 updateData.org_type = 'agency';
             }
 

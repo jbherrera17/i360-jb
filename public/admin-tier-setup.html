@@ -54,6 +54,28 @@
         .tier-business { background: #dbeafe; color: #1d4ed8; }
         .tier-enterprise { background: #fef3c7; color: #b45309; }
         .tier-agency { background: #ede9fe; color: #7c3aed; }
+        .tier-agency_starter { background: #e0e7ff; color: #4338ca; }
+        .tier-agency_professional { background: #ede9fe; color: #7c3aed; }
+        .tier-agency_enterprise { background: #fce7f3; color: #be185d; }
+
+        .tier-group-header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 0.25rem;
+        }
+
+        .tier-group-header i {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
 
         .tier-name {
             font-size: 1.5rem;
@@ -376,14 +398,8 @@
                     Feature Comparison
                 </h2>
                 <table class="comparison-table" id="comparisonTable">
-                    <thead>
-                        <tr>
-                            <th>Feature</th>
-                            <th>Starter</th>
-                            <th>Business</th>
-                            <th>Enterprise</th>
-                            <th>Agency</th>
-                        </tr>
+                    <thead id="comparisonHead">
+                        <!-- Dynamic headers generated from tiers array -->
                     </thead>
                     <tbody id="comparisonBody">
                         <!-- Comparison rows will be loaded here -->
@@ -461,9 +477,20 @@
             await loadTiers();
         });
 
+        function getAuthToken() {
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
         async function checkPlatformAdminAccess() {
             try {
-                const token = localStorage.getItem('insight360_token');
+                const token = getAuthToken();
                 if (!token) return false;
 
                 const response = await fetch('/api/platform/tiers', {
@@ -478,7 +505,7 @@
 
         async function loadTiers() {
             try {
-                const token = localStorage.getItem('insight360_token');
+                const token = getAuthToken();
                 const response = await fetch('/api/platform/tiers', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -501,7 +528,7 @@
         }
 
         async function loadTierModules() {
-            const token = localStorage.getItem('insight360_token');
+            const token = getAuthToken();
             for (const tier of tiers) {
                 try {
                     const response = await fetch(`/api/platform/tiers/${tier.id}/modules`, {
@@ -553,13 +580,11 @@
             return html || '<div style="color: var(--text-muted); font-size: 0.75rem;">No modules available</div>';
         }
 
-        function renderTiers() {
-            const grid = document.getElementById('tierGrid');
-
-            grid.innerHTML = tiers.map(tier => `
+        function renderTierCard(tier) {
+            return `
                 <div class="tier-card" data-tier-id="${tier.id}">
                     <div class="tier-header">
-                        <span class="tier-badge tier-${tier.id}">${tier.id.toUpperCase()}</span>
+                        <span class="tier-badge tier-${tier.id}">${tier.id.toUpperCase().replace(/_/g, ' ')}</span>
                         <div class="tier-name">${escapeHtml(tier.name)}</div>
                         <div class="tier-price">
                             $<input type="number" class="limit-input" style="width: 80px; display: inline-block;"
@@ -645,19 +670,62 @@
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }
 
+        function renderTiers() {
+            const grid = document.getElementById('tierGrid');
+
+            // Group tiers by tier_group
+            const groups = {};
+            tiers.forEach(tier => {
+                const group = tier.tier_group || 'standard';
+                if (!groups[group]) groups[group] = [];
+                groups[group].push(tier);
+            });
+
+            const GROUP_META = {
+                standard: { label: 'Standard Tiers', icon: 'building' },
+                agency:   { label: 'Agency Tiers', icon: 'briefcase' },
+                platform: { label: 'Platform Tiers', icon: 'server' }
+            };
+
+            // Render order: standard, agency, then any others
+            const orderedGroups = ['standard', 'agency', ...Object.keys(groups).filter(g => g !== 'standard' && g !== 'agency')];
+
+            let html = '';
+            for (const groupKey of orderedGroups) {
+                const groupTiers = groups[groupKey];
+                if (!groupTiers || groupTiers.length === 0) continue;
+
+                const meta = GROUP_META[groupKey] || { label: groupKey.charAt(0).toUpperCase() + groupKey.slice(1) + ' Tiers', icon: 'layers' };
+
+                html += `
+                    <div class="tier-group-header">
+                        <i data-lucide="${meta.icon}"></i>
+                        ${meta.label}
+                    </div>
+                `;
+                html += groupTiers.map(tier => renderTierCard(tier)).join('');
+            }
+
+            grid.innerHTML = html;
             lucide.createIcons();
         }
 
         function renderComparison() {
+            const thead = document.getElementById('comparisonHead');
             const tbody = document.getElementById('comparisonBody');
+            const colSpan = tiers.length + 1;
+
+            // Dynamic headers
+            thead.innerHTML = `<tr><th>Feature</th>${tiers.map(t => `<th>${escapeHtml(t.name)}</th>`).join('')}</tr>`;
 
             // Limits comparison
             const limitRows = Object.entries(LIMIT_LABELS).map(([key, label]) => `
                 <tr>
                     <td><strong>${label}</strong></td>
-                    ${tiers.map(tier => `<td>${tier[key] === -1 ? '<span style="color: var(--success);">∞</span>' : (tier[key] || 0)}</td>`).join('')}
+                    ${tiers.map(tier => `<td>${tier[key] === -1 ? '<span style="color: var(--success);">&#8734;</span>' : (tier[key] || 0)}</td>`).join('')}
                 </tr>
             `).join('');
 
@@ -685,11 +753,11 @@
             `).join('');
 
             tbody.innerHTML = `
-                <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Resource Limits</td></tr>
+                <tr><td colspan="${colSpan}" style="background: var(--bg-tertiary); font-weight: 600;">Resource Limits</td></tr>
                 ${limitRows}
-                <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Features</td></tr>
+                <tr><td colspan="${colSpan}" style="background: var(--bg-tertiary); font-weight: 600;">Features</td></tr>
                 ${featureRows}
-                <tr><td colspan="5" style="background: var(--bg-tertiary); font-weight: 600;">Integration Addons</td></tr>
+                <tr><td colspan="${colSpan}" style="background: var(--bg-tertiary); font-weight: 600;">Integration Addons</td></tr>
                 ${addonRows}
             `;
 
@@ -736,7 +804,7 @@
         }
 
         async function saveAllChanges() {
-            const token = localStorage.getItem('insight360_token');
+            const token = getAuthToken();
 
             try {
                 for (const tier of tiers) {

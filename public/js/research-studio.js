@@ -21,6 +21,9 @@ let loadingMessageController = null;
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize usage nudge (soft-limit warnings)
+    if (typeof UsageNudge !== 'undefined') UsageNudge.init();
+
     // Load studios list
     await loadStudios();
 
@@ -158,6 +161,9 @@ async function createStudio(event) {
         alert('Please enter a title');
         return;
     }
+
+    // Guard new creation against plan limits
+    if (typeof UsageNudge !== 'undefined' && !(await UsageNudge.checkBeforeCreate('research_studios'))) return;
 
     try {
         const response = await fetch(API_BASE, {

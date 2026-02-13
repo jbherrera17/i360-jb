@@ -318,6 +318,338 @@
             width: 16px;
             height: 16px;
         }
+
+        /* Branding Panel Styles */
+        .branding-section {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+        }
+
+        .branding-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .branding-section.tier-locked .branding-fields {
+            opacity: 0.35;
+            pointer-events: none;
+            filter: blur(1px);
+        }
+
+        .branding-section.tier-locked .tier-lock-overlay {
+            display: flex;
+        }
+
+        .branding-section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 0 0 0.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .tier-lock-overlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1.25rem;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            white-space: nowrap;
+        }
+
+        .branding-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .branding-thumb {
+            margin-top: 0.5rem;
+            max-height: 40px;
+            max-width: 160px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            padding: 4px;
+        }
+
+        .branding-thumb-sm {
+            max-height: 24px;
+            max-width: 24px;
+        }
+
+        .branding-thumb-avatar {
+            max-height: 36px;
+            max-width: 36px;
+            border-radius: 50%;
+        }
+
+        /* Color inputs */
+        .color-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .color-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .color-picker {
+            width: 40px !important;
+            height: 36px !important;
+            padding: 2px !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 6px !important;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .color-hex {
+            flex: 1;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem !important;
+        }
+
+        .mono-input {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Preview Panel */
+        .preview-tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .preview-tab {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+
+        .preview-tab:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .preview-tab.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .preview-pane {
+            display: none;
+        }
+
+        .preview-pane.active {
+            display: block;
+        }
+
+        /* Sidebar Preview Mock */
+        .preview-sidebar-mock {
+            width: 100%;
+            max-width: 220px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 0.8rem;
+        }
+
+        .preview-sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-logo-img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+
+        .preview-app-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .preview-sidebar-nav {
+            padding: 0.5rem;
+        }
+
+        .preview-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.5rem;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .preview-nav-item.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .preview-nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+
+        .preview-nav-item.active .preview-nav-dot {
+            opacity: 0.8;
+        }
+
+        /* Login Preview Mock */
+        .preview-login-mock {
+            max-width: 260px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .preview-login-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            margin-bottom: 0.75rem;
+        }
+
+        .preview-login-mock h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+        }
+
+        .preview-login-tagline {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 0 0 1rem 0;
+        }
+
+        .preview-login-field {
+            height: 36px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-login-btn {
+            padding: 0.5rem;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Chat Preview Mock */
+        .preview-chat-mock {
+            max-width: 280px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .preview-chat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .preview-chat-avatar-img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .preview-chat-messages {
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .preview-chat-bubble {
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            max-width: 85%;
+            line-height: 1.4;
+        }
+
+        .preview-chat-bubble.assistant {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            align-self: flex-start;
+        }
+
+        .preview-chat-bubble.user {
+            background: var(--primary);
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        @media (max-width: 1024px) {
+            #branding-panel {
+                grid-template-columns: 1fr !important;
+            }
+            #branding-preview-area {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -448,30 +780,329 @@
                 </div>
             </div>
 
-            <!-- Branding (Full Width) -->
+            <!-- Branding & Appearance (Full Width) -->
             <div class="settings-section" style="grid-column: 1 / -1;">
-                <div class="settings-section-header">
-                    <h2>Branding & Appearance</h2>
+                <div class="settings-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2><i data-lucide="palette" style="width:18px;height:18px;display:inline;vertical-align:middle;margin-right:6px;"></i>Branding & Appearance</h2>
+                    <button class="btn btn-primary" id="save-branding-btn" onclick="saveBranding()">
+                        <i data-lucide="save"></i>
+                        Save Branding
+                    </button>
                 </div>
-                <div class="settings-section-body">
-                    <form id="branding-form">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label for="brand-color">Primary Color</label>
-                                <input type="color" id="brand-color" name="primary_color" value="#6366f1" style="width: 100px; height: 40px; padding: 0; border: none;">
+                <div class="settings-section-body" style="padding: 0;">
+                    <div id="branding-panel" style="display: grid; grid-template-columns: 3fr 2fr; min-height: 500px;">
+                        <!-- Left: Form Sections -->
+                        <div id="branding-form-area" style="padding: 1.25rem; overflow-y: auto; max-height: 700px; border-right: 1px solid var(--border);">
+
+                            <!-- Section 1: Brand Identity -->
+                            <div class="branding-section" data-required-feature="custom_branding">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="fingerprint" style="width:16px;height:16px;"></i>
+                                    Brand Identity
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Business to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="form-group">
+                                        <label for="brand-app-name">App Name</label>
+                                        <input type="text" id="brand-app-name" placeholder="Insight 360" maxlength="50">
+                                        <p class="helper">Replaces "Insight 360" in the sidebar and page titles</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="brand-tagline">Tagline</label>
+                                        <input type="text" id="brand-tagline" placeholder="AI-Powered Command Center" maxlength="100">
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="brand-logo-url">Primary Logo URL</label>
+                                            <input type="url" id="brand-logo-url" placeholder="https://...">
+                                            <img id="brand-logo-preview" class="branding-thumb" style="display:none;" alt="Logo preview">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="brand-logo-dark-url">Dark Mode Logo URL</label>
+                                            <input type="url" id="brand-logo-dark-url" placeholder="https://...">
+                                            <img id="brand-logo-dark-preview" class="branding-thumb" style="display:none;" alt="Dark logo preview">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="brand-favicon-url">Favicon URL</label>
+                                        <input type="url" id="brand-favicon-url" placeholder="https://...">
+                                        <img id="brand-favicon-preview" class="branding-thumb branding-thumb-sm" style="display:none;" alt="Favicon preview">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="logo-url">Logo URL</label>
-                                <input type="url" id="logo-url" name="logo_url" placeholder="https://...">
+
+                            <!-- Section 2: Color Palette -->
+                            <div class="branding-section" data-required-feature="custom_branding">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="paintbrush" style="width:16px;height:16px;"></i>
+                                    Color Palette
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Business to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="color-grid">
+                                        <div class="form-group color-field">
+                                            <label for="brand-primary-color">Primary</label>
+                                            <div class="color-input-row">
+                                                <input type="color" id="brand-primary-color" value="#6366f1" class="color-picker">
+                                                <input type="text" id="brand-primary-color-hex" value="#6366f1" maxlength="7" class="color-hex">
+                                            </div>
+                                        </div>
+                                        <div class="form-group color-field">
+                                            <label for="brand-secondary-color">Secondary</label>
+                                            <div class="color-input-row">
+                                                <input type="color" id="brand-secondary-color" value="#4f46e5" class="color-picker">
+                                                <input type="text" id="brand-secondary-color-hex" value="#4f46e5" maxlength="7" class="color-hex">
+                                            </div>
+                                        </div>
+                                        <div class="form-group color-field">
+                                            <label for="brand-accent-color">Accent</label>
+                                            <div class="color-input-row">
+                                                <input type="color" id="brand-accent-color" value="#22c55e" class="color-picker">
+                                                <input type="text" id="brand-accent-color-hex" value="#22c55e" maxlength="7" class="color-hex">
+                                            </div>
+                                        </div>
+                                        <div class="form-group color-field">
+                                            <label for="brand-sidebar-color">Sidebar</label>
+                                            <div class="color-input-row">
+                                                <input type="color" id="brand-sidebar-color" value="#f9fafb" class="color-picker">
+                                                <input type="text" id="brand-sidebar-color-hex" value="#f9fafb" maxlength="7" class="color-hex">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Typography -->
+                            <div class="branding-section" data-required-feature="custom_branding">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="type" style="width:16px;height:16px;"></i>
+                                    Typography
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Business to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="brand-heading-font">Heading Font</label>
+                                            <select id="brand-heading-font">
+                                                <option value="Inter">Inter</option>
+                                                <option value="Source Sans 3" selected>Source Sans 3</option>
+                                                <option value="Roboto">Roboto</option>
+                                                <option value="Open Sans">Open Sans</option>
+                                                <option value="Lato">Lato</option>
+                                                <option value="Montserrat">Montserrat</option>
+                                                <option value="Poppins">Poppins</option>
+                                                <option value="Nunito">Nunito</option>
+                                                <option value="Raleway">Raleway</option>
+                                                <option value="Orbitron">Orbitron</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="brand-body-font">Body Font</label>
+                                            <select id="brand-body-font">
+                                                <option value="Inter">Inter</option>
+                                                <option value="Source Sans 3" selected>Source Sans 3</option>
+                                                <option value="Roboto">Roboto</option>
+                                                <option value="Open Sans">Open Sans</option>
+                                                <option value="Lato">Lato</option>
+                                                <option value="Montserrat">Montserrat</option>
+                                                <option value="Poppins">Poppins</option>
+                                                <option value="Nunito">Nunito</option>
+                                                <option value="Raleway">Raleway</option>
+                                                <option value="Orbitron">Orbitron</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="max-width: 200px;">
+                                        <label for="brand-font-size">Base Font Size</label>
+                                        <select id="brand-font-size">
+                                            <option value="14px">14px</option>
+                                            <option value="15px">15px</option>
+                                            <option value="16px" selected>16px</option>
+                                            <option value="18px">18px</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: AI Assistant -->
+                            <div class="branding-section" data-required-feature="white_label">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="bot" style="width:16px;height:16px;"></i>
+                                    AI Assistant
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Agency Professional to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="brand-ai-name">Assistant Name</label>
+                                            <input type="text" id="brand-ai-name" placeholder="Higgins" maxlength="50">
+                                            <p class="helper">Replaces "Higgins" throughout the chat interface</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="brand-ai-avatar">Assistant Avatar URL</label>
+                                            <input type="url" id="brand-ai-avatar" placeholder="https://...">
+                                            <img id="brand-ai-avatar-preview" class="branding-thumb branding-thumb-avatar" style="display:none;" alt="Avatar preview">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Report Branding -->
+                            <div class="branding-section" data-required-feature="white_label">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="file-text" style="width:16px;height:16px;"></i>
+                                    Report Branding
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Agency Professional to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="form-group">
+                                        <label for="brand-report-header">Report Header HTML</label>
+                                        <textarea id="brand-report-header" rows="3" class="mono-input" placeholder="<div class='report-header'>...</div>"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="brand-report-footer">Report Footer HTML</label>
+                                        <textarea id="brand-report-footer" rows="3" class="mono-input" placeholder="<div class='report-footer'>...</div>"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="brand-report-css">Report Custom CSS</label>
+                                        <textarea id="brand-report-css" rows="5" class="mono-input" placeholder=".report-header { ... }"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 6: Email Branding -->
+                            <div class="branding-section" data-required-feature="white_label">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="mail" style="width:16px;height:16px;"></i>
+                                    Email Branding
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Agency Professional to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="brand-email-from-name">From Name</label>
+                                            <input type="text" id="brand-email-from-name" placeholder="Your Company">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="brand-email-from-address">From Email</label>
+                                            <input type="email" id="brand-email-from-address" placeholder="noreply@yourcompany.com">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="brand-email-signature">Email Signature HTML</label>
+                                        <textarea id="brand-email-signature" rows="4" class="mono-input" placeholder="<div class='signature'>...</div>"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 7: Client Portal -->
+                            <div class="branding-section" data-required-feature="white_label">
+                                <h3 class="branding-section-title">
+                                    <i data-lucide="globe" style="width:16px;height:16px;"></i>
+                                    Client Portal
+                                </h3>
+                                <div class="tier-lock-overlay">
+                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
+                                    <span>Upgrade to Agency Professional to unlock</span>
+                                </div>
+                                <div class="branding-fields">
+                                    <div class="form-group">
+                                        <label for="brand-portal-welcome">Portal Welcome Message</label>
+                                        <textarea id="brand-portal-welcome" rows="3" placeholder="Welcome to your client portal..."></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="brand-portal-css">Portal Custom CSS</label>
+                                        <textarea id="brand-portal-css" rows="4" class="mono-input" placeholder=".portal-container { ... }"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right: Live Preview -->
+                        <div id="branding-preview-area" style="padding: 1.25rem; position: sticky; top: 0; align-self: start;">
+                            <div class="preview-tabs">
+                                <button class="preview-tab active" data-tab="sidebar" onclick="switchPreviewTab('sidebar')">Sidebar</button>
+                                <button class="preview-tab" data-tab="login" onclick="switchPreviewTab('login')">Login</button>
+                                <button class="preview-tab" data-tab="chat" onclick="switchPreviewTab('chat')">Chat</button>
+                            </div>
+
+                            <!-- Sidebar Preview -->
+                            <div class="preview-pane active" id="preview-sidebar">
+                                <div class="preview-sidebar-mock">
+                                    <div class="preview-sidebar-header">
+                                        <img id="preview-logo" src="/assets/I360-180T.png" alt="Logo" class="preview-logo-img" onerror="this.style.display='none'">
+                                        <span id="preview-app-name" class="preview-app-name">Insight 360</span>
+                                    </div>
+                                    <div class="preview-sidebar-nav">
+                                        <div class="preview-nav-item active">
+                                            <span class="preview-nav-dot"></span>
+                                            <span>Dashboard</span>
+                                        </div>
+                                        <div class="preview-nav-item">
+                                            <span class="preview-nav-dot"></span>
+                                            <span>Agent Library</span>
+                                        </div>
+                                        <div class="preview-nav-item">
+                                            <span class="preview-nav-dot"></span>
+                                            <span>Context Assets</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Login Preview -->
+                            <div class="preview-pane" id="preview-login">
+                                <div class="preview-login-mock">
+                                    <img id="preview-login-logo" src="/assets/I360-180T.png" alt="Logo" class="preview-login-logo" onerror="this.style.display='none'">
+                                    <h3 id="preview-login-name">Insight 360</h3>
+                                    <p id="preview-login-tagline" class="preview-login-tagline">AI-Powered Command Center</p>
+                                    <div class="preview-login-field"></div>
+                                    <div class="preview-login-field"></div>
+                                    <div class="preview-login-btn" id="preview-login-btn">Sign In</div>
+                                </div>
+                            </div>
+
+                            <!-- Chat Preview -->
+                            <div class="preview-pane" id="preview-chat">
+                                <div class="preview-chat-mock">
+                                    <div class="preview-chat-header" id="preview-chat-header">
+                                        <img id="preview-chat-avatar" src="/assets/25-08-20 - Higgins Mona Lisa Smile-T.png" alt="AI" class="preview-chat-avatar-img">
+                                        <span id="preview-chat-name">Higgins</span>
+                                    </div>
+                                    <div class="preview-chat-messages">
+                                        <div class="preview-chat-bubble assistant">
+                                            <span>Hello! How can I help you today?</span>
+                                        </div>
+                                        <div class="preview-chat-bubble user">
+                                            <span>Tell me about our strategy</span>
+                                        </div>
+                                        <div class="preview-chat-bubble assistant">
+                                            <span>I'd be happy to help with your strategy...</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i data-lucide="save"></i>
-                                Save Branding
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
 
@@ -586,6 +1217,9 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            setupColorSync();
+            setupThumbPreviews();
+            setupLivePreviewListeners();
             await checkPlatformAdmin();
             await loadOrganizations();
         });
@@ -725,10 +1359,16 @@
                 document.getElementById('member-since').textContent =
                     new Date(currentOrg.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-                // Branding
-                const settings = currentOrg.settings || {};
-                document.getElementById('brand-color').value = settings.primary_color || '#6366f1';
-                document.getElementById('logo-url').value = settings.logo_url || '';
+                // Tier features for branding gating
+                tierFeatures = currentOrg.tier_features || {};
+                // Platform tier gets all features
+                if (tier === 'platform') {
+                    tierFeatures = { custom_branding: true, white_label: true, client_portal: true, api_access: true, sso: true };
+                }
+                applyTierGating();
+
+                // Load branding from org_branding table
+                await loadBranding(orgId);
 
                 // Show danger zone for org owners or platform admins (non-personal orgs)
                 const dangerZone = document.getElementById('danger-zone');
@@ -748,14 +1388,17 @@
 
                 // Disable forms for non-admins (platform admins always have access)
                 const isAdmin = isPlatformAdmin || ['owner', 'admin'].includes(userRole);
-                document.querySelectorAll('#general-form input, #branding-form input').forEach(input => {
+                document.querySelectorAll('#general-form input').forEach(input => {
                     if (input.id !== 'org-slug') {
                         input.disabled = !isAdmin;
                     }
                 });
-                document.querySelectorAll('#general-form button, #branding-form button').forEach(btn => {
+                document.querySelectorAll('#general-form button').forEach(btn => {
                     btn.disabled = !isAdmin;
                 });
+                // Branding save button
+                const saveBrandingBtn = document.getElementById('save-branding-btn');
+                if (saveBrandingBtn) saveBrandingBtn.disabled = !isAdmin;
 
                 // Load stats, setup progress, members, and clients
                 await loadStats(orgId);
@@ -868,7 +1511,7 @@
                 icon: 'palette',
                 link: null,
                 priority: 'recommended',
-                check: (data) => !!(data.org?.settings?.logo_url || data.org?.settings?.primary_color)
+                check: (data) => !!(data.org?.settings?.logo_url || data.org?.settings?.primary_color || data.hasBranding)
             },
             {
                 id: 'first-agent',
@@ -924,7 +1567,8 @@
                 contextCount: 0,
                 hasResources: false,
                 soulConfig: null,
-                hasConversations: false
+                hasConversations: false,
+                hasBranding: false
             };
 
             try {
@@ -980,6 +1624,11 @@
 
             } catch (error) {
                 console.error('Error loading setup data:', error);
+            }
+
+            // Check if org_branding has meaningful data
+            if (currentBranding && (currentBranding.logo_url || currentBranding.primary_color !== '#6366f1' || currentBranding.app_name)) {
+                setupData.hasBranding = true;
             }
 
             renderSetupProgress(setupData);
@@ -1235,39 +1884,293 @@
             }
         });
 
-        document.getElementById('branding-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // ==========================================
+        // BRANDING PANEL LOGIC
+        // ==========================================
+
+        let currentBranding = {};
+        let tierFeatures = {};
+
+        // Field mapping: form ID → branding API field
+        const brandingFieldMap = {
+            'brand-app-name': 'app_name',
+            'brand-tagline': 'app_tagline',
+            'brand-logo-url': 'logo_url',
+            'brand-logo-dark-url': 'logo_dark_url',
+            'brand-favicon-url': 'favicon_url',
+            'brand-primary-color': 'primary_color',
+            'brand-secondary-color': 'secondary_color',
+            'brand-accent-color': 'accent_color',
+            'brand-sidebar-color': 'sidebar_color',
+            'brand-heading-font': 'heading_font',
+            'brand-body-font': 'body_font',
+            'brand-font-size': 'font_size_base',
+            'brand-ai-name': 'ai_assistant_name',
+            'brand-ai-avatar': 'ai_assistant_avatar_url',
+            'brand-report-header': 'report_header_html',
+            'brand-report-footer': 'report_footer_html',
+            'brand-report-css': 'report_css',
+            'brand-email-from-name': 'email_from_name',
+            'brand-email-from-address': 'email_from_address',
+            'brand-email-signature': 'email_signature_html',
+            'brand-portal-welcome': 'portal_welcome_message',
+            'brand-portal-css': 'portal_custom_css'
+        };
+
+        // Load branding data from API
+        async function loadBranding(orgId) {
+            try {
+                const response = await authFetch(`/api/org-customization/${orgId}/branding`);
+                const result = await response.json();
+                if (result.success) {
+                    currentBranding = result.data || {};
+                    populateBrandingForm();
+                }
+            } catch (error) {
+                console.error('Error loading branding:', error);
+            }
+        }
+
+        // Populate form fields from branding data
+        function populateBrandingForm() {
+            const b = currentBranding;
+
+            // Text/URL fields
+            setVal('brand-app-name', b.app_name || '');
+            setVal('brand-tagline', b.app_tagline || '');
+            setVal('brand-logo-url', b.logo_url || '');
+            setVal('brand-logo-dark-url', b.logo_dark_url || '');
+            setVal('brand-favicon-url', b.favicon_url || '');
+            setVal('brand-ai-name', b.ai_assistant_name || '');
+            setVal('brand-ai-avatar', b.ai_assistant_avatar_url || '');
+
+            // Colors (sync picker + hex)
+            setColorField('brand-primary-color', b.primary_color || '#6366f1');
+            setColorField('brand-secondary-color', b.secondary_color || '#4f46e5');
+            setColorField('brand-accent-color', b.accent_color || '#22c55e');
+            setColorField('brand-sidebar-color', b.sidebar_color || '#f9fafb');
+
+            // Selects
+            setVal('brand-heading-font', b.heading_font || 'Source Sans 3');
+            setVal('brand-body-font', b.body_font || 'Source Sans 3');
+            setVal('brand-font-size', b.font_size_base || '16px');
+
+            // Textareas
+            setVal('brand-report-header', b.report_header_html || '');
+            setVal('brand-report-footer', b.report_footer_html || '');
+            setVal('brand-report-css', b.report_css || '');
+            setVal('brand-email-from-name', b.email_from_name || '');
+            setVal('brand-email-from-address', b.email_from_address || '');
+            setVal('brand-email-signature', b.email_signature_html || '');
+            setVal('brand-portal-welcome', b.portal_welcome_message || '');
+            setVal('brand-portal-css', b.portal_custom_css || '');
+
+            // Show URL thumbnails
+            showThumb('brand-logo-url', 'brand-logo-preview');
+            showThumb('brand-logo-dark-url', 'brand-logo-dark-preview');
+            showThumb('brand-favicon-url', 'brand-favicon-preview');
+            showThumb('brand-ai-avatar', 'brand-ai-avatar-preview');
+
+            // Update live preview
+            updateLivePreview();
+        }
+
+        function setVal(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.value = value;
+        }
+
+        function setColorField(baseId, hex) {
+            const picker = document.getElementById(baseId);
+            const hexInput = document.getElementById(baseId + '-hex');
+            if (picker) picker.value = hex;
+            if (hexInput) hexInput.value = hex;
+        }
+
+        function showThumb(inputId, imgId) {
+            const input = document.getElementById(inputId);
+            const img = document.getElementById(imgId);
+            if (!input || !img) return;
+            if (input.value && input.value.trim()) {
+                img.src = input.value;
+                img.style.display = 'block';
+                img.onerror = () => { img.style.display = 'none'; };
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
+        // Apply tier gating to branding sections
+        function applyTierGating() {
+            const sections = document.querySelectorAll('.branding-section[data-required-feature]');
+            sections.forEach(section => {
+                const feature = section.dataset.requiredFeature;
+                if (!tierFeatures[feature]) {
+                    section.classList.add('tier-locked');
+                    // Disable all inputs within
+                    section.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+                } else {
+                    section.classList.remove('tier-locked');
+                    const isAdmin = isPlatformAdmin || ['owner', 'admin'].includes(userRole);
+                    section.querySelectorAll('input, select, textarea').forEach(el => el.disabled = !isAdmin);
+                }
+            });
+        }
+
+        // Save branding
+        async function saveBranding() {
             if (!currentOrg) return;
+
+            // Collect all field values
+            const data = {};
+            for (const [fieldId, apiField] of Object.entries(brandingFieldMap)) {
+                const el = document.getElementById(fieldId);
+                if (el) {
+                    const val = el.value.trim();
+                    data[apiField] = val || null;
+                }
+            }
 
             try {
                 showLoading();
-                const settings = {
-                    ...currentOrg.settings,
-                    primary_color: document.getElementById('brand-color').value,
-                    logo_url: document.getElementById('logo-url').value
-                };
-
-                const response = await authFetch(`/api/organizations/${currentOrg.id}`, {
+                const response = await authFetch(`/api/org-customization/${currentOrg.id}/branding`, {
                     method: 'PUT',
-                    body: JSON.stringify({ settings })
+                    body: JSON.stringify(data)
                 });
 
                 const result = await response.json();
                 if (result.success) {
-                    ModalService.toast({ message: 'Branding updated successfully', type: 'success' });
-                    currentOrg.settings = settings;
-                    // Refresh setup progress to reflect branding status
+                    ModalService.toast({ message: 'Branding saved successfully', type: 'success' });
+                    currentBranding = result.data;
+                    // Clear BrandingService cache so changes take effect
+                    if (typeof BrandingService !== 'undefined') {
+                        BrandingService.clearCache();
+                        BrandingService.load();
+                    }
+                    // Refresh setup progress
                     await loadSetupProgress(currentOrg.id);
                 } else {
                     throw new Error(result.error);
                 }
             } catch (error) {
-                console.error('Error updating branding:', error);
-                ModalService.toast({ message: 'Failed to update branding', type: 'error' });
+                console.error('Error saving branding:', error);
+                ModalService.toast({ message: error.message || 'Failed to save branding', type: 'error' });
             } finally {
                 hideLoading();
             }
-        });
+        }
+
+        // Color picker ↔ hex input sync
+        function setupColorSync() {
+            const colorPairs = [
+                'brand-primary-color',
+                'brand-secondary-color',
+                'brand-accent-color',
+                'brand-sidebar-color'
+            ];
+
+            colorPairs.forEach(baseId => {
+                const picker = document.getElementById(baseId);
+                const hex = document.getElementById(baseId + '-hex');
+                if (!picker || !hex) return;
+
+                picker.addEventListener('input', () => {
+                    hex.value = picker.value;
+                    updateLivePreview();
+                });
+
+                hex.addEventListener('input', () => {
+                    if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) {
+                        picker.value = hex.value;
+                        updateLivePreview();
+                    }
+                });
+            });
+        }
+
+        // URL thumbnail previews on input
+        function setupThumbPreviews() {
+            const pairs = [
+                ['brand-logo-url', 'brand-logo-preview'],
+                ['brand-logo-dark-url', 'brand-logo-dark-preview'],
+                ['brand-favicon-url', 'brand-favicon-preview'],
+                ['brand-ai-avatar', 'brand-ai-avatar-preview']
+            ];
+
+            pairs.forEach(([inputId, imgId]) => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('input', () => showThumb(inputId, imgId));
+                }
+            });
+        }
+
+        // Live preview tabs
+        function switchPreviewTab(tab) {
+            document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.preview-pane').forEach(p => p.classList.remove('active'));
+            document.querySelector(`.preview-tab[data-tab="${tab}"]`)?.classList.add('active');
+            document.getElementById(`preview-${tab}`)?.classList.add('active');
+        }
+
+        // Update live preview from form values
+        function updateLivePreview() {
+            const appName = document.getElementById('brand-app-name')?.value || 'Insight 360';
+            const tagline = document.getElementById('brand-tagline')?.value || 'AI-Powered Command Center';
+            const logoUrl = document.getElementById('brand-logo-url')?.value || '/assets/I360-180T.png';
+            const primaryColor = document.getElementById('brand-primary-color')?.value || '#6366f1';
+            const sidebarColor = document.getElementById('brand-sidebar-color')?.value;
+            const aiName = document.getElementById('brand-ai-name')?.value || 'Higgins';
+            const aiAvatar = document.getElementById('brand-ai-avatar')?.value || '/assets/25-08-20 - Higgins Mona Lisa Smile-T.png';
+
+            // Sidebar preview
+            const previewName = document.getElementById('preview-app-name');
+            const previewLogo = document.getElementById('preview-logo');
+            if (previewName) previewName.textContent = appName;
+            if (previewLogo && logoUrl) previewLogo.src = logoUrl;
+
+            const sidebarMock = document.querySelector('.preview-sidebar-mock');
+            if (sidebarMock && sidebarColor) {
+                sidebarMock.style.background = sidebarColor;
+            }
+
+            // Active nav item color
+            const activeNav = document.querySelector('.preview-nav-item.active');
+            if (activeNav) activeNav.style.background = primaryColor;
+
+            // Login preview
+            const loginName = document.getElementById('preview-login-name');
+            const loginTagline = document.getElementById('preview-login-tagline');
+            const loginLogo = document.getElementById('preview-login-logo');
+            const loginBtn = document.getElementById('preview-login-btn');
+            if (loginName) loginName.textContent = appName;
+            if (loginTagline) loginTagline.textContent = tagline;
+            if (loginLogo && logoUrl) loginLogo.src = logoUrl;
+            if (loginBtn) loginBtn.style.background = primaryColor;
+
+            // Chat preview
+            const chatName = document.getElementById('preview-chat-name');
+            const chatAvatar = document.getElementById('preview-chat-avatar');
+            if (chatName) chatName.textContent = aiName;
+            if (chatAvatar && aiAvatar) chatAvatar.src = aiAvatar;
+
+            // User bubble color
+            const userBubbles = document.querySelectorAll('.preview-chat-bubble.user');
+            userBubbles.forEach(b => b.style.background = primaryColor);
+        }
+
+        // Setup live preview listeners on all branding inputs
+        function setupLivePreviewListeners() {
+            const ids = [
+                'brand-app-name', 'brand-tagline', 'brand-logo-url',
+                'brand-primary-color', 'brand-sidebar-color',
+                'brand-ai-name', 'brand-ai-avatar'
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', updateLivePreview);
+            });
+        }
 
         // Create organization modal using ModalService
         async function showCreateOrgModal() {
