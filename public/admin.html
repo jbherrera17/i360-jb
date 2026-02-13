@@ -1960,16 +1960,17 @@
         function buildNewUserAssignment() {
             return `
                 <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
-                <div class="form-group">
-                    <label class="form-label">Initial Assignment</label>
-                    <select id="newUserAssignmentType" class="form-select" onchange="toggleNewUserAssignmentFields()">
-                        <option value="">-- Select assignment type --</option>
-                        <option value="platform">Platform Admin (Synergi)</option>
-                        <option value="organization">Agency Team Member</option>
-                    </select>
-                </div>
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600;">Assignments</h4>
 
-                <div id="platformAssignmentFields" style="display: none;">
+                <!-- Platform Admin (optional) -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="newUserIsPlatformAdmin" onchange="toggleNewPlatformFields()" style="width: 16px; height: 16px;">
+                        <i data-lucide="crown" style="width:16px;height:16px;color:#eab308;"></i>
+                        <span class="form-label" style="margin: 0;">Platform Admin (Synergi)</span>
+                    </label>
+                </div>
+                <div id="platformAssignmentFields" style="display: none; margin-bottom: 1rem; padding-left: 1.5rem;">
                     <div class="form-group">
                         <label class="form-label" for="platformRole">Platform Role</label>
                         <select id="platformRole" class="form-select">
@@ -1980,7 +1981,14 @@
                     </div>
                 </div>
 
-                <div id="orgAssignmentFields" style="display: none;">
+                <!-- Organization Assignment (always visible) -->
+                <div style="margin-bottom: 0.5rem;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="building" style="width:16px;height:16px;color:#6366f1;"></i>
+                        Organization Assignment
+                    </label>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label class="form-label" for="assignOrgId">Organization</label>
                         <select id="assignOrgId" class="form-select">
@@ -1989,10 +1997,10 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="orgMemberRole">Role</label>
+                        <label class="form-label" for="orgMemberRole">Role in Organization</label>
                         <select id="orgMemberRole" class="form-select">
-                            <option value="consultant">Consultant</option>
                             <option value="admin">Admin</option>
+                            <option value="consultant">Consultant</option>
                             <option value="viewer">Viewer</option>
                         </select>
                     </div>
@@ -2090,10 +2098,9 @@
             `;
         }
 
-        function toggleNewUserAssignmentFields() {
-            const type = document.getElementById('newUserAssignmentType').value;
-            document.getElementById('platformAssignmentFields').style.display = type === 'platform' ? 'block' : 'none';
-            document.getElementById('orgAssignmentFields').style.display = type === 'organization' ? 'block' : 'none';
+        function toggleNewPlatformFields() {
+            const checked = document.getElementById('newUserIsPlatformAdmin').checked;
+            document.getElementById('platformAssignmentFields').style.display = checked ? 'block' : 'none';
         }
 
         // Platform Admin assignment functions
@@ -2348,24 +2355,28 @@
                         department_id: departmentId
                     });
 
-                    // Handle initial assignment if selected
-                    const assignmentType = document.getElementById('newUserAssignmentType')?.value;
-                    if (assignmentType && result.data?.id) {
+                    // Handle assignments (platform admin and/or org can both be set)
+                    if (result.data?.id) {
                         const newUserId = result.data.id;
+                        const assignments = {};
 
-                        if (assignmentType === 'platform') {
+                        // Platform admin assignment
+                        const isPlatformAdmin = document.getElementById('newUserIsPlatformAdmin')?.checked;
+                        if (isPlatformAdmin) {
                             const platformRole = document.getElementById('platformRole').value;
-                            await updateUserAssignments(newUserId, {
-                                platform_admin: { role: platformRole }
-                            });
-                        } else if (assignmentType === 'organization') {
-                            const orgId = document.getElementById('assignOrgId').value;
-                            const orgRole = document.getElementById('orgMemberRole').value;
-                            if (orgId) {
-                                await updateUserAssignments(newUserId, {
-                                    add_org_memberships: [{ org_id: orgId, role: orgRole }]
-                                });
-                            }
+                            assignments.platform_admin = { role: platformRole };
+                        }
+
+                        // Organization assignment
+                        const orgId = document.getElementById('assignOrgId')?.value;
+                        const orgRole = document.getElementById('orgMemberRole')?.value;
+                        if (orgId) {
+                            assignments.add_org_memberships = [{ org_id: orgId, role: orgRole || 'consultant' }];
+                        }
+
+                        // Apply assignments if any were selected
+                        if (Object.keys(assignments).length > 0) {
+                            await updateUserAssignments(newUserId, assignments);
                         }
                     }
 

@@ -155,12 +155,32 @@ module.exports = function(supabase) {
                 });
             }
 
+            // Check platform admin status
+            let is_platform_admin = false;
+            let platform_admin_role = null;
+            try {
+                const { data: adminRecord } = await supabase
+                    .from('platform_admins')
+                    .select('role')
+                    .eq('user_id', data.user.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                if (adminRecord) {
+                    is_platform_admin = true;
+                    platform_admin_role = adminRecord.role;
+                }
+            } catch (e) {
+                console.warn('Could not check platform admin status at login:', e.message);
+            }
+
             const userResponse = {
                 id: data.user.id,
                 email: data.user.email,
                 display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
                 role: profile?.role || 'user',
-                preferences: profile?.preferences || {}
+                preferences: profile?.preferences || {},
+                is_platform_admin,
+                platform_admin_role
             };
 
             // Cache the profile for subsequent requests
@@ -413,7 +433,7 @@ module.exports = function(supabase) {
                     success: true,
                     user: {
                         ...cachedProfile,
-                        is_admin: cachedProfile.role === 'admin'
+                        is_admin: cachedProfile.role === 'admin' || cachedProfile.is_platform_admin === true
                     }
                 });
             }
@@ -429,13 +449,33 @@ module.exports = function(supabase) {
                 console.error('Profile fetch error:', profileError);
             }
 
+            // Check platform admin status
+            let is_platform_admin = false;
+            let platform_admin_role = null;
+            try {
+                const { data: adminRecord } = await supabase
+                    .from('platform_admins')
+                    .select('role')
+                    .eq('user_id', user.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                if (adminRecord) {
+                    is_platform_admin = true;
+                    platform_admin_role = adminRecord.role;
+                }
+            } catch (e) {
+                console.warn('Could not check platform admin status:', e.message);
+            }
+
             const userResponse = {
                 id: user.id,
                 email: user.email,
                 display_name: profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0],
                 role: profile?.role || 'user',
                 preferences: profile?.preferences || {},
-                created_at: profile?.created_at || user.created_at
+                created_at: profile?.created_at || user.created_at,
+                is_platform_admin,
+                platform_admin_role
             };
 
             // Cache the profile
@@ -445,7 +485,7 @@ module.exports = function(supabase) {
                 success: true,
                 user: {
                     ...userResponse,
-                    is_admin: userResponse.role === 'admin'
+                    is_admin: userResponse.role === 'admin' || is_platform_admin
                 }
             });
 
@@ -485,14 +525,31 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Check if user is admin
+            // Check if user is admin (system role OR platform admin)
             const { data: profile } = await supabase
                 .from('users')
                 .select('role')
                 .eq('id', user.id)
                 .single();
 
-            if (!profile || profile.role !== 'admin') {
+            let isAdmin = profile?.role === 'admin';
+
+            // Also check platform_admins table
+            if (!isAdmin) {
+                try {
+                    const { data: adminRecord } = await supabase
+                        .from('platform_admins')
+                        .select('role')
+                        .eq('user_id', user.id)
+                        .eq('is_active', true)
+                        .maybeSingle();
+                    if (adminRecord) isAdmin = true;
+                } catch (e) {
+                    // platform_admins table may not exist
+                }
+            }
+
+            if (!isAdmin) {
                 return res.status(403).json({
                     success: false,
                     error: 'Admin access required'
@@ -500,7 +557,7 @@ module.exports = function(supabase) {
             }
 
             req.user = user;
-            req.userRole = profile.role;
+            req.userRole = profile?.role || 'user';
             next();
 
         } catch (error) {

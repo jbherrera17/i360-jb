@@ -295,6 +295,15 @@ function getCurrentUserRole() {
 }
 
 /**
+ * Check if current user has admin access (system admin OR platform admin)
+ */
+function isCurrentUserAdmin() {
+    const user = getCurrentUser();
+    if (!user) return false;
+    return user.role === 'admin' || user.is_platform_admin === true;
+}
+
+/**
  * Get user initials for avatar
  */
 function getUserInitials(user) {
@@ -453,10 +462,12 @@ function generateNavHTML() {
     // Grouped items
     html += '<div class="nav-section nav-groups">';
 
+    const hasAdminAccess = isCurrentUserAdmin();
+
     (config.groups || [])
         .filter(group => {
             // For static config, check adminOnly
-            if (!modulesLoaded && group.adminOnly && userRole !== 'admin') {
+            if (!modulesLoaded && group.adminOnly && !hasAdminAccess) {
                 return false;
             }
             // For dynamic config, modules are already filtered by the API
@@ -504,7 +515,10 @@ function generateUserProfileHTML() {
     const displayName = user.display_name || user.email?.split('@')[0] || 'User';
     // Sanitize role to only allow alphanumeric characters (prevents XSS in class name)
     const role = (user.role || 'user').replace(/[^a-zA-Z0-9]/g, '');
-    const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+    // Show "Platform Admin" for platform admins instead of their system role
+    const roleLabel = user.is_platform_admin
+        ? 'Platform Admin'
+        : role.charAt(0).toUpperCase() + role.slice(1);
 
     return `
         <div class="user-profile">
@@ -521,7 +535,7 @@ function generateUserProfileHTML() {
                     <i data-lucide="user"></i>
                     <span>Profile</span>
                 </a>
-                <a href="/administrator.html" class="user-menu-item ${role !== 'admin' ? 'hidden' : ''}">
+                <a href="/administrator.html" class="user-menu-item ${(role !== 'admin' && !user.is_platform_admin) ? 'hidden' : ''}">
                     <i data-lucide="shield"></i>
                     <span>Administrator</span>
                 </a>
