@@ -297,6 +297,7 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/documentation', express.static(path.join(__dirname, '../documentation')));
+app.use('/site', express.static(path.join(__dirname, '../website')));
 
 // ============================================
 // OBSERVABILITY MIDDLEWARE (Phase 14)
@@ -742,6 +743,9 @@ app.get('/workflow-run', (req, res) => {
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/login.html'));
 });
+
+// Marketing pricing page (public)
+app.get('/pricing', (req, res) => res.redirect('/site/pricing.html'));
 
 // SynergiNexus pages (Phase 3.0)
 app.get('/synerginexus', (req, res) => {
