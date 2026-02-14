@@ -4066,11 +4066,14 @@
             }
         }
 
-        function editAgentById(agentId) {
+        async function editAgentById(agentId) {
             const agent = agents.find(a => a.id === agentId);
             if (agent) {
-                selectAgent(agentId);
-                openModal(agent);
+                // Load full agent detail (agent_summary view excludes system_prompt)
+                await loadAgentDetail(agentId);
+                if (selectedAgent) {
+                    openModal(selectedAgent);
+                }
             }
         }
 

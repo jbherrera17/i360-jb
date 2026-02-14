@@ -287,7 +287,7 @@
 
             <div class="pricing-grid" style="grid-template-columns: repeat(3, 1fr);">
                 <!-- Starter Plan -->
-                <div class="pricing-card fade-in">
+                <div class="pricing-card fade-in" data-tier-id="starter">
                     <div class="pricing-header">
                         <span class="tier-indicator blue">
                             <span class="dot"></span>
@@ -301,41 +301,20 @@
                             <span class="period">/mo</span>
                         </div>
                     </div>
-                    <ul class="pricing-features">
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Up to 10 users
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Claude Haiku, GPT-4o Mini
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            25 context assets
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            10 pre-built agents
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            5 workflows
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            30-day chat history
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Email support (business hours)
-                        </li>
+                    <ul class="pricing-features" id="features-starter">
+                        <!-- Populated dynamically from API; static fallback below -->
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Up to 10 users</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Claude Haiku, GPT-4o Mini</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 25 context assets</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 10 pre-built agents</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 5 workflows</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Email support (business hours)</li>
                     </ul>
                     <a href="contact.html" class="btn btn-secondary">Get Started</a>
                 </div>
 
                 <!-- Professional Plan -->
-                <div class="pricing-card featured fade-in delay-1">
+                <div class="pricing-card featured fade-in delay-1" data-tier-id="business">
                     <div class="pricing-badge">Most Popular</div>
                     <div class="pricing-header">
                         <span class="tier-indicator purple">
@@ -350,57 +329,23 @@
                             <span class="period">/mo</span>
                         </div>
                     </div>
-                    <ul class="pricing-features">
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Up to 50 users
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            All Claude, GPT-4o, Gemini models
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Unlimited context assets
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Full agent library (40+ agents)
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Unlimited workflows
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            <strong>Full Align 120 + Strategy 120</strong>
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Execute 120 (5 departments)
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            3 Research Studios
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Daily automated briefings
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            1-year chat history
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Priority support + guided onboarding
-                        </li>
+                    <ul class="pricing-features" id="features-business">
+                        <!-- Populated dynamically from API; static fallback below -->
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Up to 50 users</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> All Claude, GPT-4o, Gemini models</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Unlimited context assets</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full agent library (40+ agents)</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> <strong>Full Align 120 + Strategy 120</strong></li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Execute 120 (5 departments)</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Research Studios</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Daily automated briefings</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Priority support + guided onboarding</li>
                     </ul>
                     <a href="contact.html" class="btn btn-primary">Get Started</a>
                 </div>
 
                 <!-- Enterprise Plan -->
-                <div class="pricing-card fade-in delay-2">
+                <div class="pricing-card fade-in delay-2" data-tier-id="enterprise">
                     <div class="pricing-header">
                         <span class="tier-indicator coral">
                             <span class="dot"></span>
@@ -413,50 +358,33 @@
                         </div>
                         <p style="font-size: 0.875rem; color: var(--color-gray-500); margin-top: var(--spacing-xs);">Starting at $3,500/mo</p>
                     </div>
-                    <ul class="pricing-features">
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Unlimited users
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            All models including Claude Opus 4.5
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Full agent library + custom agents
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            <strong>Parthenon governance framework</strong>
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Complete integrity monitoring
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Full API access
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            SSO/SAML + advanced audit logging
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            Data residency options
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            24/7 support + dedicated CSM
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            99.9% uptime SLA
-                        </li>
+                    <ul class="pricing-features" id="features-enterprise">
+                        <!-- Populated dynamically from API; static fallback below -->
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Unlimited users</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> All models including Claude Opus 4.5</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full agent library + custom agents</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> <strong>Parthenon governance framework</strong></li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full API access</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> SSO/SAML + advanced audit logging</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 24/7 support + dedicated CSM</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 99.9% uptime SLA</li>
                     </ul>
                     <a href="contact.html" class="btn btn-secondary">Contact Sales</a>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Module Add-ons Section (populated dynamically) -->
+    <section class="section" id="module-addons-section" style="display: none;">
+        <div class="container">
+            <div class="section-header">
+                <span class="label">Expand Your Platform</span>
+                <h2>Module Add-ons</h2>
+                <p>Enhance any plan with additional capabilities. Purchase only what you need.</p>
+            </div>
+            <div class="addons-grid" id="module-addons-grid">
+                <!-- Populated dynamically from API -->
             </div>
         </div>
     </section>
@@ -972,5 +900,153 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script>
+    /**
+     * Dynamic Pricing Enhancement
+     * Fetches module data from the API and replaces static feature lists
+     * with nav-group-organized module lists. Falls back to static content on error.
+     */
+    (function() {
+        const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+
+        const NAV_GROUP_LABELS = {
+            'primary': 'Core',
+            'ai-systems': 'AI 360 Systems',
+            'dashboards': 'Dashboards',
+            'modules': 'Modules',
+            'agency': 'Agency',
+            'admin': 'Administration'
+        };
+
+        const NAV_GROUP_ORDER = ['primary', 'ai-systems', 'dashboards', 'modules'];
+
+        // Tier ID to pricing card mapping
+        const TIER_CARDS = {
+            starter: 'features-starter',
+            business: 'features-business',
+            enterprise: 'features-enterprise'
+        };
+
+        // Resource limit descriptions per tier (static, not from modules)
+        const TIER_LIMITS = {
+            starter: [
+                'Up to 10 users',
+                'Claude Haiku, GPT-4o Mini',
+                'Email support (business hours)'
+            ],
+            business: [
+                'Up to 50 users',
+                'All Claude, GPT-4o, Gemini models',
+                'Priority support + guided onboarding'
+            ],
+            enterprise: [
+                'Unlimited users',
+                'All models including Claude Opus 4.5',
+                'SSO/SAML + advanced audit logging',
+                '24/7 support + dedicated CSM',
+                '99.9% uptime SLA'
+            ]
+        };
+
+        async function loadPricingData() {
+            try {
+                const [compRes, modRes] = await Promise.all([
+                    fetch('/api/pricing/comparison'),
+                    fetch('/api/pricing/modules')
+                ]);
+
+                if (!compRes.ok || !modRes.ok) return;
+
+                const compData = await compRes.json();
+                const modData = await modRes.json();
+
+                if (!compData.success || !modData.success) return;
+
+                renderTierFeatures(compData.data, modData.data);
+                renderModuleAddons(modData.data);
+            } catch (e) {
+                // Silently fail — static content remains
+                console.warn('Pricing API unavailable, using static content');
+            }
+        }
+
+        function renderTierFeatures(comparison, modulesData) {
+            const tiers = comparison.tiers || [];
+            const groups = comparison.comparison || {};
+
+            for (const [tierId, elementId] of Object.entries(TIER_CARDS)) {
+                const el = document.getElementById(elementId);
+                if (!el) continue;
+
+                let html = '';
+
+                // Static resource limits first
+                const limits = TIER_LIMITS[tierId] || [];
+                for (const limit of limits) {
+                    html += `<li>${CHECK_SVG} ${limit}</li>`;
+                }
+
+                // Modules grouped by nav_group
+                for (const groupId of NAV_GROUP_ORDER) {
+                    const group = groups[groupId];
+                    if (!group || !group.modules || group.modules.length === 0) continue;
+
+                    // Filter modules included in this tier
+                    const included = group.modules.filter(m => m.tiers[tierId] === 'included');
+                    if (included.length === 0) continue;
+
+                    html += `<li style="font-weight: 600; color: var(--color-gray-400); font-size: 0.8125rem; margin-top: 0.5rem; list-style: none; padding-left: 0;">${NAV_GROUP_LABELS[groupId] || groupId}</li>`;
+                    for (const mod of included) {
+                        html += `<li>${CHECK_SVG} ${mod.name}</li>`;
+                    }
+                }
+
+                el.innerHTML = html;
+            }
+        }
+
+        function renderModuleAddons(modulesData) {
+            const modules = modulesData.modules || [];
+            const addons = modules.filter(m => m.is_addon_purchasable && m.addon_price_monthly);
+
+            if (addons.length === 0) return;
+
+            const section = document.getElementById('module-addons-section');
+            const grid = document.getElementById('module-addons-grid');
+            if (!section || !grid) return;
+
+            const colors = ['var(--color-primary-tint)', 'var(--color-secondary-tint)', 'var(--color-accent-tint)'];
+            const textColors = ['var(--color-primary-dark)', 'var(--color-secondary-dark)', 'var(--color-accent-dark)'];
+
+            let html = '';
+            addons.forEach((mod, i) => {
+                const colorIdx = i % 3;
+                html += `
+                    <div class="addon-card fade-in${i > 0 ? ' delay-' + Math.min(i, 2) : ''}">
+                        <div class="addon-icon" style="background: ${colors[colorIdx]};">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="${textColors[colorIdx]}" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M12 8v8M8 12h8"/>
+                            </svg>
+                        </div>
+                        <h4>${mod.name}</h4>
+                        <p style="margin-bottom: 0; font-size: 1rem; color: var(--color-gray-500);">${mod.addon_description || mod.description || ''}</p>
+                        <div class="addon-price" style="color: ${textColors[colorIdx]};">$${mod.addon_price_monthly}/mo</div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+            section.style.display = '';
+        }
+
+        // Load after DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadPricingData);
+        } else {
+            loadPricingData();
+        }
+    })();
+    </script>
 </body>
 </html>

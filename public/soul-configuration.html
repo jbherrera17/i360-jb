@@ -26,6 +26,7 @@
             gap: 0.5rem;
             border-bottom: 1px solid var(--border);
             padding-bottom: 0;
+            flex-wrap: wrap;
         }
 
         .tab {
@@ -252,6 +253,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 1rem;
+            position: relative;
         }
 
         .value-card.non-negotiable {
@@ -290,6 +292,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.35rem;
+            margin-bottom: 0.75rem;
         }
 
         .value-behavior {
@@ -298,6 +301,40 @@
             background: rgba(99, 102, 241, 0.1);
             color: var(--primary);
             border-radius: 4px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .card-actions .btn-icon {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card-actions .btn-icon:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .card-actions .btn-icon.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: var(--danger);
         }
 
         /* Bright Lines */
@@ -337,6 +374,114 @@
             padding: 0.15rem 0.5rem;
             border-radius: 4px;
             background: var(--bg-tertiary);
+        }
+
+        .bright-line-actions {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        .bright-line-actions .btn-icon {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bright-line-actions .btn-icon:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .bright-line-actions .btn-icon.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        /* Guardrails */
+        .guardrails-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .guardrail-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .guardrail-card h4 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .guardrail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .guardrail-tag {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.6rem;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border-radius: 4px;
+        }
+
+        /* Domain */
+        .domain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .domain-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .domain-card h4 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .domain-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .domain-tag {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.6rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 4px;
+        }
+
+        .domain-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
         /* Empty State */
@@ -396,6 +541,27 @@
             font-family: 'Fira Code', monospace;
             font-size: 0.85rem;
         }
+
+        /* Header button groups */
+        .header-btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Section label */
+        .section-label {
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-label i {
+            width: 14px;
+            height: 14px;
+        }
     </style>
 </head>
 <body>
@@ -416,7 +582,7 @@
                         <i data-lucide="help-circle"></i>
                     </button>
                     <a href="/soul-wizard.html" class="btn btn-primary">
-                        <i data-lucide="plus"></i> New Configuration
+                        <i data-lucide="wand-2"></i> Full Wizard
                     </a>
                 </div>
             </header>
@@ -442,7 +608,7 @@
                     </div>
                 </div>
 
-                <!-- Tabs -->
+                <!-- Tabs (ordered to match wizard steps) -->
                 <div class="tabs">
                     <button class="tab active" data-tab="overview" onclick="switchTab('overview')">
                         <i data-lucide="layout-dashboard"></i> Overview
@@ -453,8 +619,14 @@
                     <button class="tab" data-tab="bright-lines" onclick="switchTab('bright-lines')">
                         <i data-lucide="shield-alert"></i> Bright Lines
                     </button>
+                    <button class="tab" data-tab="guardrails" onclick="switchTab('guardrails')">
+                        <i data-lucide="fence"></i> Guardrails
+                    </button>
                     <button class="tab" data-tab="voice" onclick="switchTab('voice')">
                         <i data-lucide="mic"></i> Voice
+                    </button>
+                    <button class="tab" data-tab="domain" onclick="switchTab('domain')">
+                        <i data-lucide="globe"></i> Domain
                     </button>
                     <button class="tab" data-tab="history" onclick="switchTab('history')">
                         <i data-lucide="history"></i> History
@@ -492,8 +664,8 @@
                                 <i data-lucide="gem" style="color: var(--primary);"></i>
                                 <h3>Core Values</h3>
                             </div>
-                            <button class="btn btn-secondary btn-sm" onclick="editValues()">
-                                <i data-lucide="edit-2"></i> Edit
+                            <button class="btn btn-primary btn-sm edit-action-btn" onclick="addValue()">
+                                <i data-lucide="plus"></i> Add Value
                             </button>
                         </div>
 
@@ -511,25 +683,44 @@
                                 <i data-lucide="shield-alert" style="color: var(--danger);"></i>
                                 <h3>Bright Lines (Non-Negotiables)</h3>
                             </div>
-                            <button class="btn btn-secondary btn-sm" onclick="editBrightLines()">
-                                <i data-lucide="edit-2"></i> Edit
+                            <button class="btn btn-primary btn-sm edit-action-btn" onclick="addBrightLine()">
+                                <i data-lucide="plus"></i> Add Bright Line
                             </button>
                         </div>
 
                         <div class="bright-lines-section" id="platform-lines">
-                            <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
-                                <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+                            <h4 class="section-label">
+                                <i data-lucide="lock"></i>
                                 Platform Level (Immutable)
                             </h4>
                             <!-- Platform lines loaded dynamically -->
                         </div>
 
                         <div class="bright-lines-section" id="org-lines">
-                            <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
-                                <i data-lucide="building-2" style="width: 14px; height: 14px;"></i>
+                            <h4 class="section-label">
+                                <i data-lucide="building-2"></i>
                                 Organization Level
                             </h4>
                             <!-- Org lines loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guardrails Tab (NEW) -->
+                <div class="tab-panel" id="tab-guardrails">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="fence" style="color: #f59e0b;"></i>
+                                <h3>Guardrails</h3>
+                            </div>
+                            <button class="btn btn-secondary btn-sm edit-action-btn" onclick="editGuardrails()">
+                                <i data-lucide="edit-2"></i> Edit
+                            </button>
+                        </div>
+
+                        <div class="guardrails-grid" id="guardrails-grid">
+                            <!-- Guardrails loaded dynamically -->
                         </div>
                     </div>
                 </div>
@@ -542,13 +733,32 @@
                                 <i data-lucide="mic" style="color: var(--primary);"></i>
                                 <h3>Voice & Persona</h3>
                             </div>
-                            <button class="btn btn-secondary btn-sm" onclick="editVoice()">
+                            <button class="btn btn-secondary btn-sm edit-action-btn" onclick="editVoice()">
                                 <i data-lucide="edit-2"></i> Edit
                             </button>
                         </div>
 
                         <div id="voice-content">
                             <!-- Voice config loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domain Tab (NEW) -->
+                <div class="tab-panel" id="tab-domain">
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="globe" style="color: var(--primary);"></i>
+                                <h3>Domain Knowledge</h3>
+                            </div>
+                            <button class="btn btn-secondary btn-sm edit-action-btn" onclick="editDomain()">
+                                <i data-lucide="edit-2"></i> Edit
+                            </button>
+                        </div>
+
+                        <div class="domain-grid" id="domain-grid">
+                            <!-- Domain loaded dynamically -->
                         </div>
                     </div>
                 </div>
@@ -577,7 +787,7 @@
                                 <i data-lucide="file-text" style="color: var(--primary);"></i>
                                 <h3>Soul.md Preview</h3>
                             </div>
-                            <div style="display: flex; gap: 0.5rem;">
+                            <div class="header-btn-group">
                                 <button class="btn btn-secondary btn-sm" onclick="regenerateSoulMd()">
                                     <i data-lucide="refresh-cw"></i> Regenerate
                                 </button>
@@ -596,15 +806,17 @@
         </main>
     </div>
 
-    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
         let currentConfig = null;
         let orgId = null;
         let configId = null;
+        let isPlatformAdmin = false;
+        let configScope = null; // 'platform' or 'organization'
 
-        // Initialize
+        // ── Initialize ──────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -612,46 +824,117 @@
             if (typeof initNavigation === 'function') await initNavigation();
             if (typeof lucide !== 'undefined') lucide.createIcons();
 
-            // Get org context
+            // Load ModalService
+            await ModalServiceLoader.load();
+
+            // Get user context from localStorage (set during login)
             try {
-                const response = await fetch('/api/user-profile');
-                const data = await response.json();
-                if (data.user && data.user.org_id) {
-                    orgId = data.user.org_id;
-                }
+                const storedUser = JSON.parse(localStorage.getItem('insight360_user') || '{}');
+                if (storedUser.is_platform_admin) isPlatformAdmin = true;
+                orgId = localStorage.getItem('insight360_org_id') || storedUser.default_org_id || null;
             } catch (e) {
-                console.error('Failed to get user profile:', e);
+                console.error('Failed to parse stored user:', e);
+            }
+
+            // If still no org context, try fetching from auth endpoint
+            if (!orgId && !isPlatformAdmin) {
+                const token = localStorage.getItem('insight360_token');
+                if (token) {
+                    try {
+                        const response = await fetch('/api/auth/me', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (data.success && data.user) {
+                            if (data.user.is_platform_admin) isPlatformAdmin = true;
+                        }
+                    } catch (e) {
+                        console.error('Failed to get user profile:', e);
+                    }
+                }
             }
 
             await loadConfiguration();
         });
 
-        // Load configuration
+        // ── Load Configuration ──────────────────────────────────
         async function loadConfiguration() {
-            try {
-                // Get active org-level config
-                const response = await fetch(`/api/soul-config?scope_type=organization&org_id=${orgId}&is_active=true`);
-                const data = await response.json();
+            // Show loading modal while fetching configuration
+            const loadingModal = ModalService.loading({ message: 'Loading soul configuration...' });
 
-                if (!data.success || !data.data || data.data.length === 0) {
-                    showEmptyState();
-                    return;
+            try {
+                // Try org-level config first
+                if (orgId) {
+                    const orgResponse = await fetch(`/api/soul-config?scope_type=organization&org_id=${orgId}&is_active=true`);
+                    const orgData = await orgResponse.json();
+
+                    if (orgData.success && orgData.data && orgData.data.length > 0) {
+                        currentConfig = orgData.data[0];
+                        configId = currentConfig.id;
+                        configScope = 'organization';
+                        renderConfig();
+                        loadingModal.close();
+                        return;
+                    }
                 }
 
-                currentConfig = data.data[0];
-                configId = currentConfig.id;
+                // Fall back to platform config (for platform admins or if no org config)
+                if (isPlatformAdmin) {
+                    const platResponse = await fetch('/api/soul-config?scope_type=platform&is_active=true');
+                    const platData = await platResponse.json();
 
-                updateStats();
-                renderHierarchy();
-                renderValues();
-                renderBrightLines();
-                renderVoice();
-                loadVersionHistory();
-                loadSoulMd();
+                    if (platData.success && platData.data && platData.data.length > 0) {
+                        currentConfig = platData.data[0];
+                        configId = currentConfig.id;
+                        configScope = 'platform';
+                        renderConfig();
+                        loadingModal.close();
+                        return;
+                    }
+                }
+
+                // No config found at all
+                showEmptyState();
+                loadingModal.close();
 
             } catch (error) {
                 console.error('Error loading configuration:', error);
+                loadingModal.close();
                 showToast('Failed to load configuration', 'error');
+            }
+        }
+
+        function isEditable() {
+            // Platform configs are editable by platform admins
+            // Org configs are always editable (user already has access)
+            return configScope === 'organization' || (configScope === 'platform' && isPlatformAdmin);
+        }
+
+        function renderConfig() {
+            // Show/hide edit buttons based on editability
+            const editBtns = document.querySelectorAll('.edit-action-btn');
+            editBtns.forEach(btn => btn.style.display = isEditable() ? '' : 'none');
+
+            // Show scope indicator
+            updateScopeIndicator();
+
+            updateStats();
+            renderHierarchy();
+            renderValues();
+            renderBrightLines();
+            renderGuardrails();
+            renderVoice();
+            renderDomain();
+            loadVersionHistory();
+            loadSoulMd();
+        }
+
+        function updateScopeIndicator() {
+            const header = document.querySelector('.header-subtitle');
+            if (configScope === 'platform') {
+                header.textContent = 'Platform-level soul configuration (Synergi AI)';
+            } else {
+                header.textContent = "Manage your organization's values, ethics, and AI persona";
             }
         }
 
@@ -669,13 +952,36 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        // ── Shared Save Helper ──────────────────────────────────
+        async function saveSection(sectionData, changeReason) {
+            try {
+                const response = await fetch(`/api/soul-config/${configId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...sectionData, change_reason: changeReason })
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error || 'Save failed');
+
+                // Reload everything to reflect changes
+                await loadConfiguration();
+                showToast('Configuration updated', 'success');
+                return true;
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('Failed to save: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // ── Stats ───────────────────────────────────────────────
         function updateStats() {
             document.getElementById('stat-values').textContent = (currentConfig.values || []).length;
             document.getElementById('stat-bright-lines').textContent = (currentConfig.bright_lines || []).length;
             document.getElementById('stat-completeness').textContent = `${currentConfig.completeness_score || 0}%`;
             document.getElementById('stat-version').textContent = `v${currentConfig.version || 1}`;
 
-            // Update status badge
             const statusEl = document.getElementById('config-status');
             if (currentConfig.is_draft) {
                 statusEl.className = 'config-status draft';
@@ -690,88 +996,218 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        // ── Overview Tab ────────────────────────────────────────
         function renderHierarchy() {
             const tree = document.getElementById('hierarchy-tree');
             const identity = currentConfig.identity || {};
+            const isPlatformScope = configScope === 'platform';
+            const valuesCount = (currentConfig.values || []).length;
+            const brightLinesCount = (currentConfig.bright_lines || []).length;
+            const orgBrightLines = (currentConfig.bright_lines || []).filter(bl => bl.level !== 'platform').length;
 
             tree.innerHTML = `
                 <div class="hierarchy-level">
                     <div class="hierarchy-connector">
-                        <div class="hierarchy-dot"></div>
+                        <div class="hierarchy-dot" ${isPlatformScope ? 'style="background: var(--primary); box-shadow: 0 0 8px var(--primary);"' : ''}></div>
                         <div class="hierarchy-line"></div>
                     </div>
-                    <div class="hierarchy-content platform">
-                        <div class="hierarchy-label">Platform Level</div>
+                    <div class="hierarchy-content platform" ${isPlatformScope ? 'style="border-color: var(--primary);"' : ''}>
+                        <div class="hierarchy-label">Platform Level ${isPlatformScope ? '<span style="color: var(--primary); font-weight: 600;">(Viewing)</span>' : ''}</div>
                         <div class="hierarchy-name">Synergi AI Platform</div>
                         <div class="hierarchy-meta">
-                            <span>6 Immutable Bright Lines</span>
-                            <span>SCU Ethics Framework</span>
+                            ${isPlatformScope ? `
+                                <span>${valuesCount} Values</span>
+                                <span>${brightLinesCount} Bright Lines</span>
+                                <span>Completeness: ${currentConfig.completeness_score || 0}%</span>
+                            ` : `
+                                <span>Immutable Bright Lines</span>
+                                <span>SCU Ethics Framework</span>
+                            `}
                         </div>
                     </div>
                 </div>
 
+                ${isPlatformScope ? '' : `
                 <div class="hierarchy-level">
                     <div class="hierarchy-connector">
-                        <div class="hierarchy-dot" style="background: #10b981;"></div>
+                        <div class="hierarchy-dot" style="background: #10b981; box-shadow: 0 0 8px #10b981;"></div>
                         <div class="hierarchy-line"></div>
                     </div>
-                    <div class="hierarchy-content organization">
-                        <div class="hierarchy-label">Organization Level</div>
-                        <div class="hierarchy-name">${currentConfig.organization_name || 'Your Organization'}</div>
+                    <div class="hierarchy-content organization" style="border-color: #10b981;">
+                        <div class="hierarchy-label">Organization Level <span style="color: #10b981; font-weight: 600;">(Viewing)</span></div>
+                        <div class="hierarchy-name">${escapeHtml(currentConfig.organization_name || 'Your Organization')}</div>
                         <div class="hierarchy-meta">
-                            <span>${(currentConfig.values || []).length} Values</span>
-                            <span>${(currentConfig.bright_lines || []).filter(bl => bl.level !== 'platform').length} Bright Lines</span>
+                            <span>${valuesCount} Values</span>
+                            <span>${orgBrightLines} Bright Lines</span>
                             <span>Completeness: ${currentConfig.completeness_score || 0}%</span>
                         </div>
                     </div>
                 </div>
+                `}
 
                 <div class="hierarchy-level">
                     <div class="hierarchy-connector">
                         <div class="hierarchy-dot" style="background: #f59e0b;"></div>
                     </div>
-                    <div class="hierarchy-content department">
+                    <div class="hierarchy-content department" style="position: relative;">
                         <div class="hierarchy-label">AI Persona</div>
-                        <div class="hierarchy-name">${identity.name || 'Higgins'}</div>
+                        <div class="hierarchy-name">${escapeHtml(identity.name || 'Higgins')}</div>
                         <div class="hierarchy-meta">
-                            <span>Role: ${identity.role || 'Chief of Staff AI'}</span>
-                            <span>Archetype: ${identity.archetype || 'Trusted Butler'}</span>
+                            <span>Role: ${escapeHtml(identity.role || 'Chief of Staff AI')}</span>
+                            <span>Archetype: ${escapeHtml(identity.archetype || 'Trusted Butler')}</span>
                         </div>
+                        ${identity.character_essence ? `<div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); font-style: italic;">${escapeHtml(identity.character_essence)}</div>` : ''}
+                        ${isEditable() ? `<button class="btn-icon" onclick="editIdentity()" title="Edit AI Persona" style="position: absolute; top: 0.75rem; right: 0.75rem;">
+                            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                        </button>` : ''}
                     </div>
                 </div>
             `;
         }
 
+        // ── AI Persona / Identity Edit ─────────────────────────
+        async function editIdentity() {
+            const identity = currentConfig.identity || {};
+
+            const result = await ModalService.form({
+                title: 'Edit AI Persona',
+                resizable: true,
+                fields: [
+                    { name: 'name', label: 'Persona Name', type: 'text', required: true, value: identity.name || '' },
+                    { name: 'role', label: 'Role', type: 'text', required: true, value: identity.role || '' },
+                    { name: 'archetype', label: 'Archetype', type: 'text', value: identity.archetype || '' },
+                    { name: 'character_essence', label: 'Character Essence', type: 'textarea', value: identity.character_essence || '' },
+                    { name: 'persona_temperature', label: 'Persona Temperature', type: 'select', value: identity.persona_temperature || 'warm_professional', options: [
+                        { value: 'formal', label: 'Formal' },
+                        { value: 'warm_professional', label: 'Warm Professional' },
+                        { value: 'friendly', label: 'Friendly' },
+                        { value: 'casual', label: 'Casual' }
+                    ]}
+                ],
+                submitText: 'Save Changes'
+            });
+
+            if (result) {
+                const updatedIdentity = {
+                    ...identity,
+                    name: result.name,
+                    role: result.role,
+                    archetype: result.archetype,
+                    character_essence: result.character_essence,
+                    persona_temperature: result.persona_temperature
+                };
+                await saveSection({ identity: updatedIdentity }, `Updated AI persona: ${result.name}`);
+            }
+        }
+
+        // ── Values Tab ──────────────────────────────────────────
         function renderValues() {
             const grid = document.getElementById('values-grid');
             const values = currentConfig.values || [];
 
             if (values.length === 0) {
-                grid.innerHTML = '<div class="empty-state"><p>No values defined yet.</p></div>';
+                grid.innerHTML = '<div class="empty-state"><p>No values defined yet. Click "Add Value" to get started.</p></div>';
                 return;
             }
 
-            grid.innerHTML = values.map(v => `
+            grid.innerHTML = values.map((v, idx) => `
                 <div class="value-card ${v.non_negotiable ? 'non-negotiable' : ''}">
                     <div class="value-header">
                         <span class="value-name">
                             ${v.non_negotiable ? '<i data-lucide="star" style="width: 14px; height: 14px; color: var(--danger);"></i>' : ''}
-                            ${v.name}
+                            ${escapeHtml(v.name)}
                         </span>
-                        <span class="value-priority">${v.priority || 'medium'}</span>
+                        <span class="value-priority">${escapeHtml(v.priority || 'medium')}</span>
                     </div>
-                    ${v.meaning ? `<div class="value-meaning">${v.meaning}</div>` : ''}
+                    ${v.meaning ? `<div class="value-meaning">${escapeHtml(v.meaning)}</div>` : ''}
                     ${v.behaviors && v.behaviors.length > 0 ? `
                         <div class="value-behaviors">
-                            ${v.behaviors.map(b => `<span class="value-behavior">${b}</span>`).join('')}
+                            ${v.behaviors.map(b => `<span class="value-behavior">${escapeHtml(b)}</span>`).join('')}
                         </div>
                     ` : ''}
+                    ${isEditable() ? `<div class="card-actions">
+                        <button class="btn-icon" onclick="editValue(${idx})" title="Edit value">
+                            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                        </button>
+                        <button class="btn-icon danger" onclick="deleteValue(${idx})" title="Delete value">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        </button>
+                    </div>` : ''}
                 </div>
             `).join('');
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        async function addValue() {
+            await openValueModal(-1);
+        }
+
+        async function editValue(idx) {
+            await openValueModal(idx);
+        }
+
+        async function openValueModal(idx) {
+            const isNew = idx === -1;
+            const value = isNew ? {} : (currentConfig.values || [])[idx];
+            if (!isNew && !value) return;
+
+            const result = await ModalService.form({
+                title: isNew ? 'Add Core Value' : `Edit Value: ${value.name}`,
+                resizable: true,
+                fields: [
+                    { name: 'name', label: 'Value Name', type: 'text', required: true, value: value.name || '' },
+                    { name: 'meaning', label: 'What does this value mean?', type: 'textarea', value: value.meaning || '' },
+                    { name: 'priority', label: 'Priority', type: 'select', options: [
+                        { value: 'high', label: 'High' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'low', label: 'Low' }
+                    ], value: value.priority || 'medium' },
+                    { name: 'non_negotiable', label: 'Non-negotiable (cannot be compromised)', type: 'checkbox', value: value.non_negotiable || false },
+                    { name: 'behaviors', label: 'Observable Behaviors (comma-separated)', type: 'textarea', value: (value.behaviors || []).join(', '), placeholder: 'e.g. Speak up when something feels wrong, Admit mistakes quickly' }
+                ],
+                submitText: isNew ? 'Add Value' : 'Save Changes'
+            });
+
+            if (result) {
+                const values = [...(currentConfig.values || [])];
+                const newValue = {
+                    name: result.name.trim(),
+                    meaning: result.meaning.trim(),
+                    priority: result.priority,
+                    non_negotiable: result.non_negotiable || false,
+                    behaviors: result.behaviors ? result.behaviors.split(',').map(b => b.trim()).filter(Boolean) : []
+                };
+
+                if (isNew) {
+                    values.push(newValue);
+                } else {
+                    values[idx] = newValue;
+                }
+
+                await saveSection({ values }, isNew ? `Added value: ${newValue.name}` : `Updated value: ${newValue.name}`);
+            }
+        }
+
+        async function deleteValue(idx) {
+            const value = (currentConfig.values || [])[idx];
+            if (!value) return;
+
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Value',
+                message: `Are you sure you want to delete the value "${value.name}"? This action will create a new version.`,
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+
+            if (confirmed) {
+                const values = [...(currentConfig.values || [])];
+                values.splice(idx, 1);
+                await saveSection({ values }, `Removed value: ${value.name}`);
+            }
+        }
+
+        // ── Bright Lines Tab ────────────────────────────────────
         function renderBrightLines() {
             const platformContainer = document.getElementById('platform-lines');
             const orgContainer = document.getElementById('org-lines');
@@ -780,61 +1216,194 @@
             const platformLines = lines.filter(bl => bl.level === 'platform');
             const orgLines = lines.filter(bl => bl.level !== 'platform');
 
-            // Platform lines
-            if (platformLines.length > 0) {
-                platformContainer.innerHTML = `
-                    <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
-                        <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
-                        Platform Level (Immutable)
-                    </h4>
-                    ${platformLines.map(bl => `
-                        <div class="bright-line-card platform">
-                            <div class="bright-line-header">
-                                <span class="bright-line-name">
-                                    <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
-                                    ${bl.name}
-                                </span>
-                                <span class="bright-line-badge">Platform</span>
-                            </div>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${bl.description || ''}</p>
+            // Platform lines (read-only)
+            platformContainer.innerHTML = `
+                <h4 class="section-label">
+                    <i data-lucide="lock"></i>
+                    Platform Level (Immutable)
+                </h4>
+                ${platformLines.length > 0 ? platformLines.map(bl => `
+                    <div class="bright-line-card platform">
+                        <div class="bright-line-header">
+                            <span class="bright-line-name">
+                                <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                                ${escapeHtml(bl.name)}
+                            </span>
+                            <span class="bright-line-badge">Platform</span>
                         </div>
-                    `).join('')}
-                `;
-            }
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${escapeHtml(bl.description || '')}</p>
+                    </div>
+                `).join('') : '<p style="color: var(--text-muted); font-size: 0.9rem; padding-left: 0.5rem;">No platform bright lines loaded.</p>'}
+            `;
 
-            // Org lines
-            if (orgLines.length > 0) {
-                orgContainer.innerHTML = `
-                    <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
-                        <i data-lucide="building-2" style="width: 14px; height: 14px;"></i>
-                        Organization Level
-                    </h4>
-                    ${orgLines.map(bl => `
-                        <div class="bright-line-card">
-                            <div class="bright-line-header">
-                                <span class="bright-line-name">
-                                    <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
-                                    ${bl.name}
-                                </span>
-                            </div>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${bl.description || ''}</p>
-                            ${bl.test_question ? `<p style="margin: 0.5rem 0 0 0; font-style: italic; font-size: 0.85rem; color: var(--text-muted);">Test: "${bl.test_question}"</p>` : ''}
+            // Org lines (editable)
+            orgContainer.innerHTML = `
+                <h4 class="section-label">
+                    <i data-lucide="building-2"></i>
+                    Organization Level
+                </h4>
+                ${orgLines.length > 0 ? orgLines.map((bl, idx) => `
+                    <div class="bright-line-card">
+                        <div class="bright-line-header">
+                            <span class="bright-line-name">
+                                <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
+                                ${escapeHtml(bl.name)}
+                            </span>
+                            ${isEditable() ? `<div class="bright-line-actions">
+                                <button class="btn-icon" onclick="editBrightLine(${idx})" title="Edit bright line">
+                                    <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                                </button>
+                                <button class="btn-icon danger" onclick="deleteBrightLine(${idx})" title="Delete bright line">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>` : ''}
                         </div>
-                    `).join('')}
-                `;
-            } else {
-                orgContainer.innerHTML = `
-                    <h4 style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
-                        <i data-lucide="building-2" style="width: 14px; height: 14px;"></i>
-                        Organization Level
-                    </h4>
-                    <div class="empty-state" style="padding: 1.5rem;"><p>No organization bright lines defined.</p></div>
-                `;
-            }
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${escapeHtml(bl.description || '')}</p>
+                        ${bl.test_question ? `<p style="margin: 0.5rem 0 0 0; font-style: italic; font-size: 0.85rem; color: var(--text-muted);">Test: "${escapeHtml(bl.test_question)}"</p>` : ''}
+                    </div>
+                `).join('') : '<div class="empty-state" style="padding: 1.5rem;"><p>No organization bright lines defined. Click "Add Bright Line" to create one.</p></div>'}
+            `;
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        async function addBrightLine() {
+            await openBrightLineModal(-1);
+        }
+
+        async function editBrightLine(idx) {
+            await openBrightLineModal(idx);
+        }
+
+        async function openBrightLineModal(idx) {
+            const orgLines = (currentConfig.bright_lines || []).filter(bl => bl.level !== 'platform');
+            const isNew = idx === -1;
+            const line = isNew ? {} : orgLines[idx];
+            if (!isNew && !line) return;
+
+            const result = await ModalService.form({
+                title: isNew ? 'Add Bright Line' : `Edit: ${line.name}`,
+                resizable: true,
+                fields: [
+                    { name: 'name', label: 'Bright Line Name', type: 'text', required: true, value: line.name || '' },
+                    { name: 'description', label: 'Description', type: 'textarea', required: true, value: line.description || '' },
+                    { name: 'test_question', label: 'Test Question (how to check compliance)', type: 'textarea', value: line.test_question || '', placeholder: 'e.g. Would this action compromise our commitment to transparency?' }
+                ],
+                submitText: isNew ? 'Add Bright Line' : 'Save Changes'
+            });
+
+            if (result) {
+                const allLines = [...(currentConfig.bright_lines || [])];
+                const platformLines = allLines.filter(bl => bl.level === 'platform');
+                const currentOrgLines = allLines.filter(bl => bl.level !== 'platform');
+
+                const newLine = {
+                    name: result.name.trim(),
+                    description: result.description.trim(),
+                    test_question: result.test_question ? result.test_question.trim() : '',
+                    level: 'organization'
+                };
+
+                if (isNew) {
+                    currentOrgLines.push(newLine);
+                } else {
+                    currentOrgLines[idx] = newLine;
+                }
+
+                const bright_lines = [...platformLines, ...currentOrgLines];
+                await saveSection({ bright_lines }, isNew ? `Added bright line: ${newLine.name}` : `Updated bright line: ${newLine.name}`);
+            }
+        }
+
+        async function deleteBrightLine(idx) {
+            const orgLines = (currentConfig.bright_lines || []).filter(bl => bl.level !== 'platform');
+            const line = orgLines[idx];
+            if (!line) return;
+
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Bright Line',
+                message: `Are you sure you want to delete "${line.name}"? This is a non-negotiable boundary.`,
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+
+            if (confirmed) {
+                const allLines = [...(currentConfig.bright_lines || [])];
+                const platformLines = allLines.filter(bl => bl.level === 'platform');
+                const currentOrgLines = allLines.filter(bl => bl.level !== 'platform');
+                currentOrgLines.splice(idx, 1);
+
+                const bright_lines = [...platformLines, ...currentOrgLines];
+                await saveSection({ bright_lines }, `Removed bright line: ${line.name}`);
+            }
+        }
+
+        // ── Guardrails Tab ──────────────────────────────────────
+        function renderGuardrails() {
+            const grid = document.getElementById('guardrails-grid');
+            const guardrails = currentConfig.guardrails || {};
+            const categories = [
+                { key: 'communication', label: 'Communication', icon: 'message-circle' },
+                { key: 'decision', label: 'Decision Making', icon: 'git-branch' },
+                { key: 'scope', label: 'Scope', icon: 'target' },
+                { key: 'emotional', label: 'Emotional', icon: 'heart-handshake' }
+            ];
+
+            const hasAny = categories.some(c => (guardrails[c.key] || []).length > 0);
+
+            if (!hasAny) {
+                grid.innerHTML = '<div class="empty-state"><p>No guardrails defined yet. Click "Edit" to add guardrails.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = categories.map(cat => {
+                const items = guardrails[cat.key] || [];
+                return `
+                    <div class="guardrail-card">
+                        <h4>
+                            <i data-lucide="${cat.icon}" style="width:16px;height:16px;color:#f59e0b;"></i>
+                            ${cat.label}
+                        </h4>
+                        ${items.length > 0 ? `
+                            <div class="guardrail-tags">
+                                ${items.map(item => `<span class="guardrail-tag">${escapeHtml(item)}</span>`).join('')}
+                            </div>
+                        ` : '<p style="color: var(--text-muted); font-size: 0.85rem;">None defined</p>'}
+                    </div>
+                `;
+            }).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function editGuardrails() {
+            const guardrails = currentConfig.guardrails || {};
+
+            const result = await ModalService.form({
+                title: 'Edit Guardrails',
+                resizable: true,
+                fields: [
+                    { name: 'communication', label: 'Communication Guardrails (one per line)', type: 'textarea', value: (guardrails.communication || []).join('\n'), placeholder: 'e.g. Never make promises on behalf of the organization\nAlways cite sources for claims' },
+                    { name: 'decision', label: 'Decision Making Guardrails (one per line)', type: 'textarea', value: (guardrails.decision || []).join('\n'), placeholder: 'e.g. Flag decisions above $10K for human review\nNever override compliance requirements' },
+                    { name: 'scope', label: 'Scope Guardrails (one per line)', type: 'textarea', value: (guardrails.scope || []).join('\n'), placeholder: 'e.g. Stay within assigned domain expertise\nDefer medical/legal questions to professionals' },
+                    { name: 'emotional', label: 'Emotional Guardrails (one per line)', type: 'textarea', value: (guardrails.emotional || []).join('\n'), placeholder: 'e.g. Acknowledge frustration before solving\nNever dismiss concerns as unimportant' }
+                ],
+                submitText: 'Save Guardrails'
+            });
+
+            if (result) {
+                const parseLines = (text) => text ? text.split('\n').map(l => l.trim()).filter(Boolean) : [];
+                const newGuardrails = {
+                    communication: parseLines(result.communication),
+                    decision: parseLines(result.decision),
+                    scope: parseLines(result.scope),
+                    emotional: parseLines(result.emotional)
+                };
+                await saveSection({ guardrails: newGuardrails }, 'Updated guardrails');
+            }
+        }
+
+        // ── Voice Tab ───────────────────────────────────────────
         function renderVoice() {
             const container = document.getElementById('voice-content');
             const identity = currentConfig.identity || {};
@@ -848,9 +1417,9 @@
                             AI Persona
                         </h4>
                         <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
-                            <p style="margin: 0 0 0.5rem 0;"><strong>Name:</strong> ${identity.name || 'Higgins'}</p>
-                            <p style="margin: 0 0 0.5rem 0;"><strong>Role:</strong> ${identity.role || 'Chief of Staff AI'}</p>
-                            <p style="margin: 0;"><strong>Archetype:</strong> ${identity.archetype || 'Trusted Butler'}</p>
+                            <p style="margin: 0 0 0.5rem 0;"><strong>Name:</strong> ${escapeHtml(identity.name || 'Higgins')}</p>
+                            <p style="margin: 0 0 0.5rem 0;"><strong>Role:</strong> ${escapeHtml(identity.role || 'Chief of Staff AI')}</p>
+                            <p style="margin: 0;"><strong>Archetype:</strong> ${escapeHtml(identity.archetype || 'Trusted Butler')}</p>
                         </div>
                     </div>
 
@@ -861,13 +1430,28 @@
                         </h4>
                         <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
                             ${voice.tone && voice.tone.length > 0 ? `
-                                <p style="margin: 0 0 0.5rem 0;"><strong>Tone:</strong> ${voice.tone.join(', ')}</p>
+                                <p style="margin: 0 0 0.5rem 0;"><strong>Tone:</strong></p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.75rem;">
+                                    ${voice.tone.map(t => `<span class="value-behavior">${escapeHtml(t)}</span>`).join('')}
+                                </div>
                             ` : ''}
                             ${voice.use_words && voice.use_words.length > 0 ? `
-                                <p style="margin: 0 0 0.5rem 0;"><strong>Use:</strong> ${voice.use_words.join(', ')}</p>
+                                <p style="margin: 0 0 0.5rem 0;"><strong>Preferred Words:</strong></p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.75rem;">
+                                    ${voice.use_words.map(w => `<span class="value-behavior">${escapeHtml(w)}</span>`).join('')}
+                                </div>
                             ` : ''}
                             ${voice.avoid && voice.avoid.length > 0 ? `
-                                <p style="margin: 0;"><strong>Avoid:</strong> ${voice.avoid.join(', ')}</p>
+                                <p style="margin: 0 0 0.5rem 0;"><strong>Avoid:</strong></p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                                    ${voice.avoid.map(a => `<span class="guardrail-tag">${escapeHtml(a)}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            ${voice.personality_temperature != null ? `
+                                <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                                    Personality Temperature: ${voice.personality_temperature}
+                                    (${voice.personality_temperature < 0.4 ? 'Formal' : voice.personality_temperature > 0.7 ? 'Casual' : 'Balanced'})
+                                </p>
                             ` : ''}
                         </div>
                     </div>
@@ -877,6 +1461,161 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        async function editVoice() {
+            const identity = currentConfig.identity || {};
+            const voice = currentConfig.voice || {};
+
+            const result = await ModalService.form({
+                title: 'Edit Voice & Persona',
+                resizable: true,
+                fields: [
+                    { name: 'persona_name', label: 'AI Persona Name', type: 'text', value: identity.name || '' },
+                    { name: 'persona_role', label: 'Role', type: 'text', value: identity.role || '' },
+                    { name: 'persona_archetype', label: 'Archetype', type: 'text', value: identity.archetype || '', placeholder: 'e.g. Trusted Butler, Strategic Advisor' },
+                    { name: 'tone', label: 'Tone Descriptors (comma-separated)', type: 'textarea', value: (voice.tone || []).join(', '), placeholder: 'e.g. professional, warm, concise, confident' },
+                    { name: 'use_words', label: 'Preferred Words (comma-separated)', type: 'textarea', value: (voice.use_words || []).join(', '), placeholder: 'e.g. strategic, evidence-based, collaborative' },
+                    { name: 'avoid', label: 'Words to Avoid (comma-separated)', type: 'textarea', value: (voice.avoid || []).join(', '), placeholder: 'e.g. synergy, leverage, disrupt' },
+                    { name: 'personality_temperature', label: 'Personality Temperature (0.0 = Formal, 1.0 = Casual)', type: 'number', value: voice.personality_temperature != null ? voice.personality_temperature : 0.5 }
+                ],
+                submitText: 'Save Voice'
+            });
+
+            if (result) {
+                const parseCSV = (text) => text ? text.split(',').map(s => s.trim()).filter(Boolean) : [];
+                const temp = parseFloat(result.personality_temperature);
+
+                const newIdentity = {
+                    ...(currentConfig.identity || {}),
+                    name: result.persona_name.trim(),
+                    role: result.persona_role.trim(),
+                    archetype: result.persona_archetype.trim()
+                };
+
+                const newVoice = {
+                    tone: parseCSV(result.tone),
+                    use_words: parseCSV(result.use_words),
+                    avoid: parseCSV(result.avoid),
+                    personality_temperature: isNaN(temp) ? 0.5 : Math.max(0, Math.min(1, temp))
+                };
+
+                await saveSection({ identity: newIdentity, voice: newVoice }, 'Updated voice & persona');
+            }
+        }
+
+        // ── Domain Tab ──────────────────────────────────────────
+        function renderDomain() {
+            const grid = document.getElementById('domain-grid');
+            const domain = currentConfig.domain || {};
+
+            const hasAny = domain.industry || (domain.key_terms || []).length > 0 ||
+                           (domain.products || []).length > 0 || (domain.audiences || []).length > 0 ||
+                           (domain.competitors || []).length > 0 || domain.challenges;
+
+            if (!hasAny) {
+                grid.innerHTML = '<div class="empty-state"><p>No domain knowledge defined yet. Click "Edit" to add domain context.</p></div>';
+                return;
+            }
+
+            const sections = [];
+
+            if (domain.industry) {
+                sections.push(`
+                    <div class="domain-card">
+                        <h4><i data-lucide="factory" style="width:16px;height:16px;color:var(--primary);"></i> Industry</h4>
+                        <p class="domain-text">${escapeHtml(domain.industry)}</p>
+                    </div>
+                `);
+            }
+
+            if ((domain.key_terms || []).length > 0) {
+                sections.push(`
+                    <div class="domain-card">
+                        <h4><i data-lucide="book-open" style="width:16px;height:16px;color:var(--primary);"></i> Key Terms</h4>
+                        <div class="domain-tags">
+                            ${domain.key_terms.map(t => `<span class="domain-tag">${escapeHtml(t)}</span>`).join('')}
+                        </div>
+                    </div>
+                `);
+            }
+
+            if ((domain.products || []).length > 0) {
+                sections.push(`
+                    <div class="domain-card">
+                        <h4><i data-lucide="package" style="width:16px;height:16px;color:var(--primary);"></i> Products / Services</h4>
+                        <div class="domain-tags">
+                            ${domain.products.map(p => `<span class="domain-tag">${escapeHtml(p)}</span>`).join('')}
+                        </div>
+                    </div>
+                `);
+            }
+
+            if ((domain.audiences || []).length > 0) {
+                sections.push(`
+                    <div class="domain-card">
+                        <h4><i data-lucide="users" style="width:16px;height:16px;color:var(--primary);"></i> Audiences</h4>
+                        <div class="domain-tags">
+                            ${domain.audiences.map(a => `<span class="domain-tag">${escapeHtml(a)}</span>`).join('')}
+                        </div>
+                    </div>
+                `);
+            }
+
+            if ((domain.competitors || []).length > 0) {
+                sections.push(`
+                    <div class="domain-card">
+                        <h4><i data-lucide="swords" style="width:16px;height:16px;color:var(--primary);"></i> Competitors</h4>
+                        <div class="domain-tags">
+                            ${domain.competitors.map(c => `<span class="domain-tag">${escapeHtml(c)}</span>`).join('')}
+                        </div>
+                    </div>
+                `);
+            }
+
+            if (domain.challenges) {
+                sections.push(`
+                    <div class="domain-card" style="grid-column: 1 / -1;">
+                        <h4><i data-lucide="alert-triangle" style="width:16px;height:16px;color:var(--primary);"></i> Key Challenges</h4>
+                        <p class="domain-text">${escapeHtml(domain.challenges)}</p>
+                    </div>
+                `);
+            }
+
+            grid.innerHTML = sections.join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function editDomain() {
+            const domain = currentConfig.domain || {};
+
+            const result = await ModalService.form({
+                title: 'Edit Domain Knowledge',
+                resizable: true,
+                fields: [
+                    { name: 'industry', label: 'Industry', type: 'text', value: domain.industry || '', placeholder: 'e.g. Professional Services, Healthcare, Finance' },
+                    { name: 'key_terms', label: 'Key Industry Terms (comma-separated)', type: 'textarea', value: (domain.key_terms || []).join(', '), placeholder: 'e.g. digital transformation, AI governance, change management' },
+                    { name: 'products', label: 'Products / Services (comma-separated)', type: 'textarea', value: (domain.products || []).join(', '), placeholder: 'e.g. Strategy Consulting, AI Readiness Assessment' },
+                    { name: 'audiences', label: 'Target Audiences (comma-separated)', type: 'textarea', value: (domain.audiences || []).join(', '), placeholder: 'e.g. C-Suite, Operations Leaders, HR Directors' },
+                    { name: 'competitors', label: 'Competitors (comma-separated)', type: 'textarea', value: (domain.competitors || []).join(', ') },
+                    { name: 'challenges', label: 'Key Challenges', type: 'textarea', value: domain.challenges || '' }
+                ],
+                submitText: 'Save Domain'
+            });
+
+            if (result) {
+                const parseCSV = (text) => text ? text.split(',').map(s => s.trim()).filter(Boolean) : [];
+                const newDomain = {
+                    industry: result.industry.trim(),
+                    key_terms: parseCSV(result.key_terms),
+                    products: parseCSV(result.products),
+                    audiences: parseCSV(result.audiences),
+                    competitors: parseCSV(result.competitors),
+                    challenges: result.challenges.trim()
+                };
+                await saveSection({ domain: newDomain }, 'Updated domain knowledge');
+            }
+        }
+
+        // ── Version History ─────────────────────────────────────
         async function loadVersionHistory() {
             try {
                 const response = await fetch(`/api/soul-config/${configId}/versions`);
@@ -896,21 +1635,18 @@
                     <div class="version-item">
                         <div class="version-number ${idx === 0 ? 'current' : ''}">v${v.version}</div>
                         <div class="version-content">
-                            <div class="version-summary">${v.change_summary || 'Configuration update'}</div>
+                            <div class="version-summary">${escapeHtml(v.change_summary || 'Configuration update')}</div>
                             <div class="version-meta">
                                 ${new Date(v.changed_at).toLocaleString()}
                                 ${v.changed_sections && v.changed_sections.length > 0 ? ` - Changed: ${v.changed_sections.join(', ')}` : ''}
                             </div>
                         </div>
                         <div class="version-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="viewVersion(${v.version})" title="View">
-                                <i data-lucide="eye"></i>
-                            </button>
                             ${idx > 0 ? `
-                                <button class="btn btn-secondary btn-sm" onclick="rollbackToVersion(${v.version})" title="Rollback">
-                                    <i data-lucide="rotate-ccw"></i>
+                                <button class="btn btn-secondary btn-sm" onclick="rollbackToVersion(${v.version})" title="Rollback to this version">
+                                    <i data-lucide="rotate-ccw"></i> Rollback
                                 </button>
-                            ` : ''}
+                            ` : '<span class="bright-line-badge">Current</span>'}
                         </div>
                     </div>
                 `).join('');
@@ -921,6 +1657,7 @@
             }
         }
 
+        // ── Soul.md ─────────────────────────────────────────────
         async function loadSoulMd() {
             try {
                 const response = await fetch(`/api/soul-config/${configId}/export`);
@@ -932,30 +1669,6 @@
             } catch (error) {
                 console.error('Error loading soul.md:', error);
             }
-        }
-
-        // Tab switching
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-
-            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        // Actions
-        function editValues() {
-            window.location.href = `/soul-wizard.html?edit=${configId}&step=2`;
-        }
-
-        function editBrightLines() {
-            window.location.href = `/soul-wizard.html?edit=${configId}&step=3`;
-        }
-
-        function editVoice() {
-            window.location.href = `/soul-wizard.html?edit=${configId}&step=5`;
         }
 
         async function regenerateSoulMd() {
@@ -988,15 +1701,27 @@
             }
         }
 
-        async function viewVersion(version) {
-            showToast(`Viewing version ${version}`, 'info');
-            // Could open a modal with version diff
+        // ── Tab Switching ───────────────────────────────────────
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        // ── Rollback (uses ModalService) ────────────────────────
         async function rollbackToVersion(version) {
-            if (!confirm(`Are you sure you want to rollback to version ${version}? This will create a new version.`)) {
-                return;
-            }
+            const confirmed = await ModalService.confirm({
+                title: 'Rollback Configuration',
+                message: `Are you sure you want to rollback to version ${version}? This will create a new version with the restored configuration.`,
+                confirmText: 'Rollback',
+                confirmClass: 'btn-danger'
+            });
+
+            if (!confirmed) return;
 
             try {
                 const response = await fetch(`/api/soul-config/${configId}/rollback`, {
@@ -1017,7 +1742,14 @@
             }
         }
 
-        // Toast notifications
+        // ── Utilities ───────────────────────────────────────────
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;

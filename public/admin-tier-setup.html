@@ -419,7 +419,22 @@
         let tiers = [];
         let originalTiers = [];
         let hasChanges = false;
-        let tierModules = {}; // { tierId: { modules: [], by_category: {} } }
+        let tierModules = {}; // { tierId: { modules: [], by_nav_group: {} } }
+        let allModules = []; // All platform modules (for addon pricing config)
+        let addonPricingChanges = {}; // { moduleId: { is_addon_purchasable, addon_price_monthly, ... } }
+
+        // Nav group labels matching navigation.js
+        const NAV_GROUP_LABELS = {
+            'primary': 'Primary',
+            'ai-systems': 'AI 360 Systems',
+            'dashboards': 'Dashboards',
+            'modules': 'Modules',
+            'agency': 'Agency',
+            'admin': 'Administration'
+        };
+
+        // Nav group display order
+        const NAV_GROUP_ORDER = ['primary', 'ai-systems', 'dashboards', 'modules', 'agency', 'admin'];
 
         const ADDON_CATEGORIES = {
             productivity: 'Productivity (Google, Microsoft, Slack)',
@@ -529,41 +544,52 @@
 
         async function loadTierModules() {
             const token = getAuthToken();
-            for (const tier of tiers) {
+
+            // Load modules per tier and all modules in parallel
+            const promises = tiers.map(async tier => {
                 try {
                     const response = await fetch(`/api/platform/tiers/${tier.id}/modules`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (response.ok) {
                         const data = await response.json();
-                        tierModules[tier.id] = data.data || { modules: [], by_category: {} };
+                        tierModules[tier.id] = data.data || { modules: [], by_nav_group: {} };
                     }
                 } catch (error) {
                     console.warn(`Failed to load modules for tier ${tier.id}:`, error);
-                    tierModules[tier.id] = { modules: [], by_category: {} };
+                    tierModules[tier.id] = { modules: [], by_nav_group: {} };
                 }
-            }
+            });
+
+            // Also fetch all modules for addon pricing config
+            promises.push((async () => {
+                try {
+                    const response = await fetch('/api/pricing/modules');
+                    if (response.ok) {
+                        const data = await response.json();
+                        allModules = data.data?.modules || [];
+                    }
+                } catch (error) {
+                    console.warn('Failed to load all modules:', error);
+                }
+            })());
+
+            await Promise.all(promises);
         }
 
         function renderTierModules(tierId) {
             const data = tierModules[tierId];
-            if (!data || !data.by_category || Object.keys(data.by_category).length === 0) {
+            const groups = data?.by_nav_group;
+            if (!groups || Object.keys(groups).length === 0) {
                 return '<div style="color: var(--text-muted); font-size: 0.75rem;">No modules configured</div>';
             }
 
-            const categoryLabels = {
-                core: 'Core',
-                tools: 'Tools',
-                suites: 'Suites',
-                admin: 'Administration',
-                other: 'Other'
-            };
-
             let html = '';
-            for (const [category, modules] of Object.entries(data.by_category)) {
-                if (modules.length === 0) continue;
+            for (const groupId of NAV_GROUP_ORDER) {
+                const modules = groups[groupId];
+                if (!modules || modules.length === 0) continue;
 
-                html += `<div class="modules-category">${categoryLabels[category] || category}</div>`;
+                html += `<div class="modules-category">${NAV_GROUP_LABELS[groupId] || groupId}</div>`;
                 html += '<div class="modules-grid">';
                 for (const module of modules) {
                     html += `
@@ -578,6 +604,70 @@
             }
 
             return html || '<div style="color: var(--text-muted); font-size: 0.75rem;">No modules available</div>';
+        }
+
+        function renderModuleAddonConfig() {
+            if (!allModules || allModules.length === 0) {
+                return '<div style="color: var(--text-muted); font-size: 0.75rem;">Loading modules...</div>';
+            }
+
+            // Show modules that have min_tier set (i.e., not available to all tiers)
+            const addonCandidates = allModules.filter(m => m.min_tier);
+            if (addonCandidates.length === 0) {
+                return '<div style="color: var(--text-muted); font-size: 0.75rem;">All modules are available to every tier</div>';
+            }
+
+            let html = '<div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Configure which modules can be purchased as add-ons by lower tiers.</div>';
+
+            for (const mod of addonCandidates) {
+                const changes = addonPricingChanges[mod.id] || {};
+                const purchasable = changes.is_addon_purchasable ?? mod.is_addon_purchasable ?? false;
+                const monthly = changes.addon_price_monthly ?? mod.addon_price_monthly ?? '';
+                const yearly = changes.addon_price_yearly ?? mod.addon_price_yearly ?? '';
+
+                html += `
+                    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; min-width: 160px;">
+                            <input type="checkbox" ${purchasable ? 'checked' : ''}
+                                   onchange="updateModuleAddon('${mod.id}', 'is_addon_purchasable', this.checked)">
+                            <i data-lucide="${mod.icon || 'puzzle'}" style="width: 14px; height: 14px;"></i>
+                            <span style="font-size: 0.8rem;">${escapeHtml(mod.name)}</span>
+                        </label>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">min: ${mod.min_tier}</span>
+                        <div style="display: flex; gap: 0.25rem; align-items: center; margin-left: auto;">
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">$</span>
+                            <input type="number" class="limit-input" style="width: 60px;" step="0.01" placeholder="Mo"
+                                   value="${monthly}" ${!purchasable ? 'disabled' : ''}
+                                   onchange="updateModuleAddon('${mod.id}', 'addon_price_monthly', this.value)">
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">/mo</span>
+                            <input type="number" class="limit-input" style="width: 60px;" step="0.01" placeholder="Yr"
+                                   value="${yearly}" ${!purchasable ? 'disabled' : ''}
+                                   onchange="updateModuleAddon('${mod.id}', 'addon_price_yearly', this.value)">
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">/yr</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        function updateModuleAddon(moduleId, field, value) {
+            if (!addonPricingChanges[moduleId]) {
+                const mod = allModules.find(m => m.id === moduleId) || {};
+                addonPricingChanges[moduleId] = {
+                    is_addon_purchasable: mod.is_addon_purchasable || false,
+                    addon_price_monthly: mod.addon_price_monthly,
+                    addon_price_yearly: mod.addon_price_yearly
+                };
+            }
+            if (field === 'is_addon_purchasable') {
+                addonPricingChanges[moduleId][field] = value;
+            } else {
+                addonPricingChanges[moduleId][field] = value ? parseFloat(value) : null;
+            }
+            hasChanges = true;
+            renderTiers();
         }
 
         function renderTierCard(tier) {
@@ -658,6 +748,11 @@
                                 <span class="module-count">${tierModules[tier.id]?.total_count || 0}</span>
                             </div>
                             ${renderTierModules(tier.id)}
+                        </div>
+
+                        <div class="tier-section">
+                            <div class="tier-section-title">Module Add-on Pricing</div>
+                            ${renderModuleAddonConfig()}
                         </div>
                     </div>
 
@@ -752,6 +847,39 @@
                 </tr>
             `).join('');
 
+            // Module comparison by nav_group
+            let moduleRows = '';
+            for (const groupId of NAV_GROUP_ORDER) {
+                const label = NAV_GROUP_LABELS[groupId] || groupId;
+                // Collect all modules in this group from any tier
+                const groupModules = new Map();
+                for (const tier of tiers) {
+                    const modules = tierModules[tier.id]?.by_nav_group?.[groupId] || [];
+                    for (const mod of modules) {
+                        if (!groupModules.has(mod.id)) groupModules.set(mod.id, mod);
+                    }
+                }
+                if (groupModules.size === 0) continue;
+
+                moduleRows += `<tr><td colspan="${colSpan}" style="background: var(--bg-tertiary); font-weight: 600; font-size: 0.85rem;">${label}</td></tr>`;
+                for (const [modId, mod] of groupModules) {
+                    moduleRows += `<tr>
+                        <td style="padding-left: 1.5rem;"><i data-lucide="${mod.icon || 'puzzle'}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>${escapeHtml(mod.name)}</td>
+                        ${tiers.map(tier => {
+                            const hasMod = (tierModules[tier.id]?.modules || []).some(m => m.id === modId);
+                            const addonMod = allModules.find(m => m.id === modId);
+                            if (hasMod) {
+                                return '<td><i data-lucide="check" class="check-icon"></i></td>';
+                            } else if (addonMod?.is_addon_purchasable && addonMod?.addon_price_monthly) {
+                                return `<td style="font-size:0.75rem;color:var(--warning);">$${addonMod.addon_price_monthly}/mo</td>`;
+                            } else {
+                                return '<td><i data-lucide="x" class="x-icon"></i></td>';
+                            }
+                        }).join('')}
+                    </tr>`;
+                }
+            }
+
             tbody.innerHTML = `
                 <tr><td colspan="${colSpan}" style="background: var(--bg-tertiary); font-weight: 600;">Resource Limits</td></tr>
                 ${limitRows}
@@ -759,6 +887,7 @@
                 ${featureRows}
                 <tr><td colspan="${colSpan}" style="background: var(--bg-tertiary); font-weight: 600;">Integration Addons</td></tr>
                 ${addonRows}
+                ${moduleRows}
             `;
 
             lucide.createIcons();
@@ -837,9 +966,33 @@
                     }
                 }
 
+                // Save module addon pricing changes
+                const addonModuleIds = Object.keys(addonPricingChanges);
+                for (const moduleId of addonModuleIds) {
+                    const changes = addonPricingChanges[moduleId];
+                    const addonResponse = await fetch(`/api/platform/modules/${moduleId}/addon-pricing`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(changes)
+                    });
+
+                    if (!addonResponse.ok) {
+                        const addonData = await addonResponse.json();
+                        throw new Error(addonData.error || `Failed to save addon pricing for ${moduleId}`);
+                    }
+                }
+
                 originalTiers = JSON.parse(JSON.stringify(tiers));
+                addonPricingChanges = {};
                 hasChanges = false;
-                showToast('All tiers saved successfully', 'success');
+                showToast('All tiers and addon pricing saved successfully', 'success');
+
+                // Reload modules to reflect changes
+                await loadTierModules();
+                renderTiers();
             } catch (error) {
                 console.error('Error saving tiers:', error);
                 showToast(error.message || 'Failed to save tiers', 'error');

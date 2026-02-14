@@ -132,6 +132,7 @@ const orgCustomizationRoutes = require('./routes/orgCustomization');
 const clientPortalRoutes = require('./routes/clientPortal');
 const agencyAnalyticsRoutes = require('./routes/agencyAnalytics');
 const platformAdminRoutes = require('./routes/platformAdmin');
+const pricingRoutes = require('./routes/pricing');
 const modulesRoutes = require('./routes/modules');
 const resourceAccessRoutes = require('./routes/resourceAccess');
 const integrationsRoutes = require('./routes/integrations');
@@ -555,6 +556,9 @@ function initializeServices() {
 
         // Phase 54: Soul Configuration & Human Values System
         app.use('/api/soul-config', soulConfigRoutes(supabase));
+
+        // Phase 57: Public Pricing API (unauthenticated, whitelisted in auth middleware)
+        app.use('/api/pricing', pricingRoutes(supabase));
 
         // Initialize module access middleware for use in other routes
         const moduleAccess = createModuleAccessMiddleware(supabase);

@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modal Service Test - Insight 360</title>
+    <title>Modals | Insight 360</title>
 
     <!-- Fonts and main CSS -->
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -155,16 +156,24 @@
     </style>
 </head>
 <body>
-    <div class="app-layout">
+    <div class="app-container">
         <aside class="sidebar"></aside>
 
         <main class="main-content">
-            <div class="header-row">
-                <div>
-                    <h1>Modal Service Test Page</h1>
-                    <p class="subtitle">Test all modal types and functionality (Phase 1, 2 & 3)</p>
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="layout-grid" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Modals
+                    </h1>
+                    <p class="header-subtitle">Test all modal types and functionality</p>
                 </div>
-            </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
 
     <!-- Phase 1: Basic Modals -->
     <div class="test-section">
@@ -1610,12 +1619,15 @@ const result = await AgentModal.run({
             log('User direction modal shown - buttons: Profile, Execute 120, Dashboard');
         }
 
-        // Initialize Lucide icons on load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         });
     </script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 </body>
 </html>

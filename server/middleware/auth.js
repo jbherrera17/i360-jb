@@ -20,7 +20,8 @@ async function authenticate(req, res, next) {
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/forgot-password',
-        '/api/auth/reset-password'
+        '/api/auth/reset-password',
+        '/api/pricing'
     ];
 
     // Use originalUrl since middleware is mounted at /api
