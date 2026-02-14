@@ -299,6 +299,7 @@ const SessionTimeout = (function () {
 
         localStorage.removeItem('insight360_user');
         localStorage.removeItem(STORAGE_TOKEN_KEY);
+        localStorage.removeItem('insight360_token_expires_at');
         localStorage.removeItem(STORAGE_ACTIVITY_KEY);
         localStorage.removeItem('insight360_org_id');
         localStorage.removeItem('insight360_org');

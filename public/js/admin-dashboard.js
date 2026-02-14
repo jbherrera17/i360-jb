@@ -27,14 +27,15 @@ const AdminDashboard = {
     async loadData() {
         const token = localStorage.getItem('insight360_token');
         const headers = { 'Authorization': `Bearer ${token}` };
+        const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
 
         try {
             // Load stats in parallel
             const [statsRes, usersRes, orgsRes, agentsRes] = await Promise.allSettled([
-                fetch('/api/platform/stats', { headers }).catch(() => null),
-                fetch('/api/users', { headers }),
-                fetch('/api/organizations', { headers }).catch(() => null),
-                fetch('/api/agents/stats', { headers })
+                fetcher('/api/platform/stats', { headers }).catch(() => null),
+                fetcher('/api/users', { headers }),
+                fetcher('/api/organizations', { headers }).catch(() => null),
+                fetcher('/api/agents/stats', { headers })
             ]);
 
             this.stats = {
@@ -74,7 +75,7 @@ const AdminDashboard = {
 
             // Load recent activity (from conversations or audit log)
             try {
-                const activityRes = await fetch('/api/conversations?limit=5', { headers });
+                const activityRes = await fetcher('/api/conversations?limit=5', { headers });
                 if (activityRes.ok) {
                     const activityData = await activityRes.json();
                     this.recentActivity = (activityData.data || []).map(item => ({

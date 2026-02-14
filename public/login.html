@@ -699,6 +699,9 @@
                     // Store token in localStorage (cookie is now set by server with httpOnly flag)
                     localStorage.setItem('insight360_token', data.session.access_token);
                     localStorage.setItem('insight360_user', JSON.stringify(data.user));
+                    if (data.session.expires_at) {
+                        localStorage.setItem('insight360_token_expires_at', String(data.session.expires_at));
+                    }
 
                     currentUser = data.user;
 

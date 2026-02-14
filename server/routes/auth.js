@@ -189,17 +189,26 @@ module.exports = function(supabase) {
             // Cache token validation result
             cache.cacheTokenValidation(data.session.access_token, { user: data.user });
 
-            // Set auth cookie with security flags (httpOnly prevents JS access)
+            // Set auth cookies with security flags (httpOnly prevents JS access)
             const isProduction = process.env.NODE_ENV === 'production';
-            const cookieOptions = [
+            const maxAge = 7 * 24 * 60 * 60; // 7 days
+            const authCookie = [
                 `auth_token=${data.session.access_token}`,
                 'Path=/',
                 'HttpOnly',
                 'SameSite=Lax',
-                `Max-Age=${7 * 24 * 60 * 60}`, // 7 days
+                `Max-Age=${maxAge}`,
                 isProduction ? 'Secure' : ''
             ].filter(Boolean).join('; ');
-            res.setHeader('Set-Cookie', cookieOptions);
+            const refreshCookie = [
+                `refresh_token=${data.session.refresh_token}`,
+                'Path=/api/auth/refresh',
+                'HttpOnly',
+                'SameSite=Lax',
+                `Max-Age=${maxAge}`,
+                isProduction ? 'Secure' : ''
+            ].filter(Boolean).join('; ');
+            res.setHeader('Set-Cookie', [authCookie, refreshCookie]);
 
             res.json({
                 success: true,
@@ -369,8 +378,11 @@ module.exports = function(supabase) {
                 }
             }
 
-            // Clear auth cookie
-            res.setHeader('Set-Cookie', 'auth_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+            // Clear auth and refresh cookies
+            res.setHeader('Set-Cookie', [
+                'auth_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+                'refresh_token=; Path=/api/auth/refresh; HttpOnly; SameSite=Lax; Max-Age=0'
+            ]);
 
             res.json({
                 success: true,
@@ -382,6 +394,89 @@ module.exports = function(supabase) {
             res.status(500).json({
                 success: false,
                 error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/auth/refresh
+     * Refresh an expired access token using the refresh_token cookie
+     */
+    router.post('/refresh', async (req, res) => {
+        try {
+            // Read refresh_token from HttpOnly cookie
+            const cookies = req.headers.cookie || '';
+            const match = cookies.match(/refresh_token=([^;]+)/);
+            const refreshToken = match ? match[1] : null;
+
+            if (!refreshToken) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'No refresh token',
+                    code: 'REFRESH_TOKEN_MISSING'
+                });
+            }
+
+            // Use Supabase to refresh the session
+            const { data, error } = await supabase.auth.refreshSession({
+                refresh_token: refreshToken
+            });
+
+            if (error || !data.session) {
+                // Clear stale cookies
+                res.setHeader('Set-Cookie', [
+                    'auth_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+                    'refresh_token=; Path=/api/auth/refresh; HttpOnly; SameSite=Lax; Max-Age=0'
+                ]);
+                return res.status(401).json({
+                    success: false,
+                    error: 'Refresh token expired or invalid',
+                    code: 'REFRESH_FAILED'
+                });
+            }
+
+            // Invalidate old cached token
+            const oldCookieMatch = cookies.match(/auth_token=([^;]+)/);
+            if (oldCookieMatch && data.user) {
+                cache.invalidateUser(data.user.id, oldCookieMatch[1]);
+            }
+
+            // Cache new token validation
+            cache.cacheTokenValidation(data.session.access_token, { user: data.user });
+
+            // Set updated cookies
+            const isProduction = process.env.NODE_ENV === 'production';
+            const maxAge = 7 * 24 * 60 * 60;
+            const authCookie = [
+                `auth_token=${data.session.access_token}`,
+                'Path=/',
+                'HttpOnly',
+                'SameSite=Lax',
+                `Max-Age=${maxAge}`,
+                isProduction ? 'Secure' : ''
+            ].filter(Boolean).join('; ');
+            const refreshCookie = [
+                `refresh_token=${data.session.refresh_token}`,
+                'Path=/api/auth/refresh',
+                'HttpOnly',
+                'SameSite=Lax',
+                `Max-Age=${maxAge}`,
+                isProduction ? 'Secure' : ''
+            ].filter(Boolean).join('; ');
+            res.setHeader('Set-Cookie', [authCookie, refreshCookie]);
+
+            res.json({
+                success: true,
+                access_token: data.session.access_token,
+                expires_at: data.session.expires_at
+            });
+
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Token refresh failed',
+                code: 'REFRESH_ERROR'
             });
         }
     });

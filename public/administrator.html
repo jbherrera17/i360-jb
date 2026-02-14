@@ -1241,7 +1241,8 @@
                     return;
                 }
 
-                const response = await fetch('/api/platform/config', {
+                const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+                const response = await fetcher('/api/platform/config', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -1249,6 +1250,8 @@
                     hidePlatformAdminSection();
                 }
             } catch (error) {
+                // authFetch redirects to login on expired sessions,
+                // so if we reach here it's a network error or similar
                 hidePlatformAdminSection();
             }
         }
@@ -1261,7 +1264,10 @@
         // Conversation count
         async function loadConversationCount() {
             try {
-                const response = await fetch('/api/conversations/admin/stats');
+                const token = localStorage.getItem('insight360_token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+                const response = await fetcher('/api/conversations/admin/stats', { headers });
                 const data = await response.json();
                 if (data.success) {
                     document.getElementById('conversationCount').textContent = `${data.data.total} conversation${data.data.total !== 1 ? 's' : ''}`;
@@ -1274,7 +1280,10 @@
         // Sessions count
         async function loadSessionsCount() {
             try {
-                const response = await fetch('/api/align120/admin/sessions');
+                const token = localStorage.getItem('insight360_token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+                const response = await fetcher('/api/align120/admin/sessions', { headers });
                 const data = await response.json();
                 if (data.success) {
                     sessionsData = data.data;

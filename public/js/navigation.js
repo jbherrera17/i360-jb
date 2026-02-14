@@ -35,8 +35,7 @@ const navConfig = {
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
-                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' },
-                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' }
+                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' }
             ]
         },
         {
@@ -339,6 +338,7 @@ async function handleLogout() {
     // Clear local storage
     localStorage.removeItem('insight360_user');
     localStorage.removeItem('insight360_token');
+    localStorage.removeItem('insight360_token_expires_at');
     localStorage.removeItem('insight360_last_activity');
     // Redirect to login
     window.location.href = '/login.html';
@@ -683,13 +683,43 @@ async function initNavigation() {
     // Show impersonation banner if active
     showImpersonationBanner();
 
-    // Initialize session timeout (skip on login page)
+    // Initialize auth-fetch (token auto-refresh) and session timeout (skip on login page)
     if (!window.location.pathname.includes('/login')) {
+        _loadAuthFetch();
         _loadSessionTimeout();
     }
 
     // Load and apply org branding (non-blocking)
     _loadBrandingService();
+}
+
+/**
+ * Load and initialize auth-fetch (token auto-refresh)
+ * @private
+ */
+function _loadAuthFetch() {
+    var token = localStorage.getItem('insight360_token');
+    if (!token) return;
+
+    if (typeof AuthFetch !== 'undefined') {
+        AuthFetch.init();
+        return;
+    }
+
+    // Prevent duplicate script tags if called multiple times
+    if (document.querySelector('script[src="/js/auth-fetch.js"]')) return;
+
+    var script = document.createElement('script');
+    script.src = '/js/auth-fetch.js';
+    script.onload = function () {
+        if (typeof AuthFetch !== 'undefined') {
+            AuthFetch.init();
+        }
+    };
+    script.onerror = function () {
+        console.warn('AuthFetch: Failed to load auth-fetch.js');
+    };
+    document.head.appendChild(script);
 }
 
 /**
