@@ -823,10 +823,6 @@
         }
 
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
-        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
-        .btn-secondary:hover:not(:disabled) { background: var(--bg-hover); }
         .btn-success { background: var(--success); color: white; }
     </style>
 </head>
@@ -850,7 +846,7 @@
                 </div>
             </header>
 
-            <div style="padding: 0 var(--spacing-xl) var(--spacing-xl);">
+            <div style="padding: var(--spacing-xl);">
                 <!-- Admin Tabs -->
                 <div class="admin-tabs">
                     <button class="admin-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
