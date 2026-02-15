@@ -199,7 +199,7 @@
             color: var(--danger);
         }
 
-        /* Loading State */
+        /* Loading Overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -211,23 +211,31 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
         }
 
-        .loading-overlay.hidden {
-            display: none;
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
 
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .loading-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .loading-card h3 {
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .loading-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
         /* Setup Checklist */
@@ -1160,8 +1168,12 @@
     </div>
 
     <!-- Loading Overlay -->
-    <div class="loading-overlay hidden" id="loading-overlay">
-        <div class="spinner"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <img src="/assets/loading-spinner.svg" alt="Loading..." style="width:48px;height:48px;">
+            <h3 id="loadingTitle">Loading</h3>
+            <p id="loadingMessage">Please wait...</p>
+        </div>
     </div>
 
 
@@ -1255,18 +1267,20 @@
         }
 
         // Show/hide loading
-        function showLoading() {
-            document.getElementById('loading-overlay').classList.remove('hidden');
+        function showLoading(title = 'Loading', message = 'Please wait...') {
+            document.getElementById('loadingTitle').textContent = title;
+            document.getElementById('loadingMessage').textContent = message;
+            document.getElementById('loadingOverlay').classList.add('active');
         }
 
         function hideLoading() {
-            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('active');
         }
 
         // Load organizations list
         async function loadOrganizations(preserveOrgId = null) {
             try {
-                showLoading();
+                showLoading('Loading Organizations', 'Fetching organization data...');
 
                 // Use platform API if admin and toggle is on
                 const endpoint = (isPlatformAdmin && showAllOrgs)
@@ -1328,7 +1342,7 @@
             }
 
             try {
-                showLoading();
+                showLoading('Loading Organization', 'Fetching settings and configuration...');
 
                 // Use platform API if admin and viewing all orgs
                 const endpoint = (isPlatformAdmin && showAllOrgs)
@@ -1372,7 +1386,7 @@
 
                 // Show danger zone for org owners or platform admins (non-personal orgs)
                 const dangerZone = document.getElementById('danger-zone');
-                if ((userRole === 'owner' || isPlatformAdmin) && !settings.is_personal) {
+                if ((userRole === 'owner' || isPlatformAdmin) && !currentOrg.settings?.is_personal) {
                     dangerZone.style.display = 'block';
                 } else {
                     dangerZone.style.display = 'none';
@@ -1578,7 +1592,7 @@
                     fetch('/api/departments', { headers }),
                     fetch('/api/roles', { headers }),
                     fetch('/api/agents?limit=100', { headers }),
-                    fetch('/api/context?limit=1', { headers }),
+                    fetch('/api/context/assets?limit=1', { headers }),
                     fetch(`/api/soul-config?org_id=${orgId}&scope=organization`, { headers }),
                     fetch('/api/conversations?limit=1', { headers })
                 ]);
@@ -1861,7 +1875,7 @@
             if (!currentOrg) return;
 
             try {
-                showLoading();
+                showLoading('Saving Settings', 'Updating organization details...');
                 const name = document.getElementById('org-name').value;
 
                 const response = await authFetch(`/api/organizations/${currentOrg.id}`, {
@@ -2032,7 +2046,7 @@
             }
 
             try {
-                showLoading();
+                showLoading('Saving Branding', 'Updating appearance settings...');
                 const response = await authFetch(`/api/org-customization/${currentOrg.id}/branding`, {
                     method: 'PUT',
                     body: JSON.stringify(data)
@@ -2209,7 +2223,7 @@
             }
 
             try {
-                showLoading();
+                showLoading('Creating Organization', 'Setting up new organization...');
                 const response = await authFetch('/api/organizations', {
                     method: 'POST',
                     body: JSON.stringify({ name: name.trim(), slug: slug?.trim() || undefined })
@@ -2261,7 +2275,7 @@
             }
 
             try {
-                showLoading();
+                showLoading('Deleting Organization', 'Removing organization and all data...');
                 const response = await authFetch(`/api/organizations/${currentOrg.id}`, {
                     method: 'DELETE'
                 });

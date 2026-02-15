@@ -1,7 +1,7 @@
 # Organization Settings User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Wednesday, February 12, 2026
+**Last Updated:** Friday, February 14, 2026
 
 ---
 
@@ -17,8 +17,8 @@ Organization Settings is your central hub for managing how your team operates wi
 |--------|-------------|
 | **View Organizations** | See all organizations you belong to |
 | **Switch Organizations** | Change context between different organizations |
-| **Edit Settings** | Update organization name, slug, and branding |
-| **Manage Branding** | Set brand color and logo for consistent appearance |
+| **Edit Settings** | Update organization name and slug |
+| **Manage Branding** | Configure brand identity, colors, typography, AI assistant, reports, emails, and client portal |
 | **View Statistics** | See member count and activity metrics |
 | **Track Setup Progress** | Monitor onboarding checklist completion |
 | **Delete Organization** | Remove an organization (owner only, non-personal only) |
@@ -72,16 +72,87 @@ The Setup Progress section shows your organization's onboarding status:
 
 Click any incomplete item to navigate to the relevant page for setup.
 
-### Editing Organization Settings
+### Editing General Settings
 
 1. Select the organization you want to edit
 2. Update the **Organization Name** field
 3. The **Slug** field is read-only and cannot be changed (it is automatically derived from the organization name)
-4. Set a **Brand Color** using the color picker
-5. Optionally enter a **Logo URL** to display your organization's logo throughout the interface
-6. Click **Save Changes**
+4. Click **Save Changes**
 
 **Note:** Only owners and admins can edit organization settings.
+
+### Branding & Appearance
+
+The Branding & Appearance panel lets you customize the look and feel of Insight 360 for your organization. It includes a **live preview** on the right side that updates as you make changes. Click **Save Branding** when done.
+
+**Note:** Some branding sections require specific subscription tier features. Locked sections show a "Requires [feature]" overlay.
+
+#### Section 1: Brand Identity
+
+| Field | Description |
+|-------|-------------|
+| **App Name** | Custom name displayed in the header and login page (default: "Insight 360") |
+| **Tagline** | Subtitle shown on the login page (default: "AI-Powered Command Center") |
+| **Primary Logo URL** | Main logo displayed in the sidebar and header |
+| **Dark Mode Logo URL** | Alternative logo for dark mode (falls back to primary if not set) |
+| **Favicon URL** | Browser tab icon for your organization |
+
+#### Section 2: Color Palette
+
+| Field | Description |
+|-------|-------------|
+| **Primary** | Main brand color used for buttons, links, and accents (default: #6366f1) |
+| **Secondary** | Supporting color for gradients and secondary elements (default: #4f46e5) |
+| **Accent** | Highlight color for success states and call-to-action elements (default: #22c55e) |
+| **Sidebar** | Background color for the navigation sidebar (default: #f9fafb) |
+
+Each color field has a color picker and a hex input field that stay synchronized.
+
+#### Section 3: Typography
+
+| Field | Description |
+|-------|-------------|
+| **Heading Font** | Font family for headings (options: Source Sans 3, Inter, Roboto, Open Sans, Poppins, Lato, Montserrat, Nunito) |
+| **Body Font** | Font family for body text (same options as heading) |
+| **Base Font Size** | Root font size (options: 14px, 15px, 16px, 17px, 18px) |
+
+#### Section 4: AI Assistant (requires White Label)
+
+| Field | Description |
+|-------|-------------|
+| **Assistant Name** | Custom name for the AI assistant (default: "Higgins") |
+| **Assistant Avatar URL** | Custom avatar image for the AI assistant |
+
+#### Section 5: Report Branding (requires White Label)
+
+| Field | Description |
+|-------|-------------|
+| **Report Header HTML** | Custom HTML for report headers |
+| **Report Footer HTML** | Custom HTML for report footers |
+| **Report Custom CSS** | Additional CSS for report styling |
+
+#### Section 6: Email Branding (requires White Label)
+
+| Field | Description |
+|-------|-------------|
+| **From Name** | Display name for outgoing emails |
+| **From Email** | Email address for outgoing emails |
+| **Email Signature HTML** | Custom HTML signature appended to emails |
+
+#### Section 7: Client Portal (requires White Label)
+
+| Field | Description |
+|-------|-------------|
+| **Portal Welcome Message** | Welcome text displayed on the client portal landing page |
+| **Portal Custom CSS** | Additional CSS to style the client portal |
+
+#### Live Preview
+
+The right side of the branding panel shows a real-time preview with:
+- **App Preview**: Shows how the sidebar header and app name will look with your branding
+- **Login Preview**: Shows how the login page will appear with your logo, colors, and tagline
+
+The preview updates automatically as you change any field.
 
 ### Understanding the Statistics
 
@@ -134,7 +205,9 @@ The stats panel shows:
 ## Tips & Best Practices
 
 - **Use descriptive names**: Choose organization names that clearly identify the team or purpose
-- **Set brand color**: Your brand color appears throughout the interface for visual consistency
+- **Brand early**: Set your brand colors and logo during onboarding so the interface feels familiar from day one
+- **Use the live preview**: Check the branding preview panel before saving to see how your changes will look
+- **Provide a dark mode logo**: If your logo doesn't work well on dark backgrounds, upload a separate dark mode variant
 - **Slugs are automatic**: The slug is generated from your organization name and is read-only
 - **Personal vs Team**: Use personal workspace for individual work; create organizations for team collaboration
 - **Complete onboarding**: Follow the Setup Progress checklist to ensure your organization is fully configured
@@ -152,4 +225,7 @@ The stats panel shows:
 | Changes not saving | Check your internet connection and try refreshing the page |
 | Slug field is grayed out | The slug is read-only and automatically derived from the organization name |
 | Setup Progress not updating | Refresh the page after making changes on other pages |
+| Branding sections locked | Your subscription tier may not include Custom Branding or White Label features. Contact your platform admin to upgrade. |
+| Logo not showing in preview | Ensure the URL is publicly accessible (HTTPS) and points to a valid image file |
+| Colors not applying after save | Clear your browser cache or hard refresh (Ctrl+Shift+R / Cmd+Shift+R) |
 | User suspended after org deleted | Contact platform admin to reactivate and assign to new org |
