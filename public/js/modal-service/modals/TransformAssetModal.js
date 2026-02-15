@@ -85,7 +85,20 @@ class TransformAssetModal extends ModalBase {
     _createStep1() {
         const step = document.createElement('div');
         step.className = 'transform-step transform-step-1';
-        step.innerHTML = `
+
+        // Add contextual help banner
+        if (typeof ModalHelpBanner !== 'undefined') {
+            const helpBanner = ModalHelpBanner.create({
+                key: 'transform-asset',
+                title: 'How Transform Works',
+                content: 'Paste any content — a system prompt, chat response, or document excerpt — and AI will transform it into a structured Insight 360 asset. Choose a target type (Skill, Voice DNA, ICP, or Agent) or select "Auto" to let AI detect the best format. You\'ll preview and edit the result before saving.',
+                startExpanded: false
+            });
+            step.appendChild(helpBanner);
+        }
+
+        const inner = document.createElement('div');
+        inner.innerHTML = `
             <div class="transform-input-section">
                 <label class="transform-label">Content to Transform</label>
                 <textarea class="transform-textarea" placeholder="Paste a system prompt, chat response, or any content to transform into a structured asset..."></textarea>
@@ -105,6 +118,7 @@ class TransformAssetModal extends ModalBase {
                 <div class="transform-type-buttons"></div>
             </div>
         `;
+        while (inner.firstChild) step.appendChild(inner.firstChild);
 
         this.elements.body.appendChild(step);
         this.elements.step1 = step;

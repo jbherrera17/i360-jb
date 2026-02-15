@@ -2427,3 +2427,93 @@ html[data-theme="light"] .i360-form-checkbox-option {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/* ============================================
+   In-Modal Contextual Help Banner
+   Reusable collapsible help/guidance pattern.
+   Usage: ModalHelpBanner.create() in utils/helpBanner.js
+   ============================================ */
+
+.i360-modal-help-banner {
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--i360-modal-border);
+    background: var(--i360-modal-header-bg);
+    overflow: hidden;
+}
+
+.i360-modal-help-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+    text-align: left;
+    font-family: inherit;
+}
+
+.i360-modal-help-toggle:hover {
+    background: rgba(59, 130, 246, 0.05);
+    color: var(--i360-modal-info, #3b82f6);
+}
+
+.i360-modal-help-icon-info {
+    color: var(--i360-modal-info, #3b82f6);
+    flex-shrink: 0;
+}
+
+.i360-modal-help-title {
+    flex: 1;
+}
+
+.i360-modal-help-chevron {
+    transition: transform 200ms ease;
+    flex-shrink: 0;
+}
+
+.i360-modal-help-toggle[aria-expanded="true"] .i360-modal-help-chevron {
+    transform: rotate(180deg);
+}
+
+.i360-modal-help-content {
+    padding: 0 12px 12px 12px;
+}
+
+.i360-modal-help-content[hidden] {
+    display: none;
+}
+
+.i360-modal-help-text {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--i360-modal-text-secondary);
+}
+
+.i360-modal-help-dismiss {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--i360-modal-text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+    font-family: inherit;
+}
+
+.i360-modal-help-dismiss:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--i360-modal-error, #ef4444);
+}

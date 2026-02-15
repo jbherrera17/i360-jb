@@ -31,6 +31,9 @@ const ModalServiceLoader = (function() {
         'mixins/FullscreenMixin.js',
         'mixins/PersistenceMixin.js',
 
+        // Utilities
+        'utils/helpBanner.js',
+
         // Base class
         'ModalBase.js',
 
