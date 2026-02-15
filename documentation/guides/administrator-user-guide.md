@@ -1,7 +1,7 @@
 # Administrator User Guide
 
 **For:** Insight 360 Organization Administrators
-**Last Updated:** Wednesday, February 12, 2026
+**Last Updated:** Friday, February 14, 2026
 
 ---
 
@@ -88,20 +88,36 @@ The Setup Wizard guides you through configuring a new organization in 6 steps.
 
 ## Onboarding Tab
 
-The Onboarding Checklist ensures you complete all essential configuration steps.
+The Onboarding Checklist ensures you complete all essential configuration steps. Items are organized into three priority groups: **Required**, **Recommended**, and **Optional**.
 
-### Checklist Items
+### Required Items (Must Complete)
 
 | Item | Description | Navigates To |
 |------|-------------|--------------|
-| **Organization created** | Confirm org exists | Organization Settings |
-| **Admin user assigned** | At least one admin role | User Management |
-| **Departments configured** | Set up department structure | Departments page |
-| **Roles defined** | Create business roles | Title Management |
-| **Users invited** | Add team members | Team Members |
-| **Modules enabled** | Activate required modules | Module Configuration |
-| **Resources assigned** | Configure access permissions | Resource Access |
-| **Context assets created** | Add initial context data | Context Assets |
+| **Organization Created** | Confirm org exists | Organization Settings |
+| **Admin User Assigned** | At least one admin role | User Management |
+| **Subscription Tier Configured** | Appropriate tier selected | Tier Configuration |
+| **Soul Configuration** | Values, ethics, and voice configured | Soul Configuration |
+| **Departments Created** | Set up department structure | Departments page |
+| **Invite Team Members** | Add team members | Team Members |
+
+All required items must be completed to reach "You're Ready!" state.
+
+### Recommended Items (Strongly Suggested)
+
+| Item | Description | Navigates To |
+|------|-------------|--------------|
+| **Roles Defined** | Create business roles | Title Management |
+| **Branding Configured** | Logo and colors set | Organization Customization |
+| **First Agent Created** | Create or configure your first AI agent | Agents |
+| **Context Assets Added** | Upload documents or knowledge for agents | Context Assets |
+| **Resources Configured** | Configure resource visibility so team members see the right agents and assets | Resource Access |
+
+### Optional Items (Enhance Your Experience)
+
+| Item | Description | Navigates To |
+|------|-------------|--------------|
+| **First Conversation** | Start a chat with Higgins to explore | Chat |
 
 ### Progress Tracking
 

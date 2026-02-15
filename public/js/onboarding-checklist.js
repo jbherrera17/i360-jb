@@ -111,17 +111,17 @@ const OnboardingChecklist = {
             priority: 'recommended',
             check: (data) => data.contextCount > 0
         },
-
-        // === OPTIONAL ===
         {
             id: 'resources-assigned',
             title: 'Resources Configured',
-            description: 'Agents or skills assigned to departments',
+            description: 'Configure resource visibility so team members see the right agents and assets',
             icon: 'puzzle',
             link: 'admin-resource-access.html',
-            priority: 'optional',
+            priority: 'recommended',
             check: (data) => data.hasResources
         },
+
+        // === OPTIONAL ===
         {
             id: 'first-conversation',
             title: 'First Conversation',

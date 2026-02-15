@@ -2,7 +2,7 @@
 
 **Purpose:** Complete guide for onboarding a new organization onto the Insight 360 multi-tenant platform.
 **Audience:** Platform administrators (Synergi), system administrators (org-level), client success managers.
-**Last Updated:** February 10, 2026 | Version 2.1
+**Last Updated:** February 14, 2026 | Version 2.2
 
 ---
 
@@ -113,18 +113,38 @@ The current wizard has **5 steps**:
 
 ### Existing Onboarding Checklist — **BUILT** (`public/js/onboarding-checklist.js`)
 
-8-item checklist with org selector and platform admin toggle:
+12-item checklist with org selector, platform admin toggle, and three priority groups (Required, Recommended, Optional):
+
+**Required Items (6):**
 
 | Item | Check Condition | Links To |
 |------|-----------------|----------|
 | Organization Created | Org record exists | `admin-org-settings.html` |
 | Admin User Assigned | Member with role admin or owner | `admin-org-members.html` |
 | Subscription Tier Configured | Tier is not 'none' | `admin-tier-setup.html` |
+| Soul Configuration | Soul config with identity or values | `soul-configuration.html` |
 | Departments Created | At least 1 department | `admin-org-settings.html#departments` |
+| Invite Team Members | At least 2 members | `admin-org-members.html` |
+
+**Recommended Items (5):**
+
+| Item | Check Condition | Links To |
+|------|-----------------|----------|
 | Roles Defined | At least 1 role | `admin-org-settings.html#roles` |
-| Team Members | At least 1 member | `admin-org-members.html` |
 | Branding Configured | Logo URL or primary color set | `admin-org-customization.html` |
-| Resources Configured | At least 1 agent accessible | `admin-resource-access.html` |
+| First Agent Created | Agent count > 0 | `agents.html` |
+| Context Assets Added | Context asset count > 0 | `context.html` |
+| Resources Configured | Resource visibility configured (agent count > 0) | `admin-resource-access.html` |
+
+**Optional Items (1):**
+
+| Item | Check Condition | Links To |
+|------|-----------------|----------|
+| First Conversation | At least 1 conversation | `chat.html` |
+
+**Progress States:**
+- All Required items complete = "You're Ready!" banner displays
+- 100% of all items complete = "Onboarding Complete!" celebration banner
 
 ### Existing Platform Admin Features — **BUILT** (`server/routes/platformAdmin.js`)
 
@@ -667,15 +687,25 @@ Run after Phases 1-4 are complete:
 
 ### Onboarding Tab Check
 
-Go to Administrator → Onboarding tab. All 8 items should be complete:
+Go to Administrator → Onboarding tab. All 12 items should be complete:
+
+**Required (6):**
 - [x] Organization Created
 - [x] Admin User Assigned
 - [x] Subscription Tier Configured
+- [x] Soul Configuration
 - [x] Departments Created
+- [x] Invite Team Members
+
+**Recommended (5):**
 - [x] Roles Defined
-- [x] Team Members
 - [x] Branding Configured
+- [x] First Agent Created
+- [x] Context Assets Added
 - [x] Resources Configured
+
+**Optional (1):**
+- [x] First Conversation
 
 ### Functional Spot Checks
 
@@ -734,4 +764,4 @@ The following platform changes are needed to fully support this process. Items a
 ---
 
 *This document supersedes setup-guide.md and client-onboarding-steps.md.*
-*Version: 2.1 | February 2026*
+*Version: 2.2 | February 14, 2026*
