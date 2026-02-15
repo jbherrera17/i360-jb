@@ -141,6 +141,56 @@
             color: var(--text-secondary);
         }
 
+        .toolbar-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            user-select: none;
+        }
+
+        .toolbar-toggle input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: relative;
+            width: 32px;
+            height: 18px;
+            background: var(--text-muted);
+            border-radius: 9px;
+            transition: background 0.2s;
+        }
+
+        .toggle-slider::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toolbar-toggle input:checked + .toggle-slider {
+            background: var(--primary);
+        }
+
+        .toolbar-toggle input:checked + .toggle-slider::after {
+            transform: translateX(14px);
+        }
+
+        .toggle-text {
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
         .toolbar-chips {
             display: flex;
             gap: var(--spacing-sm);
@@ -1468,6 +1518,45 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .loading-card h3 {
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .loading-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
         /* Toast Notifications handled by ModalService */
 
         /* Responsive - hide details panel on smaller screens */
@@ -2092,6 +2181,12 @@
                             </div>
                         </div>
 
+                        <label class="toolbar-toggle" id="systemTemplateToggle" title="Show/hide system template agents" style="display:none;">
+                            <input type="checkbox" id="toggleSystemTemplates" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">System Templates</span>
+                        </label>
+
                         <div class="toolbar-filters">
                             <select class="toolbar-filter" id="filterDepartment">
                                 <option value="">All Departments</option>
@@ -2302,6 +2397,14 @@
         </main> <!-- Close main-content -->
     </div> <!-- Close app-container -->
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <img src="/assets/loading-spinner.svg" alt="Loading..." style="width:48px;height:48px;">
+            <h3 id="loadingTitle">Loading</h3>
+            <p id="loadingMessage">Please wait...</p>
+        </div>
+    </div>
 
     <!-- Agent Launcher Panel (Slide-in Drawer) -->
     <div class="launcher-overlay" id="launcherOverlay">
@@ -2370,7 +2473,8 @@
         lucide.createIcons();
 
         // State
-        let agents = [];
+        let allAgents = [];  // All agents from API (before system template filter)
+        let agents = [];     // Filtered agents displayed in the list
         let selectedAgent = null;
         let editingAgent = null;
         let categories = [];
@@ -2394,6 +2498,20 @@
         // Agent Dialog Service for running agents in modal
         // Defaults: 800px width, 75vh height, centered via flexbox
         const agentDialog = new AgentDialogService();
+
+        // =========================================================================
+        // Loading Overlay Helpers
+        // =========================================================================
+
+        function showLoading(title, message) {
+            document.getElementById('loadingTitle').textContent = title || 'Loading';
+            document.getElementById('loadingMessage').textContent = message || 'Please wait...';
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
 
         // =========================================================================
         // API Functions
@@ -2423,7 +2541,14 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    agents = data.data;
+                    allAgents = data.data;
+                    // Apply system templates filter
+                    const toggle = document.getElementById('toggleSystemTemplates');
+                    if (toggle && !toggle.checked) {
+                        agents = allAgents.filter(a => !a.is_system);
+                    } else {
+                        agents = allAgents;
+                    }
                     renderAgentList();
                     updateStats();
                 }
@@ -2587,8 +2712,11 @@
                 // Guard new creation against plan limits
                 if (!editingAgent && !(await UsageNudge.checkBeforeCreate('agents'))) return;
 
-                const method = editingAgent ? 'PUT' : 'POST';
-                const url = editingAgent ? `/api/agents/${editingAgent.id}` : '/api/agents';
+                const isEdit = !!editingAgent;
+                showLoading(isEdit ? 'Updating Agent' : 'Creating Agent', 'Saving agent configuration...');
+
+                const method = isEdit ? 'PUT' : 'POST';
+                const url = isEdit ? `/api/agents/${editingAgent.id}` : '/api/agents';
 
                 const response = await fetch(url, {
                     method,
@@ -2597,23 +2725,26 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
-                    showToast(editingAgent ? 'Agent updated' : 'Agent created', 'success');
+                    showToast(isEdit ? 'Agent updated' : 'Agent created', 'success');
                     closeModal();
-                    fetchAgents(); // updateStats() is called within fetchAgents()
+                    await fetchAgents(); // updateStats() is called within fetchAgents()
                 } else {
                     showToast(data.error || 'Failed to save agent', 'error');
                 }
             } catch (error) {
                 console.error('Error saving agent:', error);
                 showToast('Failed to save agent', 'error');
+            } finally {
+                hideLoading();
             }
         }
 
         async function deleteAgent(id) {
             if (!confirm('Are you sure you want to archive this agent?')) return;
 
+            showLoading('Archiving Agent', 'Removing agent from active list...');
             try {
                 const response = await fetch(`/api/agents/${id}`, { method: 'DELETE' });
                 const data = await response.json();
@@ -2622,11 +2753,13 @@
                     showToast('Agent archived', 'success');
                     selectedAgent = null;
                     showEmptyState();
-                    fetchAgents(); // updateStats() is called within fetchAgents()
+                    await fetchAgents(); // updateStats() is called within fetchAgents()
                 }
             } catch (error) {
                 console.error('Error deleting agent:', error);
                 showToast('Failed to delete agent', 'error');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -2953,9 +3086,11 @@
         }
 
         function updateStats() {
-            // Local stats update from currently loaded agents array
-            // This reflects the filtered view, not total database counts
-            document.getElementById('statTotal').textContent = agents.length;
+            // Show filtered count / total when system templates are hidden
+            const toggle = document.getElementById('toggleSystemTemplates');
+            const isFiltered = toggle && !toggle.checked && allAgents.length !== agents.length;
+            const totalText = isFiltered ? `${agents.length}/${allAgents.length}` : `${agents.length}`;
+            document.getElementById('statTotal').textContent = totalText;
             document.getElementById('statActive').textContent = agents.filter(a => a.is_active !== false).length;
             document.getElementById('statMindStudio').textContent = agents.filter(a => a.type === 'mindstudio').length;
             document.getElementById('statPickAxe').textContent = agents.filter(a => a.type === 'pickaxe').length;
@@ -4125,6 +4260,7 @@
             const newName = prompt(`Create a copy of "${selectedAgent.name}"?\n\nEnter a name for your copy:`, `${selectedAgent.name} (My Copy)`);
             if (!newName) return;
 
+            showLoading('Duplicating Agent', 'Creating your custom copy...');
             try {
                 const response = await fetch(`/api/agents/${selectedAgent.id}/duplicate`, {
                     method: 'POST',
@@ -4144,10 +4280,36 @@
             } catch (error) {
                 console.error('Error duplicating agent:', error);
                 showToast(`Failed to duplicate: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
             }
         });
 
         document.getElementById('btnAddContext').addEventListener('click', openContextModal);
+
+        // System Templates toggle
+        const systemToggle = document.getElementById('toggleSystemTemplates');
+        // Restore saved preference
+        const savedToggle = localStorage.getItem('insight360_systemTemplateToggle');
+        if (savedToggle !== null) {
+            systemToggle.checked = savedToggle === 'true';
+        }
+        systemToggle.addEventListener('change', () => {
+            localStorage.setItem('insight360_systemTemplateToggle', systemToggle.checked);
+            // Re-apply filter from cached allAgents without re-fetching
+            if (!systemToggle.checked) {
+                agents = allAgents.filter(a => !a.is_system);
+            } else {
+                agents = allAgents;
+            }
+            renderAgentList();
+            updateStats();
+        });
+
+        // Show toggle only for admin users
+        if (typeof isCurrentUserAdmin === 'function' && isCurrentUserAdmin()) {
+            document.getElementById('systemTemplateToggle').style.display = '';
+        }
 
         // Filters
         ['filterDepartment', 'filterSuite', 'filterStatus', 'filterCategory', 'filterPlatform'].forEach(id => {
@@ -4291,13 +4453,18 @@
             initTheme();
             initPanelResize();
             UsageNudge.init();
-            await Promise.all([
-                fetchDepartments(),
-                fetchCategories(),
-                fetchContextAssets(),
-                fetchModels()
-            ]);
-            await fetchAgents(); // updateStats() is called within fetchAgents()
+            showLoading('Loading Agent Library', 'Fetching agents and configurations...');
+            try {
+                await Promise.all([
+                    fetchDepartments(),
+                    fetchCategories(),
+                    fetchContextAssets(),
+                    fetchModels()
+                ]);
+                await fetchAgents(); // updateStats() is called within fetchAgents()
+            } finally {
+                hideLoading();
+            }
 
             // Check for edit query parameter (from Strategy 120 redirect)
             const urlParams = new URLSearchParams(window.location.search);

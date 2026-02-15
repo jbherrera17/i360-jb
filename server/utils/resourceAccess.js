@@ -65,9 +65,14 @@ function buildResourceAccessFilter(query, { userId, orgId, departmentIds = [], b
  * @param {Object} options - Access context
  * @returns {Object} Modified query with access filters
  */
-function buildAgentAccessFilter(query, { userId, orgId, departmentIds = [], businessRole }) {
+function buildAgentAccessFilter(query, { userId, orgId, departmentIds = [], businessRole, isPlatformAdmin = false }) {
     if (!userId) {
         return query.eq('visibility', 'public');
+    }
+
+    // Platform admins see all agents: their org's agents (any visibility) + system agents
+    if (isPlatformAdmin && orgId) {
+        return query.or(`org_id.eq.${orgId},org_id.is.null,user_id.is.null`);
     }
 
     const conditions = [
@@ -126,11 +131,21 @@ async function getUserAccessContext(supabase, userId) {
 
     const departmentIds = await getUserDepartmentIds(supabase, userId);
 
+    // Check if user is a platform admin (Synergi super-admin)
+    let isPlatformAdmin = false;
+    try {
+        const { data } = await supabase.rpc('is_platform_admin', { p_user_id: userId });
+        isPlatformAdmin = data === true;
+    } catch (e) {
+        // Function may not exist in older schemas - default to false
+    }
+
     return {
         userId: user.id,
         orgId: user.default_org_id,
         departmentIds,
-        businessRole: user.business_role
+        businessRole: user.business_role,
+        isPlatformAdmin
     };
 }
 
