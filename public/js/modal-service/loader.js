@@ -43,6 +43,7 @@ const ModalServiceLoader = (function() {
         'modals/ChatModal.js',
         'modals/AgentModal.js',
         'modals/CreateAssetModal.js',
+        'modals/TransformAssetModal.js',
 
         // Service
         'index.js',
@@ -221,6 +222,25 @@ const ModalServiceLoader = (function() {
                     assetTypes: options.assetTypes || [],
                     onGenerate: options.onGenerate,
                     onImport: options.onImport,
+                    onCancel: options.onCancel,
+                    ...options
+                });
+
+                this.register(modal);
+                modal.init().open();
+                return modal;
+            };
+
+            /**
+             * Create a transform asset modal
+             * @param {Object} options - Transform options
+             * @returns {TransformAssetModal}
+             */
+            ModalService.transformAsset = function(options) {
+                const modal = new TransformAssetModal({
+                    sourceContent: options.sourceContent || '',
+                    targetType: options.targetType || null,
+                    onSave: options.onSave,
                     onCancel: options.onCancel,
                     ...options
                 });

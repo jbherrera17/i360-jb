@@ -1939,6 +1939,17 @@ messageStyles.textContent = `
         color: var(--text-muted);
     }
 
+    .artifact-divider {
+        padding: 8px 16px 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+    }
+
     /* Conversation actions */
     .conversation-actions {
         display: flex;
@@ -2159,6 +2170,59 @@ const artifactModalHtml = `
                 <div class="artifact-option-content">
                     <div class="artifact-option-title">Export as Excel</div>
                     <div class="artifact-option-desc">Download tables as .xlsx spreadsheet</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+
+            <div class="artifact-divider">
+                <span>Create Asset</span>
+            </div>
+
+            <div class="artifact-option" onclick="ChatAssetCreator.createFromArtifact('skill')">
+                <div class="artifact-option-icon" style="color: var(--primary);">
+                    <i data-lucide="wand-2"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Create Skill</div>
+                    <div class="artifact-option-desc">Transform into a reusable workflow skill</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="ChatAssetCreator.createFromArtifact('voice_dna')">
+                <div class="artifact-option-icon" style="color: var(--primary);">
+                    <i data-lucide="mic"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Create Voice DNA</div>
+                    <div class="artifact-option-desc">Extract brand voice & writing style</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="ChatAssetCreator.createFromArtifact('icp')">
+                <div class="artifact-option-icon" style="color: var(--primary);">
+                    <i data-lucide="users"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Create ICP</div>
+                    <div class="artifact-option-desc">Build an ideal customer profile</div>
+                </div>
+                <div class="artifact-option-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            <div class="artifact-option" onclick="ChatAssetCreator.createFromArtifact('agent')">
+                <div class="artifact-option-icon" style="color: var(--primary);">
+                    <i data-lucide="bot"></i>
+                </div>
+                <div class="artifact-option-content">
+                    <div class="artifact-option-title">Create Agent</div>
+                    <div class="artifact-option-desc">Create an AI agent with role & capabilities</div>
                 </div>
                 <div class="artifact-option-arrow">
                     <i data-lucide="chevron-right"></i>
