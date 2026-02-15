@@ -4,467 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Health | Insight 360</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            /* Light Mode (default) */
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f7;
-            --bg-tertiary: #e8e8ed;
-            --bg-hover: #f0f0f5;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-muted: #aeaeb2;
-            --border: #d2d2d7;
-            --border-light: #e5e5ea;
-
-            /* Brand Colors */
-            --primary: #6366f1;
-            --primary-hover: #5558e3;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --info: #3b82f6;
-
-            /* Layout */
-            --sidebar-width: 260px;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #0f0f1a;
-            --bg-secondary: #1a1a2e;
-            --bg-tertiary: #252540;
-            --bg-hover: #2a2a45;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0b0;
-            --text-muted: #6b6b80;
-            --border: #2a2a40;
-            --border-light: #353550;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-
-        /* Main Layout - Sidebar Navigation Pattern */
-        .app-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Navigation Sidebar (injected by navigation.js) */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-        }
-
-        .logo-image {
-            height: 32px;
-            width: auto;
-        }
-
-        .logo-text {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .sidebar-nav {
-            padding: 1rem;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            margin-bottom: 0.25rem;
-            transition: all 0.15s;
-        }
-
-        .nav-item:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .nav-item i {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
-
-        /* Navigation Sections */
-        .nav-section {
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-primary {
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 0.5rem;
-        }
-
-        /* Navigation Groups (Collapsible) */
-        .nav-group {
-            margin-bottom: 0.25rem;
-        }
-
-        .nav-group-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.25rem 0.75rem;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .nav-group-header:hover {
-            background: var(--bg-hover);
-            color: var(--text-secondary);
-        }
-
-        .nav-group-header .group-icon {
-            width: 16px;
-            height: 16px;
-            opacity: 0.7;
-        }
-
-        .nav-group-header .group-label {
-            flex: 1;
-            text-align: left;
-        }
-
-        .nav-group-header .group-chevron {
-            width: 14px;
-            height: 14px;
-            transition: transform 0.15s;
-        }
-
-        .nav-group.collapsed .group-chevron {
-            transform: rotate(-90deg);
-        }
-
-        .nav-group-items {
-            overflow: hidden;
-            max-height: 500px;
-            transition: max-height 0.2s ease-out, opacity 0.2s ease-out;
-            padding-left: 0.5rem;
-        }
-
-        .nav-group.collapsed .nav-group-items {
-            max-height: 0;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .nav-group-items .nav-item {
-            font-size: 0.9rem;
-            padding: 0.25rem 0.75rem;
-        }
-
-        /* Sidebar Footer */
-        .sidebar-footer {
-            padding: 1rem;
-            border-top: 1px solid var(--border);
-            margin-top: auto;
-        }
-
-        .sidebar-footer .nav-item {
-            margin-bottom: 0;
-        }
-
-        .sidebar-footer .theme-toggle {
-            width: 100%;
-            justify-content: flex-start;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: inherit;
-        }
-
-        /* User Profile in Sidebar */
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 8px;
-            background: var(--bg-tertiary);
-            margin-bottom: 0.5rem;
-        }
-
-        .user-profile .user-avatar {
-            width: 36px;
-            height: 36px;
-            min-width: 36px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .user-profile .user-info {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-profile .user-name {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .user-profile .user-role {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: capitalize;
-        }
-
-        .user-profile .user-role.admin {
-            color: var(--warning);
-        }
-
-        .user-menu-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .user-menu-btn:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .user-menu-btn i {
-            width: 18px;
-            height: 18px;
-        }
-
-        .user-menu {
-            display: none;
-            flex-direction: column;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 0.5rem;
-        }
-
-        .user-menu.open {
-            display: flex;
-        }
-
-        .user-menu-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.875rem;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            transition: all 0.2s;
-        }
-
-        .user-menu-item:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .user-menu-item.hidden {
-            display: none;
-        }
-
-        .user-menu-item.logout {
-            color: var(--error);
-            border-top: 1px solid var(--border);
-        }
-
-        .user-menu-item.logout:hover {
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        .user-menu-item i {
-            width: 16px;
-            height: 16px;
-        }
-
-        /* Provider Status Badges */
-        .provider-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.7rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .provider-status.available {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-        }
-
-        .provider-status.warning {
-            background: rgba(245, 158, 11, 0.15);
-            color: #f59e0b;
-        }
-
-        .provider-status.unavailable {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-
-        .provider-status.unknown {
-            background: rgba(107, 114, 128, 0.15);
-            color: var(--text-muted);
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .page-container {
-            margin-left: var(--sidebar-width);
-            max-width: 1400px;
-            padding: 2rem;
-            flex: 1;
-            height: 100vh;
-            overflow-y: auto;
-        }
-
-        /* Header */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-header p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border);
-        }
+        /* Page-specific: health dashboard styles only */
+        /* Global styles (sidebar, buttons, toasts, etc.) come from /css/styles.css */
 
         /* Overall Health Card */
         .health-overview {
@@ -940,27 +487,32 @@
     </style>
 </head>
 <body>
-    <div id="toastContainer" class="toast-container"></div>
-
-    <div class="app-layout">
-        <!-- Navigation Sidebar (injected by navigation.js) -->
+    <div class="app-container">
         <aside class="sidebar"></aside>
 
-        <div class="page-container">
-            <!-- Header -->
+        <main class="main-content">
             <header class="page-header">
-            <div>
-                <h1>System Health</h1>
-                <p>Monitor system components, alerts, and incidents</p>
-                <div class="last-updated" id="lastUpdated"></div>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-secondary" id="refreshBtn">
-                    <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
-                    Refresh
-                </button>
-            </div>
-        </header>
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="heart-pulse" style="width:28px;height:28px;color:var(--primary);"></i>
+                        System Health
+                    </h1>
+                    <p class="header-subtitle">Monitor system components, alerts, and incidents</p>
+                    <div class="last-updated" id="lastUpdated"></div>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-secondary" id="refreshBtn">
+                        <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                        Refresh
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+            <!-- Content wrapper with standard spacing -->
 
         <!-- Health Overview -->
         <div class="health-overview">
@@ -1385,8 +937,9 @@
                 </div>
             </div>
         </div>
-        </div> <!-- Close page-container -->
-    </div> <!-- Close app-layout -->
+            </div> <!-- Close content wrapper -->
+        </main>
+    </div> <!-- Close app-container -->
 
     <script>
         // ============================================================================
@@ -1872,18 +1425,15 @@
         }
 
         // ============================================================================
-        // Theme
-        // ============================================================================
-        // Apply saved theme immediately to prevent flash
-        (function() {
-            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        })();
-
-        // ============================================================================
         // Initialization
         // ============================================================================
         function init() {
+            // Standard page initialization
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
             // Tab switching
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -1897,11 +1447,11 @@
 
             // Auto-refresh every 30 seconds
             setInterval(loadAll, 30000);
-
-            lucide.createIcons();
         }
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
 </body>
 </html>

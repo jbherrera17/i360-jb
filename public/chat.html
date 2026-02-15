@@ -60,7 +60,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin: var(--spacing-lg, 1.5rem) var(--spacing-lg, 1.5rem) var(--spacing-lg, 1.5rem) 0;
+            margin: var(--spacing-lg, 1.5rem);
             height: calc(100vh - 3rem);
             position: relative;
         }
@@ -280,7 +280,10 @@
             <!-- Chat Header -->
             <header class="chat-header">
                 <div class="chat-header-left">
-                    <h1>Higgins</h1>
+                    <h1>
+                        <i data-lucide="message-circle" style="width:24px;height:24px;color:var(--primary);"></i>
+                        Higgins
+                    </h1>
                     <span id="modelIndicator" class="model-badge">Claude Sonnet 4.5</span>
                 </div>
                 <div class="chat-header-right">
@@ -316,6 +319,10 @@
                             <span>Voice</span>
                         </label>
                     </div>
+                    <button class="toggle-option" onclick="ChatAssetCreator.createFromToolbar()" title="Transform prompt into asset">
+                        <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+                        <span>Create</span>
+                    </button>
                     <button class="help-btn" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
                     </button>
@@ -470,6 +477,10 @@
     <script src="/js/loading-messages.js"></script>
     <!-- Then load chat functionality -->
     <script src="/js/chat.js"></script>
+    <!-- Modal service for asset creation -->
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <!-- Chat asset creator (transform prompts/responses into assets) -->
+    <script src="/js/chat-asset-creator.js"></script>
     <!-- Chart visualization components -->
     <script src="/js/charts/chartRenderer.js"></script>
     <script src="/js/charts/radarChart.js"></script>
