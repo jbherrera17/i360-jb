@@ -15,8 +15,6 @@ const DOCS_DIR = path.join(__dirname, '../../documentation/guides');
 
 // Allowed documentation files (whitelist for security)
 const ALLOWED_DOCS = [
-    'prompt-transformer-user-guide.md',
-    'prompt-transformer-technical-guide.md',
     'dashboard-user-guide.md',
     'chat-user-guide.md',
     'agents-user-guide.md',

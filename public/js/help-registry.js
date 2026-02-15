@@ -11,10 +11,6 @@ const HelpRegistry = {
     // Page-to-documentation mapping
     // Key: page path (without .html), Value: { file, title }
     pages: {
-        '/prompt-editor': {
-            file: '/api/docs/prompt-transformer-user-guide.md',
-            title: 'Prompt Transformer Help'
-        },
         '/': {
             file: '/api/docs/dashboard-user-guide.md',
             title: 'Dashboard Help'
