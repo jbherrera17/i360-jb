@@ -132,7 +132,7 @@ const SetupWizard = {
         { id: 'skills', name: 'Skills', icon: 'wand-2', category: 'Core', min_tier: null, default: true },
         { id: 'actions', name: 'Actions', icon: 'zap', category: 'Core', min_tier: null, default: true },
         { id: 'briefing', name: 'Briefing', icon: 'newspaper', category: 'Core', min_tier: null, default: true },
-        { id: 'prompts', name: 'Prompt Transformer', icon: 'file-code', category: 'Core', min_tier: null, default: true },
+
         { id: 'align120', name: 'Align 120', icon: 'compass', category: 'Strategy', min_tier: 'business', default: true },
         { id: 'strategy120', name: 'Strategy (S2E)', icon: 'milestone', category: 'Strategy', min_tier: 'business', default: true },
         { id: 'execute120', name: 'Execute 120', icon: 'rocket', category: 'Strategy', min_tier: 'business', default: true },
