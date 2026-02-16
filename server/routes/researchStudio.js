@@ -21,6 +21,40 @@ const sourceProcessor = require('../services/sourceProcessor');
 const outputService = require('../services/studioOutputService');
 const llmRegistry = require('../services/llmRegistry');
 
+// LLM clients - initialized once, not per-request
+const Anthropic = require('@anthropic-ai/sdk');
+const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+let openaiClient = null;
+function getOpenAI() {
+    if (!openaiClient) {
+        const OpenAI = require('openai');
+        openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+    return openaiClient;
+}
+
+let perplexityClient = null;
+function getPerplexity() {
+    if (!perplexityClient) {
+        const OpenAI = require('openai');
+        perplexityClient = new OpenAI({
+            apiKey: process.env.PERPLEXITY_API_KEY,
+            baseURL: 'https://api.perplexity.ai'
+        });
+    }
+    return perplexityClient;
+}
+
+let geminiInstance = null;
+function getGemini() {
+    if (!geminiInstance) {
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        geminiInstance = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    }
+    return geminiInstance;
+}
+
 // Configure multer for file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -36,6 +70,11 @@ const upload = multer({
  */
 module.exports = function(supabase) {
     const router = express.Router();
+
+    // Inject shared Supabase client into services
+    studioService.setSupabase(supabase);
+    sourceProcessor.setSupabase(supabase);
+    outputService.setSupabase(supabase);
 
     // Initialize storage bucket on startup
     sourceProcessor.initializeStorage().catch(err => {
@@ -431,12 +470,7 @@ module.exports = function(supabase) {
             }
 
             // Generate suggested questions using LLM
-            const Anthropic = require('@anthropic-ai/sdk');
-            const anthropic = new Anthropic({
-                apiKey: process.env.ANTHROPIC_API_KEY
-            });
-
-            const response = await anthropic.messages.create({
+            const response = await anthropicClient.messages.create({
                 model: 'claude-haiku-4-5-20251001',
                 max_tokens: 1024,
                 system: 'You are a research assistant. Generate insightful questions that a researcher might ask about the provided sources. Focus on questions that reveal key insights, connections, and implications.',
@@ -558,12 +592,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
 
             if (provider === 'anthropic') {
                 // Use Anthropic
-                const Anthropic = require('@anthropic-ai/sdk');
-                const anthropic = new Anthropic({
-                    apiKey: process.env.ANTHROPIC_API_KEY
-                });
-
-                const stream = anthropic.messages.stream({
+                const stream = anthropicClient.messages.stream({
                     model: selectedModel,
                     max_tokens: 8192,
                     system: systemPrompt,
@@ -583,12 +612,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                 }
             } else if (provider === 'openai') {
                 // Use OpenAI
-                const OpenAI = require('openai');
-                const openai = new OpenAI({
-                    apiKey: process.env.OPENAI_API_KEY
-                });
-
-                const stream = await openai.chat.completions.create({
+                const stream = await getOpenAI().chat.completions.create({
                     model: selectedModel,
                     messages: [
                         { role: 'system', content: systemPrompt },
@@ -611,13 +635,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                 }
             } else if (provider === 'perplexity') {
                 // Use Perplexity (OpenAI-compatible API)
-                const OpenAI = require('openai');
-                const perplexity = new OpenAI({
-                    apiKey: process.env.PERPLEXITY_API_KEY,
-                    baseURL: 'https://api.perplexity.ai'
-                });
-
-                const stream = await perplexity.chat.completions.create({
+                const stream = await getPerplexity().chat.completions.create({
                     model: selectedModel,
                     messages: [
                         { role: 'system', content: systemPrompt },
@@ -640,9 +658,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                 }
             } else if (provider === 'google') {
                 // Use Google Gemini
-                const { GoogleGenerativeAI } = require('@google/generative-ai');
-                const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-                const geminiModel = genAI.getGenerativeModel({ model: selectedModel });
+                const geminiModel = getGemini().getGenerativeModel({ model: selectedModel });
 
                 // Convert messages to Gemini format
                 const geminiHistory = messages.slice(0, -1).map(m => ({
@@ -670,12 +686,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                 }
             } else {
                 // Fallback to Claude for unknown providers
-                const Anthropic = require('@anthropic-ai/sdk');
-                const anthropic = new Anthropic({
-                    apiKey: process.env.ANTHROPIC_API_KEY
-                });
-
-                const stream = anthropic.messages.stream({
+                const stream = anthropicClient.messages.stream({
                     model: 'claude-sonnet-4-20250514',
                     max_tokens: 8192,
                     system: systemPrompt,

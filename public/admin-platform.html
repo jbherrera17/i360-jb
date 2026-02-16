@@ -126,6 +126,7 @@
         }
 
         .status-active { background: #d1fae5; color: #065f46; }
+        .status-invited { background: #dbeafe; color: #1e40af; }
         .status-trial { background: #fef3c7; color: #b45309; }
         .status-suspended { background: #fee2e2; color: #991b1b; }
 
@@ -499,7 +500,7 @@
                             </h3>
                             <button class="btn btn-primary" onclick="createUser()">
                                 <i data-lucide="user-plus"></i>
-                                Create User
+                                Invite User
                             </button>
                         </div>
 
@@ -508,6 +509,7 @@
                             <select class="filter-select" id="userStatusFilter" onchange="filterUsers()">
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
+                                <option value="invited">Invited</option>
                                 <option value="suspended">Suspended</option>
                                 <option value="inactive">Inactive</option>
                             </select>
@@ -2083,7 +2085,12 @@
                         <td>${user.role || 'user'}</td>
                         <td>${formatDate(user.created_at)}</td>
                         <td class="actions-cell">
-                            ${userStatus === 'suspended' ? `
+                            ${userStatus === 'invited' ? `
+                                <button class="btn btn-sm btn-primary" onclick="resendInvite('${user.id}', '${escapeHtml(user.email)}')" title="Resend invitation email">
+                                    <i data-lucide="mail" style="width: 12px; height: 12px;"></i>
+                                    Resend
+                                </button>
+                            ` : userStatus === 'suspended' ? `
                                 <button class="btn btn-sm btn-primary" onclick="reactivateUser('${user.id}')">
                                     Reactivate
                                 </button>
@@ -2174,7 +2181,7 @@
             ];
 
             const result = await ModalService.form({
-                title: 'Create New User',
+                title: 'Invite New User',
                 fields: [
                     {
                         name: 'email',
@@ -2188,13 +2195,6 @@
                         label: 'Display Name',
                         type: 'text',
                         placeholder: 'John Doe'
-                    },
-                    {
-                        name: 'password',
-                        label: 'Password',
-                        type: 'password',
-                        required: true,
-                        placeholder: 'Minimum 6 characters'
                     },
                     {
                         name: 'org_id',
@@ -2213,20 +2213,15 @@
                         ]
                     }
                 ],
-                submitText: 'Create User',
+                submitText: 'Send Invitation',
                 submitClass: 'btn-primary'
             });
 
             if (!result) return;
 
             // Validate
-            if (!result.email || !result.password) {
-                showToast('Email and password are required', 'error');
-                return;
-            }
-
-            if (result.password.length < 6) {
-                showToast('Password must be at least 6 characters', 'error');
+            if (!result.email) {
+                showToast('Email is required', 'error');
                 return;
             }
 
@@ -2240,7 +2235,6 @@
                     },
                     body: JSON.stringify({
                         email: result.email,
-                        password: result.password,
                         display_name: result.display_name || null,
                         org_id: result.org_id || null,
                         role: result.role || 'consultant'
@@ -2250,14 +2244,48 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showToast('User created successfully', 'success');
+                    showToast('Invitation sent! User will receive an email to set their password.', 'success');
                     await loadAllData();
                 } else {
-                    showToast(data.error || 'Failed to create user', 'error');
+                    showToast(data.error || 'Failed to send invitation', 'error');
                 }
             } catch (error) {
-                console.error('Error creating user:', error);
-                showToast('Failed to create user', 'error');
+                console.error('Error inviting user:', error);
+                showToast('Failed to send invitation', 'error');
+            }
+        }
+
+        // Resend invitation to a user with 'invited' status
+        async function resendInvite(userId, userEmail) {
+            const confirmed = await ModalService.confirm({
+                title: 'Resend Invitation',
+                message: `Resend the invitation email to ${userEmail}?`,
+                confirmText: 'Resend',
+                confirmClass: 'btn-primary'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const token = localStorage.getItem('insight360_token');
+                const response = await fetch(`/api/platform/users/${userId}/resend-invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('Invitation resent successfully', 'success');
+                } else {
+                    showToast(data.error || 'Failed to resend invitation', 'error');
+                }
+            } catch (error) {
+                console.error('Error resending invitation:', error);
+                showToast('Failed to resend invitation', 'error');
             }
         }
 

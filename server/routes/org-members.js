@@ -174,17 +174,69 @@ module.exports = function(supabase) {
             }
 
             // Check if user exists
-            const { data: invitee } = await supabase
+            let { data: invitee } = await supabase
                 .from('users')
                 .select('id, email')
                 .eq('email', email)
                 .single();
 
+            // If user doesn't exist, create and invite them
             if (!invitee) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'User not found. They must create an account first.'
-                });
+                const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+                const redirectTo = `${appUrl}/login.html`;
+
+                // Invite via Supabase Auth (sends email)
+                const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+                    email,
+                    {
+                        redirectTo,
+                        data: {
+                            display_name: email.split('@')[0],
+                            invited_by_admin: userId,
+                            org_id: orgId
+                        }
+                    }
+                );
+
+                if (authError) {
+                    console.error('Error inviting new user:', authError);
+                    const isRateLimit = authError.message?.toLowerCase().includes('rate') ||
+                        authError.status === 429;
+                    return res.status(isRateLimit ? 429 : 400).json({
+                        success: false,
+                        error: isRateLimit
+                            ? 'Email rate limit reached. Please wait before sending more invitations.'
+                            : `Failed to send invitation: ${authError.message}`
+                    });
+                }
+
+                const newUserId = authData.user.id;
+
+                // Create user record
+                const { data: newUser, error: userCreateError } = await supabase
+                    .from('users')
+                    .insert({
+                        id: newUserId,
+                        email,
+                        display_name: email.split('@')[0],
+                        status: 'invited',
+                        invited_at: new Date().toISOString(),
+                        invited_by: userId,
+                        default_org_id: orgId
+                    })
+                    .select()
+                    .single();
+
+                if (userCreateError) {
+                    console.error('Error creating user record:', userCreateError);
+                    await supabase.auth.admin.deleteUser(newUserId);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Failed to create user record'
+                    });
+                }
+
+                invitee = newUser;
             }
 
             // Check if already a member

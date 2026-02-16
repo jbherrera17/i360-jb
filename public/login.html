@@ -470,6 +470,26 @@
                 </form>
             </div>
 
+            <!-- Accept Invitation Form (shown when user clicks invite email link) -->
+            <div class="form-panel" id="acceptInvitePanel">
+                <form id="acceptInviteForm">
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg); font-size: 0.9rem;">
+                        Welcome to Insight 360! Set a password to activate your account.
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label" for="invitePassword">Password</label>
+                        <input type="password" class="form-input" id="invitePassword" placeholder="Choose a secure password (min 6 characters)" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="invitePasswordConfirm">Confirm Password</label>
+                        <input type="password" class="form-input" id="invitePasswordConfirm" placeholder="Re-enter your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn-primary" id="acceptInviteBtn">
+                        <span>Activate Account</span>
+                    </button>
+                </form>
+            </div>
+
             <div class="form-footer">
                 <a href="/">Back to Dashboard</a>
             </div>
@@ -563,16 +583,23 @@
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
 
-            // Check for password reset token in URL
+            // Check for password reset or invitation token in URL
             const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
             // Supabase sends tokens in the hash fragment
             const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
-            const resetMode = urlParams.get('reset') === 'true' || accessToken;
+            const tokenType = hashParams.get('type') || urlParams.get('type');
 
+            // Invitation acceptance flow (type=invite or type=magiclink from Supabase invite)
+            if (accessToken && (tokenType === 'invite' || tokenType === 'magiclink')) {
+                showAcceptInviteForm(accessToken);
+                return;
+            }
+
+            // Password reset flow
+            const resetMode = urlParams.get('reset') === 'true' || accessToken;
             if (resetMode && accessToken) {
-                // Show reset password form
                 showResetPasswordForm(accessToken);
                 return;
             }
@@ -642,6 +669,83 @@
 
             // Setup reset form handler
             document.getElementById('resetForm').addEventListener('submit', handleResetPassword);
+        }
+
+        // Show accept invitation form (when user clicks invite email link)
+        function showAcceptInviteForm(accessToken) {
+            // Store token for form submission
+            window.inviteAccessToken = accessToken;
+
+            // Hide tabs and show accept invite panel
+            document.querySelector('.login-tabs').style.display = 'none';
+            panels.forEach(p => p.classList.remove('active'));
+            document.getElementById('acceptInvitePanel').classList.add('active');
+
+            // Setup form handler
+            document.getElementById('acceptInviteForm').addEventListener('submit', handleAcceptInvite);
+        }
+
+        // Handle accept invitation
+        async function handleAcceptInvite(e) {
+            e.preventDefault();
+            hideMessages();
+
+            const btn = document.getElementById('acceptInviteBtn');
+            const password = document.getElementById('invitePassword').value;
+            const passwordConfirm = document.getElementById('invitePasswordConfirm').value;
+
+            if (password !== passwordConfirm) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const response = await fetch('/api/auth/accept-invite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        access_token: window.inviteAccessToken,
+                        password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store session
+                    if (data.session?.access_token) {
+                        localStorage.setItem('insight360_token', data.session.access_token);
+                    }
+                    if (data.user) {
+                        localStorage.setItem('insight360_user', JSON.stringify(data.user));
+                    }
+                    if (data.session?.expires_at) {
+                        localStorage.setItem('insight360_token_expires_at', String(data.session.expires_at));
+                    }
+
+                    showSuccess('Account activated successfully! Redirecting...');
+
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showError(data.error || 'Failed to activate account');
+                }
+            } catch (error) {
+                showError('Connection error. Please try again.');
+                console.error('Accept invite error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Activate Account</span>';
+            }
         }
 
         // Setup event listeners

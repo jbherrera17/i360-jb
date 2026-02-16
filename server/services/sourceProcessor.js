@@ -8,9 +8,67 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const { randomUUID: uuidv4 } = require('crypto');
+const dns = require('dns');
+const { promisify } = require('util');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
 const axios = require('axios');
+
+const dnsResolve = promisify(dns.resolve4);
+
+/**
+ * SSRF protection: validate URL is not targeting internal networks
+ */
+async function validateUrlSafety(url) {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Block localhost and loopback
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0') {
+        throw new Error('URLs targeting localhost are not allowed');
+    }
+
+    // Block cloud metadata endpoints
+    if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
+        throw new Error('URLs targeting cloud metadata services are not allowed');
+    }
+
+    // Resolve hostname to IP and check for private ranges
+    try {
+        const addresses = await dnsResolve(hostname);
+        for (const ip of addresses) {
+            if (isPrivateIP(ip)) {
+                throw new Error('URLs targeting internal network addresses are not allowed');
+            }
+        }
+    } catch (err) {
+        if (err.message.includes('not allowed')) throw err;
+        // DNS resolution failure — allow the request to proceed and let axios handle it
+    }
+}
+
+/**
+ * Check if an IP address is in a private/reserved range
+ */
+function isPrivateIP(ip) {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4) return false;
+
+    // 10.0.0.0/8
+    if (parts[0] === 10) return true;
+    // 172.16.0.0/12
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    // 192.168.0.0/16
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    // 127.0.0.0/8 (loopback)
+    if (parts[0] === 127) return true;
+    // 169.254.0.0/16 (link-local)
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    // 0.0.0.0/8
+    if (parts[0] === 0) return true;
+
+    return false;
+}
 // Lazy-loaded to avoid jsdom ESM/require hang on Node.js 24
 let JSDOM = null;
 let Readability = null;
@@ -24,11 +82,15 @@ function loadJsdom() {
     }
 }
 
-// Initialize Supabase client
-const supabase = createClient(
+// Supabase client - can be injected via setSupabase() or falls back to env vars
+let supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
 );
+
+function setSupabase(client) {
+    supabase = client;
+}
 
 // Storage bucket name
 const STORAGE_BUCKET = 'studio-sources';
@@ -254,6 +316,9 @@ async function processUrlSource(url, studioId) {
         throw new Error('Invalid URL format');
     }
 
+    // SSRF protection: block internal/private URLs
+    await validateUrlSafety(url);
+
     // Fetch content
     let response;
     try {
@@ -431,6 +496,7 @@ function validateFile(file) {
 // =====================================================
 
 module.exports = {
+    setSupabase,
     initializeStorage,
     isSupported,
     processSourceFile,

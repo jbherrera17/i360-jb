@@ -21,21 +21,21 @@
     <script src="/js/loading-messages.js"></script>
 </head>
 <body>
+    <div class="app-container">
     <!-- Navigation Sidebar -->
-    <nav class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar">
         <!-- Populated by navigation.js -->
-    </nav>
+    </aside>
 
     <!-- Main Content -->
     <main class="main-content">
         <header class="page-header">
-            <div class="header-left">
-                <div class="header-content">
-                    <h1>
-                        <i data-lucide="book-open-text"></i>
-                        Research Studio
-                    </h1>
-                </div>
+            <div class="header-content">
+                <h1>
+                    <i data-lucide="book-open-text" style="width:28px;height:28px;color:var(--primary);"></i>
+                    Research Studio
+                </h1>
+                <p class="header-subtitle">Upload sources, chat with your research, and generate outputs</p>
             </div>
             <div class="header-actions">
                 <!-- Model Selector -->
@@ -64,7 +64,7 @@
                     <i data-lucide="plus"></i>
                     <span>New Studio</span>
                 </button>
-                <button class="btn btn-icon" onclick="openHelp()" title="Help">
+                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
                     <i data-lucide="help-circle"></i>
                 </button>
             </div>
@@ -235,112 +235,21 @@
             </div>
         </div>
     </main>
-
-    <!-- Create Studio Modal -->
-    <div class="studio-modal-overlay" id="createStudioModal">
-        <div class="studio-modal">
-            <div class="studio-modal-header">
-                <h2>Create Research Studio</h2>
-                <button class="studio-modal-close" onclick="hideModal('createStudioModal')">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <form onsubmit="createStudio(event)">
-                <div class="studio-form-group">
-                    <label for="newStudioTitle">Title</label>
-                    <input type="text" id="newStudioTitle" placeholder="My Research" required>
-                </div>
-                <div class="studio-form-group">
-                    <label for="newStudioDescription">Description (optional)</label>
-                    <textarea id="newStudioDescription" rows="3" placeholder="What are you researching?"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    Create Studio
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add Source Modal -->
-    <div class="studio-modal-overlay" id="addSourceModal">
-        <div class="studio-modal">
-            <div class="studio-modal-header">
-                <h2>Add Source</h2>
-                <button class="studio-modal-close" onclick="hideModal('addSourceModal')">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="source-tabs">
-                <button class="source-tab active" onclick="switchSourceTab('file')">Upload File</button>
-                <button class="source-tab" onclick="switchSourceTab('url')">Website URL</button>
-                <button class="source-tab" onclick="switchSourceTab('text')">Paste Text</button>
-            </div>
-
-            <!-- File Upload Tab -->
-            <div class="tab-content active" id="fileTab">
-                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-                    <i data-lucide="upload-cloud"></i>
-                    <p>Click to upload or drag and drop</p>
-                    <p class="supported-types">PDF, DOCX, TXT, Markdown, CSV</p>
-                </div>
-                <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.txt,.md,.csv" onchange="handleFileSelect(event)">
-            </div>
-
-            <!-- URL Tab -->
-            <div class="tab-content" id="urlTab">
-                <div class="studio-form-group">
-                    <label for="sourceUrl">Website URL</label>
-                    <input type="url" id="sourceUrl" placeholder="https://example.com/article">
-                </div>
-                <button class="btn btn-primary" style="width: 100%;" onclick="addUrlSource()">
-                    Add URL
-                </button>
-            </div>
-
-            <!-- Text Tab -->
-            <div class="tab-content" id="textTab">
-                <div class="studio-form-group">
-                    <label for="textTitle">Title</label>
-                    <input type="text" id="textTitle" placeholder="Note title">
-                </div>
-                <div class="studio-form-group">
-                    <label for="textContent">Content</label>
-                    <textarea id="textContent" rows="8" placeholder="Paste your text here..."></textarea>
-                </div>
-                <button class="btn btn-primary" style="width: 100%;" onclick="addTextSource()">
-                    Add Text
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Output Preview Modal -->
-    <div class="studio-modal-overlay" id="outputPreviewModal">
-        <div class="studio-modal" style="max-width: 700px;">
-            <div class="studio-modal-header">
-                <h2 id="outputPreviewTitle">Output</h2>
-                <button class="studio-modal-close" onclick="hideModal('outputPreviewModal')">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="output-content" id="outputPreviewContent">
-                <!-- Content populated dynamically -->
-            </div>
-        </div>
-    </div>
+    </div><!-- /app-container -->
 
     <script src="/js/usage-nudge.js"></script>
     <script src="/js/research-studio.js"></script>
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-
         // Model state
         let currentModel = 'claude-sonnet-4-20250514';
         let modelCapabilities = {};
 
-        // Load models on page load
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             await loadModels();
         });
 

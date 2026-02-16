@@ -9,11 +9,18 @@
 const { createClient } = require('@supabase/supabase-js');
 const { randomUUID: uuidv4 } = require('crypto');
 
-// Initialize Supabase client
-const supabase = createClient(
+// Supabase client - can be injected via setSupabase() or falls back to env vars
+let supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
 );
+
+/**
+ * Inject a shared Supabase client (called from route factory)
+ */
+function setSupabase(client) {
+    supabase = client;
+}
 
 // Constants
 const CHARS_PER_TOKEN = 4;
@@ -1111,6 +1118,9 @@ async function deleteOutput(outputId) {
 // =====================================================
 
 module.exports = {
+    // Initialization
+    setSupabase,
+
     // Studios
     createStudio,
     getStudio,

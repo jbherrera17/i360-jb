@@ -10,11 +10,15 @@
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 
-// Initialize clients
-const supabase = createClient(
+// Supabase client - can be injected via setSupabase() or falls back to env vars
+let supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
 );
+
+function setSupabase(client) {
+    supabase = client;
+}
 
 const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
@@ -762,6 +766,9 @@ function filterFlashcardsByDifficulty(flashcardOutput, difficulty) {
 // =====================================================
 
 module.exports = {
+    // Initialization
+    setSupabase,
+
     // Core generation
     generateOutput,
     saveOutput,

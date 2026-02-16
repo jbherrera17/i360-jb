@@ -1574,16 +1574,17 @@ module.exports = function(supabase) {
 
     /**
      * POST /api/platform/users
-     * Create a new user (Platform Admin only)
+     * Invite a new user via email (Platform Admin only)
+     * Sends Supabase invitation email — user sets their own password
      */
     router.post('/users', requireAdminWrite, async (req, res) => {
         try {
-            const { email, password, display_name, org_id, role } = req.body;
+            const { email, display_name, org_id, role } = req.body;
 
-            if (!email || !password) {
+            if (!email) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Email and password are required'
+                    error: 'Email is required'
                 });
             }
 
@@ -1596,29 +1597,33 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Validate password length
-            if (password.length < 6) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Password must be at least 6 characters'
-                });
-            }
+            // Build redirect URL for invitation acceptance
+            const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+            const redirectTo = `${appUrl}/login.html`;
 
-            // Create user in Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            // Invite user via Supabase Auth (sends email)
+            const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
                 email,
-                password,
-                email_confirm: true, // Auto-confirm email
-                user_metadata: {
-                    display_name: display_name || email.split('@')[0]
+                {
+                    redirectTo,
+                    data: {
+                        display_name: display_name || email.split('@')[0],
+                        invited_by_admin: req.userId,
+                        org_id: org_id || null
+                    }
                 }
-            });
+            );
 
             if (authError) {
-                console.error('Auth error creating user:', authError);
-                return res.status(400).json({
+                console.error('Auth error inviting user:', authError);
+                // Handle rate limit errors with a clear message
+                const isRateLimit = authError.message?.toLowerCase().includes('rate') ||
+                    authError.status === 429;
+                return res.status(isRateLimit ? 429 : 400).json({
                     success: false,
-                    error: authError.message
+                    error: isRateLimit
+                        ? 'Email rate limit reached. Please wait before sending more invitations.'
+                        : authError.message
                 });
             }
 
@@ -1631,7 +1636,9 @@ module.exports = function(supabase) {
                     id: userId,
                     email,
                     display_name: display_name || email.split('@')[0],
-                    status: 'active',
+                    status: 'invited',
+                    invited_at: new Date().toISOString(),
+                    invited_by: req.userId,
                     default_org_id: org_id || null
                 })
                 .select()
@@ -1662,19 +1669,91 @@ module.exports = function(supabase) {
 
                 if (memberError) {
                     console.error('Error adding user to org:', memberError);
-                    // User created, just org membership failed - log but continue
+                    // User invited, just org membership failed - log but continue
                 }
             }
 
-            console.log(`User ${email} created by admin ${req.userId}`);
+            console.log(`User ${email} invited by admin ${req.userId}`);
 
             res.status(201).json({
                 success: true,
                 data: userData,
-                message: 'User created successfully'
+                message: 'Invitation email sent successfully. User will set their own password.'
             });
         } catch (error) {
-            console.error('Error creating user:', error);
+            console.error('Error inviting user:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
+     * POST /api/platform/users/:id/resend-invite
+     * Resend invitation email to a user in 'invited' status
+     */
+    router.post('/users/:id/resend-invite', requireAdminWrite, async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            // Get user details
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select('id, email, status')
+                .eq('id', id)
+                .single();
+
+            if (userError || !user) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'User not found'
+                });
+            }
+
+            if (user.status !== 'invited') {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Can only resend invitations to users with invited status'
+                });
+            }
+
+            // Build redirect URL
+            const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+            const redirectTo = `${appUrl}/login.html`;
+
+            // Resend invitation via Supabase
+            const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+                user.email,
+                { redirectTo }
+            );
+
+            if (inviteError) {
+                console.error('Error resending invitation:', inviteError);
+                const isRateLimit = inviteError.message?.toLowerCase().includes('rate') ||
+                    inviteError.status === 429;
+                return res.status(isRateLimit ? 429 : 400).json({
+                    success: false,
+                    error: isRateLimit
+                        ? 'Email rate limit reached. Please wait before sending more invitations.'
+                        : inviteError.message
+                });
+            }
+
+            // Update invited_at timestamp
+            await supabase
+                .from('users')
+                .update({ invited_at: new Date().toISOString() })
+                .eq('id', id);
+
+            console.log(`Invitation resent to ${user.email} by admin ${req.userId}`);
+
+            res.json({
+                success: true,
+                message: 'Invitation email resent successfully'
+            });
+        } catch (error) {
+            console.error('Error resending invitation:', error);
             res.status(500).json({
                 success: false,
                 error: error.message

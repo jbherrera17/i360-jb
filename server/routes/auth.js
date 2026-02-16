@@ -356,6 +356,108 @@ module.exports = function(supabase) {
     });
 
     /**
+     * POST /api/auth/accept-invite
+     * Accept invitation by setting password and activating account
+     * Called after user clicks the invitation email link
+     */
+    router.post('/accept-invite', async (req, res) => {
+        try {
+            const { access_token, password } = req.body;
+
+            if (!access_token || !password) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Access token and password are required'
+                });
+            }
+
+            if (password.length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Password must be at least 6 characters'
+                });
+            }
+
+            // Set session with the access token from the invite link
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                access_token,
+                refresh_token: access_token // Supabase uses same token for invite flow
+            });
+
+            if (sessionError || !sessionData?.user) {
+                console.error('Accept invite session error:', sessionError);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid or expired invitation link. Please request a new invitation.'
+                });
+            }
+
+            const userId = sessionData.user.id;
+
+            // Update the user's password
+            const { error: updateError } = await supabase.auth.updateUser({
+                password
+            });
+
+            if (updateError) {
+                console.error('Accept invite password update error:', updateError);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Failed to set password: ' + updateError.message
+                });
+            }
+
+            // Activate the user in the users table
+            const { error: activateError } = await supabase.rpc('activate_invited_user', {
+                p_user_id: userId
+            });
+
+            if (activateError) {
+                console.error('Activation error (non-fatal):', activateError);
+                // Non-fatal — user can still log in, we'll try a direct update
+                await supabase
+                    .from('users')
+                    .update({
+                        status: 'active',
+                        invitation_accepted_at: new Date().toISOString()
+                    })
+                    .eq('id', userId);
+            }
+
+            // Get updated user info
+            const { data: user } = await supabase
+                .from('users')
+                .select('id, email, display_name, role, status, default_org_id')
+                .eq('id', userId)
+                .single();
+
+            console.log(`User ${sessionData.user.email} accepted invitation`);
+
+            res.json({
+                success: true,
+                message: 'Account activated successfully',
+                user: user || {
+                    id: userId,
+                    email: sessionData.user.email,
+                    display_name: sessionData.user.user_metadata?.display_name || sessionData.user.email.split('@')[0]
+                },
+                session: {
+                    access_token: sessionData.session?.access_token,
+                    refresh_token: sessionData.session?.refresh_token,
+                    expires_at: sessionData.session?.expires_at
+                }
+            });
+
+        } catch (error) {
+            console.error('Accept invite error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to activate account'
+            });
+        }
+    });
+
+    /**
      * POST /api/auth/logout
      * Logout current session
      */
@@ -756,19 +858,12 @@ module.exports = function(supabase) {
      */
     router.post('/users', requireAdmin, async (req, res) => {
         try {
-            const { email, password, display_name, role, business_role, department_id, org_id, org_role } = req.body;
+            const { email, display_name, role, business_role, department_id, org_id, org_role } = req.body;
 
-            if (!email || !password) {
+            if (!email) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Email and password are required'
-                });
-            }
-
-            if (password.length < 6) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Password must be at least 6 characters'
+                    error: 'Email is required'
                 });
             }
 
@@ -799,31 +894,45 @@ module.exports = function(supabase) {
 
             const userRole = role && ['admin', 'user', 'viewer'].includes(role) ? role : 'user';
 
-            // Create user in Supabase Auth using admin API
-            const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            // Build redirect URL for invitation acceptance
+            const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+            const redirectTo = `${appUrl}/login.html`;
+
+            // Invite user via Supabase Auth (sends email)
+            const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
                 email,
-                password,
-                email_confirm: true, // Auto-confirm email for admin-created users
-                user_metadata: {
-                    display_name: display_name || email.split('@')[0]
+                {
+                    redirectTo,
+                    data: {
+                        display_name: display_name || email.split('@')[0],
+                        invited_by_admin: req.user?.id || req.userId,
+                        org_id: org_id || null
+                    }
                 }
-            });
+            );
 
             if (authError) {
-                console.error('Admin create user error:', authError);
-                return res.status(400).json({
+                console.error('Admin invite user error:', authError);
+                const isRateLimit = authError.message?.toLowerCase().includes('rate') ||
+                    authError.status === 429;
+                return res.status(isRateLimit ? 429 : 400).json({
                     success: false,
-                    error: authError.message
+                    error: isRateLimit
+                        ? 'Email rate limit reached. Please wait before sending more invitations.'
+                        : authError.message
                 });
             }
 
-            // Insert user profile into users table with specified role
+            // Insert user profile into users table
             if (authData.user) {
                 const profileData = {
                     id: authData.user.id,
                     email: authData.user.email,
                     display_name: display_name || email.split('@')[0],
                     role: userRole,
+                    status: 'invited',
+                    invited_at: new Date().toISOString(),
+                    invited_by: req.user?.id || req.userId,
                     default_org_id: org_id || null
                 };
                 if (business_role) profileData.business_role = business_role;
@@ -846,32 +955,32 @@ module.exports = function(supabase) {
                             user_id: authData.user.id,
                             role: org_role || 'consultant',
                             status: 'active',
-                            invited_by: req.user.id,
+                            invited_by: req.user?.id || req.userId,
                             joined_at: new Date().toISOString()
                         });
 
                     if (memberError) {
                         console.error('Organization membership error:', memberError);
-                        // Don't fail the whole operation, user is created
                     }
                 }
             }
 
             res.json({
                 success: true,
-                message: org_id ? 'User created and added to organization' : 'User created successfully',
+                message: 'Invitation email sent successfully. User will set their own password.',
                 data: {
                     id: authData.user.id,
                     email: authData.user.email,
                     display_name: display_name || email.split('@')[0],
                     role: userRole,
+                    status: 'invited',
                     org_id: org_id || null,
                     org_role: org_id ? (org_role || 'consultant') : null
                 }
             });
 
         } catch (error) {
-            console.error('Create user error:', error);
+            console.error('Invite user error:', error);
             res.status(500).json({
                 success: false,
                 error: error.message

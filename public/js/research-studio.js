@@ -132,36 +132,33 @@ async function loadStudio(studioId) {
                 await loadChatHistory();
             }
         } else {
-            alert('Failed to load studio: ' + result.error);
+            showToast('Failed to load studio: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error loading studio:', error);
-        alert('Error loading studio');
+        showToast('Error loading studio', 'error');
     }
 }
 
 /**
- * Show the create studio modal
+ * Show the create studio modal using ModalService
  */
-function showCreateStudioModal() {
-    document.getElementById('newStudioTitle').value = '';
-    document.getElementById('newStudioDescription').value = '';
-    showModal('createStudioModal');
-}
-
-/**
- * Create a new studio
- */
-async function createStudio(event) {
-    event.preventDefault();
-
-    const title = document.getElementById('newStudioTitle').value.trim();
-    const description = document.getElementById('newStudioDescription').value.trim();
-
-    if (!title) {
-        alert('Please enter a title');
+async function showCreateStudioModal() {
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
         return;
     }
+
+    const values = await ModalService.form({
+        title: 'Create Research Studio',
+        fields: [
+            { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'My Research' },
+            { name: 'description', label: 'Description (optional)', type: 'textarea', rows: 3, placeholder: 'What are you researching?' }
+        ],
+        submitText: 'Create Studio'
+    });
+
+    if (!values) return;
 
     // Guard new creation against plan limits
     if (typeof UsageNudge !== 'undefined' && !(await UsageNudge.checkBeforeCreate('research_studios'))) return;
@@ -170,20 +167,19 @@ async function createStudio(event) {
         const response = await fetch(API_BASE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description })
+            body: JSON.stringify({ title: values.title, description: values.description })
         });
 
         const result = await response.json();
 
         if (result.success) {
-            hideModal('createStudioModal');
             await loadStudio(result.data.id);
         } else {
-            alert('Failed to create studio: ' + result.error);
+            showToast('Failed to create studio: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error creating studio:', error);
-        alert('Error creating studio');
+        showToast('Error creating studio', 'error');
     }
 }
 
@@ -209,7 +205,7 @@ async function updateStudioTitle() {
             currentStudio.title = newTitle;
         } else {
             document.getElementById('studioTitleInput').value = currentStudio.title;
-            alert('Failed to update title');
+            showToast('Failed to update title', 'error');
         }
     } catch (error) {
         console.error('Error updating title:', error);
@@ -302,11 +298,75 @@ function getSourceIcon(type) {
 }
 
 /**
- * Show add source modal
+ * Active add-source modal reference (for closing after operations)
+ */
+let addSourceModal = null;
+
+/**
+ * Show add source modal using ModalService.content()
  */
 function showAddSourceModal() {
-    switchSourceTab('file');
-    showModal('addSourceModal');
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
+        return;
+    }
+
+    const html = `
+        <div class="source-tabs">
+            <button class="source-tab active" onclick="switchSourceTab('file')">Upload File</button>
+            <button class="source-tab" onclick="switchSourceTab('url')">Website URL</button>
+            <button class="source-tab" onclick="switchSourceTab('text')">Paste Text</button>
+        </div>
+        <div class="tab-content active" id="fileTab">
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <i data-lucide="upload-cloud"></i>
+                <p>Click to upload or drag and drop</p>
+                <p class="supported-types">PDF, DOCX, TXT, Markdown, CSV</p>
+            </div>
+            <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.txt,.md,.csv" onchange="handleFileSelect(event)">
+        </div>
+        <div class="tab-content" id="urlTab">
+            <div class="studio-form-group">
+                <label for="sourceUrl">Website URL</label>
+                <input type="url" id="sourceUrl" placeholder="https://example.com/article">
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addUrlSource()">Add URL</button>
+        </div>
+        <div class="tab-content" id="textTab">
+            <div class="studio-form-group">
+                <label for="textTitle">Title</label>
+                <input type="text" id="textTitle" placeholder="Note title">
+            </div>
+            <div class="studio-form-group">
+                <label for="textContent">Content</label>
+                <textarea id="textContent" rows="8" placeholder="Paste your text here..."></textarea>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addTextSource()">Add Text</button>
+        </div>
+    `;
+
+    addSourceModal = ModalService.content({
+        title: 'Add Source',
+        content: html,
+        contentType: 'html',
+        width: 500
+    });
+
+    // Re-init icons and drag/drop after modal renders
+    setTimeout(() => {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        setupDragAndDrop();
+    }, 100);
+}
+
+/**
+ * Close the add source modal
+ */
+function closeAddSourceModal() {
+    if (addSourceModal && typeof addSourceModal.close === 'function') {
+        addSourceModal.close();
+        addSourceModal = null;
+    }
 }
 
 /**
@@ -322,7 +382,8 @@ function switchSourceTab(tab) {
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    document.getElementById(`${tab}Tab`).classList.add('active');
+    const tabEl = document.getElementById(`${tab}Tab`);
+    if (tabEl) tabEl.classList.add('active');
 }
 
 /**
@@ -375,7 +436,7 @@ function handleFileSelect(event) {
  */
 async function uploadFile(file) {
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
@@ -383,7 +444,7 @@ async function uploadFile(file) {
     formData.append('file', file);
 
     try {
-        hideModal('addSourceModal');
+        closeAddSourceModal();
 
         // Show loading state
         const sourcesList = document.getElementById('sourcesList');
@@ -410,13 +471,14 @@ async function uploadFile(file) {
         if (result.success) {
             sources.unshift(result.data);
             renderSources();
+            showToast('File uploaded successfully', 'success');
         } else {
-            alert('Failed to upload file: ' + result.error);
+            showToast('Failed to upload file: ' + result.error, 'error');
             renderSources();
         }
     } catch (error) {
         console.error('Error uploading file:', error);
-        alert('Error uploading file');
+        showToast('Error uploading file', 'error');
         renderSources();
     }
 }
@@ -426,18 +488,18 @@ async function uploadFile(file) {
  */
 async function addUrlSource() {
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
     const url = document.getElementById('sourceUrl').value.trim();
     if (!url) {
-        alert('Please enter a URL');
+        showToast('Please enter a URL', 'error');
         return;
     }
 
     try {
-        hideModal('addSourceModal');
+        closeAddSourceModal();
 
         const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
             method: 'POST',
@@ -450,13 +512,13 @@ async function addUrlSource() {
         if (result.success) {
             sources.unshift(result.data);
             renderSources();
-            document.getElementById('sourceUrl').value = '';
+            showToast('URL source added', 'success');
         } else {
-            alert('Failed to add URL: ' + result.error);
+            showToast('Failed to add URL: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error adding URL:', error);
-        alert('Error adding URL');
+        showToast('Error adding URL', 'error');
     }
 }
 
@@ -465,7 +527,7 @@ async function addUrlSource() {
  */
 async function addTextSource() {
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
@@ -473,12 +535,12 @@ async function addTextSource() {
     const text = document.getElementById('textContent').value.trim();
 
     if (!text) {
-        alert('Please enter some text');
+        showToast('Please enter some text', 'error');
         return;
     }
 
     try {
-        hideModal('addSourceModal');
+        closeAddSourceModal();
 
         const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
             method: 'POST',
@@ -491,14 +553,13 @@ async function addTextSource() {
         if (result.success) {
             sources.unshift(result.data);
             renderSources();
-            document.getElementById('textTitle').value = '';
-            document.getElementById('textContent').value = '';
+            showToast('Text source added', 'success');
         } else {
-            alert('Failed to add text: ' + result.error);
+            showToast('Failed to add text: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error adding text:', error);
-        alert('Error adding text');
+        showToast('Error adding text', 'error');
     }
 }
 
@@ -534,10 +595,10 @@ async function viewSource(sourceId) {
     const source = sources.find(s => s.id === sourceId);
     if (!source) return;
 
-    // Check if ContentModal is available
-    if (typeof ContentModal === 'undefined') {
-        console.error('ContentModal not available');
-        alert('View functionality not available');
+    // Check if ModalService is available
+    if (typeof ModalService === 'undefined') {
+        console.error('ModalService not available');
+        showToast('View functionality not available', 'error');
         return;
     }
 
@@ -586,7 +647,7 @@ async function editSource(sourceId) {
     // Check if ModalService is available
     if (typeof ModalService === 'undefined') {
         console.error('ModalService not available');
-        alert('Edit functionality not available');
+        showToast('Edit functionality not available', 'error');
         return;
     }
 
@@ -647,7 +708,7 @@ async function editSource(sourceId) {
         }
     } catch (error) {
         console.error('Error updating source:', error);
-        alert('Error updating source: ' + error.message);
+        showToast('Error updating source: ' + error.message, 'error');
     }
 }
 
@@ -658,19 +719,18 @@ async function deleteSource(sourceId) {
     const source = sources.find(s => s.id === sourceId);
     if (!source) return;
 
-    // Use ModalService for confirmation if available
-    let confirmed = false;
-    if (typeof ModalService !== 'undefined') {
-        confirmed = await ModalService.confirm({
-            title: 'Delete Source',
-            message: `Are you sure you want to delete "${source.title}"? This action cannot be undone.`,
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
-            type: 'danger'
-        });
-    } else {
-        confirmed = confirm('Are you sure you want to delete this source?');
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
+        return;
     }
+
+    const confirmed = await ModalService.confirm({
+        title: 'Delete Source',
+        message: `Are you sure you want to delete "${source.title}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'danger'
+    });
 
     if (!confirmed) return;
 
@@ -684,20 +744,13 @@ async function deleteSource(sourceId) {
         if (result.success) {
             sources = sources.filter(s => s.id !== sourceId);
             renderSources();
+            showToast('Source deleted', 'success');
         } else {
-            if (typeof ModalService !== 'undefined') {
-                ModalService.error(result.error || 'Failed to delete source', 'Delete Failed');
-            } else {
-                alert('Failed to delete source: ' + result.error);
-            }
+            showToast(result.error || 'Failed to delete source', 'error');
         }
     } catch (error) {
         console.error('Error deleting source:', error);
-        if (typeof ModalService !== 'undefined') {
-            ModalService.error('An error occurred while deleting the source', 'Delete Failed');
-        } else {
-            alert('Error deleting source');
-        }
+        showToast('Error deleting source', 'error');
     }
 }
 
@@ -831,13 +884,13 @@ async function sendMessage() {
 
     if (!message || isStreaming) return;
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
     const selectedSources = sources.filter(s => s.is_selected);
     if (selectedSources.length === 0) {
-        alert('Please select at least one source');
+        showToast('Please select at least one source', 'error');
         return;
     }
 
@@ -1081,20 +1134,20 @@ function copyMessageContent(messageId) {
  */
 async function saveMessageAsSource(messageId) {
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
     const contentEl = document.getElementById(messageId);
     if (!contentEl) {
         console.error('Message element not found:', messageId);
-        alert('Could not find message content');
+        showToast('Could not find message content', 'error');
         return;
     }
 
     const content = contentEl.innerText;
     if (!content || content.trim().length === 0) {
-        alert('No content to save');
+        showToast('No content to save', 'error');
         return;
     }
 
@@ -1152,7 +1205,7 @@ async function saveMessageAsSource(messageId) {
         }
     } catch (error) {
         console.error('Error saving as source:', error);
-        alert('Error saving as source: ' + error.message);
+        showToast('Error saving as source: ' + error.message, 'error');
 
         // Reset button on error
         if (btn && originalIcon) {
@@ -1214,19 +1267,18 @@ function askSuggested(button) {
  * Clear chat
  */
 async function clearChat() {
-    // Use ModalService for confirmation if available
-    let confirmed = false;
-    if (typeof ModalService !== 'undefined') {
-        confirmed = await ModalService.confirm({
-            title: 'Clear Chat',
-            message: 'Are you sure you want to clear all messages in this conversation?',
-            confirmText: 'Clear',
-            cancelText: 'Cancel',
-            type: 'warning'
-        });
-    } else {
-        confirmed = confirm('Clear all messages in this conversation?');
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
+        return;
     }
+
+    const confirmed = await ModalService.confirm({
+        title: 'Clear Chat',
+        message: 'Are you sure you want to clear all messages in this conversation?',
+        confirmText: 'Clear',
+        cancelText: 'Cancel',
+        type: 'warning'
+    });
 
     if (!confirmed) return;
 
@@ -1353,7 +1405,7 @@ function renderChatHistoryList() {
  */
 async function startNewChat() {
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
@@ -1393,11 +1445,11 @@ async function startNewChat() {
                 await loadChatHistoryList();
             }
         } else {
-            alert('Failed to create new chat: ' + result.error);
+            showToast('Failed to create new chat: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error creating new chat:', error);
-        alert('Error creating new chat');
+        showToast('Error creating new chat', 'error');
     }
 }
 
@@ -1433,11 +1485,11 @@ async function switchToConversation(conversationId) {
             // Close the history panel
             toggleChatHistory();
         } else {
-            alert('Failed to switch conversation: ' + result.error);
+            showToast('Failed to switch conversation: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error switching conversation:', error);
-        alert('Error switching conversation');
+        showToast('Error switching conversation', 'error');
     }
 }
 
@@ -1448,28 +1500,37 @@ async function renameConversation(conversationId) {
     const convo = conversations.find(c => c.id === conversationId);
     if (!convo) return;
 
-    const newTitle = prompt('Enter new name for this conversation:', convo.title);
-    if (!newTitle || newTitle === convo.title) return;
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
+        return;
+    }
+
+    const values = await ModalService.form({
+        title: 'Rename Conversation',
+        fields: [{ name: 'title', label: 'Name', type: 'text', value: convo.title, required: true }],
+        submitText: 'Rename'
+    });
+
+    if (!values || !values.title || values.title === convo.title) return;
 
     try {
         const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle })
+            body: JSON.stringify({ title: values.title })
         });
 
         const result = await response.json();
 
         if (result.success) {
-            // Update local state
-            convo.title = newTitle;
+            convo.title = values.title;
             renderChatHistoryList();
         } else {
-            alert('Failed to rename conversation: ' + result.error);
+            showToast('Failed to rename conversation: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error renaming conversation:', error);
-        alert('Error renaming conversation');
+        showToast('Error renaming conversation', 'error');
     }
 }
 
@@ -1480,19 +1541,18 @@ async function deleteConversation(conversationId) {
     const convo = conversations.find(c => c.id === conversationId);
     if (!convo) return;
 
-    // Use ModalService for confirmation if available
-    let confirmed = false;
-    if (typeof ModalService !== 'undefined') {
-        confirmed = await ModalService.confirm({
-            title: 'Delete Conversation',
-            message: `Are you sure you want to delete "${convo.title}"? This will permanently delete all messages in this conversation.`,
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
-            type: 'danger'
-        });
-    } else {
-        confirmed = confirm(`Delete conversation "${convo.title}"? This cannot be undone.`);
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
+        return;
     }
+
+    const confirmed = await ModalService.confirm({
+        title: 'Delete Conversation',
+        message: `Are you sure you want to delete "${convo.title}"? This will permanently delete all messages in this conversation.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'danger'
+    });
 
     if (!confirmed) return;
 
@@ -1504,21 +1564,20 @@ async function deleteConversation(conversationId) {
         const result = await response.json();
 
         if (result.success) {
-            // Remove from local state
             conversations = conversations.filter(c => c.id !== conversationId);
 
-            // If we deleted the current conversation, create a new one
             if (conversationId === currentConversationId) {
                 await startNewChat();
             } else {
                 renderChatHistoryList();
             }
+            showToast('Conversation deleted', 'success');
         } else {
-            alert('Failed to delete conversation: ' + result.error);
+            showToast('Failed to delete conversation: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error deleting conversation:', error);
-        alert('Error deleting conversation');
+        showToast('Error deleting conversation', 'error');
     }
 }
 
@@ -1531,13 +1590,13 @@ async function deleteConversation(conversationId) {
  */
 async function generateOutput(type) {
     if (!currentStudio) {
-        alert('Please select or create a studio first');
+        showToast('Please select or create a studio first', 'error');
         return;
     }
 
     const selectedSources = sources.filter(s => s.is_selected);
     if (selectedSources.length === 0) {
-        alert('Please select at least one source');
+        showToast('Please select at least one source', 'error');
         return;
     }
 
@@ -1566,11 +1625,11 @@ async function generateOutput(type) {
             renderOutputs();
             showOutputPreview(result.data);
         } else {
-            alert('Failed to generate output: ' + result.error);
+            showToast('Failed to generate output: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error generating output:', error);
-        alert('Error generating output');
+        showToast('Error generating output', 'error');
     } finally {
         // Reset button
         if (btn) {
@@ -1650,62 +1709,24 @@ function showOutputPreview(outputOrId) {
     // Store in map for future lookups
     if (output.id) outputsMap[output.id] = output;
 
-    const titleEl = document.getElementById('outputPreviewTitle');
-    const contentEl = document.getElementById('outputPreviewContent');
-
-    titleEl.textContent = output.title || capitalizeFirst(output.output_type);
-
     // Render based on output type
     const content = output.content;
     let html = '';
 
     switch (output.output_type) {
-        case 'report':
-            html = renderReport(content);
-            break;
-
-        case 'summary':
-            html = renderSummary(content);
-            break;
-
-        case 'flashcards':
-            html = renderFlashcards(content, output);
-            break;
-
-        case 'quiz':
-            html = renderInteractiveQuiz(content, output);
-            break;
-
-        case 'mindmap':
-            html = renderMindmap(content);
-            break;
-
-        case 'slides':
-            html = renderSlides(content);
-            break;
-
-        case 'table':
-            html = renderTable(content);
-            break;
-
-        case 'briefing':
-            html = renderBriefing(content);
-            break;
-
-        case 'infographic':
-            html = renderInfographic(content);
-            break;
-
-        case 'audio':
-            html = renderAudioOverview(content, output);
-            break;
-
+        case 'report':    html = renderReport(content); break;
+        case 'summary':   html = renderSummary(content); break;
+        case 'flashcards': html = renderFlashcards(content, output); break;
+        case 'quiz':      html = renderInteractiveQuiz(content, output); break;
+        case 'mindmap':   html = renderMindmap(content); break;
+        case 'slides':    html = renderSlides(content); break;
+        case 'table':     html = renderTable(content); break;
+        case 'briefing':  html = renderBriefing(content); break;
+        case 'infographic': html = renderInfographic(content); break;
+        case 'audio':     html = renderAudioOverview(content, output); break;
         default:
             html = `<pre style="white-space: pre-wrap; font-size: 0.9rem;">${escapeHtml(JSON.stringify(content, null, 2))}</pre>`;
     }
-
-    contentEl.innerHTML = html;
-    showModal('outputPreviewModal');
 
     // Initialize interactive elements
     if (output.output_type === 'quiz') {
@@ -1718,7 +1739,17 @@ function showOutputPreview(outputOrId) {
         flashcardFlipped = false;
     }
 
-    lucide.createIcons();
+    // Use ModalService.content() for the preview
+    if (typeof ModalService !== 'undefined') {
+        ModalService.content({
+            title: output.title || capitalizeFirst(output.output_type),
+            content: html,
+            contentType: 'html',
+            width: 700,
+            resizable: true
+        });
+        setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 100);
+    }
 }
 
 /**
@@ -2048,11 +2079,11 @@ async function submitQuiz(event, outputId) {
         if (result.success) {
             displayQuizResults(result.data);
         } else {
-            alert('Error scoring quiz: ' + result.error);
+            showToast('Error scoring quiz: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Error submitting quiz:', error);
-        alert('Error submitting quiz');
+        showToast('Error submitting quiz', 'error');
     }
 }
 
@@ -2438,20 +2469,6 @@ function renderMindmapBranches(branches) {
 // ============================================================================
 
 /**
- * Show modal
- */
-function showModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-/**
- * Hide modal
- */
-function hideModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
-/**
  * Escape HTML
  */
 function escapeHtml(text) {
@@ -2550,7 +2567,7 @@ function openHelp() {
                 width: 600
             });
         } else {
-            alert('Help is available in the documentation.');
+            showToast('Help documentation not available', 'error');
         }
     }
 }
