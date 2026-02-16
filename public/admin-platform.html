@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/icon-picker.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -451,7 +452,9 @@
                                 <option value="starter">Starter</option>
                                 <option value="business">Business</option>
                                 <option value="enterprise">Enterprise</option>
-                                <option value="agency">Agency</option>
+                                <option value="agency_starter">Agency Starter</option>
+                                <option value="agency_professional">Agency Professional</option>
+                                <option value="agency_enterprise">Agency Enterprise</option>
                             </select>
                             <button class="btn btn-primary" onclick="showCreateOrgModal()">
                                 <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
@@ -853,6 +856,7 @@
         </main>
     </div>
 
+    <script src="/js/icon-picker.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
@@ -1416,7 +1420,9 @@
                 { id: 'starter', name: 'Starter', description: 'For individuals and small teams' },
                 { id: 'business', name: 'Business', description: 'For growing teams' },
                 { id: 'enterprise', name: 'Enterprise', description: 'For large organizations' },
-                { id: 'agency', name: 'Agency', description: 'For agencies with clients' }
+                { id: 'agency_starter', name: 'Agency Starter', description: 'For small consultancies' },
+                { id: 'agency_professional', name: 'Agency Professional', description: 'For growing agencies' },
+                { id: 'agency_enterprise', name: 'Agency Enterprise', description: 'For large consultancies' }
             ];
 
             const tierOptions = availableTiers.map(t =>
@@ -1631,7 +1637,7 @@
                 { label: 'Starter (All Tiers)', value: 'starter' },
                 { label: 'Business', value: 'business' },
                 { label: 'Enterprise', value: 'enterprise' },
-                { label: 'Agency', value: 'agency' }
+                { label: 'Agency Starter', value: 'agency_starter' }
             ];
 
             const result = await ModalService.form({
@@ -1681,7 +1687,7 @@
                         ]
                     },
                     { name: 'route_path', label: 'Route Path', type: 'text', placeholder: 'e.g., /my-module' },
-                    { name: 'icon', label: 'Icon (Lucide name)', type: 'text', value: 'puzzle', placeholder: 'e.g., puzzle, settings, chart-bar' },
+                    { name: 'icon', label: 'Icon', type: 'icon-picker', value: 'puzzle' },
                     { name: 'nav_group', label: 'Navigation Group', type: 'text', placeholder: 'e.g., tools, admin' },
                     { name: 'is_beta', label: 'Beta Feature', type: 'checkbox', value: false }
                 ],
@@ -1835,7 +1841,7 @@
                         options: tierOptions
                     },
                     { name: 'route_path', label: 'Route Path', type: 'text', value: module.route_path || '' },
-                    { name: 'icon', label: 'Icon (Lucide name)', type: 'text', value: module.icon || '' },
+                    { name: 'icon', label: 'Icon', type: 'icon-picker', value: module.icon || 'puzzle' },
                     { name: 'is_active', label: 'Active', type: 'checkbox', value: module.is_active !== false },
                     { name: 'is_beta', label: 'Beta Feature', type: 'checkbox', value: module.is_beta === true }
                 ],

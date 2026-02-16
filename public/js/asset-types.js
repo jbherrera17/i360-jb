@@ -1,7 +1,7 @@
 /**
  * Asset Types Admin - Insight 360
  * CRUD operations for managing context asset types
- * Version: 2.0.0 - Using Lucide Icons
+ * Version: 3.0.0 - Using shared IconPicker component
  */
 
 // State
@@ -9,44 +9,13 @@ let assetTypes = [];
 let assetCounts = {};
 let editingType = null;
 let deletingType = null;
-let selectedIcon = '';
-let allIcons = [];
-let filteredIconList = [];
-
-// Common Lucide icons for asset types (curated list)
-const RECOMMENDED_ICONS = [
-    'building', 'trophy', 'package', 'target', 'mic', 'user', 'gem', 'settings',
-    'swords', 'book-open', 'help-circle', 'users', 'globe', 'library', 'file-text', 'dollar-sign',
-    'palette', 'theater', 'bar-chart', 'trending-up', 'lightbulb', 'wrench', 'hammer', 'link',
-    'mail', 'smartphone', 'laptop', 'monitor', 'folder-open', 'folder', 'archive', 'clipboard',
-    'check-circle', 'star', 'rocket', 'tent', 'medal', 'award', 'briefcase', 'pin',
-    'compass', 'map', 'flag', 'bookmark', 'heart', 'zap', 'flame', 'sparkles',
-    'shield', 'lock', 'key', 'eye', 'search', 'filter', 'layers', 'grid',
-    'calendar', 'clock', 'bell', 'message-square', 'phone', 'video', 'image', 'camera',
-    'music', 'headphones', 'play', 'film', 'tv', 'radio', 'speaker', 'volume-2',
-    'database', 'server', 'cloud', 'cpu', 'hard-drive', 'wifi', 'bluetooth', 'signal',
-    'code', 'terminal', 'git-branch', 'github', 'box', 'boxes', 'truck', 'plane',
-    'shopping-cart', 'credit-card', 'wallet', 'coins', 'banknote', 'receipt', 'tag', 'percent'
-];
-
-/**
- * Convert PascalCase to kebab-case (handles numbers like Grid2x2Check -> grid-2x2-check)
- */
-function pascalToKebab(str) {
-    return str
-        .replace(/([a-z])([A-Z])/g, '$1-$2')  // lowercase followed by uppercase
-        .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')  // uppercase followed by uppercase+lowercase
-        .replace(/([a-zA-Z])(\d)/g, '$1-$2')  // letter followed by number
-        .replace(/(\d)([a-zA-Z])/g, '$1-$2')  // number followed by letter
-        .toLowerCase();
-}
+let assetTypeIconPicker = null;
 
 /**
  * Initialize the page
  */
 async function init() {
-    await loadLucideIcons();
-    setupIconPicker();
+    initIconPicker();
     await loadAssetTypes();
     await loadAssetCounts();
     renderTable();
@@ -54,72 +23,17 @@ async function init() {
 }
 
 /**
- * Load all Lucide icons
+ * Initialize the shared IconPicker component
  */
-async function loadLucideIcons() {
-    // Wait for Lucide to be fully loaded
-    await new Promise(resolve => {
-        if (typeof lucide !== 'undefined' && lucide.icons) {
-            resolve();
-        } else {
-            setTimeout(resolve, 500);
+function initIconPicker() {
+    const container = document.getElementById('icon-picker-container');
+    if (!container || typeof IconPicker === 'undefined') return;
+
+    assetTypeIconPicker = IconPicker.create(container, {
+        value: '',
+        onSelect: (iconName) => {
+            // Icon selected - no additional action needed
         }
-    });
-
-    // Get all icons from Lucide library
-    if (typeof lucide !== 'undefined' && lucide.icons) {
-        allIcons = Object.keys(lucide.icons).map(name => pascalToKebab(name));
-    } else {
-        // Fallback to recommended icons
-        allIcons = [...RECOMMENDED_ICONS];
-    }
-
-    filteredIconList = [...RECOMMENDED_ICONS]; // Start with recommended icons
-}
-
-/**
- * Setup icon picker
- */
-function setupIconPicker() {
-    renderIconPicker(RECOMMENDED_ICONS);
-
-    // Setup search
-    const searchInput = document.getElementById('icon-search');
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        if (query === '') {
-            filteredIconList = [...RECOMMENDED_ICONS];
-        } else {
-            filteredIconList = allIcons.filter(icon => icon.includes(query)).slice(0, 64);
-        }
-        renderIconPicker(filteredIconList);
-    });
-}
-
-/**
- * Render icon picker with given icons
- */
-function renderIconPicker(icons) {
-    const picker = document.getElementById('icon-picker');
-    picker.innerHTML = icons.map(icon => `
-        <button type="button" class="icon-option ${selectedIcon === icon ? 'selected' : ''}"
-                data-icon="${icon}" onclick="selectIcon('${icon}')" title="${icon}">
-            <i data-lucide="${icon}" width="20" height="20"></i>
-        </button>
-    `).join('');
-    lucide.createIcons();
-}
-
-/**
- * Select an icon
- */
-function selectIcon(icon) {
-    selectedIcon = icon;
-    document.getElementById('icon-preview').value = icon;
-
-    // Update selected state
-    document.querySelectorAll('.icon-option').forEach(btn => {
-        btn.classList.toggle('selected', btn.dataset.icon === icon);
     });
 }
 
@@ -261,7 +175,6 @@ function filterTypes() {
  */
 function openCreateModal() {
     editingType = null;
-    selectedIcon = '';
 
     document.getElementById('modal-title').textContent = 'Add Asset Type';
     document.getElementById('submit-btn').textContent = 'Create Type';
@@ -269,12 +182,11 @@ function openCreateModal() {
 
     // Reset form
     document.getElementById('type-form').reset();
-    document.getElementById('icon-preview').value = '';
-    document.getElementById('icon-search').value = '';
 
-    // Reset icon picker to recommended icons
-    filteredIconList = [...RECOMMENDED_ICONS];
-    renderIconPicker(filteredIconList);
+    // Reset icon picker
+    if (assetTypeIconPicker) {
+        assetTypeIconPicker.setValue('');
+    }
 
     // Show modal
     document.getElementById('modal-overlay').classList.add('active');
@@ -288,7 +200,6 @@ function openEditModal(typeKey) {
     if (!type) return;
 
     editingType = typeKey;
-    selectedIcon = type.icon || '';
 
     document.getElementById('modal-title').textContent = 'Edit Asset Type';
     document.getElementById('submit-btn').textContent = 'Save Changes';
@@ -296,12 +207,11 @@ function openEditModal(typeKey) {
     document.getElementById('type-key').disabled = true; // Can't change type key
     document.getElementById('display-name').value = type.display_name;
     document.getElementById('category').value = type.category;
-    document.getElementById('icon-preview').value = type.icon || '';
-    document.getElementById('icon-search').value = '';
 
-    // Reset icon picker to recommended icons and update selection
-    filteredIconList = [...RECOMMENDED_ICONS];
-    renderIconPicker(filteredIconList);
+    // Set icon picker value
+    if (assetTypeIconPicker) {
+        assetTypeIconPicker.setValue(type.icon || '');
+    }
 
     // Show modal
     document.getElementById('modal-overlay').classList.add('active');
@@ -324,7 +234,7 @@ async function handleSubmit(event) {
     const typeKey = document.getElementById('type-key').value;
     const displayName = document.getElementById('display-name').value;
     const category = document.getElementById('category').value;
-    const icon = selectedIcon || 'file';
+    const icon = (assetTypeIconPicker ? assetTypeIconPicker.getValue() : '') || 'file';
 
     const data = {
         type_key: typeKey,

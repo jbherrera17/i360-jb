@@ -9,9 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/icon-picker.css">
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/icon-picker.js"></script>
     <style>
         :root {
             --bg-primary: #ffffff;
@@ -504,59 +506,7 @@
             color: var(--text-muted);
         }
 
-        .icon-picker-container {
-            margin-top: 8px;
-        }
-
-        .icon-search-box {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        .icon-search-box::placeholder {
-            color: var(--text-muted);
-        }
-
-        .icon-picker {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 4px;
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .icon-option {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            background: none;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s;
-            color: var(--text-primary);
-        }
-
-        .icon-option:hover {
-            background: var(--bg-hover);
-        }
-
-        .icon-option.selected {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 0 0 2px var(--primary);
-        }
+        /* Icon picker styles loaded from /css/icon-picker.css */
 
         .type-icon-display {
             display: flex;
@@ -767,13 +717,7 @@
                     </div>
                     <div class="form-group">
                         <label>Icon</label>
-                        <input type="text" id="icon-preview" readonly placeholder="Select an icon below">
-                        <div class="icon-picker-container">
-                            <input type="text" class="icon-search-box" id="icon-search" placeholder="Search icons...">
-                            <div class="icon-picker" id="icon-picker">
-                                <!-- Populated by JavaScript -->
-                            </div>
-                        </div>
+                        <div id="icon-picker-container"></div>
                     </div>
                 </div>
                 <div class="modal-footer">

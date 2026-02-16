@@ -174,6 +174,10 @@ class FormModal extends ModalBase {
                 input = this._createAvatarField(field, initialValue);
                 break;
 
+            case 'icon-picker':
+                input = this._createIconPickerField(field, initialValue);
+                break;
+
             case 'checkbox-group':
                 const checkboxGroup = document.createElement('div');
                 checkboxGroup.className = 'i360-form-checkbox-group';
@@ -493,6 +497,33 @@ class FormModal extends ModalBase {
     }
 
     /**
+     * Create icon picker field using IconPicker component
+     * @private
+     * @param {Object} field - Field definition
+     * @param {string} initialValue - Initial icon name
+     * @returns {HTMLElement}
+     */
+    _createIconPickerField(field, initialValue) {
+        const container = document.createElement('div');
+        container.className = 'i360-form-icon-picker-container';
+        container.id = `${this.id}-${field.name}`;
+
+        if (typeof IconPicker === 'undefined') {
+            container.innerHTML = '<div style="color: var(--danger); font-size: 0.8rem;">IconPicker not loaded. Include icon-picker.js</div>';
+            container._iconPicker = { getValue: () => initialValue || '' };
+            return container;
+        }
+
+        const picker = IconPicker.create(container, {
+            value: initialValue || '',
+            onSelect: () => this._clearFieldError(field.name)
+        });
+
+        container._iconPicker = picker;
+        return container;
+    }
+
+    /**
      * Escape HTML
      * @private
      */
@@ -526,6 +557,8 @@ class FormModal extends ModalBase {
             } else if (field.type === 'avatar') {
                 const hiddenInput = el._hiddenInput || el.querySelector('.i360-form-avatar-value');
                 values[field.name] = hiddenInput ? hiddenInput.value : '';
+            } else if (field.type === 'icon-picker') {
+                values[field.name] = el._iconPicker ? el._iconPicker.getValue() : '';
             } else if (field.type === 'checkbox-group') {
                 const checked = el.querySelectorAll('input:checked');
                 values[field.name] = Array.from(checked).map(cb => cb.value);

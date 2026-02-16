@@ -9,9 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/icon-picker.css">
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/icon-picker.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* Briefing Layout */
@@ -1115,8 +1117,8 @@
                         <textarea id="sectionPrompt" placeholder="Custom prompt for this section...">${section?.prompt_template || ''}</textarea>
                     </div>
                     <div class="form-group">
-                        <label>Icon (Lucide icon name)</label>
-                        <input type="text" id="sectionIcon" placeholder="e.g., trending-up" value="${section?.icon || 'file-text'}">
+                        <label>Icon</label>
+                        <div id="sectionIconPickerContainer" data-initial-icon="${section?.icon || 'file-text'}"></div>
                     </div>
                 `,
                 footer: `
@@ -1135,6 +1137,13 @@
                         const currentValue = agentSelect.value;
                         agentSelect.innerHTML = '<option value="">Select an agent...</option>' + buildAgentOptions(filtered, currentValue);
                     });
+                    // Initialize icon picker
+                    const iconContainer = document.getElementById('sectionIconPickerContainer');
+                    if (iconContainer && typeof IconPicker !== 'undefined') {
+                        window._sectionIconPicker = IconPicker.create(iconContainer, {
+                            value: iconContainer.getAttribute('data-initial-icon') || 'file-text'
+                        });
+                    }
                     lucide.createIcons();
                 }
             });
@@ -1170,7 +1179,7 @@
                 name,
                 agent_id: document.getElementById('sectionAgent').value || null,
                 prompt_template: document.getElementById('sectionPrompt').value.trim() || null,
-                icon: document.getElementById('sectionIcon').value.trim() || 'file-text'
+                icon: (window._sectionIconPicker ? window._sectionIconPicker.getValue() : '') || 'file-text'
             };
 
             try {

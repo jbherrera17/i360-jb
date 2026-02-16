@@ -328,6 +328,45 @@
             margin-top: 0;
         }
 
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .loading-card h3 {
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .loading-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
         .access-denied {
             display: flex;
             flex-direction: column;
@@ -411,6 +450,15 @@
         </main>
     </div>
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <img src="/assets/loading-spinner.svg" alt="Loading..." style="width:48px;height:48px;">
+            <h3 id="loadingTitle">Loading</h3>
+            <p id="loadingMessage">Please wait...</p>
+        </div>
+    </div>
+
     <script src="/js/modal-service-loader.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
@@ -468,6 +516,17 @@
             max_monthly_api_calls: 'API Calls/Month'
         };
 
+        // Show/hide loading overlay
+        function showLoading(title = 'Loading', message = 'Please wait...') {
+            document.getElementById('loadingTitle').textContent = title;
+            document.getElementById('loadingMessage').textContent = message;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
@@ -520,6 +579,7 @@
 
         async function loadTiers() {
             try {
+                showLoading('Loading Tiers', 'Fetching subscription tier data...');
                 const token = getAuthToken();
                 const response = await fetch('/api/platform/tiers', {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -532,6 +592,7 @@
                 originalTiers = JSON.parse(JSON.stringify(tiers));
 
                 // Load modules for each tier
+                showLoading('Loading Tiers', 'Loading module configurations...');
                 await loadTierModules();
 
                 renderTiers();
@@ -539,6 +600,8 @@
             } catch (error) {
                 console.error('Error loading tiers:', error);
                 showToast('Failed to load tiers', 'error');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -936,6 +999,7 @@
             const token = getAuthToken();
 
             try {
+                showLoading('Saving Changes', 'Updating subscription tiers...');
                 for (const tier of tiers) {
                     const response = await fetch(`/api/platform/tiers/${tier.id}`, {
                         method: 'PUT',
@@ -967,6 +1031,7 @@
                 }
 
                 // Save module addon pricing changes
+                showLoading('Saving Changes', 'Updating addon pricing...');
                 const addonModuleIds = Object.keys(addonPricingChanges);
                 for (const moduleId of addonModuleIds) {
                     const changes = addonPricingChanges[moduleId];
@@ -996,6 +1061,8 @@
             } catch (error) {
                 console.error('Error saving tiers:', error);
                 showToast(error.message || 'Failed to save tiers', 'error');
+            } finally {
+                hideLoading();
             }
         }
 

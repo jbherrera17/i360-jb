@@ -9,9 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/icon-picker.css">
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-manager.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/icon-picker.js"></script>
     <style>
         /* Parthenon Specific Styles */
         .parthenon-layout {
@@ -1331,8 +1333,8 @@
                     <textarea id="deptDescription" rows="3" placeholder="Brief description of the department's purpose..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Icon (Lucide icon name)</label>
-                    <input type="text" id="deptIcon" placeholder="e.g., megaphone, trending-up, settings" value="building-2">
+                    <label>Icon</label>
+                    <div id="deptIconPickerContainer"></div>
                 </div>
                 <div class="form-group">
                     <label>Color</label>
@@ -2082,12 +2084,18 @@ Or paste JSON:
         }
 
         // Modal functions
+        function initDeptIconPicker(iconValue) {
+            const container = document.getElementById('deptIconPickerContainer');
+            container.innerHTML = '';
+            window._deptIconPicker = IconPicker.create(container, { value: iconValue || 'building-2' });
+        }
+
         function showDeptModal() {
             editingId = null;
             document.getElementById('deptModalTitle').textContent = 'Add Department';
             document.getElementById('deptName').value = '';
             document.getElementById('deptDescription').value = '';
-            document.getElementById('deptIcon').value = 'building-2';
+            initDeptIconPicker('building-2');
             document.getElementById('deptColor').value = '#6366f1';
             if (deptModalManager) {
                 deptModalManager.open();
@@ -2112,7 +2120,7 @@ Or paste JSON:
             document.getElementById('deptModalTitle').textContent = 'Edit Department';
             document.getElementById('deptName').value = dept.name;
             document.getElementById('deptDescription').value = dept.description || '';
-            document.getElementById('deptIcon').value = dept.icon || 'building-2';
+            initDeptIconPicker(dept.icon || 'building-2');
             document.getElementById('deptColor').value = dept.color || '#6366f1';
             if (deptModalManager) {
                 deptModalManager.open();
@@ -2125,7 +2133,7 @@ Or paste JSON:
             const data = {
                 name: document.getElementById('deptName').value,
                 description: document.getElementById('deptDescription').value,
-                icon: document.getElementById('deptIcon').value,
+                icon: window._deptIconPicker ? window._deptIconPicker.getValue() : 'building-2',
                 color: document.getElementById('deptColor').value
             };
 

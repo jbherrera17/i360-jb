@@ -7,8 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/icon-picker.css">
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/icon-picker.js"></script>
     <style>
         .categories-table {
             width: 100%;
@@ -58,58 +60,7 @@
             height: 20px;
         }
 
-        .icon-preview-area {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xs);
-        }
-
-        .icon-preview-box {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-sm);
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-        }
-
-        .icon-suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin-top: var(--spacing-xs);
-        }
-
-        .icon-chip {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: var(--radius-sm);
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .icon-chip:hover {
-            border-color: var(--primary);
-            background: var(--bg-secondary);
-        }
-
-        .icon-chip.selected {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.15);
-        }
-
-        .icon-chip svg {
-            width: 16px;
-            height: 16px;
-        }
+        /* Icon picker styles loaded from /css/icon-picker.css */
 
         .category-name {
             font-weight: 600;
@@ -313,24 +264,12 @@
     <script src="/js/help-registry.js"></script>
     <script>
         // ============================================================================
-        // Common Lucide Icons for Categories
-        // ============================================================================
-        const COMMON_ICONS = [
-            'compass', 'target', 'zap', 'lightbulb', 'shield', 'brain',
-            'bar-chart-3', 'file-text', 'message-circle', 'star', 'heart',
-            'user', 'code', 'database', 'globe', 'calendar', 'clock',
-            'mail', 'search', 'bot', 'sparkles', 'megaphone', 'briefcase',
-            'cog', 'layers', 'trending-up', 'book-open', 'pen-tool',
-            'headphones', 'users', 'building-2', 'rocket', 'palette',
-            'microscope', 'graduation-cap', 'scale', 'calculator', 'wrench'
-        ];
-
-        // ============================================================================
         // State Management
         // ============================================================================
         let agentCategories = [];
         let editingCategoryId = null;
         let categoryModal = null;
+        let categoryIconPicker = null;
 
         // ============================================================================
         // Auth
@@ -476,22 +415,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="categoryIcon">Icon (Lucide)</label>
-                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
-                            <div style="flex: 1;">
-                                <input type="text" id="categoryIcon" class="form-input" placeholder="e.g., compass" value="${isEdit ? (category.icon || '') : ''}" oninput="updateIconPreview()">
-                            </div>
-                            <div class="icon-preview-box" id="iconPreviewBox" style="color: ${isEdit ? (category.color || '#6366f1') : '#6366f1'};">
-                                <i data-lucide="${isEdit && category.icon ? category.icon : 'folder'}" id="iconPreviewSvg"></i>
-                            </div>
-                        </div>
-                        <div class="icon-suggestions" id="iconSuggestions">
-                            ${COMMON_ICONS.map(ic => `
-                                <div class="icon-chip ${isEdit && category.icon === ic ? 'selected' : ''}" onclick="selectIcon('${ic}')" title="${ic}">
-                                    <i data-lucide="${ic}"></i>
-                                </div>
-                            `).join('')}
-                        </div>
+                        <label class="form-label">Icon</label>
+                        <div id="categoryIconPickerContainer" data-initial-icon="${isEdit ? (category.icon || '') : ''}"></div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -534,7 +459,7 @@
                 onOpen: () => {
                     lucide.createIcons();
                     document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
-                    updateIconPreview();
+                    initCategoryIconPicker();
                 }
             });
             categoryModal.open();
@@ -558,10 +483,17 @@
                 onOpen: () => {
                     lucide.createIcons();
                     document.getElementById('saveCategoryBtn').addEventListener('click', handleSaveCategory);
-                    updateIconPreview();
+                    initCategoryIconPicker();
                 }
             });
             categoryModal.open();
+        }
+
+        function initCategoryIconPicker() {
+            const container = document.getElementById('categoryIconPickerContainer');
+            if (!container) return;
+            const initialIcon = container.getAttribute('data-initial-icon') || '';
+            categoryIconPicker = IconPicker.create(container, { value: initialIcon });
         }
 
         function closeCategoryModal() {
@@ -579,7 +511,7 @@
             const key = document.getElementById('categoryKey').value.trim();
             const displayName = document.getElementById('categoryDisplayName').value.trim();
             const description = document.getElementById('categoryDescription').value.trim();
-            const icon = document.getElementById('categoryIcon').value.trim();
+            const icon = categoryIconPicker ? categoryIconPicker.getValue() : '';
             const color = document.getElementById('categoryColor').value;
             const sortOrder = parseInt(document.getElementById('categorySortOrder').value) || 99;
             const isActive = document.getElementById('categoryIsActive')?.checked ?? true;
@@ -631,33 +563,6 @@
             } catch (error) {
                 console.error('Error saving category:', error);
                 ModalService.error('Failed to save category');
-            }
-        }
-
-        // ============================================================================
-        // Icon Preview & Selection
-        // ============================================================================
-        function updateIconPreview() {
-            const iconName = document.getElementById('categoryIcon')?.value.trim() || 'folder';
-            const color = document.getElementById('categoryColor')?.value || '#6366f1';
-            const previewBox = document.getElementById('iconPreviewBox');
-            if (!previewBox) return;
-
-            previewBox.style.color = color;
-            previewBox.innerHTML = `<i data-lucide="${iconName}"></i>`;
-            lucide.createIcons({ nodes: [previewBox] });
-
-            // Update chip selection
-            document.querySelectorAll('.icon-chip').forEach(chip => {
-                chip.classList.toggle('selected', chip.getAttribute('title') === iconName);
-            });
-        }
-
-        function selectIcon(iconName) {
-            const input = document.getElementById('categoryIcon');
-            if (input) {
-                input.value = iconName;
-                updateIconPreview();
             }
         }
 

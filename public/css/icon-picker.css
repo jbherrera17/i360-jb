@@ -1,0 +1,181 @@
+/* Icon Picker Component Styles */
+/* Reusable icon selection grid with search and categories */
+
+.icon-picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Selected icon preview row */
+.icon-picker-selected {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    min-height: 40px;
+}
+
+.icon-picker-selected-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+}
+
+.icon-picker-selected-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.icon-picker-selected-name {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-family: 'Fira Code', monospace;
+}
+
+.icon-picker-selected-placeholder {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Search input */
+.icon-picker-search {
+    width: 100%;
+    padding: 0.5rem 0.75rem 0.5rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.icon-picker-search:focus {
+    border-color: var(--primary);
+}
+
+.icon-picker-search-wrapper {
+    position: relative;
+}
+
+.icon-picker-search-icon {
+    position: absolute;
+    left: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* Scrollable grid area */
+.icon-picker-grid-area {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    padding: 0.5rem;
+}
+
+/* Category label */
+.icon-picker-category {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 0.375rem 0.25rem 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.icon-picker-category:first-child {
+    margin-top: 0;
+}
+
+/* Icon grid */
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 4px;
+}
+
+/* Individual icon button */
+.icon-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+    color: var(--text-secondary);
+}
+
+.icon-picker-item:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+    border-color: var(--border);
+}
+
+.icon-picker-item.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.icon-picker-item svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Search results info */
+.icon-picker-info {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 0.25rem;
+}
+
+/* Empty state */
+.icon-picker-empty {
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Scrollbar styling */
+.icon-picker-grid-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.icon-picker-grid-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.icon-picker-grid-area::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.icon-picker-grid-area::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Inside ModalService forms - override max-height for better fit */
+.i360-form-modal .icon-picker-grid-area {
+    max-height: 180px;
+}
