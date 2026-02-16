@@ -448,6 +448,42 @@ async function toggleSourceSelection(sourceId, isSelected) {
 }
 
 /**
+ * Update source fields (title, content)
+ * @param {string} sourceId - Source ID
+ * @param {object} updates - Fields to update
+ * @param {string} [updates.title] - New title
+ * @param {string} [updates.content] - New content
+ * @returns {Promise<object>} - Updated source
+ */
+async function updateSource(sourceId, updates) {
+    const allowedFields = {};
+    if (updates.title !== undefined) allowedFields.title = updates.title;
+    if (updates.content !== undefined) allowedFields.content = updates.content;
+
+    if (Object.keys(allowedFields).length === 0) {
+        throw new Error('No valid fields to update');
+    }
+
+    const { data, error } = await supabase
+        .from('studio_sources')
+        .update(allowedFields)
+        .eq('id', sourceId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Failed to update source: ${error.message}`);
+    }
+
+    // Re-chunk if content changed
+    if (updates.content !== undefined) {
+        await createChunksForSource(sourceId, updates.content);
+    }
+
+    return data;
+}
+
+/**
  * Delete a source
  * @param {string} sourceId - Source ID
  * @returns {Promise<void>}
@@ -1086,6 +1122,7 @@ module.exports = {
     addSource,
     getSource,
     toggleSourceSelection,
+    updateSource,
     deleteSource,
     updateSourceContent,
     createChunksForSource,

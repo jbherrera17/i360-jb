@@ -205,7 +205,9 @@ module.exports = function(supabase) {
                         { id: 'starter', name: 'Starter', description: 'For individuals and small teams', max_members: 3, max_clients: 0, max_agents: 5 },
                         { id: 'business', name: 'Business', description: 'For growing teams', max_members: 10, max_clients: 0, max_agents: 25 },
                         { id: 'enterprise', name: 'Enterprise', description: 'For large organizations', max_members: 100, max_clients: 0, max_agents: 100 },
-                        { id: 'agency', name: 'Agency', description: 'For agencies with clients', max_members: 50, max_clients: 100, max_agents: 200 }
+                        { id: 'agency_starter', name: 'Agency Starter', description: 'For small consultancies', max_members: 5, max_clients: 5, max_agents: 25 },
+                        { id: 'agency_professional', name: 'Agency Professional', description: 'For growing agencies', max_members: 15, max_clients: 25, max_agents: 100 },
+                        { id: 'agency_enterprise', name: 'Agency Enterprise', description: 'For large consultancies', max_members: 50, max_clients: 100, max_agents: 200 }
                     ],
                     note: 'Using default tiers. Deploy Phase 44 schema to enable tier management.'
                 });
@@ -1130,7 +1132,7 @@ module.exports = function(supabase) {
             }
 
             // Valid tiers (fallback if table doesn't exist)
-            const validTiers = ['starter', 'business', 'enterprise', 'agency', 'agency_starter', 'agency_professional', 'agency_enterprise', 'free', 'pro'];
+            const validTiers = ['starter', 'business', 'enterprise', 'agency_starter', 'agency_professional', 'agency_enterprise', 'free', 'pro'];
 
             // Try to validate tier from database
             const { data: tierData, error: tierError } = await supabase

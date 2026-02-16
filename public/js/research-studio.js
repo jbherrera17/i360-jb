@@ -13,6 +13,7 @@ let currentStudio = null;
 let currentConversationId = null;
 let sources = [];
 let outputs = [];
+const outputsMap = {};
 let isStreaming = false;
 let loadingMessageController = null;
 
@@ -1595,8 +1596,10 @@ function renderOutputs() {
         return;
     }
 
-    container.innerHTML = outputs.map(output => `
-        <div class="output-item" onclick="showOutputPreview(${JSON.stringify(output).replace(/"/g, '&quot;')})">
+    container.innerHTML = outputs.map(output => {
+        outputsMap[output.id] = output;
+        return `
+        <div class="output-item" onclick="showOutputPreview('${output.id}')">
             <div class="output-item-icon">
                 <i data-lucide="${getOutputIcon(output.output_type)}"></i>
             </div>
@@ -1605,7 +1608,8 @@ function renderOutputs() {
                 <div class="output-item-meta">${new Date(output.created_at).toLocaleDateString()}</div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     lucide.createIcons();
 }
@@ -1632,13 +1636,20 @@ function getOutputIcon(type) {
 // State for interactive outputs
 let currentQuiz = null;
 let quizAnswers = {};
+let currentFlashcardOutput = null;
 let currentFlashcardIndex = 0;
 let flashcardFlipped = false;
 
 /**
  * Show output preview modal
  */
-function showOutputPreview(output) {
+function showOutputPreview(outputOrId) {
+    const output = typeof outputOrId === 'string' ? outputsMap[outputOrId] : outputOrId;
+    if (!output) return;
+
+    // Store in map for future lookups
+    if (output.id) outputsMap[output.id] = output;
+
     const titleEl = document.getElementById('outputPreviewTitle');
     const contentEl = document.getElementById('outputPreviewContent');
 
@@ -1702,6 +1713,7 @@ function showOutputPreview(output) {
         quizAnswers = {};
     }
     if (output.output_type === 'flashcards') {
+        currentFlashcardOutput = output;
         currentFlashcardIndex = 0;
         flashcardFlipped = false;
     }
@@ -1879,7 +1891,7 @@ function prevFlashcard() {
  * Navigate to next flashcard
  */
 function nextFlashcard() {
-    const cards = currentQuiz?.content?.cards || [];
+    const cards = currentFlashcardOutput?.content?.cards || [];
     if (currentFlashcardIndex < cards.length - 1) {
         currentFlashcardIndex++;
         updateFlashcardDisplay();
@@ -1898,10 +1910,27 @@ function flipFlashcard() {
 }
 
 /**
+ * Shuffle flashcards using Fisher-Yates algorithm
+ */
+function shuffleFlashcards() {
+    const cards = currentFlashcardOutput?.content?.cards;
+    if (!cards || cards.length <= 1) return;
+
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+
+    currentFlashcardIndex = 0;
+    flashcardFlipped = false;
+    updateFlashcardDisplay();
+}
+
+/**
  * Update flashcard display after navigation
  */
 function updateFlashcardDisplay() {
-    const cards = currentQuiz?.content?.cards || [];
+    const cards = currentFlashcardOutput?.content?.cards || [];
     const card = cards[currentFlashcardIndex];
     if (!card) return;
 

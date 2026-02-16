@@ -1392,9 +1392,9 @@
                     dangerZone.style.display = 'none';
                 }
 
-                // Show clients section only for agency tier
+                // Show clients section for agency tiers
                 const clientsSection = document.getElementById('clients-section');
-                if (tier === 'agency') {
+                if (tier && tier.startsWith('agency')) {
                     clientsSection.style.display = 'block';
                 } else {
                     clientsSection.style.display = 'none';
@@ -1418,7 +1418,7 @@
                 await loadStats(orgId);
                 await loadSetupProgress(orgId);
                 await loadOrgMembers(orgId);
-                if (tier === 'agency') {
+                if (tier && tier.startsWith('agency')) {
                     await loadOrgClients(orgId);
                 }
 

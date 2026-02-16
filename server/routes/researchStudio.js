@@ -317,7 +317,7 @@ module.exports = function(supabase) {
     router.patch('/:id/sources/:sourceId', async (req, res) => {
         try {
             const { sourceId } = req.params;
-            const { is_selected, title } = req.body;
+            const { is_selected, title, content } = req.body;
 
             let source;
 
@@ -325,7 +325,9 @@ module.exports = function(supabase) {
                 source = await studioService.toggleSourceSelection(sourceId, is_selected);
             }
 
-            // TODO: Add title update if needed
+            if (title !== undefined || content !== undefined) {
+                source = await studioService.updateSource(sourceId, { title, content });
+            }
 
             res.json({
                 success: true,
@@ -873,7 +875,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
     router.post('/:id/outputs/:type', async (req, res) => {
         try {
             const { id: studioId, type: outputType } = req.params;
-            const { title, options = {} } = req.body;
+            const { title, model, options = {} } = req.body;
 
             const validTypes = Object.keys(outputService.OUTPUT_CONFIGS);
 
@@ -899,7 +901,7 @@ Return format: ["Question 1?", "Question 2?", ...]`
                 studioId,
                 outputType,
                 context,
-                { title, ...options }
+                { title, model, ...options }
             );
 
             res.status(201).json({

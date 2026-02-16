@@ -24,7 +24,7 @@ const NAV_GROUP_LABELS = {
 };
 
 // Tier ordering for comparison
-const TIER_ORDER = ['starter', 'business', 'enterprise', 'agency'];
+const TIER_ORDER = ['starter', 'business', 'enterprise', 'agency_starter', 'agency_professional', 'agency_enterprise'];
 
 function resolveNavGroup(dbNavGroup) {
     return NAV_GROUP_ALIASES[dbNavGroup] || dbNavGroup || 'other';

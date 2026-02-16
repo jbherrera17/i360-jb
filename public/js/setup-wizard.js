@@ -139,14 +139,14 @@ const SetupWizard = {
         { id: 'workflows', name: 'Workflows', icon: 'git-branch', category: 'Advanced', min_tier: 'business', default: true },
         { id: 'research_studio', name: 'Research Studio', icon: 'book-open-text', category: 'Advanced', min_tier: 'business', default: true },
         { id: 'thought_leadership', name: 'Thought Leadership', icon: 'lightbulb', category: 'Advanced', min_tier: 'business', default: false },
-        { id: 'agency_dashboard', name: 'Agency Dashboard', icon: 'gauge', category: 'Agency', min_tier: 'agency', default: true },
-        { id: 'agency_customization', name: 'White-Label', icon: 'palette', category: 'Agency', min_tier: 'agency', default: true },
-        { id: 'client_portal_admin', name: 'Portal Users', icon: 'user-check', category: 'Agency', min_tier: 'agency', default: true },
-        { id: 'client_comparison', name: 'Client Comparison', icon: 'bar-chart-3', category: 'Agency', min_tier: 'agency', default: false }
+        { id: 'agency_dashboard', name: 'Agency Dashboard', icon: 'gauge', category: 'Agency', min_tier: 'agency_starter', default: true },
+        { id: 'agency_customization', name: 'White-Label', icon: 'palette', category: 'Agency', min_tier: 'agency_starter', default: true },
+        { id: 'client_portal_admin', name: 'Portal Users', icon: 'user-check', category: 'Agency', min_tier: 'agency_starter', default: true },
+        { id: 'client_comparison', name: 'Client Comparison', icon: 'bar-chart-3', category: 'Agency', min_tier: 'agency_starter', default: false }
     ],
 
     // Tier ordering for comparison
-    tierOrder: { starter: 1, business: 2, enterprise: 3, agency: 4 },
+    tierOrder: { starter: 1, business: 2, enterprise: 3, agency_starter: 4, agency_professional: 5, agency_enterprise: 6 },
 
     // ========================================================================
     // Wizard Steps
@@ -279,7 +279,9 @@ const SetupWizard = {
                 { id: 'starter', name: 'Starter', max_members: 3, max_agents: 5 },
                 { id: 'business', name: 'Business', max_members: 10, max_agents: 25 },
                 { id: 'enterprise', name: 'Enterprise', max_members: 100, max_agents: 100 },
-                { id: 'agency', name: 'Agency', max_members: 50, max_clients: 100, max_agents: 200 }
+                { id: 'agency_starter', name: 'Agency Starter', max_members: 5, max_clients: 5, max_agents: 25 },
+                { id: 'agency_professional', name: 'Agency Professional', max_members: 15, max_clients: 25, max_agents: 100 },
+                { id: 'agency_enterprise', name: 'Agency Enterprise', max_members: 50, max_clients: 100, max_agents: 200 }
             ];
         }
     },
