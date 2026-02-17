@@ -789,6 +789,18 @@
                 if (result.success) {
                     currentProfile = result.data;
                     populateForm(currentProfile);
+
+                    // Sync platform admin status to localStorage so navigation reflects it
+                    const storedUser = JSON.parse(localStorage.getItem('insight360_user') || '{}');
+                    if (currentProfile.is_platform_admin !== storedUser.is_platform_admin ||
+                        currentProfile.platform_admin_role !== storedUser.platform_admin_role) {
+                        storedUser.is_platform_admin = currentProfile.is_platform_admin || false;
+                        storedUser.platform_admin_role = currentProfile.platform_admin_role || null;
+                        localStorage.setItem('insight360_user', JSON.stringify(storedUser));
+                        // Refresh navigation to show updated role
+                        if (typeof initNavigation === 'function') initNavigation();
+                    }
+
                     // Load platform connections after profile is available
                     loadPlatformConnections();
                 }
@@ -841,11 +853,23 @@
             document.getElementById('email').value = profile.email || '';
             document.getElementById('department').value = profile.department_id || '';
 
-            // Update role badge
+            // Update role badge - platform admin overrides system role
             const roleLabel = document.getElementById('roleLabel');
             const roleBadge = document.getElementById('roleBadge');
-            roleLabel.textContent = (profile.role || 'user').charAt(0).toUpperCase() + (profile.role || 'user').slice(1);
-            roleBadge.className = `role-badge ${profile.role || 'user'}`;
+            if (profile.is_platform_admin) {
+                const roleMap = { super_admin: 'Super Administrator', admin: 'Platform Administrator', support: 'Platform Support' };
+                roleLabel.textContent = roleMap[profile.platform_admin_role] || 'Platform Administrator';
+                roleBadge.className = 'role-badge platform-admin';
+                // Update icon to crown for platform admins
+                const roleIcon = roleBadge.querySelector('[data-lucide]');
+                if (roleIcon) {
+                    roleIcon.setAttribute('data-lucide', 'crown');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            } else {
+                roleLabel.textContent = (profile.role || 'user').charAt(0).toUpperCase() + (profile.role || 'user').slice(1);
+                roleBadge.className = `role-badge ${profile.role || 'user'}`;
+            }
 
             // Update organization
             const orgNameEl = document.getElementById('orgName');
@@ -855,16 +879,9 @@
                 orgNameEl.querySelector('span').textContent = 'No organization';
             }
 
-            // Update platform admin status
+            // Hide separate platform admin group - role badge already shows platform role
             const platformAdminGroup = document.getElementById('platformAdminGroup');
-            if (profile.is_platform_admin) {
-                platformAdminGroup.style.display = '';
-                const label = document.getElementById('platformAdminLabel');
-                const roleMap = { super_admin: 'Super Administrator', admin: 'Platform Administrator', support: 'Platform Support' };
-                label.textContent = roleMap[profile.platform_admin_role] || 'Platform Administrator';
-            } else {
-                platformAdminGroup.style.display = 'none';
-            }
+            platformAdminGroup.style.display = 'none';
 
             // Update avatar
             updateAvatarDisplay(profile.avatar_url);
