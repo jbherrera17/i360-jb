@@ -40,6 +40,7 @@ class TransformAssetModal extends ModalBase {
 
         // Initial state
         this._sourceContent = options.sourceContent || '';
+        this._sourceName = options.sourceName || '';
         this._preselectedType = options.targetType || null;
         this._currentStep = 1;
         this._selectedType = this._preselectedType || 'auto';
@@ -381,7 +382,7 @@ class TransformAssetModal extends ModalBase {
     _renderSkillForm(data) {
         this.elements.formContent.innerHTML = `
             <div class="transform-form-grid">
-                ${this._field('Name', 'skill_name', data.name || data.display_name || '', 'text')}
+                ${this._field('Name', 'skill_name', data.name || data.display_name || this._sourceName || '', 'text')}
                 ${this._field('Display Name', 'skill_display_name', data.display_name || '', 'text')}
                 ${this._field('Description', 'skill_description', data.description || '', 'textarea-sm')}
                 ${this._field('Instructions', 'skill_instructions', data.instructions || '', 'textarea')}
@@ -398,7 +399,7 @@ class TransformAssetModal extends ModalBase {
         const tone = data.tone || {};
         this.elements.formContent.innerHTML = `
             <div class="transform-form-grid">
-                ${this._field('Name', 'voice_name', '', 'text', 'Enter a name for this Voice DNA')}
+                ${this._field('Name', 'voice_name', this._sourceName || '', 'text', 'Enter a name for this Voice DNA')}
                 <div class="form-section-label">Core Identity</div>
                 ${this._field('Who You Are', 'voice_who', ci.who_you_are || '', 'text')}
                 ${this._field('What You Do', 'voice_what', ci.what_you_do || '', 'text')}
@@ -420,7 +421,7 @@ class TransformAssetModal extends ModalBase {
         const psycho = data.psychographics || {};
         this.elements.formContent.innerHTML = `
             <div class="transform-form-grid">
-                ${this._field('Name', 'icp_name', po.name || '', 'text', 'Enter a name for this ICP')}
+                ${this._field('Name', 'icp_name', po.name || this._sourceName || '', 'text', 'Enter a name for this ICP')}
                 ${this._field('One-Line Description', 'icp_description', po.one_line_description || '', 'text')}
                 ${this._field('Why They Follow You', 'icp_why', po.why_they_follow_you || '', 'textarea-sm')}
                 <div class="form-section-label">Demographics</div>
@@ -454,7 +455,7 @@ class TransformAssetModal extends ModalBase {
         this.elements.formContent.innerHTML = `
             <div class="transform-form-grid">
                 <div class="form-section-label">Identity</div>
-                ${this._field('Agent Name', 'agent_name', data.name || '', 'text')}
+                ${this._field('Agent Name', 'agent_name', data.name || this._sourceName || '', 'text')}
                 ${this._field('Description', 'agent_description', data.description || '', 'textarea-sm')}
                 ${this._field('Introduction', 'agent_introduction', data.introduction || '', 'textarea-sm', 'Greeting message when users start a conversation')}
                 ${this._field('Icon (emoji)', 'agent_icon', data.icon || '🤖', 'text')}
@@ -493,7 +494,7 @@ class TransformAssetModal extends ModalBase {
     _renderGenericForm(data, targetType) {
         this.elements.formContent.innerHTML = `
             <div class="transform-form-grid">
-                ${this._field('Name', 'generic_name', '', 'text', 'Enter a name for this asset')}
+                ${this._field('Name', 'generic_name', this._sourceName || '', 'text', 'Enter a name for this asset')}
                 <div class="form-section-label">Transformed Data</div>
                 <div class="transform-json-editable">
                     <textarea class="transform-textarea" id="${this.id}-generic-json"

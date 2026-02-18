@@ -58,15 +58,16 @@ window.ChatAssetCreator = (function() {
     async function createFromArtifact(targetType) {
         await _ensureModalService();
 
-        // Use the currently stored artifact content
+        // Use the currently stored artifact content and name
         const content = window.currentArtifactContent || '';
+        const name = window.currentArtifactName || '';
 
         // Close the artifact modal
         if (typeof closeArtifactModal === 'function') {
             closeArtifactModal();
         }
 
-        _openTransformModal(content, targetType);
+        _openTransformModal(content, targetType, name);
     }
 
     // =========================================================================
@@ -98,7 +99,7 @@ window.ChatAssetCreator = (function() {
     /**
      * Open the TransformAssetModal
      */
-    function _openTransformModal(sourceContent, targetType) {
+    function _openTransformModal(sourceContent, targetType, sourceName) {
         if (typeof TransformAssetModal === 'undefined') {
             console.error('TransformAssetModal not loaded');
             if (typeof showToast === 'function') {
@@ -110,6 +111,7 @@ window.ChatAssetCreator = (function() {
         const modal = new TransformAssetModal({
             sourceContent: sourceContent,
             targetType: targetType,
+            sourceName: sourceName || '',
             onSave: (result) => {
                 _handleSaveSuccess(result);
             },

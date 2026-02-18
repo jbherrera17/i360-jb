@@ -2126,6 +2126,10 @@ const artifactModalHtml = `
                 <i data-lucide="x"></i>
             </button>
         </div>
+        <div class="artifact-name-section">
+            <label class="artifact-name-label" for="artifactNameInput">Artifact Name</label>
+            <input type="text" id="artifactNameInput" class="artifact-name-input" placeholder="Name this artifact...">
+        </div>
         <div class="artifact-options">
             <div class="artifact-option" onclick="exportAsDocument('markdown')">
                 <div class="artifact-option-icon">
@@ -2243,6 +2247,7 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentArtifactContent = '';
 let currentArtifactHtmlContent = ''; // HTML content for PDF export
 let currentArtifactMessageEl = null;
+let currentArtifactName = '';
 
 /**
  * Open artifact modal for a message
@@ -2258,11 +2263,44 @@ function openArtifactModal(button) {
     currentArtifactHtmlContent = contentDiv.innerHTML; // Store HTML for PDF export
     currentArtifactMessageEl = messageDiv;
 
+    // Auto-generate a default name from the first heading or first meaningful line
+    currentArtifactName = generateArtifactName(currentArtifactContent);
+
     const modal = document.getElementById('artifactModal');
     if (modal) {
+        const nameInput = document.getElementById('artifactNameInput');
+        if (nameInput) {
+            nameInput.value = currentArtifactName;
+            // Sync name on user edit
+            nameInput.oninput = () => { currentArtifactName = nameInput.value.trim(); };
+        }
         modal.classList.add('active');
         lucide.createIcons();
     }
+}
+
+/**
+ * Generate a default artifact name from message content
+ */
+function generateArtifactName(content) {
+    if (!content) return '';
+
+    // Try to find the first markdown heading
+    const headingMatch = content.match(/^#{1,3}\s+(.+)$/m);
+    if (headingMatch) {
+        return headingMatch[1].trim().substring(0, 80);
+    }
+
+    // Fall back to first non-empty line, cleaned up
+    const lines = content.split('\n').filter(l => l.trim());
+    if (lines.length > 0) {
+        // Remove markdown formatting
+        let name = lines[0].replace(/^[#*_>\-`]+\s*/, '').trim();
+        if (name.length > 80) name = name.substring(0, 77) + '...';
+        return name;
+    }
+
+    return '';
 }
 
 /**
@@ -2276,6 +2314,7 @@ function closeArtifactModal() {
     currentArtifactContent = '';
     currentArtifactHtmlContent = '';
     currentArtifactMessageEl = null;
+    currentArtifactName = '';
 }
 
 // Close modal on outside click
@@ -2302,9 +2341,20 @@ async function exportAsDocument(format) {
         return;
     }
 
+    // Read the latest name from the input (user may have edited it)
+    const nameInput = document.getElementById('artifactNameInput');
+    if (nameInput) currentArtifactName = nameInput.value.trim();
+
     const timestamp = new Date().toISOString().slice(0, 10);
     const _exportName = (typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName().toLowerCase().replace(/\s+/g, '-') : 'higgins';
-    const filename = `${_exportName}-response-${timestamp}`;
+
+    // Use artifact name for filename if provided, otherwise fall back to default
+    let filename;
+    if (currentArtifactName) {
+        filename = currentArtifactName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+    } else {
+        filename = `${_exportName}-response-${timestamp}`;
+    }
 
     try {
         if (format === 'markdown') {
@@ -2331,7 +2381,7 @@ async function exportAsDocument(format) {
                 <html>
                 <head>
                     <meta charset="utf-8">
-                    <title>Insight 360 - AI Response</title>
+                    <title>${currentArtifactName || 'Insight 360 - AI Response'}</title>
                     <style>
                         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -2563,7 +2613,7 @@ async function exportAsDocument(format) {
                 <body>
                     <div class="document">
                         <div class="document-header">
-                            <h1>AI-Generated Response</h1>
+                            <h1>${currentArtifactName || 'AI-Generated Response'}</h1>
                             <div class="document-meta">
                                 <div class="brand">
                                     <div class="brand-icon"></div>
@@ -2592,9 +2642,9 @@ async function exportAsDocument(format) {
             // For DOCX, create a simple HTML-based download that Word can open
             const htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-                <head><meta charset='utf-8'><title>${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} Response</title></head>
+                <head><meta charset='utf-8'><title>${currentArtifactName || ((typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins') + ' Response'}</title></head>
                 <body style="font-family: Calibri, sans-serif; font-size: 11pt; line-height: 1.5;">
-                <h1>${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} Response</h1>
+                <h1>${currentArtifactName || ((typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins') + ' Response'}</h1>
                 <p><small>Generated: ${new Date().toLocaleString()}</small></p>
                 <hr>
                 ${formatContentForPrint(currentArtifactContent)}
@@ -2655,7 +2705,7 @@ async function exportAsDocument(format) {
 
             // Also add a full text sheet with the complete response
             const textWs = XLSX.utils.aoa_to_sheet([
-                [`${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} AI Response`],
+                [currentArtifactName || `${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} AI Response`],
                 [`Generated: ${new Date().toLocaleString()}`],
                 [''],
                 ...currentArtifactContent.split('\n').map(line => [line])
