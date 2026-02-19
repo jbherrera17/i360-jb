@@ -723,6 +723,22 @@
                             <!-- Guardrails loaded dynamically -->
                         </div>
                     </div>
+
+                    <!-- Response Defaults -->
+                    <div class="config-card" style="margin-top: 1.5rem;">
+                        <div class="config-card-header">
+                            <div class="config-card-title">
+                                <i data-lucide="shield-check" style="color: var(--danger, #ef4444);"></i>
+                                <h3>Enforcement Response Defaults</h3>
+                            </div>
+                            <button class="btn btn-secondary btn-sm edit-action-btn" onclick="editResponseDefaults()">
+                                <i data-lucide="edit-2"></i> Edit
+                            </button>
+                        </div>
+                        <div id="response-defaults-content">
+                            <!-- Response defaults loaded dynamically -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Voice Tab -->
@@ -923,6 +939,7 @@
             renderValues();
             renderBrightLines();
             renderGuardrails();
+            renderResponseDefaults();
             renderVoice();
             renderDomain();
             loadVersionHistory();
@@ -1260,6 +1277,10 @@
                         </div>
                         <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${escapeHtml(bl.description || '')}</p>
                         ${bl.test_question ? `<p style="margin: 0.5rem 0 0 0; font-style: italic; font-size: 0.85rem; color: var(--text-muted);">Test: "${escapeHtml(bl.test_question)}"</p>` : ''}
+                        <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
+                            <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: ${bl.response_severity === 'warn' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'}; color: ${bl.response_severity === 'warn' ? '#f59e0b' : '#ef4444'};">${bl.response_severity === 'warn' ? 'Warn' : 'Block'}</span>
+                            ${bl.response_template ? '<span style="font-size: 0.75rem; color: var(--text-muted);">Custom response</span>' : ''}
+                        </div>
                     </div>
                 `).join('') : '<div class="empty-state" style="padding: 1.5rem;"><p>No organization bright lines defined. Click "Add Bright Line" to create one.</p></div>'}
             `;
@@ -1287,7 +1308,12 @@
                 fields: [
                     { name: 'name', label: 'Bright Line Name', type: 'text', required: true, value: line.name || '' },
                     { name: 'description', label: 'Description', type: 'textarea', required: true, value: line.description || '' },
-                    { name: 'test_question', label: 'Test Question (how to check compliance)', type: 'textarea', value: line.test_question || '', placeholder: 'e.g. Would this action compromise our commitment to transparency?' }
+                    { name: 'test_question', label: 'Test Question (how to check compliance)', type: 'textarea', value: line.test_question || '', placeholder: 'e.g. Would this action compromise our commitment to transparency?' },
+                    { name: 'response_severity', label: 'Enforcement Action', type: 'select', value: line.response_severity || 'block', options: [
+                        { value: 'block', label: 'Block — Refuse the request entirely' },
+                        { value: 'warn', label: 'Warn — Allow but include warning' }
+                    ]},
+                    { name: 'response_template', label: 'Custom Response (optional)', type: 'textarea', value: line.response_template || '', placeholder: 'Leave blank to use the organization default response. Enter a custom message to display when this specific bright line is triggered.' }
                 ],
                 submitText: isNew ? 'Add Bright Line' : 'Save Changes'
             });
@@ -1301,6 +1327,8 @@
                     name: result.name.trim(),
                     description: result.description.trim(),
                     test_question: result.test_question ? result.test_question.trim() : '',
+                    response_severity: result.response_severity || 'block',
+                    response_template: result.response_template ? result.response_template.trim() : '',
                     level: 'organization'
                 };
 
@@ -1400,6 +1428,58 @@
                     emotional: parseLines(result.emotional)
                 };
                 await saveSection({ guardrails: newGuardrails }, 'Updated guardrails');
+            }
+        }
+
+        // ── Response Defaults ──────────────────────────────────
+        function renderResponseDefaults() {
+            const container = document.getElementById('response-defaults-content');
+            if (!container) return;
+
+            const defaults = currentConfig.response_defaults || {};
+            const entries = [
+                { key: 'bright_line_blocked', label: 'Bright Line Blocked', icon: 'shield-x', desc: 'Shown when a message violates a bright line (block severity)' },
+                { key: 'guardrail_warning', label: 'Guardrail Warning', icon: 'alert-triangle', desc: 'Shown when a guardrail is triggered (warn severity)' },
+                { key: 'escalation_notice', label: 'Escalation Notice', icon: 'arrow-up-circle', desc: 'Shown when a request is escalated for human review' }
+            ];
+
+            container.innerHTML = entries.map(e => `
+                <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <i data-lucide="${e.icon}" style="width:14px;height:14px;color:var(--text-muted);"></i>
+                        <strong style="font-size: 0.85rem;">${e.label}</strong>
+                    </div>
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                        ${defaults[e.key] ? escapeHtml(defaults[e.key]) : '<em style="color: var(--text-muted);">Using platform default</em>'}
+                    </p>
+                </div>
+            `).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function editResponseDefaults() {
+            const defaults = currentConfig.response_defaults || {};
+
+            const result = await ModalService.form({
+                title: 'Edit Enforcement Response Defaults',
+                resizable: true,
+                fields: [
+                    { name: 'bright_line_blocked', label: 'Bright Line Blocked Response', type: 'textarea', value: defaults.bright_line_blocked || '', placeholder: 'Message shown when a request is blocked by a bright line violation. Leave blank to use platform default.' },
+                    { name: 'guardrail_warning', label: 'Guardrail Warning Response', type: 'textarea', value: defaults.guardrail_warning || '', placeholder: 'Warning message appended when guardrails are triggered. Leave blank to use platform default.' },
+                    { name: 'escalation_notice', label: 'Escalation Notice', type: 'textarea', value: defaults.escalation_notice || '', placeholder: 'Message shown when a request is escalated for human review. Leave blank to use platform default.' }
+                ],
+                submitText: 'Save Defaults'
+            });
+
+            if (result) {
+                const newDefaults = {};
+                if (result.bright_line_blocked?.trim()) newDefaults.bright_line_blocked = result.bright_line_blocked.trim();
+                if (result.guardrail_warning?.trim()) newDefaults.guardrail_warning = result.guardrail_warning.trim();
+                if (result.escalation_notice?.trim()) newDefaults.escalation_notice = result.escalation_notice.trim();
+                // Preserve custom_blocked_patterns if they exist
+                if (defaults.custom_blocked_patterns) newDefaults.custom_blocked_patterns = defaults.custom_blocked_patterns;
+                await saveSection({ response_defaults: newDefaults }, 'Updated enforcement response defaults');
             }
         }
 

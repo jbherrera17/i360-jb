@@ -1400,6 +1400,53 @@ select {
     height: 16px;
 }
 
+/* Guardrail Block Styling */
+.guardrail-blocked {
+    border-left: 4px solid var(--danger, #ef4444);
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin: var(--spacing-sm) 0;
+}
+
+.guardrail-blocked.injection {
+    border-left-color: var(--warning, #f59e0b);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.guardrail-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--danger, #ef4444);
+}
+
+.guardrail-blocked.injection .guardrail-header {
+    color: var(--warning, #f59e0b);
+}
+
+.guardrail-header i,
+.guardrail-header svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.guardrail-label {
+    white-space: nowrap;
+}
+
+.guardrail-message {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
 /* Chat Input */
 .chat-input-container {
     padding: var(--spacing-lg) var(--spacing-xl);

@@ -100,3 +100,4 @@ secrets/
 *-secret.*
 credentials.json
 service-account.json
+.vercel

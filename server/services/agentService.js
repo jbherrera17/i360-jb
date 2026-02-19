@@ -13,6 +13,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { assembleContext, estimateTokens } = require('./contextInjection');
 const mindstudioService = require('./mindstudioService');
 const gemini = require('./gemini');
+const guardrailEnforcement = require('./guardrailEnforcementService');
 
 // Initialize clients
 const supabase = createClient(
@@ -620,13 +621,58 @@ async function executeAgent(agentId, options = {}) {
             throw new Error('Agent is not active');
         }
 
+        // ── Guardrail Enforcement: Pre-screen ──
+        const screenResult = await guardrailEnforcement.screenMessage(userMessage, agent.org_id, {
+            agentId,
+            userId
+        });
+
+        if (screenResult.blocked) {
+            // Return standard response immediately — no LLM call
+            const executionId = await logExecution(agentId, userId, {
+                userMessage,
+                conversationHistory,
+                temperature: agent.temperature
+            }, {
+                content: screenResult.responseMessage,
+                model: agent.llm_model,
+                provider: 'guardrail',
+                usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                duration_ms: 0
+            });
+
+            return {
+                execution_id: executionId,
+                response: screenResult.responseMessage,
+                model: agent.llm_model,
+                provider: 'guardrail',
+                context_used: [],
+                usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                duration_ms: 0,
+                guardrail: {
+                    blocked: true,
+                    category: screenResult.category,
+                    severity: screenResult.severity,
+                    brightLine: screenResult.brightLine
+                }
+            };
+        }
+
+        // ── Guardrail Enforcement: Build soul context ──
+        let soulContext = null;
+        try {
+            soulContext = await guardrailEnforcement.buildSoulContextBlock(agent.org_id, userMessage);
+        } catch (e) {
+            console.warn('Failed to build soul context for agent:', e.message);
+        }
+
         // Assemble context
         const contextResult = await assembleContext(agentId, {
             userQuery: userMessage,
             includeOnDemand,
             returnDetails: true
         }, supabase);
-        
+
         // Execute based on agent type
         let result;
 
@@ -641,8 +687,11 @@ async function executeAgent(agentId, options = {}) {
             );
         } else {
             // Native LLM execution (custom or llm type)
-            // Build system prompt with context
-            const systemPrompt = buildSystemPrompt(agent, contextResult.context);
+            // Build system prompt with context + soul context
+            let systemPrompt = buildSystemPrompt(agent, contextResult.context);
+            if (soulContext) {
+                systemPrompt = soulContext + '\n\n' + systemPrompt;
+            }
 
             // Build messages
             const messages = buildMessages(userMessage, conversationHistory);
@@ -664,7 +713,7 @@ async function executeAgent(agentId, options = {}) {
                     throw new Error(`Unsupported provider: ${agent.llm_provider}`);
             }
         }
-        
+
         // Log execution
         const executionId = await logExecution(agentId, userId, {
             userMessage,
@@ -672,7 +721,7 @@ async function executeAgent(agentId, options = {}) {
             contextDetails: contextResult.assets,
             temperature: agent.temperature
         }, result);
-        
+
         return {
             execution_id: executionId,
             response: result.content,
@@ -682,16 +731,16 @@ async function executeAgent(agentId, options = {}) {
             usage: result.usage,
             duration_ms: result.duration_ms
         };
-        
+
     } catch (error) {
         console.error('Error executing agent:', error);
-        
+
         // Log failed execution
         await logExecution(agentId, userId, {
             userMessage,
             conversationHistory
         }, { error });
-        
+
         throw error;
     }
 }
@@ -720,6 +769,66 @@ async function streamAgent(agentId, options = {}) {
 
         if (!agent.is_active) {
             throw new Error('Agent is not active');
+        }
+
+        // ── Guardrail Enforcement: Pre-screen ──
+        const screenResult = await guardrailEnforcement.screenMessage(userMessage, agent.org_id, {
+            agentId,
+            userId,
+            conversationId: sessionId
+        });
+
+        if (screenResult.blocked) {
+            // Emit guardrail block event via onGuardrailBlocked or onToken fallback
+            if (options.onGuardrailBlocked) {
+                options.onGuardrailBlocked({
+                    category: screenResult.category,
+                    brightLine: screenResult.brightLine,
+                    message: screenResult.responseMessage,
+                    severity: screenResult.severity
+                });
+            } else if (onToken) {
+                // Fallback: emit the blocked message as content
+                onToken(screenResult.responseMessage);
+            }
+
+            // Log as execution
+            const executionId = await logExecution(agentId, userId, {
+                userMessage,
+                conversationHistory,
+                temperature: agent.temperature,
+                sessionId
+            }, {
+                content: screenResult.responseMessage,
+                model: agent.llm_model,
+                provider: 'guardrail',
+                usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                duration_ms: 0
+            });
+
+            if (onComplete) {
+                onComplete({
+                    execution_id: executionId,
+                    context_used: [],
+                    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                    duration_ms: 0,
+                    guardrail: {
+                        blocked: true,
+                        category: screenResult.category,
+                        severity: screenResult.severity,
+                        brightLine: screenResult.brightLine
+                    }
+                });
+            }
+            return;
+        }
+
+        // ── Guardrail Enforcement: Build soul context ──
+        let soulContext = null;
+        try {
+            soulContext = await guardrailEnforcement.buildSoulContextBlock(agent.org_id, userMessage);
+        } catch (e) {
+            console.warn('Failed to build soul context for agent stream:', e.message);
         }
 
         // Determine which model to use (override or agent default)
@@ -782,8 +891,11 @@ async function streamAgent(agentId, options = {}) {
             };
         } else {
             // Native LLM execution (custom or llm type)
-            // Build system prompt with context
-            const systemPrompt = buildSystemPrompt(agent, contextResult.context);
+            // Build system prompt with context + soul context
+            let systemPrompt = buildSystemPrompt(agent, contextResult.context);
+            if (soulContext) {
+                systemPrompt = soulContext + '\n\n' + systemPrompt;
+            }
 
             // Build messages
             const messages = buildMessages(userMessage, conversationHistory);

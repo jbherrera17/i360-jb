@@ -67,6 +67,7 @@ to provide helpful, clear guidance. You know:
  * @param {object} options.voiceDNA - Voice DNA content (if loaded from DB)
  * @param {object} options.i360Knowledge - i360 knowledge content (if loaded from DB)
  * @param {string} options.userSystemPrompt - Optional user-provided system prompt to merge
+ * @param {string} options.soulContext - Soul context block (values, bright lines, guardrails)
  * @returns {string} - Complete system prompt
  */
 function buildHigginsPrompt(options = {}) {
@@ -75,7 +76,8 @@ function buildHigginsPrompt(options = {}) {
         modelName = 'AI',
         voiceDNA = null,
         i360Knowledge = null,
-        userSystemPrompt = null
+        userSystemPrompt = null,
+        soulContext = null
     } = options;
 
     let prompt = '';
@@ -95,6 +97,11 @@ ${voiceDNA.content_text}
             'You are Higgins, an intelligent AI assistant for Insight 360.',
             `You are Higgins, an intelligent AI assistant for Insight 360, powered by ${modelName}.`
         ) + '\n\n';
+    }
+
+    // Add soul context (values, bright lines, guardrails, safety instructions)
+    if (soulContext) {
+        prompt += '---\n' + soulContext + '\n\n';
     }
 
     // Add i360 knowledge if available
@@ -188,6 +195,7 @@ async function getHigginsSystemPrompt(supabase, options = {}) {
         isAdmin = false,
         modelName = 'AI',
         userSystemPrompt = null,
+        soulContext = null,
         skipDatabaseFetch = false
     } = options;
 
@@ -206,7 +214,8 @@ async function getHigginsSystemPrompt(supabase, options = {}) {
         modelName,
         voiceDNA,
         i360Knowledge,
-        userSystemPrompt
+        userSystemPrompt,
+        soulContext
     });
 }
 

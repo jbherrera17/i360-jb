@@ -18,6 +18,9 @@ const llmRegistry = require('../services/llmRegistry');
 // Import Higgins service for persona and knowledge injection
 const higginsService = require('../services/higginsService');
 
+// Import guardrail enforcement for pre-screening and soul context
+const guardrailEnforcement = require('../services/guardrailEnforcementService');
+
 // Initialize services with error handling to prevent crashes
 if (process.env.ANTHROPIC_API_KEY) {
     anthropic.initialize(process.env.ANTHROPIC_API_KEY);
@@ -282,6 +285,39 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         const allMedia = [...images, ...documents];
         const normalizedHistory = normalizeHistoryMessages(history);
 
+        // ── Guardrail Enforcement: Pre-screen ──
+        const orgId = req.orgId || null;
+        if (orgId && text) {
+            const screenResult = await guardrailEnforcement.screenMessage(text, orgId, {
+                userId: req.user?.id
+            });
+
+            if (screenResult.blocked) {
+                return res.json({
+                    success: true,
+                    response: screenResult.responseMessage,
+                    model,
+                    provider: 'guardrail',
+                    guardrail: {
+                        blocked: true,
+                        category: screenResult.category,
+                        severity: screenResult.severity,
+                        brightLine: screenResult.brightLine
+                    }
+                });
+            }
+        }
+
+        // ── Guardrail Enforcement: Build soul context ──
+        let soulContext = null;
+        if (orgId) {
+            try {
+                soulContext = await guardrailEnforcement.buildSoulContextBlock(orgId, text);
+            } catch (e) {
+                console.warn('Failed to build soul context for chat message:', e.message);
+            }
+        }
+
         // Build Higgins-enhanced system prompt (unless explicitly skipped)
         let finalSystemPrompt = systemPrompt;
         if (!skipHiggins) {
@@ -294,6 +330,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
                     isAdmin,
                     modelName,
                     userSystemPrompt: systemPrompt,
+                    soulContext,
                     skipDatabaseFetch: !supabase
                 });
             } catch (higginsError) {
@@ -301,9 +338,12 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
                 const modelName = higginsService.getModelDisplayName(model);
                 finalSystemPrompt = higginsService.buildHigginsPrompt({
                     modelName,
-                    userSystemPrompt: systemPrompt
+                    userSystemPrompt: systemPrompt,
+                    soulContext
                 });
             }
+        } else if (soulContext) {
+            finalSystemPrompt = soulContext + '\n\n' + (finalSystemPrompt || '');
         }
 
         let response;
@@ -392,6 +432,44 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
         // Normalize history (convert multimodal to text-only for simplicity)
         const normalizedHistory = normalizeHistoryMessages(history);
 
+        // ── Guardrail Enforcement: Pre-screen ──
+        const orgId = req.orgId || null;
+        if (orgId && text) {
+            const screenResult = await guardrailEnforcement.screenMessage(text, orgId, {
+                userId: req.user?.id
+            });
+
+            if (screenResult.blocked) {
+                // Set up SSE and immediately send guardrail block
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache, no-transform');
+                res.setHeader('Connection', 'keep-alive');
+                res.setHeader('X-Accel-Buffering', 'no');
+                res.flushHeaders();
+
+                res.write(`data: ${JSON.stringify({
+                    type: 'guardrail_blocked',
+                    category: screenResult.category,
+                    brightLine: screenResult.brightLine,
+                    message: screenResult.responseMessage,
+                    severity: screenResult.severity
+                })}\n\n`);
+                res.write('data: [DONE]\n\n');
+                res.end();
+                return;
+            }
+        }
+
+        // ── Guardrail Enforcement: Build soul context ──
+        let soulContext = null;
+        if (orgId) {
+            try {
+                soulContext = await guardrailEnforcement.buildSoulContextBlock(orgId, text);
+            } catch (e) {
+                console.warn('Failed to build soul context for chat stream:', e.message);
+            }
+        }
+
         // Build Higgins-enhanced system prompt (unless explicitly skipped)
         let finalSystemPrompt = systemPrompt;
         if (!skipHiggins) {
@@ -406,6 +484,7 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
                     isAdmin,
                     modelName,
                     userSystemPrompt: systemPrompt,
+                    soulContext,
                     skipDatabaseFetch: !supabase
                 });
             } catch (higginsError) {
@@ -414,9 +493,13 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
                 const modelName = higginsService.getModelDisplayName(model);
                 finalSystemPrompt = higginsService.buildHigginsPrompt({
                     modelName,
-                    userSystemPrompt: systemPrompt
+                    userSystemPrompt: systemPrompt,
+                    soulContext
                 });
             }
+        } else if (soulContext) {
+            // Even if Higgins is skipped, still inject soul context
+            finalSystemPrompt = soulContext + '\n\n' + (finalSystemPrompt || '');
         }
 
         // Set up SSE headers

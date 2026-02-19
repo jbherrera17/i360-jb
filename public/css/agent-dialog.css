@@ -1059,7 +1059,7 @@
     background: var(--bg-secondary, #1a1a2e);
     border: 1px solid var(--border, #2a2a4a);
     border-radius: 12px;
-    width: 400px;
+    width: 520px;
     max-width: 90vw;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     transform: translateY(20px) scale(0.95);
@@ -1080,8 +1080,8 @@
 
 .artifact-modal-header h3 {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--text-primary, #fff);
 }
 
@@ -1158,31 +1158,49 @@
     color: var(--text-secondary, #aaa);
 }
 
-/* Artifact Name Input */
-.artifact-name-section {
-    padding: 0.75rem 1.25rem;
-    border-bottom: 1px solid var(--border, #2a2a4a);
-}
-
-.artifact-name-label {
-    display: block;
+/* Artifact Section Labels */
+.artifact-section-label {
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted, #666);
-    margin-bottom: 0.375rem;
+    color: var(--primary, #6366f1);
+    padding: 0.5rem 1rem 0.25rem;
+}
+
+.artifact-section-label.artifact-section-divider {
+    margin-top: 0.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border, #2a2a4a);
+}
+
+/* Artifact Name Input - inline layout */
+.artifact-name-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 1rem 0.625rem;
+}
+
+.artifact-name-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary, #fff);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .artifact-name-input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.4rem 0.625rem;
     border: 1px solid var(--border, #2a2a4a);
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--bg-primary, #0f0f1a);
     color: var(--text-primary, #fff);
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 400;
     outline: none;
     transition: border-color 0.2s;
 }
@@ -1193,20 +1211,8 @@
 
 .artifact-name-input::placeholder {
     color: var(--text-muted, #666);
-    font-weight: 400;
 }
 
-.artifact-divider {
-    padding: 0.5rem 1rem;
-}
-
-.artifact-divider span {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted, #666);
-}
 
 /* ================================
    Conversation Starters

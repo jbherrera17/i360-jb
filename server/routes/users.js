@@ -108,6 +108,7 @@ router.get('/unified', async (req, res) => {
                 display_name,
                 business_role,
                 department_id,
+                status,
                 created_at
             `)
             .order('display_name', { ascending: true });
@@ -141,7 +142,7 @@ router.get('/unified', async (req, res) => {
             .in('user_id', userIds)
             .eq('is_active', true);
 
-        // Fetch organization memberships with org names
+        // Fetch organization memberships with org names, tier, and type
         const { data: orgMemberships } = await supabase
             .from('organization_members')
             .select(`
@@ -150,7 +151,7 @@ router.get('/unified', async (req, res) => {
                 org_id,
                 role,
                 status,
-                organizations!inner(id, name)
+                organizations!inner(id, name, subscription_tier, org_type)
             `)
             .in('user_id', userIds)
             .neq('status', 'removed');
@@ -196,6 +197,8 @@ router.get('/unified', async (req, res) => {
                 membership_id: om.id,
                 org_id: om.org_id,
                 org_name: om.organizations?.name,
+                org_type: om.organizations?.org_type,
+                subscription_tier: om.organizations?.subscription_tier,
                 role: om.role,
                 status: om.status
             });

@@ -618,6 +618,38 @@ function generateSidebarHTML() {
 }
 
 /**
+ * Refresh auth-related user fields in localStorage from /api/auth/me.
+ * Keeps is_platform_admin, platform_admin_role, is_admin, and role in sync
+ * so the user card always shows the correct role label.
+ * @private
+ */
+async function _refreshUserSession() {
+    try {
+        const token = localStorage.getItem('insight360_token');
+        if (!token) return;
+
+        const orgId = localStorage.getItem('insight360_org_id');
+        const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        if (orgId) headers['x-org-id'] = orgId;
+
+        const response = await fetch('/api/auth/me', { headers });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success || !data.user) return;
+
+        const stored = JSON.parse(localStorage.getItem('insight360_user') || '{}');
+        stored.is_platform_admin = data.user.is_platform_admin || false;
+        stored.platform_admin_role = data.user.platform_admin_role || null;
+        stored.is_admin = data.user.is_admin || false;
+        stored.role = data.user.role || stored.role || 'user';
+        localStorage.setItem('insight360_user', JSON.stringify(stored));
+    } catch (e) {
+        // Non-critical — navigation renders from whatever is cached
+    }
+}
+
+/**
  * Initialize navigation
  * Call this after DOMContentLoaded
  */
@@ -654,6 +686,9 @@ async function initNavigation() {
     } catch (error) {
         console.warn('Navigation: Using static config due to error:', error);
     }
+
+    // Refresh user session data (platform admin status) from server before rendering
+    await _refreshUserSession();
 
     // Inject navigation
     sidebar.innerHTML = generateSidebarHTML();

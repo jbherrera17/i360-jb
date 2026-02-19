@@ -443,6 +443,15 @@ async function publishSoulConfig(configId, publishedBy) {
     // Sync to related systems
     await syncSoulConfigToRelatedSystems(data);
 
+    // Invalidate guardrail enforcement cache so new config takes effect immediately
+    try {
+        const guardrailEnforcement = require('./guardrailEnforcementService');
+        guardrailEnforcement.invalidateCache(data.org_id);
+    } catch (e) {
+        // Non-critical — enforcement cache will expire on its own
+        console.warn('Failed to invalidate guardrail cache:', e.message);
+    }
+
     return data;
 }
 

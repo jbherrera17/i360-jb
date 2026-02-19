@@ -306,7 +306,87 @@ async function getAdminConversations(options = {}) {
     } = options;
 
     try {
-        // Build query with user join - use simpler select to avoid join issues
+        // Pre-filter user IDs at the database level when org/dept/role filters are applied.
+        // Users belong to orgs via organization_members (not a direct column on users).
+        // Platform admins are in platform_admins and should appear under the Synergi org.
+        let filteredUserIds = null;
+
+        if (orgId) {
+            // Get users who are members of this organization
+            const { data: orgMembers, error: omError } = await supabase
+                .from('organization_members')
+                .select('user_id')
+                .eq('org_id', orgId)
+                .eq('status', 'active');
+
+            if (omError) {
+                console.error('Error querying organization_members:', omError);
+                throw new Error(`Failed to filter org members: ${omError.message}`);
+            }
+
+            filteredUserIds = (orgMembers || []).map(m => m.user_id);
+
+            // Also include platform admins — they belong to the Synergi (platform) org
+            // but may not have an organization_members row
+            const { data: platformAdmins, error: paError } = await supabase
+                .from('platform_admins')
+                .select('user_id')
+                .eq('is_active', true);
+
+            if (!paError && platformAdmins) {
+                for (const pa of platformAdmins) {
+                    if (!filteredUserIds.includes(pa.user_id)) {
+                        filteredUserIds.push(pa.user_id);
+                    }
+                }
+            }
+        }
+
+        if (businessRole) {
+            // business_role IS a direct column on users
+            const { data: roleUsers, error: roleError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('business_role', businessRole);
+
+            if (roleError) {
+                console.error('Error filtering by business_role:', roleError);
+            } else {
+                const roleUserIds = (roleUsers || []).map(u => u.id);
+                // Intersect with existing filter if org filter was also applied
+                if (filteredUserIds) {
+                    filteredUserIds = filteredUserIds.filter(id => roleUserIds.includes(id));
+                } else {
+                    filteredUserIds = roleUserIds;
+                }
+            }
+        }
+
+        if (departmentId) {
+            // Departments use department_members junction table
+            const { data: deptMembers, error: deptError } = await supabase
+                .from('department_members')
+                .select('user_id')
+                .eq('department_id', departmentId);
+
+            if (deptError) {
+                // Fall back: some setups may not have department_members, ignore gracefully
+                console.error('Error filtering by department:', deptError);
+            } else {
+                const deptUserIds = (deptMembers || []).map(m => m.user_id);
+                if (filteredUserIds) {
+                    filteredUserIds = filteredUserIds.filter(id => deptUserIds.includes(id));
+                } else {
+                    filteredUserIds = deptUserIds;
+                }
+            }
+        }
+
+        if (filteredUserIds !== null && filteredUserIds.length === 0) {
+            return [];
+        }
+
+        // Build conversation query
         let query = supabase
             .from('conversations')
             .select(`
@@ -325,7 +405,12 @@ async function getAdminConversations(options = {}) {
             query = query.eq('user_id', userId);
         }
 
-        // Apply pagination
+        // Apply pre-filtered user IDs at database level
+        if (filteredUserIds) {
+            query = query.in('user_id', filteredUserIds);
+        }
+
+        // Apply pagination AFTER database-level filters
         query = query.range(offset, offset + limit - 1);
 
         const { data: conversations, error } = await query;
@@ -339,10 +424,10 @@ async function getAdminConversations(options = {}) {
             return [];
         }
 
-        // Get unique user IDs
+        // Get unique user IDs from results
         const userIds = [...new Set(conversations.map(c => c.user_id).filter(Boolean))];
 
-        // Fetch user info separately (including org_id)
+        // Fetch user info
         let users = [];
         if (userIds.length > 0) {
             const { data: userData, error: userError } = await supabase
@@ -352,8 +437,7 @@ async function getAdminConversations(options = {}) {
                     email,
                     display_name,
                     business_role,
-                    department_id,
-                    org_id
+                    default_org_id
                 `)
                 .in('id', userIds);
 
@@ -362,28 +446,33 @@ async function getAdminConversations(options = {}) {
             }
         }
 
-        // Fetch department info
-        const deptIds = [...new Set(users.map(u => u.department_id).filter(Boolean))];
-        let departments = [];
-        if (deptIds.length > 0) {
-            const { data: deptData, error: deptError } = await supabase
-                .from('departments')
-                .select('id, name')
-                .in('id', deptIds);
+        // Fetch org membership for these users
+        let userOrgMap = new Map();
+        if (userIds.length > 0) {
+            const { data: memberships, error: memError } = await supabase
+                .from('organization_members')
+                .select('user_id, org_id')
+                .in('user_id', userIds)
+                .eq('status', 'active');
 
-            if (!deptError && deptData) {
-                departments = deptData;
+            if (!memError && memberships) {
+                for (const m of memberships) {
+                    userOrgMap.set(m.user_id, m.org_id);
+                }
             }
         }
 
         // Fetch organization info
-        const orgIds = [...new Set(users.map(u => u.org_id).filter(Boolean))];
+        const orgIdSet = new Set([
+            ...users.map(u => u.default_org_id).filter(Boolean),
+            ...Array.from(userOrgMap.values())
+        ]);
         let organizations = [];
-        if (orgIds.length > 0) {
+        if (orgIdSet.size > 0) {
             const { data: orgData, error: orgError } = await supabase
                 .from('organizations')
                 .select('id, name')
-                .in('id', orgIds);
+                .in('id', Array.from(orgIdSet));
 
             if (!orgError && orgData) {
                 organizations = orgData;
@@ -391,13 +480,16 @@ async function getAdminConversations(options = {}) {
         }
 
         // Create lookup maps
-        const deptMap = new Map(departments.map(d => [d.id, d]));
         const orgMap = new Map(organizations.map(o => [o.id, o]));
-        const userMap = new Map(users.map(u => [u.id, {
-            ...u,
-            departments: u.department_id ? deptMap.get(u.department_id) : null,
-            organization: u.org_id ? orgMap.get(u.org_id) : null
-        }]));
+        const userMap = new Map(users.map(u => {
+            const memberOrgId = userOrgMap.get(u.id);
+            const effectiveOrgId = memberOrgId || u.default_org_id;
+            return [u.id, {
+                ...u,
+                org_id: effectiveOrgId,
+                organization: effectiveOrgId ? orgMap.get(effectiveOrgId) : null
+            }];
+        }));
 
         // Merge data
         let result = conversations.map(conv => ({
@@ -405,19 +497,7 @@ async function getAdminConversations(options = {}) {
             users: conv.user_id ? userMap.get(conv.user_id) : null
         }));
 
-        // Apply filters
-        if (orgId) {
-            result = result.filter(c => c.users?.org_id === orgId);
-        }
-
-        if (departmentId) {
-            result = result.filter(c => c.users?.department_id === departmentId);
-        }
-
-        if (businessRole) {
-            result = result.filter(c => c.users?.business_role === businessRole);
-        }
-
+        // Apply search filter (text search still done in JS for flexibility)
         if (search) {
             const searchLower = search.toLowerCase();
             result = result.filter(c =>

@@ -1145,6 +1145,52 @@
             max-width: 300px;
         }
 
+        /* Tier Badges */
+        .tier-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .tier-badge.starter { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+        .tier-badge.business { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .tier-badge.enterprise { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .tier-badge.agency { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .tier-badge.platform { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-badge.active { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .status-badge.invited { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-badge.suspended { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        /* Table column width hints */
+        .users-table th:nth-child(1) { min-width: 200px; }
+        .users-table th:nth-child(2) { min-width: 140px; }
+        .users-table th:nth-child(3) { min-width: 120px; }
+        .users-table th:nth-child(4) { min-width: 110px; }
+        .users-table th:nth-child(5) { min-width: 90px; }
+        .users-table th:nth-child(6) { min-width: 70px; }
+        .users-table th:nth-child(7) { min-width: 90px; }
+        .users-table th:nth-child(8) { min-width: 80px; }
+
+        .muted-dash { color: var(--text-muted); }
+
         /* Assignment Form Sections */
         .assignment-section {
             border: 1px solid var(--border);
@@ -1589,6 +1635,72 @@
             return role ? role.name : 'Individual Contributor';
         }
 
+        function getTierBadge(tier) {
+            if (!tier) return '<span class="muted-dash">—</span>';
+            const label = tier.charAt(0).toUpperCase() + tier.slice(1);
+            return `<span class="tier-badge ${tier.toLowerCase()}">${label}</span>`;
+        }
+
+        function getStatusBadge(status) {
+            const s = (status || 'active').toLowerCase();
+            const label = s.charAt(0).toUpperCase() + s.slice(1);
+            return `<span class="status-badge ${s}">${label}</span>`;
+        }
+
+        function getRoleDisplay(user) {
+            if (user.platform_admin) {
+                const role = user.platform_admin.role || 'admin';
+                return role.charAt(0).toUpperCase() + role.slice(1);
+            }
+            if (user.organization_memberships && user.organization_memberships.length > 0) {
+                const role = user.organization_memberships[0].role || '';
+                return role.charAt(0).toUpperCase() + role.slice(1);
+            }
+            return '<span class="muted-dash">—</span>';
+        }
+
+        function getTierDisplay(user) {
+            if (user.platform_admin && (!user.organization_memberships || user.organization_memberships.length === 0)) {
+                return getTierBadge('platform');
+            }
+            if (user.organization_memberships && user.organization_memberships.length > 0) {
+                const tier = user.organization_memberships[0].subscription_tier;
+                return getTierBadge(tier);
+            }
+            return '<span class="muted-dash">—</span>';
+        }
+
+        function getOrgDisplay(user) {
+            if (user.organization_memberships && user.organization_memberships.length > 0) {
+                return user.organization_memberships[0].org_name || '<span class="muted-dash">—</span>';
+            }
+            if (user.platform_admin) {
+                return 'Synergi Platform';
+            }
+            return '<span class="muted-dash">—</span>';
+        }
+
+        function getClientDisplay(user) {
+            if (!user.client_portal_access || user.client_portal_access.length === 0) {
+                return '<span class="muted-dash">—</span>';
+            }
+            const firstOrg = user.organization_memberships && user.organization_memberships[0];
+            if (!firstOrg || firstOrg.org_type !== 'agency') {
+                return '<span class="muted-dash">—</span>';
+            }
+            return user.client_portal_access[0].client_name || '<span class="muted-dash">—</span>';
+        }
+
+        function getPortalDisplay(user) {
+            if (user.client_portal_access && user.client_portal_access.length > 0) {
+                return `<span class="assignment-badge client">
+                    <i data-lucide="check" style="width:12px;height:12px;"></i>
+                    Yes
+                </span>`;
+            }
+            return '<span class="muted-dash">—</span>';
+        }
+
         function renderUsersTable() {
             const tableContent = document.getElementById('tableContent');
             const userTotal = document.getElementById('userTotal');
@@ -1610,13 +1722,17 @@
             userTotal.textContent = `${displayUsers.length} user${displayUsers.length !== 1 ? 's' : ''}`;
 
             tableContent.innerHTML = `
-                <table>
+                <div style="overflow-x:auto;">
+                <table class="users-table">
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Assignments</th>
-                            <th>Business Role</th>
-                            <th>Created</th>
+                            <th>Organization</th>
+                            <th>Client</th>
+                            <th>Role</th>
+                            <th>Tier</th>
+                            <th>Portal</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1632,15 +1748,12 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="assignments-cell">
-                                        ${renderUserAssignments(user)}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="business-role-badge ${user.business_role || 'ic'}">${getBusinessRoleName(user.business_role || 'ic')}</span>
-                                </td>
-                                <td>${formatDate(user.created_at)}</td>
+                                <td>${getOrgDisplay(user)}</td>
+                                <td>${getClientDisplay(user)}</td>
+                                <td>${getRoleDisplay(user)}</td>
+                                <td>${getTierDisplay(user)}</td>
+                                <td>${getPortalDisplay(user)}</td>
+                                <td>${getStatusBadge(user.status)}</td>
                                 <td>
                                     <div class="actions-cell">
                                         <button class="icon-btn" onclick="openEditModal('${user.id}')" title="Edit user">
@@ -1655,11 +1768,13 @@
                         `).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
             lucide.createIcons();
         }
 
-        function renderUserAssignments(user) {
+        // Kept for backward compatibility (used in edit modal assignment display)
+        function renderUserAssignmentsTooltip(user) {
             let badges = [];
 
             // Platform admin badge
@@ -1696,6 +1811,11 @@
             }
 
             return badges.join('');
+        }
+
+        // Alias for any legacy calls
+        function renderUserAssignments(user) {
+            return renderUserAssignmentsTooltip(user);
         }
 
         async function filterUsers(filter) {
@@ -2523,7 +2643,7 @@
                 return;
             }
 
-            if (user.role !== 'admin') {
+            if (!user.is_admin) {
                 document.getElementById('accessDenied').style.display = 'flex';
                 lucide.createIcons();
                 return;

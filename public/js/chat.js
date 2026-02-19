@@ -657,7 +657,16 @@ Only include sources when you reference specific external information. For gener
                         try {
                             const parsed = JSON.parse(data);
 
-                            if (parsed.type === 'content' && parsed.text) {
+                            if (parsed.type === 'guardrail_blocked') {
+                                // Guardrail or bright line enforcement blocked the message
+                                stopLoadingMessages();
+                                fullResponse = parsed.message || 'This request was blocked by organizational guardrails.';
+                                if (contentDiv) {
+                                    contentDiv.innerHTML = renderGuardrailBlock(parsed);
+                                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                                    autoScrollIfNearBottom();
+                                }
+                            } else if (parsed.type === 'content' && parsed.text) {
                                 // Stop loading messages on first content
                                 if (fullResponse === '') {
                                     stopLoadingMessages();
@@ -824,6 +833,26 @@ function stopLoadingMessages() {
 
 /**
  * Format citations from Perplexity into a sources section
+ * Render a guardrail block message with styled container
+ * @param {object} data - { category, brightLine, message, severity }
+ * @returns {string} HTML for guardrail block display
+ */
+function renderGuardrailBlock(data) {
+    const isInjection = data.category === 'prompt_injection';
+    const icon = isInjection ? 'shield-alert' : 'shield-x';
+    const label = isInjection ? 'Security Protection' : (data.brightLine || 'Guardrail Triggered');
+    const cssClass = isInjection ? 'guardrail-blocked injection' : 'guardrail-blocked';
+
+    return `<div class="${cssClass}">
+        <div class="guardrail-header">
+            <i data-lucide="${icon}"></i>
+            <span class="guardrail-label">${label}</span>
+        </div>
+        <div class="guardrail-message">${data.message || 'This request was blocked by organizational guardrails.'}</div>
+    </div>`;
+}
+
+/**
  * @param {Array} citations - Array of citation URLs
  * @returns {string} Markdown formatted sources section
  */
@@ -2121,16 +2150,17 @@ const artifactModalHtml = `
 <div id="artifactModal" class="artifact-modal">
     <div class="artifact-modal-content">
         <div class="artifact-modal-header">
-            <h3>Create Artifact</h3>
+            <h3>Artifacts and Assets</h3>
             <button class="artifact-modal-close" onclick="closeArtifactModal()">
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <div class="artifact-name-section">
-            <label class="artifact-name-label" for="artifactNameInput">Artifact Name</label>
-            <input type="text" id="artifactNameInput" class="artifact-name-input" placeholder="Name this artifact...">
-        </div>
         <div class="artifact-options">
+            <div class="artifact-section-label">Create Artifact</div>
+            <div class="artifact-name-section">
+                <label class="artifact-name-label" for="artifactNameInput">Export Name:</label>
+                <input type="text" id="artifactNameInput" class="artifact-name-input" placeholder="Enter file name...">
+            </div>
             <div class="artifact-option" onclick="exportAsDocument('markdown')">
                 <div class="artifact-option-icon">
                     <i data-lucide="file-text"></i>
@@ -2180,9 +2210,7 @@ const artifactModalHtml = `
                 </div>
             </div>
 
-            <div class="artifact-divider">
-                <span>Create Asset</span>
-            </div>
+            <div class="artifact-section-label artifact-section-divider">Create Asset</div>
 
             <div class="artifact-option" onclick="ChatAssetCreator.createFromArtifact('skill')">
                 <div class="artifact-option-icon" style="color: var(--primary);">
