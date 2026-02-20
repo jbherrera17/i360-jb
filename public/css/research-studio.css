@@ -8,7 +8,9 @@
     display: flex;
     gap: 1rem;
     padding: 1rem;
-    height: calc(100vh - var(--header-height));
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
     overflow: hidden;
 }
 
@@ -177,7 +179,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 400px;
+    min-width: 0;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -889,10 +891,34 @@
     transform: translateY(-2px);
 }
 
+.studio-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
 .studio-card h3 {
-    margin: 0 0 0.5rem;
+    margin: 0;
     font-size: 1rem;
     color: var(--text-primary);
+}
+
+.studio-card-delete {
+    opacity: 0;
+    transition: opacity var(--transition-fast), color var(--transition-fast);
+    color: var(--text-muted);
+    padding: 0.25rem;
+    background: none;
+    border: none;
+}
+
+.studio-card:hover .studio-card-delete {
+    opacity: 1;
+}
+
+.studio-card-delete:hover {
+    color: var(--danger);
 }
 
 .studio-card p {

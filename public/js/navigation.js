@@ -96,6 +96,9 @@ let allNavItems = [
 let dynamicNavConfig = null;
 let modulesLoaded = false;
 
+// Mobile nav setup guard — only run once per page load
+let _mobileNavInitialised = false;
+
 /**
  * Fetch accessible modules from API
  * Returns grouped modules for navigation
@@ -726,6 +729,117 @@ async function initNavigation() {
 
     // Load and apply org branding (non-blocking)
     _loadBrandingService();
+
+    // Setup responsive mobile navigation (hamburger + backdrop) — once per page load
+    if (!_mobileNavInitialised) {
+        _setupMobileNav(sidebar);
+        _mobileNavInitialised = true;
+    }
+}
+
+/**
+ * Setup mobile navigation: hamburger toggle button, backdrop overlay,
+ * close-on-outside-click, Escape key, and auto-close on nav link click.
+ * All logic lives here so navigation.js is the single source of truth.
+ * @param {HTMLElement} sidebar
+ * @private
+ */
+function _setupMobileNav(sidebar) {
+    // Inject backdrop element (idempotent)
+    let backdrop = document.getElementById('mobile-nav-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'mobile-nav-backdrop';
+        backdrop.className = 'mobile-nav-backdrop';
+        backdrop.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(backdrop);
+    }
+
+    // Inject hamburger toggle button (idempotent)
+    let toggleBtn = document.getElementById('mobile-nav-toggle');
+    if (!toggleBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.id = 'mobile-nav-toggle';
+        toggleBtn.className = 'mobile-nav-toggle';
+        toggleBtn.setAttribute('aria-label', 'Open navigation menu');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.setAttribute('aria-controls', 'sidebar');
+        toggleBtn.innerHTML = '<i data-lucide="menu"></i>';
+        document.body.appendChild(toggleBtn);
+
+        // Assign an id to the sidebar if missing (for aria-controls)
+        if (!sidebar.id) {
+            sidebar.id = 'sidebar';
+        }
+
+        // Re-run lucide on the new button
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    // Open mobile nav
+    function openMobileNav() {
+        sidebar.classList.add('open');
+        backdrop.classList.add('visible');
+        document.body.classList.add('mobile-nav-open');
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        toggleBtn.setAttribute('aria-label', 'Close navigation menu');
+        // Swap icon to X
+        const icon = toggleBtn.querySelector('i');
+        if (icon) {
+            icon.setAttribute('data-lucide', 'x');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    // Close mobile nav
+    function closeMobileNav() {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('visible');
+        document.body.classList.remove('mobile-nav-open');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.setAttribute('aria-label', 'Open navigation menu');
+        // Swap icon back to hamburger
+        const icon = toggleBtn.querySelector('i');
+        if (icon) {
+            icon.setAttribute('data-lucide', 'menu');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    // Toggle on hamburger click
+    toggleBtn.addEventListener('click', () => {
+        if (sidebar.classList.contains('open')) {
+            closeMobileNav();
+        } else {
+            openMobileNav();
+        }
+    });
+
+    // Close on backdrop click
+    backdrop.addEventListener('click', closeMobileNav);
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            closeMobileNav();
+            toggleBtn.focus();
+        }
+    });
+
+    // Close when a nav link is clicked (page navigation)
+    sidebar.addEventListener('click', (e) => {
+        const link = e.target.closest('a.nav-item');
+        if (link && sidebar.classList.contains('open')) {
+            // Small delay so the browser starts navigation first
+            setTimeout(closeMobileNav, 100);
+        }
+    });
+
+    // Expose closeMobileNav globally for any page-level use
+    window.closeMobileNav = closeMobileNav;
+    window.openMobileNav = openMobileNav;
 }
 
 /**

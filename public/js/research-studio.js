@@ -80,7 +80,12 @@ function renderStudioList(studios) {
 
         const date = new Date(studio.updated_at).toLocaleDateString();
         card.innerHTML = `
-            <h3>${escapeHtml(studio.title)}</h3>
+            <div class="studio-card-header">
+                <h3>${escapeHtml(studio.title)}</h3>
+                <button class="btn btn-icon studio-card-delete" onclick="event.stopPropagation(); deleteStudio('${studio.id}', '${escapeHtml(studio.title).replace(/'/g, "\\'")}')" title="Delete Studio">
+                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                </button>
+            </div>
             <p>${escapeHtml(studio.description || 'No description')}</p>
             <div class="studio-card-meta">
                 <span><i data-lucide="files" style="width:14px;height:14px;"></i> ${studio.source_count || 0} sources</span>
@@ -227,6 +232,48 @@ function showStudioList() {
 
     window.history.pushState({}, '', window.location.pathname);
     loadStudios();
+}
+
+/**
+ * Delete a research studio
+ */
+async function deleteStudio(studioId, studioTitle) {
+    if (typeof ModalService === 'undefined') {
+        showToast('Modal service not available', 'error');
+        return;
+    }
+
+    const confirmed = await ModalService.confirm({
+        title: 'Delete Studio',
+        message: `Are you sure you want to delete "${studioTitle}"? This will permanently remove all sources, conversations, and outputs.`,
+        confirmText: 'Delete',
+        confirmClass: 'btn-danger'
+    });
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/${studioId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Studio deleted', 'success');
+            // If we're viewing the deleted studio, go back to list
+            if (currentStudio && currentStudio.id === studioId) {
+                showStudioList();
+            } else {
+                await loadStudios();
+            }
+        } else {
+            showToast('Failed to delete studio: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting studio:', error);
+        showToast('Error deleting studio', 'error');
+    }
 }
 
 // ============================================================================
@@ -391,6 +438,7 @@ function switchSourceTab(tab) {
  */
 function setupDragAndDrop() {
     const uploadZone = document.getElementById('uploadZone');
+    if (!uploadZone) return; // Upload zone is inside dynamic modal content
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         uploadZone.addEventListener(eventName, preventDefaults, false);

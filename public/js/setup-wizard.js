@@ -940,7 +940,25 @@ const SetupWizard = {
                 }).catch(e => console.warn('Could not seed context:', e));
             }
 
-            // TODO: Send admin invitation email
+            // 7. Invite the designated org admin
+            if (this.formData.adminEmail?.trim()) {
+                const inviteResponse = await fetch('/api/platform/users', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        email: this.formData.adminEmail.trim(),
+                        display_name: this.formData.adminName?.trim() || null,
+                        org_id: orgId,
+                        role: 'admin'
+                    })
+                });
+
+                if (!inviteResponse.ok) {
+                    const inviteData = await inviteResponse.json();
+                    // Non-fatal — org was created, just log the warning
+                    console.warn('Could not send admin invitation:', inviteData.error);
+                }
+            }
 
             this.showSuccess('Organization created successfully!');
 

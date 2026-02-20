@@ -362,12 +362,19 @@ module.exports = function(supabase) {
      */
     router.post('/accept-invite', async (req, res) => {
         try {
-            const { access_token, password } = req.body;
+            const { access_token, refresh_token, token_hash, token_type, password } = req.body;
 
-            if (!access_token || !password) {
+            if (!password) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Access token and password are required'
+                    error: 'Password is required'
+                });
+            }
+
+            if (!access_token && !token_hash) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invitation token is required'
                 });
             }
 
@@ -378,11 +385,25 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Set session with the access token from the invite link
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-                access_token,
-                refresh_token: access_token // Supabase uses same token for invite flow
-            });
+            let sessionData, sessionError;
+
+            if (token_hash) {
+                // New Supabase PKCE flow: exchange token_hash for a real session
+                const result = await supabase.auth.verifyOtp({
+                    token_hash,
+                    type: token_type || 'invite'
+                });
+                sessionData = result.data;
+                sessionError = result.error;
+            } else {
+                // Legacy implicit flow: access_token + refresh_token both in URL hash
+                const result = await supabase.auth.setSession({
+                    access_token,
+                    refresh_token: refresh_token || access_token
+                });
+                sessionData = result.data;
+                sessionError = result.error;
+            }
 
             if (sessionError || !sessionData?.user) {
                 console.error('Accept invite session error:', sessionError);
@@ -1072,10 +1093,10 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Verify user exists
+            // Verify user exists (also fetch status to handle invited users)
             const { data: user, error: userError } = await supabase
                 .from('users')
-                .select('id, email')
+                .select('id, email, status')
                 .eq('id', id)
                 .single();
 
@@ -1087,8 +1108,10 @@ module.exports = function(supabase) {
             }
 
             // Update password via Supabase admin API
+            // Also confirm email so invited-but-unconfirmed users can log in immediately
             const { error: authError } = await supabase.auth.admin.updateUserById(id, {
-                password: new_password
+                password: new_password,
+                email_confirm: true
             });
 
             if (authError) {
@@ -1097,6 +1120,21 @@ module.exports = function(supabase) {
                     success: false,
                     error: authError.message || 'Failed to reset password'
                 });
+            }
+
+            // If user was in invited state, activate them now that admin has set their password
+            if (user.status === 'invited') {
+                const { error: rpcError } = await supabase.rpc('activate_invited_user', {
+                    p_user_id: id
+                });
+                if (rpcError) {
+                    // Fallback to direct update
+                    await supabase
+                        .from('users')
+                        .update({ status: 'active', invitation_accepted_at: new Date().toISOString() })
+                        .eq('id', id);
+                }
+                console.log(`Activated invited user on admin password reset: ${user.email}`);
             }
 
             console.log(`Password reset by admin for user: ${user.email}`);

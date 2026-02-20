@@ -117,6 +117,13 @@
         .tier-enterprise { background: #fef3c7; color: #b45309; }
         .tier-agency { background: #ede9fe; color: #7c3aed; }
 
+        /* Modifier-class tier variants (used in Users table) */
+        .tier-badge.starter { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+        .tier-badge.business { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .tier-badge.enterprise { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .tier-badge.agency { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .tier-badge.platform { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
         .status-badge {
             display: inline-block;
             padding: 0.25rem 0.5rem;
@@ -129,6 +136,23 @@
         .status-invited { background: #dbeafe; color: #1e40af; }
         .status-trial { background: #fef3c7; color: #b45309; }
         .status-suspended { background: #fee2e2; color: #991b1b; }
+
+        /* Modifier-class status variants (used in Users table) */
+        .status-badge.active { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .status-badge.invited { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-badge.suspended { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        .muted-dash { color: var(--text-secondary); opacity: 0.5; }
+
+        /* Users tab column widths */
+        #tab-users .data-table th:nth-child(1) { min-width: 200px; }
+        #tab-users .data-table th:nth-child(2) { min-width: 140px; }
+        #tab-users .data-table th:nth-child(3) { min-width: 120px; }
+        #tab-users .data-table th:nth-child(4) { min-width: 110px; }
+        #tab-users .data-table th:nth-child(5) { min-width: 90px; }
+        #tab-users .data-table th:nth-child(6) { min-width: 70px; }
+        #tab-users .data-table th:nth-child(7) { min-width: 90px; }
+        #tab-users .data-table th:nth-child(8) { min-width: 160px; }
 
         .role-badge {
             display: inline-block;
@@ -539,23 +563,27 @@
                             </div>
                         </div>
 
+                        <div style="overflow-x: auto;">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>User</th>
-                                    <th>Status</th>
-                                    <th>Organizations</th>
+                                    <th>Organization</th>
+                                    <th>Client</th>
                                     <th>Role</th>
-                                    <th>Created</th>
+                                    <th>Tier</th>
+                                    <th>Portal</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
                                 <tr>
-                                    <td colspan="6" class="empty-state">Loading users...</td>
+                                    <td colspan="8" class="empty-state">Loading users...</td>
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
@@ -980,7 +1008,7 @@
                 } else {
                     const tbody = document.getElementById('usersTableBody');
                     const errorData = await usersRes.json().catch(() => ({}));
-                    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger);">
+                    tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color: var(--danger);">
                         Failed to load users: ${errorData.error || 'API error'}.
                         <br><small>Make sure the Phase 47 schema has been deployed.</small>
                     </td></tr>`;
@@ -2043,47 +2071,87 @@
             filterUsers(); // Apply current filters
         }
 
+        // Helper: derive tier badge for users table
+        function getUserTierBadge(user) {
+            if (user.is_platform_admin && (!user.organizations || user.organizations.length === 0)) {
+                return '<span class="tier-badge platform">Platform</span>';
+            }
+            const firstOrg = (user.organizations || [])[0];
+            const tier = firstOrg?.subscription_tier;
+            if (!tier) return '<span class="muted-dash">—</span>';
+            return `<span class="tier-badge ${tier}">${tier}</span>`;
+        }
+
+        // Helper: derive org display for users table (first org name)
+        function getUserOrgDisplay(user) {
+            const orgs = user.organizations || [];
+            if (orgs.length === 0) {
+                return user.is_platform_admin
+                    ? '<span style="color: var(--text-secondary); font-size: 0.8rem;">Synergi Platform</span>'
+                    : '<span style="color: var(--warning); font-size: 0.8rem;">No org</span>';
+            }
+            const first = orgs[0];
+            const name = escapeHtml(first.org_name || '');
+            const extra = orgs.length > 1 ? ` <span class="muted-dash" title="${orgs.slice(1).map(o => escapeHtml(o.org_name || '')).join(', ')}">+${orgs.length - 1}</span>` : '';
+            return `${name}${extra}`;
+        }
+
+        // Helper: derive client display (only for agency orgs)
+        function getUserClientDisplay(user) {
+            const firstOrg = (user.organizations || [])[0];
+            if (!firstOrg || firstOrg.org_type !== 'agency') {
+                return '<span class="muted-dash">—</span>';
+            }
+            const clientName = firstOrg.client_name;
+            return clientName ? escapeHtml(clientName) : '<span class="muted-dash">—</span>';
+        }
+
+        // Helper: derive role display for users table
+        function getUserRoleDisplay(user) {
+            if (user.is_platform_admin) {
+                return '<span class="role-badge role-admin">Platform Admin</span>';
+            }
+            const firstOrg = (user.organizations || [])[0];
+            const role = firstOrg?.member_role || user.role;
+            return role ? escapeHtml(role) : '<span class="muted-dash">—</span>';
+        }
+
+        // Helper: derive portal badge
+        function getUserPortalDisplay(user) {
+            const hasPortal = Array.isArray(user.client_portal_access) && user.client_portal_access.length > 0;
+            if (hasPortal) {
+                return '<span class="status-badge active" style="font-size:0.7rem;" title="Has client portal access"><i data-lucide="check" style="width:10px;height:10px;"></i> Yes</span>';
+            }
+            return '<span class="muted-dash">—</span>';
+        }
+
         // Render filtered users table
         function renderFilteredUsers(filteredUsers) {
             const tbody = document.getElementById('usersTableBody');
 
             if (filteredUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No users found</td></tr>';
                 return;
             }
 
             tbody.innerHTML = filteredUsers.map(user => {
                 const userStatus = user.status || 'active';
-                const orgs = user.organizations || [];
-                const orgCount = user.active_org_count || orgs.filter(o => o.member_status === 'active').length;
 
                 return `
                     <tr>
                         <td>
                             <strong>${escapeHtml(user.display_name || user.email?.split('@')[0] || 'Unknown')}</strong>
                             <br><small style="color: var(--text-secondary);">${escapeHtml(user.email)}</small>
-                            ${user.is_platform_admin ? '<br><span class="role-badge role-admin">Platform Admin</span>' : ''}
                         </td>
+                        <td>${getUserOrgDisplay(user)}</td>
+                        <td>${getUserClientDisplay(user)}</td>
+                        <td>${getUserRoleDisplay(user)}</td>
+                        <td>${getUserTierBadge(user)}</td>
+                        <td>${getUserPortalDisplay(user)}</td>
                         <td>
-                            <span class="status-badge status-${userStatus}">${userStatus}</span>
-                            ${user.suspended_reason ? `<br><small style="color: var(--text-secondary);">${escapeHtml(user.suspended_reason)}</small>` : ''}
+                            <span class="status-badge ${userStatus}">${userStatus}</span>
+                            ${user.suspended_reason ? `<br><small style="color: var(--text-secondary); font-size: 0.7rem;">${escapeHtml(user.suspended_reason)}</small>` : ''}
                         </td>
-                        <td>
-                            ${orgCount > 0 ? `
-                                <span>${orgCount} org${orgCount > 1 ? 's' : ''}</span>
-                                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem;">
-                                    ${orgs.slice(0, 3).map(o => `
-                                        <span class="tier-badge" style="font-size: 0.7rem;"
-                                            title="${escapeHtml(o.org_name || '')}${o.is_personal ? ' (Personal)' : ''}">
-                                            ${escapeHtml((o.org_name || '').substring(0, 15))}${o.is_personal ? '*' : ''}
-                                        </span>
-                                    `).join('')}
-                                    ${orgs.length > 3 ? `<span class="tier-badge" style="font-size: 0.7rem;">+${orgs.length - 3} more</span>` : ''}
-                                </div>
-                            ` : '<span style="color: var(--warning);">No organization</span>'}
-                        </td>
-                        <td>${user.role || 'user'}</td>
-                        <td>${formatDate(user.created_at)}</td>
                         <td class="actions-cell">
                             ${userStatus === 'invited' ? `
                                 <button class="btn btn-sm btn-primary" onclick="resendInvite('${user.id}', '${escapeHtml(user.email)}')" title="Resend invitation email">

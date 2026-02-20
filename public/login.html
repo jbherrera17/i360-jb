@@ -587,14 +587,26 @@
             const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
-            // Supabase sends tokens in the hash fragment
+            // Support both Supabase token formats:
+            // - Legacy implicit flow: #access_token=X&refresh_token=Y&type=invite
+            // - New PKCE flow:        ?token_hash=X&type=invite
             const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
+            const tokenHash = urlParams.get('token_hash');
             const tokenType = hashParams.get('type') || urlParams.get('type');
 
-            // Invitation acceptance flow (type=invite or type=magiclink from Supabase invite)
-            if (accessToken && (tokenType === 'invite' || tokenType === 'magiclink')) {
-                showAcceptInviteForm(accessToken);
-                return;
+            // Invitation acceptance flow
+            if (tokenType === 'invite' || tokenType === 'magiclink') {
+                if (tokenHash) {
+                    // New PKCE flow — pass token_hash to server for verifyOtp exchange
+                    showAcceptInviteForm(null, tokenHash, tokenType);
+                    return;
+                }
+                if (accessToken) {
+                    // Legacy implicit flow — pass both access and refresh tokens
+                    showAcceptInviteForm(accessToken, null, tokenType, refreshToken);
+                    return;
+                }
             }
 
             // Password reset flow
@@ -672,9 +684,13 @@
         }
 
         // Show accept invitation form (when user clicks invite email link)
-        function showAcceptInviteForm(accessToken) {
-            // Store token for form submission
+        // Supports both legacy (access_token + refresh_token) and new PKCE (token_hash) formats
+        function showAcceptInviteForm(accessToken, tokenHash, tokenType, refreshToken) {
+            // Store tokens for form submission
             window.inviteAccessToken = accessToken;
+            window.inviteRefreshToken = refreshToken;
+            window.inviteTokenHash = tokenHash;
+            window.inviteTokenType = tokenType || 'invite';
 
             // Hide tabs and show accept invite panel
             document.querySelector('.login-tabs').style.display = 'none';
@@ -713,6 +729,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         access_token: window.inviteAccessToken,
+                        refresh_token: window.inviteRefreshToken,
+                        token_hash: window.inviteTokenHash,
+                        token_type: window.inviteTokenType,
                         password
                     })
                 });

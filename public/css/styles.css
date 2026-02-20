@@ -1815,22 +1815,180 @@ select {
 }
 
 /* ============================================
+   MOBILE NAVIGATION TOGGLE BUTTON
+   Injected by navigation.js into .app-container
+   ============================================ */
+
+.mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    top: var(--spacing-md);
+    left: var(--spacing-md);
+    z-index: 200;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    box-shadow: var(--shadow-md);
+    flex-shrink: 0;
+}
+
+.mobile-nav-toggle:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.mobile-nav-toggle i {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+/* Backdrop overlay — covers content when mobile nav is open */
+.mobile-nav-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity var(--transition-slow);
+}
+
+.mobile-nav-backdrop.visible {
+    opacity: 1;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 
+/* Tablet & Mobile: sidebar becomes overlay */
 @media (max-width: 1024px) {
+    /* Show hamburger button */
+    .mobile-nav-toggle {
+        display: flex;
+    }
+
+    /* Sidebar slides off-screen by default */
     .sidebar {
         transform: translateX(-100%);
-        transition: transform var(--transition-base);
+        transition: transform var(--transition-slow);
+        /* Ensure it sits above backdrop */
+        z-index: 150;
+        /* Keep drop shadow on open */
+        box-shadow: none;
     }
-    
+
+    /* Open state: slide in */
     .sidebar.open {
         transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
     }
-    
+
+    /* Show backdrop when nav is open */
+    .mobile-nav-backdrop {
+        display: block;
+    }
+
+    /* Content fills full width — no sidebar offset */
     .main-content,
     .main-container {
         margin-left: 0;
+    }
+
+    /* Also remove the collapsed-sidebar content offset on tablet */
+    .app-container:has(.sidebar-collapsed) .main-content {
+        margin-left: 0;
+    }
+
+    /* Add top padding to main content so hamburger button doesn't overlap page header */
+    .page-header {
+        padding-left: calc(var(--spacing-xl) + 52px);
+    }
+
+    /* Collapse toggle button hidden on mobile — sidebar is always full-width overlay */
+    .sidebar-toggle-btn {
+        display: none;
+    }
+
+    /* Never apply the collapsed narrow state on mobile; sidebar is either open or closed */
+    .sidebar.sidebar-collapsed {
+        width: var(--sidebar-width);
+    }
+
+    .sidebar.sidebar-collapsed .logo-text,
+    .sidebar.sidebar-collapsed .nav-item span,
+    .sidebar.sidebar-collapsed .group-label,
+    .sidebar.sidebar-collapsed .group-chevron {
+        display: revert;
+    }
+
+    .sidebar.sidebar-collapsed .nav-group-header {
+        justify-content: flex-start;
+        padding: var(--spacing-xs) var(--spacing-md);
+    }
+
+    .sidebar.sidebar-collapsed .nav-item {
+        justify-content: flex-start;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .sidebar.sidebar-collapsed .nav-group-items {
+        padding-left: var(--spacing-sm);
+    }
+
+    .sidebar.sidebar-collapsed .user-profile {
+        flex-direction: row;
+        padding: var(--spacing-sm);
+    }
+
+    .sidebar.sidebar-collapsed .user-profile .user-info,
+    .sidebar.sidebar-collapsed .user-profile .user-menu-btn {
+        display: flex;
+    }
+
+    .sidebar.sidebar-collapsed .theme-toggle span {
+        display: inline;
+    }
+
+    .sidebar.sidebar-collapsed .theme-toggle {
+        justify-content: flex-start;
+    }
+
+    .sidebar.sidebar-collapsed .sidebar-header {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .sidebar.sidebar-collapsed .logo {
+        display: flex;
+    }
+
+    /* Prevent body scroll when mobile nav is open */
+    body.mobile-nav-open {
+        overflow: hidden;
+    }
+}
+
+/* Phone: narrower sidebar so content edge is visible (encourages backdrop tap to close) */
+@media (max-width: 480px) {
+    .sidebar {
+        width: min(var(--sidebar-width), calc(100vw - 48px));
+    }
+
+    /* Restore standard page-header padding on phone — hamburger doesn't shift header on very small screens */
+    .page-header {
+        padding-left: var(--spacing-xl);
     }
 }
 
@@ -1838,18 +1996,18 @@ select {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .chat-header {
         flex-direction: column;
         gap: var(--spacing-md);
         align-items: flex-start;
     }
-    
+
     .chat-header-right {
         width: 100%;
         flex-wrap: wrap;
     }
-    
+
     .page-header {
         flex-direction: column;
         gap: var(--spacing-md);

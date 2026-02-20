@@ -70,6 +70,7 @@ const OnboardingChecklist = {
             description: 'At least one team member added to the organization',
             icon: 'users',
             link: 'admin-org-members.html',
+            action: 'inviteTeamMember',
             priority: 'required',
             check: (data) => data.members?.length >= 2
         },
@@ -581,9 +582,15 @@ const OnboardingChecklist = {
      * Render a single checklist item
      */
     renderChecklistItem(item) {
+        const clickHandler = !item.completed
+            ? (item.action
+                ? `onclick="OnboardingChecklist.handleAction('${item.action}', event)"`
+                : `onclick="window.location.href='${item.link}'"`)
+            : '';
+
         return `
             <div class="checklist-item ${item.completed ? 'completed' : 'pending'}"
-                 ${!item.completed ? `onclick="window.location.href='${item.link}'"` : ''}>
+                 ${clickHandler}>
                 <div class="checklist-item-status">
                     <i data-lucide="${item.completed ? 'check-circle' : 'circle'}"></i>
                 </div>
@@ -601,6 +608,89 @@ const OnboardingChecklist = {
                 ` : ''}
             </div>
         `;
+    },
+
+    /**
+     * Handle inline actions for checklist items
+     */
+    async handleAction(action, event) {
+        event.stopPropagation();
+
+        if (action === 'inviteTeamMember') {
+            await this.showInviteModal();
+        }
+    },
+
+    /**
+     * Inline invite modal for the "Invite Team Members" checklist item
+     */
+    async showInviteModal() {
+        if (typeof ModalService === 'undefined') {
+            window.location.href = 'admin-org-members.html';
+            return;
+        }
+
+        const result = await ModalService.form({
+            title: 'Invite Team Member',
+            fields: [
+                {
+                    name: 'email',
+                    label: 'Email Address',
+                    type: 'email',
+                    required: true,
+                    placeholder: 'colleague@company.com',
+                    help: 'Enter their email. If they don\'t have an account yet, they\'ll receive an invitation to join.'
+                },
+                {
+                    name: 'role',
+                    label: 'Role',
+                    type: 'select',
+                    options: [
+                        { value: 'consultant', label: 'Consultant' },
+                        { value: 'admin', label: 'Admin' },
+                        { value: 'viewer', label: 'Viewer' }
+                    ],
+                    value: 'consultant',
+                    help: 'Admin: Full access | Consultant: Can work with clients | Viewer: Read-only'
+                }
+            ],
+            submitText: 'Send Invitation',
+            cancelText: 'Cancel',
+            width: 500
+        });
+
+        if (!result) return;
+
+        try {
+            const token = localStorage.getItem('insight360_token');
+            const response = await fetch(`/api/org-members/${this.orgId}/invite`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: result.email, role: result.role })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                if (typeof showToast === 'function') {
+                    showToast('Invitation sent successfully!', 'success');
+                }
+                // Refresh checklist to update completion state
+                await this.refresh();
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast(data.error || 'Failed to send invitation', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Invite error:', error);
+            if (typeof showToast === 'function') {
+                showToast('Failed to send invitation', 'error');
+            }
+        }
     },
 
     /**
