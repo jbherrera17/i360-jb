@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/usage-nudge.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .builder-layout {
@@ -56,7 +57,7 @@
         .library-content {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem;
+            padding: var(--spacing-md);
         }
 
         .library-section {
@@ -173,7 +174,7 @@
         .canvas-content {
             flex: 1;
             overflow: auto;
-            padding: 2rem;
+            padding: var(--spacing-xl);
         }
 
         .steps-timeline {
@@ -612,7 +613,10 @@
         <main class="main-content" style="overflow: hidden;">
             <header class="page-header">
                 <div class="header-content">
-                    <h1>Workflow Builder</h1>
+                    <h1>
+                        <i data-lucide="workflow" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Workflow Builder
+                    </h1>
                     <p class="header-subtitle">Design intelligent workflows with HITL control</p>
                 </div>
                 <div class="header-actions">
@@ -887,9 +891,25 @@
         // Departments array for dropdown
         let departments = [];
 
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;padding:0.75rem 1.25rem;border-radius:8px;color:#fff;font-size:0.875rem;z-index:10000;animation:fadeIn 0.3s ease;';
+            toast.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#6366f1';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2700);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
             lucide.createIcons();
+            if (typeof ModalServiceLoader !== 'undefined') await ModalServiceLoader.load();
             UsageNudge.init();
 
             // Load departments first for dropdown
@@ -985,10 +1005,10 @@
                 const skillsResult = await skillsRes.json();
 
                 if (agentsResult.success) {
-                    agents = agentsResult.agents || [];
+                    agents = agentsResult.data || [];
                 }
                 if (skillsResult.success) {
-                    skills = skillsResult.skills || [];
+                    skills = skillsResult.data || [];
                 }
             } catch (error) {
                 console.error('Error loading agents/skills:', error);
@@ -1001,7 +1021,7 @@
 
             if (workflow.steps.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    <div style="text-align: center; padding: var(--spacing-2xl); color: var(--text-muted);">
                         <i data-lucide="workflow" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
                         <p>Drag steps from the library to build your workflow</p>
                     </div>
@@ -1280,8 +1300,14 @@
         }
 
         // Delete step
-        function deleteStep(index) {
-            if (!confirm('Delete this step?')) return;
+        async function deleteStep(index) {
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Step',
+                message: 'Are you sure you want to delete this step?',
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             saveUndoState();
             workflow.steps.splice(index, 1);
@@ -1301,14 +1327,22 @@
         }
 
         // Add input field
-        function addInputField() {
+        async function addInputField() {
             if (selectedStepIndex === null) return;
 
-            const fieldName = prompt('Field name (e.g., topic, audience):');
-            if (!fieldName) return;
-
-            const fieldType = prompt('Field type (text, textarea, select):', 'text');
-            if (!fieldType) return;
+            const result = await ModalService.form({
+                title: 'Add Input Field',
+                fields: [
+                    { name: 'label', label: 'Field Name', type: 'text', required: true, placeholder: 'e.g., Topic, Audience' },
+                    { name: 'type', label: 'Field Type', type: 'select', required: true, options: [
+                        { value: 'text', label: 'Text' },
+                        { value: 'textarea', label: 'Textarea' },
+                        { value: 'select', label: 'Select' }
+                    ]}
+                ],
+                submitText: 'Add Field'
+            });
+            if (!result) return;
 
             saveUndoState();
 
@@ -1317,9 +1351,9 @@
             }
 
             workflow.steps[selectedStepIndex].input_fields.push({
-                name: fieldName.toLowerCase().replace(/\s+/g, '_'),
-                label: fieldName,
-                type: fieldType,
+                name: result.label.toLowerCase().replace(/\s+/g, '_'),
+                label: result.label,
+                type: result.type,
                 required: true
             });
 
@@ -1396,12 +1430,12 @@
             workflow.department_id = document.getElementById('workflowDepartment').value || null;
 
             if (!workflow.name.trim()) {
-                alert('Please enter a workflow name');
+                await ModalService.alert({ title: 'Missing Name', message: 'Please enter a workflow name.' });
                 return;
             }
 
             if (workflow.steps.length === 0) {
-                alert('Please add at least one step');
+                await ModalService.alert({ title: 'No Steps', message: 'Please add at least one step.' });
                 return;
             }
 
@@ -1483,20 +1517,20 @@
 
                     // Update URL
                     history.replaceState({}, '', `/workflow-builder?id=${workflow.id}`);
-                    alert('Workflow saved successfully!');
+                    showToast('Workflow saved successfully', 'success');
                 } else {
-                    alert('Failed to save workflow: ' + (result.error || 'Unknown error'));
+                    showToast('Failed to save workflow: ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error saving workflow:', error);
-                alert('Failed to save workflow');
+                showToast('Failed to save workflow', 'error');
             }
         }
 
         // Preview workflow
-        function previewWorkflow() {
+        async function previewWorkflow() {
             if (!workflow.id) {
-                alert('Please save the workflow first');
+                await ModalService.alert({ title: 'Save Required', message: 'Please save the workflow first.' });
                 return;
             }
             window.open(`/workflow-run?id=${workflow.id}`, '_blank');

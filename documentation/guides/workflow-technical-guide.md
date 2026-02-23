@@ -496,42 +496,142 @@ CREATE TABLE workflow_templates (
 
 ### Workflow Builder (workflow-builder.html)
 
-Key JavaScript functions:
+#### Initialization Pattern
+
+The page initializes in `DOMContentLoaded` with theme restoration, navigation, Lucide icons, and ModalService loading before any data fetch:
 
 ```javascript
-// Load workflow for editing
-async function loadWorkflow(workflowId) {
-    const response = await fetch(`/api/workflows/${workflowId}`);
-    // ...
-}
+document.addEventListener('DOMContentLoaded', async () => {
+    const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (typeof initNavigation === 'function') await initNavigation();
+    lucide.createIcons();
+    if (typeof ModalServiceLoader !== 'undefined') await ModalServiceLoader.load();
+    UsageNudge.init();
 
-// Save workflow
-async function saveWorkflow() {
-    const response = await fetch(`/api/workflows/${workflow.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(workflow)
+    await loadDepartments();
+    const params = new URLSearchParams(window.location.search);
+    const workflowId = params.get('id');
+    if (workflowId) await loadWorkflow(workflowId);
+    await loadAgentsAndSkills();
+    renderSteps();
+});
+```
+
+ModalService is loaded via `<script src="/js/modal-service/loader.js" data-auto-load></script>` in the `<head>`.
+
+#### API Response Shape
+
+Both `/api/agents` and `/api/skills` return their lists under the `.data` property (not `.agents` / `.skills`):
+
+```javascript
+// Load agents and skills — reads .data from both endpoints
+async function loadAgentsAndSkills() {
+    const [agentsRes, skillsRes] = await Promise.all([
+        fetch('/api/agents'),
+        fetch('/api/skills')
+    ]);
+    const agentsResult = await agentsRes.json();
+    const skillsResult = await skillsRes.json();
+
+    if (agentsResult.success) agents = agentsResult.data || [];
+    if (skillsResult.success) skills = skillsResult.data || [];
+}
+```
+
+#### Modal and Toast Patterns
+
+Native `window.confirm()`, `window.alert()`, and `window.prompt()` are replaced throughout with ModalService and showToast():
+
+```javascript
+// Delete step — confirmation dialog
+async function deleteStep(index) {
+    const confirmed = await ModalService.confirm({
+        title: 'Delete Step',
+        message: 'Are you sure you want to delete this step?',
+        confirmText: 'Delete',
+        confirmClass: 'btn-danger'
     });
-    // ...
+    if (!confirmed) return;
+    // proceed with deletion
 }
 
-// Add step
-function addStep(stepType) {
-    const step = {
-        id: generateTempId(),
-        name: `New ${stepType} Step`,
-        step_type: stepType,
-        step_number: workflow.steps.length + 1,
-        config: getDefaultConfig(stepType)
-    };
-    workflow.steps.push(step);
-    renderCanvas();
+// Add input field — form dialog
+async function addInputField() {
+    const result = await ModalService.form({
+        title: 'Add Input Field',
+        fields: [
+            { name: 'label', label: 'Field Name', type: 'text', required: true },
+            { name: 'type', label: 'Field Type', type: 'select', options: [
+                { value: 'text', label: 'Text' },
+                { value: 'textarea', label: 'Textarea' },
+                { value: 'select', label: 'Select' }
+            ]}
+        ],
+        submitText: 'Add Field'
+    });
+    if (!result) return;
+    // proceed with field creation
 }
 
-// Drag and drop handling
-function handleDrop(event) {
-    const stepType = event.dataTransfer.getData('step-type');
-    addStep(stepType);
+// Save validation alerts
+async function saveWorkflow() {
+    if (!workflow.name.trim()) {
+        await ModalService.alert({ title: 'Missing Name', message: 'Please enter a workflow name.' });
+        return;
+    }
+    if (workflow.steps.length === 0) {
+        await ModalService.alert({ title: 'No Steps', message: 'Please add at least one step.' });
+        return;
+    }
+    // ... save logic
+    showToast('Workflow saved successfully', 'success');
+}
+
+// Preview guard
+async function previewWorkflow() {
+    if (!workflow.id) {
+        await ModalService.alert({ title: 'Save Required', message: 'Please save the workflow first.' });
+        return;
+    }
+    window.open(`/workflow-run?id=${workflow.id}`, '_blank');
+}
+```
+
+#### Save workflow
+
+Save creates or updates the workflow record, then saves each step individually. New workflows check plan limits via `UsageNudge.checkBeforeCreate('workflows')` before the API call:
+
+```javascript
+async function saveWorkflow() {
+    // Guard new creation against plan limits
+    if (!workflow.id && !(await UsageNudge.checkBeforeCreate('workflows'))) return;
+
+    const method = workflow.id ? 'PUT' : 'POST';
+    const url = workflow.id ? `/api/workflows/${workflow.id}` : '/api/workflows';
+
+    const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name, description, icon, color, department_id, suite, estimated_minutes, is_active, is_public })
+    });
+    // After workflow record saved, iterate workflow.steps and POST/PUT each one
+}
+```
+
+#### Drag and drop
+
+Drag uses `dataTransfer.setData('stepType', ...)` and drop reads `dataTransfer.getData('stepType')`:
+
+```javascript
+function dragStart(event) {
+    event.dataTransfer.setData('stepType', event.currentTarget.dataset.type);
+}
+
+function dropStep(event) {
+    event.preventDefault();
+    const stepType = event.dataTransfer.getData('stepType');
+    if (stepType) addStep(stepType);
 }
 ```
 

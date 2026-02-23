@@ -1,7 +1,7 @@
 # Workflow Builder & Runner User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Wednesday, February 12, 2026
+**Last Updated:** Sunday, February 23, 2026
 
 ---
 
@@ -111,7 +111,7 @@ Click any step on the canvas to open its configuration in the right panel. All s
 
 **User Input Steps:**
 - **Input Fields** - Add form fields (text, textarea, select) using the field builder
-- Click **+ Add Field** to create a new field with a name and type
+- Click **+ Add Field** to open a dialog where you enter the field name and choose the field type (Text, Textarea, or Select)
 - Remove fields with the X button on each field item
 
 **Context Creation Steps:**
@@ -149,7 +149,7 @@ Steps execute in order from top to bottom on the vertical timeline. Each step ca
 
 - **Chevron Up** button - Move the step up one position
 - **Chevron Down** button - Move the step down one position
-- **Trash** button - Delete the step (with confirmation prompt)
+- **Trash** button - Delete the step (a confirmation dialog appears before deletion)
 
 The first step disables the up button, and the last step disables the down button.
 
@@ -170,7 +170,7 @@ The builder header provides two action buttons:
 - A workflow name is required
 - At least one step must exist
 
-After saving, the URL updates to include the workflow ID (`?id=...`) so you can bookmark or share the link.
+Validation failures are shown as dialog alerts. After a successful save, a green toast notification appears in the bottom-right corner. After saving, the URL updates to include the workflow ID (`?id=...`) so you can bookmark or share the link.
 
 ### Using Variables in Prompts
 
@@ -342,12 +342,13 @@ For Agent Chat, Skill Execution, and Research steps:
 
 | Issue | Solution |
 |-------|----------|
-| **Workflow will not save** | Ensure the workflow has a name and at least one step |
-| **Step fails during execution** | Review the error message; check that the selected agent is active and configured |
+| **Workflow will not save** | Ensure the workflow has a name and at least one step; validation errors are shown as dialog alerts |
+| **Agent or skill dropdown is empty** | Agents and skills are loaded from your organization's database on page load; contact your administrator if none appear |
+| **Step fails during execution** | Review the error message shown as a toast notification; check that the selected agent is active and configured |
 | **AI response not relevant** | Refine the prompt template; provide more specific context in follow-up messages |
 | **Cannot proceed to next step** | Ensure all required fields are filled in (marked with red asterisks) |
 | **Lost your progress** | Return to Execute 120 and look for "In Progress" workflows, or use the URL with the execution ID |
-| **Preview button shows alert** | Save the workflow first before using Preview |
+| **Preview button shows a dialog** | Save the workflow first before using Preview; the dialog will remind you if you have not saved yet |
 | **Department dropdown is empty** | Departments are loaded from the database; contact your administrator if none appear |
 
 ---
