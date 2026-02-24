@@ -21,6 +21,7 @@ async function authenticate(req, res, next) {
         '/api/auth/register',
         '/api/auth/forgot-password',
         '/api/auth/reset-password',
+        '/api/auth/accept-invite',
         '/api/auth/refresh',
         '/api/pricing'
     ];

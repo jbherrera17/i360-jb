@@ -63,13 +63,6 @@ class DirectionModalService {
             userButtons.style.display = 'flex';
         }
 
-        // Disable sign out button while modal is open
-        this.signOutBtn = document.querySelector('.direction-signout');
-        if (this.signOutBtn) {
-            this.signOutBtn.disabled = true;
-            this.signOutBtn.classList.add('disabled');
-        }
-
         // Show overlay
         this.overlay.classList.add('active');
 
@@ -127,9 +120,9 @@ class DirectionModalService {
                         <div class="direction-nav">
                             <!-- Admin Buttons -->
                             <div class="direction-buttons" id="directionAdminButtons" style="display: none;">
-                                <a href="/profile.html" class="direction-btn">
-                                    <i data-lucide="user"></i>
-                                    <span>Profile</span>
+                                <a href="/chat.html" class="direction-btn">
+                                    <i data-lucide="message-circle"></i>
+                                    <span>Higgins</span>
                                 </a>
                                 <a href="/administrator.html" class="direction-btn">
                                     <i data-lucide="shield"></i>
@@ -143,9 +136,9 @@ class DirectionModalService {
 
                             <!-- User Buttons -->
                             <div class="direction-buttons" id="directionUserButtons" style="display: none;">
-                                <a href="/profile.html" class="direction-btn">
-                                    <i data-lucide="user"></i>
-                                    <span>Profile</span>
+                                <a href="/chat.html" class="direction-btn">
+                                    <i data-lucide="message-circle"></i>
+                                    <span>Higgins</span>
                                 </a>
                                 <a href="/execute120.html" class="direction-btn">
                                     <i data-lucide="rocket"></i>
