@@ -47,7 +47,7 @@ CREATE OR REPLACE FUNCTION check_org_limits(
 RETURNS TABLE (
     current_count INTEGER,
     max_allowed INTEGER,
-    within_limit BOOLEAN,
+    within_limits BOOLEAN,
     usage_percent NUMERIC(5,2)
 ) AS $$
 DECLARE
