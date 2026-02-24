@@ -665,7 +665,8 @@ router.post('/assets', async (req, res) => {
             content_json,
             tags = [],
             visibility = 'private',
-            department_id = null
+            department_id = null,
+            is_template = false
         } = req.body;
         
         // Validation
@@ -729,7 +730,8 @@ router.post('/assets', async (req, res) => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             created_by: userId,
-            department_id: department_id || null
+            department_id: department_id || null,
+            is_template: !!is_template
         };
         
         const { data, error } = await supabase
@@ -784,7 +786,8 @@ router.put('/assets/:id', async (req, res) => {
             tags,
             change_summary,
             visibility,
-            department_id
+            department_id,
+            is_template
         } = req.body;
         
         // Get current asset
@@ -845,6 +848,7 @@ router.put('/assets/:id', async (req, res) => {
         if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
         if (visibility !== undefined) updateData.visibility = visibility;
         if (department_id !== undefined) updateData.department_id = department_id || null;
+        if (is_template !== undefined) updateData.is_template = !!is_template;
 
         if (content_json !== undefined) {
             updateData.content_json = content_json;

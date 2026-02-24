@@ -84,6 +84,13 @@ function renderTypeIcon(icon) {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Context Admin initializing...');
 
+    // Apply saved theme
+    const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Initialize navigation
+    if (typeof initNavigation === 'function') await initNavigation();
+
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -270,7 +277,7 @@ function renderAssetList() {
     if (state.assets.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">📦</div>
+                <div class="empty-icon"><i data-lucide="package" style="width:48px;height:48px;opacity:0.4;"></i></div>
                 <h3>No Assets Found</h3>
                 <p>Create your first context asset to get started.</p>
                 <button onclick="showCreateModal()" class="btn-primary">
@@ -286,9 +293,12 @@ function renderAssetList() {
         const typeInfo = state.assetTypes.find(t => t.type_key === asset.asset_type) ||
                         { icon: 'file', display_name: asset.asset_type };
         const updatedDate = asset.updated_at ? formatRelativeDate(asset.updated_at) : '';
+        const isTemplate = asset.is_template || (asset.tags || []).includes('template');
+        const templateBadge = isTemplate ? '<span class="asset-template-badge">Template</span>' : '';
+        const templateClass = isTemplate ? ' is-template' : '';
 
         return `
-            <div class="asset-item ${state.selectedAsset?.id === asset.id ? 'selected' : ''}"
+            <div class="asset-item${templateClass} ${state.selectedAsset?.id === asset.id ? 'selected' : ''}"
                  onclick="selectAsset('${asset.id}')">
                 <div class="asset-icon">${renderTypeIcon(typeInfo.icon)}</div>
                 <div class="asset-info">
@@ -297,6 +307,7 @@ function renderAssetList() {
                         ${typeInfo.display_name} • v${asset.version || 1}${updatedDate ? ` • ${updatedDate}` : ''}
                     </div>
                 </div>
+                ${templateBadge}
             </div>
         `;
     }).join('');
@@ -398,6 +409,32 @@ function loadAssetIntoEditor(asset) {
         editorModified.textContent = `Modified: ${formatFullDate(asset.updated_at)}`;
     }
 
+    // Show/hide template callout banner
+    const isTemplate = asset.is_template || (asset.tags || []).includes('template');
+    let templateCallout = document.getElementById('templateCallout');
+    if (isTemplate) {
+        if (!templateCallout) {
+            templateCallout = document.createElement('div');
+            templateCallout.id = 'templateCallout';
+            templateCallout.className = 'template-callout';
+            templateCallout.innerHTML = `
+                <i data-lucide="bookmark" style="width:16px;height:16px;flex-shrink:0;color:var(--warning, #f59e0b);"></i>
+                <span><strong>Template:</strong> Duplicate and customize this for your organization.</span>
+                <button class="btn-duplicate" onclick="duplicateAsset()">
+                    <i data-lucide="copy" style="width:14px;height:14px;"></i> Duplicate
+                </button>
+            `;
+            const editorContent = document.getElementById('editorContent');
+            if (editorContent) {
+                editorContent.parentNode.insertBefore(templateCallout, editorContent);
+            }
+        }
+        templateCallout.style.display = 'flex';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } else {
+        if (templateCallout) templateCallout.style.display = 'none';
+    }
+
     state.isDirty = false;
     updateSaveButtonState();
 }
@@ -440,7 +477,8 @@ function showCreateModal() {
     // Update editor header
     const editorTitle = document.getElementById('editorTitle');
     if (editorTitle) {
-        editorTitle.textContent = '➕ New Asset';
+        editorTitle.innerHTML = '<i data-lucide="plus-circle" style="width:16px;height:16px;vertical-align:middle;margin-right:0.4rem;"></i>New Asset';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Hide editor metadata for new assets
@@ -472,13 +510,13 @@ async function saveAsset() {
     const asset_type = typeSelect?.value;
     
     if (!name) {
-        showNotification('Please enter a name', 'error');
+        showToast('Please enter a name', 'error');
         nameInput?.focus();
         return;
     }
     
     if (!asset_type) {
-        showNotification('Please select an asset type', 'error');
+        showToast('Please select an asset type', 'error');
         typeSelect?.focus();
         return;
     }
@@ -488,7 +526,7 @@ async function saveAsset() {
     try {
         content_json = JSON.parse(jsonEditor?.value || '{}');
     } catch (e) {
-        showNotification('Invalid JSON: ' + e.message, 'error');
+        showToast('Invalid JSON: ' + e.message, 'error');
         switchTab('json');
         return;
     }
@@ -521,7 +559,7 @@ async function saveAsset() {
                 method: 'PUT',
                 body: JSON.stringify(assetData)
             });
-            showNotification('Asset updated successfully', 'success');
+            showToast('Asset updated successfully', 'success');
         } else {
             // Guard new creation against plan limits
             if (typeof UsageNudge !== 'undefined' && !(await UsageNudge.checkBeforeCreate('context_assets'))) return;
@@ -530,7 +568,7 @@ async function saveAsset() {
                 method: 'POST',
                 body: JSON.stringify(assetData)
             });
-            showNotification('Asset created successfully', 'success');
+            showToast('Asset created successfully', 'success');
         }
         
         // Reload assets
@@ -545,7 +583,7 @@ async function saveAsset() {
         updateSaveButtonState();
         
     } catch (error) {
-        showNotification('Failed to save: ' + error.message, 'error');
+        showToast('Failed to save: ' + error.message, 'error');
     }
 }
 
@@ -555,7 +593,7 @@ async function deleteAsset(id) {
 
     // First, check for dependencies
     try {
-        showNotification('Checking dependencies...', 'info');
+        showToast('Checking dependencies...', 'info');
         const response = await apiCall(`/api/context/assets/${id}/dependencies`);
         const deps = response.data;
 
@@ -568,7 +606,7 @@ async function deleteAsset(id) {
             method: 'DELETE'
         });
 
-        showNotification('Asset deleted', 'success');
+        showToast('Asset deleted', 'success');
 
         if (state.selectedAsset?.id === id) {
             state.selectedAsset = null;
@@ -578,7 +616,43 @@ async function deleteAsset(id) {
         await loadAssets();
 
     } catch (error) {
-        showNotification('Failed to delete: ' + error.message, 'error');
+        showToast('Failed to delete: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Duplicate the currently selected asset as a non-template copy
+ */
+async function duplicateAsset() {
+    const asset = state.selectedAsset;
+    if (!asset) return;
+
+    try {
+        const duplicateName = `Copy of ${asset.name}`;
+        const cleanTags = (asset.tags || []).filter(t => t !== 'template');
+        const assetData = {
+            name: duplicateName,
+            asset_type: asset.asset_type,
+            description: asset.description || '',
+            content_json: asset.content_json || {},
+            tags: cleanTags,
+            department_id: asset.department_id || null,
+            is_template: false
+        };
+
+        const result = await apiCall('/api/context/assets', {
+            method: 'POST',
+            body: JSON.stringify(assetData)
+        });
+
+        showToast(`Duplicated as "${duplicateName}"`, 'success');
+        await loadAssets();
+
+        if (result.data?.id) {
+            selectAsset(result.data.id);
+        }
+    } catch (error) {
+        showToast('Failed to duplicate: ' + error.message, 'error');
     }
 }
 
@@ -1306,7 +1380,7 @@ async function handleImport(e) {
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }
 
-            showNotification(`Importing ${data.assets.length} assets...`, 'info');
+            showToast(`Importing ${data.assets.length} assets...`, 'info');
 
             const response = await fetch('/api/context/import', {
                 method: 'POST',
@@ -1321,7 +1395,7 @@ async function handleImport(e) {
                 throw new Error(result.error || `HTTP ${response.status}`);
             }
 
-            showNotification(`Imported ${result.data?.created || 0} assets`, 'success');
+            showToast(`Imported ${result.data?.created || 0} assets`, 'success');
             await loadAssets();
         } else if (data.asset_type || data.content_json) {
             // Single asset - load into editor
@@ -1337,7 +1411,7 @@ async function handleImport(e) {
             state.selectedAsset = null;
             state.isDirty = true;
             updateSaveButtonState();
-            showNotification('Asset loaded into editor - click Save to create', 'info');
+            showToast('Asset loaded into editor - click Save to create', 'info');
         } else {
             // Raw JSON - load as content
             hideEmptyState();
@@ -1356,7 +1430,8 @@ async function handleImport(e) {
             // Update editor header
             const editorTitle = document.getElementById('editorTitle');
             if (editorTitle) {
-                editorTitle.textContent = '➕ New Asset';
+                editorTitle.innerHTML = '<i data-lucide="plus-circle" style="width:16px;height:16px;vertical-align:middle;margin-right:0.4rem;"></i>New Asset';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
             }
 
             // Hide editor metadata
@@ -1375,13 +1450,13 @@ async function handleImport(e) {
             state.selectedAsset = null;
             state.isDirty = true;
             updateSaveButtonState();
-            showNotification('JSON loaded into editor - add name/type and save', 'info');
+            showToast('JSON loaded into editor - add name/type and save', 'info');
         }
     } catch (error) {
         if (error.name === 'AbortError') {
-            showNotification('Import cancelled', 'info');
+            showToast('Import cancelled', 'info');
         } else {
-            showNotification('Failed to import: ' + error.message, 'error');
+            showToast('Failed to import: ' + error.message, 'error');
         }
     } finally {
         // Reset state
@@ -1426,9 +1501,9 @@ async function handleExport() {
         a.click();
         URL.revokeObjectURL(url);
         
-        showNotification('Export downloaded', 'success');
+        showToast('Export downloaded', 'success');
     } catch (error) {
-        showNotification('Failed to export: ' + error.message, 'error');
+        showToast('Failed to export: ' + error.message, 'error');
     }
 }
 
@@ -1436,21 +1511,12 @@ async function handleExport() {
 // NOTIFICATIONS
 // ============================================
 
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    document.querySelectorAll('.notification').forEach(n => n.remove());
-    
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <span>${escapeHtml(message)}</span>
-        <button onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => notification.remove(), 5000);
+function showToast(message, type = 'info') {
+    if (typeof ModalService !== 'undefined' && ModalService.toast) {
+        ModalService.toast({ message, type });
+    } else {
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
 }
 
 // ============================================
@@ -1531,7 +1597,7 @@ function openGenerateModal() {
     // Check if ModalService is available
     if (typeof ModalService === 'undefined' || !ModalService.createAsset) {
         console.error('ModalService.createAsset not available');
-        showNotification('Modal service not loaded', 'error');
+        showToast('Modal service not loaded', 'error');
         return;
     }
 
@@ -1620,7 +1686,7 @@ async function handleModalGenerate(data) {
             modal.close();
 
             // Show success
-            showNotification(`Generated ${typeInfo.display_name} content! Review and save when ready.`, 'success');
+            showToast(`Generated ${typeInfo.display_name} content! Review and save when ready.`, 'success');
 
             // Mark as dirty so user knows to save
             state.selectedAsset = null;
@@ -1636,10 +1702,10 @@ async function handleModalGenerate(data) {
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            showNotification('Generation cancelled', 'info');
+            showToast('Generation cancelled', 'info');
         } else {
             console.error('Generate error:', error);
-            showNotification('Failed to generate: ' + error.message, 'error');
+            showToast('Failed to generate: ' + error.message, 'error');
         }
         modal.hideStatus();
     } finally {
@@ -1658,7 +1724,7 @@ async function handleModalImport(data) {
 
     // Validation
     if (content.length < 50) {
-        showNotification('Content is too short. Please provide more detail.', 'error');
+        showToast('Content is too short. Please provide more detail.', 'error');
         return;
     }
 
@@ -1710,7 +1776,7 @@ async function handleModalImport(data) {
             // Show success with confidence info
             const confidence = responseData.metadata?.confidence || 0;
             const confidenceText = confidence >= 0.9 ? 'high' : confidence >= 0.7 ? 'good' : 'moderate';
-            showNotification(
+            showToast(
                 `Created ${typeInfo.icon} ${typeInfo.display_name} with ${confidenceText} confidence. Review and save when ready.`,
                 'success'
             );
@@ -1731,10 +1797,10 @@ async function handleModalImport(data) {
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            showNotification('Conversion cancelled', 'info');
+            showToast('Conversion cancelled', 'info');
         } else {
             console.error('Import error:', error);
-            showNotification('Failed to convert: ' + error.message, 'error');
+            showToast('Failed to convert: ' + error.message, 'error');
         }
         modal.hideStatus();
     } finally {

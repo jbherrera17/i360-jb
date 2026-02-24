@@ -14,14 +14,27 @@ const supabase = createClient(
 
 /**
  * GET /api/departments
- * List all departments
+ * List departments, scoped to the user's organization.
+ * Accepts ?org_id=UUID query param or falls back to req.orgId from auth middleware.
+ * Returns only departments belonging to the resolved org (filters out null org_id orphans).
  */
 router.get('/', async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const orgId = req.query.org_id || req.headers['x-org-id'] || req.orgId;
+
+        let query = supabase
             .from('departments')
             .select('*')
             .order('name', { ascending: true });
+
+        if (orgId) {
+            query = query.eq('org_id', orgId);
+        } else {
+            // No org context — filter out orphans, return only org-scoped departments
+            query = query.not('org_id', 'is', null);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -113,12 +126,20 @@ router.put('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
     try {
-        const { name, description, icon, color, tagline, metrics, quick_prompts, sort_order } = req.body;
+        const { name, description, icon, color, tagline, metrics, quick_prompts, sort_order, org_id } = req.body;
 
         if (!name) {
             return res.status(400).json({
                 success: false,
                 error: 'Department name is required'
+            });
+        }
+
+        const resolvedOrgId = org_id || req.headers['x-org-id'] || req.orgId;
+        if (!resolvedOrgId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Organization context is required to create a department'
             });
         }
 
@@ -132,7 +153,8 @@ router.post('/', async (req, res) => {
                 tagline: tagline || '',
                 metrics: metrics || [],
                 quick_prompts: quick_prompts || [],
-                sort_order: sort_order || 99
+                sort_order: sort_order || 99,
+                org_id: resolvedOrgId
             })
             .select()
             .single();

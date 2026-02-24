@@ -1299,7 +1299,7 @@
                         <div class="stat-value" id="userCount">0</div>
                         <div class="stat-label">Agency Members</div>
                     </div>
-                    <div class="stat-card viewer">
+                    <div class="stat-card viewer" data-agency-only>
                         <div class="stat-value" id="viewerCount">0</div>
                         <div class="stat-label">Client Portal</div>
                     </div>
@@ -1311,15 +1311,15 @@
                         <i data-lucide="users" style="width:14px;height:14px;"></i>
                         All Users
                     </button>
-                    <button class="filter-btn" data-filter="platform" onclick="filterUsers('platform')">
+                    <button class="filter-btn" data-filter="platform" onclick="filterUsers('platform')" data-agency-only>
                         <i data-lucide="crown" style="width:14px;height:14px;"></i>
                         Platform
                     </button>
-                    <button class="filter-btn" data-filter="agency" onclick="filterUsers('agency')">
+                    <button class="filter-btn" data-filter="agency" onclick="filterUsers('agency')" data-agency-only>
                         <i data-lucide="building" style="width:14px;height:14px;"></i>
                         Agency Teams
                     </button>
-                    <button class="filter-btn" data-filter="client" onclick="filterUsers('client')">
+                    <button class="filter-btn" data-filter="client" onclick="filterUsers('client')" data-agency-only>
                         <i data-lucide="user-check" style="width:14px;height:14px;"></i>
                         Client Portal
                     </button>
@@ -1375,6 +1375,42 @@
         let organizations = [];
         let clients = [];
         let currentUserFilter = 'all'; // 'all', 'platform', 'agency', 'client'
+
+        // Tier-based visibility
+        let isAgencyOrg = false;
+        let isPlatformAdminUser = false;
+
+        function detectOrgTier() {
+            isPlatformAdminUser = currentUser?.is_platform_admin || false;
+
+            // Platform admins see everything
+            if (isPlatformAdminUser) {
+                isAgencyOrg = true;
+                return;
+            }
+
+            // Check if any org the admin belongs to is agency-tier
+            isAgencyOrg = organizations.some(org =>
+                org.subscription_tier && org.subscription_tier.startsWith('agency')
+            );
+        }
+
+        function applyTierVisibility() {
+            detectOrgTier();
+
+            // Toggle agency-only elements
+            document.querySelectorAll('[data-agency-only]').forEach(el => {
+                el.style.display = isAgencyOrg ? '' : 'none';
+            });
+
+            // Update stat card labels for non-agency orgs
+            if (!isAgencyOrg) {
+                document.querySelectorAll('.stat-label').forEach(label => {
+                    if (label.textContent === 'Platform Admins') label.textContent = 'Admins';
+                    if (label.textContent === 'Agency Members') label.textContent = 'Members';
+                });
+            }
+        }
 
         // Modal instances (ModalService)
         let userModal = null;
@@ -1734,10 +1770,10 @@
                         <tr>
                             <th>User</th>
                             <th>Organization</th>
-                            <th>Client</th>
+                            ${isAgencyOrg ? '<th>Client</th>' : ''}
                             <th>Role</th>
                             <th>Tier</th>
-                            <th>Portal</th>
+                            ${isAgencyOrg ? '<th>Portal</th>' : ''}
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -1755,10 +1791,10 @@
                                     </div>
                                 </td>
                                 <td>${getOrgDisplay(user)}</td>
-                                <td>${getClientDisplay(user)}</td>
+                                ${isAgencyOrg ? `<td>${getClientDisplay(user)}</td>` : ''}
                                 <td>${getRoleDisplay(user)}</td>
                                 <td>${getTierDisplay(user)}</td>
-                                <td>${getPortalDisplay(user)}</td>
+                                ${isAgencyOrg ? `<td>${getPortalDisplay(user)}</td>` : ''}
                                 <td>${getStatusBadge(user.status)}</td>
                                 <td>
                                     <div class="actions-cell">
@@ -1851,19 +1887,29 @@
         }
 
         function updateAssignmentStats() {
-            // Count users by assignment type
-            let platformCount = 0;
-            let agencyCount = 0;
+            let adminCount = 0;
+            let memberCount = 0;
             let clientCount = 0;
 
-            unifiedUsers.forEach(user => {
-                if (user.platform_admin) platformCount++;
-                if (user.organization_memberships && user.organization_memberships.length > 0) agencyCount++;
-                if (user.client_portal_access && user.client_portal_access.length > 0) clientCount++;
-            });
+            if (isAgencyOrg) {
+                // Agency/platform view: count by assignment type
+                unifiedUsers.forEach(user => {
+                    if (user.platform_admin) adminCount++;
+                    if (user.organization_memberships && user.organization_memberships.length > 0) memberCount++;
+                    if (user.client_portal_access && user.client_portal_access.length > 0) clientCount++;
+                });
+            } else {
+                // Non-agency: count by org membership role
+                unifiedUsers.forEach(user => {
+                    const role = user.organization_memberships?.[0]?.role;
+                    if (role === 'admin') adminCount++;
+                    else if (role === 'viewer') clientCount++; // reuse viewerCount slot
+                    else if (role) memberCount++;
+                });
+            }
 
-            document.getElementById('adminCount').textContent = platformCount;
-            document.getElementById('userCount').textContent = agencyCount;
+            document.getElementById('adminCount').textContent = adminCount;
+            document.getElementById('userCount').textContent = memberCount;
             document.getElementById('viewerCount').textContent = clientCount;
         }
 
@@ -2575,6 +2621,8 @@
             });
 
             try {
+                // Detect org tier before rendering so UI adapts to tier
+                applyTierVisibility();
                 renderUsersTable();
                 updateAssignmentStats();
                 populateDepartmentDropdown();
