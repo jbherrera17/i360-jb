@@ -164,8 +164,8 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Only admin/owner/consultant can create clients
-            if (!['owner', 'admin', 'consultant'].includes(req.orgRole)) {
+            // Only admin/owner/member can create clients
+            if (!['owner', 'admin', 'member'].includes(req.orgRole)) {
                 return res.status(403).json({
                     success: false,
                     error: 'Insufficient permissions to create clients'
@@ -242,7 +242,7 @@ module.exports = function(supabase) {
                 .eq('status', 'active')
                 .single();
 
-            if (!membership || !['owner', 'admin', 'consultant'].includes(membership.role)) {
+            if (!membership || !['owner', 'admin', 'member'].includes(membership.role)) {
                 return res.status(403).json({
                     success: false,
                     error: 'Insufficient permissions'

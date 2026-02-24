@@ -588,7 +588,7 @@
 
         // Update UI based on role
         function updateUIForRole() {
-            const canCreate = ['owner', 'admin', 'consultant'].includes(userRole);
+            const canCreate = ['owner', 'admin', 'member'].includes(userRole);
             document.getElementById('add-client-btn').style.display = canCreate ? 'flex' : 'none';
         }
 
@@ -649,7 +649,7 @@
                 return;
             }
 
-            const canEdit = ['owner', 'admin', 'consultant'].includes(userRole);
+            const canEdit = ['owner', 'admin', 'member'].includes(userRole);
             const canDelete = ['owner', 'admin'].includes(userRole);
 
             grid.innerHTML = filteredClients.map(client => `

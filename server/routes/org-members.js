@@ -112,7 +112,7 @@ module.exports = function(supabase) {
         try {
             const { orgId } = req.params;
             const userId = req.userId;
-            const { email, role = 'consultant' } = req.body;
+            const { email, role = 'member' } = req.body;
 
             if (!userId) {
                 return res.status(401).json({
@@ -145,7 +145,7 @@ module.exports = function(supabase) {
             }
 
             // Validate role
-            const validRoles = ['admin', 'consultant', 'viewer'];
+            const validRoles = ['admin', 'member', 'viewer'];
             if (!validRoles.includes(role)) {
                 return res.status(400).json({
                     success: false,
@@ -357,7 +357,7 @@ module.exports = function(supabase) {
             }
 
             // Validate role
-            const validRoles = ['owner', 'admin', 'consultant', 'viewer'];
+            const validRoles = ['owner', 'admin', 'member', 'viewer'];
             if (role && !validRoles.includes(role)) {
                 return res.status(400).json({
                     success: false,

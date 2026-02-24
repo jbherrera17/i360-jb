@@ -646,12 +646,12 @@ const OnboardingChecklist = {
                     label: 'Role',
                     type: 'select',
                     options: [
-                        { value: 'consultant', label: 'Consultant' },
+                        { value: 'member', label: 'Member' },
                         { value: 'admin', label: 'Admin' },
                         { value: 'viewer', label: 'Viewer' }
                     ],
-                    value: 'consultant',
-                    help: 'Admin: Full access | Consultant: Can work with clients | Viewer: Read-only'
+                    value: 'member',
+                    help: 'Admin: Full access | Member: Active team member | Viewer: Read-only'
                 }
             ],
             submitText: 'Send Invitation',

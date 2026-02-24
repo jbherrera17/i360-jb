@@ -889,7 +889,7 @@ module.exports = function(supabase) {
             }
 
             // Validate org_role if provided
-            const validOrgRoles = ['admin', 'consultant', 'viewer'];
+            const validOrgRoles = ['admin', 'member', 'viewer'];
             if (org_role && !validOrgRoles.includes(org_role)) {
                 return res.status(400).json({
                     success: false,
@@ -974,7 +974,7 @@ module.exports = function(supabase) {
                         .insert({
                             org_id: org_id,
                             user_id: authData.user.id,
-                            role: org_role || 'consultant',
+                            role: org_role || 'member',
                             status: 'active',
                             invited_by: req.user?.id || req.userId,
                             joined_at: new Date().toISOString()
@@ -996,7 +996,7 @@ module.exports = function(supabase) {
                     role: userRole,
                     status: 'invited',
                     org_id: org_id || null,
-                    org_role: org_id ? (org_role || 'consultant') : null
+                    org_role: org_id ? (org_role || 'member') : null
                 }
             });
 
@@ -1679,7 +1679,7 @@ module.exports = function(supabase) {
                 return res.status(404).json({ success: false, error: 'Organization not found' });
             }
 
-            const validRoles = ['owner', 'admin', 'consultant', 'viewer', 'user'];
+            const validRoles = ['owner', 'admin', 'member', 'viewer', 'user'];
             if (!validRoles.includes(role)) {
                 return res.status(400).json({ success: false, error: `Invalid role. Must be: ${validRoles.join(', ')}` });
             }

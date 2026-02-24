@@ -481,7 +481,7 @@
 
                 if (result.success) {
                     organizations = result.data.filter(o =>
-                        ['owner', 'admin', 'consultant'].includes(o.member_role)
+                        ['owner', 'admin', 'member'].includes(o.member_role)
                     );
                     populateOrgSelect();
 

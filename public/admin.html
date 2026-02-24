@@ -2126,7 +2126,7 @@
                         <label class="form-label" for="orgMemberRole">Role in Organization</label>
                         <select id="orgMemberRole" class="form-select">
                             <option value="admin">Admin</option>
-                            <option value="consultant">Consultant</option>
+                            <option value="member">Member</option>
                             <option value="viewer">Viewer</option>
                         </select>
                     </div>
@@ -2212,7 +2212,7 @@
                                 ${organizations.map(org => `<option value="${org.id}">${escapeHtml(org.name)}</option>`).join('')}
                             </select>
                             <select id="newOrgRole" class="form-select" style="flex: 1; min-width: 100px;">
-                                <option value="consultant">Consultant</option>
+                                <option value="member">Member</option>
                                 <option value="admin">Admin</option>
                                 <option value="viewer">Viewer</option>
                             </select>
@@ -2497,7 +2497,7 @@
                         const orgId = document.getElementById('assignOrgId')?.value;
                         const orgRole = document.getElementById('orgMemberRole')?.value;
                         if (orgId) {
-                            assignments.add_org_memberships = [{ org_id: orgId, role: orgRole || 'consultant' }];
+                            assignments.add_org_memberships = [{ org_id: orgId, role: orgRole || 'member' }];
                         }
 
                         // Apply assignments if any were selected

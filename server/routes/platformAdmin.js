@@ -1661,7 +1661,7 @@ module.exports = function(supabase) {
                     .insert({
                         user_id: userId,
                         org_id,
-                        role: role || 'consultant',
+                        role: role || 'member',
                         status: 'active',
                         invited_by: req.userId,
                         joined_at: new Date().toISOString()
@@ -1768,7 +1768,7 @@ module.exports = function(supabase) {
     router.post('/users/:id/add-to-org', requireAdminWrite, async (req, res) => {
         try {
             const { id } = req.params;
-            const { org_id, role = 'consultant' } = req.body;
+            const { org_id, role = 'member' } = req.body;
 
             if (!org_id) {
                 return res.status(400).json({

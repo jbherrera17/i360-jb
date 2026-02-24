@@ -173,7 +173,7 @@
             color: var(--primary);
         }
 
-        .role-badge.consultant {
+        .role-badge.member {
             background: rgba(16, 185, 129, 0.15);
             color: #10b981;
         }
@@ -703,12 +703,12 @@
                         label: 'Role',
                         type: 'select',
                         options: [
-                            { value: 'consultant', label: 'Consultant' },
+                            { value: 'member', label: 'Member' },
                             { value: 'admin', label: 'Admin' },
                             { value: 'viewer', label: 'Viewer' }
                         ],
-                        value: 'consultant',
-                        help: 'Admin: Full access | Consultant: Can work with clients | Viewer: Read-only'
+                        value: 'member',
+                        help: 'Admin: Full access | Member: Active team member | Viewer: Read-only'
                     }
                 ],
                 submitText: 'Send Invitation',
@@ -768,7 +768,7 @@
                         type: 'select',
                         options: [
                             { value: 'admin', label: 'Admin' },
-                            { value: 'consultant', label: 'Consultant' },
+                            { value: 'member', label: 'Member' },
                             { value: 'viewer', label: 'Viewer' }
                         ],
                         value: currentRole
