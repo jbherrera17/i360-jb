@@ -46,15 +46,13 @@ CREATE POLICY "Admins and members can manage clients"
         )
     );
 
--- Update client_users policies if they exist
+-- Update client_users policies if the table exists
 DO $$
 BEGIN
-    -- Drop old policies that reference consultant if they exist
-    DROP POLICY IF EXISTS "Org admins and consultants can manage client users" ON client_users;
-    DROP POLICY IF EXISTS "Org admins and consultants can view client users" ON client_users;
-
-    -- Check if client_users table exists before creating policies
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'client_users') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'client_users' AND table_schema = 'public') THEN
+        -- Drop old policies that reference consultant
+        DROP POLICY IF EXISTS "Org admins and consultants can manage client users" ON client_users;
+        DROP POLICY IF EXISTS "Org admins and consultants can view client users" ON client_users;
         -- Recreate with 'member' instead of 'consultant'
         CREATE POLICY "Org admins and members can manage client users"
             ON client_users
@@ -80,12 +78,11 @@ BEGIN
     END IF;
 END $$;
 
--- Update client_portal_access policies if they exist
+-- Update client_portal_access policies if the table exists
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Org admins and consultants can manage portal access" ON client_portal_access;
-
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'client_portal_access') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'client_portal_access' AND table_schema = 'public') THEN
+        DROP POLICY IF EXISTS "Org admins and consultants can manage portal access" ON client_portal_access;
         CREATE POLICY "Org admins and members can manage portal access"
             ON client_portal_access
             FOR ALL
