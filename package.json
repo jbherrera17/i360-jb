@@ -14,7 +14,7 @@
     "test:e2e:report": "playwright show-report",
     "test:all": "npm run test && npm run test:e2e",
     "lint": "eslint .",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "server/**/*.js": [
@@ -67,6 +67,6 @@
     "supertest": "^7.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }
