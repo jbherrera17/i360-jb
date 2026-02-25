@@ -101,7 +101,7 @@ Agents are persistent AI specialists you can have ongoing conversations with. Ag
 - Given conversation starters — example prompts you can click to begin a conversation
 - Assigned a greeting message shown at the start of each chat
 
-To use an agent later: go to **Execute 120**, find it in your department's Recommended Agents section, and click **Chat**.
+To use an agent later: go to **Execute 120**, find it in the **My Agents** section of your Command Center, and click **Chat**.
 
 ### Actions
 
@@ -111,31 +111,31 @@ Actions are single-click AI operations for tasks you need to run repeatedly. Act
 - Pre-configured with an AI prompt that executes the described task
 - Available immediately in the Quick Actions section of Execute 120
 
-To run an action later: go to **Execute 120**, find it in Quick Actions, and hover to reveal the play button. Or go to the **Actions** page to browse the full library.
+To run an action later: go to **Execute 120**, find it in the **Quick Actions** section of your Command Center, and hover to reveal the play button. Or go to the **Actions** page to browse the full library.
 
 ### Workflows
 
 Workflows are structured, multi-step processes that guide you through a task. Workflows created by Easy Start are:
 
 - Built with 3 to 5 ordered steps covering inputs, AI generation, and review
-- Available as Workflow Wizards in Execute 120
+- Available in the **My Workflows** section of Execute 120
 - Organized by category (automation, content, research, reporting, onboarding, review, or general)
 
-To run a workflow later: go to **Execute 120**, find it in the Workflow Wizards section, and click **Start**.
+To run a workflow later: go to **Execute 120**, find it in the **My Workflows** section of your Command Center, and click **Start**.
 
 ---
 
 ## Where to Find Your Created Resources
 
-All resources created by Easy Start appear in **Execute 120** (`/execute120`). They are organized by department (if Higgins assigned them to one) or visible under all departments.
+All resources created by Easy Start appear in **Execute 120** (`/execute120`), your personal Command Center. They load in the relevant section automatically based on your department assignment.
 
 You can also find them directly:
 
 | Resource Type | Where to Find It |
 |---------------|-----------------|
-| Agents | **Agent Library** page — filter by category or search by name |
-| Actions | **Actions** page — filter by suite or search by name |
-| Workflows | **Execute 120** → Workflow Wizards section |
+| Agents | **Execute 120** → My Agents section, or the **Agent Library** page |
+| Actions | **Execute 120** → Quick Actions section, or the **Actions** page |
+| Workflows | **Execute 120** → My Workflows section |
 
 ---
 

@@ -287,8 +287,9 @@ module.exports = function(supabase) {
     router.get('/my-cards', async (req, res) => {
         try {
             const userId = getUserId(req);
-            const { limit = 5 } = req.query;
+            const { limit = 5, department_id } = req.query;
             const limitNum = parseInt(limit);
+            const orgId = req.headers['x-org-id'] || null;
 
             // Get user profile
             let user = null;
@@ -301,7 +302,8 @@ module.exports = function(supabase) {
                 user = userData;
             }
 
-            const deptId = user?.department_id;
+            // Use explicit department_id param if provided, else user's own department
+            const deptId = department_id || user?.department_id;
             const roleLevel = user?.business_role || 'ic';
 
             // Get user's role level number for filtering
@@ -315,19 +317,21 @@ module.exports = function(supabase) {
                 userRoleLevelNum = roleData?.level || 1;
             }
 
-            // Parallel fetch all cards — filtered by department and role
-            const [contextAssets, agents, actions, skills, workflows, briefing] = await Promise.all([
+            // Parallel fetch all cards + module access checks
+            const [contextAssets, agents, actions, skills, workflows, briefing, briefingAccess, strategyAccess] = await Promise.all([
                 getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredActions(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredSkills(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limitNum),
-                getLatestBriefing(supabase, userId)
+                getLatestBriefing(supabase, userId),
+                userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'briefing', p_org_id: orgId }) : { data: true },
+                userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'strategy120', p_org_id: orgId }) : { data: false }
             ]);
 
-            // Strategy overview for executives only
+            // Strategy overview for executives only (and only if they have strategy access)
             let strategyOverview = null;
-            if (['executive', 'director'].includes(roleLevel)) {
+            if (['executive', 'director'].includes(roleLevel) && strategyAccess.data !== false) {
                 strategyOverview = await getStrategyOverview(supabase, deptId);
             }
 
@@ -340,7 +344,11 @@ module.exports = function(supabase) {
                     skills,
                     workflows,
                     briefing,
-                    strategyOverview
+                    strategyOverview,
+                    moduleAccess: {
+                        briefing: briefingAccess.data !== false,
+                        strategy120: strategyAccess.data === true
+                    }
                 }
             });
         } catch (error) {
@@ -386,6 +394,238 @@ module.exports = function(supabase) {
             });
         }
     });
+
+    // ============================================
+    // USER FAVORITES (Phase 61)
+    // ============================================
+
+    /**
+     * GET /api/execute120/my-favorites
+     * Get current user's pinned/starred items
+     */
+    router.get('/my-favorites', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.json({ success: true, data: [] });
+            }
+
+            const { entity_type } = req.query;
+
+            let query = supabase
+                .from('user_favorites')
+                .select('*')
+                .eq('user_id', userId)
+                .order('sort_order', { ascending: true })
+                .order('last_accessed_at', { ascending: false });
+
+            if (entity_type) {
+                query = query.eq('entity_type', entity_type);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            // Enrich favorites with entity details
+            const enriched = await enrichFavorites(supabase, data || []);
+
+            res.json({ success: true, data: enriched });
+        } catch (error) {
+            console.error('Error fetching favorites:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch favorites' });
+        }
+    });
+
+    /**
+     * POST /api/execute120/my-favorites
+     * Add or update a favorite
+     */
+    router.post('/my-favorites', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            const { entity_type, entity_id, label } = req.body;
+
+            if (!entity_type || !entity_id) {
+                return res.status(400).json({ success: false, error: 'entity_type and entity_id are required' });
+            }
+
+            const { data, error } = await supabase
+                .from('user_favorites')
+                .upsert(
+                    { user_id: userId, entity_type, entity_id, label, last_accessed_at: new Date().toISOString() },
+                    { onConflict: 'user_id,entity_type,entity_id' }
+                )
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error adding favorite:', error);
+            res.status(500).json({ success: false, error: 'Failed to add favorite' });
+        }
+    });
+
+    /**
+     * DELETE /api/execute120/my-favorites/:entityType/:entityId
+     * Remove a favorite
+     */
+    router.delete('/my-favorites/:entityType/:entityId', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Authentication required' });
+            }
+
+            const { entityType, entityId } = req.params;
+
+            const { error } = await supabase
+                .from('user_favorites')
+                .delete()
+                .eq('user_id', userId)
+                .eq('entity_type', entityType)
+                .eq('entity_id', entityId);
+
+            if (error) throw error;
+
+            res.json({ success: true, message: 'Favorite removed' });
+        } catch (error) {
+            console.error('Error removing favorite:', error);
+            res.status(500).json({ success: false, error: 'Failed to remove favorite' });
+        }
+    });
+
+    /**
+     * GET /api/execute120/my-recents
+     * Get recently used workflows and favorited agents
+     */
+    router.get('/my-recents', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.json({ success: true, data: { recentWorkflows: [], recentAgents: [] } });
+            }
+
+            // Recent workflows from workflow_executions
+            const { data: recentExecs } = await supabase
+                .from('workflow_executions')
+                .select('workflow_id, started_at, workflow:workflows(id, name, icon, color, description)')
+                .eq('user_id', userId)
+                .order('started_at', { ascending: false })
+                .limit(20);
+
+            // Deduplicate by workflow_id, keep most recent
+            const seenWorkflows = new Set();
+            const recentWorkflows = (recentExecs || [])
+                .filter(r => {
+                    if (!r.workflow || seenWorkflows.has(r.workflow_id)) return false;
+                    seenWorkflows.add(r.workflow_id);
+                    return true;
+                })
+                .slice(0, 5)
+                .map(r => ({ ...r.workflow, last_used_at: r.started_at }));
+
+            // Recently accessed favorite agents
+            const { data: recentAgentFavs } = await supabase
+                .from('user_favorites')
+                .select('entity_id, last_accessed_at')
+                .eq('user_id', userId)
+                .eq('entity_type', 'agent')
+                .order('last_accessed_at', { ascending: false })
+                .limit(5);
+
+            // Enrich with agent details
+            let recentAgents = [];
+            if (recentAgentFavs?.length) {
+                const agentIds = recentAgentFavs.map(f => f.entity_id);
+                const { data: agents } = await supabase
+                    .from('agents')
+                    .select('id, name, description, icon, category')
+                    .in('id', agentIds);
+
+                recentAgents = agentIds
+                    .map(id => {
+                        const agent = (agents || []).find(a => a.id === id);
+                        const fav = recentAgentFavs.find(f => f.entity_id === id);
+                        return agent ? { ...agent, last_accessed_at: fav?.last_accessed_at } : null;
+                    })
+                    .filter(Boolean);
+            }
+
+            res.json({
+                success: true,
+                data: { recentWorkflows, recentAgents }
+            });
+        } catch (error) {
+            console.error('Error fetching recents:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch recents' });
+        }
+    });
+
+    /**
+     * Enrich favorite records with entity details (name, icon, etc.)
+     */
+    async function enrichFavorites(supabase, favorites) {
+        if (!favorites.length) return [];
+
+        // Group by entity type
+        const grouped = {};
+        for (const fav of favorites) {
+            if (!grouped[fav.entity_type]) grouped[fav.entity_type] = [];
+            grouped[fav.entity_type].push(fav.entity_id);
+        }
+
+        // Fetch details for each type in parallel
+        const entityDetails = {};
+        const fetches = [];
+
+        if (grouped.agent?.length) {
+            fetches.push(
+                supabase.from('agents').select('id, name, icon, category').in('id', grouped.agent)
+                    .then(({ data }) => { entityDetails.agent = data || []; })
+            );
+        }
+        if (grouped.workflow?.length) {
+            fetches.push(
+                supabase.from('workflows').select('id, name, icon, color').in('id', grouped.workflow)
+                    .then(({ data }) => { entityDetails.workflow = data || []; })
+            );
+        }
+        if (grouped.skill?.length) {
+            fetches.push(
+                supabase.from('skills').select('id, name, display_name, icon, color').in('id', grouped.skill)
+                    .then(({ data }) => { entityDetails.skill = data || []; })
+            );
+        }
+        if (grouped.action?.length) {
+            fetches.push(
+                supabase.from('actions').select('id, name, slug, icon').in('id', grouped.action)
+                    .then(({ data }) => { entityDetails.action = data || []; })
+            );
+        }
+        if (grouped.context_asset?.length) {
+            fetches.push(
+                supabase.from('context_assets').select('id, name, asset_type').in('id', grouped.context_asset)
+                    .then(({ data }) => { entityDetails.context_asset = data || []; })
+            );
+        }
+
+        await Promise.all(fetches);
+
+        // Merge details into favorites
+        return favorites.map(fav => {
+            const details = (entityDetails[fav.entity_type] || []).find(e => e.id === fav.entity_id);
+            return {
+                ...fav,
+                entity: details || null
+            };
+        });
+    }
 
     // ============================================
     // HELPER FUNCTIONS FOR PERSONALIZATION

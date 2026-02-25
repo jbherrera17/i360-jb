@@ -460,14 +460,23 @@ function setupTextareaResize() {
  */
 function checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    
+
     if (params.get('voice') === 'true' && enableVoice) {
         enableVoice.checked = true;
         enableVoice.dispatchEvent(new Event('change'));
     }
-    
+
     if (params.get('search') === 'true' && enableSearch) {
         enableSearch.checked = true;
+    }
+
+    // Pre-fill prompt from URL param (used by Execute 120 Quick Start)
+    const promptText = params.get('prompt');
+    if (promptText && chatInput) {
+        chatInput.value = promptText;
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 150) + 'px';
+        chatInput.focus();
     }
 }
 

@@ -1,13 +1,13 @@
-# Execute 120 User Guide
+# Execute 120 — Command Center User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** Wednesday, February 12, 2026
+**Last Updated:** Tuesday, February 25, 2026
 
 ---
 
-## Why Execute 120 Is Important
+## Why the Command Center Is Important
 
-Strategy without execution is just theory. Execute 120 bridges the gap between strategic planning and daily work by organizing AI-powered tools, agents, and workflows around your department. Instead of searching across the platform for the right resource, Execute 120 brings everything relevant to your role and department into one personalized hub, so you can get work done faster and with better AI support.
+The Command Center is your personal workspace inside Insight 360. Instead of hunting across the platform for the right agent, workflow, or action, everything relevant to you loads immediately — filtered by your department and role. You can pin your most-used items so they are always one click away, pick up where you left off with recently used workflows and agents, and launch AI conversations with Higgins directly from curated department prompts.
 
 ---
 
@@ -15,152 +15,178 @@ Strategy without execution is just theory. Execute 120 bridges the gap between s
 
 | Action | Description |
 |--------|-------------|
-| **Department-Based Organization** | Groups agents, workflows, context assets, and actions by department for focused execution |
-| **Automatic Personalization** | Detects your department and role from your profile to show the most relevant content first |
-| **Workflow Wizards** | Launches multi-step guided workflows that walk you through complex tasks |
-| **Create Workflow** | Header button links directly to the Workflow Builder to create new workflows |
-| **Quick Start Prompts** | Provides ready-to-use prompt templates you can copy or send to chat instantly |
-| **Department Metrics** | Displays metric badges in each department header for at-a-glance performance data |
-| **Strategic Initiatives** | Shows an initiative grid with progress bars, priority scores, and perspective badges per department |
-| **Daily Briefing** | Surfaces your personalized daily intelligence summary with a link to the full briefing |
-| **Strategic Overview** | Gives executives and directors high-level strategy metrics (active initiatives, completion rate, average progress) |
-| **Skills Card** | Displays department-relevant skills with links to the Skills page |
+| **Personalized Header** | Displays your name, role, and department so you always know whose workspace you are in |
+| **Pinned Items** | Star any agent, workflow, skill, action, or context asset to pin it to the top of the page as a quick-access chip |
+| **Recently Used** | Shows the workflows you have run and agents you have accessed most recently, so you can resume work without searching |
+| **My Agents** | Lists the top agents assigned to your department with a one-click Chat button |
+| **My Workflows** | Lists the workflows available to your department with a one-click Start button |
+| **Context Assets** | Shows documents and knowledge resources relevant to your department |
+| **Skills** | Displays skills available to your department |
+| **Quick Actions** | Lists one-click actions for common department tasks with an inline play button |
+| **Quick Start with Higgins** | Provides curated prompt templates that open directly in Higgins AI chat |
+| **Daily Briefing** | Shows your latest briefing summary (only if your subscription tier includes briefing access) |
+| **Strategic Overview** | Shows active initiative counts and progress metrics (only for Executive and Director roles with Strategy 120 access) |
+| **Department Browser** | A collapsible secondary section at the bottom for browsing any department's agents and workflows |
+| **Create Workflow** | Header button that links directly to the Workflow Builder |
 
 ---
 
 ## Step by Step Use
 
-### 1. Open Execute 120
+### 1. Open the Command Center
 
-Navigate to Execute 120 from the sidebar. When the page loads, it automatically selects your assigned department based on your user profile. If no department is assigned, it falls back to your last manually selected department or the first department in the list.
+Navigate to **Execute 120** from the sidebar. The page title shows as "[Your Name]'s Command Center" and the subtitle shows your role and department. This personalization happens automatically from your user profile.
 
-### 2. Browse Department Tabs
+If your profile has a department and role assigned, the main content grid loads agents, workflows, assets, skills, and actions that are relevant to you. If no department is set, the page still works but shows general resources.
 
-The horizontal tab bar at the top shows all active departments. Click any tab to switch context. The active departments are:
+### 2. Review Pinned Items
 
-| Department | Focus Area |
-|------------|------------|
-| **Executive** | Board prep, strategic planning, organizational communication |
-| **Finance** | Budgeting, forecasting, investment analysis |
-| **Operations** | Process documentation, efficiency analysis, vendor evaluation |
-| **Sales** | Deal management, proposals, objection handling |
-| **Marketing** | Campaign planning, content creation, brand strategy |
-| **HR** | Hiring, onboarding, performance management |
-| **Development** | Technical documentation, architecture reviews |
-| **Product & Curriculum Dev** | Product development, curriculum design |
+The **Pinned** section appears at the top of the page. When you first arrive it will be empty with the message "No pinned items yet. Star your favorite agents, workflows, or actions below."
 
-Each department tab displays an icon and name. Your currently selected department is highlighted with the primary color.
+Once you have pinned items, they appear as compact chips showing the item name and type. Click any chip to navigate directly to that item. Hover a chip to reveal an X button that unpins it.
 
-### 3. Review the Department Header
+### 3. Review Recently Used
 
-When you select a department, a header card appears showing:
-- **Department icon and name** in the Orbitron display font
-- **Tagline** describing the department's mission in italic text
-- **Metric badges** (when available) showing key performance indicators as compact badges in the upper-right area of the header
+The **Recently Used** section appears below Pinned, but only when there is data to show. It is hidden if you have no recent history. When visible, it shows a horizontally scrolling row of cards for:
 
-### 4. Explore Content Cards
+- **Workflows** you have recently executed (from your workflow execution history)
+- **Agents** you have pinned and recently accessed (from your favorites access time)
 
-Below the department header, a two-column content grid displays the following section cards:
+Each card shows the item's icon, name, and how long ago you last used it (e.g., "3h ago", "2d ago"). Click any card to navigate directly to that item.
 
-#### Workflow Wizards
-Shows workflows configured for the selected department. Each workflow item displays:
-- A colored icon
-- The workflow name
-- Estimated time and usage count
-- A **Start** button to launch the workflow
+### 4. Work from the Main Content Grid
 
-Click **Start** to navigate to the full-page workflow runner where you follow each step, provide input, and review AI-generated output.
+The central two-column grid contains six content sections. Each section shows up to five items from your department and role, and every section has a **View All** link in the header to browse the full library.
 
-#### Recommended Agents
-Lists the top 5 agents assigned to this department. Featured agents are marked with a colored left border. Each agent shows a name and description. Hover to reveal a **Chat** button that opens a conversation with that agent. Click **View All** to browse all agents on the Strategy 120 page.
+#### My Agents
+
+Shows agents assigned to your department. Featured agents appear first. Hover any agent row to reveal a **Chat** button that opens a direct conversation with that agent. The star button on the right pins or unpins the agent.
+
+#### My Workflows
+
+Shows workflows assigned to your department or available globally. Hover any workflow row to reveal a **Start** button that opens the workflow runner. The star button pins or unpins the workflow.
 
 #### Context Assets
-Displays up to 5 key documents and knowledge resources relevant to your department. Each item shows the asset name and type. Click any asset to view its details on the Context page. Click **View All** to browse all context assets.
 
-#### Quick Actions
-Lists one-click actions for common department tasks. Each action shows the action name and suite. Hover to reveal a play button that executes the action immediately. Click **View All** to browse all available actions.
+Shows knowledge documents and assets relevant to your department. Clicking a row opens the asset on the Context page. The star button pins or unpins the asset.
 
 #### Skills
-Shows department-relevant skills with icons and category labels. Click any skill to view it on the Skills page. Click **View All** to browse the full skills library.
 
-#### Daily Briefing (Full Width)
-Spans both columns. If a briefing has been generated today, it shows the date, title, and a truncated summary with a **Read Full Briefing** link. If no briefing exists for today, a **Generate Briefing** button appears that navigates to the briefing page.
+Shows skills available to your department. Clicking a row opens the skill on the Skills page. The star button pins or unpins the skill.
 
-#### Strategic Initiatives (Full Width)
-Spans both columns. Displays an initiative grid showing in-progress strategic initiatives assigned to the selected department. Each initiative card includes:
-- A perspective icon (Financial, Customer, Process, or Learning) with color coding
-- A priority badge (color-coded by urgency: red for high, amber for medium, gray for low)
-- The initiative name
-- A progress bar with percentage
-- Perspective and assignment type badges
+#### Quick Actions
 
-Click any initiative to view its details on the Strategy 120 page. If no initiatives are assigned, an **Assign Initiative** button links to the Strategy 120 page.
+Shows one-click actions for common tasks. Hover any action row to reveal a play button that navigates directly to the action in execute mode. The star button pins or unpins the action.
 
-#### Strategic Overview (Executives Only, Full Width)
-Visible only when your profile has executive or director-level access. Displays a gradient-styled card with four key metrics:
-- **Active Initiatives** count
-- **Completed This Quarter** count
-- **Avg Progress** percentage
-- **Total Initiatives** count
+#### Quick Start with Higgins
+
+Shows four prompt templates relevant to your department. Each prompt has two buttons that appear on hover:
+
+- **Copy** -- copies the prompt text to your clipboard. The button changes to "Copied!" briefly to confirm.
+- **Ask Higgins** -- navigates to the Higgins chat page (`/chat`) with the prompt pre-filled in the input field, ready to send.
+
+Click anywhere on the prompt row to open it in Higgins directly.
+
+### 5. Pin an Item
+
+To pin any agent, workflow, skill, action, or context asset:
+
+1. Hover over its row in any content section.
+2. Click the star icon on the right side of the row. The star fills with amber to confirm it is pinned.
+3. The item immediately appears as a chip in the **Pinned** section at the top.
+
+To unpin, click the amber star again or hover the chip in the Pinned section and click the X button.
+
+Pins are saved to your account and persist across sessions and devices.
+
+### 6. Use Conditional Cards (Briefing and Strategic Overview)
+
+Below the main grid, the page may show additional cards depending on your access level:
+
+#### Daily Briefing
+
+Shown if your subscription tier includes briefing access. Displays the title and a truncated preview of your most recent daily briefing. Click **Full Briefing** to read the complete briefing. If no briefing has been generated today, a **Generate Briefing** link appears.
+
+#### Strategic Overview
+
+Shown only to users with Executive or Director role level who also have Strategy 120 module access. Displays four metrics in a gradient card:
+
+- Active Initiatives count
+- Completed This Quarter count
+- Average Progress percentage
+- Total Initiatives count
 
 Click **Strategy Hub** to navigate to the full Strategy 120 dashboard.
 
-#### Quick Start Prompts (Full Width)
-Spans both columns. Provides ready-to-use prompt templates relevant to your department. Each prompt displays the full text with two action buttons that appear on hover:
-- **Copy** -- copies the prompt text to your clipboard (button briefly changes to "Copied!" to confirm)
-- **Use** -- a styled primary button that opens the chat page with the prompt pre-filled
+### 7. Browse All Departments (Secondary Section)
 
-Click anywhere on the prompt row to use the prompt directly.
+At the bottom of the page is a collapsible **Browse All Departments** toggle. Click it to expand the department browser:
 
-### 5. Create a New Workflow
+1. A horizontal tab bar shows all active departments.
+2. Click any department tab to load its agents and workflows in a two-column grid below.
+3. The browser remembers whether it was open or closed the last time you visited, and restores that state automatically.
 
-Click the **Create Workflow** button in the page header (upper-right area, next to the help button) to navigate to the Workflow Builder where you can design multi-step workflow wizards for your department.
+The department browser is intentionally secondary. Use it to explore resources outside your own department, or to help new team members see what is available across the organization.
+
+### 8. Create a New Workflow
+
+Click the **Create Workflow** button in the top-right area of the page header to navigate to the Workflow Builder, where you can design multi-step workflow wizards for your team.
 
 ---
 
 ## Running a Workflow
 
-When you click **Start** on a workflow, the page navigates to the full-page workflow runner. Workflows consist of sequential steps, each with a specific type:
+When you click **Start** on a workflow, the page navigates to the full-page workflow runner (`/workflow-run`). Workflows run sequentially through their steps:
 
 ### User Input Steps
-Fill out form fields with the information the workflow needs. Required fields are marked with a red asterisk. Field types include text inputs, textareas, and dropdowns.
+
+Fill out form fields with the information the workflow needs. Required fields are marked with a red asterisk.
 
 ### Agent Chat Steps
-The workflow generates a prompt from your previous inputs and presents it alongside an assigned AI agent. Click **Run with Agent** to execute the step -- this redirects to the chat page with the agent and prompt pre-loaded.
+
+The workflow generates a prompt from your previous inputs and presents it alongside an assigned AI agent. Click **Run with Agent** to execute the step -- this redirects to the Higgins chat page with the agent and prompt pre-loaded.
 
 ### Review Steps
-Review the output from previous steps. You can optionally provide refinements or additional feedback in a textarea before proceeding.
+
+Review the output from a previous step. You can optionally provide refinements in a textarea before proceeding.
 
 ### Output Steps
+
 View and export the final compiled output from all workflow steps.
 
-Use the **Previous** and **Next** buttons at the bottom of the workflow modal to navigate between steps. On the final step, the Next button changes to **Complete**.
+Use **Previous** and **Next** buttons at the bottom of the workflow runner to move between steps. The Next button changes to **Complete** on the final step.
 
 ---
 
 ## Automatic Personalization
 
-Execute 120 uses your user profile to personalize your experience in two ways:
+The Command Center uses your user profile to tailor what you see:
 
-### Department Auto-Selection
-When you open Execute 120, it fetches your profile and auto-selects your assigned department. You can still browse other departments by clicking different tabs. Your most recent manual selection is saved in browser local storage as a fallback.
+### Department Filtering
+
+All six main content sections (Agents, Workflows, Context Assets, Skills, Actions, Quick Prompts) automatically filter to show resources relevant to your assigned department. Resources without a department assignment are always included.
 
 ### Role-Based Filtering
-Content visibility adjusts based on your business role level:
-- **Individual Contributors** see operational workflows and agents
-- **Supervisors and Managers** see team management resources
-- **Directors and Executives** see strategic planning tools and the Strategic Overview card
+
+Content also filters based on your business role level. Resources with role requirements are hidden if your role level does not meet the minimum. This means Executive-level users see resources that Individual Contributors do not.
+
+### Module-Based Visibility
+
+Certain cards only appear if your organization has access to that module:
+
+- **Daily Briefing card** -- visible unless your organization's tier explicitly excludes the briefing module
+- **Strategic Overview card** -- visible only with both Executive/Director role AND Strategy 120 module access
 
 ---
 
 ## Tips & Best Practices
 
-- **Complete your profile first** -- your department and role must be set for personalization to work correctly
-- **Check your briefing daily** -- start each day with your personalized intelligence summary
-- **Use workflows for complex tasks** -- they ensure you follow all necessary steps and capture all required inputs
-- **Iterate on AI outputs** -- do not accept the first draft; use review steps and chat follow-ups to refine results
-- **Try prompts before building workflows** -- use Quick Start Prompts to test an approach, then formalize it as a workflow if you use it repeatedly
-- **Explore other departments** -- browse tabs outside your own department to discover useful agents and workflows you might not know about
+- **Complete your profile first** -- your department and role must be set for personalization to work correctly. Go to **Profile** from the sidebar to update these.
+- **Pin your most-used items** -- after a week of use, pin the agents and workflows you reach for most often. The Pinned section at the top saves you from scrolling each visit.
+- **Use Quick Start prompts before building workflows** -- test an approach with a Higgins prompt, then formalize it as a workflow if you use it repeatedly.
+- **Check the Recently Used section** -- if you are continuing a task from yesterday, your most recent workflows are there without any searching.
+- **Explore the Department Browser** -- browse other departments to discover agents and workflows your colleagues use. Cross-department prompts often spark unexpected ideas.
+- **Check your briefing daily** -- if the Daily Briefing card is visible, start each morning with the intelligence summary before diving into work.
 
 ---
 
@@ -169,7 +195,7 @@ Content visibility adjusts based on your business role level:
 | Document | Description |
 |----------|-------------|
 | [Easy Start Guide](./easy-start-user-guide.md) | Conversational onboarding that creates custom agents, actions, and workflows automatically |
-| [Workflow Guide](./workflow-user-guide.md) | Building and managing workflow wizards |
+| [Workflow Guide](./workflow-user-guide.md) | Building and running workflow wizards |
 | [Strategy 120 Guide](./strategy120-user-guide.md) | Strategic planning with AI agents and initiatives |
 | [Agents Guide](./agents-user-guide.md) | General agent management and usage |
 | [Departments Guide](./departments-user-guide.md) | Department setup and configuration |
@@ -180,11 +206,13 @@ Content visibility adjusts based on your business role level:
 
 | Issue | Solution |
 |-------|----------|
-| No content appears for your department | Your department may not have agents, workflows, or assets configured yet. Contact your administrator to assign resources to the department. |
-| Wrong department is auto-selected | Update your department assignment in your Profile settings. The page also remembers your last manual tab selection as a fallback. |
-| Strategic Overview card is missing | This card only appears for users with Executive or Director role level. Verify your role in Profile settings. |
-| Workflows show "No workflows configured" | Workflows need to be created in the Workflow Builder and tagged with the correct department category. Click the Create Workflow header button to get started. |
-| Agents section says "No agents assigned" | Agents must be linked to departments via the department-agents mapping. Browse all agents on the Strategy 120 page or ask your administrator. |
-| Quick Start Prompts section is empty | Default prompts are only configured for Executive, Marketing, Sales, Finance, and Operations departments. Custom prompts can be added via department configuration. |
-| Copy button does not work | Your browser may be blocking clipboard access. Try using HTTPS or granting clipboard permissions. The button uses the Clipboard API with a fallback to legacy execCommand. |
-| Daily Briefing shows "No briefing generated today" | Click the Generate Briefing button to navigate to the briefing page and create one, or visit the Briefing page directly. |
+| Page header shows "Your Command Center" instead of your name | Your profile display name or department has not been set. Go to **Profile** in the sidebar to complete your profile. |
+| Content sections show "No agents assigned" or similar | Your department may not have resources configured yet. Contact your administrator to assign agents, workflows, or actions to your department. |
+| Pinned section is always empty after starring items | Check that you are logged in with the same account. Pins are user-specific and saved to the server, so they require authentication. |
+| Recently Used section does not appear | The section is hidden until you have executed at least one workflow or pinned and accessed at least one agent. Run a workflow or chat with an agent to populate it. |
+| Strategic Overview card is not visible | This card requires both Executive or Director role level AND Strategy 120 module access. Verify your role in Profile settings and contact your administrator about module access. |
+| Daily Briefing card is not visible | Your subscription tier may not include briefing access. Contact your administrator or visit the Briefing page directly. |
+| Quick Start prompts are empty or show generic placeholders | Default prompts are configured per department. If your department has no prompts configured, contact your administrator to add them via department configuration. |
+| Copy button on prompts does not work | Your browser may be blocking clipboard access. The Clipboard API requires HTTPS or localhost. If you are on HTTPS and it still fails, try granting clipboard permissions in your browser settings. |
+| Department Browser tab does not load content | Department data loads on demand when you open the browser and click a tab. If content does not appear, refresh the page and try again. If the error persists, the department may have no resources configured. |
+| Workflows show estimated time but no Start button | Hover over the workflow row -- the Start button appears on hover. On touch devices, tap the row to trigger the hover state. |
