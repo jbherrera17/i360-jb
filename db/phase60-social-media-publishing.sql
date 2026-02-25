@@ -137,35 +137,35 @@ ALTER TABLE social_post_analytics ENABLE ROW LEVEL SECURITY;
 
 -- Social posts: org members can view, creators can edit
 CREATE POLICY "social_posts_select" ON social_posts FOR SELECT
-    USING (org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.uid()));
+    USING (org_id IN (SELECT org_id FROM organization_members WHERE user_id = auth.uid()));
 
 CREATE POLICY "social_posts_insert" ON social_posts FOR INSERT
-    WITH CHECK (org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.uid()));
+    WITH CHECK (org_id IN (SELECT org_id FROM organization_members WHERE user_id = auth.uid()));
 
 CREATE POLICY "social_posts_update" ON social_posts FOR UPDATE
     USING (user_id = auth.uid() OR org_id IN (
-        SELECT org_id FROM org_members WHERE user_id = auth.uid() AND business_role IN ('owner', 'admin')
+        SELECT org_id FROM organization_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
     ));
 
 CREATE POLICY "social_posts_delete" ON social_posts FOR DELETE
     USING (user_id = auth.uid() OR org_id IN (
-        SELECT org_id FROM org_members WHERE user_id = auth.uid() AND business_role IN ('owner', 'admin')
+        SELECT org_id FROM organization_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
     ));
 
 -- Platform connections: org admins manage, members view
 CREATE POLICY "social_connections_select" ON social_platform_connections FOR SELECT
-    USING (org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.uid()));
+    USING (org_id IN (SELECT org_id FROM organization_members WHERE user_id = auth.uid()));
 
 CREATE POLICY "social_connections_manage" ON social_platform_connections FOR ALL
     USING (org_id IN (
-        SELECT org_id FROM org_members WHERE user_id = auth.uid() AND business_role IN ('owner', 'admin')
+        SELECT org_id FROM organization_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
     ));
 
 -- Analytics: org members can view
 CREATE POLICY "social_analytics_select" ON social_post_analytics FOR SELECT
     USING (post_id IN (
         SELECT id FROM social_posts WHERE org_id IN (
-            SELECT org_id FROM org_members WHERE user_id = auth.uid()
+            SELECT org_id FROM organization_members WHERE user_id = auth.uid()
         )
     ));
 
