@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Start | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/easy-start.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="sparkles" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Easy Start
+                    </h1>
+                    <p class="header-subtitle">Tell Higgins what you need and get custom AI tools built for you</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="easy-start-layout">
+                <!-- Chat thread (left) -->
+                <div class="easy-start-chat-area">
+                    <div id="easyStartMessages" class="es-messages">
+                        <div class="es-welcome" id="esWelcome">
+                            <div class="es-welcome-icon">
+                                <i data-lucide="sparkles" style="width:32px;height:32px;"></i>
+                            </div>
+                            <h2>Welcome to Easy Start</h2>
+                            <p>Have a quick conversation with Higgins about your work and challenges. Based on what you share, Higgins will create custom AI agents, actions, and workflows tailored to your needs.</p>
+                        </div>
+                    </div>
+                    <div class="es-input-area">
+                        <textarea
+                            id="esInput"
+                            placeholder="Tell Higgins about your work..."
+                            rows="1"
+                            aria-label="Message input"
+                        ></textarea>
+                        <button id="esSendBtn" class="es-send-btn" title="Send message">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Created resources panel (right) -->
+                <div class="easy-start-resources-panel" id="resourcesPanel">
+                    <div class="es-panel-header">
+                        <i data-lucide="package"></i>
+                        <h3>Your New Tools</h3>
+                    </div>
+                    <div id="resourceCards" class="es-resource-cards">
+                        <div class="es-empty-state" id="esEmptyState">
+                            <i data-lucide="sparkles"></i>
+                            <p>Your custom agents, actions, and workflows will appear here as Higgins creates them.</p>
+                        </div>
+                    </div>
+                    <div id="esHandoff" class="es-handoff hidden">
+                        <a href="/execute120.html">
+                            <i data-lucide="rocket"></i>
+                            Go to Execute 120
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script src="/js/easy-start.js"></script>
+</body>
+</html>

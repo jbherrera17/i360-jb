@@ -139,6 +139,7 @@ const integrationsRoutes = require('./routes/integrations');
 const webhooksRoutes = require('./routes/webhooks');
 const soulConfigRoutes = require('./routes/soulConfig');
 const socialPublishRoutes = require('./routes/social-publish');
+const easyStartRoutes = require('./routes/easyStart');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -207,7 +208,7 @@ app.use(compression({
         if (req.headers.accept === 'text/event-stream') {
             return false;
         }
-        if (req.path === '/api/chat/stream') {
+        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream') {
             return false;
         }
         // Use default compression for everything else
@@ -264,7 +265,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/admin-okr-capabilities', '/admin-okr-capabilities.html',
     '/my-capabilities', '/my-capabilities.html',
     '/client-comparison', '/client-comparison.html',
-    '/integrations', '/integrations.html'];
+    '/integrations', '/integrations.html',
+    '/easy-start', '/easy-start.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -557,6 +559,9 @@ function initializeServices() {
 
         // Phase 54: Soul Configuration & Human Values System
         app.use('/api/soul-config', soulConfigRoutes(supabase));
+
+        // Easy Start: Conversational onboarding with tool-use
+        app.use('/api/easy-start', easyStartRoutes(supabase));
 
         // Phase 60: Social Media Publishing (Postiz Integration)
         app.use('/api/social', socialPublishRoutes(supabase));

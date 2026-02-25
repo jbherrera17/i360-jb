@@ -234,6 +234,7 @@ Agents that take action and produce outputs:
 
 | Document | Description | Location |
 |----------|-------------|----------|
+| Easy Start Guide | Automatically create agents via a guided conversation with Higgins | [easy-start-user-guide.md](./easy-start-user-guide.md) |
 | Skills User Guide | Reusable capabilities for agents | [skills-user-guide.md](./skills-user-guide.md) |
 | Context Assets Guide | Business knowledge for agents | [context-user-guide.md](./context-user-guide.md) |
 | Chat User Guide | Direct model conversation | [chat-user-guide.md](./chat-user-guide.md) |

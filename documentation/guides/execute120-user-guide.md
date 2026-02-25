@@ -168,6 +168,7 @@ Content visibility adjusts based on your business role level:
 
 | Document | Description |
 |----------|-------------|
+| [Easy Start Guide](./easy-start-user-guide.md) | Conversational onboarding that creates custom agents, actions, and workflows automatically |
 | [Workflow Guide](./workflow-user-guide.md) | Building and managing workflow wizards |
 | [Strategy 120 Guide](./strategy120-user-guide.md) | Strategic planning with AI agents and initiatives |
 | [Agents Guide](./agents-user-guide.md) | General agent management and usage |

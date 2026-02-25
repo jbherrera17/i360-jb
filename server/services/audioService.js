@@ -9,7 +9,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const OpenAI = require('openai');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 
 // Initialize clients
 const supabase = createClient(

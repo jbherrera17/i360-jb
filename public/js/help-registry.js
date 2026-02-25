@@ -217,6 +217,11 @@ const HelpRegistry = {
         '/workflows': {
             file: '/api/docs/workflow-user-guide.md',
             title: 'Workflows Help'
+        },
+        // Easy Start
+        '/easy-start': {
+            file: '/api/docs/easy-start-user-guide.md',
+            title: 'Easy Start Help'
         }
     },
 

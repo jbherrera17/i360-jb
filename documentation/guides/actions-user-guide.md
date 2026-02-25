@@ -204,6 +204,7 @@ Actions that produce outputs:
 
 | Document | Description | Location |
 |----------|-------------|----------|
+| Easy Start Guide | Automatically create actions via a guided conversation with Higgins | [easy-start-user-guide.md](./easy-start-user-guide.md) |
 | Parthenon Guide | Organizational processes | [parthenon-user-guide.md](./parthenon-user-guide.md) |
 | Agents Guide | Agents that use actions | [agents-user-guide.md](./agents-user-guide.md) |
 | Skills Guide | Skills vs. actions | [skills-user-guide.md](./skills-user-guide.md) |

@@ -86,7 +86,9 @@ const ALLOWED_DOCS = [
     // Onboarding
     'onboarding-guide.md',
     // Strategy 120 Technical Guide
-    'strategy120-technical-guide.md'
+    'strategy120-technical-guide.md',
+    // Easy Start
+    'easy-start-user-guide.md'
 ];
 
 /**
