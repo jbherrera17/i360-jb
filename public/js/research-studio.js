@@ -879,7 +879,8 @@ function renderFollowUpQuestions(questions, messageDiv) {
         </div>
     `;
 
-    messageDiv.insertAdjacentHTML('beforeend', followUpHtml);
+    const bodyDiv = messageDiv.querySelector('.studio-message-body') || messageDiv;
+    bodyDiv.insertAdjacentHTML('beforeend', followUpHtml);
 }
 
 /**
@@ -1656,6 +1657,11 @@ async function generateOutput(type) {
         lucide.createIcons();
     }
 
+    // Show loading modal
+    const loadingModal = typeof ModalService !== 'undefined'
+        ? ModalService.loading({ message: `Generating ${type}...` })
+        : null;
+
     try {
         // Get selected model (function defined in research-studio.html)
         const model = typeof getSelectedModel === 'function' ? getSelectedModel() : 'claude-sonnet-4-20250514';
@@ -1671,6 +1677,8 @@ async function generateOutput(type) {
         if (result.success) {
             outputs.unshift(result.data);
             renderOutputs();
+            // Close loading modal before opening preview modal
+            if (loadingModal) { loadingModal.close(); }
             showOutputPreview(result.data);
         } else {
             showToast('Failed to generate output: ' + result.error, 'error');
@@ -1679,6 +1687,8 @@ async function generateOutput(type) {
         console.error('Error generating output:', error);
         showToast('Error generating output', 'error');
     } finally {
+        // Ensure loading modal is closed (no-op if already closed)
+        if (loadingModal) loadingModal.close();
         // Reset button
         if (btn) {
             btn.classList.remove('generating');
@@ -1706,19 +1716,60 @@ function renderOutputs() {
     container.innerHTML = outputs.map(output => {
         outputsMap[output.id] = output;
         return `
-        <div class="output-item" onclick="showOutputPreview('${output.id}')">
-            <div class="output-item-icon">
+        <div class="output-item">
+            <div class="output-item-icon" onclick="showOutputPreview('${output.id}')">
                 <i data-lucide="${getOutputIcon(output.output_type)}"></i>
             </div>
-            <div class="output-item-info">
+            <div class="output-item-info" onclick="showOutputPreview('${output.id}')">
                 <div class="output-item-title">${escapeHtml(output.title || capitalizeFirst(output.output_type))}</div>
                 <div class="output-item-meta">${new Date(output.created_at).toLocaleDateString()}</div>
             </div>
+            <button class="output-item-delete" onclick="event.stopPropagation(); deleteOutput('${output.id}')" title="Delete">
+                <i data-lucide="trash-2"></i>
+            </button>
         </div>
     `;
     }).join('');
 
     lucide.createIcons();
+}
+
+/**
+ * Delete a generated output
+ */
+async function deleteOutput(outputId) {
+    if (!currentStudio) return;
+
+    const confirmed = typeof ModalService !== 'undefined'
+        ? await ModalService.confirm({
+            title: 'Delete Output',
+            message: 'Are you sure you want to delete this generated output?',
+            confirmText: 'Delete',
+            confirmClass: 'btn-danger'
+        })
+        : confirm('Delete this output?');
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/${currentStudio.id}/outputs/${outputId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            outputs = outputs.filter(o => o.id !== outputId);
+            delete outputsMap[outputId];
+            renderOutputs();
+            showToast('Output deleted', 'success');
+        } else {
+            showToast('Failed to delete output: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting output:', error);
+        showToast('Error deleting output', 'error');
+    }
 }
 
 /**
@@ -1757,8 +1808,11 @@ function showOutputPreview(outputOrId) {
     // Store in map for future lookups
     if (output.id) outputsMap[output.id] = output;
 
-    // Render based on output type
-    const content = output.content;
+    // Render based on output type — ensure content is parsed
+    let content = output.content;
+    if (typeof content === 'string') {
+        try { content = JSON.parse(content); } catch (_e) { /* use as-is */ }
+    }
     let html = '';
 
     switch (output.output_type) {
@@ -1804,6 +1858,10 @@ function showOutputPreview(outputOrId) {
  * Render report output
  */
 function renderReport(content) {
+    // Handle raw fallback when JSON parsing failed server-side
+    if (content.raw && !content.executive_summary && !content.sections) {
+        return `<div class="output-report"><div style="white-space: pre-wrap; line-height: 1.6;">${formatMarkdown(content.raw)}</div></div>`;
+    }
     let html = `<div class="output-report">`;
     html += `<h3>${escapeHtml(content.title || 'Report')}</h3>`;
 

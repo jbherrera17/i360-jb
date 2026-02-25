@@ -821,6 +821,21 @@
     color: var(--text-muted);
 }
 
+.output-item-delete {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+.output-item-delete i { width: 14px; height: 14px; }
+.output-item:hover .output-item-delete { opacity: 1; }
+.output-item-delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+
 /* Empty States */
 .empty-state {
     text-align: center;

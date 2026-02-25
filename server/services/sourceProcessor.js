@@ -378,6 +378,7 @@ async function processUrlSource(url, studioId) {
         source_type: 'url',
         content: text,
         url,
+        file_size: Buffer.byteLength(text, 'utf8'),
         metadata
     };
 }
@@ -389,13 +390,15 @@ async function processUrlSource(url, studioId) {
  * @returns {object} - Processed source data
  */
 function processTextSource(text, title) {
+    const trimmed = text.trim();
     return {
         title: title || 'Text Note',
         source_type: 'text',
-        content: text.trim(),
+        content: trimmed,
+        file_size: Buffer.byteLength(trimmed, 'utf8'),
         metadata: {
-            character_count: text.length,
-            word_count: countWords(text),
+            character_count: trimmed.length,
+            word_count: countWords(trimmed),
             created_at: new Date().toISOString()
         }
     };

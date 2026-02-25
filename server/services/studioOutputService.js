@@ -447,16 +447,31 @@ ${config.format}`
         let content;
 
         try {
+            // Strip markdown code fences if present
+            let cleanedText = responseText.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '');
             // Extract JSON from response
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 content = JSON.parse(jsonMatch[0]);
             } else {
                 content = { raw: responseText };
             }
         } catch (e) {
-            console.error('JSON parse error:', e);
-            content = { raw: responseText };
+            // Try fixing common JSON issues: trailing commas, unescaped newlines in strings
+            try {
+                let cleanedText = responseText.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '');
+                const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    // Remove trailing commas before } or ]
+                    const fixed = jsonMatch[0].replace(/,\s*([}\]])/g, '$1');
+                    content = JSON.parse(fixed);
+                } else {
+                    content = { raw: responseText };
+                }
+            } catch (e2) {
+                console.error('JSON parse error (even after cleanup):', e2.message);
+                content = { raw: responseText };
+            }
         }
 
         // Validate and enhance content based on type
