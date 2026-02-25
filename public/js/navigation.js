@@ -60,7 +60,8 @@ const navConfig = {
                 { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
                 { href: '/social-media.html', icon: 'share-2', label: 'Social Media' },
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
-                { href: '/guides.html', icon: 'book-open', label: 'Guides' }
+                { href: '/guides.html', icon: 'book-open', label: 'Guides' },
+                { href: '/easy-start.html', icon: 'sparkles', label: 'Easy Start' }
             ]
         },
         {
@@ -478,8 +479,9 @@ function generateNavHTML() {
             return group.items && group.items.length > 0;
         })
         .forEach(group => {
-            // Auto-expand if contains active item, otherwise use saved state
-            const isExpanded = group.id === activeGroup || !collapsed[group.id];
+            // Default to collapsed; expand only if contains active item or user explicitly expanded
+            const hasExplicitState = collapsed.hasOwnProperty(group.id);
+            const isExpanded = group.id === activeGroup || (hasExplicitState && !collapsed[group.id]);
 
             html += `
                 <div class="nav-group${isExpanded ? '' : ' collapsed'}" data-nav-group="${group.id}">

@@ -15,7 +15,7 @@ VALUES (
     '/social-media.html',
     'business',
     NULL,
-    'tools',
+    'tool',
     'modules',
     36,
     true
