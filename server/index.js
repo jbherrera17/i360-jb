@@ -138,6 +138,7 @@ const resourceAccessRoutes = require('./routes/resourceAccess');
 const integrationsRoutes = require('./routes/integrations');
 const webhooksRoutes = require('./routes/webhooks');
 const soulConfigRoutes = require('./routes/soulConfig');
+const socialPublishRoutes = require('./routes/social-publish');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -556,6 +557,9 @@ function initializeServices() {
 
         // Phase 54: Soul Configuration & Human Values System
         app.use('/api/soul-config', soulConfigRoutes(supabase));
+
+        // Phase 60: Social Media Publishing (Postiz Integration)
+        app.use('/api/social', socialPublishRoutes(supabase));
 
         // Phase 57: Public Pricing API (unauthenticated, whitelisted in auth middleware)
         app.use('/api/pricing', pricingRoutes(supabase));

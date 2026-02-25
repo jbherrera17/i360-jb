@@ -78,6 +78,9 @@ const ALLOWED_DOCS = [
     // Thought Leadership
     'thought-leadership-user-guide.md',
     'thought-leadership-technical-guide.md',
+    // Social Media Publishing
+    'social-media-user-guide.md',
+    'social-media-technical-guide.md',
     // Workflow Technical Guide
     'workflow-technical-guide.md',
     // Onboarding

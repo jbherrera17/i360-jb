@@ -84,6 +84,10 @@ class WorkflowEngine {
                     result = await this.handleOutput(step, execution.variables);
                     break;
 
+                case 'social_publish':
+                    result = await this.handleSocialPublish(step, inputData, execution.variables);
+                    break;
+
                 default:
                     throw new Error(`Unknown step type: ${step.step_type}`);
             }
@@ -401,6 +405,55 @@ class WorkflowEngine {
         return {
             status: 'completed',
             output: variables
+        };
+    }
+
+    /**
+     * Handle social_publish step - publish content to social media via Postiz
+     * Phase 60: Social Media Publishing
+     */
+    async handleSocialPublish(step, inputData, variables) {
+        const postizService = require('./postizService');
+        const contentAdapter = require('./contentAdapterService');
+
+        const config = step.config || {};
+        const content = this.interpolateTemplate(config.content || inputData.content || '', variables);
+        const platforms = config.platforms || inputData.platforms || [];
+        const orgId = inputData.org_id || variables.org_id;
+        const userId = inputData.user_id || variables.user_id;
+
+        if (!orgId || !userId || !content || platforms.length === 0) {
+            return {
+                status: 'failed',
+                error: 'Missing required fields: org_id, user_id, content, platforms'
+            };
+        }
+
+        const hashtags = config.hashtags || inputData.hashtags || [];
+        const articleUrl = config.article_url || inputData.article_url || null;
+
+        const platformContent = contentAdapter.adaptForAllPlatforms(content, platforms, {
+            hashtags,
+            articleUrl
+        });
+
+        const post = await postizService.createPost(orgId, userId, {
+            platforms,
+            content,
+            platformContent,
+            scheduledAt: config.scheduled_at || inputData.scheduled_at || null,
+            sourceType: 'workflow',
+            sourceId: inputData.execution_id || null
+        });
+
+        return {
+            status: 'completed',
+            output: {
+                post_id: post.id,
+                postiz_post_id: post.postiz_post_id,
+                platforms,
+                status: post.status
+            }
         };
     }
 

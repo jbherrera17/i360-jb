@@ -198,6 +198,11 @@ const HelpRegistry = {
             file: '/api/docs/thought-leadership-user-guide.md',
             title: 'Thought Leadership Help'
         },
+        // Social Media Publishing
+        '/social-media': {
+            file: '/api/docs/social-media-user-guide.md',
+            title: 'Social Media Help'
+        },
         // Tag Management
         '/tags': {
             file: '/api/docs/tags-user-guide.md',

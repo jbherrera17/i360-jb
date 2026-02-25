@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Social Media Page Styles */
+        .social-tabs {
+            display: flex;
+            gap: var(--spacing-xs);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: var(--spacing-lg);
+            padding: 0 var(--spacing-xl);
+        }
+        .social-tab {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .social-tab:hover { color: var(--text-primary); }
+        .social-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .social-tab-content { display: none; padding: 0 var(--spacing-xl) var(--spacing-xl); }
+        .social-tab-content.active { display: block; }
+
+        /* Platform Grid */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        .platform-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-md);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .platform-card:hover { border-color: rgba(99,102,241,0.3); box-shadow: var(--shadow-md); }
+        .platform-card.connected { border-color: var(--success); }
+        .platform-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .platform-icon i { width: 24px; height: 24px; }
+        .platform-name { font-weight: 600; font-size: 1rem; }
+        .platform-status {
+            font-size: 0.8rem;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+        }
+        .platform-status.connected { background: rgba(16,185,129,0.1); color: var(--success); }
+        .platform-status.disconnected { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .platform-account { font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* Usage Bar */
+        .usage-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-lg);
+            align-items: center;
+        }
+        .usage-item { display: flex; align-items: center; gap: var(--spacing-sm); flex: 1; min-width: 200px; }
+        .usage-label { display: flex; align-items: center; gap: var(--spacing-xs); font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+        .usage-meter { flex: 1; height: 8px; background: var(--bg-tertiary); border-radius: var(--radius-sm); overflow: hidden; min-width: 80px; }
+        .usage-fill { height: 100%; border-radius: var(--radius-sm); background: var(--primary); transition: width 0.3s ease; }
+        .usage-fill.warning { background: var(--warning); }
+        .usage-fill.danger { background: var(--danger); }
+        .usage-text { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+
+        /* Compose Section */
+        .compose-container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: var(--spacing-lg);
+        }
+        @media (max-width: 900px) { .compose-container { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) {
+            .usage-item { min-width: 100%; }
+            .usage-bar { flex-direction: column; gap: var(--spacing-sm); }
+        }
+        .compose-editor {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+        }
+        .compose-textarea {
+            width: 100%;
+            min-height: 200px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+        }
+        .compose-textarea:focus { outline: none; border-color: var(--primary); }
+        .char-count { font-size: 0.8rem; color: var(--text-secondary); text-align: right; margin-top: var(--spacing-xs); }
+        .char-count.over-limit { color: var(--danger); font-weight: 600; }
+
+        /* Platform Checkboxes */
+        .platform-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin: var(--spacing-md) 0;
+        }
+        .platform-check {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .platform-check:hover { border-color: rgba(99,102,241,0.3); }
+        .platform-check.selected { border-color: var(--primary); background: rgba(99,102,241,0.1); }
+        .platform-check.disabled { opacity: 0.4; cursor: not-allowed; }
+        .platform-check input { display: none; }
+
+        /* Preview Sidebar */
+        .preview-sidebar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .preview-platform {
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border);
+        }
+        .preview-platform:last-child { border-bottom: none; }
+        .preview-platform-name { font-weight: 600; font-size: 0.85rem; margin-bottom: var(--spacing-xs); color: var(--text-primary); }
+        .preview-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .preview-thread-badge {
+            display: inline-block;
+            background: rgba(99,102,241,0.1);
+            color: var(--primary);
+            font-size: 0.75rem;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            margin-top: var(--spacing-xs);
+        }
+
+        /* Schedule Picker */
+        .schedule-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            align-items: center;
+            margin-top: var(--spacing-md);
+        }
+        .schedule-row input[type="datetime-local"] {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        .schedule-row label {
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+
+        /* Posts List */
+        .posts-list { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .post-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+        }
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+        .post-platforms { display: flex; gap: var(--spacing-xs); flex-wrap: wrap; }
+        .post-platform-badge {
+            font-size: 0.75rem;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        .post-status-badge {
+            font-size: 0.75rem;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-weight: 600;
+        }
+        .post-status-badge.scheduled { background: rgba(59,130,246,0.1); color: var(--info); }
+        .post-status-badge.published { background: rgba(16,185,129,0.1); color: var(--success); }
+        .post-status-badge.failed { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .post-status-badge.draft { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .post-status-badge.cancelled { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .post-content { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: var(--spacing-sm); white-space: pre-wrap; }
+        .post-meta { font-size: 0.8rem; color: var(--text-muted); }
+        .post-cancel-btn { margin-top: var(--spacing-sm); }
+
+        /* Analytics Cards */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+        .analytics-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+        }
+        .analytics-value { font-size: 2rem; font-weight: 700; color: var(--primary); }
+        .analytics-label { font-size: 0.85rem; color: var(--text-secondary); margin-top: var(--spacing-xs); }
+
+        /* Setup banner */
+        .setup-banner {
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+        .setup-banner h3 { margin-bottom: var(--spacing-sm); }
+        .setup-banner p { color: var(--text-secondary); margin-bottom: var(--spacing-md); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-secondary);
+        }
+        .empty-state i { width: 48px; height: 48px; margin-bottom: var(--spacing-md); opacity: 0.5; }
+
+        /* Hashtag input */
+        .hashtag-input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        .hashtag-input:focus { outline: none; border-color: var(--primary); }
+
+        .compose-field label { display: block; font-weight: 500; font-size: 0.9rem; margin-bottom: var(--spacing-xs); }
+        .compose-field { margin-bottom: var(--spacing-md); }
+
+        .compose-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+    <!-- Navigation Sidebar -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <div class="header-content">
+                <h1>
+                    <i data-lucide="share-2" style="width:28px;height:28px;color:var(--primary);"></i>
+                    Social Media
+                </h1>
+                <p class="header-subtitle">Publish to YouTube, Instagram, TikTok, Twitter/X, Facebook, LinkedIn, Pinterest & Threads</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="switchTab('compose')">
+                    <i data-lucide="plus"></i>
+                    <span>New Post</span>
+                </button>
+                <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                    <i data-lucide="help-circle"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Setup Banner (shown if not configured) -->
+        <div id="setupBanner" class="setup-banner" style="display:none; margin: 0 var(--spacing-xl);">
+            <i data-lucide="settings" style="width:40px;height:40px;color:var(--primary);"></i>
+            <h3>Social Publishing Not Configured</h3>
+            <p>Your organization needs to connect to Postiz to enable multi-platform social media publishing.</p>
+            <button class="btn btn-primary" onclick="showConfigModal()">
+                <i data-lucide="plug"></i> Configure Social Publishing
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="social-tabs" id="socialTabs">
+            <button class="social-tab active" data-tab="accounts" onclick="switchTab('accounts')">
+                <i data-lucide="link" style="width:16px;height:16px;"></i> Connected Accounts
+            </button>
+            <button class="social-tab" data-tab="compose" onclick="switchTab('compose')">
+                <i data-lucide="pen-tool" style="width:16px;height:16px;"></i> Compose
+            </button>
+            <button class="social-tab" data-tab="scheduled" onclick="switchTab('scheduled')">
+                <i data-lucide="calendar-clock" style="width:16px;height:16px;"></i> Scheduled
+            </button>
+            <button class="social-tab" data-tab="history" onclick="switchTab('history')">
+                <i data-lucide="history" style="width:16px;height:16px;"></i> History
+            </button>
+            <button class="social-tab" data-tab="analytics" onclick="switchTab('analytics')">
+                <i data-lucide="bar-chart-3" style="width:16px;height:16px;"></i> Analytics
+            </button>
+        </div>
+
+        <!-- Tab: Connected Accounts -->
+        <div class="social-tab-content active" id="tab-accounts">
+            <div class="platform-grid" id="platformGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Tab: Compose -->
+        <div class="social-tab-content" id="tab-compose">
+            <!-- Usage bar -->
+            <div id="usageBar" class="usage-bar" style="display:none;">
+                <div class="usage-item">
+                    <span class="usage-label"><i data-lucide="send" style="width:14px;height:14px;"></i> Posts this month</span>
+                    <div class="usage-meter">
+                        <div class="usage-fill" id="postUsageFill"></div>
+                    </div>
+                    <span class="usage-text" id="postUsageText">0 / 0</span>
+                </div>
+                <div class="usage-item">
+                    <span class="usage-label"><i data-lucide="plug" style="width:14px;height:14px;"></i> Channels</span>
+                    <div class="usage-meter">
+                        <div class="usage-fill" id="channelUsageFill"></div>
+                    </div>
+                    <span class="usage-text" id="channelUsageText">0 / 0</span>
+                </div>
+            </div>
+            <div class="compose-container">
+                <div class="compose-editor">
+                    <div class="compose-field">
+                        <label>Select Platforms</label>
+                        <div class="platform-selector" id="platformSelector"></div>
+                    </div>
+
+                    <div class="compose-field">
+                        <label>Content</label>
+                        <textarea class="compose-textarea" id="composeContent" placeholder="Write your post content here..."></textarea>
+                        <div class="char-count" id="charCount">0 characters</div>
+                    </div>
+
+                    <div class="compose-field">
+                        <label>Hashtags (comma-separated)</label>
+                        <input type="text" class="hashtag-input" id="composeHashtags" placeholder="#marketing, #business, #ai">
+                    </div>
+
+                    <div class="compose-field">
+                        <label>Article Link (optional)</label>
+                        <input type="url" class="hashtag-input" id="composeArticleUrl" placeholder="https://your-article-url.com">
+                    </div>
+
+                    <div class="compose-field">
+                        <label>Schedule</label>
+                        <div class="schedule-row">
+                            <label>
+                                <input type="radio" name="scheduleType" value="now" checked onchange="toggleSchedule()"> Publish Now
+                            </label>
+                            <label>
+                                <input type="radio" name="scheduleType" value="schedule" onchange="toggleSchedule()"> Schedule
+                            </label>
+                            <input type="datetime-local" id="scheduleDateTime" style="display:none;" min="">
+                        </div>
+                    </div>
+
+                    <div class="compose-actions">
+                        <button class="btn btn-primary" onclick="submitPost()" id="submitBtn">
+                            <i data-lucide="send"></i> Publish
+                        </button>
+                        <button class="btn btn-secondary" onclick="previewAdapted()">
+                            <i data-lucide="eye"></i> Preview
+                        </button>
+                        <button class="btn btn-secondary" onclick="importFromTL()">
+                            <i data-lucide="lightbulb"></i> Import from TL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview Sidebar -->
+                <div class="preview-sidebar" id="previewSidebar">
+                    <h4 style="margin-bottom: var(--spacing-md);">Platform Preview</h4>
+                    <div id="previewContent">
+                        <p class="empty-state" style="padding: var(--spacing-md);">
+                            Select platforms and type content to see previews
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Scheduled -->
+        <div class="social-tab-content" id="tab-scheduled">
+            <div class="posts-list" id="scheduledPosts">
+                <div class="empty-state">
+                    <i data-lucide="calendar-clock"></i>
+                    <p>No scheduled posts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: History -->
+        <div class="social-tab-content" id="tab-history">
+            <div class="posts-list" id="historyPosts">
+                <div class="empty-state">
+                    <i data-lucide="history"></i>
+                    <p>No publishing history yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Analytics -->
+        <div class="social-tab-content" id="tab-analytics">
+            <div class="analytics-grid" id="analyticsGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </main>
+    </div>
+
+    <script>
+    // ============================================
+    // State
+    // ============================================
+    let socialConfig = null;
+    let platformAccounts = [];
+    let selectedPlatforms = [];
+    let allPosts = [];
+
+    const ORG_ID = localStorage.getItem('insight360-org-id');
+
+    function getHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            'x-org-id': ORG_ID || ''
+        };
+    }
+
+    function showToast(message, type = 'success') {
+        if (typeof ModalService !== 'undefined' && ModalService.toast) {
+            ModalService.toast({ message, type });
+        } else {
+            // Fallback for early calls before ModalService is ready
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `position:fixed;bottom:2rem;right:2rem;padding:1rem 1.5rem;border-radius:8px;color:white;font-size:0.9rem;z-index:10000;`;
+            toast.style.background = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success, #10b981)' : 'var(--primary)';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    }
+
+    // ============================================
+    // Initialization
+    // ============================================
+    document.addEventListener('DOMContentLoaded', async () => {
+        const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        if (typeof initNavigation === 'function') await initNavigation();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Set minimum schedule time to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('scheduleDateTime').min = now.toISOString().slice(0, 16);
+
+        // Character counter
+        document.getElementById('composeContent').addEventListener('input', updateCharCount);
+
+        await loadConfig();
+        await loadAccounts();
+        await loadUsage();
+    });
+
+    async function loadConfig() {
+        try {
+            const res = await fetch('/api/social/config', { headers: getHeaders() });
+            socialConfig = await res.json();
+
+            if (!socialConfig.configured) {
+                document.getElementById('setupBanner').style.display = 'block';
+            }
+        } catch (err) {
+            console.error('Failed to load social config:', err);
+        }
+    }
+
+    async function loadAccounts() {
+        try {
+            const res = await fetch('/api/social/accounts', { headers: getHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            platformAccounts = data.platforms || [];
+            renderPlatformGrid();
+            renderPlatformSelector();
+        } catch (err) {
+            console.error('Failed to load accounts:', err);
+        }
+    }
+
+    // ============================================
+    // Usage Limits
+    // ============================================
+    async function loadUsage() {
+        try {
+            const res = await fetch('/api/social/usage', { headers: getHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const bar = document.getElementById('usageBar');
+            const posts = data.posts;
+            const channels = data.channels;
+
+            // Only show if there are limits (max > 0)
+            if (posts.max_allowed === 0 && channels.max_allowed === 0) return;
+
+            bar.style.display = 'flex';
+
+            function updateMeter(fillId, textId, current, max) {
+                const fill = document.getElementById(fillId);
+                const text = document.getElementById(textId);
+                const unlimited = max === -1;
+                const pct = unlimited ? 0 : (max > 0 ? Math.min((current / max) * 100, 100) : 0);
+
+                fill.style.width = unlimited ? '0%' : `${pct}%`;
+                fill.className = 'usage-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warning' : '');
+                text.textContent = unlimited ? `${current} / Unlimited` : `${current} / ${max}`;
+            }
+
+            updateMeter('postUsageFill', 'postUsageText', posts.current_count, posts.max_allowed);
+            updateMeter('channelUsageFill', 'channelUsageText', channels.current_count, channels.max_allowed);
+            lucide.createIcons();
+        } catch (err) {
+            console.error('Failed to load usage:', err);
+        }
+    }
+
+    // ============================================
+    // Tab Navigation
+    // ============================================
+    function switchTab(tabName) {
+        document.querySelectorAll('.social-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.social-tab-content').forEach(t => t.classList.remove('active'));
+
+        const tab = document.querySelector(`.social-tab[data-tab="${tabName}"]`);
+        const content = document.getElementById(`tab-${tabName}`);
+        if (tab) tab.classList.add('active');
+        if (content) content.classList.add('active');
+
+        // Load data for the tab
+        if (tabName === 'scheduled') loadPosts('scheduled');
+        if (tabName === 'history') loadPosts('published');
+        if (tabName === 'analytics') loadAnalytics();
+
+        lucide.createIcons();
+    }
+
+    // ============================================
+    // Connected Accounts
+    // ============================================
+    function renderPlatformGrid() {
+        const grid = document.getElementById('platformGrid');
+        if (!platformAccounts.length) {
+            grid.innerHTML = '<div class="empty-state"><i data-lucide="plug"></i><p>No platform data available</p></div>';
+            lucide.createIcons();
+            return;
+        }
+
+        grid.innerHTML = platformAccounts.map(p => `
+            <div class="platform-card ${p.connected ? 'connected' : ''}">
+                <div class="platform-icon" style="background:${p.color}20;">
+                    <i data-lucide="${p.icon}" style="color:${p.color};"></i>
+                </div>
+                <div class="platform-name">${p.name}</div>
+                <span class="platform-status ${p.connected ? 'connected' : 'disconnected'}">
+                    ${p.connected ? 'Connected' : 'Not Connected'}
+                </span>
+                ${p.accountName ? `<span class="platform-account">${p.accountName}</span>` : ''}
+                <button class="btn ${p.connected ? 'btn-secondary' : 'btn-primary'} btn-sm"
+                    onclick="${p.connected ? `disconnectPlatform('${p.id}')` : `connectPlatform('${p.id}')`}">
+                    <i data-lucide="${p.connected ? 'unlink' : 'link'}"></i>
+                    ${p.connected ? 'Disconnect' : 'Connect'}
+                </button>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    async function connectPlatform(platformId) {
+        try {
+            const res = await fetch(`/api/social/accounts/oauth-url/${platformId}`, { headers: getHeaders() });
+            const data = await res.json();
+            if (data.url) {
+                window.open(data.url, '_blank', 'width=600,height=700');
+                showToast('Complete the connection in the popup window', 'info');
+            }
+        } catch (err) {
+            showToast('Failed to start platform connection', 'error');
+        }
+    }
+
+    async function disconnectPlatform(platformId) {
+        const platform = platformAccounts.find(p => p.id === platformId);
+        const platformName = platform?.name || platformId;
+        const confirmed = await ModalService.confirm({
+            title: 'Disconnect Platform',
+            message: `Disconnect ${platformName}? You will need to reconnect it to publish to this platform again.`,
+            confirmText: 'Disconnect',
+            confirmClass: 'btn-danger'
+        });
+        if (!confirmed) return;
+        showToast(`${platformName} disconnection requested`, 'info');
+        await loadAccounts();
+    }
+
+    async function syncAccounts() {
+        try {
+            const res = await fetch('/api/social/accounts/sync', {
+                method: 'POST',
+                headers: getHeaders()
+            });
+            const data = await res.json();
+            showToast(`Synced ${data.synced} accounts`, 'success');
+            await loadAccounts();
+        } catch (err) {
+            showToast('Failed to sync accounts', 'error');
+        }
+    }
+
+    // ============================================
+    // Compose
+    // ============================================
+    function renderPlatformSelector() {
+        const selector = document.getElementById('platformSelector');
+        selector.innerHTML = platformAccounts.map(p => `
+            <label class="platform-check ${!p.connected ? 'disabled' : ''}" data-platform="${p.id}">
+                <input type="checkbox" value="${p.id}" ${!p.connected ? 'disabled' : ''}
+                    onchange="togglePlatformSelection('${p.id}', this.checked)">
+                <i data-lucide="${p.icon}" style="width:16px;height:16px;color:${p.color};"></i>
+                ${p.name}
+            </label>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    function togglePlatformSelection(platformId, checked) {
+        if (checked) {
+            selectedPlatforms.push(platformId);
+        } else {
+            selectedPlatforms = selectedPlatforms.filter(p => p !== platformId);
+        }
+
+        // Update visual state
+        document.querySelectorAll('.platform-check').forEach(el => {
+            if (el.dataset.platform === platformId) {
+                el.classList.toggle('selected', checked);
+            }
+        });
+
+        updateCharCount();
+        previewAdapted();
+    }
+
+    function updateCharCount() {
+        const content = document.getElementById('composeContent').value;
+        const countEl = document.getElementById('charCount');
+        const len = content.length;
+
+        // Show the most restrictive limit for selected platforms
+        let minLimit = Infinity;
+        const limits = socialConfig?.platformLimits || {};
+        for (const p of selectedPlatforms) {
+            const pLimit = limits[p]?.maxChars || Infinity;
+            if (pLimit < minLimit) minLimit = pLimit;
+        }
+
+        if (minLimit < Infinity) {
+            countEl.textContent = `${len} / ${minLimit} characters`;
+            countEl.classList.toggle('over-limit', len > minLimit);
+        } else {
+            countEl.textContent = `${len} characters`;
+            countEl.classList.remove('over-limit');
+        }
+    }
+
+    function toggleSchedule() {
+        const isScheduled = document.querySelector('input[name="scheduleType"]:checked').value === 'schedule';
+        document.getElementById('scheduleDateTime').style.display = isScheduled ? 'block' : 'none';
+        document.getElementById('submitBtn').innerHTML = isScheduled
+            ? '<i data-lucide="calendar-clock"></i> Schedule'
+            : '<i data-lucide="send"></i> Publish';
+        lucide.createIcons();
+    }
+
+    async function previewAdapted() {
+        const content = document.getElementById('composeContent').value;
+        const previewDiv = document.getElementById('previewContent');
+
+        if (!content || selectedPlatforms.length === 0) {
+            previewDiv.innerHTML = '<p class="empty-state" style="padding: var(--spacing-md);">Select platforms and type content to see previews</p>';
+            return;
+        }
+
+        const hashtags = document.getElementById('composeHashtags').value
+            .split(',').map(h => h.trim()).filter(Boolean).map(h => h.startsWith('#') ? h : `#${h}`);
+        const articleUrl = document.getElementById('composeArticleUrl').value || null;
+
+        try {
+            const res = await fetch('/api/social/adapt', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ content, platforms: selectedPlatforms, hashtags, articleUrl })
+            });
+            const data = await res.json();
+
+            previewDiv.innerHTML = Object.entries(data.adapted || {}).map(([platform, adapted]) => {
+                const platformInfo = platformAccounts.find(p => p.id === platform) || { name: platform, color: '#666' };
+                return `
+                    <div class="preview-platform">
+                        <div class="preview-platform-name" style="color:${platformInfo.color};">${platformInfo.name}</div>
+                        <div class="preview-text">${escapeHtml(adapted.text || adapted.title || '')}</div>
+                        ${adapted.isThread ? `<span class="preview-thread-badge">${adapted.thread?.length || 0}-tweet thread</span>` : ''}
+                        ${adapted.requiresMedia ? '<span class="preview-thread-badge">Image required</span>' : ''}
+                        ${adapted.requiresVideo ? '<span class="preview-thread-badge">Video required</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            previewDiv.innerHTML = '<p style="color:var(--danger);">Preview failed</p>';
+        }
+    }
+
+    async function submitPost() {
+        const content = document.getElementById('composeContent').value;
+        if (!content) return showToast('Content is required', 'error');
+        if (selectedPlatforms.length === 0) return showToast('Select at least one platform', 'error');
+
+        const isScheduled = document.querySelector('input[name="scheduleType"]:checked').value === 'schedule';
+        const scheduledAt = isScheduled ? document.getElementById('scheduleDateTime').value : null;
+
+        if (isScheduled && !scheduledAt) return showToast('Select a schedule date/time', 'error');
+
+        const hashtags = document.getElementById('composeHashtags').value
+            .split(',').map(h => h.trim()).filter(Boolean).map(h => h.startsWith('#') ? h : `#${h}`);
+        const articleUrl = document.getElementById('composeArticleUrl').value || null;
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/social/posts', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    platforms: selectedPlatforms,
+                    content,
+                    hashtags,
+                    articleUrl,
+                    scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+                    sourceType: 'manual'
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                if (res.status === 429) {
+                    throw new Error(`Monthly post limit reached (${err.current}/${err.limit}). Upgrade your plan for more posts.`);
+                }
+                throw new Error(err.error || 'Failed to create post');
+            }
+
+            showToast(isScheduled ? 'Post scheduled!' : 'Post published!', 'success');
+            loadUsage(); // Refresh usage display
+
+            // Clear form
+            document.getElementById('composeContent').value = '';
+            document.getElementById('composeHashtags').value = '';
+            document.getElementById('composeArticleUrl').value = '';
+            document.getElementById('previewContent').innerHTML = '<p class="empty-state" style="padding: var(--spacing-md);">Select platforms and type content to see previews</p>';
+
+            // Switch to appropriate tab
+            switchTab(isScheduled ? 'scheduled' : 'history');
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function importFromTL() {
+        showToast('Opening Thought Leadership content...', 'info');
+        // Open TL page in a way that allows content selection
+        // For now, direct users to the TL page
+        window.open('/thought-leadership.html', '_blank');
+    }
+
+    // ============================================
+    // Posts (Scheduled & History)
+    // ============================================
+    async function loadPosts(status) {
+        const containerId = status === 'scheduled' ? 'scheduledPosts' : 'historyPosts';
+        const container = document.getElementById(containerId);
+
+        try {
+            const statusFilter = status === 'published' ? '' : `&status=${status}`;
+            const res = await fetch(`/api/social/posts?limit=50${statusFilter}`, { headers: getHeaders() });
+            if (!res.ok) return;
+
+            const data = await res.json();
+            const posts = status === 'published'
+                ? (data.posts || []).filter(p => ['published', 'failed'].includes(p.status))
+                : (data.posts || []).filter(p => p.status === 'scheduled');
+
+            if (posts.length === 0) {
+                const icon = status === 'scheduled' ? 'calendar-clock' : 'history';
+                container.innerHTML = `<div class="empty-state"><i data-lucide="${icon}"></i><p>No ${status} posts</p></div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = posts.map(post => `
+                <div class="post-item">
+                    <div class="post-header">
+                        <div class="post-platforms">
+                            ${(post.platforms || []).map(p => `<span class="post-platform-badge">${p}</span>`).join('')}
+                        </div>
+                        <span class="post-status-badge ${post.status}">${post.status}</span>
+                    </div>
+                    <div class="post-content">${escapeHtml(truncate(post.content_text, 200))}</div>
+                    <div class="post-meta">
+                        ${post.scheduled_at ? `Scheduled: ${new Date(post.scheduled_at).toLocaleString()}` : ''}
+                        ${post.published_at ? `Published: ${new Date(post.published_at).toLocaleString()}` : ''}
+                        ${post.last_error ? `<span style="color:var(--danger);">Error: ${escapeHtml(post.last_error)}</span>` : ''}
+                    </div>
+                    ${post.status === 'scheduled' ? `
+                        <button class="btn btn-danger btn-sm post-cancel-btn" onclick="cancelPost('${post.id}')">
+                            <i data-lucide="x"></i> Cancel
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+            lucide.createIcons();
+        } catch (err) {
+            console.error('Failed to load posts:', err);
+        }
+    }
+
+    async function cancelPost(postId) {
+        const confirmed = await ModalService.confirm({
+            title: 'Cancel Scheduled Post',
+            message: 'Are you sure you want to cancel this scheduled post? This action cannot be undone.',
+            confirmText: 'Cancel Post',
+            confirmClass: 'btn-danger'
+        });
+        if (!confirmed) return;
+        try {
+            await fetch(`/api/social/posts/${postId}`, { method: 'DELETE', headers: getHeaders() });
+            showToast('Post cancelled', 'success');
+            loadPosts('scheduled');
+        } catch (err) {
+            showToast('Failed to cancel post', 'error');
+        }
+    }
+
+    // ============================================
+    // Analytics
+    // ============================================
+    async function loadAnalytics() {
+        const grid = document.getElementById('analyticsGrid');
+        try {
+            const res = await fetch('/api/social/analytics?days=30', { headers: getHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            grid.innerHTML = `
+                <div class="analytics-card">
+                    <div class="analytics-value">${data.totalPosts}</div>
+                    <div class="analytics-label">Total Posts</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${data.published}</div>
+                    <div class="analytics-label">Published</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${data.scheduled}</div>
+                    <div class="analytics-label">Scheduled</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${formatNumber(data.totalEngagement?.impressions || 0)}</div>
+                    <div class="analytics-label">Impressions</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${formatNumber(data.totalEngagement?.likes || 0)}</div>
+                    <div class="analytics-label">Likes</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${formatNumber(data.totalEngagement?.comments || 0)}</div>
+                    <div class="analytics-label">Comments</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${formatNumber(data.totalEngagement?.shares || 0)}</div>
+                    <div class="analytics-label">Shares</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">${formatNumber(data.totalEngagement?.reach || 0)}</div>
+                    <div class="analytics-label">Reach</div>
+                </div>
+            `;
+
+            // Platform breakdown
+            if (Object.keys(data.platformBreakdown || {}).length > 0) {
+                grid.innerHTML += `
+                    <div class="analytics-card" style="grid-column: span 2;">
+                        <div class="analytics-label" style="margin-bottom:var(--spacing-sm);font-weight:600;">Posts by Platform</div>
+                        ${Object.entries(data.platformBreakdown).map(([p, count]) =>
+                            `<div style="display:flex;justify-content:space-between;padding:var(--spacing-xs) 0;">
+                                <span>${p}</span><strong>${count}</strong>
+                            </div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+        } catch (err) {
+            grid.innerHTML = '<div class="empty-state"><p>Failed to load analytics</p></div>';
+        }
+    }
+
+    // ============================================
+    // Configuration Modal
+    // ============================================
+    async function showConfigModal() {
+        if (typeof ModalService === 'undefined') {
+            await ModalServiceLoader.load();
+        }
+
+        const result = await ModalService.form({
+            title: 'Configure Social Publishing',
+            fields: [
+                { name: 'postizOrgId', label: 'Postiz Organization ID', type: 'text', required: true, placeholder: 'From your Postiz dashboard' },
+                { name: 'apiKey', label: 'Postiz API Key', type: 'text', required: true, placeholder: 'Bearer token from Postiz settings' }
+            ],
+            submitText: 'Save Configuration'
+        });
+
+        if (!result) return;
+
+        try {
+            const res = await fetch('/api/social/config', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(result)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error);
+            }
+
+            showToast('Social publishing configured!', 'success');
+            document.getElementById('setupBanner').style.display = 'none';
+            await loadConfig();
+            await loadAccounts();
+        } catch (err) {
+            showToast(err.message || 'Configuration failed', 'error');
+        }
+    }
+
+    // ============================================
+    // Utilities
+    // ============================================
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function truncate(str, max) {
+        if (!str || str.length <= max) return str || '';
+        return str.substring(0, max) + '...';
+    }
+
+    function formatNumber(n) {
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+        return String(n);
+    }
+    </script>
+</body>
+</html>

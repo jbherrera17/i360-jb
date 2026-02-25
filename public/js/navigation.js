@@ -58,6 +58,7 @@ const navConfig = {
                 { href: '/strategy.html', icon: 'milestone', label: 'Strategy (S2E)' },
                 { href: '/research-studio.html', icon: 'book-open-text', label: 'Research Studio' },
                 { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
+                { href: '/social-media.html', icon: 'share-2', label: 'Social Media' },
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
                 { href: '/guides.html', icon: 'book-open', label: 'Guides' }
             ]

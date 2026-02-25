@@ -459,7 +459,7 @@
         </div>
     </div>
 
-    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
@@ -513,7 +513,9 @@
             max_skills: 'Skills',
             max_context_assets: 'Context Assets',
             max_research_studios: 'Research Studios',
-            max_monthly_api_calls: 'API Calls/Month'
+            max_monthly_api_calls: 'API Calls/Month',
+            max_social_posts_monthly: 'Social Posts/Month',
+            max_social_channels: 'Social Channels'
         };
 
         // Show/hide loading overlay
@@ -1018,6 +1020,8 @@
                             max_context_assets: tier.max_context_assets,
                             max_research_studios: tier.max_research_studios,
                             max_monthly_api_calls: tier.max_monthly_api_calls,
+                            max_social_posts_monthly: tier.max_social_posts_monthly,
+                            max_social_channels: tier.max_social_channels,
                             features: tier.features,
                             integration_addons: tier.integration_addons,
                             allow_self_upgrade: tier.allow_self_upgrade
@@ -1082,15 +1086,18 @@
         }
 
         function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem;
-                background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--info)'};
-                color: white; border-radius: 8px; z-index: 9999; animation: slideIn 0.3s ease;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            if (typeof ModalService !== 'undefined' && ModalService.toast) {
+                ModalService.toast({ message, type });
+            } else {
+                // Fallback for early calls before ModalService is ready
+                const toast = document.createElement('div');
+                toast.style.cssText = `position:fixed;bottom:20px;right:20px;padding:1rem 1.5rem;` +
+                    `background:${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--info)'};` +
+                    `color:white;border-radius:var(--radius-md);z-index:9999;font-size:0.9rem;`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
         }
 
         // Warn before leaving with unsaved changes
