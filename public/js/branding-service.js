@@ -86,6 +86,9 @@ const BrandingService = (() => {
 
     function _applyColors(branding) {
         const root = document.documentElement;
+        const isDark = (root.getAttribute('data-theme') || 'dark') === 'dark';
+
+        // Apply direct color mappings
         const colorMap = {
             primary_color: '--primary',
             secondary_color: '--secondary',
@@ -99,11 +102,31 @@ const BrandingService = (() => {
             }
         }
 
-        // Generate hover/muted variants from primary
-        if (branding.primary_color) {
-            root.style.setProperty('--primary-hover', _adjustBrightness(branding.primary_color, -15));
-            root.style.setProperty('--primary-muted', branding.primary_color + '26'); // ~15% opacity
+        // Generate derived variants from primary
+        const primary = branding.primary_color;
+        if (primary) {
+            root.style.setProperty('--primary-dark', _adjustBrightness(primary, -15));
+            root.style.setProperty('--primary-light', _adjustBrightness(primary, 30));
+            root.style.setProperty('--primary-hover', _adjustBrightness(primary, -15));
+            root.style.setProperty('--primary-muted', _hexToRgba(primary, 0.15));
+            root.style.setProperty('--bg-hover', _hexToRgba(primary, isDark ? 0.15 : 0.08));
         }
+
+        // Rebuild gradient from current primary + secondary
+        const secondary = branding.secondary_color;
+        if (primary || secondary) {
+            const p = primary || getComputedStyle(root).getPropertyValue('--primary').trim();
+            const s = secondary || getComputedStyle(root).getPropertyValue('--secondary').trim();
+            root.style.setProperty('--gradient-primary', `linear-gradient(135deg, ${p} 0%, ${s} 100%)`);
+        }
+    }
+
+    function _hexToRgba(hex, alpha) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const r = (num >> 16) & 0xFF;
+        const g = (num >> 8) & 0xFF;
+        const b = num & 0xFF;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
     function _adjustBrightness(hex, percent) {

@@ -1172,9 +1172,9 @@ function toggleTheme() {
     // Update toggle icon
     updateThemeToggleIcon();
 
-    // Swap light/dark logos if branding is loaded
+    // Re-apply branding for theme-aware derived vars (bg-hover opacity, sidebar logo)
     if (typeof BrandingService !== 'undefined') {
-        BrandingService.updateSidebar();
+        BrandingService.apply();
     }
 }
 
