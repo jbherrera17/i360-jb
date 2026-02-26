@@ -15,7 +15,7 @@ const BrandingService = (() => {
     let _loaded = false;
 
     function _getOrgId() {
-        return localStorage.getItem('currentOrgId');
+        return localStorage.getItem('insight360_org_id') || localStorage.getItem('currentOrgId');
     }
 
     function _getCacheKey() {
