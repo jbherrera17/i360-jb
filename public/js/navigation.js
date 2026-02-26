@@ -198,8 +198,19 @@ function convertModulesToNavConfig(modulesData) {
         }
     });
 
-    // Build config
-    const primary = groupMap.primary.items;
+    // Build config — ensure core primary items are always present
+    const corePrimary = [
+        { href: '/chat.html', icon: 'graduation-cap', label: 'Higgins' },
+        { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' },
+        { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
+    ];
+    const dynamicPrimary = groupMap.primary.items;
+    // Merge: start with core items, then add any dynamic primary items not already present
+    const primaryHrefs = new Set(corePrimary.map(i => i.href));
+    const primary = [
+        ...corePrimary,
+        ...dynamicPrimary.filter(i => !primaryHrefs.has(i.href))
+    ];
     const groups = Object.values(groupMap)
         .filter(g => g.id !== 'primary' && g.items.length > 0);
 
