@@ -1190,7 +1190,58 @@ module.exports = function(supabase) {
                 }
             }
 
-            // Delete from users table first
+            // Clean up foreign key references that don't cascade
+            // These are audit/tracking columns (created_by, updated_by, etc.)
+            // that reference users(id) without ON DELETE SET NULL
+            const nullifyTables = [
+                { table: 'soul_configurations', columns: ['created_by', 'updated_by', 'published_by'] },
+                { table: 'soul_config_versions', columns: ['changed_by', 'approved_by'] },
+                { table: 'ethical_evaluations', columns: ['user_id'] },
+                { table: 'values_alignment_audits', columns: ['audited_by'] },
+                { table: 'bright_line_incidents', columns: ['reported_by', 'resolved_by'] },
+                { table: 'bright_line_reviews', columns: ['reviewed_by'] },
+                { table: 'integrity_alerts', columns: ['assigned_to', 'created_by'] },
+                { table: 'integrity_reviews', columns: ['created_by'] },
+                { table: 'integrity_acknowledgments', columns: ['acknowledged_by'] },
+                { table: 'governance_policies', columns: ['created_by', 'updated_by'] },
+                { table: 'governance_compliance_checks', columns: ['verified_by', 'owner_id'] },
+                { table: 'department_okrs', columns: ['owner_id', 'created_by'] },
+                { table: 'department_processes', columns: ['owner_id', 'created_by'] },
+                { table: 'department_permissions', columns: ['granted_by'] },
+                { table: 'user_business_roles', columns: ['created_by'] },
+                { table: 'resource_access_grants', columns: ['created_by'] },
+                { table: 'skill_templates', columns: ['created_by'] },
+                { table: 'skill_executions', columns: ['created_by'] },
+                { table: 'module_addon_purchases', columns: ['purchased_by'] },
+                { table: 'nexus_search_queries', columns: ['created_by'] },
+                { table: 'nexus_knowledge_items', columns: ['created_by'] },
+                { table: 'nexus_data_conflicts', columns: ['resolved_by'] },
+            ];
+
+            for (const { table, columns } of nullifyTables) {
+                for (const col of columns) {
+                    try {
+                        await supabase
+                            .from(table)
+                            .update({ [col]: null })
+                            .eq(col, id);
+                    } catch (e) {
+                        // Table may not exist yet - skip silently
+                    }
+                }
+            }
+
+            // Remove from organization_members (soft-delete records too)
+            try {
+                await supabase
+                    .from('organization_members')
+                    .delete()
+                    .eq('user_id', id);
+            } catch (e) {
+                // May not exist
+            }
+
+            // Delete from users table
             const { error: profileError } = await supabase
                 .from('users')
                 .delete()
@@ -1198,6 +1249,10 @@ module.exports = function(supabase) {
 
             if (profileError) {
                 console.error('Delete profile error:', profileError);
+                return res.status(500).json({
+                    success: false,
+                    error: `Failed to delete user profile: ${profileError.message}`
+                });
             }
 
             // Delete from Supabase Auth
@@ -1205,10 +1260,8 @@ module.exports = function(supabase) {
 
             if (authError) {
                 console.error('Delete auth user error:', authError);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Failed to delete user from authentication system'
-                });
+                // Profile already deleted - log but don't block
+                console.warn('User profile deleted but auth record removal failed');
             }
 
             res.json({
