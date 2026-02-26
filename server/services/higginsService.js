@@ -1,10 +1,14 @@
 /**
  * INSIGHT 360 - Higgins Service
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Manages the Higgins AI assistant persona and knowledge injection.
  * Higgins is the always-aware i360 expert with JB's brand voice.
+ * Phase 61b: Added dynamic help documentation access.
  */
+
+const fs = require('fs');
+const path = require('path');
 
 // Asset IDs for Higgins knowledge (must match seed-higgins-knowledge.sql)
 const HIGGINS_ASSET_IDS = {
@@ -117,6 +121,16 @@ ${voiceDNA.content_text}
     // Add admin indicator
     if (isAdmin) {
         prompt += '\n---\nNOTE: This user has administrator privileges. You can provide more detailed technical information about system architecture, database concepts, and admin features when asked.\n';
+    }
+
+    // Phase 61b: Add help documentation index so Higgins knows what docs exist
+    const docsIndex = getDocsIndex();
+    if (docsIndex.length > 0) {
+        prompt += '\n---\nAVAILABLE HELP DOCUMENTATION:\nWhen users ask about features, reference these guides. The most relevant doc will be automatically injected when detected.\n';
+        for (const doc of docsIndex) {
+            prompt += `- ${doc.title} (${doc.filename})\n`;
+        }
+        prompt += '\n';
     }
 
     // Merge user's custom system prompt if provided
@@ -249,6 +263,132 @@ function getModelDisplayName(modelId) {
     return modelNames[modelId] || modelId;
 }
 
+// ============================================
+// Help Documentation Access (Phase 61b)
+// ============================================
+
+const DOCS_DIR = path.join(__dirname, '../../documentation/guides');
+let _docsIndexCache = null;
+let _docsIndexCacheTime = 0;
+const DOCS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get index of all help documentation files
+ * Cached with 5-minute TTL
+ * @returns {Array<{filename, title, summary}>}
+ */
+function getDocsIndex() {
+    const now = Date.now();
+    if (_docsIndexCache && (now - _docsIndexCacheTime) < DOCS_CACHE_TTL) {
+        return _docsIndexCache;
+    }
+
+    try {
+        const files = fs.readdirSync(DOCS_DIR).filter(f => f.endsWith('.md'));
+        const index = files.map(filename => {
+            try {
+                const content = fs.readFileSync(path.join(DOCS_DIR, filename), 'utf8');
+                const lines = content.split('\n');
+
+                // Extract title from first # heading
+                const titleLine = lines.find(l => l.startsWith('# '));
+                const title = titleLine ? titleLine.slice(2).trim() : filename.replace('.md', '');
+
+                // Extract first paragraph as summary
+                let summary = '';
+                for (const line of lines) {
+                    if (line.startsWith('# ')) continue;
+                    if (line.startsWith('---')) continue;
+                    if (line.trim() && !line.startsWith('#') && !line.startsWith('|') && !line.startsWith('**')) {
+                        summary = line.trim();
+                        break;
+                    }
+                }
+
+                return { filename, title, summary: summary.substring(0, 150) };
+            } catch (e) {
+                return { filename, title: filename.replace('.md', ''), summary: '' };
+            }
+        });
+
+        _docsIndexCache = index;
+        _docsIndexCacheTime = now;
+        return index;
+    } catch (e) {
+        console.warn('Failed to read docs directory:', e.message);
+        return [];
+    }
+}
+
+/**
+ * Fetch a specific help doc by filename
+ * Security: rejects paths with / or .., requires .md extension
+ * Truncates to 8000 chars to prevent token overflow
+ * @param {string} filename
+ * @returns {string|null}
+ */
+function fetchHelpDoc(filename) {
+    if (!filename || filename.includes('/') || filename.includes('..') || !filename.endsWith('.md')) {
+        return null;
+    }
+
+    try {
+        const filePath = path.join(DOCS_DIR, filename);
+        const content = fs.readFileSync(filePath, 'utf8');
+        return content.substring(0, 8000);
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Find relevant help docs based on user message keywords
+ * Returns the most relevant doc content for injection
+ * @param {string} userMessage - The user's message
+ * @returns {string|null} - Doc content to inject, or null
+ */
+function findRelevantHelpDoc(userMessage) {
+    if (!userMessage) return null;
+
+    const msg = userMessage.toLowerCase();
+
+    // Check for help-seeking keywords
+    const helpKeywords = ['how do i', 'how to', 'what is', 'what are', 'help with',
+        'where is', 'where can i find', 'show me how', 'explain', 'guide',
+        'how does', 'can i', 'how can i', 'tell me about', 'what does'];
+    const isHelpQuery = helpKeywords.some(k => msg.includes(k));
+    if (!isHelpQuery) return null;
+
+    const index = getDocsIndex();
+    if (!index.length) return null;
+
+    // Score each doc by keyword overlap
+    const msgWords = msg.split(/\s+/).filter(w => w.length > 2);
+    const scored = index.map(doc => {
+        const docText = `${doc.title} ${doc.filename} ${doc.summary}`.toLowerCase();
+        let score = 0;
+        for (const word of msgWords) {
+            if (docText.includes(word)) score++;
+        }
+        // Boost for exact title/filename match patterns
+        const titleLower = doc.title.toLowerCase();
+        if (msg.includes(titleLower.replace(' user guide', '').replace(' technical guide', ''))) {
+            score += 5;
+        }
+        return { ...doc, score };
+    });
+
+    // Get top match (must have some relevance)
+    scored.sort((a, b) => b.score - a.score);
+    const top = scored[0];
+    if (!top || top.score < 2) return null;
+
+    const content = fetchHelpDoc(top.filename);
+    if (!content) return null;
+
+    return `\n---\nRELEVANT HELP DOCUMENTATION (${top.title}):\n\n${content}\n`;
+}
+
 module.exports = {
     HIGGINS_ASSET_IDS,
     VOICE_DNA_ASSET_ID,
@@ -256,5 +396,8 @@ module.exports = {
     buildHigginsPrompt,
     fetchHigginsKnowledge,
     getHigginsSystemPrompt,
-    getModelDisplayName
+    getModelDisplayName,
+    getDocsIndex,
+    fetchHelpDoc,
+    findRelevantHelpDoc
 };

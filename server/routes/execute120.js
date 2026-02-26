@@ -317,8 +317,8 @@ module.exports = function(supabase) {
                 userRoleLevelNum = roleData?.level || 1;
             }
 
-            // Parallel fetch all cards + module access checks
-            const [contextAssets, agents, actions, skills, workflows, briefing, briefingAccess, strategyAccess] = await Promise.all([
+            // Parallel fetch all cards + module access checks + hidden items
+            const [contextAssets, agents, actions, skills, workflows, briefing, briefingAccess, strategyAccess, hiddenResult] = await Promise.all([
                 getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredActions(supabase, deptId, userRoleLevelNum, limitNum),
@@ -326,8 +326,22 @@ module.exports = function(supabase) {
                 getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limitNum),
                 getLatestBriefing(supabase, userId),
                 userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'briefing', p_org_id: orgId }) : { data: true },
-                userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'strategy120', p_org_id: orgId }) : { data: false }
+                userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'strategy120', p_org_id: orgId }) : { data: false },
+                userId ? supabase.from('user_hidden_items').select('entity_type, entity_id').eq('user_id', userId) : { data: [] }
             ]);
+
+            // Build hidden items set for O(1) lookup
+            const hiddenItems = new Set(
+                (hiddenResult.data || []).map(h => `${h.entity_type}:${h.entity_id}`)
+            );
+            const isHidden = (type, id) => hiddenItems.has(`${type}:${id}`);
+
+            // Filter out hidden items from all arrays
+            const filteredAgents = agents.filter(a => !isHidden('agent', a.id));
+            const filteredWorkflows = workflows.filter(w => !isHidden('workflow', w.id));
+            const filteredSkills = skills.filter(s => !isHidden('skill', s.id));
+            const filteredActions = actions.filter(a => !isHidden('action', a.id));
+            const filteredContextAssets = contextAssets.filter(c => !isHidden('context_asset', c.id));
 
             // Strategy overview for executives only (and only if they have strategy access)
             let strategyOverview = null;
@@ -338,11 +352,11 @@ module.exports = function(supabase) {
             res.json({
                 success: true,
                 data: {
-                    contextAssets,
-                    agents,
-                    actions,
-                    skills,
-                    workflows,
+                    contextAssets: filteredContextAssets,
+                    agents: filteredAgents,
+                    actions: filteredActions,
+                    skills: filteredSkills,
+                    workflows: filteredWorkflows,
                     briefing,
                     strategyOverview,
                     moduleAccess: {
@@ -497,6 +511,121 @@ module.exports = function(supabase) {
         } catch (error) {
             console.error('Error removing favorite:', error);
             res.status(500).json({ success: false, error: 'Failed to remove favorite' });
+        }
+    });
+
+    // ============================================
+    // USER HIDDEN ITEMS (Phase 61b)
+    // ============================================
+
+    /**
+     * GET /api/execute120/my-hidden
+     * Get current user's hidden item IDs
+     */
+    router.get('/my-hidden', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.json({ success: true, data: [] });
+            }
+
+            const { data, error } = await supabase
+                .from('user_hidden_items')
+                .select('entity_type, entity_id, hidden_at')
+                .eq('user_id', userId)
+                .order('hidden_at', { ascending: false });
+
+            if (error) throw error;
+            res.json({ success: true, data: data || [] });
+        } catch (error) {
+            console.error('Error fetching hidden items:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch hidden items' });
+        }
+    });
+
+    /**
+     * POST /api/execute120/my-hidden
+     * Hide an item from the Command Center
+     */
+    router.post('/my-hidden', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+
+            const { entity_type, entity_id } = req.body;
+            const validTypes = ['agent', 'workflow', 'skill', 'action', 'context_asset'];
+            if (!validTypes.includes(entity_type) || !entity_id) {
+                return res.status(400).json({ success: false, error: 'Invalid entity_type or entity_id' });
+            }
+
+            const { data, error } = await supabase
+                .from('user_hidden_items')
+                .upsert({
+                    user_id: userId,
+                    entity_type,
+                    entity_id
+                }, { onConflict: 'user_id,entity_type,entity_id' })
+                .select()
+                .single();
+
+            if (error) throw error;
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error hiding item:', error);
+            res.status(500).json({ success: false, error: 'Failed to hide item' });
+        }
+    });
+
+    /**
+     * DELETE /api/execute120/my-hidden/:entityType/:entityId
+     * Restore (unhide) a single item
+     */
+    router.delete('/my-hidden/:entityType/:entityId', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+
+            const { entityType, entityId } = req.params;
+            const { error } = await supabase
+                .from('user_hidden_items')
+                .delete()
+                .eq('user_id', userId)
+                .eq('entity_type', entityType)
+                .eq('entity_id', entityId);
+
+            if (error) throw error;
+            res.json({ success: true, message: 'Item restored' });
+        } catch (error) {
+            console.error('Error restoring hidden item:', error);
+            res.status(500).json({ success: false, error: 'Failed to restore item' });
+        }
+    });
+
+    /**
+     * DELETE /api/execute120/my-hidden
+     * Restore all hidden items (bulk unhide)
+     */
+    router.delete('/my-hidden', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+
+            const { error } = await supabase
+                .from('user_hidden_items')
+                .delete()
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            res.json({ success: true, message: 'All hidden items restored' });
+        } catch (error) {
+            console.error('Error restoring all hidden items:', error);
+            res.status(500).json({ success: false, error: 'Failed to restore hidden items' });
         }
     });
 

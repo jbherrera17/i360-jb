@@ -290,6 +290,50 @@
             fill: var(--warning, #f59e0b);
         }
 
+        /* Hide/Dismiss Button */
+        .hide-btn {
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: var(--text-muted);
+        }
+
+        .item-row:hover .hide-btn {
+            opacity: 0.6;
+        }
+
+        .hide-btn:hover {
+            opacity: 1 !important;
+            color: var(--danger, #ef4444);
+        }
+
+        /* Restore Hidden Banner */
+        .restore-hidden-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1rem;
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .restore-hidden-bar button {
+            background: none;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .restore-hidden-bar button:hover {
+            background: var(--primary);
+            color: white;
+        }
+
         /* Prompt List (Quick Start with Higgins) */
         .prompt-list {
             display: flex;
@@ -825,6 +869,9 @@
                     <div id="conditionalCards"></div>
                 </div>
 
+                <!-- Restore Hidden Items Bar -->
+                <div id="restoreHiddenBar" style="display:none;"></div>
+
                 <!-- Department Browser (Secondary/Collapsible) -->
                 <div>
                     <button class="dept-browser-toggle" id="deptBrowserToggle" onclick="toggleDepartmentBrowser()">
@@ -853,6 +900,7 @@
         let currentDepartment = null;
         let userProfile = null;
         let favorites = [];
+        let hiddenItems = []; // { entity_type, entity_id }
         let personalizedCards = {};
         let quickPrompts = []; // store prompts in array to avoid HTML encoding issues
 
@@ -875,11 +923,12 @@
             if (localUser) renderHeaderIdentity(localUser, null, null);
 
             // Parallel load all data
-            const [profileResult, cardsResult, favoritesResult, recentsResult] = await Promise.allSettled([
+            const [profileResult, cardsResult, favoritesResult, recentsResult, hiddenResult] = await Promise.allSettled([
                 fetch('/api/execute120/my-profile').then(r => r.json()),
                 fetch('/api/execute120/my-cards?limit=6').then(r => r.json()),
                 fetch('/api/execute120/my-favorites').then(r => r.json()),
-                fetch('/api/execute120/my-recents').then(r => r.json())
+                fetch('/api/execute120/my-recents').then(r => r.json()),
+                fetch('/api/execute120/my-hidden').then(r => r.json())
             ]);
 
             // Parse results
@@ -891,6 +940,8 @@
                 ? favoritesResult.value.data : [];
             const recents = recentsResult.status === 'fulfilled' && recentsResult.value?.success
                 ? recentsResult.value.data : {};
+            hiddenItems = hiddenResult.status === 'fulfilled' && hiddenResult.value?.success
+                ? hiddenResult.value.data : [];
 
             // Update header with full profile
             if (userProfile.user) {
@@ -907,6 +958,7 @@
             renderActions(personalizedCards.actions || []);
             renderQuickPrompts(userProfile.user?.department);
             renderConditionalCards();
+            renderRestoreHiddenBar();
 
             // Load department tabs (secondary, lazy)
             loadDepartmentTabs();
@@ -1415,6 +1467,11 @@
                         <div class="item-row-desc">${escapeHTML(desc)}</div>
                     </div>
                     <div class="item-row-actions">
+                        <button class="fav-btn hide-btn"
+                                onclick="event.stopPropagation(); hideItem('${entityType}', '${entityId}')"
+                                title="Hide from Command Center">
+                            <i data-lucide="eye-off" style="width:14px;height:14px;"></i>
+                        </button>
                         <button class="fav-btn ${isFav ? 'is-fav' : ''}"
                                 data-type="${entityType}" data-id="${entityId}"
                                 onclick="event.stopPropagation(); toggleFavorite('${entityType}', '${entityId}', this)"
@@ -1437,27 +1494,263 @@
             `;
         }
 
-        function navigateToEntity(type, id) {
-            const routes = {
-                agent: `/chat?agent=${id}`,
-                workflow: `/workflow-run?id=${id}`,
-                skill: `/skills.html?skill=${id}`,
-                action: `/actions.html?action=${id}`,
-                context_asset: `/context.html?id=${id}`
-            };
-            window.location.href = routes[type] || '#';
+        // ================================================
+        // Inline Modal Actions (Phase 61b)
+        // ================================================
+        async function navigateToEntity(type, id) {
+            switch (type) {
+                case 'agent':        await openAgentModal(id); break;
+                case 'workflow':     startWorkflow(id); break;
+                case 'skill':        await openSkillPreview(id); break;
+                case 'action':       await openActionModal(id); break;
+                case 'context_asset': await openAssetPreview(id); break;
+                default:             break;
+            }
         }
 
-        function openAgentChat(agentId) {
-            window.location.href = `/chat?agent=${agentId}`;
+        async function openAgentModal(agentId) {
+            try {
+                const res = await fetch(`/api/agents/${agentId}`);
+                const result = await res.json();
+                const agent = result.success ? (result.data || result.agent) : null;
+                if (!agent) { showToast('Could not load agent', 'error'); return; }
+
+                const contextAssets = (agent.context_mappings || [])
+                    .map(m => m.context_assets || m.context_asset)
+                    .filter(Boolean);
+
+                if (typeof ModalService !== 'undefined' && ModalService.agent) {
+                    ModalService.agent({
+                        agent: { id: agent.id, name: agent.name, description: agent.description,
+                                 prompt: agent.system_prompt, context_assets: contextAssets },
+                        autoStart: false, width: 650, height: 700
+                    });
+                } else {
+                    window.location.href = `/chat?agent=${agentId}`;
+                }
+            } catch (e) {
+                console.error('Error opening agent modal:', e);
+                showToast('Failed to open agent', 'error');
+            }
+        }
+
+        function openAgentChat(agentId) { openAgentModal(agentId); }
+
+        async function openSkillPreview(skillId) {
+            try {
+                let skill = (personalizedCards.skills || []).find(s => s.id === skillId);
+                if (!skill) {
+                    const res = await fetch(`/api/skills/${skillId}`);
+                    const result = await res.json();
+                    skill = result.success ? result.data : null;
+                }
+                if (!skill) { showToast('Could not load skill', 'error'); return; }
+
+                if (typeof ModalService !== 'undefined') {
+                    ModalService.content({
+                        title: skill.display_name || skill.name,
+                        content: `<div style="padding:0.5rem 0;">
+                            <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">${escapeHTML(skill.category || 'Skill')}</p>
+                            <p style="line-height:1.6;">${escapeHTML(skill.description || 'No description available.')}</p>
+                        </div>`,
+                        contentType: 'html', width: 500
+                    });
+                }
+            } catch (e) { console.error('Error opening skill preview:', e); }
+        }
+
+        async function openActionModal(actionId) {
+            try {
+                const res = await fetch(`/api/actions/${actionId}`);
+                const result = await res.json();
+                const action = result.success ? result.data : null;
+                if (!action) { showToast('Could not load action', 'error'); return; }
+
+                const template = action.prompt_template || '';
+                const placeholders = [];
+                const regex = /\{\{(\w+)\}\}/g;
+                let match;
+                while ((match = regex.exec(template)) !== null) {
+                    if (!placeholders.includes(match[1])) placeholders.push(match[1]);
+                }
+                const contextAssets = action.context_assets || [];
+
+                if (placeholders.length === 0 && typeof ModalService !== 'undefined') {
+                    const confirmed = await ModalService.confirm({
+                        title: `Run: ${action.name}`,
+                        message: `${action.description || 'Execute this action?'}${contextAssets.length ? `\n\nContext: ${contextAssets.map(a => a.name).join(', ')}` : ''}`,
+                        confirmText: 'Execute', confirmClass: 'btn-primary'
+                    });
+                    if (confirmed) await executeActionRun(action, {});
+                    return;
+                }
+
+                const fields = placeholders.map(p => ({
+                    name: p, label: p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                    type: 'text', required: true, placeholder: `Enter ${p.replace(/_/g, ' ')}`
+                }));
+
+                if (typeof ModalService !== 'undefined') {
+                    const formResult = await ModalService.form({
+                        title: action.name,
+                        description: action.description + (contextAssets.length ? `\n\nContext: ${contextAssets.map(a => a.name).join(', ')}` : ''),
+                        fields: fields, submitText: 'Execute'
+                    });
+                    if (formResult) await executeActionRun(action, formResult);
+                }
+            } catch (e) {
+                console.error('Error opening action modal:', e);
+                showToast('Failed to open action', 'error');
+            }
+        }
+
+        async function executeActionRun(action, inputData) {
+            try {
+                showToast('Executing action...', 'info');
+                const res = await fetch(`/api/actions/${action.id}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input_data: inputData })
+                });
+                const result = await res.json();
+                if (result.success && typeof ModalService !== 'undefined') {
+                    const output = result.data?.output || result.data?.result || JSON.stringify(result.data, null, 2);
+                    ModalService.content({
+                        title: `Result: ${action.name}`,
+                        content: output,
+                        contentType: typeof output === 'string' && output.includes('#') ? 'markdown' : 'text',
+                        width: 600,
+                        actions: [{ label: 'Copy', onclick: () => { navigator.clipboard.writeText(output); showToast('Copied!', 'success'); } }]
+                    });
+                } else if (!result.success) {
+                    showToast(result.error || 'Action failed', 'error');
+                }
+            } catch (e) {
+                console.error('Error executing action:', e);
+                showToast('Failed to execute action', 'error');
+            }
+        }
+
+        function executeAction(actionId) { openActionModal(actionId); }
+
+        async function openAssetPreview(assetId) {
+            try {
+                const res = await fetch(`/api/context/${assetId}`);
+                const result = await res.json();
+                const asset = result.success ? result.data : null;
+                if (!asset) { showToast('Could not load asset', 'error'); return; }
+
+                let content = asset.content_text || (asset.content_json ? JSON.stringify(asset.content_json, null, 2) : 'No content available.');
+                if (typeof ModalService !== 'undefined') {
+                    ModalService.content({
+                        title: asset.name, content: content, contentType: 'markdown', width: 600,
+                        actions: [{ label: 'Copy', onclick: () => { navigator.clipboard.writeText(content); showToast('Copied!', 'success'); } }]
+                    });
+                }
+            } catch (e) { console.error('Error opening asset preview:', e); }
+        }
+
+        // ================================================
+        // Hide/Dismiss Items (Phase 61b)
+        // ================================================
+        async function hideItem(entityType, entityId) {
+            try {
+                await fetch('/api/execute120/my-hidden', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ entity_type: entityType, entity_id: entityId })
+                });
+                hiddenItems.push({ entity_type: entityType, entity_id: entityId });
+
+                const wasFav = favorites.some(f => f.entity_type === entityType && f.entity_id === entityId);
+                if (wasFav) {
+                    await fetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
+                    favorites = favorites.filter(f => !(f.entity_type === entityType && f.entity_id === entityId));
+                }
+
+                reRenderPanels();
+                showToast('Item hidden from Command Center', 'success');
+            } catch (e) {
+                console.error('Error hiding item:', e);
+                showToast('Failed to hide item', 'error');
+            }
+        }
+
+        function isHidden(entityType, entityId) {
+            return hiddenItems.some(h => h.entity_type === entityType && h.entity_id === entityId);
+        }
+
+        function reRenderPanels() {
+            const agents = (personalizedCards.agents || []).filter(a => !isHidden('agent', a.id));
+            const workflows = (personalizedCards.workflows || []).filter(w => !isHidden('workflow', w.id));
+            const assets = (personalizedCards.contextAssets || []).filter(a => !isHidden('context_asset', a.id));
+            const skills = (personalizedCards.skills || []).filter(s => !isHidden('skill', s.id));
+            const actions = (personalizedCards.actions || []).filter(a => !isHidden('action', a.id));
+
+            renderAgents(agents);
+            renderWorkflows(workflows);
+            renderAssets(assets);
+            renderSkills(skills);
+            renderActions(actions);
+            renderPins();
+            renderRestoreHiddenBar();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderRestoreHiddenBar() {
+            const container = document.getElementById('restoreHiddenBar');
+            if (!hiddenItems.length) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div class="restore-hidden-bar">
+                    <span><i data-lucide="eye-off" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:0.35rem;"></i>${hiddenItems.length} item${hiddenItems.length > 1 ? 's' : ''} hidden from your view</span>
+                    <button onclick="restoreAllHidden()">Restore All</button>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function restoreAllHidden() {
+            if (typeof ModalService !== 'undefined') {
+                const confirmed = await ModalService.confirm({
+                    title: 'Restore Hidden Items',
+                    message: `Restore ${hiddenItems.length} hidden item${hiddenItems.length > 1 ? 's' : ''} to your Command Center?`,
+                    confirmText: 'Restore All', confirmClass: 'btn-primary'
+                });
+                if (!confirmed) return;
+            }
+            try {
+                await fetch('/api/execute120/my-hidden', { method: 'DELETE' });
+                hiddenItems = [];
+                const cardsRes = await fetch('/api/execute120/my-cards?limit=6');
+                const cardsResult = await cardsRes.json();
+                if (cardsResult.success) personalizedCards = cardsResult.data;
+                reRenderPanels();
+                showToast('All items restored', 'success');
+            } catch (e) {
+                console.error('Error restoring hidden items:', e);
+                showToast('Failed to restore items', 'error');
+            }
+        }
+
+        // Toast notification (self-contained for this page)
+        function showToast(message, type = 'info') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            const colors = { success: '#22c55e', error: '#ef4444', warning: '#f59e0b', info: '#6366f1' };
+            toast.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;padding:0.75rem 1.25rem;background:${colors[type] || colors.info};color:white;border-radius:var(--radius-md);font-size:0.9rem;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:opacity 0.3s;`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
         function startWorkflow(workflowId) {
             window.location.href = `/workflow-run?id=${workflowId}`;
-        }
-
-        function executeAction(actionId) {
-            window.location.href = `/actions.html?action=${actionId}&execute=true`;
         }
 
         function getEntityIcon(entityType, entity) {

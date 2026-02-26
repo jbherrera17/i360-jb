@@ -144,6 +144,68 @@ const mockUsageNudge = {
     data: { warnings: [], blocks: [] },
 };
 
+// ─── Phase 61b Mock Data ──────────────────────────────────────────────────────
+
+const mockHiddenEmpty = {
+    success: true,
+    data: [],
+};
+
+// Mock agent detail response for openAgentModal
+const mockAgentDetail = {
+    success: true,
+    data: {
+        id: 'agent-001',
+        name: 'Research Agent',
+        description: 'Does research',
+        system_prompt: 'You are a research assistant.',
+        icon: 'search',
+        context_mappings: [],
+    },
+};
+
+// Mock skill detail response for openSkillPreview
+const mockSkillDetail = {
+    success: true,
+    data: {
+        id: 'skill-001',
+        name: 'article_generator',
+        display_name: 'Article Generator',
+        description: 'Generates articles from outlines.',
+        category: 'content',
+        icon: 'feather',
+    },
+};
+
+// Mock action with no placeholders for direct-execute path
+const mockActionDetailNoPlaceholders = {
+    success: true,
+    data: {
+        id: 'action-001',
+        name: 'Summarise Notes',
+        description: 'Summarises your notes.',
+        prompt_template: 'Summarise my recent notes.',
+        context_assets: [],
+    },
+};
+
+// Mock action execute result
+const mockActionExecuteResult = {
+    success: true,
+    data: { output: 'Summary: Key points identified.' },
+};
+
+// Mock context asset detail
+const mockAssetDetail = {
+    success: true,
+    data: {
+        id: 'asset-001',
+        name: 'Company Description',
+        asset_type: 'company_description',
+        content_text: 'We are a values-based AI company.',
+    },
+};
+
 // ─── Shared Setup Helpers ─────────────────────────────────────────────────────
 
 /**
@@ -212,6 +274,35 @@ async function setupExecute120Page(page, options = {}) {
             contentType: 'application/json',
             body: JSON.stringify(options.recents || mockRecents),
         });
+    });
+
+    await page.route('**/api/execute120/my-hidden**', async (route) => {
+        const method = route.request().method();
+        if (method === 'GET') {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(options.hidden || mockHiddenEmpty),
+            });
+        } else if (method === 'POST') {
+            const body = route.request().postDataJSON();
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    success: true,
+                    data: { user_id: 'user-test-exec120', entity_type: body.entity_type, entity_id: body.entity_id },
+                }),
+            });
+        } else if (method === 'DELETE') {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ success: true, message: 'Restored' }),
+            });
+        } else {
+            await route.continue();
+        }
     });
 
     await page.route('**/api/execute120/departments', async (route) => {
@@ -300,7 +391,8 @@ test.describe('Execute 120 — Personal Command Center', () => {
 
         test('"Create Workflow" link is visible in page header', async ({ page }) => {
             await setupExecute120Page(page);
-            const createBtn = page.locator('a.workflow-btn');
+            // The button uses class "btn btn-primary" with text "Create Workflow"
+            const createBtn = page.locator('.header-actions a').filter({ hasText: 'Create Workflow' });
             await expect(createBtn).toBeVisible();
             await expect(createBtn).toContainText('Create Workflow');
         });
@@ -1031,6 +1123,629 @@ test.describe('Execute 120 — Personal Command Center', () => {
             await setupExecute120Page(page);
             const grid = page.locator('#personalGrid');
             await expect(grid).toHaveClass(/content-grid/);
+        });
+    });
+
+    // ─── 12. Inline Modal Actions (Phase 61b) ────────────────────────────────
+    //
+    // navigateToEntity() dispatches by type:
+    //   agent        → openAgentModal (ModalService.agent or fallback to /chat)
+    //   skill        → openSkillPreview (ModalService.content)
+    //   action       → openActionModal (ModalService.form or ModalService.confirm)
+    //   context_asset→ openAssetPreview (ModalService.content)
+    //   workflow     → startWorkflow (navigates to /workflow-run?id=...)
+    //
+    // The tests verify that clicking an item row triggers the correct API fetch
+    // (proving the click reached the right handler) and that only workflows
+    // navigate away from execute120.html. Modal rendering is not fully asserted
+    // because ModalService requires modal-service/loader.js which may not fully
+    // initialise without a real session.
+
+    test.describe('12. Inline Modal Actions (Phase 61b)', () => {
+
+        // Helper: wire per-item API mocks needed by modal handlers
+        async function setupInlineModalMocks(page) {
+            await page.route('**/api/agents/agent-001', async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockAgentDetail),
+                });
+            });
+            await page.route('**/api/skills/skill-001', async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockSkillDetail),
+                });
+            });
+            await page.route('**/api/actions/action-001', async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockActionDetailNoPlaceholders),
+                });
+            });
+            await page.route('**/api/actions/action-001/execute', async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockActionExecuteResult),
+                });
+            });
+            await page.route('**/api/context/asset-001', async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockAssetDetail),
+                });
+            });
+        }
+
+        test('clicking an agent item row fetches agent detail API', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            let agentFetchCalled = false;
+            await page.route('**/api/agents/agent-001', async (route) => {
+                agentFetchCalled = true;
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockAgentDetail),
+                });
+            });
+
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+            const agentRow = page.locator('#agentsContent .item-row').first();
+            await agentRow.click();
+            await page.waitForTimeout(500);
+
+            expect(agentFetchCalled).toBe(true);
+        });
+
+        test('clicking an agent item row does NOT navigate to /agents.html', async ({ page }) => {
+            await setupExecute120Page(page);
+            await setupInlineModalMocks(page);
+
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+            const agentRow = page.locator('#agentsContent .item-row').first();
+            await agentRow.click();
+            await page.waitForTimeout(600);
+
+            // Must remain on execute120 or go to /chat (fallback when ModalService unavailable)
+            // Must NOT go to /agents.html
+            const url = page.url();
+            expect(url).not.toContain('/agents.html');
+        });
+
+        test('clicking a workflow item row navigates to /workflow-run', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            await page.waitForSelector('#workflowsContent .item-row', { timeout: 5000 });
+            const workflowRow = page.locator('#workflowsContent .item-row').first();
+            await workflowRow.click();
+            await page.waitForTimeout(500);
+
+            const currentUrl = page.url();
+            expect(currentUrl).toContain('/workflow-run');
+        });
+
+        test('clicking a workflow item row includes the workflow id in the URL', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            await page.waitForSelector('#workflowsContent .item-row', { timeout: 5000 });
+            const workflowRow = page.locator('#workflowsContent .item-row').first();
+            await workflowRow.click();
+            await page.waitForTimeout(500);
+
+            // mockCards has workflow id 'wf-001'
+            expect(page.url()).toContain('id=wf-001');
+        });
+
+        test('clicking a skill item row does NOT navigate away from execute120.html', async ({ page }) => {
+            await setupExecute120Page(page);
+            await setupInlineModalMocks(page);
+
+            await page.waitForSelector('#skillsContent .item-row', { timeout: 5000 });
+            const skillRow = page.locator('#skillsContent .item-row').first();
+            await skillRow.click();
+            await page.waitForTimeout(600);
+
+            expect(page.url()).toContain('execute120');
+        });
+
+        test('clicking a context asset item row fetches asset detail API', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            let assetFetchCalled = false;
+            await page.route('**/api/context/asset-001', async (route) => {
+                assetFetchCalled = true;
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockAssetDetail),
+                });
+            });
+
+            await page.waitForSelector('#assetsContent .item-row', { timeout: 5000 });
+            const assetRow = page.locator('#assetsContent .item-row').first();
+            await assetRow.click();
+            await page.waitForTimeout(500);
+
+            expect(assetFetchCalled).toBe(true);
+        });
+
+        test('clicking a context asset item row does NOT navigate away from execute120.html', async ({ page }) => {
+            await setupExecute120Page(page);
+            await setupInlineModalMocks(page);
+
+            await page.waitForSelector('#assetsContent .item-row', { timeout: 5000 });
+            const assetRow = page.locator('#assetsContent .item-row').first();
+            await assetRow.click();
+            await page.waitForTimeout(600);
+
+            expect(page.url()).toContain('execute120');
+        });
+
+        test('clicking an action item row fetches action detail API', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            let actionFetchCalled = false;
+            await page.route('**/api/actions/action-001', async (route) => {
+                actionFetchCalled = true;
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockActionDetailNoPlaceholders),
+                });
+            });
+
+            await page.waitForSelector('#actionsContent .item-row', { timeout: 5000 });
+            const actionRow = page.locator('#actionsContent .item-row').first();
+            await actionRow.click();
+            await page.waitForTimeout(500);
+
+            expect(actionFetchCalled).toBe(true);
+        });
+
+        test('clicking an action item row does NOT navigate away from execute120.html', async ({ page }) => {
+            await setupExecute120Page(page);
+            await setupInlineModalMocks(page);
+
+            await page.waitForSelector('#actionsContent .item-row', { timeout: 5000 });
+            const actionRow = page.locator('#actionsContent .item-row').first();
+            await actionRow.click();
+            await page.waitForTimeout(600);
+
+            expect(page.url()).toContain('execute120');
+        });
+
+        test('action execute button (play icon) triggers action detail fetch', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            let actionFetchCalled = false;
+            await page.route('**/api/actions/action-001', async (route) => {
+                actionFetchCalled = true;
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify(mockActionDetailNoPlaceholders),
+                });
+            });
+
+            // The action row has a play button visible only on hover
+            await page.waitForSelector('#actionsContent .item-action-btn', { timeout: 5000 });
+            const execBtn = page.locator('#actionsContent .item-action-btn').first();
+            // Force visible for reliable click
+            await execBtn.evaluate(el => { el.style.opacity = '1'; });
+            await execBtn.click();
+            await page.waitForTimeout(500);
+
+            expect(actionFetchCalled).toBe(true);
+        });
+
+        test('navigateToEntity with type "workflow" triggers startWorkflow navigation', async ({ page }) => {
+            await setupExecute120Page(page);
+
+            // Call navigateToEntity directly for 'workflow' type and verify navigation
+            // This tests the switch dispatch without relying on a rendered item row
+            await page.evaluate(() => {
+                // Define startWorkflow to capture the call (override temporarily)
+                window._startWorkflowCalled = null;
+                const orig = window.startWorkflow;
+                window.startWorkflow = (id) => { window._startWorkflowCalled = id; };
+                navigateToEntity('workflow', 'wf-test-999');
+                window.startWorkflow = orig;
+            });
+
+            const called = await page.evaluate(() => window._startWorkflowCalled);
+            expect(called).toBe('wf-test-999');
+        });
+    });
+
+    // ─── 13. Hide/Dismiss Items (Phase 61b) ──────────────────────────────────
+    //
+    // The eye-off (hide) button on each item-row POSTs to /api/execute120/my-hidden,
+    // removes the item from the rendered panel, and shows a toast. The restoreHiddenBar
+    // appears when hiddenItems.length > 0. "Restore All" DELETEs /api/execute120/my-hidden
+    // and re-renders with fresh cards data.
+
+    test.describe('13. Hide/Dismiss Items (Phase 61b)', () => {
+
+        test('each agent item row has a hide button with hide-btn class', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+            const hideBtn = page.locator('#agentsContent .item-row .hide-btn').first();
+            await expect(hideBtn).toBeAttached();
+        });
+
+        test('hide button has eye-off icon (data-lucide attribute)', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+            // The hide button contains a child with data-lucide="eye-off"
+            const eyeOffIcon = page.locator('#agentsContent .item-row .hide-btn [data-lucide="eye-off"]').first();
+            await expect(eyeOffIcon).toBeAttached();
+        });
+
+        test('restoreHiddenBar is hidden when no items are hidden', async ({ page }) => {
+            await setupExecute120Page(page, { hidden: mockHiddenEmpty });
+            const bar = page.locator('#restoreHiddenBar');
+            await expect(bar).toBeHidden();
+        });
+
+        test('restoreHiddenBar is visible when hidden items are pre-loaded from API', async ({ page }) => {
+            const hiddenWithItem = {
+                success: true,
+                data: [{ entity_type: 'agent', entity_id: 'agent-001' }],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithItem });
+            await page.waitForTimeout(600);
+
+            const bar = page.locator('#restoreHiddenBar');
+            await expect(bar).toBeVisible();
+        });
+
+        test('restoreHiddenBar shows correct hidden item count text', async ({ page }) => {
+            const hiddenWithItem = {
+                success: true,
+                data: [{ entity_type: 'agent', entity_id: 'agent-001' }],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithItem });
+            await page.waitForTimeout(600);
+
+            const bar = page.locator('#restoreHiddenBar');
+            await expect(bar).toContainText('1 item hidden from your view');
+        });
+
+        test('restoreHiddenBar shows plural text when multiple items are hidden', async ({ page }) => {
+            const hiddenWithMultiple = {
+                success: true,
+                data: [
+                    { entity_type: 'agent', entity_id: 'agent-001' },
+                    { entity_type: 'skill', entity_id: 'skill-001' },
+                ],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithMultiple });
+            await page.waitForTimeout(600);
+
+            const bar = page.locator('#restoreHiddenBar');
+            await expect(bar).toContainText('2 items hidden from your view');
+        });
+
+        test('restoreHiddenBar contains a Restore All button', async ({ page }) => {
+            const hiddenWithItem = {
+                success: true,
+                data: [{ entity_type: 'agent', entity_id: 'agent-001' }],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithItem });
+            await page.waitForTimeout(600);
+
+            const restoreBtn = page.locator('#restoreHiddenBar button');
+            await expect(restoreBtn).toBeVisible();
+            await expect(restoreBtn).toContainText('Restore All');
+        });
+
+        test('clicking hide button on an agent item sends POST to my-hidden API', async ({ page }) => {
+            // Use page.on('request') to observe the POST without intercepting it.
+            // The setupExecute120Page mock will handle the actual response.
+            let hiddenPostBody = null;
+            page.on('request', (request) => {
+                if (request.method() === 'POST' && request.url().includes('/api/execute120/my-hidden')) {
+                    try { hiddenPostBody = request.postDataJSON(); } catch (e) { /* ignore */ }
+                }
+            });
+
+            await setupExecute120Page(page);
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+
+            // Force the hide button to be visible (it requires hover state via CSS)
+            const hideBtn = page.locator('#agentsContent .item-row .hide-btn').first();
+            await hideBtn.evaluate(el => { el.style.opacity = '1'; });
+            await hideBtn.click();
+            await page.waitForTimeout(600);
+
+            expect(hiddenPostBody).not.toBeNull();
+            expect(hiddenPostBody.entity_type).toBe('agent');
+            expect(hiddenPostBody.entity_id).toBe('agent-001');
+        });
+
+        test('clicking hide button reduces the number of items in the agents panel', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+
+            // Count before hiding
+            const initialCount = await page.locator('#agentsContent .item-row').count();
+            expect(initialCount).toBe(2); // mockCards has 2 agents
+
+            // Force hide button visible and click
+            const hideBtn = page.locator('#agentsContent .item-row .hide-btn').first();
+            await hideBtn.evaluate(el => { el.style.opacity = '1'; });
+            await hideBtn.click();
+            await page.waitForTimeout(600);
+
+            // After hiding, should have 1 fewer row
+            const afterCount = await page.locator('#agentsContent .item-row').count();
+            expect(afterCount).toBeLessThan(initialCount);
+        });
+
+        test('clicking hide button makes restoreHiddenBar appear', async ({ page }) => {
+            await setupExecute120Page(page, { hidden: mockHiddenEmpty });
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+
+            // Bar should start hidden
+            await expect(page.locator('#restoreHiddenBar')).toBeHidden();
+
+            // Hide the first agent
+            const hideBtn = page.locator('#agentsContent .item-row .hide-btn').first();
+            await hideBtn.evaluate(el => { el.style.opacity = '1'; });
+            await hideBtn.click();
+            await page.waitForTimeout(600);
+
+            // Bar should now be visible
+            await expect(page.locator('#restoreHiddenBar')).toBeVisible();
+        });
+
+        test('clicking Restore All button calls bulk DELETE on my-hidden API', async ({ page }) => {
+            const hiddenWithItem = {
+                success: true,
+                data: [{ entity_type: 'agent', entity_id: 'agent-001' }],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithItem });
+            await page.waitForTimeout(600);
+
+            let bulkDeleteCalled = false;
+
+            await page.route('**/api/execute120/my-hidden', async (route) => {
+                const method = route.request().method();
+                if (method === 'DELETE') {
+                    bulkDeleteCalled = true;
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify({ success: true, message: 'All hidden items restored' }),
+                    });
+                } else {
+                    await route.continue();
+                }
+            });
+
+            // Override ModalService.confirm to auto-accept
+            await page.evaluate(() => {
+                if (typeof ModalService !== 'undefined') {
+                    ModalService.confirm = async () => true;
+                } else {
+                    window.ModalService = { confirm: async () => true };
+                }
+            });
+
+            const restoreBtn = page.locator('#restoreHiddenBar button');
+            await expect(restoreBtn).toBeVisible();
+            await restoreBtn.click();
+            await page.waitForTimeout(800);
+
+            expect(bulkDeleteCalled).toBe(true);
+        });
+
+        test('after Restore All, restoreHiddenBar is hidden again', async ({ page }) => {
+            const hiddenWithItem = {
+                success: true,
+                data: [{ entity_type: 'agent', entity_id: 'agent-001' }],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithItem });
+            await page.waitForTimeout(600);
+
+            await page.evaluate(() => {
+                if (typeof ModalService !== 'undefined') {
+                    ModalService.confirm = async () => true;
+                } else {
+                    window.ModalService = { confirm: async () => true };
+                }
+            });
+
+            const restoreBtn = page.locator('#restoreHiddenBar button');
+            await restoreBtn.click();
+            await page.waitForTimeout(800);
+
+            await expect(page.locator('#restoreHiddenBar')).toBeHidden();
+        });
+    });
+
+    // ─── 14. Hidden Items API (Phase 61b) ────────────────────────────────────
+    //
+    // Live API calls verifying route registration and response shapes.
+    // Same pattern as Favorites: allow 200/401/403/500 since the
+    // user_hidden_items table may not exist until phase61 migration runs.
+
+    test.describe('14. Hidden Items API (live API calls)', () => {
+
+        test('GET /api/execute120/my-hidden route is registered (not 404)', async ({ request }) => {
+            const response = await request.get('/api/execute120/my-hidden');
+            expect(response.status()).not.toBe(404);
+        });
+
+        test('GET /api/execute120/my-hidden returns JSON with success field', async ({ request }) => {
+            const response = await request.get('/api/execute120/my-hidden');
+            expect([200, 401, 403, 500]).toContain(response.status());
+            const body = await response.json();
+            expect(body).toHaveProperty('success');
+        });
+
+        test('GET /api/execute120/my-hidden returns data array when 200', async ({ request }) => {
+            const response = await request.get('/api/execute120/my-hidden');
+            if (response.status() === 200) {
+                const body = await response.json();
+                expect(body.success).toBe(true);
+                expect(Array.isArray(body.data)).toBe(true);
+            }
+        });
+
+        test('POST /api/execute120/my-hidden with missing entity_type returns non-200', async ({ request }) => {
+            const response = await request.post('/api/execute120/my-hidden', {
+                data: { entity_id: 'agent-test-001' },
+            });
+            // 400 = validation; 401 = no auth (auth checked first in some flows)
+            expect([400, 401, 403]).toContain(response.status());
+            const body = await response.json();
+            expect(body.success).toBe(false);
+        });
+
+        test('POST /api/execute120/my-hidden with missing entity_id returns non-200', async ({ request }) => {
+            const response = await request.post('/api/execute120/my-hidden', {
+                data: { entity_type: 'agent' },
+            });
+            expect([400, 401, 403]).toContain(response.status());
+            const body = await response.json();
+            expect(body.success).toBe(false);
+        });
+
+        test('POST /api/execute120/my-hidden with invalid entity_type returns non-200', async ({ request }) => {
+            const response = await request.post('/api/execute120/my-hidden', {
+                data: { entity_type: 'invalid_type', entity_id: 'some-id' },
+            });
+            expect([400, 401, 403]).toContain(response.status());
+        });
+
+        test('POST /api/execute120/my-hidden route is registered (not 404)', async ({ request }) => {
+            const response = await request.post('/api/execute120/my-hidden', {
+                data: { entity_type: 'agent', entity_id: 'test-id' },
+            });
+            expect(response.status()).not.toBe(404);
+        });
+
+        test('DELETE /api/execute120/my-hidden/:type/:id route is registered (not 404)', async ({ request }) => {
+            const response = await request.delete('/api/execute120/my-hidden/agent/nonexistent-id');
+            expect(response.status()).not.toBe(404);
+            expect([200, 401, 403, 500]).toContain(response.status());
+        });
+
+        test('DELETE /api/execute120/my-hidden bulk restore route is registered (not 404)', async ({ request }) => {
+            const response = await request.delete('/api/execute120/my-hidden');
+            expect(response.status()).not.toBe(404);
+            expect([200, 401, 403, 500]).toContain(response.status());
+        });
+
+        test('DELETE /api/execute120/my-hidden bulk restore returns success shape when 200', async ({ request }) => {
+            const response = await request.delete('/api/execute120/my-hidden');
+            if (response.status() === 200) {
+                const body = await response.json();
+                expect(body.success).toBe(true);
+                expect(body).toHaveProperty('message');
+            }
+        });
+
+        test('DELETE /api/execute120/my-hidden/:type/:id returns success shape when 200', async ({ request }) => {
+            const response = await request.delete('/api/execute120/my-hidden/agent/nonexistent-id');
+            if (response.status() === 200) {
+                const body = await response.json();
+                expect(body.success).toBe(true);
+            }
+        });
+    });
+
+    // ─── 15. Toast Notifications (Phase 61b) ─────────────────────────────────
+    //
+    // showToast() creates a .toast-notification div fixed at bottom-right.
+    // We verify the element appears on hide actions and disappears after timeout.
+    // showToast is a global function defined in the page's inline <script>.
+
+    test.describe('15. Toast Notifications (Phase 61b)', () => {
+
+        test('showToast function is defined on the page', async ({ page }) => {
+            await setupExecute120Page(page);
+            const isFunction = await page.evaluate(() => typeof showToast === 'function');
+            expect(isFunction).toBe(true);
+        });
+
+        test('showToast creates a .toast-notification element', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.evaluate(() => showToast('Test notification', 'info'));
+            const toast = page.locator('.toast-notification');
+            await expect(toast).toBeVisible({ timeout: 1000 });
+        });
+
+        test('showToast displays the provided message text', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.evaluate(() => showToast('Item hidden from Command Center', 'success'));
+            await expect(page.locator('.toast-notification')).toContainText('Item hidden from Command Center', { timeout: 1000 });
+        });
+
+        test('only one toast exists at a time — second call replaces first', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.evaluate(() => {
+                showToast('First toast', 'info');
+                showToast('Second toast', 'success');
+            });
+            const toasts = page.locator('.toast-notification');
+            await expect(toasts).toHaveCount(1, { timeout: 1000 });
+            await expect(toasts.first()).toContainText('Second toast');
+        });
+
+        test('toast element is removed from DOM after fade timeout', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.evaluate(() => showToast('Temporary notification', 'info'));
+            const toast = page.locator('.toast-notification');
+            await expect(toast).toBeVisible({ timeout: 1000 });
+            // Toast fades at 3s, DOM removal at 3.3s — wait 4s total
+            await page.waitForTimeout(4000);
+            await expect(toast).toHaveCount(0);
+        });
+
+        test('clicking hide button shows a toast with hide message', async ({ page }) => {
+            await setupExecute120Page(page);
+            await page.waitForSelector('#agentsContent .item-row', { timeout: 5000 });
+
+            const hideBtn = page.locator('#agentsContent .item-row .hide-btn').first();
+            await hideBtn.evaluate(el => { el.style.opacity = '1'; });
+            await hideBtn.click();
+
+            await expect(page.locator('.toast-notification')).toBeVisible({ timeout: 2000 });
+            await expect(page.locator('.toast-notification')).toContainText('Item hidden from Command Center');
+        });
+
+        test('toast after successful restore all says All items restored', async ({ page }) => {
+            const hiddenWithItem = {
+                success: true,
+                data: [{ entity_type: 'agent', entity_id: 'agent-001' }],
+            };
+            await setupExecute120Page(page, { hidden: hiddenWithItem });
+            await page.waitForTimeout(600);
+
+            // Inject ModalService stub to auto-confirm
+            await page.evaluate(() => {
+                const stub = { confirm: async () => true };
+                if (typeof ModalService !== 'undefined') {
+                    ModalService.confirm = stub.confirm;
+                } else {
+                    window.ModalService = stub;
+                }
+            });
+
+            const restoreBtn = page.locator('#restoreHiddenBar button');
+            await expect(restoreBtn).toBeVisible();
+            await restoreBtn.click();
+
+            await expect(page.locator('.toast-notification')).toBeVisible({ timeout: 2000 });
+            await expect(page.locator('.toast-notification')).toContainText('All items restored');
         });
     });
 

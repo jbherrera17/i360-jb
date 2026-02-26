@@ -346,6 +346,14 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
             finalSystemPrompt = soulContext + '\n\n' + (finalSystemPrompt || '');
         }
 
+        // Phase 61b: Inject relevant help documentation for help-seeking queries
+        if (!skipHiggins) {
+            const helpDocContent = higginsService.findRelevantHelpDoc(text);
+            if (helpDocContent) {
+                finalSystemPrompt += helpDocContent;
+            }
+        }
+
         let response;
 
         if (provider === 'anthropic') {
@@ -500,6 +508,14 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
         } else if (soulContext) {
             // Even if Higgins is skipped, still inject soul context
             finalSystemPrompt = soulContext + '\n\n' + (finalSystemPrompt || '');
+        }
+
+        // Phase 61b: Inject relevant help documentation for help-seeking queries
+        if (!skipHiggins) {
+            const helpDocContent = higginsService.findRelevantHelpDoc(text);
+            if (helpDocContent) {
+                finalSystemPrompt += helpDocContent;
+            }
         }
 
         // Set up SSE headers
