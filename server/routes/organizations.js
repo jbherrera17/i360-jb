@@ -360,6 +360,17 @@ module.exports = function(supabase) {
                     suspendedUsers.map(u => u.email));
             }
 
+            // Delete departments first — the FK is ON DELETE SET NULL
+            // but org_id has a NOT NULL constraint (phase59c), causing conflicts
+            const { error: deptError } = await supabase
+                .from('departments')
+                .delete()
+                .eq('org_id', id);
+
+            if (deptError) {
+                console.warn('Warning: Could not delete departments:', deptError);
+            }
+
             const { error } = await supabase
                 .from('organizations')
                 .delete()
