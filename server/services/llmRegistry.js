@@ -9,18 +9,27 @@
 // ANTHROPIC (CLAUDE) MODELS
 // ============================================================================
 const ANTHROPIC_MODELS = {
-    // Claude 4.6 Family (Latest - February 2026) - NOT YET RELEASED
-    'claude-opus-4-6-20260205': {
+    // Claude 4.6 Family (Latest - February 2026)
+    'claude-opus-4-6': {
         name: 'Claude Opus 4.6',
         provider: 'anthropic',
-        description: 'Most capable - 1M context, agent teams, adaptive thinking',
+        description: 'Most capable - agent teams, adaptive thinking, context compaction',
         maxTokens: 128000,
-        contextWindow: 1000000,
+        contextWindow: 200000,
         capabilities: ['vision', 'pdf', 'tool_use', 'reasoning', 'agent_teams', 'context_compaction'],
         tier: 'premium',
         supportsEffort: true,
-        effortLevels: ['low', 'medium', 'high', 'max'],
-        default: false  // Model not yet available - changed to false
+        effortLevels: ['low', 'medium', 'high', 'max']
+    },
+    'claude-sonnet-4-6': {
+        name: 'Claude Sonnet 4.6',
+        provider: 'anthropic',
+        description: 'Opus-level intelligence at Sonnet pricing - extended thinking',
+        maxTokens: 64000,
+        contextWindow: 200000,
+        capabilities: ['vision', 'pdf', 'tool_use', 'reasoning'],
+        tier: 'standard',
+        default: true
     },
     // Claude 4.5 Family
     'claude-opus-4-5-20251101': {
@@ -40,8 +49,7 @@ const ANTHROPIC_MODELS = {
         maxTokens: 8192,
         contextWindow: 200000,
         capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'standard',
-        default: true  // Set as default - actually available model
+        tier: 'standard'
     },
     'claude-haiku-4-5-20251001': {
         name: 'Claude Haiku 4.5',
@@ -231,10 +239,19 @@ const PERPLEXITY_MODELS = {
         capabilities: ['search'],
         tier: 'standard'
     },
+    'sonar-reasoning': {
+        name: 'Sonar Reasoning',
+        provider: 'perplexity',
+        description: 'Real-time reasoning with search grounding',
+        maxTokens: 8192,
+        contextWindow: 128000,
+        capabilities: ['search', 'reasoning'],
+        tier: 'standard'
+    },
     'sonar-reasoning-pro': {
         name: 'Sonar Reasoning Pro',
         provider: 'perplexity',
-        description: 'Chain of Thought reasoning for complex analytical tasks',
+        description: 'DeepSeek-R1 powered reasoning with visible chain of thought',
         maxTokens: 8192,
         contextWindow: 128000,
         capabilities: ['search', 'reasoning'],
@@ -255,6 +272,18 @@ const PERPLEXITY_MODELS = {
 // GOOGLE (GEMINI) MODELS
 // ============================================================================
 const GEMINI_MODELS = {
+    // Gemini 3.1 Family (Latest - February 2026)
+    'gemini-3.1-pro-preview': {
+        name: 'Gemini 3.1 Pro Preview',
+        provider: 'google',
+        description: 'Most advanced reasoning - adjustable thinking depth, agentic coding',
+        maxTokens: 65536,
+        contextWindow: 1000000,
+        capabilities: ['vision', 'audio', 'video', 'tool_use', 'reasoning', 'agentic'],
+        tier: 'premium',
+        supportsThinkingLevel: true,
+        thinkingLevels: ['low', 'medium', 'high']
+    },
     // Gemini 3 Family (Preview)
     'gemini-3-pro-preview': {
         name: 'Gemini 3 Pro Preview',
@@ -339,23 +368,43 @@ const IMAGE_MODELS = {
         tier: 'flagship',
         default: true
     },
-    'dall-e-3': {
-        name: 'DALL-E 3',
+    'gpt-image-1': {
+        name: 'GPT Image 1',
         provider: 'openai',
-        description: 'High quality image generation with detailed prompts',
+        description: 'Natively multimodal - professional-grade image generation',
         sizes: ['1024x1024', '1024x1792', '1792x1024'],
         qualities: ['standard', 'hd'],
         styles: ['vivid', 'natural'],
         tier: 'premium'
     },
+    'gpt-image-1-mini': {
+        name: 'GPT Image 1 Mini',
+        provider: 'openai',
+        description: 'Cost-efficient image generation from text and image inputs',
+        sizes: ['1024x1024', '1024x1792', '1792x1024'],
+        qualities: ['standard'],
+        styles: ['vivid', 'natural'],
+        tier: 'standard'
+    },
+    'dall-e-3': {
+        name: 'DALL-E 3',
+        provider: 'openai',
+        description: 'High quality image generation - deprecated May 12, 2026',
+        sizes: ['1024x1024', '1024x1792', '1792x1024'],
+        qualities: ['standard', 'hd'],
+        styles: ['vivid', 'natural'],
+        tier: 'legacy',
+        deprecated: '2026-05-12'
+    },
     'dall-e-2': {
         name: 'DALL-E 2',
         provider: 'openai',
-        description: 'Fast image generation, supports variations and edits',
+        description: 'Fast image generation - deprecated May 12, 2026',
         sizes: ['256x256', '512x512', '1024x1024'],
         qualities: ['standard'],
         styles: [],
-        tier: 'standard'
+        tier: 'legacy',
+        deprecated: '2026-05-12'
     }
 };
 

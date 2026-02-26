@@ -48,15 +48,15 @@ describe('LLM Registry Service', () => {
                 expect(defaultModel).toBeDefined();
             });
 
-            it('should include Claude Opus 4.6 as default', () => {
+            it('should include Claude Sonnet 4.6 as default', () => {
                 const defaultModel = Object.entries(ANTHROPIC_MODELS)
                     .find(([id, model]) => model.default);
-                expect(defaultModel[0]).toBe('claude-opus-4-6-20260205');
+                expect(defaultModel[0]).toBe('claude-sonnet-4-6');
             });
 
-            it('should have 1M context window for Opus 4.6', () => {
-                const opus46 = ANTHROPIC_MODELS['claude-opus-4-6-20260205'];
-                expect(opus46.contextWindow).toBe(1000000);
+            it('should have correct specs for Opus 4.6', () => {
+                const opus46 = ANTHROPIC_MODELS['claude-opus-4-6'];
+                expect(opus46.contextWindow).toBe(200000);
                 expect(opus46.maxTokens).toBe(128000);
                 expect(opus46.capabilities).toContain('agent_teams');
                 expect(opus46.effortLevels).toEqual(['low', 'medium', 'high', 'max']);
@@ -282,7 +282,7 @@ describe('LLM Registry Service', () => {
     describe('getDefaultModel', () => {
         it('should return default Anthropic model', () => {
             const defaultModel = getDefaultModel('anthropic');
-            expect(defaultModel).toBe('claude-opus-4-6-20260205');
+            expect(defaultModel).toBe('claude-sonnet-4-6');
         });
 
         it('should return default OpenAI model', () => {
