@@ -929,9 +929,9 @@
             document.getElementById('brand-primary-hex').value = branding.primary_color || '#6366f1';
             document.getElementById('brand-secondary-color').value = branding.secondary_color || '#8b5cf6';
             document.getElementById('brand-secondary-hex').value = branding.secondary_color || '#8b5cf6';
-            document.getElementById('brand-header-text').value = branding.report_header || '';
-            document.getElementById('brand-footer-text').value = branding.report_footer || '';
-            document.getElementById('brand-email-signature').value = branding.email_signature || '';
+            document.getElementById('brand-header-text').value = branding.report_header_html || '';
+            document.getElementById('brand-footer-text').value = branding.report_footer_html || '';
+            document.getElementById('brand-email-signature').value = branding.email_signature_html || '';
             updateBrandingPreview();
         }
 
@@ -1360,25 +1360,33 @@
                     };
                 });
 
-                await authFetch(`/api/org-customization/${currentOrgId}/modules`, {
+                const moduleResp = await authFetch(`/api/org-customization/${currentOrgId}/modules`, {
                     method: 'PUT',
                     body: JSON.stringify({ modules: moduleData })
                 });
+                if (!moduleResp.ok) {
+                    const err = await moduleResp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to save module settings');
+                }
 
                 // Save branding
                 const brandingData = {
                     logo_url: document.getElementById('brand-logo-url').value || null,
                     primary_color: document.getElementById('brand-primary-color').value,
                     secondary_color: document.getElementById('brand-secondary-color').value,
-                    report_header: document.getElementById('brand-header-text').value || null,
-                    report_footer: document.getElementById('brand-footer-text').value || null,
-                    email_signature: document.getElementById('brand-email-signature').value || null
+                    report_header_html: document.getElementById('brand-header-text').value || null,
+                    report_footer_html: document.getElementById('brand-footer-text').value || null,
+                    email_signature_html: document.getElementById('brand-email-signature').value || null
                 };
 
-                await authFetch(`/api/org-customization/${currentOrgId}/branding`, {
+                const brandResp = await authFetch(`/api/org-customization/${currentOrgId}/branding`, {
                     method: 'PUT',
                     body: JSON.stringify(brandingData)
                 });
+                if (!brandResp.ok) {
+                    const err = await brandResp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to save branding');
+                }
 
                 hasUnsavedChanges = false;
                 showToast('All changes saved successfully', 'success');

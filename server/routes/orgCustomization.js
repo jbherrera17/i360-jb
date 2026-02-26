@@ -227,6 +227,62 @@ module.exports = function(supabase) {
         }
     });
 
+    /**
+     * PUT /api/org-customization/:orgId/modules
+     * Bulk update module configurations
+     */
+    router.put('/:orgId/modules', requireOrgAdmin, async (req, res) => {
+        try {
+            const { orgId } = req.params;
+            const { modules } = req.body;
+
+            if (!Array.isArray(modules)) {
+                return res.status(400).json({ success: false, error: 'modules must be an array' });
+            }
+
+            // Map frontend module_key to DB module_type + module_number
+            const keyMap = {
+                'align_120': { module_type: 'align120', module_number: null },
+                'strategy_120': { module_type: 'strategy120', module_number: null },
+                'execute_120': { module_type: 'execute120', module_number: null },
+                'ai_maturity': { module_type: 'align120', module_number: 1 },
+                'team_readiness': { module_type: 'align120', module_number: 3 },
+                'risk_assessment': { module_type: 'align120', module_number: 5 }
+            };
+
+            const results = [];
+            for (const mod of modules) {
+                const mapping = keyMap[mod.module_key];
+                if (!mapping) continue; // Skip unknown keys
+
+                const upsertData = {
+                    org_id: orgId,
+                    module_type: mapping.module_type,
+                    module_number: mapping.module_number,
+                    is_enabled: mod.is_enabled,
+                    updated_at: new Date().toISOString()
+                };
+                if (mod.custom_name) upsertData.custom_name = mod.custom_name;
+                if (mod.custom_description) upsertData.custom_description = mod.custom_description;
+                if (mod.system_prompt_override) upsertData.custom_prompts = { system: mod.system_prompt_override };
+
+                const { data, error } = await supabase
+                    .from('org_module_configs')
+                    .upsert(upsertData, { onConflict: 'org_id,module_type,module_number' })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                results.push(data);
+            }
+
+            res.json({ success: true, data: results });
+        } catch (error) {
+            console.error('Error bulk updating module configs:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     // ==========================================
     // BRANDING ENDPOINTS
     // ==========================================
