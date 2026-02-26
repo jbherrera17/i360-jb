@@ -624,10 +624,12 @@ const OnboardingWizard = (function() {
         }
     }
 
-    // Fetch departments
+    // Fetch departments (use ungated /api/departments, not module-gated execute120)
     async function fetchDepartments() {
         try {
-            const response = await fetch('/api/execute120/departments');
+            const orgId = localStorage.getItem('insight360_org_id') || '';
+            const url = orgId ? `/api/departments?org_id=${orgId}` : '/api/departments';
+            const response = await fetch(url);
             const result = await response.json();
             if (result.success) {
                 departments = result.data;
