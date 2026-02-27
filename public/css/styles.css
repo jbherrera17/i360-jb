@@ -1641,7 +1641,10 @@ select {
 
 .voice-animation {
     display: flex;
+    align-items: center;
+    justify-content: center;
     gap: var(--spacing-sm);
+    min-height: 48px;
 }
 
 .voice-circle {

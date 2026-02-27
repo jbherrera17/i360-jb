@@ -437,13 +437,16 @@
     <div id="voiceModal" class="modal hidden">
         <div class="modal-content voice-modal">
             <div class="voice-recording">
-                <div class="voice-animation">
-                    <div class="voice-circle"></div>
-                    <div class="voice-circle"></div>
-                    <div class="voice-circle"></div>
+                <div id="voiceVisual" class="voice-animation">
+                    <div id="voiceDots" style="display:flex;gap:0.5rem;">
+                        <div class="voice-circle"></div>
+                        <div class="voice-circle"></div>
+                        <div class="voice-circle"></div>
+                    </div>
+                    <img id="voiceSpinner" src="/assets/loading-spinner.svg" alt="Transcribing" class="loading-spinner" style="display:none;">
                 </div>
                 <p id="voiceStatus">Listening...</p>
-                <div class="voice-actions">
+                <div id="voiceActions" class="voice-actions">
                     <button id="stopRecording" class="btn-danger">
                         <i data-lucide="square"></i>
                         Stop

@@ -3063,6 +3063,21 @@ async function saveAsSnippet() {
 // ============================================
 
 (function() {
+    console.log('[Voice] Module initializing...');
+
+    // Local toast helper — showToast doesn't exist on the chat page
+    function voiceToast(message, type) {
+        try {
+            if (typeof ModalService !== 'undefined' && ModalService.toast) {
+                ModalService.toast({ message, type });
+            } else {
+                console[type === 'error' ? 'warn' : 'log']('[Voice]', message);
+            }
+        } catch (e) {
+            console.warn('[Voice] Toast failed:', message);
+        }
+    }
+
     // DOM elements
     const voiceInputBtn = document.getElementById('voiceInputBtn');
     const voiceModal = document.getElementById('voiceModal');
@@ -3074,6 +3089,18 @@ async function saveAsSnippet() {
     const voiceSelect = document.getElementById('voiceSelect');
     const chatInputEl = document.getElementById('chatInput');
     const enableVoiceEl = document.getElementById('enableVoice');
+    const voiceActions = document.getElementById('voiceActions');
+    const voiceDots = document.getElementById('voiceDots');
+    const voiceSpinner = document.getElementById('voiceSpinner');
+
+    console.log('[Voice] DOM elements:', {
+        voiceInputBtn: !!voiceInputBtn,
+        voiceModal: !!voiceModal,
+        stopRecordingBtn: !!stopRecordingBtn,
+        voicePlayback: !!voicePlayback,
+        playResponseBtn: !!playResponseBtn,
+        enableVoiceEl: !!enableVoiceEl
+    });
 
     // State
     let mediaRecorder = null;
@@ -3083,19 +3110,23 @@ async function saveAsSnippet() {
     let isPlaying = false;
     let lastAssistantText = '';
     let adminConfig = null;
+    let pendingAutoRead = false;
 
     // Load admin voice configuration
     async function loadVoiceConfig() {
         try {
             const res = await fetch('/api/chat/voice/config');
             const data = await res.json();
+            console.log('[Voice] Config loaded:', { available: data.available, stt: data.config?.stt_enabled, tts: data.config?.tts_enabled });
             if (data.success) {
                 adminConfig = data.config;
                 // Apply admin defaults
                 if (!data.available || !adminConfig.stt_enabled) {
+                    console.log('[Voice] STT disabled — hiding mic button');
                     if (voiceInputBtn) voiceInputBtn.style.display = 'none';
                 }
                 if (!data.available || !adminConfig.tts_enabled) {
+                    console.log('[Voice] TTS disabled — hiding playback');
                     if (voicePlayback) voicePlayback.classList.add('hidden');
                 }
                 // Set default voice from admin config if no user preference
@@ -3104,7 +3135,7 @@ async function saveAsSnippet() {
                 }
             }
         } catch (e) {
-            // Use defaults if config unavailable
+            console.warn('[Voice] Config fetch failed:', e.message);
         }
     }
     loadVoiceConfig();
@@ -3137,8 +3168,16 @@ async function saveAsSnippet() {
     }
 
     async function startRecording() {
+        console.log('[Voice] startRecording called');
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.error('[Voice] getUserMedia not available — page may not be in a secure context');
+                voiceToast('Voice recording requires HTTPS or localhost', 'error');
+                return;
+            }
+            console.log('[Voice] Requesting microphone access...');
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log('[Voice] Microphone access granted');
             recordingStream = stream;
             audioChunks = [];
 
@@ -3148,6 +3187,7 @@ async function saveAsSnippet() {
                 : MediaRecorder.isTypeSupported('audio/webm')
                     ? 'audio/webm'
                     : '';
+            console.log('[Voice] Using mimeType:', mimeType || '(browser default)');
 
             mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
 
@@ -3160,17 +3200,22 @@ async function saveAsSnippet() {
             };
 
             mediaRecorder.start(100); // collect data every 100ms
+            console.log('[Voice] Recording started');
 
             // Show modal
-            if (voiceModal) voiceModal.classList.remove('hidden');
+            if (voiceModal) {
+                voiceModal.style.display = '';
+                voiceModal.classList.remove('hidden');
+                voiceModal.classList.add('active');
+            }
             if (voiceStatus) voiceStatus.textContent = 'Listening...';
 
         } catch (err) {
-            console.error('Microphone access error:', err);
+            console.error('[Voice] Microphone access error:', err);
             if (err.name === 'NotAllowedError') {
-                showToast('Microphone access denied. Please allow microphone permission.', 'error');
+                voiceToast('Microphone access denied. Please allow microphone permission.', 'error');
             } else {
-                showToast('Could not access microphone: ' + err.message, 'error');
+                voiceToast('Could not access microphone: ' + err.message, 'error');
             }
         }
     }
@@ -3178,9 +3223,11 @@ async function saveAsSnippet() {
     async function stopRecording() {
         if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
 
-        // Update UI
+        // Switch to transcribing state: swap dots for spinner, hide buttons
+        if (voiceDots) voiceDots.style.display = 'none';
+        if (voiceSpinner) voiceSpinner.style.display = '';
         if (voiceStatus) voiceStatus.textContent = 'Transcribing...';
-        if (stopRecordingBtn) stopRecordingBtn.disabled = true;
+        if (voiceActions) voiceActions.style.display = 'none';
 
         // Wait for final data
         await new Promise(resolve => {
@@ -3198,11 +3245,13 @@ async function saveAsSnippet() {
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
         const audioBlob = new Blob(audioChunks, { type: mimeType });
         audioChunks = [];
+        console.log('[Voice] Recording stopped. Blob size:', audioBlob.size, 'mimeType:', mimeType);
 
         if (audioBlob.size < 1000) {
             // Too short to be useful
             hideVoiceModal();
-            showToast('Recording too short. Please try again.', 'error');
+            console.warn('[Voice] Recording too short:', audioBlob.size, 'bytes');
+            voiceToast('Recording too short. Please try again.', 'error');
             return;
         }
 
@@ -3210,6 +3259,7 @@ async function saveAsSnippet() {
             const formData = new FormData();
             const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'm4a' : 'wav';
             formData.append('audio', audioBlob, `recording.${ext}`);
+            console.log('[Voice] Sending transcription request...');
 
             const response = await fetch('/api/chat/voice/transcribe', {
                 method: 'POST',
@@ -3217,6 +3267,7 @@ async function saveAsSnippet() {
             });
 
             const data = await response.json();
+            console.log('[Voice] Transcription response:', { status: response.status, success: data.success, hasText: !!data.text, error: data.error });
 
             if (data.success && data.text) {
                 // Insert transcribed text into chat input
@@ -3227,13 +3278,25 @@ async function saveAsSnippet() {
                     chatInputEl.style.height = 'auto';
                     chatInputEl.style.height = chatInputEl.scrollHeight + 'px';
                 }
-                showToast('Voice transcribed', 'success');
+                // Auto-enable voice mode so TTS plays the response
+                if (enableVoiceEl && !enableVoiceEl.checked) {
+                    enableVoiceEl.checked = true;
+                    enableVoiceEl.dispatchEvent(new Event('change'));
+                }
+                pendingAutoRead = true;
+                voiceToast('Voice transcribed', 'success');
+                // Close modal first, then auto-send
+                hideVoiceModal();
+                if (typeof sendMessage === 'function') {
+                    setTimeout(() => sendMessage(), 100);
+                }
+                return; // hideVoiceModal already called
             } else {
-                showToast(data.error || 'Transcription failed', 'error');
+                voiceToast(data.error || 'Transcription failed', 'error');
             }
         } catch (err) {
             console.error('Transcription request error:', err);
-            showToast('Failed to transcribe: ' + err.message, 'error');
+            voiceToast('Failed to transcribe: ' + err.message, 'error');
         }
 
         hideVoiceModal();
@@ -3252,7 +3315,16 @@ async function saveAsSnippet() {
     }
 
     function hideVoiceModal() {
-        if (voiceModal) voiceModal.classList.add('hidden');
+        console.log('[Voice] hideVoiceModal called');
+        if (voiceModal) {
+            voiceModal.classList.remove('active');
+            voiceModal.classList.add('hidden');
+            voiceModal.style.display = 'none';
+        }
+        // Reset to recording state for next use
+        if (voiceDots) voiceDots.style.display = '';
+        if (voiceSpinner) voiceSpinner.style.display = 'none';
+        if (voiceActions) voiceActions.style.display = '';
         if (stopRecordingBtn) stopRecordingBtn.disabled = false;
         if (voiceStatus) voiceStatus.textContent = 'Listening...';
     }
@@ -3273,7 +3345,7 @@ async function saveAsSnippet() {
         }
 
         if (!lastAssistantText) {
-            showToast('No response to read aloud', 'error');
+            voiceToast('No response to read aloud', 'error');
             return;
         }
 
@@ -3288,7 +3360,7 @@ async function saveAsSnippet() {
             .trim();
 
         if (!cleanText) {
-            showToast('No text content to read', 'error');
+            voiceToast('No text content to read', 'error');
             return;
         }
 
@@ -3331,7 +3403,7 @@ async function saveAsSnippet() {
                 isPlaying = false;
                 updatePlayButton(false);
                 URL.revokeObjectURL(audioUrl);
-                showToast('Audio playback error', 'error');
+                voiceToast('Audio playback error', 'error');
                 setStatus('Ready');
             };
 
@@ -3343,7 +3415,7 @@ async function saveAsSnippet() {
             console.error('TTS error:', err);
             isPlaying = false;
             updatePlayButton(false);
-            showToast('Text-to-speech failed: ' + err.message, 'error');
+            voiceToast('Text-to-speech failed: ' + err.message, 'error');
             setStatus('Ready');
         }
     }
@@ -3410,6 +3482,11 @@ async function saveAsSnippet() {
                     if (text && text !== lastAssistantText) {
                         lastAssistantText = text;
                         if (voicePlayback) voicePlayback.classList.remove('hidden');
+                        // Auto-read response if voice input was used
+                        if (pendingAutoRead) {
+                            pendingAutoRead = false;
+                            togglePlayback();
+                        }
                     }
                 }
             }
