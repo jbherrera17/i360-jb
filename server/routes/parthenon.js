@@ -21,6 +21,35 @@ const { getUserId } = require('../utils/auth');
 module.exports = function(supabase) {
     const router = express.Router();
 
+    /**
+     * Resolve org_id from request: header → user's default_org_id
+     */
+    async function resolveOrgId(req) {
+        const orgId = req.headers['x-org-id'];
+        if (orgId) return orgId;
+        const userId = getUserId(req);
+        if (userId) {
+            const { data: userRow } = await supabase
+                .from('users')
+                .select('default_org_id')
+                .eq('id', userId)
+                .maybeSingle();
+            if (userRow?.default_org_id) return userRow.default_org_id;
+        }
+        return null;
+    }
+
+    /**
+     * Get department IDs belonging to an org
+     */
+    async function getOrgDepartmentIds(orgId) {
+        const { data } = await supabase
+            .from('departments')
+            .select('id')
+            .eq('org_id', orgId);
+        return (data || []).map(d => d.id);
+    }
+
     // ============================================================================
     // DEPARTMENTS ENDPOINTS
     // ============================================================================
@@ -40,6 +69,12 @@ module.exports = function(supabase) {
                 .from('departments')
                 .select('*')
                 .order('sort_order');
+
+            // Org-scope: only show departments belonging to this org
+            const orgId = await resolveOrgId(req);
+            if (orgId) {
+                query = query.eq('org_id', orgId);
+            }
 
             if (active_only === 'true') {
                 query = query.eq('is_active', true);
@@ -147,6 +182,7 @@ module.exports = function(supabase) {
             }
 
             const userId = getUserId(req);
+            const orgId = await resolveOrgId(req);
 
             const departmentData = {
                 id: uuidv4(),
@@ -159,6 +195,7 @@ module.exports = function(supabase) {
                 sort_order: parseInt(sort_order),
                 is_active: true
             };
+            if (orgId) departmentData.org_id = orgId;
 
             const { data, error } = await supabase
                 .from('departments')
@@ -196,14 +233,26 @@ module.exports = function(supabase) {
             delete updates.user_id;
             delete updates.created_at;
 
+            // Backfill org_id if missing
+            const orgId = await resolveOrgId(req);
+            if (orgId) {
+                const { data: existing } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
+                if (existing && !existing.org_id) {
+                    updates.org_id = orgId;
+                }
+            }
+
             const { data, error } = await supabase
                 .from('departments')
                 .update(updates)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) {
+                return res.status(404).json({ success: false, error: 'Department not found' });
+            }
 
             res.json({
                 success: true,
@@ -279,6 +328,17 @@ module.exports = function(supabase) {
                     departments (id, name, icon, color)
                 `)
                 .order('sort_order');
+
+            // Org-scope: filter roles to departments in this org
+            const orgId = await resolveOrgId(req);
+            if (orgId && !department_id) {
+                const deptIds = await getOrgDepartmentIds(orgId);
+                if (deptIds.length > 0) {
+                    query = query.in('department_id', deptIds);
+                } else {
+                    return res.json({ success: true, data: [] });
+                }
+            }
 
             if (department_id) {
                 query = query.eq('department_id', department_id);
@@ -461,9 +521,10 @@ module.exports = function(supabase) {
                 .update(updates)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) return res.status(404).json({ success: false, error: 'Role not found' });
 
             res.json({
                 success: true,
@@ -543,6 +604,17 @@ module.exports = function(supabase) {
                     roles (id, title)
                 `)
                 .order('created_at', { ascending: false });
+
+            // Org-scope: filter OKRs to departments in this org
+            const orgId = await resolveOrgId(req);
+            if (orgId && !department_id) {
+                const deptIds = await getOrgDepartmentIds(orgId);
+                if (deptIds.length > 0) {
+                    query = query.in('department_id', deptIds);
+                } else {
+                    return res.json({ success: true, data: [] });
+                }
+            }
 
             if (scope) query = query.eq('scope', scope);
             if (department_id) query = query.eq('department_id', department_id);
@@ -793,9 +865,10 @@ module.exports = function(supabase) {
                 .update(updates)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) return res.status(404).json({ success: false, error: 'OKR not found' });
 
             res.json({
                 success: true,
@@ -866,6 +939,17 @@ module.exports = function(supabase) {
                     roles!processes_owner_role_id_fkey (id, title)
                 `)
                 .order('name');
+
+            // Org-scope: filter processes to departments in this org
+            const orgId = await resolveOrgId(req);
+            if (orgId && !department_id) {
+                const deptIds = await getOrgDepartmentIds(orgId);
+                if (deptIds.length > 0) {
+                    query = query.in('department_id', deptIds);
+                } else {
+                    return res.json({ success: true, data: [] });
+                }
+            }
 
             if (department_id) query = query.eq('department_id', department_id);
             if (type) query = query.eq('type', type);
@@ -1020,9 +1104,10 @@ module.exports = function(supabase) {
                 .update(updates)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) return res.status(404).json({ success: false, error: 'Process not found' });
 
             res.json({
                 success: true,

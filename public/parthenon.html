@@ -1637,6 +1637,16 @@ Or paste JSON:
     <script src="/js/supabase.js"></script>
 
     <script>
+        // Auth headers with org context
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('insight360_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const orgId = localStorage.getItem('currentOrgId');
+            if (orgId) headers['x-org-id'] = orgId;
+            return headers;
+        }
+
         // State
         let departments = [];
         let roles = [];
@@ -1705,7 +1715,7 @@ Or paste JSON:
         // Load overview stats
         async function loadOverview() {
             try {
-                const res = await fetch('/api/parthenon/overview');
+                const res = await fetch('/api/parthenon/overview', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     document.getElementById('deptCount').textContent = data.data.departments;
@@ -1726,7 +1736,7 @@ Or paste JSON:
         // Load departments
         async function loadDepartments() {
             try {
-                const res = await fetch('/api/parthenon/departments');
+                const res = await fetch('/api/parthenon/departments', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     departments = data.data;
@@ -1780,7 +1790,7 @@ Or paste JSON:
         // Load roles
         async function loadRoles() {
             try {
-                const res = await fetch('/api/parthenon/roles');
+                const res = await fetch('/api/parthenon/roles', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     roles = data.data;
@@ -1870,7 +1880,7 @@ Or paste JSON:
         // Load OKRs
         async function loadOKRs() {
             try {
-                const res = await fetch('/api/parthenon/okrs');
+                const res = await fetch('/api/parthenon/okrs', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     okrs = data.data;
@@ -2000,7 +2010,7 @@ Or paste JSON:
         // Load processes
         async function loadProcesses() {
             try {
-                const res = await fetch('/api/parthenon/processes');
+                const res = await fetch('/api/parthenon/processes', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     processes = data.data;
@@ -2143,7 +2153,7 @@ Or paste JSON:
 
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify(data)
                 });
 
@@ -2197,7 +2207,7 @@ Or paste JSON:
 
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify(data)
                 });
 
@@ -2239,7 +2249,7 @@ Or paste JSON:
             if (!confirm(`Delete department "${dept?.name}"? This will deactivate the department.`)) return;
 
             try {
-                const res = await fetch(`/api/parthenon/departments/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/parthenon/departments/${id}`, { method: 'DELETE', headers: getHeaders() });
                 const result = await res.json();
                 if (result.success) {
                     await loadDepartments();
@@ -2259,7 +2269,7 @@ Or paste JSON:
             if (!confirm(`Delete role "${role?.title}"? This will deactivate the role.`)) return;
 
             try {
-                const res = await fetch(`/api/parthenon/roles/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/parthenon/roles/${id}`, { method: 'DELETE', headers: getHeaders() });
                 const result = await res.json();
                 if (result.success) {
                     await loadRoles();
@@ -2359,7 +2369,7 @@ Or paste JSON:
 
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify(data)
                 });
 
@@ -2382,7 +2392,7 @@ Or paste JSON:
             if (!confirm(`Delete OKR "${okr?.title}"?`)) return;
 
             try {
-                const res = await fetch(`/api/parthenon/okrs/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/parthenon/okrs/${id}`, { method: 'DELETE', headers: getHeaders() });
                 const result = await res.json();
                 if (result.success) {
                     await loadOKRs();
@@ -2403,7 +2413,7 @@ Or paste JSON:
         // Load alignment summary for banner and stat card
         async function loadAlignmentSummary() {
             try {
-                const res = await fetch('/api/parthenon/alignment-summary');
+                const res = await fetch('/api/parthenon/alignment-summary', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     const summary = data.data;
@@ -2432,7 +2442,7 @@ Or paste JSON:
         // Load strategic objectives for linking dropdown
         async function loadObjectivesForLinking() {
             try {
-                const res = await fetch('/api/parthenon/objectives-for-linking');
+                const res = await fetch('/api/parthenon/objectives-for-linking', { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     availableObjectives = data.data || [];
@@ -2480,7 +2490,7 @@ Or paste JSON:
         // Load strategy links for a specific OKR
         async function loadOKRStrategyLinks(okrId) {
             try {
-                const res = await fetch(`/api/parthenon/okrs/${okrId}/strategic-links`);
+                const res = await fetch(`/api/parthenon/okrs/${okrId}/strategic-links`, { headers: getHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     currentOKRStrategyLinks = data.data || [];
@@ -2576,7 +2586,7 @@ Or paste JSON:
             try {
                 const res = await fetch(`/api/parthenon/okrs/${editingId}/strategic-links`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify({
                         objective_id: objectiveId,
                         link_type: linkType,
@@ -2603,7 +2613,7 @@ Or paste JSON:
             try {
                 const res = await fetch(`/api/parthenon/okrs/${editingId}/strategic-links/${linkId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify({ is_primary: isPrimary })
                 });
 
@@ -2625,7 +2635,8 @@ Or paste JSON:
 
             try {
                 const res = await fetch(`/api/parthenon/okrs/${editingId}/strategic-links/${linkId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: getHeaders()
                 });
 
                 const result = await res.json();
@@ -2784,7 +2795,7 @@ Or paste JSON:
 
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify(data)
                 });
 
@@ -2807,7 +2818,7 @@ Or paste JSON:
             if (!confirm(`Delete process "${proc?.name}"?`)) return;
 
             try {
-                const res = await fetch(`/api/parthenon/processes/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/parthenon/processes/${id}`, { method: 'DELETE', headers: getHeaders() });
                 const result = await res.json();
                 if (result.success) {
                     await loadProcesses();
@@ -2969,7 +2980,7 @@ Or paste JSON:
             try {
                 const res = await fetch('/api/parthenon/processes', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify(processData)
                 });
 
@@ -2991,7 +3002,7 @@ Or paste JSON:
         // Seed defaults
         async function seedDefaults() {
             try {
-                const res = await fetch('/api/parthenon/seed-defaults', { method: 'POST' });
+                const res = await fetch('/api/parthenon/seed-defaults', { method: 'POST', headers: getHeaders() });
                 const result = await res.json();
                 if (result.success) {
                     await loadDepartments();

@@ -12,6 +12,28 @@
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Sample Template Banner */
+        .sample-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: color-mix(in srgb, var(--primary) 10%, transparent);
+            border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .sample-banner strong {
+            color: var(--primary);
+        }
+
+        #sampleTemplate {
+            opacity: 0.85;
+        }
+
         /* Company Dashboard Styles */
         .dashboard-layout {
             display: flex;
@@ -680,6 +702,122 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Sample Template (shown when org has no data) -->
+            <div id="sampleTemplate" class="dashboard-layout" style="display:none;">
+                <div class="sample-banner">
+                    <i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;"></i>
+                    <div>
+                        <strong>Sample Preview</strong> &mdash; This is a preview showing how your Company Dashboard will look once you set up departments and OKRs.
+                        <a href="parthenon.html" style="color:var(--primary);text-decoration:underline;margin-left:0.5rem;">Set up your organization structure</a>
+                    </div>
+                </div>
+
+                <!-- Sample Summary Stats -->
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-stat-header"><i data-lucide="target" style="width:16px;height:16px;"></i> Total OKRs</div>
+                        <div class="summary-stat-value">4</div>
+                        <div class="summary-stat-change neutral"><span>Sample data</span></div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header"><i data-lucide="trending-up" style="width:16px;height:16px;"></i> Avg Progress</div>
+                        <div class="summary-stat-value">58%</div>
+                        <div class="summary-stat-change neutral"><span>Sample data</span></div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header"><i data-lucide="building-2" style="width:16px;height:16px;"></i> Departments</div>
+                        <div class="summary-stat-value">3</div>
+                        <div class="summary-stat-change neutral"><span>Sample data</span></div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header"><i data-lucide="users" style="width:16px;height:16px;"></i> Roles Defined</div>
+                        <div class="summary-stat-value">6</div>
+                        <div class="summary-stat-change neutral"><span>Sample data</span></div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-header"><i data-lucide="workflow" style="width:16px;height:16px;"></i> Processes</div>
+                        <div class="summary-stat-value">3</div>
+                        <div class="summary-stat-change neutral"><span>Sample data</span></div>
+                    </div>
+                </div>
+
+                <!-- Sample Main Grid -->
+                <div class="dashboard-grid">
+                    <div class="dashboard-column">
+                        <!-- Sample OKR Health -->
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="heart-pulse" style="width:18px;height:18px;"></i> OKR Health</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="okr-health-grid">
+                                    <div class="okr-status-card on-track"><div class="status-count">1</div><div class="status-label">On Track (70%+)</div></div>
+                                    <div class="okr-status-card at-risk"><div class="status-count">2</div><div class="status-label">At Risk (40-69%)</div></div>
+                                    <div class="okr-status-card behind"><div class="status-count">1</div><div class="status-label">Behind (&lt;40%)</div></div>
+                                    <div class="okr-status-card completed"><div class="status-count">0</div><div class="status-label">Completed</div></div>
+                                </div>
+                                <div class="progress-distribution">
+                                    <h4>Progress Distribution</h4>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-segment high" style="width:25%"></div>
+                                        <div class="progress-segment medium" style="width:50%"></div>
+                                        <div class="progress-segment low" style="width:25%"></div>
+                                    </div>
+                                    <div class="progress-legend">
+                                        <div class="legend-item"><div class="legend-dot high"></div><span>70-100%</span></div>
+                                        <div class="legend-item"><div class="legend-dot medium"></div><span>40-69%</span></div>
+                                        <div class="legend-item"><div class="legend-dot low"></div><span>0-39%</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Department Scorecard -->
+                        <div class="dashboard-card" style="margin-top:1.5rem;">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i> Department Scorecard</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="dept-scorecard-list">
+                                    <div class="dept-score-row"><div class="dept-score-info"><div class="dept-score-name">Sales</div><div class="dept-score-details">2 OKRs &middot; 3 Roles &middot; 1 Process</div></div><div class="dept-score-bar"><div class="score-fill" style="width:72%;background:var(--success)"></div></div><div class="dept-score-value">72%</div></div>
+                                    <div class="dept-score-row"><div class="dept-score-info"><div class="dept-score-name">Marketing</div><div class="dept-score-details">1 OKR &middot; 2 Roles &middot; 1 Process</div></div><div class="dept-score-bar"><div class="score-fill" style="width:45%;background:var(--warning)"></div></div><div class="dept-score-value">45%</div></div>
+                                    <div class="dept-score-row"><div class="dept-score-info"><div class="dept-score-name">Operations</div><div class="dept-score-details">1 OKR &middot; 1 Role &middot; 1 Process</div></div><div class="dept-score-bar"><div class="score-fill" style="width:30%;background:var(--danger)"></div></div><div class="dept-score-value">30%</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-column">
+                        <!-- Sample Needs Attention -->
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i> Needs Attention</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="attention-list">
+                                    <div class="attention-item"><div class="attention-indicator behind"></div><div class="attention-content"><div class="attention-title">Reduce operational costs by 15%</div><div class="attention-meta">Operations &middot; 30% complete</div></div></div>
+                                    <div class="attention-item"><div class="attention-indicator at-risk"></div><div class="attention-content"><div class="attention-title">Launch social media campaign</div><div class="attention-meta">Marketing &middot; 45% complete</div></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Recent Activity -->
+                        <div class="dashboard-card" style="margin-top:1.5rem;">
+                            <div class="dashboard-card-header">
+                                <h3><i data-lucide="activity" style="width:18px;height:18px;"></i> Recent Activity</h3>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="activity-list">
+                                    <div class="activity-item"><i data-lucide="plus-circle" style="width:14px;height:14px;color:var(--success);"></i><span>New OKR created: "Increase revenue by 20%"</span></div>
+                                    <div class="activity-item"><i data-lucide="edit-3" style="width:14px;height:14px;color:var(--primary);"></i><span>Sales department updated</span></div>
+                                    <div class="activity-item"><i data-lucide="user-plus" style="width:14px;height:14px;color:var(--info);"></i><span>New role added: Marketing Manager</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -720,14 +858,26 @@
             setupFilterListeners();
         });
 
+        // Build auth headers with org context
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('insight360_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const orgId = currentOrgId || localStorage.getItem('currentOrgId');
+            if (orgId) headers['x-org-id'] = orgId;
+            return headers;
+        }
+
         // Load all data
         async function loadAllData() {
             try {
+                const headers = getHeaders();
+                const opts = { headers };
                 const [deptRes, rolesRes, okrsRes, procRes] = await Promise.all([
-                    fetch('/api/parthenon/departments'),
-                    fetch('/api/parthenon/roles'),
-                    fetch('/api/parthenon/okrs'),
-                    fetch('/api/parthenon/processes')
+                    fetch('/api/parthenon/departments', opts),
+                    fetch('/api/parthenon/roles', opts),
+                    fetch('/api/parthenon/okrs', opts),
+                    fetch('/api/parthenon/processes', opts)
                 ]);
 
                 const [deptData, rolesData, okrsData, procData] = await Promise.all([
@@ -743,10 +893,31 @@
                 if (procData.success) processes = procData.data;
 
                 populateDeptFilter();
-                updateDashboard();
+
+                // Show sample template if org has no data
+                if (departments.length === 0 && okrs.length === 0) {
+                    renderSampleTemplate();
+                } else {
+                    hideSampleTemplate();
+                    updateDashboard();
+                }
             } catch (error) {
                 console.error('Error loading data:', error);
             }
+        }
+
+        // Show sample template, hide real dashboard
+        function renderSampleTemplate() {
+            document.querySelector('.dashboard-layout').style.display = 'none';
+            const sample = document.getElementById('sampleTemplate');
+            sample.style.display = '';
+            lucide.createIcons();
+        }
+
+        // Hide sample template, show real dashboard
+        function hideSampleTemplate() {
+            document.getElementById('sampleTemplate').style.display = 'none';
+            document.querySelector('.dashboard-layout').style.display = '';
         }
 
         // Populate department filter

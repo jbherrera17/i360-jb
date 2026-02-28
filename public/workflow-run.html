@@ -685,10 +685,21 @@
             return localStorage.getItem('insight360_token');
         }
 
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = getAuthToken();
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const orgId = localStorage.getItem('currentOrgId');
+            if (orgId) headers['x-org-id'] = orgId;
+            return headers;
+        }
+
         // Load workflow
         async function loadWorkflow(workflowId) {
             try {
-                const response = await fetch(`/api/execute120/workflows/${workflowId}`);
+                const response = await fetch(`/api/execute120/workflows/${workflowId}`, {
+                    headers: getHeaders()
+                });
                 const result = await response.json();
 
                 if (result.success) {
@@ -713,7 +724,7 @@
             try {
                 const token = getAuthToken();
                 const response = await fetch(`/api/execute120/executions/${executionId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: getHeaders()
                 });
                 const result = await response.json();
 
@@ -1159,10 +1170,7 @@
 
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify({
                         messages,
                         agent_id: step.agent_id,
@@ -1360,10 +1368,7 @@
 
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify({
                         messages: contextMessages,
                         agent_id: step.agent_id,
@@ -1515,7 +1520,6 @@
         // Save execution
         async function saveExecution() {
             try {
-                const token = getAuthToken();
                 const body = {
                     workflow_id: workflow.id,
                     current_step: currentStepIndex + 1,
@@ -1526,19 +1530,13 @@
                 if (execution) {
                     await fetch(`/api/execute120/executions/${execution.id}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
+                        headers: getHeaders(),
                         body: JSON.stringify(body)
                     });
                 } else {
                     const response = await fetch('/api/execute120/executions', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
+                        headers: getHeaders(),
                         body: JSON.stringify(body)
                     });
                     const result = await response.json();
@@ -1558,15 +1556,10 @@
         // Complete workflow
         async function completeWorkflow() {
             try {
-                const token = getAuthToken();
-
                 if (execution) {
                     await fetch(`/api/execute120/executions/${execution.id}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
+                        headers: getHeaders(),
                         body: JSON.stringify({
                             status: 'completed',
                             completed_at: new Date().toISOString()
@@ -1577,23 +1570,33 @@
                 // Mark first workflow completed for onboarding
                 await fetch('/api/onboarding/state', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify({ first_workflow_completed: true })
                 });
 
-                // Show completion message
+                // Show completion message with naming option
+                const defaultName = `${workflow.name} - ${new Date().toLocaleDateString()}`;
                 document.getElementById('workflowContent').innerHTML = `
                     <div class="step-container" style="text-align: center; padding: 3rem;">
                         <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center;">
                             <i data-lucide="check" style="width: 40px; height: 40px; color: white;"></i>
                         </div>
                         <h2 style="font-family: 'Orbitron', sans-serif; margin-bottom: 1rem;">Workflow Complete!</h2>
-                        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
                             You've successfully completed the ${escapeHtml(workflow.name)} workflow.
                         </p>
+                        <div style="max-width: 400px; margin: 0 auto 1.5rem; text-align: left;">
+                            <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Name this run (for your records)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="executionName" class="form-input" value="${escapeHtml(defaultName)}"
+                                       style="flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);"
+                                       placeholder="e.g., Q1 Campaign Strategy" />
+                                <button class="btn btn-secondary" onclick="saveExecutionName()" id="saveNameBtn">
+                                    <i data-lucide="save"></i> Save
+                                </button>
+                            </div>
+                            <p id="nameSavedMsg" style="display: none; color: var(--success); font-size: 0.8rem; margin-top: 0.5rem;">Name saved</p>
+                        </div>
                         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
                             <a href="/execute120.html" class="btn btn-primary">
                                 <i data-lucide="zap"></i> Run Another Workflow
@@ -1611,6 +1614,27 @@
                 lucide.createIcons();
             } catch (error) {
                 console.error('Error completing workflow:', error);
+            }
+        }
+
+        // Save execution name
+        async function saveExecutionName() {
+            const nameInput = document.getElementById('executionName');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name || !execution) return;
+
+            try {
+                await fetch(`/api/execute120/executions/${execution.id}`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ name })
+                });
+                const msg = document.getElementById('nameSavedMsg');
+                if (msg) msg.style.display = 'block';
+                const btn = document.getElementById('saveNameBtn');
+                if (btn) btn.disabled = true;
+            } catch (error) {
+                console.error('Error saving execution name:', error);
             }
         }
 

@@ -45,21 +45,36 @@
     <script>
         // Integrity Dashboard JavaScript
 
-        // Sample data - replace with actual API calls
+        // Build auth headers with org context
+        function getIntegrityHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('insight360_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const orgId = localStorage.getItem('currentOrgId');
+            if (orgId) headers['x-org-id'] = orgId;
+            return headers;
+        }
+
+        // Sample data with meaningful demo values for preview
         const sampleData = {
             integrityYield: {
-                score: 0,
-                interpretation: 'setup',
-                trend: { change: 0, direction: 'stable' },
-                period: 'Not configured'
+                score: 78,
+                interpretation: 'adequate',
+                trend: { change: 3, direction: 'up' },
+                period: 'Sample Preview'
             },
             components: {
-                trustVelocity: { score: 0, weight: 0.30 },
-                interventionEffectiveness: { score: 0, weight: 0.25 },
-                alignmentAudit: { score: 0, weight: 0.25 },
-                counterfactualValue: { score: 0, weight: 0.20 }
+                trustVelocity: { score: 85, weight: 0.30 },
+                interventionEffectiveness: { score: 82, weight: 0.25 },
+                alignmentAudit: { score: 68, weight: 0.25 },
+                counterfactualValue: { score: 75, weight: 0.20 }
             },
-            leadingIndicators: [],
+            leadingIndicators: [
+                { name: 'Values alignment trend', status: 'positive', note: 'Consistent with stated values' },
+                { name: 'Bright line awareness', status: 'positive', note: 'Team trained on boundaries' },
+                { name: 'Close call response time', status: 'neutral', note: 'Within acceptable range' },
+                { name: 'Stakeholder trust signals', status: 'positive', note: 'Above baseline' }
+            ],
             laggingIndicators: [],
             assets: {
                 bright_lines: { populated: false, lastUpdated: null },
@@ -86,7 +101,7 @@
 
             try {
                 // Check for existing integrity assets
-                const assetsResponse = await fetch('/api/context/assets?type=integrity_yield');
+                const assetsResponse = await fetch('/api/context/assets?type=integrity_yield', { headers: getIntegrityHeaders() });
                 const hasData = assetsResponse.ok && (await assetsResponse.json()).data?.length > 0;
 
                 if (!hasData) {
@@ -118,9 +133,10 @@
                     'industry_baseline'
                 ];
 
+                const headers = getIntegrityHeaders();
                 const responses = await Promise.all(
                     assetTypes.map(type =>
-                        fetch(`/api/context/assets?type=${type}`)
+                        fetch(`/api/context/assets?type=${type}`, { headers })
                             .then(r => r.ok ? r.json() : { data: [] })
                             .catch(() => ({ data: [] }))
                     )
@@ -219,6 +235,10 @@
         }
 
         function renderEmptyState(container) {
+            // Render sample preview with meaningful data
+            const circumference = 2 * Math.PI * 70;
+            const sampleOffset = circumference - (sampleData.integrityYield.score / 100) * circumference;
+
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon"><i data-lucide="shield" style="width: 48px; height: 48px;"></i></div>
@@ -233,6 +253,69 @@
                             <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
                             Manage Soul Config
                         </button>
+                    </div>
+                </div>
+
+                <!-- Sample Preview Banner -->
+                <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:1rem 1.25rem;background:color-mix(in srgb, var(--primary) 10%, transparent);border:1px solid color-mix(in srgb, var(--primary) 30%, transparent);border-radius:12px;color:var(--text-primary);font-size:0.9rem;line-height:1.5;">
+                    <i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;"></i>
+                    <div><strong style="color:var(--primary);">Sample Preview</strong> &mdash; Below is how your Integrity Dashboard will look once configured. These are example values to demonstrate the dashboard's capabilities.</div>
+                </div>
+
+                <!-- Sample Integrity Yield Preview -->
+                <div style="opacity:0.85;">
+                    <div class="yield-card">
+                        <div class="yield-score-container">
+                            <svg class="yield-score-ring adequate" viewBox="0 0 160 160">
+                                <circle class="bg-ring" cx="80" cy="80" r="70"/>
+                                <circle class="score-ring" cx="80" cy="80" r="70"
+                                    stroke-dasharray="${circumference}"
+                                    stroke-dashoffset="${sampleOffset}"/>
+                            </svg>
+                            <div class="yield-score-value">
+                                <div class="yield-score-number">${sampleData.integrityYield.score}</div>
+                                <div class="yield-score-label">of 100</div>
+                            </div>
+                        </div>
+                        <div class="yield-info">
+                            <h2 class="yield-title">Integrity Yield</h2>
+                            <p class="yield-subtitle">Sample Preview</p>
+                            <div class="yield-interpretation adequate">
+                                <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
+                                Adequate with Opportunities
+                            </div>
+                        </div>
+                        <div class="yield-trend">
+                            <div class="trend-value up">
+                                <i data-lucide="trending-up" style="width:14px;height:14px;"></i>
+                                +3%
+                            </div>
+                            <span class="trend-label">vs. previous</span>
+                        </div>
+                    </div>
+
+                    <!-- Sample Component Scores -->
+                    <div class="components-grid">
+                        <div class="component-card">
+                            <div class="component-header"><h3>Trust Velocity</h3><span class="component-weight">30%</span></div>
+                            <div class="component-score">85</div>
+                            <div class="component-bar"><div class="component-fill" style="width:85%;background:var(--success);"></div></div>
+                        </div>
+                        <div class="component-card">
+                            <div class="component-header"><h3>Intervention Effectiveness</h3><span class="component-weight">25%</span></div>
+                            <div class="component-score">82</div>
+                            <div class="component-bar"><div class="component-fill" style="width:82%;background:var(--success);"></div></div>
+                        </div>
+                        <div class="component-card">
+                            <div class="component-header"><h3>Alignment Audit</h3><span class="component-weight">25%</span></div>
+                            <div class="component-score">68</div>
+                            <div class="component-bar"><div class="component-fill" style="width:68%;background:var(--warning);"></div></div>
+                        </div>
+                        <div class="component-card">
+                            <div class="component-header"><h3>Counterfactual Value</h3><span class="component-weight">20%</span></div>
+                            <div class="component-score">75</div>
+                            <div class="component-bar"><div class="component-fill" style="width:75%;background:var(--success);"></div></div>
+                        </div>
                     </div>
                 </div>
 

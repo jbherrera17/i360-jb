@@ -1673,6 +1673,55 @@ module.exports = function(supabase) {
     });
 
     /**
+     * POST /api/execute120/executions
+     * Create a new workflow execution (called by workflow-run.html)
+     */
+    router.post('/executions', async (req, res) => {
+        try {
+            const userId = getUserId(req);
+            const { workflow_id, current_step, step_outputs, status, name } = req.body;
+
+            if (!workflow_id) {
+                return res.status(400).json({ success: false, error: 'workflow_id is required' });
+            }
+
+            const { data: execution, error } = await supabase
+                .from('workflow_executions')
+                .insert({
+                    workflow_id,
+                    user_id: userId,
+                    status: status || 'in_progress',
+                    current_step: current_step || 1,
+                    step_outputs: step_outputs || {},
+                    name: name || null
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Increment workflow usage count
+            await supabase
+                .from('workflows')
+                .update({
+                    last_used_at: new Date().toISOString()
+                })
+                .eq('id', workflow_id);
+
+            res.json({
+                success: true,
+                data: execution
+            });
+        } catch (error) {
+            console.error('Error creating workflow execution:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to create workflow execution'
+            });
+        }
+    });
+
+    /**
      * GET /api/execute120/executions/:id
      * Get execution state
      */
@@ -1725,7 +1774,7 @@ module.exports = function(supabase) {
     router.put('/executions/:id', async (req, res) => {
         try {
             const { id } = req.params;
-            const { current_step, variables, step_outputs, status } = req.body;
+            const { current_step, variables, step_outputs, status, name } = req.body;
 
             const updates = {
                 updated_at: new Date().toISOString()
@@ -1740,6 +1789,7 @@ module.exports = function(supabase) {
                     updates.completed_at = new Date().toISOString();
                 }
             }
+            if (name !== undefined) updates.name = name;
 
             const { data, error } = await supabase
                 .from('workflow_executions')

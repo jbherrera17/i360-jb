@@ -87,7 +87,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, icon, color, tagline, metrics, quick_prompts } = req.body;
+        const { name, description, icon, color, tagline, metrics, quick_prompts, sort_order, is_active } = req.body;
 
         const updates = {};
         if (name !== undefined) updates.name = name;
@@ -97,15 +97,33 @@ router.put('/:id', async (req, res) => {
         if (tagline !== undefined) updates.tagline = tagline;
         if (metrics !== undefined) updates.metrics = metrics;
         if (quick_prompts !== undefined) updates.quick_prompts = quick_prompts;
+        if (sort_order !== undefined) updates.sort_order = parseInt(sort_order);
+        if (is_active !== undefined) updates.is_active = is_active;
+
+        // Backfill org_id if missing
+        const orgId = req.headers['x-org-id'] || req.orgId;
+        if (orgId) {
+            const { data: existing } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
+            if (existing && !existing.org_id) {
+                updates.org_id = orgId;
+            }
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ success: false, error: 'No fields to update' });
+        }
 
         const { data, error } = await supabase
             .from('departments')
             .update(updates)
             .eq('id', id)
             .select()
-            .single();
+            .maybeSingle();
 
         if (error) throw error;
+        if (!data) {
+            return res.status(404).json({ success: false, error: 'Department not found' });
+        }
 
         res.json({
             success: true,

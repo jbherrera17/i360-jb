@@ -932,7 +932,7 @@
         // Load departments from database
         async function loadDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await fetch('/api/departments', { headers: getHeaders() });
                 const result = await response.json();
 
                 if (result.success && result.data) {
@@ -965,10 +965,19 @@
             return localStorage.getItem('insight360_token');
         }
 
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = getAuthToken();
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const orgId = localStorage.getItem('currentOrgId');
+            if (orgId) headers['x-org-id'] = orgId;
+            return headers;
+        }
+
         // Load workflow from API
         async function loadWorkflow(workflowId) {
             try {
-                const response = await fetch(`/api/workflows/${workflowId}`);
+                const response = await fetch(`/api/workflows/${workflowId}`, { headers: getHeaders() });
                 const result = await response.json();
 
                 if (result.success) {
@@ -997,8 +1006,8 @@
         async function loadAgentsAndSkills() {
             try {
                 const [agentsRes, skillsRes] = await Promise.all([
-                    fetch('/api/agents'),
-                    fetch('/api/skills')
+                    fetch('/api/agents', { headers: getHeaders() }),
+                    fetch('/api/skills', { headers: getHeaders() })
                 ]);
 
                 const agentsResult = await agentsRes.json();
@@ -1449,10 +1458,7 @@
 
                 const response = await fetch(url, {
                     method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify({
                         name: workflow.name,
                         description: workflow.description,
@@ -1493,19 +1499,13 @@
                         if (step.id) {
                             await fetch(`/api/workflows/${workflow.id}/steps/${step.id}`, {
                                 method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
+                                headers: getHeaders(),
                                 body: JSON.stringify(stepData)
                             });
                         } else {
                             const stepResponse = await fetch(`/api/workflows/${workflow.id}/steps`, {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
+                                headers: getHeaders(),
                                 body: JSON.stringify(stepData)
                             });
                             const stepResult = await stepResponse.json();
