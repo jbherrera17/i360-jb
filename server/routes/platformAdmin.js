@@ -1192,6 +1192,66 @@ module.exports = function(supabase) {
     });
 
     /**
+     * PUT /api/platform/organizations/:id/modules
+     * Configure which modules are enabled for an organization
+     */
+    router.put('/organizations/:id/modules', requireAdminWrite, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { modules } = req.body; // Array of enabled module IDs
+
+            if (!Array.isArray(modules)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'modules must be an array of module IDs'
+                });
+            }
+
+            // Get all available modules
+            const { data: allModules, error: modError } = await supabase
+                .from('platform_modules')
+                .select('id');
+
+            if (modError) {
+                // If platform_modules table doesn't exist, use known module IDs
+                console.warn('platform_modules table not found, using provided list');
+            }
+
+            const allModuleIds = allModules ? allModules.map(m => m.id) : modules;
+            const userId = req.userId;
+
+            // Upsert each module: enabled if in the list, disabled if not
+            const upserts = allModuleIds.map(moduleId => ({
+                org_id: id,
+                module_id: moduleId,
+                is_enabled: modules.includes(moduleId),
+                enabled_by: modules.includes(moduleId) ? userId : null,
+                enabled_at: modules.includes(moduleId) ? new Date().toISOString() : null,
+                disabled_by: !modules.includes(moduleId) ? userId : null,
+                disabled_at: !modules.includes(moduleId) ? new Date().toISOString() : null
+            }));
+
+            const { error: upsertError } = await supabase
+                .from('org_module_access')
+                .upsert(upserts, { onConflict: 'org_id,module_id' });
+
+            if (upsertError) throw upsertError;
+
+            res.json({
+                success: true,
+                message: `${modules.length} modules enabled for organization`,
+                data: { enabled: modules }
+            });
+        } catch (error) {
+            console.error('Error configuring org modules:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * DELETE /api/platform/organizations/:id
      * Delete an organization (platform admin only)
      */

@@ -113,7 +113,7 @@ async function fetchAccessibleModules() {
             return null;
         }
 
-        const orgId = localStorage.getItem('insight360_org_id');
+        const orgId = localStorage.getItem('insight360_org_id') || localStorage.getItem('currentOrgId');
         const headers = {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -198,17 +198,16 @@ function convertModulesToNavConfig(modulesData) {
         }
     });
 
-    // Build config — ensure core primary items are always present
-    const corePrimary = [
+    // Build config — Higgins and My Capabilities are always available (not module-gated)
+    // All other items come from the API's filtered module list
+    const alwaysPresent = [
         { href: '/chat.html', icon: 'graduation-cap', label: 'Higgins' },
-        { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' },
-        { href: '/execute120.html', icon: 'rocket', label: 'Execute 120' }
+        { href: '/my-capabilities.html', icon: 'sparkles', label: 'My Capabilities' }
     ];
     const dynamicPrimary = groupMap.primary.items;
-    // Merge: start with core items, then add any dynamic primary items not already present
-    const primaryHrefs = new Set(corePrimary.map(i => i.href));
+    const primaryHrefs = new Set(alwaysPresent.map(i => i.href));
     const primary = [
-        ...corePrimary,
+        ...alwaysPresent,
         ...dynamicPrimary.filter(i => !primaryHrefs.has(i.href))
     ];
     const groups = Object.values(groupMap)
@@ -222,7 +221,7 @@ function convertModulesToNavConfig(modulesData) {
  */
 function getCurrentOrgId() {
     try {
-        return localStorage.getItem('insight360_org_id');
+        return localStorage.getItem('insight360_org_id') || localStorage.getItem('currentOrgId');
     } catch (e) {
         return null;
     }
@@ -645,7 +644,7 @@ async function _refreshUserSession() {
         const token = localStorage.getItem('insight360_token');
         if (!token) return;
 
-        const orgId = localStorage.getItem('insight360_org_id');
+        const orgId = localStorage.getItem('insight360_org_id') || localStorage.getItem('currentOrgId');
         const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         if (orgId) headers['x-org-id'] = orgId;
 
