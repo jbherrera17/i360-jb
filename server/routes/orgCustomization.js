@@ -85,13 +85,20 @@ module.exports = function(supabase) {
             .single();
 
         if (error || !membership) {
-            return res.status(403).json({
-                success: false,
-                error: 'Not a member of this organization'
-            });
+            // Allow platform admins to access any org
+            const { data: isAdmin } = await supabase
+                .rpc('is_platform_admin', { p_user_id: userId });
+            if (!isAdmin) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Not a member of this organization'
+                });
+            }
+            req.orgRole = 'platform_admin';
+        } else {
+            req.orgRole = membership.role;
         }
 
-        req.orgRole = membership.role;
         next();
     }
 

@@ -418,10 +418,15 @@ module.exports = function(supabase) {
                 .single();
 
             if (!membership) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'Not a member of this organization'
-                });
+                // Allow platform admins to view any org's stats
+                const { data: isAdmin } = await supabase
+                    .rpc('is_platform_admin', { p_user_id: userId });
+                if (!isAdmin) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Not a member of this organization'
+                    });
+                }
             }
 
             // Get counts in parallel
