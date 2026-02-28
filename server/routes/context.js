@@ -519,7 +519,7 @@ router.get('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const userId = getUserId(req);
-        const orgId = req.headers['x-org-id'];
+        let orgId = req.headers['x-org-id'];
         const {
             type,
             search,
@@ -532,6 +532,16 @@ router.get('/assets', async (req, res) => {
             sort = 'updated_at',
             order = 'desc'
         } = req.query;
+
+        // Fallback: resolve org from user's default if not in header
+        if (!orgId && userId) {
+            const { data: userRow } = await supabase
+                .from('users')
+                .select('default_org_id')
+                .eq('id', userId)
+                .maybeSingle();
+            if (userRow?.default_org_id) orgId = userRow.default_org_id;
+        }
 
         let query = supabase
             .from('context_assets')
@@ -690,8 +700,18 @@ router.post('/assets', async (req, res) => {
         const userId = getUserId(req);
         const assetId = uuidv4();
 
+        // Resolve org_id: header → body → user's default_org_id
+        let orgId = req.headers['x-org-id'] || req.body.org_id;
+        if (!orgId && userId) {
+            const { data: userRow } = await supabase
+                .from('users')
+                .select('default_org_id')
+                .eq('id', userId)
+                .maybeSingle();
+            if (userRow?.default_org_id) orgId = userRow.default_org_id;
+        }
+
         // Check organization resource limits (Phase 44)
-        const orgId = req.headers['x-org-id'] || req.body.org_id;
         if (orgId) {
             const { data: limits, error: limitError } = await supabase
                 .rpc('check_org_limits', {
@@ -838,10 +858,18 @@ router.put('/assets/:id', async (req, res) => {
             .eq('asset_id', id)
             .eq('version', triggerVersion);
 
+        // Backfill org_id if the asset is missing one
+        const reqOrgId = req.headers['x-org-id'] || req.body.org_id;
+
         // Prepare update data
         const updateData = {
             updated_at: new Date().toISOString()
         };
+
+        // Fix missing org_id on existing assets
+        if (!current.org_id && reqOrgId) {
+            updateData.org_id = reqOrgId;
+        }
 
         if (name !== undefined) updateData.name = name;
         if (description !== undefined) updateData.description = description;

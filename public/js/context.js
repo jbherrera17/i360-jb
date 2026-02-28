@@ -32,12 +32,16 @@ const state = {
 
 async function apiCall(endpoint, options = {}) {
     try {
+        const orgId = localStorage.getItem('currentOrgId');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+        if (orgId) headers['x-org-id'] = orgId;
+
         const response = await fetch(endpoint, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            ...options
+            ...options,
+            headers
         });
         
         const data = await response.json();
@@ -547,7 +551,8 @@ async function saveAsset() {
         description: descInput?.value?.trim() || '',
         content_json,
         tags,
-        department_id
+        department_id,
+        org_id: localStorage.getItem('currentOrgId') || null
     };
     
     try {
