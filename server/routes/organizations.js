@@ -425,17 +425,22 @@ module.exports = function(supabase) {
             }
 
             // Get counts in parallel
-            const [membersResult, clientsResult, agentsResult, workflowsResult] = await Promise.all([
-                supabase.from('organization_members').select('id', { count: 'exact', head: true }).eq('org_id', id).eq('status', 'active'),
+            const [membersResult, clientsResult, agentsResult, workflowsResult, platformAdminsResult] = await Promise.all([
+                supabase.from('organization_members').select('id, user_id', { count: 'exact' }).eq('org_id', id).eq('status', 'active'),
                 supabase.from('clients').select('id', { count: 'exact', head: true }).eq('org_id', id),
                 supabase.from('agents').select('id', { count: 'exact', head: true }).eq('org_id', id),
-                supabase.from('workflows').select('id', { count: 'exact', head: true }).eq('org_id', id)
+                supabase.from('workflows').select('id', { count: 'exact', head: true }).eq('org_id', id),
+                supabase.from('platform_admins').select('user_id').eq('is_active', true)
             ]);
+
+            // Exclude platform admins from org member count
+            const platformAdminIds = new Set((platformAdminsResult.data || []).map(pa => pa.user_id));
+            const orgOnlyMembers = (membersResult.data || []).filter(m => !platformAdminIds.has(m.user_id));
 
             res.json({
                 success: true,
                 data: {
-                    members: membersResult.count || 0,
+                    members: orgOnlyMembers.length,
                     clients: clientsResult.count || 0,
                     agents: agentsResult.count || 0,
                     workflows: workflowsResult.count || 0

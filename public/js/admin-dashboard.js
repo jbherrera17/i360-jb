@@ -27,49 +27,62 @@ const AdminDashboard = {
     async loadData() {
         const token = localStorage.getItem('insight360_token');
         const headers = { 'Authorization': `Bearer ${token}` };
+        const orgId = localStorage.getItem('currentOrgId');
+        if (orgId) headers['x-org-id'] = orgId;
         const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
 
+        this.stats = {
+            users: 0,
+            organizations: 0,
+            agents: 0,
+            workflows: 0,
+            skills: 0,
+            apiHealth: 'good',
+            hasOrg: !!orgId
+        };
+
         try {
-            // Load stats in parallel
-            const [statsRes, usersRes, orgsRes, agentsRes] = await Promise.allSettled([
-                fetcher('/api/platform/stats', { headers }).catch(() => null),
-                fetcher('/api/users', { headers }),
-                fetcher('/api/organizations', { headers }).catch(() => null),
-                fetcher('/api/agents/stats', { headers })
-            ]);
-
-            this.stats = {
-                users: 0,
-                organizations: 0,
-                agents: 0,
-                workflows: 0,
-                skills: 0,
-                apiHealth: 'good'
-            };
-
-            // Parse stats response
-            if (statsRes.status === 'fulfilled' && statsRes.value?.ok) {
-                const data = await statsRes.value.json();
-                if (data.data) {
-                    this.stats.users = data.data.users || 0;
-                    this.stats.organizations = data.data.organizations?.total || 0;
-                    this.stats.agents = data.data.agents || 0;
+            if (orgId) {
+                // Org-scoped stats — only show this organization's data
+                const orgStatsRes = await fetcher(`/api/organizations/${orgId}/stats`, { headers }).catch(() => null);
+                if (orgStatsRes?.ok) {
+                    const data = await orgStatsRes.json();
+                    if (data.data) {
+                        this.stats.users = data.data.members || 0;
+                        this.stats.agents = data.data.agents || 0;
+                        this.stats.workflows = data.data.workflows || 0;
+                        this.stats.organizations = 1; // User's own org exists
+                    }
                 }
-            }
+            } else {
+                // No org context — fall back to platform-wide stats (platform admin view)
+                const [statsRes, usersRes, agentsRes] = await Promise.allSettled([
+                    fetcher('/api/platform/stats', { headers }).catch(() => null),
+                    fetcher('/api/users', { headers }),
+                    fetcher('/api/agents/stats', { headers })
+                ]);
 
-            // Fallback to direct counts if platform stats not available
-            if (usersRes.status === 'fulfilled' && usersRes.value?.ok) {
-                const data = await usersRes.value.json();
-                if (data.data) {
-                    this.stats.users = data.data.length || this.stats.users;
+                if (statsRes.status === 'fulfilled' && statsRes.value?.ok) {
+                    const data = await statsRes.value.json();
+                    if (data.data) {
+                        this.stats.users = data.data.users || 0;
+                        this.stats.organizations = data.data.organizations?.total || 0;
+                        this.stats.agents = data.data.agents || 0;
+                    }
                 }
-            }
 
-            if (agentsRes.status === 'fulfilled' && agentsRes.value?.ok) {
-                const data = await agentsRes.value.json();
-                if (data.data) {
-                    // Use total_agents from /api/agents/stats endpoint
-                    this.stats.agents = data.data.total_agents || this.stats.agents;
+                if (usersRes.status === 'fulfilled' && usersRes.value?.ok) {
+                    const data = await usersRes.value.json();
+                    if (data.data) {
+                        this.stats.users = data.data.length || this.stats.users;
+                    }
+                }
+
+                if (agentsRes.status === 'fulfilled' && agentsRes.value?.ok) {
+                    const data = await agentsRes.value.json();
+                    if (data.data) {
+                        this.stats.agents = data.data.total_agents || this.stats.agents;
+                    }
                 }
             }
 
@@ -104,9 +117,9 @@ const AdminDashboard = {
             <div class="admin-dashboard">
                 <!-- Status Cards -->
                 <div class="dashboard-stats">
-                    ${this.renderStatCard('users', 'Users', this.stats.users, 'Total active users')}
-                    ${this.renderStatCard('building-2', 'Organizations', this.stats.organizations, 'Active organizations')}
-                    ${this.renderStatCard('bot', 'Agents', this.stats.agents, 'Created agents')}
+                    ${this.renderStatCard('users', 'Members', this.stats.users, this.stats.hasOrg ? 'Organization members' : 'Total active users')}
+                    ${this.renderStatCard('building-2', 'Organizations', this.stats.organizations, this.stats.hasOrg ? 'Your organization' : 'Active organizations')}
+                    ${this.renderStatCard('bot', 'Agents', this.stats.agents, this.stats.hasOrg ? 'Organization agents' : 'Created agents')}
                     ${this.renderStatCard('activity', 'API Health', this.stats.apiHealth === 'good' ? 'Good' : 'Issues', 'System status', this.stats.apiHealth)}
                 </div>
 
@@ -196,7 +209,7 @@ const AdminDashboard = {
             });
         }
 
-        if (this.stats.organizations === 0) {
+        if (this.stats.organizations === 0 && !this.stats.hasOrg) {
             alerts.push({
                 type: 'info',
                 icon: 'building-2',
