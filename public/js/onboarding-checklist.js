@@ -112,17 +112,16 @@ const OnboardingChecklist = {
             priority: 'recommended',
             check: (data) => data.contextCount > 0
         },
+        // === OPTIONAL ===
         {
             id: 'resources-assigned',
             title: 'Resources Configured',
             description: 'Configure resource visibility so team members see the right agents and assets',
             icon: 'puzzle',
             link: 'admin-resource-access.html',
-            priority: 'recommended',
+            priority: 'optional',
             check: (data) => data.hasResources
         },
-
-        // === OPTIONAL ===
         {
             id: 'first-conversation',
             title: 'First Conversation',
@@ -165,9 +164,15 @@ const OnboardingChecklist = {
         // Always load organizations list for the selector
         await this.loadOrganizations();
 
-        if (!this.orgId && this.organizations.length > 0) {
-            // Auto-select first org if none selected
-            this.orgId = this.organizations[0].id;
+        if (this.organizations.length > 0) {
+            // If stored org is not in the loaded list, reset to first available
+            const orgInList = this.organizations.find(o => o.id === this.orgId);
+            if (!orgInList) {
+                this.orgId = this.organizations[0].id;
+            }
+        } else if (!this.orgId) {
+            // No orgs available at all
+            this.orgId = null;
         }
 
         if (!this.orgId) {
@@ -272,11 +277,11 @@ const OnboardingChecklist = {
             // Load data in parallel
             const [orgRes, membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes] = await Promise.allSettled([
                 fetch(orgEndpoint, { headers }),
-                fetch('/api/org-members', { headers }),
+                fetch(`/api/org-members/${this.orgId}`, { headers }),
                 fetch('/api/departments', { headers }),
-                fetch('/api/department-roles', { headers }),
+                fetch('/api/roles', { headers }),
                 fetch('/api/agents?limit=100', { headers }),
-                fetch('/api/context?limit=1', { headers }),
+                fetch('/api/context/assets?limit=1', { headers }),
                 fetch(`/api/soul-config?org_id=${this.orgId}&scope=organization`, { headers }),
                 fetch('/api/conversations?limit=1', { headers })
             ]);

@@ -29,7 +29,7 @@ const AdminDashboard = {
         const headers = { 'Authorization': `Bearer ${token}` };
         const orgId = localStorage.getItem('currentOrgId');
         if (orgId) headers['x-org-id'] = orgId;
-        const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+        const fetcher = typeof window.authFetch === 'function' ? window.authFetch : fetch;
 
         this.stats = {
             users: 0,
@@ -38,12 +38,28 @@ const AdminDashboard = {
             workflows: 0,
             skills: 0,
             apiHealth: 'good',
-            hasOrg: !!orgId
+            hasOrg: !!orgId,
+            isPlatformAdmin: false
         };
 
         try {
-            if (orgId) {
-                // Org-scoped stats — only show this organization's data
+            // Try platform-wide stats first (succeeds only for platform admins)
+            let platformLoaded = false;
+            const platformStatsRes = await fetcher('/api/platform/stats', { headers }).catch(() => null);
+            if (platformStatsRes?.ok) {
+                const data = await platformStatsRes.json();
+                if (data.data) {
+                    this.stats.users = data.data.users?.total || data.data.users || 0;
+                    this.stats.organizations = data.data.organizations?.total || 0;
+                    this.stats.agents = data.data.agents || 0;
+                    this.stats.isPlatformAdmin = true;
+                    this.stats.hasOrg = false; // Show platform-wide labels
+                    platformLoaded = true;
+                }
+            }
+
+            if (!platformLoaded && orgId) {
+                // Org-scoped stats for regular org admins
                 const orgStatsRes = await fetcher(`/api/organizations/${orgId}/stats`, { headers }).catch(() => null);
                 if (orgStatsRes?.ok) {
                     const data = await orgStatsRes.json();
@@ -54,22 +70,12 @@ const AdminDashboard = {
                         this.stats.organizations = 1; // User's own org exists
                     }
                 }
-            } else {
-                // No org context — fall back to platform-wide stats (platform admin view)
-                const [statsRes, usersRes, agentsRes] = await Promise.allSettled([
-                    fetcher('/api/platform/stats', { headers }).catch(() => null),
+            } else if (!platformLoaded) {
+                // Fallback — try individual endpoints
+                const [usersRes, agentsRes] = await Promise.allSettled([
                     fetcher('/api/users', { headers }),
                     fetcher('/api/agents/stats', { headers })
                 ]);
-
-                if (statsRes.status === 'fulfilled' && statsRes.value?.ok) {
-                    const data = await statsRes.value.json();
-                    if (data.data) {
-                        this.stats.users = data.data.users || 0;
-                        this.stats.organizations = data.data.organizations?.total || 0;
-                        this.stats.agents = data.data.agents || 0;
-                    }
-                }
 
                 if (usersRes.status === 'fulfilled' && usersRes.value?.ok) {
                     const data = await usersRes.value.json();
@@ -117,9 +123,9 @@ const AdminDashboard = {
             <div class="admin-dashboard">
                 <!-- Status Cards -->
                 <div class="dashboard-stats">
-                    ${this.renderStatCard('users', 'Members', this.stats.users, this.stats.hasOrg ? 'Organization members' : 'Total active users')}
-                    ${this.renderStatCard('building-2', 'Organizations', this.stats.organizations, this.stats.hasOrg ? 'Your organization' : 'Active organizations')}
-                    ${this.renderStatCard('bot', 'Agents', this.stats.agents, this.stats.hasOrg ? 'Organization agents' : 'Created agents')}
+                    ${this.renderStatCard('users', 'Members', this.stats.users, this.stats.isPlatformAdmin ? 'Platform-wide users' : this.stats.hasOrg ? 'Organization members' : 'Total active users')}
+                    ${this.renderStatCard('building-2', 'Organizations', this.stats.organizations, this.stats.isPlatformAdmin ? 'Active organizations' : this.stats.hasOrg ? 'Your organization' : 'Active organizations')}
+                    ${this.renderStatCard('bot', 'Agents', this.stats.agents, this.stats.isPlatformAdmin ? 'Platform-wide agents' : this.stats.hasOrg ? 'Organization agents' : 'Created agents')}
                     ${this.renderStatCard('activity', 'API Health', this.stats.apiHealth === 'good' ? 'Good' : 'Issues', 'System status', this.stats.apiHealth)}
                 </div>
 

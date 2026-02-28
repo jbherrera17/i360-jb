@@ -91,10 +91,15 @@ module.exports = function(supabase) {
                 .single();
 
             if (memberError || !membership) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'Not a member of this organization'
-                });
+                // Allow platform admins to view any org
+                const { data: isAdmin } = await supabase
+                    .rpc('is_platform_admin', { p_user_id: userId });
+                if (!isAdmin) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Not a member of this organization'
+                    });
+                }
             }
 
             const { data, error } = await supabase
@@ -122,7 +127,7 @@ module.exports = function(supabase) {
                 success: true,
                 data: {
                     ...data,
-                    member_role: membership.role,
+                    member_role: membership?.role || 'platform_admin',
                     tier_features
                 }
             });
