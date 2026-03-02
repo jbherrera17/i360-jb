@@ -306,6 +306,16 @@ describe('Validation Middleware', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should normalize model aliases to canonical IDs', () => {
+            const result = chatMessageSchema.safeParse({
+                message: 'Hello',
+                model: 'gpt4o'
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.model).toBe('gpt-4o');
+        });
+
         it('should reject empty message', () => {
             const result = chatMessageSchema.safeParse({
                 message: ''
@@ -338,6 +348,15 @@ describe('Validation Middleware', () => {
             });
 
             expect(result.success).toBe(true);
+        });
+
+        it('should reject deprecated models', () => {
+            const result = chatMessageSchema.safeParse({
+                message: 'Hello',
+                model: 'sonar-reasoning'
+            });
+
+            expect(result.success).toBe(false);
         });
     });
 
@@ -423,6 +442,15 @@ describe('Validation Middleware', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should reject unsupported model IDs', () => {
+            const result = chatStreamSchema.safeParse({
+                messages: [{ role: 'user', content: 'Hello' }],
+                model: 'not-a-real-model'
+            });
+
+            expect(result.success).toBe(false);
+        });
+
         it('should accept optional systemPrompt', () => {
             const result = chatStreamSchema.safeParse({
                 messages: [{ role: 'user', content: 'Hello' }],
@@ -465,6 +493,15 @@ describe('Validation Middleware', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should normalize model aliases in agent updates', () => {
+            const result = agentUpdateSchema.safeParse({
+                model: 'gpt4o'
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.model).toBe('gpt-4o');
+        });
+
         it('should accept empty object (all optional)', () => {
             const result = agentUpdateSchema.safeParse({});
 
@@ -505,6 +542,14 @@ describe('Validation Middleware', () => {
             expect(result.success).toBe(true);
             expect(result.data.customField).toBe('some value');
             expect(result.data.anotherField).toBe(123);
+        });
+
+        it('should reject deprecated model IDs in agent updates', () => {
+            const result = agentUpdateSchema.safeParse({
+                model: 'sonar-reasoning'
+            });
+
+            expect(result.success).toBe(false);
         });
 
         it('should accept config object', () => {

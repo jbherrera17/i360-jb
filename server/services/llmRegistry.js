@@ -1,416 +1,99 @@
 /**
  * LLM Registry Service - Insight 360
  *
- * Centralized registry of all supported LLM models across providers.
- * Single source of truth for model definitions used throughout the application.
+ * Centralized registry of supported LLM models across providers.
+ * Uses provider service exports so the UI and validation only expose models
+ * that the execution layer can actually send.
  */
 
-// ============================================================================
-// ANTHROPIC (CLAUDE) MODELS
-// ============================================================================
-const ANTHROPIC_MODELS = {
-    // Claude 4.6 Family (Latest - February 2026)
-    'claude-opus-4-6': {
-        name: 'Claude Opus 4.6',
-        provider: 'anthropic',
-        description: 'Most capable - agent teams, adaptive thinking, context compaction',
-        maxTokens: 128000,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use', 'reasoning', 'agent_teams', 'context_compaction'],
-        tier: 'premium',
-        supportsEffort: true,
-        effortLevels: ['low', 'medium', 'high', 'max']
-    },
-    'claude-sonnet-4-6': {
-        name: 'Claude Sonnet 4.6',
-        provider: 'anthropic',
-        description: 'Opus-level intelligence at Sonnet pricing - extended thinking',
-        maxTokens: 64000,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use', 'reasoning'],
-        tier: 'standard',
-        default: true
-    },
-    // Claude 4.5 Family
-    'claude-opus-4-5-20251101': {
-        name: 'Claude Opus 4.5',
-        provider: 'anthropic',
-        description: 'Deep reasoning - maximum capability with practical performance',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'premium',
-        supportsEffort: true
-    },
-    'claude-sonnet-4-5-20250929': {
-        name: 'Claude Sonnet 4.5',
-        provider: 'anthropic',
-        description: 'Best for complex agents and coding - highest intelligence',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'standard'
-    },
-    'claude-haiku-4-5-20251001': {
-        name: 'Claude Haiku 4.5',
-        provider: 'anthropic',
-        description: 'Fastest model - near-frontier performance at lowest cost',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'fast'
-    },
-    // Claude 4.1 Family
-    'claude-opus-4-1-20250805': {
-        name: 'Claude Opus 4.1',
-        provider: 'anthropic',
-        description: 'Deep reasoning for complex tasks - catches subtle bugs',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'premium'
-    },
-    // Claude 4 Family
-    'claude-sonnet-4-20250514': {
-        name: 'Claude Sonnet 4',
-        provider: 'anthropic',
-        description: 'Balanced performance and speed - great for general use',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'standard'
-    },
-    'claude-opus-4-20250514': {
-        name: 'Claude Opus 4',
-        provider: 'anthropic',
-        description: 'Powerful reasoning and analysis',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['vision', 'pdf', 'tool_use'],
-        tier: 'premium'
-    }
-};
+const anthropic = require('./anthropic');
+const openai = require('./openai');
+const perplexity = require('./perplexity');
+const gemini = require('./gemini');
 
-// ============================================================================
-// OPENAI (GPT) MODELS
-// ============================================================================
-const OPENAI_MODELS = {
-    // GPT-5.2 Family (Latest - December 2025)
-    'gpt-5.2': {
-        name: 'GPT-5.2 Thinking',
-        provider: 'openai',
-        description: 'Best for structured work like coding and planning',
-        maxTokens: 128000,
-        contextWindow: 400000,
-        capabilities: ['vision', 'reasoning', 'image_gen'],
-        tier: 'flagship',
-        default: true
-    },
-    'gpt-5.2-chat-latest': {
-        name: 'GPT-5.2 Instant',
-        provider: 'openai',
-        description: 'Faster at writing and information seeking',
-        maxTokens: 128000,
-        contextWindow: 400000,
-        capabilities: ['vision', 'image_gen'],
-        tier: 'flagship'
-    },
-    // Note: gpt-5.2-pro is NOT a chat model - use gpt-5.2 instead
-    // The service layer redirects gpt-5.2-pro requests to gpt-5.2
-    'gpt-5.2-codex': {
-        name: 'GPT-5.2 Codex',
-        provider: 'openai',
-        description: 'Optimized for code generation and understanding',
-        maxTokens: 128000,
-        contextWindow: 400000,
-        capabilities: ['vision', 'reasoning'],
-        tier: 'premium'
-    },
-    // GPT-4o Family
-    'gpt-4o': {
-        name: 'GPT-4o',
-        provider: 'openai',
-        description: 'Multimodal with text, vision, and audio',
-        maxTokens: 16384,
-        contextWindow: 128000,
-        capabilities: ['vision', 'audio', 'image_gen'],
-        tier: 'standard'
-    },
-    'gpt-4o-mini': {
-        name: 'GPT-4o Mini',
-        provider: 'openai',
-        description: 'Affordable multimodal - great for simple tasks',
-        maxTokens: 16384,
-        contextWindow: 128000,
-        capabilities: ['vision', 'image_gen'],
-        tier: 'efficient'
-    },
-    // GPT-5.3 Family (February 2026)
-    'gpt-5.3-codex': {
-        name: 'GPT-5.3 Codex',
-        provider: 'openai',
-        description: 'Most capable agentic coding model - real-world software engineering',
-        maxTokens: 128000,
-        contextWindow: 400000,
-        capabilities: ['vision', 'reasoning'],
-        tier: 'flagship',
-        apiNote: 'Phased API rollout - may not be available to all developers yet'
-    },
-    // O-Series Reasoning Models (Latest)
-    'o3': {
-        name: 'o3',
-        provider: 'openai',
-        description: 'Powerful reasoning - math, science, coding, and visual reasoning',
-        maxTokens: 100000,
-        contextWindow: 200000,
-        capabilities: ['vision', 'reasoning'],
-        tier: 'reasoning'
-    },
-    'o3-pro': {
-        name: 'o3-pro',
-        provider: 'openai',
-        description: 'Extended reasoning - more compute for consistently better answers',
-        maxTokens: 100000,
-        contextWindow: 200000,
-        capabilities: ['vision', 'reasoning'],
-        tier: 'reasoning'
-    },
-    'o4-mini': {
-        name: 'o4-mini',
-        provider: 'openai',
-        description: 'Fast reasoning - efficient performance in coding and visual tasks',
-        maxTokens: 100000,
-        contextWindow: 200000,
-        capabilities: ['vision', 'reasoning'],
-        tier: 'reasoning'
-    },
-    // Legacy O-Series
-    'o1': {
-        name: 'o1',
-        provider: 'openai',
-        description: 'Previous reasoning model - complex analysis and math',
-        maxTokens: 100000,
-        contextWindow: 200000,
-        capabilities: ['vision', 'reasoning'],
-        tier: 'legacy'
-    },
-    'o1-mini': {
-        name: 'o1-mini',
-        provider: 'openai',
-        description: 'Previous fast reasoning model',
-        maxTokens: 65536,
-        contextWindow: 128000,
-        capabilities: ['reasoning'],
-        tier: 'legacy'
-    },
-    // Legacy
-    'gpt-4-turbo': {
-        name: 'GPT-4 Turbo',
-        provider: 'openai',
-        description: 'Previous flagship with vision',
-        maxTokens: 4096,
-        contextWindow: 128000,
-        capabilities: ['vision', 'image_gen'],
-        tier: 'legacy'
-    }
-};
+function buildAnthropicModels() {
+    return Object.fromEntries(
+        Object.entries(anthropic.CLAUDE_MODELS).map(([id, model]) => [
+            id,
+            {
+                ...model,
+                provider: 'anthropic',
+                capabilities: [
+                    'vision',
+                    'pdf',
+                    'tool_use',
+                    ...(model.supportsEffort ? ['reasoning'] : [])
+                ]
+            }
+        ])
+    );
+}
 
-// ============================================================================
-// PERPLEXITY (SONAR) MODELS
-// Updated January 2026 - sonar-reasoning deprecated, use sonar-reasoning-pro
-// ============================================================================
-const PERPLEXITY_MODELS = {
-    'sonar-pro': {
-        name: 'Sonar Pro',
-        provider: 'perplexity',
-        description: 'Advanced search with grounding - best factuality (F-score 0.858)',
-        maxTokens: 8192,
-        contextWindow: 200000,
-        capabilities: ['search'],
-        tier: 'pro',
-        default: true
-    },
-    'sonar': {
-        name: 'Sonar',
-        provider: 'perplexity',
-        description: 'Lightweight, cost-effective search with grounding (Llama 3.3 70B)',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        capabilities: ['search'],
-        tier: 'standard'
-    },
-    'sonar-reasoning': {
-        name: 'Sonar Reasoning',
-        provider: 'perplexity',
-        description: 'Real-time reasoning with search grounding',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        capabilities: ['search', 'reasoning'],
-        tier: 'standard'
-    },
-    'sonar-reasoning-pro': {
-        name: 'Sonar Reasoning Pro',
-        provider: 'perplexity',
-        description: 'DeepSeek-R1 powered reasoning with visible chain of thought',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        capabilities: ['search', 'reasoning'],
-        tier: 'reasoning'
-    },
-    'sonar-deep-research': {
-        name: 'Sonar Deep Research',
-        provider: 'perplexity',
-        description: 'Expert-level research - exhaustive searches, comprehensive reports',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        capabilities: ['search', 'research'],
-        tier: 'research'
-    }
-};
+function buildOpenAIModels() {
+    return Object.fromEntries(
+        Object.entries(openai.OPENAI_MODELS).map(([id, model]) => [
+            id,
+            {
+                ...model,
+                provider: 'openai',
+                capabilities: [
+                    ...(model.vision ? ['vision'] : []),
+                    ...(model.audio ? ['audio'] : []),
+                    ...(model.reasoning ? ['reasoning'] : [])
+                ]
+            }
+        ])
+    );
+}
 
-// ============================================================================
-// GOOGLE (GEMINI) MODELS
-// ============================================================================
-const GEMINI_MODELS = {
-    // Gemini 3.1 Family (Latest - February 2026)
-    'gemini-3.1-pro-preview': {
-        name: 'Gemini 3.1 Pro Preview',
-        provider: 'google',
-        description: 'Most advanced reasoning - adjustable thinking depth, agentic coding',
-        maxTokens: 65536,
-        contextWindow: 1000000,
-        capabilities: ['vision', 'audio', 'video', 'tool_use', 'reasoning', 'agentic'],
-        tier: 'premium',
-        supportsThinkingLevel: true,
-        thinkingLevels: ['low', 'medium', 'high']
-    },
-    // Gemini 3 Family (Preview)
-    'gemini-3-pro-preview': {
-        name: 'Gemini 3 Pro Preview',
-        provider: 'google',
-        description: 'State-of-the-art reasoning and multimodal',
-        maxTokens: 16384,
-        contextWindow: 2000000,
-        capabilities: ['vision', 'audio', 'video', 'tool_use', 'reasoning', 'agentic'],
-        tier: 'premium'
-    },
-    'gemini-3-flash-preview': {
-        name: 'Gemini 3 Flash Preview',
-        provider: 'google',
-        description: 'Pro-grade reasoning at Flash-level speed',
-        maxTokens: 16384,
-        contextWindow: 1000000,
-        capabilities: ['vision', 'audio', 'tool_use', 'reasoning'],
-        tier: 'default',
-        default: true
-    },
-    // Gemini 2.5 Family
-    'gemini-2.5-pro': {
-        name: 'Gemini 2.5 Pro',
-        provider: 'google',
-        description: 'Most capable model for complex reasoning',
-        maxTokens: 16384,
-        contextWindow: 1000000,
-        capabilities: ['vision', 'audio', 'video', 'tool_use', 'reasoning'],
-        tier: 'premium'
-    },
-    'gemini-2.5-flash': {
-        name: 'Gemini 2.5 Flash',
-        provider: 'google',
-        description: 'Fast and efficient with great performance',
-        maxTokens: 16384,
-        contextWindow: 1000000,
-        capabilities: ['vision', 'audio', 'tool_use'],
-        tier: 'standard'
-    },
-    // Gemini 2.0 Family
-    'gemini-2.0-flash': {
-        name: 'Gemini 2.0 Flash',
-        provider: 'google',
-        description: 'Fast multimodal model with native tool use',
-        maxTokens: 8192,
-        contextWindow: 1000000,
-        capabilities: ['vision', 'audio', 'tool_use'],
-        tier: 'standard'
-    },
-    'gemini-2.0-flash-lite': {
-        name: 'Gemini 2.0 Flash Lite',
-        provider: 'google',
-        description: 'Lightweight and cost-effective',
-        maxTokens: 8192,
-        contextWindow: 1000000,
-        capabilities: ['vision', 'tool_use'],
-        tier: 'fast'
-    },
-    // Experimental
-    'nano-banana-pro-preview': {
-        name: 'Nano Banana Pro Preview',
-        provider: 'google',
-        description: 'Experimental lightweight model',
-        maxTokens: 8192,
-        contextWindow: 128000,
-        capabilities: ['vision'],
-        tier: 'experimental'
-    }
-};
+function buildPerplexityModels() {
+    return Object.fromEntries(
+        Object.entries(perplexity.PERPLEXITY_MODELS).map(([id, model]) => [
+            id,
+            {
+                ...model,
+                provider: 'perplexity',
+                capabilities: [
+                    ...(model.search ? ['search'] : []),
+                    ...(model.reasoning ? ['reasoning'] : []),
+                    ...(model.research ? ['research'] : [])
+                ]
+            }
+        ])
+    );
+}
 
-// ============================================================================
-// IMAGE GENERATION MODELS
-// ============================================================================
-const IMAGE_MODELS = {
-    'gpt-image-1.5': {
-        name: 'GPT Image 1.5',
-        provider: 'openai',
-        description: 'Latest image generation with better instruction-following',
-        sizes: ['1024x1024', '1024x1792', '1792x1024'],
-        qualities: ['standard', 'hd'],
-        styles: ['vivid', 'natural'],
-        tier: 'flagship',
-        default: true
-    },
-    'gpt-image-1': {
-        name: 'GPT Image 1',
-        provider: 'openai',
-        description: 'Natively multimodal - professional-grade image generation',
-        sizes: ['1024x1024', '1024x1792', '1792x1024'],
-        qualities: ['standard', 'hd'],
-        styles: ['vivid', 'natural'],
-        tier: 'premium'
-    },
-    'gpt-image-1-mini': {
-        name: 'GPT Image 1 Mini',
-        provider: 'openai',
-        description: 'Cost-efficient image generation from text and image inputs',
-        sizes: ['1024x1024', '1024x1792', '1792x1024'],
-        qualities: ['standard'],
-        styles: ['vivid', 'natural'],
-        tier: 'standard'
-    },
-    'dall-e-3': {
-        name: 'DALL-E 3',
-        provider: 'openai',
-        description: 'High quality image generation - deprecated May 12, 2026',
-        sizes: ['1024x1024', '1024x1792', '1792x1024'],
-        qualities: ['standard', 'hd'],
-        styles: ['vivid', 'natural'],
-        tier: 'legacy',
-        deprecated: '2026-05-12'
-    },
-    'dall-e-2': {
-        name: 'DALL-E 2',
-        provider: 'openai',
-        description: 'Fast image generation - deprecated May 12, 2026',
-        sizes: ['256x256', '512x512', '1024x1024'],
-        qualities: ['standard'],
-        styles: [],
-        tier: 'legacy',
-        deprecated: '2026-05-12'
-    }
-};
+function buildGeminiModels() {
+    return Object.fromEntries(
+        Object.entries(gemini.GEMINI_MODELS).map(([id, model]) => [
+            id,
+            {
+                ...model,
+                provider: 'google',
+                capabilities: Array.isArray(model.capabilities) ? [...model.capabilities] : []
+            }
+        ])
+    );
+}
 
-// ============================================================================
-// COMBINED REGISTRY
-// ============================================================================
+function buildImageModels() {
+    return Object.fromEntries(
+        Object.entries(openai.IMAGE_MODELS).map(([id, model]) => [
+            id,
+            {
+                ...model,
+                provider: 'openai'
+            }
+        ])
+    );
+}
+
+const ANTHROPIC_MODELS = buildAnthropicModels();
+const OPENAI_MODELS = buildOpenAIModels();
+const PERPLEXITY_MODELS = buildPerplexityModels();
+const GEMINI_MODELS = buildGeminiModels();
+const IMAGE_MODELS = buildImageModels();
+
 const ALL_MODELS = {
     ...ANTHROPIC_MODELS,
     ...OPENAI_MODELS,
@@ -418,13 +101,17 @@ const ALL_MODELS = {
     ...GEMINI_MODELS
 };
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
+const DEPRECATED_MODEL_MAP = {
+    'sonar-reasoning': 'sonar-reasoning-pro'
+};
 
-/**
- * Get all models for a specific provider
- */
+const MODEL_ALIASES = {
+    ...anthropic.MODEL_ALIASES,
+    ...openai.MODEL_ALIASES,
+    ...perplexity.MODEL_ALIASES,
+    ...gemini.MODEL_ALIASES
+};
+
 function getModelsByProvider(provider) {
     switch (provider) {
         case 'anthropic':
@@ -440,41 +127,51 @@ function getModelsByProvider(provider) {
     }
 }
 
-/**
- * Get a specific model by ID
- */
 function getModel(modelId) {
     return ALL_MODELS[modelId] || null;
 }
 
-/**
- * Get provider for a model ID
- */
 function getProvider(modelId) {
     if (!modelId) return 'anthropic';
-    if (modelId.startsWith('claude')) return 'anthropic';
-    if (modelId.startsWith('gpt') || modelId.startsWith('o1') || modelId.startsWith('o3') || modelId.startsWith('o4') || modelId.startsWith('dall-e')) return 'openai';
-    if (modelId.startsWith('sonar') || modelId.startsWith('pplx') || modelId.startsWith('perplexity')) return 'perplexity';
-    if (modelId.startsWith('gemini') || modelId.startsWith('nano-banana')) return 'google';
-    return ALL_MODELS[modelId]?.provider || 'anthropic';
+
+    const resolved = resolveModelId(modelId);
+    if (resolved.valid && resolved.model) {
+        return ALL_MODELS[resolved.model]?.provider || 'anthropic';
+    }
+
+    const normalized = String(modelId).toLowerCase();
+    if (normalized.startsWith('claude')) return 'anthropic';
+    if (
+        normalized.startsWith('gpt') ||
+        normalized.startsWith('o1') ||
+        normalized.startsWith('o3') ||
+        normalized.startsWith('o4') ||
+        normalized.startsWith('dall-e')
+    ) {
+        return 'openai';
+    }
+    if (
+        normalized.startsWith('sonar') ||
+        normalized.startsWith('pplx') ||
+        normalized.startsWith('perplexity')
+    ) {
+        return 'perplexity';
+    }
+    if (normalized.startsWith('gemini') || normalized.startsWith('nano-banana')) {
+        return 'google';
+    }
+
+    return 'anthropic';
 }
 
-/**
- * Get default model for a provider
- */
 function getDefaultModel(provider) {
     const models = getModelsByProvider(provider);
     for (const [id, model] of Object.entries(models)) {
         if (model.default) return id;
     }
-    // Return first model if no default
     return Object.keys(models)[0] || null;
 }
 
-/**
- * Get all available models formatted for frontend dropdowns
- * Filters by available API keys
- */
 function getAvailableModels(apiKeys = {}) {
     const available = {};
 
@@ -484,9 +181,9 @@ function getAvailableModels(apiKeys = {}) {
             name: model.name,
             description: model.description,
             tier: model.tier,
-            vision: model.capabilities?.includes('vision'),
-            pdf: model.capabilities?.includes('pdf'),
-            reasoning: model.capabilities?.includes('reasoning')
+            vision: model.capabilities.includes('vision'),
+            pdf: model.capabilities.includes('pdf'),
+            reasoning: model.capabilities.includes('reasoning')
         }));
     }
 
@@ -496,10 +193,10 @@ function getAvailableModels(apiKeys = {}) {
             name: model.name,
             description: model.description,
             tier: model.tier,
-            vision: model.capabilities?.includes('vision'),
-            audio: model.capabilities?.includes('audio'),
-            imageGen: model.capabilities?.includes('image_gen'),
-            reasoning: model.capabilities?.includes('reasoning')
+            vision: model.capabilities.includes('vision'),
+            audio: model.capabilities.includes('audio'),
+            imageGen: model.capabilities.includes('image_gen'),
+            reasoning: model.capabilities.includes('reasoning')
         }));
 
         available.imageModels = Object.entries(IMAGE_MODELS).map(([id, model]) => ({
@@ -517,9 +214,9 @@ function getAvailableModels(apiKeys = {}) {
             name: model.name,
             description: model.description,
             tier: model.tier,
-            search: model.capabilities?.includes('search'),
-            reasoning: model.capabilities?.includes('reasoning'),
-            research: model.capabilities?.includes('research')
+            search: model.capabilities.includes('search'),
+            reasoning: model.capabilities.includes('reasoning'),
+            research: model.capabilities.includes('research')
         }));
     }
 
@@ -529,20 +226,16 @@ function getAvailableModels(apiKeys = {}) {
             name: model.name,
             description: model.description,
             tier: model.tier,
-            vision: model.capabilities?.includes('vision'),
-            audio: model.capabilities?.includes('audio'),
-            video: model.capabilities?.includes('video'),
-            reasoning: model.capabilities?.includes('reasoning')
+            vision: model.capabilities.includes('vision'),
+            audio: model.capabilities.includes('audio'),
+            video: model.capabilities.includes('video'),
+            reasoning: model.capabilities.includes('reasoning')
         }));
     }
 
     return available;
 }
 
-/**
- * Get all chat models as a flat list (for agent configuration)
- * Includes provider info for grouping
- */
 function getAllChatModels(apiKeys = {}) {
     const models = [];
 
@@ -613,22 +306,72 @@ function getAllChatModels(apiKeys = {}) {
     return models;
 }
 
-/**
- * Validate if a model ID is valid
- */
-function isValidModel(modelId) {
-    return modelId in ALL_MODELS;
+function resolveModelId(modelId) {
+    if (!modelId) {
+        return {
+            valid: false,
+            model: null,
+            error: 'Model is required'
+        };
+    }
+
+    if (ALL_MODELS[modelId]) {
+        return {
+            valid: true,
+            model: modelId,
+            deprecated: false
+        };
+    }
+
+    const normalized = String(modelId).trim().toLowerCase();
+
+    if (!normalized) {
+        return {
+            valid: false,
+            model: null,
+            error: 'Model is required'
+        };
+    }
+
+    if (DEPRECATED_MODEL_MAP[normalized]) {
+        return {
+            valid: false,
+            model: null,
+            deprecated: true,
+            replacement: DEPRECATED_MODEL_MAP[normalized],
+            error: `Model '${modelId}' is deprecated. Use '${DEPRECATED_MODEL_MAP[normalized]}' instead.`
+        };
+    }
+
+    const canonicalModel = MODEL_ALIASES[normalized];
+    if (canonicalModel && ALL_MODELS[canonicalModel]) {
+        return {
+            valid: true,
+            model: canonicalModel,
+            deprecated: false,
+            aliasUsed: canonicalModel !== modelId
+        };
+    }
+
+    return {
+        valid: false,
+        model: null,
+        error: `Unsupported model '${modelId}'.`
+    };
 }
 
-/**
- * Get model info for display
- */
+function isValidModel(modelId) {
+    return !!resolveModelId(modelId).valid;
+}
+
 function getModelDisplayInfo(modelId) {
-    const model = ALL_MODELS[modelId];
+    const resolved = resolveModelId(modelId);
+    const lookupId = resolved.valid ? resolved.model : modelId;
+    const model = ALL_MODELS[lookupId];
     if (!model) return null;
 
     return {
-        id: modelId,
+        id: lookupId,
         name: model.name,
         provider: model.provider,
         description: model.description,
@@ -637,25 +380,22 @@ function getModelDisplayInfo(modelId) {
     };
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
 module.exports = {
-    // Model collections
     ANTHROPIC_MODELS,
     OPENAI_MODELS,
     PERPLEXITY_MODELS,
     GEMINI_MODELS,
     IMAGE_MODELS,
     ALL_MODELS,
-
-    // Helper functions
+    MODEL_ALIASES,
+    DEPRECATED_MODEL_MAP,
     getModelsByProvider,
     getModel,
     getProvider,
     getDefaultModel,
     getAvailableModels,
     getAllChatModels,
+    resolveModelId,
     isValidModel,
     getModelDisplayInfo
 };

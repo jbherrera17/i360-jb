@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const llmRegistry = require('./llmRegistry');
 
 // Asset IDs for Higgins knowledge (must match seed-higgins-knowledge.sql)
 const HIGGINS_ASSET_IDS = {
@@ -239,6 +240,11 @@ async function getHigginsSystemPrompt(supabase, options = {}) {
  * @returns {string} - Human-readable model name
  */
 function getModelDisplayName(modelId) {
+    const modelInfo = llmRegistry.getModelDisplayInfo(modelId);
+    if (modelInfo?.name) {
+        return modelInfo.name;
+    }
+
     const modelNames = {
         // Claude models
         'claude-opus-4-5-20250929': 'Claude Opus 4.5',

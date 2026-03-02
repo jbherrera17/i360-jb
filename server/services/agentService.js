@@ -14,6 +14,7 @@ const { assembleContext, estimateTokens } = require('./contextInjection');
 const mindstudioService = require('./mindstudioService');
 const gemini = require('./gemini');
 const guardrailEnforcement = require('./guardrailEnforcementService');
+const llmRegistry = require('./llmRegistry');
 
 // Initialize clients
 const supabase = createClient(
@@ -67,17 +68,10 @@ const CLAUDE_MODEL_ALIASES = {
     'claude-haiku': 'claude-haiku-4-5-20251001'
 };
 
-const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
+const DEFAULT_CLAUDE_MODEL = llmRegistry.getDefaultModel('anthropic');
 
 // All valid current Claude models
-const VALID_CLAUDE_MODELS = [
-    'claude-opus-4-5-20251101',
-    'claude-sonnet-4-5-20250929',
-    'claude-haiku-4-5-20251001',
-    'claude-opus-4-1-20250805',
-    'claude-opus-4-20250514',
-    'claude-sonnet-4-20250514'
-];
+const VALID_CLAUDE_MODELS = Object.keys(llmRegistry.ANTHROPIC_MODELS);
 
 /**
  * Resolve model name to a valid API model ID

@@ -49,6 +49,7 @@ if (process.env.GOOGLE_API_KEY) {
 
 // Use centralized registry for provider detection
 const { getProvider } = llmRegistry;
+const DEFAULT_CHAT_MODEL = llmRegistry.getDefaultModel('anthropic');
 
 /**
  * Extract text and multimodal content from a message
@@ -197,7 +198,7 @@ router.post('/', validateBody(chatMessageSchema), async (req, res) => {
         }
 
         // Direct LLM chat (no agent)
-        const selectedModel = model || 'claude-sonnet-4-5-20250929';
+        const selectedModel = model || DEFAULT_CHAT_MODEL;
         const provider = getProvider(selectedModel);
 
         // Build system prompt with optional context
@@ -265,7 +266,7 @@ router.post('/', validateBody(chatMessageSchema), async (req, res) => {
  */
 router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
     try {
-        const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt, skipHiggins = false } = req.body;
+        const { messages, model = DEFAULT_CHAT_MODEL, systemPrompt, skipHiggins = false } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return res.status(400).json({
@@ -416,7 +417,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
  */
 router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
     try {
-        const { messages, model = 'claude-sonnet-4-5-20250929', systemPrompt, skipHiggins = false } = req.body;
+        const { messages, model = DEFAULT_CHAT_MODEL, systemPrompt, skipHiggins = false } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return res.status(400).json({
@@ -646,7 +647,7 @@ router.post('/with-search', async (req, res) => {
     try {
         const {
             messages,
-            model = 'claude-sonnet-4-5-20250929',
+            model = DEFAULT_CHAT_MODEL,
             systemPrompt,
             searchQuery
         } = req.body;

@@ -6,6 +6,7 @@
  */
 
 const { z } = require('zod');
+const llmRegistry = require('../services/llmRegistry');
 
 // ============================================
 // REUSABLE SCHEMAS
@@ -21,6 +22,22 @@ const email = z.string()
 const password = z.string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password too long');
+
+const modelId = z.string()
+    .max(100, 'Model ID too long')
+    .transform((value, ctx) => {
+        const resolved = llmRegistry.resolveModelId(value);
+
+        if (!resolved.valid) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: resolved.error || 'Invalid model'
+            });
+            return z.NEVER;
+        }
+
+        return resolved.model;
+    });
 
 // ============================================
 // AUTH SCHEMAS
@@ -50,7 +67,7 @@ const chatMessageSchema = z.object({
     message: z.string().min(1, 'Message is required').max(100000, 'Message too long'),
     agent_id: uuid.optional(),
     context: z.string().max(100000).optional(),
-    model: z.string().max(100).optional(),
+    model: modelId.optional(),
     systemPrompt: z.string().max(100000).optional()
 });
 
@@ -69,7 +86,7 @@ const chatStreamSchema = z.object({
             }))
         ])
     })).min(1, 'Messages array is required').max(100),
-    model: z.string().max(100).optional(),
+    model: modelId.optional(),
     systemPrompt: z.string().max(100000).optional(),
     skipHiggins: z.boolean().optional()
 });
@@ -82,7 +99,7 @@ const agentUpdateSchema = z.object({
     name: z.string().min(1).max(200).optional(),
     description: z.string().max(2000).optional(),
     system_prompt: z.string().max(100000).optional(),
-    model: z.string().max(100).optional(),
+    model: modelId.optional(),
     category: z.string().max(100).optional(),
     is_active: z.boolean().optional(),
     config: z.record(z.unknown()).optional()

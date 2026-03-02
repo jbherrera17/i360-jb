@@ -16,6 +16,7 @@ const {
     getDefaultModel,
     getAvailableModels,
     getAllChatModels,
+    resolveModelId,
     isValidModel,
     getModelDisplayInfo
 } = require('../../../server/services/llmRegistry');
@@ -48,18 +49,17 @@ describe('LLM Registry Service', () => {
                 expect(defaultModel).toBeDefined();
             });
 
-            it('should include Claude Sonnet 4.6 as default', () => {
+            it('should include Claude Sonnet 4.5 as default', () => {
                 const defaultModel = Object.entries(ANTHROPIC_MODELS)
                     .find(([id, model]) => model.default);
-                expect(defaultModel[0]).toBe('claude-sonnet-4-6');
+                expect(defaultModel[0]).toBe('claude-sonnet-4-5-20250929');
             });
 
-            it('should have correct specs for Opus 4.6', () => {
-                const opus46 = ANTHROPIC_MODELS['claude-opus-4-6'];
-                expect(opus46.contextWindow).toBe(200000);
-                expect(opus46.maxTokens).toBe(128000);
-                expect(opus46.capabilities).toContain('agent_teams');
-                expect(opus46.effortLevels).toEqual(['low', 'medium', 'high', 'max']);
+            it('should have correct specs for Opus 4.5', () => {
+                const opus45 = ANTHROPIC_MODELS['claude-opus-4-5-20251101'];
+                expect(opus45.contextWindow).toBe(200000);
+                expect(opus45.maxTokens).toBe(8192);
+                expect(opus45.capabilities).toContain('reasoning');
             });
         });
 
@@ -282,7 +282,7 @@ describe('LLM Registry Service', () => {
     describe('getDefaultModel', () => {
         it('should return default Anthropic model', () => {
             const defaultModel = getDefaultModel('anthropic');
-            expect(defaultModel).toBe('claude-sonnet-4-6');
+            expect(defaultModel).toBe('claude-sonnet-4-5-20250929');
         });
 
         it('should return default OpenAI model', () => {
@@ -475,6 +475,37 @@ describe('LLM Registry Service', () => {
         it('should return false for image models (not in ALL_MODELS)', () => {
             expect(isValidModel('dall-e-3')).toBe(false);
             expect(isValidModel('gpt-image-1.5')).toBe(false);
+        });
+    });
+
+    describe('resolveModelId', () => {
+        it('should keep canonical model IDs unchanged', () => {
+            expect(resolveModelId('gpt-4o')).toEqual(
+                expect.objectContaining({
+                    valid: true,
+                    model: 'gpt-4o'
+                })
+            );
+        });
+
+        it('should normalize supported aliases to canonical models', () => {
+            expect(resolveModelId('gpt4o')).toEqual(
+                expect.objectContaining({
+                    valid: true,
+                    model: 'gpt-4o',
+                    aliasUsed: true
+                })
+            );
+        });
+
+        it('should reject deprecated model IDs', () => {
+            expect(resolveModelId('sonar-reasoning')).toEqual(
+                expect.objectContaining({
+                    valid: false,
+                    deprecated: true,
+                    replacement: 'sonar-reasoning-pro'
+                })
+            );
         });
     });
 

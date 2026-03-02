@@ -95,6 +95,12 @@ const GEMINI_MODELS = {
     }
 };
 
+const MODEL_ALIASES = {
+    'gemini': 'gemini-3-flash-preview',
+    'gemini-pro': 'gemini-3-pro-preview',
+    'gemini-flash': 'gemini-3-flash-preview'
+};
+
 /**
  * Initialize the Gemini service
  * @param {string} key - Google AI API key
@@ -128,13 +134,7 @@ function getModels() {
  * Resolve model alias to actual model ID
  */
 function resolveModel(model) {
-    // Handle aliases
-    const aliases = {
-        'gemini': 'gemini-3-flash-preview',
-        'gemini-pro': 'gemini-3-pro-preview',
-        'gemini-flash': 'gemini-3-flash-preview'
-    };
-    return aliases[model] || model;
+    return MODEL_ALIASES[model] || model;
 }
 
 /**
@@ -381,5 +381,6 @@ module.exports = {
     getModels,
     chat,
     streamChat,
-    GEMINI_MODELS
+    GEMINI_MODELS,
+    MODEL_ALIASES
 };

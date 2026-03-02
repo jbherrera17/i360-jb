@@ -329,7 +329,12 @@ async function chat(options) {
 
     // GPT-5.x and o-series use max_completion_tokens, others use max_tokens
     const tokenLimit = Math.min(maxTokens, modelInfo.maxTokens || 16384);
-    if (resolvedModel.startsWith('gpt-5') || resolvedModel.startsWith('o1')) {
+    if (
+        resolvedModel.startsWith('gpt-5') ||
+        resolvedModel.startsWith('o1') ||
+        resolvedModel.startsWith('o3') ||
+        resolvedModel.startsWith('o4')
+    ) {
         requestParams.max_completion_tokens = tokenLimit;
     } else {
         requestParams.max_tokens = tokenLimit;
@@ -466,7 +471,12 @@ async function* streamChat(options) {
 
     // GPT-5.x and o-series use max_completion_tokens, others use max_tokens
     const tokenLimit = Math.min(maxTokens, modelInfo.maxTokens || 16384);
-    if (resolvedModel.startsWith('gpt-5') || resolvedModel.startsWith('o1')) {
+    if (
+        resolvedModel.startsWith('gpt-5') ||
+        resolvedModel.startsWith('o1') ||
+        resolvedModel.startsWith('o3') ||
+        resolvedModel.startsWith('o4')
+    ) {
         requestParams.max_completion_tokens = tokenLimit;
     } else {
         requestParams.max_tokens = tokenLimit;
