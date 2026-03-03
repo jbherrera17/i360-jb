@@ -64,6 +64,7 @@
     "jest": "^29.7.0",
     "lint-staged": "^16.2.7",
     "nodemon": "^3.1.11",
+    "readable-stream": "^4.7.0",
     "supertest": "^7.0.0"
   },
   "engines": {

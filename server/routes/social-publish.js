@@ -122,7 +122,10 @@ module.exports = function(supabase) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
 
-            // Check admin permission
+            // Check admin permission (org admin or platform admin)
+            let isAdmin = false;
+
+            // Check org membership role
             const { data: member } = await supabase
                 .from('org_members')
                 .select('business_role')
@@ -130,13 +133,24 @@ module.exports = function(supabase) {
                 .eq('org_id', orgId)
                 .single();
 
-            if (!member || !['owner', 'admin'].includes(member.business_role)) {
+            if (member && ['owner', 'admin'].includes(member.business_role)) {
+                isAdmin = true;
+            }
+
+            // Also allow platform admins (Synergi)
+            if (!isAdmin && userId) {
+                const { data: isPlatformAdmin } = await supabase
+                    .rpc('is_platform_admin', { p_user_id: userId });
+                if (isPlatformAdmin) isAdmin = true;
+            }
+
+            if (!isAdmin) {
                 return res.status(403).json({ error: 'Admin access required to configure social publishing' });
             }
 
             const { postizOrgId, apiKey } = req.body;
-            if (!postizOrgId || !apiKey) {
-                return res.status(400).json({ error: 'postizOrgId and apiKey are required' });
+            if (!apiKey) {
+                return res.status(400).json({ error: 'apiKey is required' });
             }
 
             await postizService.configureOrg(orgId, postizOrgId, apiKey);

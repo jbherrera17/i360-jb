@@ -363,6 +363,19 @@
 
         <!-- Tab: Connected Accounts -->
         <div class="social-tab-content active" id="tab-accounts">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--spacing-md); flex-wrap:wrap; gap:var(--spacing-sm);">
+                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">
+                    Connect accounts in Postiz, then sync them here.
+                </p>
+                <div style="display:flex; gap:var(--spacing-sm);">
+                    <button class="btn btn-secondary btn-sm" onclick="openPostizDashboard()">
+                        <i data-lucide="external-link" style="width:14px;height:14px;"></i> Manage in Postiz
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="syncAccounts()">
+                        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Sync Accounts
+                    </button>
+                </div>
+            </div>
             <div class="platform-grid" id="platformGrid">
                 <!-- Populated by JS -->
             </div>
@@ -486,7 +499,7 @@
     let selectedPlatforms = [];
     let allPosts = [];
 
-    const ORG_ID = localStorage.getItem('insight360-org-id');
+    const ORG_ID = localStorage.getItem('insight360_org_id') || localStorage.getItem('currentOrgId');
 
     function getHeaders() {
         return {
@@ -646,17 +659,14 @@
         lucide.createIcons();
     }
 
+    function openPostizDashboard() {
+        window.open('https://platform.postiz.com/integrations/social', '_blank');
+        showToast('Connect your accounts in Postiz, then click Sync Accounts', 'info');
+    }
+
     async function connectPlatform(platformId) {
-        try {
-            const res = await fetch(`/api/social/accounts/oauth-url/${platformId}`, { headers: getHeaders() });
-            const data = await res.json();
-            if (data.url) {
-                window.open(data.url, '_blank', 'width=600,height=700');
-                showToast('Complete the connection in the popup window', 'info');
-            }
-        } catch (err) {
-            showToast('Failed to start platform connection', 'error');
-        }
+        window.open(`https://platform.postiz.com/integrations/social/${platformId}`, '_blank');
+        showToast('Connect in Postiz, then click Sync Accounts to pull it in', 'info');
     }
 
     async function disconnectPlatform(platformId) {
@@ -996,8 +1006,8 @@
         const result = await ModalService.form({
             title: 'Configure Social Publishing',
             fields: [
-                { name: 'postizOrgId', label: 'Postiz Organization ID', type: 'text', required: true, placeholder: 'From your Postiz dashboard' },
-                { name: 'apiKey', label: 'Postiz API Key', type: 'text', required: true, placeholder: 'Bearer token from Postiz settings' }
+                { name: 'apiKey', label: 'Postiz API Key', type: 'text', required: true, placeholder: 'Bearer token from Postiz settings' },
+                { name: 'postizOrgId', label: 'Postiz Organization ID (optional)', type: 'text', required: false, placeholder: 'Leave blank if unknown' }
             ],
             submitText: 'Save Configuration'
         });

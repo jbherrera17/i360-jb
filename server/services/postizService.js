@@ -130,12 +130,14 @@ async function postizRequest(orgId, method, path, body = null) {
 async function configureOrg(orgId, postizOrgId, apiKey) {
     const encryptedKey = encryptApiKey(apiKey);
 
+    const updateData = { postiz_api_key_encrypted: encryptedKey };
+    if (postizOrgId) {
+        updateData.postiz_org_id = postizOrgId;
+    }
+
     const { error } = await supabase
         .from('organizations')
-        .update({
-            postiz_org_id: postizOrgId,
-            postiz_api_key_encrypted: encryptedKey
-        })
+        .update(updateData)
         .eq('id', orgId);
 
     if (error) {
@@ -153,11 +155,11 @@ async function configureOrg(orgId, postizOrgId, apiKey) {
 async function isConfigured(orgId) {
     const { data } = await supabase
         .from('organizations')
-        .select('postiz_org_id, postiz_api_key_encrypted')
+        .select('postiz_api_key_encrypted')
         .eq('id', orgId)
         .single();
 
-    return !!(data?.postiz_org_id && data?.postiz_api_key_encrypted);
+    return !!data?.postiz_api_key_encrypted;
 }
 
 // ============================================
