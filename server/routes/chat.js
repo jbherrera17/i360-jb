@@ -18,6 +18,9 @@ const llmRegistry = require('../services/llmRegistry');
 // Import Higgins service for persona and knowledge injection
 const higginsService = require('../services/higginsService');
 
+// Import Open Brain for context retrieval
+const openBrain = require('../services/openBrainService');
+
 // Import guardrail enforcement for pre-screening and soul context
 const guardrailEnforcement = require('../services/guardrailEnforcementService');
 
@@ -355,6 +358,19 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
             }
         }
 
+        // Open Brain: inject relevant thoughts based on the user's message
+        if (!skipHiggins && openBrain.isConfigured() && text) {
+            try {
+                const obResult = await openBrain.searchThoughts(text, { limit: 5, threshold: 0.6 });
+                const obText = obResult?.content?.[0]?.text;
+                if (obText && !obText.startsWith('Found 0')) {
+                    finalSystemPrompt += '\n---\nRELEVANT CONTEXT FROM OPEN BRAIN:\n' + obText + '\n';
+                }
+            } catch (obError) {
+                console.warn('[OpenBrain] Context fetch failed (non-blocking):', obError.message);
+            }
+        }
+
         let response;
 
         if (provider === 'anthropic') {
@@ -516,6 +532,19 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             const helpDocContent = higginsService.findRelevantHelpDoc(text);
             if (helpDocContent) {
                 finalSystemPrompt += helpDocContent;
+            }
+        }
+
+        // Open Brain: inject relevant thoughts based on the user's message
+        if (!skipHiggins && openBrain.isConfigured() && text) {
+            try {
+                const obResult = await openBrain.searchThoughts(text, { limit: 5, threshold: 0.6 });
+                const obText = obResult?.content?.[0]?.text;
+                if (obText && !obText.startsWith('Found 0')) {
+                    finalSystemPrompt += '\n---\nRELEVANT CONTEXT FROM OPEN BRAIN:\n' + obText + '\n';
+                }
+            } catch (obError) {
+                console.warn('[OpenBrain] Context fetch failed (non-blocking):', obError.message);
             }
         }
 

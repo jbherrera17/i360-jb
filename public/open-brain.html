@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Brain | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ── Layout ──────────────────────────────────────── */
+        .ob-layout { display: flex; flex-direction: column; height: 100%; }
+
+        /* ── Header ──────────────────────────────────────── */
+        .ob-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; flex-shrink: 0;
+        }
+        .ob-header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .ob-header-left h1 { font-family: var(--font-heading); font-size: 1.25rem; margin: 0; }
+        .ob-stats-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat-pill {
+            background: var(--primary-muted); color: var(--primary-light);
+            padding: 0.25rem 0.75rem; border-radius: var(--radius-full);
+            font-size: 0.8rem; font-weight: 500; white-space: nowrap;
+        }
+
+        /* ── Tabs ────────────────────────────────────────── */
+        .ob-tabs {
+            display: flex; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border); padding: 0 1.5rem; flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 0.875rem 1.25rem; background: none; border: none;
+            border-bottom: 2px solid transparent; color: var(--text-secondary);
+            font-size: 0.9rem; font-weight: 500; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding: 1.5rem; }
+        .tab-content.active { display: flex; flex-direction: column; }
+
+        /* ── Capture tab ─────────────────────────────────── */
+        .capture-box {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.5rem;
+            max-width: 800px; width: 100%; margin: 0 auto;
+        }
+        .capture-box h2 { font-family: var(--font-heading); font-size: 1rem; margin: 0 0 0.4rem 0; }
+        .capture-hint { color: var(--text-secondary); font-size: 0.85rem; margin: 0 0 1rem 0; }
+        .capture-textarea {
+            width: 100%; min-height: 130px; background: var(--bg-tertiary);
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            color: var(--text-primary); font-family: var(--font-body); font-size: 0.95rem;
+            padding: 0.875rem 1rem; resize: vertical; box-sizing: border-box; transition: border-color 0.2s;
+        }
+        .capture-textarea:focus { outline: none; border-color: var(--primary); }
+        .capture-textarea::placeholder { color: var(--text-tertiary); }
+        .capture-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
+        .char-count { font-size: 0.8rem; color: var(--text-tertiary); }
+        .capture-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 0.625rem 1.5rem; border-radius: var(--radius-md);
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;
+        }
+        .capture-btn:hover:not(:disabled) { background: var(--primary-dark); }
+        .capture-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .capture-feedback {
+            margin-top: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-md);
+            font-size: 0.9rem; display: none;
+        }
+        .capture-feedback.success {
+            background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+            color: var(--success); display: block;
+        }
+        .capture-feedback.error {
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            color: var(--danger); display: block;
+        }
+        .recent-captures { max-width: 800px; width: 100%; margin: 1.5rem auto 0; }
+        .recent-captures h3 {
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-secondary); margin: 0 0 0.75rem 0;
+        }
+
+        /* ── Browse tab ──────────────────────────────────── */
+        .browse-toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
+        .search-input-wrap { flex: 1; min-width: 200px; position: relative; }
+        .search-input-wrap i { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+        .search-input {
+            width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-body);
+            font-size: 0.9rem; padding: 0.625rem 1rem 0.625rem 2.5rem; box-sizing: border-box; transition: border-color 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        .filter-select {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md);
+            color: var(--text-primary); font-family: var(--font-body); font-size: 0.9rem; padding: 0.625rem 0.875rem; cursor: pointer;
+        }
+        .filter-select:focus { outline: none; border-color: var(--primary); }
+        .browse-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 0.625rem 1.25rem; border-radius: var(--radius-md);
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s; white-space: nowrap;
+        }
+        .browse-btn:hover { background: var(--primary-dark); }
+        .browse-btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+        .browse-btn.secondary:hover { background: var(--bg-secondary); }
+        .result-count { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+
+        /* ── Thought cards ───────────────────────────────── */
+        .thoughts-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .thought-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; transition: border-color 0.2s; }
+        .thought-card:hover { border-color: var(--primary-light); }
+        .thought-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .thought-type { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); }
+        .thought-type.task        { background: rgba(99,102,241,0.15); color: var(--primary-light); }
+        .thought-type.idea        { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .thought-type.observation { background: rgba(6,182,212,0.15);  color: var(--accent); }
+        .thought-type.reference   { background: rgba(16,185,129,0.15); color: var(--success); }
+        .thought-type.person_note { background: rgba(139,92,246,0.15); color: var(--secondary); }
+        .thought-date { font-size: 0.8rem; color: var(--text-tertiary); margin-left: auto; }
+        .thought-content { color: var(--text-primary); font-size: 0.9rem; line-height: 1.55; white-space: pre-wrap; }
+        .thought-topics { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.625rem; }
+        .topic-tag { background: var(--bg-tertiary); color: var(--text-secondary); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); }
+        .match-score { font-size: 0.75rem; color: var(--success); font-weight: 600; }
+
+        /* ── Templates tab ───────────────────────────────── */
+        .templates-intro {
+            max-width: 800px; width: 100%; margin: 0 auto 1.5rem;
+            background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-lg); padding: 1.125rem 1.25rem;
+        }
+        .templates-intro p { margin: 0; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+        .templates-intro strong { color: var(--primary-light); }
+        .templates-grid { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+        .template-card {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); overflow: hidden;
+        }
+        .template-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 1.25rem; cursor: pointer; user-select: none;
+            transition: background 0.15s;
+        }
+        .template-header:hover { background: var(--bg-tertiary); }
+        .template-header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .template-number {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: var(--primary-muted); color: var(--primary-light);
+            font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .template-title { font-weight: 600; font-size: 0.95rem; }
+        .template-type-badge {
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+            padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); margin-left: 0.5rem;
+        }
+        .template-chevron { color: var(--text-tertiary); transition: transform 0.2s; }
+        .template-card.open .template-chevron { transform: rotate(180deg); }
+        .template-body { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+        .template-card.open .template-body { display: block; }
+        .template-pattern {
+            font-family: var(--font-mono); font-size: 0.85rem; background: var(--bg-tertiary);
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 0.75rem 1rem; margin: 1rem 0 0.75rem; color: var(--primary-light);
+            line-height: 1.5;
+        }
+        .template-example {
+            font-size: 0.88rem; color: var(--text-secondary); font-style: italic;
+            margin: 0 0 0.875rem; padding: 0.625rem 0.875rem;
+            background: var(--bg-tertiary); border-radius: var(--radius-md);
+            border-left: 3px solid var(--primary);
+        }
+        .template-why { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin: 0 0 1rem; }
+        .template-use-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 0.5rem 1.125rem; border-radius: var(--radius-md);
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;
+        }
+        .template-use-btn:hover { background: var(--primary-dark); }
+
+        /* ── Empty / loading states ──────────────────────── */
+        .state-empty { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+        .state-empty i { margin-bottom: 0.75rem; display: block; }
+        .state-empty p { margin: 0; font-size: 0.9rem; }
+        .loading-spinner { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 2rem; color: var(--text-secondary); font-size: 0.9rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-icon { animation: spin 0.8s linear infinite; }
+
+        /* ── Floating chat button ────────────────────────── */
+        .chat-fab {
+            position: fixed; bottom: 1.75rem; right: 1.75rem; z-index: 100;
+            background: var(--primary); color: white;
+            width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.45); transition: all 0.2s;
+        }
+        .chat-fab:hover { background: var(--primary-dark); transform: scale(1.06); }
+        .chat-fab-label {
+            position: fixed; bottom: 1.75rem; right: 5.25rem; z-index: 100;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            color: var(--text-primary); font-size: 0.82rem; font-weight: 500;
+            padding: 0.35rem 0.75rem; border-radius: var(--radius-md);
+            white-space: nowrap; opacity: 0; pointer-events: none;
+            transition: opacity 0.15s; box-shadow: var(--shadow-md);
+        }
+        .chat-fab:hover + .chat-fab-label { opacity: 1; }
+
+        /* ── Chat modal ──────────────────────────────────── */
+        .chat-modal-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(0,0,0,0.5); display: none; align-items: flex-end; justify-content: flex-end;
+            padding: 1.5rem;
+        }
+        .chat-modal-overlay.open { display: flex; }
+        .chat-modal {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-xl); width: 420px; max-width: 100%;
+            height: 580px; max-height: calc(100vh - 3rem);
+            display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .chat-modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .chat-modal-title { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; font-size: 0.95rem; }
+        .chat-close-btn {
+            background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+            padding: 0.25rem; border-radius: var(--radius-sm); transition: color 0.15s;
+            display: flex; align-items: center;
+        }
+        .chat-close-btn:hover { color: var(--text-primary); }
+        .chat-hint {
+            padding: 0.5rem 1.25rem; background: var(--bg-secondary);
+            font-size: 0.78rem; color: var(--text-tertiary); border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 1rem 1.25rem;
+            display: flex; flex-direction: column; gap: 0.875rem;
+        }
+        .chat-msg { display: flex; gap: 0.625rem; }
+        .chat-msg.user { flex-direction: row-reverse; }
+        .chat-bubble {
+            max-width: 85%; padding: 0.625rem 0.875rem; border-radius: var(--radius-md);
+            font-size: 0.88rem; line-height: 1.5;
+        }
+        .chat-msg.assistant .chat-bubble { background: var(--bg-secondary); color: var(--text-primary); }
+        .chat-msg.user .chat-bubble { background: var(--primary); color: white; border-radius: var(--radius-md); }
+        .chat-msg.system .chat-bubble { background: var(--bg-tertiary); color: var(--text-secondary); font-size: 0.82rem; font-style: italic; width: 100%; }
+        .chat-result-block {
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 0.625rem 0.75rem;
+            font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.375rem;
+            white-space: pre-wrap; max-height: 200px; overflow-y: auto;
+        }
+        .chat-input-row {
+            display: flex; gap: 0.5rem; padding: 0.875rem 1.25rem;
+            border-top: 1px solid var(--border); flex-shrink: 0;
+        }
+        .chat-input {
+            flex: 1; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-body);
+            font-size: 0.88rem; padding: 0.5rem 0.875rem; resize: none; min-height: 38px; max-height: 100px;
+        }
+        .chat-input:focus { outline: none; border-color: var(--primary); }
+        .chat-send-btn {
+            background: var(--primary); color: white; border: none;
+            width: 38px; height: 38px; border-radius: var(--radius-md); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .chat-send-btn:hover:not(:disabled) { background: var(--primary-dark); }
+        .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .chat-mode-toggle {
+            display: flex; gap: 0.375rem; padding: 0.5rem 1.25rem 0;
+            flex-shrink: 0;
+        }
+        .mode-btn {
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            color: var(--text-secondary); font-size: 0.78rem; font-weight: 500;
+            padding: 0.25rem 0.625rem; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
+        }
+        .mode-btn.active { background: var(--primary-muted); color: var(--primary-light); border-color: rgba(99,102,241,0.3); }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar"></aside>
+
+    <main class="main-content">
+        <div class="ob-layout">
+
+            <!-- Header -->
+            <div class="ob-header">
+                <div class="ob-header-left">
+                    <i data-lucide="brain" style="color:var(--primary);width:22px;height:22px;"></i>
+                    <h1>Open Brain</h1>
+                </div>
+                <div class="ob-stats-pills" id="statsBar">
+                    <span class="stat-pill">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="ob-tabs">
+                <button class="tab-btn active" onclick="switchTab('capture',this)">
+                    <i data-lucide="plus-circle"></i> Capture
+                </button>
+                <button class="tab-btn" onclick="switchTab('browse',this)">
+                    <i data-lucide="search"></i> Browse
+                </button>
+                <button class="tab-btn" onclick="switchTab('templates',this)">
+                    <i data-lucide="book-open"></i> Templates
+                </button>
+            </div>
+
+            <!-- ── CAPTURE TAB ───────────────────────────── -->
+            <div id="tab-capture" class="tab-content active">
+                <div class="capture-box">
+                    <h2>Capture a Thought</h2>
+                    <p class="capture-hint">Write as a clear, standalone statement — it should make sense when retrieved later with no surrounding context.</p>
+                    <textarea id="captureInput" class="capture-textarea"
+                        placeholder="e.g. Decision: Moving the launch to March 15. Context: QA found three blockers in the payment flow. Owner: Rachel."
+                        oninput="updateCharCount(this)"
+                        onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){captureThought();}"
+                    ></textarea>
+                    <div class="capture-actions">
+                        <span class="char-count" id="charCount">0 chars &nbsp;·&nbsp; Ctrl+Enter to save</span>
+                        <button class="capture-btn" id="captureBtn" onclick="captureThought()">
+                            <i data-lucide="brain"></i> Save to Brain
+                        </button>
+                    </div>
+                    <div class="capture-feedback" id="captureFeedback"></div>
+                </div>
+
+                <div class="recent-captures">
+                    <h3>Recent Captures</h3>
+                    <div id="recentList">
+                        <div class="loading-spinner"><i data-lucide="loader" class="spinner-icon"></i> Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── BROWSE TAB ────────────────────────────── -->
+            <div id="tab-browse" class="tab-content">
+                <div class="browse-toolbar">
+                    <div class="search-input-wrap">
+                        <i data-lucide="search" style="width:16px;height:16px;"></i>
+                        <input type="text" id="searchInput" class="search-input"
+                            placeholder="Search by meaning, topic, or person..."
+                            onkeydown="if(event.key==='Enter') doSearch()" />
+                    </div>
+                    <select class="filter-select" id="typeFilter">
+                        <option value="">All types</option>
+                        <option value="task">Task</option>
+                        <option value="idea">Idea</option>
+                        <option value="observation">Observation</option>
+                        <option value="reference">Reference</option>
+                        <option value="person_note">Person Note</option>
+                    </select>
+                    <select class="filter-select" id="daysFilter">
+                        <option value="">All time</option>
+                        <option value="1">Today</option>
+                        <option value="7">Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                    <button class="browse-btn" onclick="doSearch()"><i data-lucide="search"></i> Search</button>
+                    <button class="browse-btn secondary" onclick="loadRecent()"><i data-lucide="clock"></i> Recent</button>
+                </div>
+                <div id="resultCount" class="result-count"></div>
+                <div id="browseList">
+                    <div class="loading-spinner"><i data-lucide="loader" class="spinner-icon"></i> Loading...</div>
+                </div>
+            </div>
+
+            <!-- ── TEMPLATES TAB ─────────────────────────── -->
+            <div id="tab-templates" class="tab-content">
+                <div class="templates-intro">
+                    <p>
+                        <strong>Why formatting matters:</strong> Open Brain uses an LLM to extract metadata from each capture — people, topics, action items, type. These templates give that LLM clear signals, which means better tagging, better search, and better retrieval. Use them until the patterns become second nature, then drop them.
+                    </p>
+                </div>
+                <div class="templates-grid" id="templatesGrid"></div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- ── Floating chat button ───────────────────────────────── -->
+<button class="chat-fab" onclick="toggleChat()" id="chatFab" aria-label="Open Brain chat">
+    <i data-lucide="message-circle" style="width:22px;height:22px;"></i>
+</button>
+<span class="chat-fab-label">Ask your brain</span>
+
+<!-- ── Chat modal ─────────────────────────────────────────── -->
+<div class="chat-modal-overlay" id="chatOverlay" onclick="handleOverlayClick(event)">
+    <div class="chat-modal">
+        <div class="chat-modal-header">
+            <div class="chat-modal-title">
+                <i data-lucide="brain" style="width:18px;height:18px;color:var(--primary);"></i>
+                Open Brain Chat
+            </div>
+            <button class="chat-close-btn" onclick="toggleChat()">
+                <i data-lucide="x" style="width:18px;height:18px;"></i>
+            </button>
+        </div>
+        <div class="chat-hint">
+            <strong>Search:</strong> "What did I decide about X?" &nbsp;|&nbsp;
+            <strong>Capture:</strong> "Save: [your thought]"
+        </div>
+        <div class="chat-mode-toggle">
+            <button class="mode-btn active" id="modeSearch" onclick="setMode('search')">Search</button>
+            <button class="mode-btn" id="modeCapture" onclick="setMode('capture')">Capture</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+            <textarea class="chat-input" id="chatInput" rows="1"
+                placeholder="What did I decide about the launch date?"
+                onkeydown="handleChatKey(event)"
+                oninput="autoResize(this)"></textarea>
+            <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">
+                <i data-lucide="send" style="width:16px;height:16px;"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// TEMPLATES DATA
+// ════════════════════════════════════════════════════
+const TEMPLATES = [
+    {
+        title: 'Decision Capture',
+        typeBadge: 'task',
+        typeBadgeColor: 'rgba(99,102,241,0.15)',
+        typeBadgeText: 'var(--primary-light)',
+        pattern: 'Decision: [what was decided]. Context: [why]. Owner: [who].',
+        example: 'Decision: Moving the launch to March 15. Context: QA found three blockers in the payment flow. Owner: Rachel.',
+        why: '"Decision" triggers the <strong>task</strong> type. Naming an owner triggers people extraction. The context gives the embedding meaningful content to match against later.',
+        starter: 'Decision: . Context: . Owner: '
+    },
+    {
+        title: 'Person Note',
+        typeBadge: 'person note',
+        typeBadgeColor: 'rgba(139,92,246,0.15)',
+        typeBadgeText: 'var(--secondary)',
+        pattern: '[Name] — [what happened or what you learned about them].',
+        example: 'Marcus — mentioned he\'s overwhelmed since the reorg. Wants to move to the platform team. His wife just had a baby.',
+        why: 'Leading with a name triggers <strong>person_note</strong> classification and people extraction. Everything after the dash becomes searchable context about that person.',
+        starter: ' — '
+    },
+    {
+        title: 'Insight Capture',
+        typeBadge: 'idea',
+        typeBadgeColor: 'rgba(245,158,11,0.15)',
+        typeBadgeText: 'var(--warning)',
+        pattern: 'Insight: [the thing you realized]. Triggered by: [what made you think of it].',
+        example: 'Insight: Our onboarding flow assumes users already understand permissions. Triggered by: watching a new hire struggle for 20 minutes with role setup.',
+        why: '"Insight" triggers the <strong>idea</strong> type. Including the trigger gives the embedding richer semantic content and helps you remember the original context months later.',
+        starter: 'Insight: . Triggered by: '
+    },
+    {
+        title: 'Meeting Debrief',
+        typeBadge: 'task',
+        typeBadgeColor: 'rgba(6,182,212,0.15)',
+        typeBadgeText: 'var(--accent)',
+        pattern: 'Meeting with [who] about [topic]. Key points: [the important stuff]. Action items: [what happens next].',
+        example: 'Meeting with design team about the dashboard redesign. Key points: they want to cut three panels, keep the revenue chart, add a trend line. Action items: I send them the API spec by Thursday, they send revised mocks by Monday.',
+        why: 'Hits multiple extraction targets at once — people, topics, action items, dates. Dense captures like this are the highest-value entries in your brain.',
+        starter: 'Meeting with  about . Key points: . Action items: '
+    },
+    {
+        title: 'The AI Save',
+        typeBadge: 'reference',
+        typeBadgeColor: 'rgba(16,185,129,0.15)',
+        typeBadgeText: 'var(--success)',
+        pattern: 'Saving from [AI tool]: [the key takeaway or output worth keeping].',
+        example: 'Saving from Claude: Framework for evaluating vendor proposals — score on integration effort (40%), maintenance burden (30%), and switching cost (30%). Weight integration highest because that\'s where every past vendor has surprised us.',
+        why: '"Saving from [tool]" creates a natural <strong>reference</strong> classification. The content itself becomes searchable across every AI you use. This is how you stop losing good AI output to chat history graveyards.',
+        starter: 'Saving from Claude: '
+    }
+];
+
+function renderTemplates() {
+    const grid = document.getElementById('templatesGrid');
+    grid.innerHTML = TEMPLATES.map((t, i) => `
+        <div class="template-card" id="tmpl-${i}">
+            <div class="template-header" onclick="toggleTemplate(${i})">
+                <div class="template-header-left">
+                    <span class="template-number">${i + 1}</span>
+                    <span class="template-title">${t.title}</span>
+                    <span class="template-type-badge" style="background:${t.typeBadgeColor};color:${t.typeBadgeText}">${t.typeBadge}</span>
+                </div>
+                <i data-lucide="chevron-down" class="template-chevron" style="width:18px;height:18px;"></i>
+            </div>
+            <div class="template-body">
+                <div class="template-pattern">${escHtml(t.pattern)}</div>
+                <p class="template-example">${escHtml(t.example)}</p>
+                <p class="template-why">${t.why}</p>
+                <button class="template-use-btn" onclick="useTemplate(${i})">
+                    <i data-lucide="edit-3" style="width:14px;height:14px;"></i> Use this template
+                </button>
+            </div>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function toggleTemplate(i) {
+    const card = document.getElementById('tmpl-' + i);
+    card.classList.toggle('open');
+}
+
+function useTemplate(i) {
+    const t = TEMPLATES[i];
+    document.getElementById('captureInput').value = t.starter;
+    document.getElementById('charCount').textContent = t.starter.length + ' chars · Ctrl+Enter to save';
+    switchTab('capture', document.querySelector('.tab-btn'));
+    document.getElementById('captureInput').focus();
+    // Move cursor to first blank spot
+    const pos = t.starter.indexOf(' ') + 1;
+    setTimeout(() => {
+        document.getElementById('captureInput').setSelectionRange(pos, pos);
+    }, 50);
+}
+
+// ════════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════════
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+    else {
+        // Find matching button
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            if (b.onclick && b.onclick.toString().includes("'" + name + "'")) b.classList.add('active');
+        });
+    }
+    if (name === 'browse' && document.getElementById('browseList').querySelector('.loading-spinner')) {
+        loadRecent();
+    }
+}
+
+// ════════════════════════════════════════════════════
+// CAPTURE
+// ════════════════════════════════════════════════════
+function updateCharCount(el) {
+    document.getElementById('charCount').textContent = el.value.length + ' chars · Ctrl+Enter to save';
+}
+
+async function captureThought() {
+    const input = document.getElementById('captureInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    const btn = document.getElementById('captureBtn');
+    const feedback = document.getElementById('captureFeedback');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="spinner-icon"></i> Saving...';
+    feedback.className = 'capture-feedback';
+    lucide.createIcons();
+
+    try {
+        const res = await fetch('/api/open-brain/capture', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+        const data = await res.json();
+        if (data.success) {
+            feedback.className = 'capture-feedback success';
+            feedback.textContent = 'Saved to Open Brain.';
+            input.value = '';
+            document.getElementById('charCount').textContent = '0 chars · Ctrl+Enter to save';
+            loadStats();
+            loadRecentCaptures();
+        } else { throw new Error(data.error || 'Unknown error'); }
+    } catch (e) {
+        feedback.className = 'capture-feedback error';
+        feedback.textContent = 'Failed: ' + e.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="brain"></i> Save to Brain';
+        lucide.createIcons();
+    }
+}
+
+// ════════════════════════════════════════════════════
+// BROWSE & SEARCH
+// ════════════════════════════════════════════════════
+function parseTextResponse(text) {
+    if (!text || text.startsWith('Found 0') || text.startsWith('No thoughts')) return null;
+    const blocks = text.split(/\n\n---/).filter(b => b.trim());
+    const cards = [];
+    for (const block of blocks) {
+        const matchLine = block.match(/Result \d+\s*\((\d+(?:\.\d+)?)%\s*match\)/i);
+        const score = matchLine ? parseFloat(matchLine[1]).toFixed(0) : null;
+        const dateLine   = block.match(/Captured:\s*(.+)/i);
+        const typeLine   = block.match(/Type:\s*(\w+)/i);
+        const topicsLine = block.match(/Topics:\s*(.+)/i);
+        const peopleLine = block.match(/People:\s*(.+)/i);
+        const contentMatch = block.match(/\n\n(.+)$/s);
+        const content = contentMatch ? contentMatch[1].trim() : block.replace(/^.*\n/, '').trim();
+        if (content) {
+            cards.push({
+                content,
+                type: typeLine ? typeLine[1].toLowerCase() : 'observation',
+                captured_at: dateLine ? new Date(dateLine[1]) : null,
+                topics: topicsLine ? topicsLine[1].split(',').map(t => t.trim()) : [],
+                people: peopleLine ? peopleLine[1].split(',').map(p => p.trim()) : [],
+                _score: score
+            });
+        }
+    }
+    return cards.length ? cards : null;
+}
+
+function thoughtCardHTML(t) {
+    const type = t.type || 'observation';
+    const date = t.captured_at ? new Date(t.captured_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const topics = (t.topics || []).map(tp => `<span class="topic-tag">${escHtml(tp)}</span>`).join('');
+    const people = (t.people || []).map(p => `<span class="topic-tag" style="color:var(--secondary)">${escHtml(p)}</span>`).join('');
+    const score = t._score ? `<span class="match-score">${t._score}% match</span>` : '';
+    return `
+        <div class="thought-card">
+            <div class="thought-meta">
+                <span class="thought-type ${type}">${type.replace('_',' ')}</span>
+                ${score}
+                <span class="thought-date">${date}</span>
+            </div>
+            <div class="thought-content">${escHtml(t.content || '')}</div>
+            ${(topics || people) ? `<div class="thought-topics">${topics}${people}</div>` : ''}
+        </div>`;
+}
+
+function renderThoughts(cards, container, countEl) {
+    if (!cards || !cards.length) {
+        container.innerHTML = `<div class="state-empty"><i data-lucide="brain" style="width:40px;height:40px;opacity:0.3;margin:0 auto"></i><p>No thoughts found.</p></div>`;
+        if (countEl) countEl.textContent = '';
+        lucide.createIcons();
+        return;
+    }
+    if (countEl) countEl.textContent = `${cards.length} thought${cards.length !== 1 ? 's' : ''}`;
+    container.innerHTML = `<div class="thoughts-list">${cards.map(thoughtCardHTML).join('')}</div>`;
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/open-brain/stats');
+        const data = await res.json();
+        const text = data.data?.content?.[0]?.text || '';
+        const totalMatch = text.match(/Total thoughts:\s*(\d+)/i);
+        const typesMatch = text.match(/Types:\s*([\s\S]+?)(?:\n\nTop|$)/i);
+        let html = '';
+        if (totalMatch) html += `<span class="stat-pill">${totalMatch[1]} thoughts</span>`;
+        if (typesMatch) {
+            typesMatch[1].trim().split('\n').slice(0,3).forEach(l => {
+                const m = l.trim().match(/(\w+):\s*(\d+)/);
+                if (m) html += `<span class="stat-pill">${m[2]} ${m[1]}</span>`;
+            });
+        }
+        document.getElementById('statsBar').innerHTML = html || '<span class="stat-pill">0 thoughts</span>';
+    } catch {
+        document.getElementById('statsBar').innerHTML = '<span class="stat-pill" style="color:var(--danger)">Offline</span>';
+    }
+}
+
+async function loadRecentCaptures() {
+    const container = document.getElementById('recentList');
+    try {
+        const res = await fetch('/api/open-brain/thoughts?limit=5');
+        const data = await res.json();
+        renderThoughts(parseTextResponse(data.data?.content?.[0]?.text || ''), container, null);
+    } catch (e) {
+        container.innerHTML = `<div class="state-empty"><p style="color:var(--danger)">${e.message}</p></div>`;
+    }
+}
+
+async function loadRecent() {
+    const container = document.getElementById('browseList');
+    const countEl = document.getElementById('resultCount');
+    container.innerHTML = `<div class="loading-spinner"><i data-lucide="loader" class="spinner-icon"></i> Loading...</div>`;
+    lucide.createIcons();
+    const type = document.getElementById('typeFilter').value;
+    const days = document.getElementById('daysFilter').value;
+    let url = '/api/open-brain/thoughts?limit=20';
+    if (type) url += `&type=${encodeURIComponent(type)}`;
+    if (days) url += `&days=${days}`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderThoughts(parseTextResponse(data.data?.content?.[0]?.text || ''), container, countEl);
+    } catch (e) {
+        container.innerHTML = `<div class="state-empty"><p style="color:var(--danger)">${e.message}</p></div>`;
+    }
+}
+
+async function doSearch() {
+    const q = document.getElementById('searchInput').value.trim();
+    if (!q) { loadRecent(); return; }
+    const container = document.getElementById('browseList');
+    const countEl = document.getElementById('resultCount');
+    container.innerHTML = `<div class="loading-spinner"><i data-lucide="loader" class="spinner-icon"></i> Searching...</div>`;
+    lucide.createIcons();
+    try {
+        const res = await fetch(`/api/open-brain/search?q=${encodeURIComponent(q)}&limit=20`);
+        const data = await res.json();
+        renderThoughts(parseTextResponse(data.data?.content?.[0]?.text || ''), container, countEl);
+    } catch (e) {
+        container.innerHTML = `<div class="state-empty"><p style="color:var(--danger)">${e.message}</p></div>`;
+    }
+}
+
+// ════════════════════════════════════════════════════
+// CHAT MODAL
+// ════════════════════════════════════════════════════
+let chatMode = 'search'; // 'search' | 'capture'
+
+function toggleChat() {
+    const overlay = document.getElementById('chatOverlay');
+    const isOpen = overlay.classList.toggle('open');
+    if (isOpen && document.getElementById('chatMessages').children.length === 0) {
+        addChatMsg('system', 'Ask me what\'s in your brain, or switch to Capture mode to save a new thought.');
+    }
+    if (isOpen) setTimeout(() => document.getElementById('chatInput').focus(), 100);
+}
+
+function handleOverlayClick(e) {
+    if (e.target === document.getElementById('chatOverlay')) toggleChat();
+}
+
+function setMode(mode) {
+    chatMode = mode;
+    document.getElementById('modeSearch').classList.toggle('active', mode === 'search');
+    document.getElementById('modeCapture').classList.toggle('active', mode === 'capture');
+    const input = document.getElementById('chatInput');
+    input.placeholder = mode === 'search'
+        ? 'What did I decide about the launch date?'
+        : 'Meeting with Rachel about Q2 roadmap. Key points: ...';
+    input.focus();
+}
+
+function addChatMsg(role, text, isHTML) {
+    const msgs = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `chat-msg ${role}`;
+    if (isHTML) {
+        div.innerHTML = `<div class="chat-bubble">${text}</div>`;
+    } else {
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.textContent = text;
+        div.appendChild(bubble);
+    }
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+}
+
+function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const sendBtn = document.getElementById('chatSendBtn');
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+    addChatMsg('user', text);
+
+    if (chatMode === 'capture') {
+        // Detect "save:" prefix and strip it
+        const content = text.replace(/^(save|remember|capture|note)[:\s]+/i, '').trim();
+        const thinking = addChatMsg('assistant', 'Saving…');
+        try {
+            const res = await fetch('/api/open-brain/capture', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            const data = await res.json();
+            thinking.remove();
+            if (data.success) {
+                addChatMsg('assistant', 'Saved to your brain.');
+                loadStats();
+                loadRecentCaptures();
+            } else { throw new Error(data.error); }
+        } catch (e) {
+            thinking.remove();
+            addChatMsg('assistant', 'Failed to save: ' + e.message);
+        }
+    } else {
+        // Search mode
+        const thinking = addChatMsg('assistant', 'Searching…');
+        try {
+            const res = await fetch(`/api/open-brain/search?q=${encodeURIComponent(text)}&limit=5`);
+            const data = await res.json();
+            const raw = data.data?.content?.[0]?.text || '';
+            thinking.remove();
+            if (!raw || raw.startsWith('Found 0') || raw.startsWith('No thoughts')) {
+                addChatMsg('assistant', 'Nothing found for that query. Try different keywords or switch to Capture to save something new.');
+            } else {
+                const msgs = document.getElementById('chatMessages');
+                const div = document.createElement('div');
+                div.className = 'chat-msg assistant';
+                div.innerHTML = `<div class="chat-bubble">Here's what I found:<div class="chat-result-block">${escHtml(raw)}</div></div>`;
+                msgs.appendChild(div);
+                msgs.scrollTop = msgs.scrollHeight;
+            }
+        } catch (e) {
+            thinking.remove();
+            addChatMsg('assistant', 'Search failed: ' + e.message);
+        }
+    }
+
+    sendBtn.disabled = false;
+    input.focus();
+}
+
+// ════════════════════════════════════════════════════
+// UTILITY
+// ════════════════════════════════════════════════════
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    loadStats();
+    loadRecentCaptures();
+    renderTemplates();
+});
+</script>
+</body>
+</html>

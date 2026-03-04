@@ -140,6 +140,7 @@ const webhooksRoutes = require('./routes/webhooks');
 const soulConfigRoutes = require('./routes/soulConfig');
 const socialPublishRoutes = require('./routes/social-publish');
 const easyStartRoutes = require('./routes/easyStart');
+const openBrainRoutes = require('./routes/openBrain');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -562,6 +563,9 @@ function initializeServices() {
 
         // Easy Start: Conversational onboarding with tool-use
         app.use('/api/easy-start', easyStartRoutes(supabase));
+
+        // Open Brain MCP Integration
+        app.use('/api/open-brain', openBrainRoutes);
 
         // Phase 60: Social Media Publishing (Postiz Integration)
         app.use('/api/social', socialPublishRoutes(supabase));

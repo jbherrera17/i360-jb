@@ -134,6 +134,12 @@ ${voiceDNA.content_text}
         prompt += '\n';
     }
 
+    // Open Brain: inject relevant thoughts retrieved before this conversation
+    // openBrainThoughts is the text string from obResult.content[0].text
+    if (options.openBrainThoughts) {
+        prompt += '\n---\nRELEVANT CONTEXT FROM OPEN BRAIN:\n' + options.openBrainThoughts + '\n';
+    }
+
     // Merge user's custom system prompt if provided
     if (userSystemPrompt) {
         prompt += `\n---\nADDITIONAL INSTRUCTIONS:\n${userSystemPrompt}\n`;
