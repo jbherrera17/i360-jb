@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Connections | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .mcp-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+            min-height: calc(100vh - 160px);
+        }
+
+        @media (max-width: 900px) {
+            .mcp-layout { grid-template-columns: 1fr; }
+        }
+
+        .connections-list {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .connections-list-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .connections-list-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .connection-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .connection-item:hover,
+        .connection-item.active { background: var(--bg-tertiary); }
+
+        .connection-item:last-child { border-bottom: none; }
+
+        .connection-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .connection-status.connected { background: #22c55e; }
+        .connection-status.error { background: #ef4444; }
+        .connection-status.disconnected { background: #6b7280; }
+        .connection-status.disabled { background: #9ca3af; }
+
+        .connection-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .connection-info .conn-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .connection-info .conn-server {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+
+        .detail-panel .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-panel .detail-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .detail-panel .detail-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tool-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .tool-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .tool-item .tool-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .tool-item .tool-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.15rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+            background: white;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .meta-item {
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .meta-item .meta-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .meta-item .meta-value {
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .usage-bar {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .usage-bar .usage-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .empty-detail {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            gap: 1rem;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .action-btn {
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { background: var(--bg-tertiary); }
+        .action-btn.danger { color: #ef4444; border-color: #ef4444; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            width: min(560px, 90vw);
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .catalog-card {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            transition: border-color 0.2s;
+        }
+
+        .catalog-card:hover,
+        .catalog-card.selected { border-color: var(--primary); }
+
+        .catalog-card .cat-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .catalog-card .cat-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="plug-zap" style="width:28px;height:28px;color:var(--primary);"></i>
+                        MCP Connections
+                    </h1>
+                    <p class="header-subtitle">Connect external MCP servers to enable AI agent tool use</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-primary" onclick="openConnectModal()">
+                        <i data-lucide="plus"></i> Connect Server
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <div class="mcp-layout">
+                    <!-- Left: Connection List -->
+                    <div class="connections-list">
+                        <div class="connections-list-header">
+                            <h3>Connections</h3>
+                            <span id="connCount" style="font-size:0.8rem;color:var(--text-secondary);"></span>
+                        </div>
+                        <div id="connectionsList">
+                            <div style="padding:2rem;text-align:center;color:var(--text-secondary);">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Detail Panel -->
+                    <div class="detail-panel" id="detailPanel">
+                        <div class="empty-detail">
+                            <i data-lucide="plug-zap" style="width:48px;height:48px;opacity:0.3;"></i>
+                            <p>Select a connection to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Connect Server Modal -->
+    <div class="modal-overlay" id="connectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Connect MCP Server</h2>
+                <button class="modal-close" onclick="closeConnectModal()">&times;</button>
+            </div>
+            <div id="connectStep1">
+                <p style="color:var(--text-secondary);margin-bottom:1rem;">Select a server to connect:</p>
+                <div id="catalogList">Loading available servers...</div>
+            </div>
+            <div id="connectStep2" style="display:none;">
+                <div class="form-group">
+                    <label>Connection Name</label>
+                    <input type="text" id="connName" placeholder="My GitHub Connection">
+                </div>
+                <div id="credentialFields"></div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="backToStep1()">Back</button>
+                    <button class="btn btn-primary" onclick="submitConnection()">Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let connections = [];
+        let catalogEntries = [];
+        let selectedConnectionId = null;
+        let selectedCatalogId = null;
+
+        function getOrgId() {
+            return localStorage.getItem('insight360-org-id') || '';
+        }
+
+        function apiHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'x-org-id': getOrgId()
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            await loadConnections();
+        });
+
+        async function loadConnections() {
+            try {
+                const resp = await fetch(`/api/mcp/connections?org_id=${getOrgId()}`, { headers: apiHeaders() });
+                const result = await resp.json();
+                if (result.success) {
+                    connections = result.data;
+                    renderConnectionsList();
+                    if (selectedConnectionId) {
+                        showDetail(selectedConnectionId);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load connections:', err);
+            }
+        }
+
+        function renderConnectionsList() {
+            const list = document.getElementById('connectionsList');
+            document.getElementById('connCount').textContent = `${connections.length} connection${connections.length !== 1 ? 's' : ''}`;
+
+            if (connections.length === 0) {
+                list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">No connections yet. Click "Connect Server" to get started.</div>';
+                return;
+            }
+
+            list.innerHTML = connections.map(conn => {
+                const catalog = conn.mcp_server_catalog || {};
+                return `
+                    <div class="connection-item ${conn.id === selectedConnectionId ? 'active' : ''}"
+                         onclick="showDetail('${conn.id}')">
+                        <div class="connection-status ${conn.status}"></div>
+                        <div class="connection-info">
+                            <div class="conn-name">${escapeHtml(conn.name)}</div>
+                            <div class="conn-server">${escapeHtml(catalog.name || 'Unknown server')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showDetail(connectionId) {
+            selectedConnectionId = connectionId;
+            const conn = connections.find(c => c.id === connectionId);
+            if (!conn) return;
+
+            // Update active state in list
+            document.querySelectorAll('.connection-item').forEach(el => el.classList.remove('active'));
+            const activeItem = [...document.querySelectorAll('.connection-item')].find(el =>
+                el.getAttribute('onclick')?.includes(connectionId));
+            if (activeItem) activeItem.classList.add('active');
+
+            const catalog = conn.mcp_server_catalog || {};
+            const tools = conn.discovered_tools || [];
+            const resources = conn.discovered_resources || [];
+            const enabledTools = new Set(conn.enabled_tool_ids || []);
+
+            const panel = document.getElementById('detailPanel');
+            panel.innerHTML = `
+                <div class="detail-header">
+                    <div>
+                        <div class="detail-title">${escapeHtml(conn.name)}</div>
+                        <div class="detail-subtitle">${escapeHtml(catalog.name || '')} &middot; ${conn.status}</div>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="action-btn" onclick="testConnection('${conn.id}')">
+                            <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Test
+                        </button>
+                        <button class="action-btn danger" onclick="deleteConnection('${conn.id}', '${escapeHtml(conn.name)}')">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Delete
+                        </button>
+                    </div>
+                </div>
+
+                ${conn.last_error ? `
+                    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:0.75rem;margin-bottom:1.5rem;color:#ef4444;font-size:0.85rem;">
+                        ${escapeHtml(conn.last_error)}
+                    </div>
+                ` : ''}
+
+                <div class="meta-grid" style="margin-bottom:1.5rem;">
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value" style="color:${conn.status === 'connected' ? '#22c55e' : conn.status === 'error' ? '#ef4444' : 'var(--text-secondary)'};">${conn.status}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Last Connected</div>
+                        <div class="meta-value">${conn.last_connected_at ? new Date(conn.last_connected_at).toLocaleString() : 'Never'}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Tools</div>
+                        <div class="meta-value">${enabledTools.size} / ${tools.length} enabled</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Resources</div>
+                        <div class="meta-value">${resources.length}</div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Tools (${tools.length})</h4>
+                    <div class="tool-list">
+                        ${tools.length === 0 ? '<p style="color:var(--text-secondary);font-size:0.85rem;">No tools discovered. Try reconnecting.</p>' : ''}
+                        ${tools.map(tool => `
+                            <div class="tool-item">
+                                <div>
+                                    <div class="tool-name">${escapeHtml(tool.name)}</div>
+                                    <div class="tool-desc">${escapeHtml(tool.description || '')}</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${enabledTools.has(tool.name) ? 'checked' : ''}
+                                           onchange="toggleTool('${conn.id}', '${escapeHtml(tool.name)}', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${resources.length > 0 ? `
+                    <div class="detail-section">
+                        <h4>Resources (${resources.length})</h4>
+                        <div class="tool-list">
+                            ${resources.map(r => `
+                                <div class="tool-item">
+                                    <div>
+                                        <div class="tool-name">${escapeHtml(r.name || r.uri)}</div>
+                                        <div class="tool-desc">${escapeHtml(r.uri)}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function toggleTool(connectionId, toolName, enabled) {
+            try {
+                const resp = await fetch(`/api/mcp/connections/${connectionId}/tools/${encodeURIComponent(toolName)}/toggle`, {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ enabled, org_id: getOrgId() })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    // Update local data
+                    const conn = connections.find(c => c.id === connectionId);
+                    if (conn) conn.enabled_tool_ids = result.data.enabled_tool_ids;
+                    showToast(`Tool ${enabled ? 'enabled' : 'disabled'}`, 'success');
+                } else {
+                    showToast(result.error, 'error');
+                    await loadConnections();
+                }
+            } catch (err) {
+                showToast('Failed: ' + err.message, 'error');
+            }
+        }
+
+        async function testConnection(connectionId) {
+            showToast('Testing connection...', 'info');
+            try {
+                const resp = await fetch(`/api/mcp/connections/${connectionId}/test`, {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ org_id: getOrgId() })
+                });
+                const result = await resp.json();
+                if (result.success && result.data?.success) {
+                    showToast('Connection successful! Capabilities refreshed.', 'success');
+                } else {
+                    showToast('Connection failed: ' + (result.data?.error || result.error), 'error');
+                }
+                await loadConnections();
+            } catch (err) {
+                showToast('Test failed: ' + err.message, 'error');
+            }
+        }
+
+        async function deleteConnection(connectionId, name) {
+            if (!confirm(`Delete connection "${name}"?`)) return;
+            try {
+                const resp = await fetch(`/api/mcp/connections/${connectionId}?org_id=${getOrgId()}`, {
+                    method: 'DELETE',
+                    headers: apiHeaders()
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    showToast('Connection deleted', 'success');
+                    selectedConnectionId = null;
+                    document.getElementById('detailPanel').innerHTML = `
+                        <div class="empty-detail">
+                            <i data-lucide="plug-zap" style="width:48px;height:48px;opacity:0.3;"></i>
+                            <p>Select a connection to view details</p>
+                        </div>
+                    `;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    await loadConnections();
+                } else {
+                    showToast(result.error, 'error');
+                }
+            } catch (err) {
+                showToast('Failed: ' + err.message, 'error');
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // Connect Server Modal
+        // ─────────────────────────────────────────
+
+        async function openConnectModal() {
+            document.getElementById('connectStep1').style.display = '';
+            document.getElementById('connectStep2').style.display = 'none';
+            document.getElementById('connectModal').classList.add('active');
+            selectedCatalogId = null;
+
+            try {
+                const resp = await fetch(`/api/mcp/catalog?org_id=${getOrgId()}`, { headers: apiHeaders() });
+                const result = await resp.json();
+                if (result.success) {
+                    catalogEntries = result.data;
+                    renderCatalogList();
+                }
+            } catch (err) {
+                document.getElementById('catalogList').innerHTML = '<p style="color:#ef4444;">Failed to load catalog</p>';
+            }
+        }
+
+        function closeConnectModal() {
+            document.getElementById('connectModal').classList.remove('active');
+        }
+
+        function renderCatalogList() {
+            const list = document.getElementById('catalogList');
+            if (catalogEntries.length === 0) {
+                list.innerHTML = '<p style="color:var(--text-secondary);">No servers available. Contact your platform administrator.</p>';
+                return;
+            }
+
+            // Filter out already-connected servers
+            const connectedCatalogIds = new Set(connections.map(c => c.catalog_id));
+            const available = catalogEntries.filter(e => !connectedCatalogIds.has(e.id));
+
+            if (available.length === 0) {
+                list.innerHTML = '<p style="color:var(--text-secondary);">All available servers are already connected.</p>';
+                return;
+            }
+
+            list.innerHTML = available.map(entry => `
+                <div class="catalog-card" onclick="selectCatalog('${entry.id}')" id="cat-${entry.id}">
+                    <div class="cat-name">
+                        <i data-lucide="${entry.icon || 'plug'}" style="width:16px;height:16px;color:var(--primary);"></i>
+                        ${escapeHtml(entry.name)}
+                    </div>
+                    <div class="cat-desc">${escapeHtml(entry.description || '')}</div>
+                </div>
+            `).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function selectCatalog(catalogId) {
+            selectedCatalogId = catalogId;
+            const entry = catalogEntries.find(e => e.id === catalogId);
+            if (!entry) return;
+
+            // Highlight
+            document.querySelectorAll('.catalog-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`cat-${catalogId}`).classList.add('selected');
+
+            // Show step 2
+            document.getElementById('connectStep1').style.display = 'none';
+            document.getElementById('connectStep2').style.display = '';
+            document.getElementById('connName').value = entry.name;
+
+            // Build credential fields
+            const fields = document.getElementById('credentialFields');
+            const authConfig = entry.auth_config || {};
+            const configFields = authConfig.fields || [];
+
+            if (entry.auth_type === 'api_key') {
+                fields.innerHTML = `
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="password" id="cred_api_key" required placeholder="Enter API key">
+                    </div>
+                `;
+            } else if (entry.auth_type === 'bearer') {
+                fields.innerHTML = `
+                    <div class="form-group">
+                        <label>Bearer Token</label>
+                        <input type="password" id="cred_token" required placeholder="Enter bearer token">
+                    </div>
+                `;
+            } else if (configFields.length > 0) {
+                fields.innerHTML = configFields.map(f => `
+                    <div class="form-group">
+                        <label>${escapeHtml(f.label || f.name)}</label>
+                        <input type="${f.type === 'password' ? 'password' : 'text'}" id="cred_${f.name}"
+                               ${f.required ? 'required' : ''} placeholder="${escapeHtml(f.placeholder || '')}">
+                    </div>
+                `).join('');
+            } else {
+                fields.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">No credentials required for this server.</p>';
+            }
+
+            // Optional URL override
+            if (entry.transport_type === 'streamable_http') {
+                fields.innerHTML += `
+                    <div class="form-group">
+                        <label>URL Override (optional)</label>
+                        <input type="url" id="cred_url" placeholder="${escapeHtml(entry.default_url || 'Use default URL')}">
+                    </div>
+                `;
+            }
+        }
+
+        function backToStep1() {
+            document.getElementById('connectStep1').style.display = '';
+            document.getElementById('connectStep2').style.display = 'none';
+        }
+
+        async function submitConnection() {
+            if (!selectedCatalogId) return;
+            const entry = catalogEntries.find(e => e.id === selectedCatalogId);
+            if (!entry) return;
+
+            const credentials = {};
+            const apiKeyField = document.getElementById('cred_api_key');
+            const tokenField = document.getElementById('cred_token');
+            const urlField = document.getElementById('cred_url');
+
+            if (apiKeyField?.value) credentials.api_key = apiKeyField.value;
+            if (tokenField?.value) credentials.token = tokenField.value;
+            if (urlField?.value) credentials.url = urlField.value;
+
+            // Collect custom fields from auth_config
+            const configFields = (entry.auth_config?.fields || []);
+            for (const f of configFields) {
+                const el = document.getElementById(`cred_${f.name}`);
+                if (el?.value) credentials[f.name] = el.value;
+            }
+
+            try {
+                const resp = await fetch('/api/mcp/connections', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({
+                        catalog_id: selectedCatalogId,
+                        credentials,
+                        name: document.getElementById('connName').value || entry.name,
+                        org_id: getOrgId()
+                    })
+                });
+                const result = await resp.json();
+
+                if (result.success) {
+                    showToast('Connection created!', 'success');
+                    closeConnectModal();
+                    selectedConnectionId = result.data.id;
+                    await loadConnections();
+                } else {
+                    showToast(result.error || 'Connection failed', 'error');
+                }
+            } catch (err) {
+                showToast('Request failed: ' + err.message, 'error');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = 'info') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, type);
+            } else {
+                console.log(`[${type}] ${message}`);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -15,6 +15,9 @@ const mindstudioService = require('./mindstudioService');
 const gemini = require('./gemini');
 const guardrailEnforcement = require('./guardrailEnforcementService');
 const llmRegistry = require('./llmRegistry');
+const mcpConnectionService = require('./mcpConnectionService');
+const mcpToolBridge = require('./mcpToolBridge');
+const { runAnthropicToolLoop, streamAnthropicToolLoop } = require('./agentToolLoop');
 
 // Initialize clients
 const supabase = createClient(
@@ -165,6 +168,31 @@ function buildMessages(userMessage, conversationHistory = []) {
 }
 
 /**
+ * Fetch MCP tools for an agent's org and prepare them for LLM injection.
+ * Returns { tools, connectionMap } or empty if no MCP tools available.
+ */
+async function getMcpToolsForAgent(agent) {
+    if (!agent.org_id) return { tools: [], connectionMap: new Map() };
+    try {
+        const mcpTools = await mcpConnectionService.getOrgMcpTools(supabase, agent.org_id);
+        if (!mcpTools.length) return { tools: [], connectionMap: new Map() };
+
+        const connectionMap = new Map();
+        const anthropicTools = [];
+
+        for (const t of mcpTools) {
+            connectionMap.set(t.connectionId, true);
+            anthropicTools.push(mcpToolBridge.toAnthropicTool(t.connectionId, t.tool));
+        }
+
+        return { tools: anthropicTools, connectionMap };
+    } catch (e) {
+        console.warn('[MCP] Failed to load tools for agent:', e.message);
+        return { tools: [], connectionMap: new Map() };
+    }
+}
+
+/**
  * Execute agent with Anthropic Claude
  * @param {object} agent - Agent configuration
  * @param {string} systemPrompt - Complete system prompt
@@ -173,10 +201,38 @@ function buildMessages(userMessage, conversationHistory = []) {
  */
 async function executeWithAnthropic(agent, systemPrompt, messages) {
     const startTime = Date.now();
-
-    // Resolve model name to valid API model ID
     const resolvedModel = resolveModel(agent.llm_model);
 
+    // Check for MCP tools
+    const { tools: mcpTools, connectionMap } = await getMcpToolsForAgent(agent);
+
+    if (mcpTools.length > 0) {
+        // Use tool loop when MCP tools are available
+        const result = await runAnthropicToolLoop(anthropic, {
+            model: resolvedModel,
+            max_tokens: agent.max_tokens || 4096,
+            temperature: agent.temperature || 0.7,
+            system: systemPrompt,
+            messages,
+            tools: mcpTools
+        }, {
+            supabase,
+            orgId: agent.org_id,
+            connectionMap
+        });
+
+        return {
+            content: result.content,
+            model: agent.llm_model,
+            provider: 'anthropic',
+            usage: result.usage,
+            duration_ms: result.duration_ms,
+            stop_reason: result.stop_reason,
+            mcp_tool_calls: result.toolCallCount
+        };
+    }
+
+    // Standard single-call path (no tools)
     const response = await anthropic.messages.create({
         model: resolvedModel,
         max_tokens: agent.max_tokens || 4096,
@@ -184,9 +240,9 @@ async function executeWithAnthropic(agent, systemPrompt, messages) {
         system: systemPrompt,
         messages: messages
     });
-    
+
     const duration = Date.now() - startTime;
-    
+
     return {
         content: response.content[0].text,
         model: agent.llm_model,
@@ -337,11 +393,39 @@ async function executeWithGemini(agent, systemPrompt, messages) {
  */
 async function streamWithAnthropic(agent, systemPrompt, messages, onToken) {
     const startTime = Date.now();
+    const resolvedModel = resolveModel(agent.llm_model);
+
+    // Check for MCP tools
+    const { tools: mcpTools, connectionMap } = await getMcpToolsForAgent(agent);
+
+    if (mcpTools.length > 0) {
+        // Use streaming tool loop when MCP tools are available
+        const result = await streamAnthropicToolLoop(anthropic, {
+            model: resolvedModel,
+            max_tokens: agent.max_tokens || 4096,
+            temperature: agent.temperature || 0.7,
+            system: systemPrompt,
+            messages,
+            tools: mcpTools
+        }, onToken, {
+            supabase,
+            orgId: agent.org_id,
+            connectionMap
+        });
+
+        return {
+            content: result.content,
+            model: agent.llm_model,
+            provider: 'anthropic',
+            usage: result.usage,
+            duration_ms: result.duration_ms,
+            mcp_tool_calls: result.toolCallCount
+        };
+    }
+
+    // Standard streaming path (no tools)
     let fullContent = '';
     let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-
-    // Resolve model name to valid API model ID
-    const resolvedModel = resolveModel(agent.llm_model);
 
     const stream = await anthropic.messages.stream({
         model: resolvedModel,
@@ -350,7 +434,7 @@ async function streamWithAnthropic(agent, systemPrompt, messages, onToken) {
         system: systemPrompt,
         messages: messages
     });
-    
+
     for await (const event of stream) {
         if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
             const text = event.delta.text;
@@ -364,10 +448,10 @@ async function streamWithAnthropic(agent, systemPrompt, messages, onToken) {
             usage.prompt_tokens = event.message.usage.input_tokens;
         }
     }
-    
+
     const duration = Date.now() - startTime;
     usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
-    
+
     return {
         content: fullContent,
         model: agent.llm_model,

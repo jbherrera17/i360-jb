@@ -88,7 +88,10 @@ const ALLOWED_DOCS = [
     // Strategy 120 Technical Guide
     'strategy120-technical-guide.md',
     // Easy Start
-    'easy-start-user-guide.md'
+    'easy-start-user-guide.md',
+    // MCP Integration
+    'mcp-connections-user-guide.md',
+    'mcp-catalog-user-guide.md'
 ];
 
 /**

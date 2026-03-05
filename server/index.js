@@ -141,6 +141,8 @@ const soulConfigRoutes = require('./routes/soulConfig');
 const socialPublishRoutes = require('./routes/social-publish');
 const easyStartRoutes = require('./routes/easyStart');
 const openBrainRoutes = require('./routes/openBrain');
+const platformMcpRoutes = require('./routes/platformMcp');
+const mcpRoutes = require('./routes/mcp');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -566,6 +568,10 @@ function initializeServices() {
 
         // Open Brain MCP Integration
         app.use('/api/open-brain', openBrainRoutes);
+
+        // Phase 63: MCP Integration System
+        app.use('/api/platform/mcp', platformMcpRoutes(supabase));
+        app.use('/api/mcp', mcpRoutes(supabase));
 
         // Phase 60: Social Media Publishing (Postiz Integration)
         app.use('/api/social', socialPublishRoutes(supabase));

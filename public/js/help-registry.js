@@ -222,6 +222,16 @@ const HelpRegistry = {
         '/easy-start': {
             file: '/api/docs/easy-start-user-guide.md',
             title: 'Easy Start Help'
+        },
+        // MCP Connections
+        '/mcp-connections': {
+            file: '/api/docs/mcp-connections-user-guide.md',
+            title: 'MCP Connections Help'
+        },
+        // MCP Catalog (Platform Admin)
+        '/admin-mcp-catalog': {
+            file: '/api/docs/mcp-catalog-user-guide.md',
+            title: 'MCP Catalog Help'
         }
     },
 

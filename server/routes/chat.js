@@ -371,6 +371,22 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
             }
         }
 
+        // MCP: inject auto-inject resources from connected MCP servers
+        if (!skipHiggins && orgId) {
+            try {
+                const mcpConnectionService = require('../services/mcpConnectionService');
+                const mcpResources = await mcpConnectionService.getAutoInjectResources(req.supabase, orgId);
+                if (mcpResources.length > 0) {
+                    finalSystemPrompt += '\n---\nMCP CONTEXT:\n';
+                    for (const r of mcpResources) {
+                        finalSystemPrompt += `[${r.connectionName} - ${r.resourceName}]\n${r.content}\n---\n`;
+                    }
+                }
+            } catch (mcpError) {
+                console.warn('[MCP] Resource injection failed (non-blocking):', mcpError.message);
+            }
+        }
+
         let response;
 
         if (provider === 'anthropic') {
@@ -545,6 +561,22 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
                 }
             } catch (obError) {
                 console.warn('[OpenBrain] Context fetch failed (non-blocking):', obError.message);
+            }
+        }
+
+        // MCP: inject auto-inject resources from connected MCP servers
+        if (!skipHiggins && orgId) {
+            try {
+                const mcpConnectionService = require('../services/mcpConnectionService');
+                const mcpResources = await mcpConnectionService.getAutoInjectResources(req.supabase, orgId);
+                if (mcpResources.length > 0) {
+                    finalSystemPrompt += '\n---\nMCP CONTEXT:\n';
+                    for (const r of mcpResources) {
+                        finalSystemPrompt += `[${r.connectionName} - ${r.resourceName}]\n${r.content}\n---\n`;
+                    }
+                }
+            } catch (mcpError) {
+                console.warn('[MCP] Resource injection failed (non-blocking):', mcpError.message);
             }
         }
 
