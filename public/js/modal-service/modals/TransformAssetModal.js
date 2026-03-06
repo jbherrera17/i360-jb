@@ -1,3 +1,4 @@
+/* global ModalHelpBanner */
 /**
  * TransformAssetModal - Transform prompts/content into Insight 360 assets
  *
@@ -498,7 +499,7 @@ class TransformAssetModal extends ModalBase {
                 <div class="form-section-label">Transformed Data</div>
                 <div class="transform-json-editable">
                     <textarea class="transform-textarea" id="${this.id}-generic-json"
-                        style="font-family:'Fira Code',monospace;font-size:0.8rem;"
+                        style="font-family:var(--font-mono);font-size:0.8rem;"
                     >${JSON.stringify(data, null, 2)}</textarea>
                 </div>
             </div>

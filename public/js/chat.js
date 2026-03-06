@@ -1,3 +1,4 @@
+/* global BrandingService, ChartRenderer, RadarChart, XLSX */
 /**
  * Chat Interface - Insight 360
  * Multi-LLM chat with streaming, voice, and file support
@@ -2545,13 +2546,13 @@ async function exportAsDocument(format) {
                             padding: 16px;
                             margin: 16px 0;
                             overflow-x: auto;
-                            font-family: 'JetBrains Mono', 'Consolas', monospace;
+                            font-family: var(--font-mono);
                             font-size: 9pt;
                             line-height: 1.5;
                         }
 
                         .document-content code {
-                            font-family: 'JetBrains Mono', 'Consolas', monospace;
+                            font-family: var(--font-mono);
                             background: #f1f5f9;
                             padding: 2px 6px;
                             border-radius: 4px;

@@ -46,9 +46,9 @@ window.AuthFetch = (function () {
             throw new Error('Not authenticated');
         }
 
-        // Merge Authorization header
+        // Merge Authorization header (preserve caller's headers like Content-Type)
         options.headers = Object.assign(
-            { 'Authorization': 'Bearer ' + token },
+            { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
             options.headers || {}
         );
 
@@ -187,6 +187,6 @@ window.AuthFetch = (function () {
 })();
 
 // Expose globally
-window.authFetch = AuthFetch.fetch;
+window.authFetch = window.AuthFetch.fetch;
 
 } // end double-load guard

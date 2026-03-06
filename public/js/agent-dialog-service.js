@@ -1334,7 +1334,7 @@ When your response references external information, facts, statistics, or claims
             border-radius: 6px;
             padding: 1em;
             overflow-x: auto;
-            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-family: var(--font-mono);
             font-size: 9pt;
             line-height: 1.5;
             margin: 1em 0;
@@ -1344,7 +1344,7 @@ When your response references external information, facts, statistics, or claims
             background: #f1f3f4;
             padding: 0.2em 0.4em;
             border-radius: 3px;
-            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-family: var(--font-mono);
             font-size: 0.9em;
         }
 

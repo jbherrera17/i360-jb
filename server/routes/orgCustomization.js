@@ -310,18 +310,54 @@ module.exports = function(supabase) {
 
             if (error && error.code !== 'PGRST116') throw error;
 
+            // If no branding row exists yet, create one seeded from organizations.settings
+            if (!data) {
+                // Pull any existing branding from organizations.settings (backward compat)
+                const { data: org } = await supabase
+                    .from('organizations')
+                    .select('settings')
+                    .eq('id', orgId)
+                    .single();
+                const s = org?.settings || {};
+
+                const { data: newRow } = await supabase
+                    .from('org_branding')
+                    .insert({
+                        org_id: orgId,
+                        primary_color: s.primary_color || '#6366f1',
+                        secondary_color: '#4f46e5',
+                        accent_color: '#22c55e',
+                        text_color: '#1f2937',
+                        background_color: '#ffffff',
+                        sidebar_color: '#f9fafb',
+                        heading_font: 'Inter',
+                        body_font: 'Inter',
+                        font_size_base: '16px',
+                        logo_url: s.logo_url || null
+                    })
+                    .select()
+                    .single();
+
+                return res.json({
+                    success: true,
+                    data: newRow || {
+                        primary_color: s.primary_color || '#6366f1',
+                        secondary_color: '#4f46e5',
+                        accent_color: '#22c55e',
+                        text_color: '#1f2937',
+                        background_color: '#ffffff',
+                        sidebar_color: '#f9fafb',
+                        heading_font: 'Inter',
+                        body_font: 'Inter',
+                        font_size_base: '16px',
+                        logo_url: s.logo_url || null
+                    }
+                });
+            }
+
             res.json({
                 success: true,
-                data: data || {
-                    // Return defaults if no branding exists
-                    primary_color: '#6366f1',
-                    secondary_color: '#4f46e5',
-                    accent_color: '#22c55e',
-                    text_color: '#1f2937',
-                    background_color: '#ffffff',
-                    heading_font: 'Inter',
-                    body_font: 'Inter'
-                }
+                data
             });
         } catch (error) {
             console.error('Error fetching branding:', error);
@@ -340,7 +376,7 @@ module.exports = function(supabase) {
         try {
             const { orgId } = req.params;
             const userId = req.userId;
-            const brandingData = req.body;
+            const brandingData = { ...req.body };  // Clone to avoid mutation issues
 
             // Remove fields that shouldn't be updated directly
             delete brandingData.id;
@@ -385,14 +421,15 @@ module.exports = function(supabase) {
                 }
             }
 
-            // Tier enforcement: strip white_label-only fields if org doesn't have that feature
+            // Tier enforcement: strip fields if org doesn't have the required feature
+            // Platform tier has full access and skips enforcement
             const { data: org } = await supabase
                 .from('organizations')
                 .select('subscription_tier')
                 .eq('id', orgId)
                 .single();
 
-            if (org?.subscription_tier) {
+            if (org?.subscription_tier && org.subscription_tier !== 'platform') {
                 const { data: tierData } = await supabase
                     .from('subscription_tiers')
                     .select('features')
@@ -435,16 +472,17 @@ module.exports = function(supabase) {
                 }
             }
 
+            // Build update payload
+            const updatePayload = {
+                ...brandingData,
+                updated_by: userId,
+                updated_at: new Date().toISOString()
+            };
+            // Use explicit update (not upsert) — row is guaranteed to exist from GET auto-create
             const { data, error } = await supabase
                 .from('org_branding')
-                .upsert({
-                    org_id: orgId,
-                    ...brandingData,
-                    updated_by: userId,
-                    updated_at: new Date().toISOString()
-                }, {
-                    onConflict: 'org_id'
-                })
+                .update(updatePayload)
+                .eq('org_id', orgId)
                 .select()
                 .single();
 

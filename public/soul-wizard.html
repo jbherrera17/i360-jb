@@ -131,7 +131,7 @@
         }
 
         .panel-header h2 {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.1rem;
             display: flex;
             align-items: center;
@@ -417,7 +417,7 @@
         .preview-section pre {
             margin: 0;
             white-space: pre-wrap;
-            font-family: 'Fira Code', monospace;
+            font-family: var(--font-mono);
             font-size: 0.85rem;
         }
 
@@ -1581,15 +1581,48 @@
                 const data = await response.json();
                 if (data.success) {
                     showToast('Soul configuration published and activated!', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/soul-configuration.html';
-                    }, 1500);
+                    showNextStepsPanel();
                 } else {
                     throw new Error(data.error);
                 }
             } catch (e) {
                 showToast('Failed to publish: ' + e.message, 'error');
             }
+        }
+
+        function showNextStepsPanel() {
+            const wizardContent = document.querySelector('.wizard-layout');
+            if (!wizardContent) return;
+
+            wizardContent.innerHTML = `
+                <div style="max-width:700px;margin:2rem auto;text-align:center;">
+                    <div style="margin-bottom:2rem;">
+                        <i data-lucide="check-circle" style="width:64px;height:64px;color:var(--success);"></i>
+                    </div>
+                    <h2 style="margin-bottom:0.5rem;color:var(--text-primary);">Soul Configuration Published</h2>
+                    <p style="color:var(--text-secondary);margin-bottom:2rem;">Your organization's values and bright lines are now active. Here are recommended next steps to build your integrity posture.</p>
+
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;text-align:left;">
+                        <a href="/integrity.html" class="next-step-card" style="display:block;padding:1.25rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;text-decoration:none;transition:border-color 0.2s;">
+                            <i data-lucide="shield-alert" style="width:24px;height:24px;color:var(--warning);margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--text-primary);margin-bottom:0.25rem;">Log Your First Close Call</h4>
+                            <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;">Record near-misses and incidents on the Integrity Dashboard.</p>
+                        </a>
+                        <a href="/integrity.html" class="next-step-card" style="display:block;padding:1.25rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;text-decoration:none;transition:border-color 0.2s;">
+                            <i data-lucide="bar-chart-2" style="width:24px;height:24px;color:var(--primary);margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--text-primary);margin-bottom:0.25rem;">Add Industry Baseline Data</h4>
+                            <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;">Document industry incidents to quantify what your integrity practices help avoid.</p>
+                        </a>
+                        <a href="/soul-configuration.html" class="next-step-card" style="display:block;padding:1.25rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;text-decoration:none;transition:border-color 0.2s;">
+                            <i data-lucide="eye" style="width:24px;height:24px;color:var(--success);margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--text-primary);margin-bottom:0.25rem;">View Soul Configuration</h4>
+                            <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;">Review and manage your published configuration.</p>
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         // Toast notifications

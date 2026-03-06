@@ -28,7 +28,7 @@
                 <div class="header-actions">
                     <button class="btn-secondary" onclick="refreshData()">
                         <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
-                        Refresh
+                        Recalculate
                     </button>
                     <button class="help-btn" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
@@ -98,20 +98,44 @@
 
         async function loadDashboard() {
             const container = document.getElementById('dashboardContent');
+            const orgId = localStorage.getItem('currentOrgId');
+
+            if (!orgId) {
+                renderNoOrgState(container);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
 
             try {
-                // Check for existing integrity assets
-                const assetsResponse = await fetch('/api/context/assets?type=integrity_yield', { headers: getIntegrityHeaders() });
-                const hasData = assetsResponse.ok && (await assetsResponse.json()).data?.length > 0;
+                const headers = getIntegrityHeaders();
 
-                if (!hasData) {
-                    renderEmptyState(container);
-                } else {
-                    const data = await fetchIntegrityData();
+                // Fetch metrics, soul config, incidents, and baseline in parallel
+                const [metricsRes, soulRes, incidentsRes, baselineRes] = await Promise.all([
+                    fetch(`/api/soul-config/integrity-metrics/${orgId}?days=30`, { headers }).then(r => r.json()).catch(() => ({})),
+                    fetch(`/api/soul-config/resolve/${orgId}`, { headers }).then(r => r.json()).catch(() => ({})),
+                    fetch(`/api/soul-config/bright-line-incidents/${orgId}`, { headers }).then(r => r.json()).catch(() => ({})),
+                    fetch(`/api/context/assets?type=industry_baseline`, { headers }).then(r => r.json()).catch(() => ({}))
+                ]);
+
+                const metrics = metricsRes.success ? metricsRes.data : null;
+                const soulConfig = soulRes.success ? soulRes.data?.config : null;
+                const incidents = incidentsRes.success ? (incidentsRes.data || []) : [];
+                const baselineAssets = baselineRes.success ? (baselineRes.data || []) : [];
+                const baselineAsset = baselineAssets[0] || null;
+                const baselineEntries = baselineAsset?.content_json?.entries || [];
+
+                if (metrics) {
+                    const data = mapMetricsToDashboard(metrics);
+                    data.assets = buildAssetReadiness(soulConfig, metrics, incidents, baselineEntries);
+                    data.incidents = incidents;
+                    data.baselineAsset = baselineAsset;
+                    data.baselineEntries = baselineEntries;
                     renderDashboard(container, data);
+                } else {
+                    renderEmptyState(container);
                 }
             } catch (error) {
-                console.log('Loading with sample data:', error.message);
+                console.log('Loading with empty state:', error.message);
                 renderEmptyState(container);
             }
 
@@ -120,118 +144,130 @@
             }
         }
 
-        async function fetchIntegrityData() {
-            try {
-                // Fetch all integrity assets in parallel
-                const assetTypes = [
-                    'integrity_yield',
-                    'bright_lines',
-                    'values_map',
-                    'intervention_metrics',
-                    'trust_velocity_metrics',
-                    'close_call_log',
-                    'industry_baseline'
-                ];
+        function mapMetricsToDashboard(metrics) {
+            const score = metrics.metrics?.integrityYield || 0;
+            const interpretation = metrics.interpretation || (score >= 80 ? 'strong' : score >= 60 ? 'adequate' : score >= 40 ? 'gaps' : 'critical');
 
-                const headers = getIntegrityHeaders();
-                const responses = await Promise.all(
-                    assetTypes.map(type =>
-                        fetch(`/api/context/assets?type=${type}`, { headers })
-                            .then(r => r.ok ? r.json() : { data: [] })
-                            .catch(() => ({ data: [] }))
-                    )
-                );
-
-                // Map responses to asset types
-                const assetData = {};
-                assetTypes.forEach((type, index) => {
-                    const data = responses[index]?.data || [];
-                    assetData[type] = data.length > 0 ? data[0] : null;
-                });
-
-                // Build dashboard data from fetched assets
-                const integrityYield = assetData.integrity_yield?.content_json || null;
-                const valuesMap = assetData.values_map?.content_json || null;
-                const interventionMetrics = assetData.intervention_metrics?.content_json || null;
-                const trustVelocity = assetData.trust_velocity_metrics?.content_json || null;
-                const closeCallLog = assetData.close_call_log?.content_json || null;
-
-                return {
-                    integrityYield: integrityYield ? {
-                        score: integrityYield.composite_score || 0,
-                        interpretation: integrityYield.interpretation || 'setup',
-                        trend: integrityYield.trend || { change: 0, direction: 'stable' },
-                        period: integrityYield.period || 'Not configured'
-                    } : sampleData.integrityYield,
-
-                    components: integrityYield?.components ? {
-                        trustVelocity: {
-                            score: integrityYield.components.trust_velocity?.score || 0,
-                            weight: integrityYield.components.trust_velocity?.weight || 0.30
-                        },
-                        interventionEffectiveness: {
-                            score: integrityYield.components.intervention_effectiveness?.score || 0,
-                            weight: integrityYield.components.intervention_effectiveness?.weight || 0.25
-                        },
-                        alignmentAudit: {
-                            score: integrityYield.components.alignment_audit?.score || 0,
-                            weight: integrityYield.components.alignment_audit?.weight || 0.25
-                        },
-                        counterfactualValue: {
-                            score: integrityYield.components.counterfactual_value?.score || 0,
-                            weight: integrityYield.components.counterfactual_value?.weight || 0.20
-                        }
-                    } : sampleData.components,
-
-                    leadingIndicators: integrityYield?.leading_indicators?.map(ind => ({
-                        name: ind.indicator,
-                        status: ind.status,
-                        note: ind.note
-                    })) || [],
-
-                    laggingIndicators: [],
-
-                    assets: {
-                        bright_lines: {
-                            populated: !!assetData.bright_lines,
-                            lastUpdated: assetData.bright_lines?.updated_at
-                        },
-                        values_map: {
-                            populated: !!assetData.values_map,
-                            lastUpdated: assetData.values_map?.updated_at
-                        },
-                        intervention_metrics: {
-                            populated: !!assetData.intervention_metrics,
-                            lastUpdated: assetData.intervention_metrics?.updated_at
-                        },
-                        trust_velocity_metrics: {
-                            populated: !!assetData.trust_velocity_metrics,
-                            lastUpdated: assetData.trust_velocity_metrics?.updated_at
-                        },
-                        close_call_log: {
-                            populated: !!assetData.close_call_log,
-                            lastUpdated: assetData.close_call_log?.updated_at
-                        },
-                        industry_baseline: {
-                            populated: !!assetData.industry_baseline,
-                            lastUpdated: assetData.industry_baseline?.updated_at
-                        },
-                        integrity_yield: {
-                            populated: !!assetData.integrity_yield,
-                            lastUpdated: assetData.integrity_yield?.updated_at
-                        }
+            return {
+                integrityYield: {
+                    score,
+                    interpretation,
+                    trend: { change: 0, direction: 'stable' },
+                    period: `Last ${metrics.period?.days || 30} days`
+                },
+                components: {
+                    trustVelocity: metrics.components?.trustVelocity || { score: 0, weight: 0.30 },
+                    interventionEffectiveness: metrics.components?.interventionEffectiveness || { score: 0, weight: 0.25 },
+                    alignmentAudit: metrics.components?.alignmentAudit || { score: 0, weight: 0.25 },
+                    counterfactualValue: metrics.components?.counterfactualValue || { score: 0, weight: 0.20 }
+                },
+                leadingIndicators: metrics.leadingIndicators || [],
+                laggingIndicators: [
+                    {
+                        name: 'Total evaluations',
+                        status: metrics.evaluations?.total > 0 ? 'positive' : 'neutral',
+                        value: String(metrics.evaluations?.total || 0),
+                        note: `${metrics.evaluations?.highStakes || 0} high stakes`
                     },
+                    {
+                        name: 'Total incidents',
+                        status: metrics.incidents?.total === 0 ? 'positive' : 'negative',
+                        value: String(metrics.incidents?.total || 0),
+                        note: `${metrics.incidents?.violations || 0} violations, ${metrics.incidents?.nearMisses || 0} near-misses`
+                    }
+                ],
+                actionItems: generateActionItems(metrics),
+                assets: {} // filled by caller
+            };
+        }
 
-                    actionItems: integrityYield?.action_items?.map((item, i) => ({
-                        title: `Action ${i + 1}`,
-                        description: item,
-                        priority: i === 0 ? 'high' : 'medium'
-                    })) || []
-                };
-            } catch (error) {
-                console.error('Error fetching integrity data:', error);
-                return sampleData;
+        function buildAssetReadiness(soulConfig, metrics, incidents = [], baselineEntries = []) {
+            const hasBrightLines = Array.isArray(soulConfig?.bright_lines) && soulConfig.bright_lines.length > 0;
+            const hasValues = Array.isArray(soulConfig?.values) && soulConfig.values.length > 0;
+            const hasEvaluations = (metrics?.evaluations?.total || 0) > 0;
+            const hasIncidents = incidents.length > 0;
+            const hasBaseline = baselineEntries.length > 0;
+
+            return {
+                bright_lines: {
+                    populated: hasBrightLines,
+                    lastUpdated: null,
+                    source: 'soul-config'
+                },
+                values_map: {
+                    populated: hasValues,
+                    lastUpdated: null,
+                    source: 'soul-config'
+                },
+                intervention_metrics: {
+                    populated: hasEvaluations,
+                    lastUpdated: hasEvaluations ? new Date().toISOString() : null,
+                    source: 'auto'
+                },
+                trust_velocity_metrics: {
+                    populated: hasEvaluations || hasIncidents,
+                    lastUpdated: (hasEvaluations || hasIncidents) ? new Date().toISOString() : null,
+                    source: 'auto'
+                },
+                close_call_log: {
+                    populated: hasIncidents,
+                    lastUpdated: hasIncidents ? incidents[0].created_at : null,
+                    source: 'incidents'
+                },
+                industry_baseline: {
+                    populated: hasBaseline,
+                    lastUpdated: hasBaseline ? new Date().toISOString() : null,
+                    source: 'context-asset'
+                },
+                integrity_yield: {
+                    populated: hasEvaluations || hasIncidents,
+                    lastUpdated: (hasEvaluations || hasIncidents) ? new Date().toISOString() : null,
+                    source: 'auto'
+                }
+            };
+        }
+
+        function generateActionItems(metrics) {
+            const items = [];
+            if (metrics.incidents?.violations > 0 && metrics.incidents?.resolved < metrics.incidents?.total) {
+                items.push({
+                    title: 'Resolve open incidents',
+                    description: `${metrics.incidents.total - metrics.incidents.resolved} incident(s) remain unresolved. Review and resolve them to improve your integrity score.`,
+                    priority: 'high'
+                });
             }
+            if (metrics.evaluations?.requiresReview > metrics.evaluations?.reviewsCompleted) {
+                items.push({
+                    title: 'Complete pending reviews',
+                    description: `${metrics.evaluations.requiresReview - metrics.evaluations.reviewsCompleted} evaluation(s) are awaiting human review.`,
+                    priority: 'high'
+                });
+            }
+            if (metrics.evaluations?.total === 0) {
+                items.push({
+                    title: 'Start using chat with ethical context',
+                    description: 'Send messages that involve decisions, ethics, or stakeholder impact to begin building your integrity metrics.',
+                    priority: 'medium'
+                });
+            }
+            if (metrics.metrics?.integrityYield < 60) {
+                items.push({
+                    title: 'Improve integrity posture',
+                    description: 'Your integrity yield is below 60. Focus on resolving incidents and completing reviews to raise your score.',
+                    priority: 'high'
+                });
+            }
+            return items;
+        }
+
+        function renderNoOrgState(container) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i data-lucide="building" style="width: 48px; height: 48px;"></i></div>
+                    <h2>No Organization Selected</h2>
+                    <p>Select an organization to view its integrity metrics. Your organization context is needed to calculate org-scoped scores.</p>
+                </div>
+            `;
         }
 
         function renderEmptyState(container) {
@@ -340,7 +376,7 @@
                             <h4 class="action-title">1. Define Your Bright Lines</h4>
                             <p class="action-description">Document your non-negotiable ethical boundaries - the lines you won't cross regardless of business pressure.</p>
                         </div>
-                        <button class="action-cta" onclick="createAsset('bright_lines')">Configure</button>
+                        <button class="action-cta" onclick="window.location.href='/soul-wizard.html'">Configure</button>
                     </div>
                     <div class="action-item">
                         <div class="action-priority high"></div>
@@ -348,7 +384,7 @@
                             <h4 class="action-title">2. Map Your Values</h4>
                             <p class="action-description">Document how your stated values manifest under normal conditions vs. under pressure (stress values).</p>
                         </div>
-                        <button class="action-cta" onclick="createAsset('values_map')">Configure</button>
+                        <button class="action-cta" onclick="window.location.href='/soul-wizard.html'">Configure</button>
                     </div>
                     <div class="action-item">
                         <div class="action-priority medium"></div>
@@ -356,7 +392,7 @@
                             <h4 class="action-title">3. Start Your Close Call Log</h4>
                             <p class="action-description">Begin documenting near-misses - the crises that didn't happen because someone intervened.</p>
                         </div>
-                        <button class="action-cta" onclick="createAsset('close_call_log')">Start Log</button>
+                        <button class="action-cta" onclick="openLogIncidentForm()">Log Incident</button>
                     </div>
                     <div class="action-item">
                         <div class="action-priority low"></div>
@@ -364,9 +400,15 @@
                             <h4 class="action-title">4. Research Industry Baseline</h4>
                             <p class="action-description">Document industry incidents to quantify what you've avoided through your integrity practices.</p>
                         </div>
-                        <button class="action-cta" onclick="createAsset('industry_baseline')">Research</button>
+                        <button class="action-cta" onclick="openBaselineForm()">Add Entry</button>
                     </div>
                 </div>
+
+                <!-- Close Call Log (always visible) -->
+                ${renderCloseCallSection([])}
+
+                <!-- Industry Baseline (always visible) -->
+                ${renderBaselineSection([], null)}
             `;
         }
 
@@ -496,14 +538,20 @@
                 <div class="assets-section">
                     <div class="assets-header">
                         <h3><i data-lucide="layers" style="width: 18px; height: 18px;"></i> Integrity Assets</h3>
-                        <button class="btn-secondary" onclick="window.location.href='/context.html'" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                            Manage Assets
+                        <button class="btn-secondary" onclick="window.location.href='/soul-configuration.html'" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                            Soul Configuration
                         </button>
                     </div>
                     <div class="assets-grid">
                         ${renderAssetStatusCards(data.assets)}
                     </div>
                 </div>
+
+                <!-- Close Call Log -->
+                ${renderCloseCallSection(data.incidents || [])}
+
+                <!-- Industry Baseline -->
+                ${renderBaselineSection(data.baselineEntries || [], data.baselineAsset)}
 
                 <!-- Action Items -->
                 ${data.actionItems.length > 0 ? `
@@ -528,31 +576,65 @@
 
         function renderAssetStatusCards(assets) {
             const assetTypes = {
-                bright_lines: { icon: 'ban', name: 'Bright Lines', layer: 'Foundation' },
-                values_map: { icon: 'map', name: 'Values Map', layer: 'Foundation' },
-                intervention_metrics: { icon: 'zap', name: 'Intervention Metrics', layer: 'Measurement' },
-                trust_velocity_metrics: { icon: 'trending-up', name: 'Trust Velocity', layer: 'Measurement' },
-                close_call_log: { icon: 'shield', name: 'Close Call Log', layer: 'Measurement' },
-                industry_baseline: { icon: 'bar-chart-2', name: 'Industry Baseline', layer: 'Comparison' },
-                integrity_yield: { icon: 'target', name: 'Integrity Yield', layer: 'Composite' }
+                bright_lines: { icon: 'ban', name: 'Bright Lines', layer: 'Foundation', href: '/soul-configuration.html', setupHref: '/soul-wizard.html' },
+                values_map: { icon: 'map', name: 'Values Map', layer: 'Foundation', href: '/soul-configuration.html', setupHref: '/soul-wizard.html' },
+                intervention_metrics: { icon: 'zap', name: 'Intervention Metrics', layer: 'Measurement', href: null, setupHref: null },
+                trust_velocity_metrics: { icon: 'trending-up', name: 'Trust Velocity', layer: 'Measurement', href: null, setupHref: null },
+                close_call_log: { icon: 'shield', name: 'Close Call Log', layer: 'Measurement', href: null, setupHref: null, sectionClass: 'close-call-section', formFn: 'openLogIncidentForm' },
+                industry_baseline: { icon: 'bar-chart-2', name: 'Industry Baseline', layer: 'Comparison', href: null, setupHref: null, sectionClass: 'baseline-section', formFn: 'openBaselineForm' },
+                integrity_yield: { icon: 'target', name: 'Integrity Yield', layer: 'Composite', href: null, setupHref: null }
             };
 
             return Object.entries(assets).map(([key, value]) => {
                 const type = assetTypes[key];
+                const isAuto = value.source === 'auto';
+                const destination = value.populated ? type.href : (type.setupHref || type.href);
+                const hasInlineSection = !!type.sectionClass;
+                const isClickable = !!destination || hasInlineSection;
+
+                // Status label and badge class
+                let badgeLabel, badgeClass;
+                if (value.populated) {
+                    badgeLabel = isAuto ? 'Live' : 'Configured';
+                    badgeClass = 'configured';
+                } else if (isAuto) {
+                    badgeLabel = 'Awaiting Data';
+                    badgeClass = 'setup';
+                } else {
+                    badgeLabel = 'Set Up';
+                    badgeClass = 'setup';
+                }
+
+                // Meta text
+                let metaText;
+                if (value.populated && isAuto) {
+                    metaText = 'Auto-computed from chat';
+                } else if (value.populated && value.source === 'soul-config') {
+                    metaText = 'From Soul Configuration';
+                } else if (value.populated && value.source === 'incidents') {
+                    metaText = 'From incident tracking';
+                } else if (value.populated) {
+                    metaText = `Updated ${formatDate(value.lastUpdated)}`;
+                } else {
+                    metaText = isAuto ? 'Populates from chat activity' : `${type.layer} Layer`;
+                }
+
+                const clickHandler = destination
+                    ? `window.location.href='${destination}'`
+                    : hasInlineSection
+                        ? `handleAssetCardClick('${type.sectionClass}', '${type.formFn || ''}')`
+                        : '';
+
                 return `
                     <div class="asset-status-card ${value.populated ? 'populated' : 'empty'}"
-                         onclick="openAsset('${key}')">
+                         ${isClickable ? `onclick="${clickHandler}" style="cursor:pointer;"` : ''}>
                         <div class="asset-status-icon"><i data-lucide="${type.icon}" style="width: 24px; height: 24px;"></i></div>
                         <div class="asset-status-info">
                             <h4>${type.name}</h4>
-                            <div class="asset-status-meta">
-                                ${value.populated
-                                    ? `Updated ${formatDate(value.lastUpdated)}`
-                                    : `${type.layer} Layer`}
-                            </div>
+                            <div class="asset-status-meta">${metaText}</div>
                         </div>
-                        <span class="asset-status-badge ${value.populated ? 'configured' : 'setup'}">
-                            ${value.populated ? 'Configured' : 'Set Up'}
+                        <span class="asset-status-badge ${badgeClass}">
+                            ${badgeLabel}
                         </span>
                     </div>
                 `;
@@ -636,50 +718,356 @@
             window.location.href = '/soul-wizard.html';
         }
 
-        // Fetch soul-based integrity metrics
-        async function fetchSoulMetrics() {
-            try {
-                const profileRes = await fetch('/api/user-profile');
-                const profileData = await profileRes.json();
-                const orgId = profileData.user?.org_id;
-
-                if (!orgId) return null;
-
-                const response = await fetch(`/api/soul-config/integrity-metrics/${orgId}?days=30`);
-                const data = await response.json();
-
-                if (data.success) {
-                    return data.data;
-                }
-            } catch (error) {
-                console.log('Soul metrics not available:', error.message);
+        function handleAssetCardClick(sectionClass, formFn) {
+            const section = document.querySelector('.' + sectionClass);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (formFn && typeof window[formFn] === 'function') {
+                window[formFn]();
             }
-            return null;
         }
 
-        function createAsset(assetType) {
-            window.location.href = `/context.html?create=${assetType}`;
+        // ==========================================
+        // Close Call Log Section
+        // ==========================================
+
+        function renderCloseCallSection(incidents) {
+            const incidentCards = incidents.length > 0
+                ? incidents.map(inc => {
+                    const isOpen = !inc.resolved_at;
+                    const statusLabel = inc.resolved_at ? 'resolved' : (inc.resolution_notes ? 'investigating' : 'open');
+                    const dateStr = new Date(inc.created_at).toLocaleDateString();
+                    return `
+                        <div class="incident-item">
+                            <div class="incident-header" onclick="toggleIncidentDetail('inc-${inc.id}')">
+                                <div class="incident-badges">
+                                    <span class="incident-type-badge ${inc.incident_type}">${formatIncidentType(inc.incident_type)}</span>
+                                    <span class="incident-severity-badge ${inc.severity}">${inc.severity}</span>
+                                </div>
+                                <div class="incident-summary">
+                                    <span class="incident-bright-line">${escapeHtml(inc.bright_line_name)}</span>
+                                    <span class="incident-desc">${escapeHtml(inc.description || 'No description')}</span>
+                                </div>
+                                <div class="incident-meta">
+                                    <span class="incident-date">${dateStr}</span>
+                                    <span class="incident-status-badge ${statusLabel}">${statusLabel}</span>
+                                </div>
+                                <i data-lucide="chevron-down" class="incident-chevron" style="width:16px;height:16px;flex-shrink:0;"></i>
+                            </div>
+                            <div class="incident-detail collapsed" id="inc-${inc.id}">
+                                ${inc.resolution_notes ? `<div class="incident-resolution"><strong>Resolution:</strong> ${escapeHtml(inc.resolution_notes)}</div>` : ''}
+                                ${isOpen ? `<button class="btn-secondary" onclick="resolveIncident('${inc.id}')" style="margin-top:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;">
+                                    <i data-lucide="check-circle" style="width:14px;height:14px;"></i> Resolve
+                                </button>` : `<div class="incident-resolved-info">Resolved ${inc.resolved_at ? new Date(inc.resolved_at).toLocaleDateString() : ''}</div>`}
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : `<div class="section-empty-state"><i data-lucide="shield-check" style="width:24px;height:24px;color:var(--text-muted);"></i><span>No incidents logged yet. Use "Log Incident" to record near-misses, violations, or inquiries.</span></div>`;
+
+            return `
+                <div class="close-call-section">
+                    <div class="section-header">
+                        <h3><i data-lucide="shield-alert" style="width:18px;height:18px;"></i> Close Call Log</h3>
+                        <button class="btn-primary" onclick="openLogIncidentForm()" style="padding:0.5rem 1rem;font-size:0.85rem;">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> Log Incident
+                        </button>
+                    </div>
+                    <div class="incident-list">
+                        ${incidentCards}
+                    </div>
+                </div>
+            `;
         }
 
-        function openAsset(assetType) {
-            window.location.href = `/context.html?type=${assetType}`;
+        function formatIncidentType(type) {
+            const labels = { near_miss: 'Near Miss', violation: 'Violation', inquiry: 'Inquiry' };
+            return labels[type] || type;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function toggleIncidentDetail(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.toggle('collapsed');
+                // Rotate chevron
+                const header = el.previousElementSibling;
+                const chevron = header?.querySelector('.incident-chevron');
+                if (chevron) chevron.classList.toggle('rotated');
+            }
+        }
+
+        async function openLogIncidentForm() {
+            if (typeof ModalService === 'undefined') {
+                alert('ModalService not loaded');
+                return;
+            }
+            const orgId = localStorage.getItem('currentOrgId');
+            if (!orgId) return;
+
+            const result = await ModalService.form({
+                title: 'Log Bright Line Incident',
+                fields: [
+                    { name: 'brightLineName', label: 'Bright Line Name', type: 'text', required: true, placeholder: 'e.g. Never misrepresent data' },
+                    { name: 'incidentType', label: 'Incident Type', type: 'select', required: true, options: [
+                        { value: 'near_miss', label: 'Near Miss' },
+                        { value: 'violation', label: 'Violation' },
+                        { value: 'inquiry', label: 'Inquiry' }
+                    ]},
+                    { name: 'severity', label: 'Severity', type: 'select', required: true, options: [
+                        { value: 'low', label: 'Low' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'high', label: 'High' },
+                        { value: 'critical', label: 'Critical' }
+                    ]},
+                    { name: 'description', label: 'Description', type: 'textarea', required: true, placeholder: 'Describe what happened...' }
+                ],
+                submitText: 'Log Incident'
+            });
+
+            if (!result) return;
+
+            try {
+                const headers = getIntegrityHeaders();
+                const res = await fetch('/api/soul-config/bright-line-incident', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        orgId,
+                        brightLineName: result.brightLineName,
+                        incidentType: result.incidentType,
+                        severity: result.severity,
+                        description: result.description
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (typeof showToast === 'function') showToast('Incident logged successfully', 'success');
+                    await loadDashboard();
+                } else {
+                    if (typeof showToast === 'function') showToast(data.error || 'Failed to log incident', 'error');
+                }
+            } catch (err) {
+                console.error('Error logging incident:', err);
+                if (typeof showToast === 'function') showToast('Failed to log incident', 'error');
+            }
+        }
+
+        async function resolveIncident(id) {
+            if (typeof ModalService === 'undefined') return;
+
+            const result = await ModalService.form({
+                title: 'Resolve Incident',
+                fields: [
+                    { name: 'resolutionNotes', label: 'Resolution Notes', type: 'textarea', required: true, placeholder: 'How was this resolved?' }
+                ],
+                submitText: 'Resolve'
+            });
+
+            if (!result) return;
+
+            try {
+                const headers = getIntegrityHeaders();
+                const res = await fetch(`/api/soul-config/bright-line-incident/${id}/resolve`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify({ resolutionNotes: result.resolutionNotes })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (typeof showToast === 'function') showToast('Incident resolved', 'success');
+                    await loadDashboard();
+                } else {
+                    if (typeof showToast === 'function') showToast(data.error || 'Failed to resolve', 'error');
+                }
+            } catch (err) {
+                console.error('Error resolving incident:', err);
+                if (typeof showToast === 'function') showToast('Failed to resolve incident', 'error');
+            }
+        }
+
+        // ==========================================
+        // Industry Baseline Section
+        // ==========================================
+
+        function renderBaselineSection(entries, baselineAsset) {
+            const tableRows = entries.length > 0
+                ? entries.map((entry, i) => `
+                    <tr>
+                        <td>${escapeHtml(entry.industry || entry.company || '-')}</td>
+                        <td>${escapeHtml(entry.incident || entry.description || '-')}</td>
+                        <td>${escapeHtml(entry.financialImpact || entry.financial_impact || '-')}</td>
+                        <td>${escapeHtml(entry.date || '-')}</td>
+                        <td>${escapeHtml(entry.source || '-')}</td>
+                        <td><button class="btn-icon-sm" onclick="deleteBaselineEntry(${i})" title="Remove"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button></td>
+                    </tr>
+                `).join('')
+                : '';
+
+            const content = entries.length > 0
+                ? `<table class="baseline-table">
+                    <thead><tr><th>Industry/Company</th><th>Incident</th><th>Financial Impact</th><th>Date</th><th>Source</th><th></th></tr></thead>
+                    <tbody>${tableRows}</tbody>
+                </table>`
+                : `<div class="section-empty-state"><i data-lucide="bar-chart-2" style="width:24px;height:24px;color:var(--text-muted);"></i><span>No baseline entries yet. Add industry incidents to quantify what your integrity practices help avoid.</span></div>`;
+
+            return `
+                <div class="baseline-section">
+                    <div class="section-header">
+                        <h3><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> Industry Baseline</h3>
+                        <button class="btn-primary" onclick="openBaselineForm()" style="padding:0.5rem 1rem;font-size:0.85rem;">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Entry
+                        </button>
+                    </div>
+                    <div class="baseline-content">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Store current baseline state for form operations
+        let _baselineAsset = null;
+        let _baselineEntries = [];
+
+        async function openBaselineForm() {
+            if (typeof ModalService === 'undefined') return;
+
+            const result = await ModalService.form({
+                title: 'Add Industry Baseline Entry',
+                fields: [
+                    { name: 'industry', label: 'Industry / Company', type: 'text', required: true, placeholder: 'e.g. Financial Services, Wells Fargo' },
+                    { name: 'incident', label: 'Incident Description', type: 'textarea', required: true, placeholder: 'What happened?' },
+                    { name: 'financialImpact', label: 'Financial Impact', type: 'text', placeholder: 'e.g. $3.7 billion in fines' },
+                    { name: 'date', label: 'Incident Date', type: 'text', placeholder: 'e.g. 2023-09 or September 2023' },
+                    { name: 'source', label: 'Source / Reference', type: 'text', placeholder: 'e.g. SEC filing, news article URL' }
+                ],
+                submitText: 'Add Entry'
+            });
+
+            if (!result) return;
+
+            try {
+                const headers = getIntegrityHeaders();
+
+                // Re-fetch current baseline to avoid stale data
+                const currentRes = await fetch('/api/context/assets?type=industry_baseline', { headers }).then(r => r.json()).catch(() => ({}));
+                const currentAsset = currentRes.success ? (currentRes.data || [])[0] : null;
+                const currentEntries = currentAsset?.content_json?.entries || [];
+
+                const newEntries = [...currentEntries, {
+                    industry: result.industry,
+                    incident: result.incident,
+                    financialImpact: result.financialImpact,
+                    date: result.date,
+                    source: result.source,
+                    addedAt: new Date().toISOString()
+                }];
+
+                let res;
+                if (currentAsset) {
+                    // Update existing asset
+                    res = await fetch(`/api/context/assets/${currentAsset.id}`, {
+                        method: 'PUT',
+                        headers,
+                        body: JSON.stringify({
+                            content_json: { entries: newEntries },
+                            name: 'Industry Baseline'
+                        })
+                    });
+                } else {
+                    // Create new asset
+                    res = await fetch('/api/context/assets', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            asset_type: 'industry_baseline',
+                            name: 'Industry Baseline',
+                            description: 'Industry incidents for integrity counterfactual comparison',
+                            content_json: { entries: newEntries }
+                        })
+                    });
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    if (typeof showToast === 'function') showToast('Baseline entry added', 'success');
+                    await loadDashboard();
+                } else {
+                    if (typeof showToast === 'function') showToast(data.error || 'Failed to add entry', 'error');
+                }
+            } catch (err) {
+                console.error('Error adding baseline entry:', err);
+                if (typeof showToast === 'function') showToast('Failed to add baseline entry', 'error');
+            }
+        }
+
+        async function deleteBaselineEntry(index) {
+            if (typeof ModalService === 'undefined') return;
+
+            const confirmed = await ModalService.confirm({
+                title: 'Remove Entry',
+                message: 'Remove this industry baseline entry?',
+                confirmText: 'Remove',
+                confirmClass: 'btn-danger'
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const headers = getIntegrityHeaders();
+
+                // Re-fetch current baseline
+                const currentRes = await fetch('/api/context/assets?type=industry_baseline', { headers }).then(r => r.json()).catch(() => ({}));
+                const currentAsset = currentRes.success ? (currentRes.data || [])[0] : null;
+                if (!currentAsset) return;
+
+                const currentEntries = [...(currentAsset.content_json?.entries || [])];
+                currentEntries.splice(index, 1);
+
+                const res = await fetch(`/api/context/assets/${currentAsset.id}`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify({
+                        content_json: { entries: currentEntries }
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    if (typeof showToast === 'function') showToast('Entry removed', 'success');
+                    await loadDashboard();
+                } else {
+                    if (typeof showToast === 'function') showToast(data.error || 'Failed to remove entry', 'error');
+                }
+            } catch (err) {
+                console.error('Error deleting baseline entry:', err);
+                if (typeof showToast === 'function') showToast('Failed to remove entry', 'error');
+            }
         }
 
         async function refreshData() {
             const btn = event.target.closest('button');
             btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Refreshing...';
+            btn.innerHTML = '<i data-lucide="loader" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Recalculating...';
 
             await loadDashboard();
 
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh';
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Recalculate';
 
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
         }
     </script>
+    <script src="/js/modal-service-loader.js"></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
 </body>

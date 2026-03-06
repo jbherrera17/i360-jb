@@ -304,7 +304,7 @@
     background: var(--bg-primary, #121220);
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
-    font-family: 'Fira Code', monospace;
+    font-family: var(--font-mono);
     font-size: 0.85em;
 }
 
@@ -652,7 +652,7 @@
     border-radius: 8px;
     color: var(--text-secondary, #aaa);
     font-size: 0.85rem;
-    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-body);
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
@@ -830,7 +830,7 @@
 .agent-dialog-context-item .asset-tokens {
     font-size: 0.7rem;
     color: var(--text-muted, #888);
-    font-family: 'Fira Code', monospace;
+    font-family: var(--font-mono);
 }
 
 .agent-dialog-context-item .injection-mode {
@@ -908,7 +908,7 @@
 .agent-dialog-token-count {
     font-size: 0.7rem;
     color: var(--text-muted, #888);
-    font-family: 'Fira Code', monospace;
+    font-family: var(--font-mono);
     margin-left: auto;
     margin-right: 0.5rem;
 }

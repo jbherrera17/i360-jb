@@ -35,7 +35,7 @@
 .icon-picker-selected-name {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    font-family: 'Fira Code', monospace;
+    font-family: var(--font-mono);
 }
 
 .icon-picker-selected-placeholder {

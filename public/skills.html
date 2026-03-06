@@ -33,7 +33,7 @@
         }
 
         .page-header h1 {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.5rem;
             display: flex;
             align-items: center;
@@ -454,7 +454,7 @@
         }
 
         .section-header h2 {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.1rem;
             display: flex;
             align-items: center;
@@ -601,7 +601,7 @@
             background: var(--bg-tertiary);
             border-radius: 8px;
             padding: 1rem;
-            font-family: 'Fira Code', monospace;
+            font-family: var(--font-mono);
             font-size: 0.85rem;
             white-space: pre-wrap;
             max-height: 200px;
@@ -1236,7 +1236,7 @@
                 <p style="color: var(--text-secondary); margin-bottom: 1rem;">
                     Paste SKILL.md content below to import a skill:
                 </p>
-                <textarea id="importContent" style="width:100%;height:300px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--text-primary);resize:vertical;" placeholder="---
+                <textarea id="importContent" style="width:100%;height:300px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family: var(--font-mono);font-size:0.85rem;color:var(--text-primary);resize:vertical;" placeholder="---
 name: my-skill
 description: &quot;Skill description&quot;
 version: 1.0.0

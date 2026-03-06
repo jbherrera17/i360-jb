@@ -34,7 +34,7 @@
         .stat-card.workflows { border-left: 4px solid var(--secondary); }
 
         .stat-value {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-heading);
             font-size: 2rem;
             font-weight: 700;
             color: var(--text-primary);
@@ -440,12 +440,12 @@
 
         .color-hex {
             flex: 1;
-            font-family: 'Fira Code', monospace;
+            font-family: var(--font-mono);
             font-size: 0.85rem !important;
         }
 
         .mono-input {
-            font-family: 'Fira Code', monospace;
+            font-family: var(--font-mono);
             font-size: 0.85rem;
         }
 
@@ -901,8 +901,8 @@
                                         <div class="form-group">
                                             <label for="brand-heading-font">Heading Font</label>
                                             <select id="brand-heading-font">
-                                                <option value="Inter">Inter</option>
-                                                <option value="Source Sans 3" selected>Source Sans 3</option>
+                                                <option value="Inter" selected>Inter</option>
+                                                <option value="Source Sans 3">Source Sans 3</option>
                                                 <option value="Roboto">Roboto</option>
                                                 <option value="Open Sans">Open Sans</option>
                                                 <option value="Lato">Lato</option>
@@ -916,8 +916,8 @@
                                         <div class="form-group">
                                             <label for="brand-body-font">Body Font</label>
                                             <select id="brand-body-font">
-                                                <option value="Inter">Inter</option>
-                                                <option value="Source Sans 3" selected>Source Sans 3</option>
+                                                <option value="Inter" selected>Inter</option>
+                                                <option value="Source Sans 3">Source Sans 3</option>
                                                 <option value="Roboto">Roboto</option>
                                                 <option value="Open Sans">Open Sans</option>
                                                 <option value="Lato">Lato</option>
@@ -1935,13 +1935,22 @@
         async function loadBranding(orgId) {
             try {
                 const response = await authFetch(`/api/org-customization/${orgId}/branding`);
+                if (!response.ok) {
+                    console.error('Branding API error:', response.status, response.statusText);
+                    ModalService.toast({ message: `Failed to load branding (${response.status})`, type: 'error' });
+                    return;
+                }
                 const result = await response.json();
                 if (result.success) {
                     currentBranding = result.data || {};
                     populateBrandingForm();
+                } else {
+                    console.error('Branding API returned error:', result.error);
+                    ModalService.toast({ message: result.error || 'Failed to load branding', type: 'error' });
                 }
             } catch (error) {
                 console.error('Error loading branding:', error);
+                ModalService.toast({ message: 'Failed to load branding settings', type: 'error' });
             }
         }
 
@@ -1965,8 +1974,8 @@
             setColorField('brand-sidebar-color', b.sidebar_color || '#f9fafb');
 
             // Selects
-            setVal('brand-heading-font', b.heading_font || 'Source Sans 3');
-            setVal('brand-body-font', b.body_font || 'Source Sans 3');
+            setVal('brand-heading-font', b.heading_font || 'Inter');
+            setVal('brand-body-font', b.body_font || 'Inter');
             setVal('brand-font-size', b.font_size_base || '16px');
 
             // Textareas
@@ -2031,6 +2040,9 @@
             });
         }
 
+        // Color fields that have a separate hex text input
+        const colorFieldIds = ['brand-primary-color', 'brand-secondary-color', 'brand-accent-color', 'brand-sidebar-color'];
+
         // Save branding
         async function saveBranding() {
             if (!currentOrg) return;
@@ -2038,12 +2050,28 @@
             // Collect all field values
             const data = {};
             for (const [fieldId, apiField] of Object.entries(brandingFieldMap)) {
-                const el = document.getElementById(fieldId);
-                if (el) {
-                    const val = el.value.trim();
-                    data[apiField] = val || null;
+                let val;
+                // For color fields, prefer the hex text input (what the user types)
+                if (colorFieldIds.includes(fieldId)) {
+                    const hexInput = document.getElementById(fieldId + '-hex');
+                    const picker = document.getElementById(fieldId);
+                    val = (hexInput?.value || picker?.value || '').trim();
+                } else {
+                    const el = document.getElementById(fieldId);
+                    val = el ? el.value.trim() : '';
                 }
+                data[apiField] = val || null;
             }
+
+            console.log('[SAVE] Collected data:', JSON.stringify({
+                primary: data.primary_color,
+                secondary: data.secondary_color,
+                heading: data.heading_font,
+                body: data.body_font,
+                logo: data.logo_url
+            }));
+            console.log('[SAVE] Picker value:', document.getElementById('brand-primary-color')?.value);
+            console.log('[SAVE] Hex value:', document.getElementById('brand-primary-color-hex')?.value);
 
             try {
                 showLoading('Saving Branding', 'Updating appearance settings...');
@@ -2056,13 +2084,19 @@
                 if (result.success) {
                     ModalService.toast({ message: 'Branding saved successfully', type: 'success' });
                     currentBranding = result.data;
+                    console.log('[SAVE] Step 1 - result.data primary:', result.data.primary_color, 'heading:', result.data.heading_font);
+                    populateBrandingForm();
+                    console.log('[SAVE] Step 2 - after populateForm, picker value:', document.getElementById('brand-primary-color')?.value);
                     // Clear BrandingService cache so changes take effect
                     if (typeof BrandingService !== 'undefined') {
                         BrandingService.clearCache();
-                        BrandingService.load();
+                        BrandingService.load().then(() => {
+                            console.log('[SAVE] Step 3 - after BrandingService.load, picker value:', document.getElementById('brand-primary-color')?.value);
+                        });
                     }
                     // Refresh setup progress
                     await loadSetupProgress(currentOrg.id);
+                    console.log('[SAVE] Step 4 - after loadSetupProgress, picker value:', document.getElementById('brand-primary-color')?.value);
                 } else {
                     throw new Error(result.error);
                 }

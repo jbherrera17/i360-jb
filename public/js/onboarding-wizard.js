@@ -266,7 +266,7 @@ const OnboardingWizard = (function() {
         }
 
         .welcome-heading {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.75rem;
             margin: 0 0 1rem;
         }
@@ -493,7 +493,7 @@ const OnboardingWizard = (function() {
         }
 
         .complete-heading {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.5rem;
             margin: 0 0 1rem;
         }
