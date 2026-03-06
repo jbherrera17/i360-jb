@@ -437,7 +437,7 @@
         </div>
     </div>
 
-    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
@@ -447,7 +447,7 @@
         let selectedCatalogId = null;
 
         function getOrgId() {
-            return localStorage.getItem('insight360-org-id') || '';
+            return localStorage.getItem('insight360_org_id') || localStorage.getItem('currentOrgId') || '';
         }
 
         function apiHeaders() {
@@ -455,6 +455,12 @@
                 'Content-Type': 'application/json',
                 'x-org-id': getOrgId()
             };
+        }
+
+        // Use authFetch if available (loaded by navigation.js), fallback to fetch
+        function apiFetch(url, options = {}) {
+            options.headers = Object.assign(apiHeaders(), options.headers || {});
+            return (typeof authFetch === 'function') ? authFetch(url, options) : fetch(url, options);
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -468,7 +474,7 @@
 
         async function loadConnections() {
             try {
-                const resp = await fetch(`/api/mcp/connections?org_id=${getOrgId()}`, { headers: apiHeaders() });
+                const resp = await apiFetch(`/api/mcp/connections?org_id=${getOrgId()}`);
                 const result = await resp.json();
                 if (result.success) {
                     connections = result.data;
@@ -476,9 +482,14 @@
                     if (selectedConnectionId) {
                         showDetail(selectedConnectionId);
                     }
+                } else {
+                    document.getElementById('connectionsList').innerHTML =
+                        `<div style="padding:2rem;text-align:center;color:#ef4444;font-size:0.85rem;">${result.error || 'Failed to load connections'}</div>`;
                 }
             } catch (err) {
                 console.error('Failed to load connections:', err);
+                document.getElementById('connectionsList').innerHTML =
+                    `<div style="padding:2rem;text-align:center;color:#ef4444;font-size:0.85rem;">Failed to load connections</div>`;
             }
         }
 
@@ -606,9 +617,8 @@
 
         async function toggleTool(connectionId, toolName, enabled) {
             try {
-                const resp = await fetch(`/api/mcp/connections/${connectionId}/tools/${encodeURIComponent(toolName)}/toggle`, {
+                const resp = await apiFetch(`/api/mcp/connections/${connectionId}/tools/${encodeURIComponent(toolName)}/toggle`, {
                     method: 'POST',
-                    headers: apiHeaders(),
                     body: JSON.stringify({ enabled, org_id: getOrgId() })
                 });
                 const result = await resp.json();
@@ -629,9 +639,8 @@
         async function testConnection(connectionId) {
             showToast('Testing connection...', 'info');
             try {
-                const resp = await fetch(`/api/mcp/connections/${connectionId}/test`, {
+                const resp = await apiFetch(`/api/mcp/connections/${connectionId}/test`, {
                     method: 'POST',
-                    headers: apiHeaders(),
                     body: JSON.stringify({ org_id: getOrgId() })
                 });
                 const result = await resp.json();
@@ -649,9 +658,8 @@
         async function deleteConnection(connectionId, name) {
             if (!confirm(`Delete connection "${name}"?`)) return;
             try {
-                const resp = await fetch(`/api/mcp/connections/${connectionId}?org_id=${getOrgId()}`, {
-                    method: 'DELETE',
-                    headers: apiHeaders()
+                const resp = await apiFetch(`/api/mcp/connections/${connectionId}?org_id=${getOrgId()}`, {
+                    method: 'DELETE'
                 });
                 const result = await resp.json();
                 if (result.success) {
@@ -684,7 +692,7 @@
             selectedCatalogId = null;
 
             try {
-                const resp = await fetch(`/api/mcp/catalog?org_id=${getOrgId()}`, { headers: apiHeaders() });
+                const resp = await apiFetch(`/api/mcp/catalog?org_id=${getOrgId()}`);
                 const result = await resp.json();
                 if (result.success) {
                     catalogEntries = result.data;
@@ -811,9 +819,8 @@
             }
 
             try {
-                const resp = await fetch('/api/mcp/connections', {
+                const resp = await apiFetch('/api/mcp/connections', {
                     method: 'POST',
-                    headers: apiHeaders(),
                     body: JSON.stringify({
                         catalog_id: selectedCatalogId,
                         credentials,

@@ -117,7 +117,7 @@ module.exports = function(supabase) {
             // Get user profile with role and status
             const { data: profile, error: profileError } = await supabase
                 .from('users')
-                .select('id, email, display_name, role, preferences, status, suspended_reason')
+                .select('id, email, display_name, role, preferences, status, suspended_reason, default_org_id')
                 .eq('id', data.user.id)
                 .single();
 
@@ -179,6 +179,7 @@ module.exports = function(supabase) {
                 display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
                 role: profile?.role || 'user',
                 preferences: profile?.preferences || {},
+                default_org_id: profile?.default_org_id || null,
                 is_platform_admin,
                 platform_admin_role
             };

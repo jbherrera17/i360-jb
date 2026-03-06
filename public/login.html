@@ -826,6 +826,13 @@
                         localStorage.setItem('insight360_token_expires_at', String(data.session.expires_at));
                     }
 
+                    // Store org_id from user profile
+                    const userOrgId = data.user?.default_org_id || data.user?.organization?.id;
+                    if (userOrgId) {
+                        localStorage.setItem('insight360_org_id', userOrgId);
+                        localStorage.setItem('currentOrgId', userOrgId);
+                    }
+
                     currentUser = data.user;
 
                     // Check if this is a new user who needs onboarding
