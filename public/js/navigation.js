@@ -309,12 +309,12 @@ function getCurrentUserRole() {
 }
 
 /**
- * Check if current user has admin access (system admin OR platform admin)
+ * Check if current user has admin access (system admin, platform admin, OR org admin/owner)
  */
 function isCurrentUserAdmin() {
     const user = getCurrentUser();
     if (!user) return false;
-    return user.role === 'admin' || user.is_platform_admin === true;
+    return user.role === 'admin' || user.is_platform_admin === true || ['admin', 'owner'].includes(user.org_role);
 }
 
 /**
@@ -551,7 +551,7 @@ function generateUserProfileHTML() {
                     <i data-lucide="user"></i>
                     <span>Profile</span>
                 </a>
-                <a href="/administrator.html" class="user-menu-item ${(role !== 'admin' && !user.is_platform_admin) ? 'hidden' : ''}">
+                <a href="/administrator.html" class="user-menu-item ${(role !== 'admin' && !user.is_platform_admin && !['admin', 'owner'].includes(user.org_role)) ? 'hidden' : ''}">
                     <i data-lucide="shield"></i>
                     <span>Administrator</span>
                 </a>
@@ -659,6 +659,7 @@ async function _refreshUserSession() {
         stored.platform_admin_role = data.user.platform_admin_role || null;
         stored.is_admin = data.user.is_admin || false;
         stored.role = data.user.role || stored.role || 'user';
+        stored.org_role = data.user.org_role || null;
         localStorage.setItem('insight360_user', JSON.stringify(stored));
     } catch (e) {
         // Non-critical — navigation renders from whatever is cached

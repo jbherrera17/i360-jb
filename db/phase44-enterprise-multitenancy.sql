@@ -338,7 +338,7 @@ VALUES
     -- I360 Strategy Systems (Business+ tiers)
     ('align120', 'Align 120', 'Strategic alignment assessment and planning', 'compass', '/align120.html', 'business', NULL, 'system', 'systems', 20),
     ('strategy120', 'Strategy (S2E)', 'Strategy to Execution pipeline', 'milestone', '/strategy.html', 'business', NULL, 'system', 'systems', 21),
-    ('execute120', 'Execute 120', 'Quarterly execution management', 'rocket', '/execute120.html', 'business', NULL, 'system', 'systems', 22),
+    ('execute120', 'Execute 120', 'Quarterly execution management', 'rocket', '/execute120.html', NULL, NULL, 'system', 'systems', 22),
 
     -- Components/Assets
     ('context_assets', 'Context Assets', 'Manage context data and knowledge', 'database', '/context.html', NULL, NULL, 'tool', 'components', 30),

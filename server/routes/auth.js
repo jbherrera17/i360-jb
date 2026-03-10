@@ -173,15 +173,36 @@ module.exports = function(supabase) {
                 console.warn('Could not check platform admin status at login:', e.message);
             }
 
+            // Check org membership role (admin/owner in their default org)
+            let org_role = null;
+            const defaultOrgId = profile?.default_org_id || null;
+            if (defaultOrgId) {
+                try {
+                    const { data: membership } = await supabase
+                        .from('organization_members')
+                        .select('role')
+                        .eq('user_id', data.user.id)
+                        .eq('org_id', defaultOrgId)
+                        .eq('status', 'active')
+                        .maybeSingle();
+                    if (membership) {
+                        org_role = membership.role;
+                    }
+                } catch (e) {
+                    console.warn('Could not check org membership role at login:', e.message);
+                }
+            }
+
             const userResponse = {
                 id: data.user.id,
                 email: data.user.email,
                 display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
                 role: profile?.role || 'user',
                 preferences: profile?.preferences || {},
-                default_org_id: profile?.default_org_id || null,
+                default_org_id: defaultOrgId,
                 is_platform_admin,
-                platform_admin_role
+                platform_admin_role,
+                org_role
             };
 
             // Cache the profile for subsequent requests
@@ -652,7 +673,7 @@ module.exports = function(supabase) {
                     success: true,
                     user: {
                         ...cachedProfile,
-                        is_admin: cachedProfile.role === 'admin' || cachedProfile.is_platform_admin === true
+                        is_admin: cachedProfile.role === 'admin' || cachedProfile.is_platform_admin === true || ['admin', 'owner'].includes(cachedProfile.org_role)
                     }
                 });
             }
@@ -686,6 +707,28 @@ module.exports = function(supabase) {
                 console.warn('Could not check platform admin status:', e.message);
             }
 
+            // Check org membership role
+            let org_role = null;
+            const defaultOrgId = profile?.default_org_id || null;
+            // Try stored default_org_id first, then fall back to x-org-id header
+            const effectiveOrgId = defaultOrgId || req.headers['x-org-id'] || null;
+            if (effectiveOrgId) {
+                try {
+                    const { data: membership } = await supabase
+                        .from('organization_members')
+                        .select('role')
+                        .eq('user_id', user.id)
+                        .eq('org_id', effectiveOrgId)
+                        .eq('status', 'active')
+                        .maybeSingle();
+                    if (membership) {
+                        org_role = membership.role;
+                    }
+                } catch (e) {
+                    console.warn('Could not check org membership role:', e.message);
+                }
+            }
+
             const userResponse = {
                 id: user.id,
                 email: user.email,
@@ -694,7 +737,8 @@ module.exports = function(supabase) {
                 preferences: profile?.preferences || {},
                 created_at: profile?.created_at || user.created_at,
                 is_platform_admin,
-                platform_admin_role
+                platform_admin_role,
+                org_role
             };
 
             // Cache the profile
@@ -704,7 +748,7 @@ module.exports = function(supabase) {
                 success: true,
                 user: {
                     ...userResponse,
-                    is_admin: userResponse.role === 'admin' || is_platform_admin
+                    is_admin: userResponse.role === 'admin' || is_platform_admin || ['admin', 'owner'].includes(org_role)
                 }
             });
 

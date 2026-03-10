@@ -36,7 +36,10 @@
     "FullscreenMixin": "readonly",
     "PersistenceMixin": "readonly",
     "streamTimeout": "readonly",
-    "escapeHtml": "readonly"
+    "escapeHtml": "readonly",
+    "SessionTimeout": "readonly",
+    "AuthFetch": "readonly",
+    "BrandingService": "readonly"
   },
   "ignorePatterns": ["node_modules/", "coverage/", "playwright-report/"],
   "rules": {
