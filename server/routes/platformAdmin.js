@@ -1253,11 +1253,14 @@ module.exports = function(supabase) {
 
     /**
      * DELETE /api/platform/organizations/:id
-     * Delete an organization (platform admin only)
+     * Delete an organization and its members (platform admin only)
+     * Query params:
+     *   ?delete_members=true  - Also delete member users (public + auth)
      */
     router.delete('/organizations/:id', requireAdminWrite, async (req, res) => {
         try {
             const { id } = req.params;
+            const deleteMembers = req.query.delete_members === 'true';
 
             // Check if org exists
             const { data: org, error: orgError } = await supabase
@@ -1281,7 +1284,34 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Delete the organization (cascades to members, etc.)
+            // Get member user IDs before deleting (needed for cleanup)
+            let memberUserIds = [];
+            if (deleteMembers) {
+                const { data: members } = await supabase
+                    .from('organization_members')
+                    .select('user_id')
+                    .eq('org_id', id);
+
+                memberUserIds = (members || []).map(m => m.user_id);
+
+                // Exclude users who are also members of OTHER organizations
+                // (don't delete shared users)
+                const safeToDelete = [];
+                for (const userId of memberUserIds) {
+                    const { data: otherMemberships } = await supabase
+                        .from('organization_members')
+                        .select('org_id')
+                        .eq('user_id', userId)
+                        .neq('org_id', id);
+
+                    if (!otherMemberships || otherMemberships.length === 0) {
+                        safeToDelete.push(userId);
+                    }
+                }
+                memberUserIds = safeToDelete;
+            }
+
+            // Delete the organization (cascades to members, clients, etc.)
             const { error: deleteError } = await supabase
                 .from('organizations')
                 .delete()
@@ -1289,9 +1319,65 @@ module.exports = function(supabase) {
 
             if (deleteError) throw deleteError;
 
+            // Clean up orphaned data (SET NULL survivors) owned by these users
+            let usersDeleted = 0;
+            let authUsersDeleted = 0;
+            const authDeleteErrors = [];
+
+            if (deleteMembers && memberUserIds.length > 0) {
+                // Delete orphaned rows where org_id was set to NULL
+                for (const table of ['agents', 'conversations', 'context_assets', 'departments', 'okrs', 'skills', 'workflows', 'actions']) {
+                    await supabase
+                        .from(table)
+                        .delete()
+                        .is('org_id', null)
+                        .in('user_id', memberUserIds);
+                }
+
+                // Delete user-only tables (no org_id column)
+                for (const table of ['research_studios', 'thought_leadership_profiles', 'ai_visibility_research', 'content_pillars', 'content_calendar_entries', 'thought_leadership_outputs']) {
+                    await supabase
+                        .from(table)
+                        .delete()
+                        .in('user_id', memberUserIds);
+                }
+
+                // Delete from public.users (cascades remaining dependent rows)
+                const { error: userDeleteError } = await supabase
+                    .from('users')
+                    .delete()
+                    .in('id', memberUserIds);
+
+                if (!userDeleteError) {
+                    usersDeleted = memberUserIds.length;
+                }
+
+                // Delete from auth.users
+                for (const userId of memberUserIds) {
+                    try {
+                        const { error } = await supabase.auth.admin.deleteUser(userId);
+                        if (error) {
+                            authDeleteErrors.push({ id: userId, error: error.message });
+                        } else {
+                            authUsersDeleted++;
+                        }
+                    } catch (err) {
+                        authDeleteErrors.push({ id: userId, error: err.message });
+                    }
+                }
+            }
+
+            console.log(`[DELETE ORG] "${org.name}" deleted by ${req.userId}. Members deleted: ${usersDeleted}, Auth deleted: ${authUsersDeleted}`);
+
             res.json({
                 success: true,
-                message: `Organization "${org.name}" deleted successfully`
+                message: `Organization "${org.name}" deleted successfully`,
+                summary: {
+                    organization: org.name,
+                    members_deleted: usersDeleted,
+                    auth_users_deleted: authUsersDeleted,
+                    auth_delete_errors: authDeleteErrors.length > 0 ? authDeleteErrors : undefined
+                }
             });
         } catch (error) {
             console.error('Error deleting organization:', error);
@@ -2153,6 +2239,109 @@ module.exports = function(supabase) {
         }
     });
 
+
+    // ============================================
+    // TEST DATA RESET
+    // ============================================
+
+    /**
+     * POST /api/platform/reset-test-data
+     * Deletes all organizations and users EXCEPT Synergi (platform owner).
+     * Requires super_admin role. Cleans up orphaned data and auth.users entries.
+     */
+    router.post('/reset-test-data', requireAdminWrite, async (req, res) => {
+        try {
+            // Extra safety: only super_admin can reset
+            if (req.platformAdminRole !== 'super_admin') {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Only super_admin can reset test data'
+                });
+            }
+
+            const { confirm } = req.body;
+            if (confirm !== 'RESET_ALL_TEST_DATA') {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Must send { "confirm": "RESET_ALL_TEST_DATA" } to proceed'
+                });
+            }
+
+            console.log(`[RESET] Test data reset initiated by user ${req.userId}`);
+
+            // Step 1: Get non-Synergi user IDs BEFORE deletion (for auth.users cleanup)
+            const { data: synergiOrg } = await supabase
+                .from('organizations')
+                .select('id')
+                .eq('is_platform_owner', true)
+                .single();
+
+            if (!synergiOrg) {
+                return res.status(500).json({
+                    success: false,
+                    error: 'Platform owner organization not found'
+                });
+            }
+
+            // Get Synergi member IDs
+            const { data: synergiMembers } = await supabase
+                .from('organization_members')
+                .select('user_id')
+                .eq('org_id', synergiOrg.id)
+                .eq('status', 'active');
+
+            const synergiUserIds = new Set((synergiMembers || []).map(m => m.user_id));
+
+            // Get ALL auth users to find non-Synergi ones
+            const { data: authData } = await supabase.auth.admin.listUsers();
+            const authUsers = authData?.users || [];
+            const nonSynergiAuthUsers = authUsers.filter(u => !synergiUserIds.has(u.id));
+
+            // Step 2: Run the SQL reset function (handles public tables)
+            const { data: resetResult, error: resetError } = await supabase
+                .rpc('reset_test_data');
+
+            if (resetError) {
+                console.error('[RESET] SQL function error:', resetError);
+                throw resetError;
+            }
+
+            // Step 3: Delete non-Synergi users from auth.users
+            let authDeleteCount = 0;
+            const authDeleteErrors = [];
+
+            for (const user of nonSynergiAuthUsers) {
+                try {
+                    const { error } = await supabase.auth.admin.deleteUser(user.id);
+                    if (error) {
+                        authDeleteErrors.push({ id: user.id, email: user.email, error: error.message });
+                    } else {
+                        authDeleteCount++;
+                    }
+                } catch (err) {
+                    authDeleteErrors.push({ id: user.id, email: user.email, error: err.message });
+                }
+            }
+
+            console.log(`[RESET] Complete. Orgs deleted: ${resetResult?.organizations_deleted}, Users deleted: ${resetResult?.users_deleted}, Auth users deleted: ${authDeleteCount}`);
+
+            res.json({
+                success: true,
+                message: 'Test data reset complete',
+                summary: {
+                    ...resetResult,
+                    auth_users_deleted: authDeleteCount,
+                    auth_delete_errors: authDeleteErrors.length > 0 ? authDeleteErrors : undefined
+                }
+            });
+        } catch (error) {
+            console.error('[RESET] Error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
 
     return router;
 };
