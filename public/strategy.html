@@ -883,9 +883,9 @@
                             <div id="coreValuesList" class="themes-list">
                                 <!-- Values populated here -->
                             </div>
-                            <button type="button" class="add-theme-btn" onclick="addCoreValue()">
-                                <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                                Add Core Value
+                            <button type="button" class="add-theme-btn" onclick="window.location.href='/soul-configuration.html'">
+                                <i data-lucide="external-link" style="width:16px;height:16px;"></i>
+                                Manage in Soul Configuration
                             </button>
                         </div>
                     </div>
@@ -1075,7 +1075,8 @@
                     foundation = foundationData.data;
                     themes = foundation.themes || [];
                     perspectives = foundation.perspectives || [];
-                    coreValues = foundation.core_values || [];
+                    // Core values always come from soul configuration (single source of truth)
+                    coreValues = await loadSoulConfigValues();
 
                     // Flatten objectives
                     objectives = [];
@@ -1188,14 +1189,31 @@
 
         // ============= STEP 1: Foundation =============
 
+        async function loadSoulConfigValues() {
+            try {
+                const soulRes = await fetch('/api/soul-config?scope_type=platform&is_active=true');
+                const soulData = await soulRes.json();
+                if (soulData.success && soulData.data && soulData.data.length > 0) {
+                    const soulConfig = soulData.data[0];
+                    return (soulConfig.values || []).map(v => ({
+                        name: v.name || v.title || '',
+                        description: v.description || ''
+                    }));
+                }
+            } catch (err) {
+                console.error('Error loading soul config values:', err);
+            }
+            return [];
+        }
+
         function renderCoreValues() {
             const container = document.getElementById('coreValuesList');
             if (coreValues.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No core values defined yet</p>';
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No core values defined yet. <a href="/soul-configuration.html" style="color: var(--primary);">Configure in Soul Configuration</a></p>';
                 return;
             }
 
-            container.innerHTML = coreValues.map((value, index) => `
+            container.innerHTML = coreValues.map((value) => `
                 <div class="theme-item" style="border-left-color: #8b5cf6;">
                     <div class="theme-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
                         <i data-lucide="heart" style="width:18px;height:18px;"></i>
@@ -1204,33 +1222,9 @@
                         <div class="theme-name">${value.name}</div>
                         <div class="theme-rationale">${value.description || ''}</div>
                     </div>
-                    <div class="theme-actions">
-                        <button class="btn-icon danger" onclick="removeCoreValue(${index})" title="Remove">
-                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                        </button>
-                    </div>
                 </div>
             `).join('');
             lucide.createIcons();
-        }
-
-        async function addCoreValue() {
-            const result = await ModalService.form({
-                title: 'Add Core Value',
-                fields: [
-                    { name: 'name', label: 'Core Value Name', type: 'text', required: true, placeholder: 'e.g., Integrity' },
-                    { name: 'description', label: 'Brief Description (optional)', type: 'text', placeholder: 'What this value means...' }
-                ],
-                submitText: 'Add Value'
-            });
-            if (!result) return;
-            coreValues.push({ name: result.name, description: result.description || '' });
-            renderCoreValues();
-        }
-
-        function removeCoreValue(index) {
-            coreValues.splice(index, 1);
-            renderCoreValues();
         }
 
         async function saveFoundationAndNext() {
@@ -1239,7 +1233,6 @@
                 vision_horizon: document.getElementById('visionHorizon').value,
                 mission: document.getElementById('mission').value,
                 planning_period: document.getElementById('planningPeriod').value,
-                core_values: coreValues,
                 is_current: true,
                 status: 'active'
             };

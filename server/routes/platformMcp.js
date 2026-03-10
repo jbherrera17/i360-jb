@@ -42,6 +42,134 @@ module.exports = function(supabase) {
     router.use(requirePlatformAdmin);
 
     // ─────────────────────────────────────────
+    // MCP REGISTRY BROWSER
+    // ─────────────────────────────────────────
+
+    // In-memory cache for registry data
+    let registryCache = { data: null, fetchedAt: 0 };
+    const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+    /**
+     * GET /api/platform/mcp/registry
+     * Proxy the Anthropic MCP Registry and return simplified server list.
+     */
+    router.get('/registry', async (req, res) => {
+        try {
+            const now = Date.now();
+            if (registryCache.data && (now - registryCache.fetchedAt) < CACHE_TTL) {
+                return res.json({ success: true, data: registryCache.data, cached: true });
+            }
+
+            const servers = [];
+            let cursor = null;
+
+            // Paginate through all results
+            do {
+                const url = new URL('https://api.anthropic.com/mcp-registry/v0/servers');
+                url.searchParams.set('version', 'latest');
+                url.searchParams.set('visibility', 'commercial');
+                url.searchParams.set('limit', '100');
+                if (cursor) url.searchParams.set('cursor', cursor);
+
+                const resp = await fetch(url.toString(), {
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`Registry returned ${resp.status}: ${resp.statusText}`);
+                }
+
+                const body = await resp.json();
+                const items = body.servers || body.data || [];
+                servers.push(...items);
+
+                cursor = body.metadata?.nextCursor || null;
+            } while (cursor);
+
+            // Map to simplified format
+            // The Anthropic registry nests metadata under _meta['com.anthropic.api/mcp-registry']
+            const mapped = servers.map(entry => {
+                const anthropicMeta = (entry._meta || {})['com.anthropic.api/mcp-registry'] || {};
+                const server = entry.server || {};
+                const remotes = server.remotes || [];
+                const remote = remotes[0] || {};
+
+                const displayName = anthropicMeta.displayName || server.title || server.name || 'Unknown';
+
+                return {
+                    registry_id: anthropicMeta.slug || server.name || anthropicMeta.uuid,
+                    name: displayName,
+                    description: server.description || anthropicMeta.oneLiner || '',
+                    url: remote.url || anthropicMeta.url || null,
+                    transport_type: remote.type || null,
+                    auth_required: !anthropicMeta.isAuthless,
+                    tools: anthropicMeta.toolNames || [],
+                    permissions: anthropicMeta.permissions || [],
+                    works_with: anthropicMeta.worksWith || [],
+                    documentation: anthropicMeta.documentation || null,
+                    icon_url: anthropicMeta.iconUrl || null,
+                    icon: guessIcon(displayName)
+                };
+            });
+
+            registryCache = { data: mapped, fetchedAt: now };
+            res.json({ success: true, data: mapped, cached: false });
+        } catch (error) {
+            console.error('[MCP Registry] Fetch error:', error);
+            // Return stale cache if available
+            if (registryCache.data) {
+                return res.json({ success: true, data: registryCache.data, cached: true, stale: true });
+            }
+            res.status(502).json({ success: false, error: 'Failed to fetch MCP registry: ' + error.message });
+        }
+    });
+
+    /**
+     * POST /api/platform/mcp/catalog/bulk
+     * Bulk-create catalog entries from registry imports.
+     */
+    router.post('/catalog/bulk', async (req, res) => {
+        try {
+            const { entries } = req.body;
+            if (!Array.isArray(entries) || entries.length === 0) {
+                return res.status(400).json({ success: false, error: 'entries array is required' });
+            }
+
+            const result = await mcpCatalogService.bulkCreateCatalogEntries(supabase, entries, req.userId);
+            res.status(201).json({ success: true, data: result });
+        } catch (error) {
+            console.error('[MCP Catalog] Bulk create error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /**
+     * Guess a Lucide icon name from the server name.
+     */
+    function guessIcon(name) {
+        const n = name.toLowerCase();
+        const iconMap = {
+            github: 'github', git: 'git-branch',
+            slack: 'slack', database: 'database', postgres: 'database',
+            file: 'file', filesystem: 'folder', folder: 'folder',
+            search: 'search', brave: 'search', google: 'search',
+            web: 'globe', fetch: 'globe', browser: 'globe',
+            memory: 'brain', puppeteer: 'monitor',
+            sentry: 'bug', linear: 'layout-list',
+            notion: 'book-open', stripe: 'credit-card',
+            cloudflare: 'cloud', aws: 'cloud',
+            docker: 'container', kubernetes: 'container',
+            email: 'mail', smtp: 'mail',
+            calendar: 'calendar', time: 'clock',
+            map: 'map', location: 'map-pin',
+        };
+        for (const [key, icon] of Object.entries(iconMap)) {
+            if (n.includes(key)) return icon;
+        }
+        return 'plug';
+    }
+
+    // ─────────────────────────────────────────
     // CATALOG CRUD
     // ─────────────────────────────────────────
 

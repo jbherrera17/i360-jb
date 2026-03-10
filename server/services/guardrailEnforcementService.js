@@ -356,9 +356,10 @@ function resolveResponseTemplate(brightLine, config) {
  * Build soul context markdown block for system prompt injection
  * @param {string|null} orgId - Organization ID
  * @param {string} userMessage - The user message (for stakes detection)
+ * @param {object} options - { conversationId, agentId, userId }
  * @returns {string|null} - Formatted markdown for prompt, or null if no config
  */
-async function buildSoulContextBlock(orgId, userMessage = '') {
+async function buildSoulContextBlock(orgId, userMessage = '', options = {}) {
     const config = await getResolvedSoulConfig(orgId);
     if (!config) return null;
 
@@ -371,6 +372,23 @@ async function buildSoulContextBlock(orgId, userMessage = '') {
 
     if (formattedContext) {
         parts.push(formattedContext);
+    }
+
+    // Log ethical evaluation for medium+ stakes (fire-and-forget)
+    if (stakesLevel !== 'low' && orgId) {
+        ethicalContextService.logEthicalEvaluation({
+            orgId,
+            conversationId: options.conversationId || null,
+            agentId: options.agentId || null,
+            userId: options.userId || null,
+            stakesLevel,
+            decisionSummary: `Auto-detected ${stakesLevel} stakes in chat message`,
+            decisionType: 'recommendation',
+            automated: true,
+            requiresHumanReview: stakesLevel === 'critical'
+        }).catch(err => {
+            console.warn('Failed to log ethical evaluation:', err.message);
+        });
     }
 
     // Add voice/persona guidance if present

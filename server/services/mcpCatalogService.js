@@ -215,6 +215,65 @@ async function testCatalogEntry(supabase, id, testCredentials = {}) {
 }
 
 /**
+ * Bulk-create catalog entries (for registry imports).
+ * Skips entries whose slug already exists.
+ * Returns { inserted, skipped } counts.
+ */
+async function bulkCreateCatalogEntries(supabase, entries, adminUserId) {
+    let inserted = 0;
+    let skipped = 0;
+    const results = [];
+
+    for (const entry of entries) {
+        if (!entry.slug || !entry.name || !entry.transport_type) {
+            skipped++;
+            continue;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('mcp_server_catalog')
+                .insert({
+                    slug: entry.slug,
+                    name: entry.name,
+                    description: entry.description || null,
+                    icon: entry.icon || 'plug',
+                    transport_type: entry.transport_type,
+                    default_url: entry.default_url || null,
+                    auth_type: entry.auth_type || 'none',
+                    auth_config: entry.auth_config || {},
+                    command: entry.command || null,
+                    args: entry.args || [],
+                    env_schema: entry.env_schema || {},
+                    tool_schemas: entry.tool_schemas || [],
+                    min_tier: entry.min_tier || null,
+                    platform_admin_only: entry.platform_admin_only || false,
+                    created_by: adminUserId
+                })
+                .select()
+                .single();
+
+            if (error) {
+                // Unique constraint violation = duplicate slug
+                if (error.code === '23505') {
+                    skipped++;
+                } else {
+                    throw error;
+                }
+            } else {
+                inserted++;
+                results.push(data);
+            }
+        } catch (err) {
+            console.error(`[MCP Catalog] Bulk insert error for "${entry.slug}":`, err.message);
+            skipped++;
+        }
+    }
+
+    return { inserted, skipped, entries: results };
+}
+
+/**
  * Get connection count per catalog entry (for admin stats).
  */
 async function getConnectionCounts(supabase) {
@@ -242,5 +301,6 @@ module.exports = {
     rejectCatalogEntry,
     deleteCatalogEntry,
     testCatalogEntry,
+    bulkCreateCatalogEntries,
     getConnectionCounts
 };

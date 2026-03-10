@@ -24,6 +24,10 @@ const openBrain = require('../services/openBrainService');
 // Import guardrail enforcement for pre-screening and soul context
 const guardrailEnforcement = require('../services/guardrailEnforcementService');
 
+// Import MCP tool bridge for tool injection into chat
+const mcpToolBridge = require('../services/mcpToolBridge');
+const mcpClientManager = require('../services/mcpClientManager');
+
 // Initialize services with error handling to prevent crashes
 if (process.env.ANTHROPIC_API_KEY) {
     anthropic.initialize(process.env.ANTHROPIC_API_KEY);
@@ -316,7 +320,11 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         let soulContext = null;
         if (orgId) {
             try {
-                soulContext = await guardrailEnforcement.buildSoulContextBlock(orgId, text);
+                soulContext = await guardrailEnforcement.buildSoulContextBlock(orgId, text, {
+                    conversationId: req.body.conversationId || null,
+                    agentId: req.body.agentId || null,
+                    userId: req.userId || null
+                });
             } catch (e) {
                 console.warn('Failed to build soul context for chat message:', e.message);
             }
@@ -387,6 +395,48 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
             }
         }
 
+        // MCP: gather enabled tools for this org
+        let mcpToolDefs = [];
+        let mcpConnectionMap = {};
+        let onMcpToolUse = null;
+
+        if (!skipHiggins && orgId) {
+            try {
+                const mcpConnectionService = require('../services/mcpConnectionService');
+                const orgTools = await mcpConnectionService.getOrgMcpTools(req.supabase, orgId);
+                if (orgTools.length > 0) {
+                    // Build connection map for tool execution routing
+                    for (const t of orgTools) {
+                        const connPrefix = t.connectionId.replace(/-/g, '').slice(0, 8);
+                        mcpConnectionMap[connPrefix] = t.connectionId;
+                    }
+
+                    // Convert to provider format
+                    if (provider === 'anthropic') {
+                        mcpToolDefs = orgTools.map(t => mcpToolBridge.toAnthropicTool(t.connectionId, t.tool));
+                    } else if (provider === 'openai') {
+                        mcpToolDefs = orgTools.map(t => mcpToolBridge.toOpenAITool(t.connectionId, t.tool));
+                    }
+
+                    // Build MCP tool execution callback
+                    onMcpToolUse = async (namespacedName, toolInput) => {
+                        const parsed = mcpToolBridge.parseToolName(namespacedName);
+                        if (!parsed) return { content: 'Invalid MCP tool name', isError: true };
+
+                        const fullConnId = mcpToolBridge.findConnectionByPrefix(mcpConnectionMap, parsed.connectionPrefix);
+                        if (!fullConnId) return { content: 'MCP connection not found', isError: true };
+
+                        return mcpToolBridge.executeMcpTool(
+                            mcpClientManager, fullConnId, parsed.toolName, toolInput,
+                            req.supabase, { orgId, userId: req.userId, conversationId: req.body.conversationId }
+                        );
+                    };
+                }
+            } catch (mcpToolError) {
+                console.warn('[MCP] Tool injection failed (non-blocking):', mcpToolError.message);
+            }
+        }
+
         let response;
 
         if (provider === 'anthropic') {
@@ -395,7 +445,9 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
                 model,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
-                images: allMedia
+                images: allMedia,
+                mcpTools: mcpToolDefs,
+                onMcpToolUse
             });
         } else if (provider === 'openai') {
             response = await openai.chat({
@@ -403,7 +455,9 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
                 model,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
-                images: allMedia
+                images: allMedia,
+                mcpTools: mcpToolDefs,
+                onMcpToolUse
             });
         } else if (provider === 'perplexity') {
             response = await perplexity.chat({
@@ -505,7 +559,11 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
         let soulContext = null;
         if (orgId) {
             try {
-                soulContext = await guardrailEnforcement.buildSoulContextBlock(orgId, text);
+                soulContext = await guardrailEnforcement.buildSoulContextBlock(orgId, text, {
+                    conversationId: req.body.conversationId || null,
+                    agentId: req.body.agentId || null,
+                    userId: req.userId || null
+                });
             } catch (e) {
                 console.warn('Failed to build soul context for chat stream:', e.message);
             }
@@ -580,6 +638,45 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             }
         }
 
+        // MCP: gather enabled tools for this org (streaming)
+        let mcpToolDefs = [];
+        let mcpConnectionMap = {};
+        let onMcpToolUse = null;
+
+        if (!skipHiggins && orgId) {
+            try {
+                const mcpConnectionService = require('../services/mcpConnectionService');
+                const orgTools = await mcpConnectionService.getOrgMcpTools(req.supabase, orgId);
+                if (orgTools.length > 0) {
+                    for (const t of orgTools) {
+                        const connPrefix = t.connectionId.replace(/-/g, '').slice(0, 8);
+                        mcpConnectionMap[connPrefix] = t.connectionId;
+                    }
+
+                    if (provider === 'anthropic') {
+                        mcpToolDefs = orgTools.map(t => mcpToolBridge.toAnthropicTool(t.connectionId, t.tool));
+                    } else if (provider === 'openai') {
+                        mcpToolDefs = orgTools.map(t => mcpToolBridge.toOpenAITool(t.connectionId, t.tool));
+                    }
+
+                    onMcpToolUse = async (namespacedName, toolInput) => {
+                        const parsed = mcpToolBridge.parseToolName(namespacedName);
+                        if (!parsed) return { content: 'Invalid MCP tool name', isError: true };
+
+                        const fullConnId = mcpToolBridge.findConnectionByPrefix(mcpConnectionMap, parsed.connectionPrefix);
+                        if (!fullConnId) return { content: 'MCP connection not found', isError: true };
+
+                        return mcpToolBridge.executeMcpTool(
+                            mcpClientManager, fullConnId, parsed.toolName, toolInput,
+                            req.supabase, { orgId, userId: req.userId, conversationId: req.body.conversationId }
+                        );
+                    };
+                }
+            } catch (mcpToolError) {
+                console.warn('[MCP] Tool injection failed (non-blocking):', mcpToolError.message);
+            }
+        }
+
         // Set up SSE headers
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -611,7 +708,9 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
                 model,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
-                images: allMedia
+                images: allMedia,
+                mcpTools: mcpToolDefs,
+                onMcpToolUse
             });
         } else if (provider === 'openai') {
             // Check if OpenAI has streamChat
@@ -621,7 +720,9 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
                     model,
                     systemPrompt: finalSystemPrompt,
                     history: normalizedHistory,
-                    images: allMedia
+                    images: allMedia,
+                    mcpTools: mcpToolDefs,
+                    onMcpToolUse
                 });
             } else if (openai.stream) {
                 stream = openai.stream({
@@ -629,7 +730,9 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
                     model,
                     systemPrompt: finalSystemPrompt,
                     history: normalizedHistory,
-                    images: allMedia
+                    images: allMedia,
+                    mcpTools: mcpToolDefs,
+                    onMcpToolUse
                 });
             } else {
                 throw new Error('OpenAI streaming not available');

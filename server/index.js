@@ -67,6 +67,16 @@ function validateEnvironment() {
         }
     }
 
+    // MCP credential encryption key validation
+    if (process.env.MCP_CREDENTIAL_KEY) {
+        if (process.env.MCP_CREDENTIAL_KEY.length !== 64 || !/^[0-9a-fA-F]+$/.test(process.env.MCP_CREDENTIAL_KEY)) {
+            errors.push('MCP_CREDENTIAL_KEY must be a 64-character hex string (32 bytes)');
+            errors.push('  → Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+        }
+    } else {
+        warnings.push('MCP_CREDENTIAL_KEY not set - MCP credential encryption unavailable');
+    }
+
     console.log(`\n🌐 Environment: ${environment} (NODE_ENV=${process.env.NODE_ENV || 'undefined'})`);
     if (warnings.length > 0) {
         console.log('\n⚠️  Optional services not configured:');

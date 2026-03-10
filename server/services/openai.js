@@ -314,9 +314,10 @@ async function chat(options) {
         images = [],
         maxTokens = 16384,
         enableSearch = false,
-        reasoningEffort = null
+        reasoningEffort = null,
+        mcpTools = []
     } = options;
-    
+
     const resolvedModel = resolveModel(model);
     const modelInfo = OPENAI_MODELS[resolvedModel] || {};
     
@@ -345,9 +346,11 @@ async function chat(options) {
         requestParams.reasoning_effort = reasoningEffort;
     }
     
-    // Add web search tool if enabled
+    // Collect all tools (web search + MCP)
+    const allTools = [];
+
     if (enableSearch && searchService && searchService.isAvailable()) {
-        requestParams.tools = [{
+        allTools.push({
             type: 'function',
             function: {
                 name: 'web_search',
@@ -360,40 +363,61 @@ async function chat(options) {
                     required: ['query']
                 }
             }
-        }];
+        });
+    }
+
+    if (mcpTools.length > 0) {
+        allTools.push(...mcpTools);
+    }
+
+    if (allTools.length > 0) {
+        requestParams.tools = allTools;
         requestParams.tool_choice = 'auto';
     }
-    
+
+    // Callback for MCP tool execution
+    const onMcpToolUse = options.onMcpToolUse || null;
+
     // Use resilience wrapper for API call
     const makeApiCall = async () => {
         let response = await client.chat.completions.create(requestParams);
         let responseMessage = response.choices[0].message;
+        let loopCount = 0;
+        const MAX_TOOL_LOOPS = 5;
 
-        // Handle tool calls (web search)
-        if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+        // Handle tool calls (web search + MCP)
+        while (responseMessage.tool_calls && responseMessage.tool_calls.length > 0 && loopCount < MAX_TOOL_LOOPS) {
+            loopCount++;
             const toolCall = responseMessage.tool_calls[0];
+            const args = JSON.parse(toolCall.function.arguments);
+            let toolResultContent;
 
             if (toolCall.function.name === 'web_search') {
-                const args = JSON.parse(toolCall.function.arguments);
                 const searchResults = await searchService.search(args.query);
-
-                // Continue with tool result
-                const continueMessages = [
-                    ...messages,
-                    responseMessage,
-                    {
-                        role: 'tool',
-                        tool_call_id: toolCall.id,
-                        content: JSON.stringify(searchResults),
-                    },
-                ];
-
-                response = await client.chat.completions.create({
-                    ...requestParams,
-                    messages: continueMessages,
-                });
-                responseMessage = response.choices[0].message;
+                toolResultContent = JSON.stringify(searchResults);
+            } else if (toolCall.function.name.startsWith('mcp__') && onMcpToolUse) {
+                const mcpResult = await onMcpToolUse(toolCall.function.name, args);
+                toolResultContent = mcpResult.content;
+            } else {
+                toolResultContent = JSON.stringify({ error: `Unknown tool: ${toolCall.function.name}` });
             }
+
+            // Continue with tool result
+            const continueMessages = [
+                ...messages,
+                responseMessage,
+                {
+                    role: 'tool',
+                    tool_call_id: toolCall.id,
+                    content: toolResultContent,
+                },
+            ];
+
+            response = await client.chat.completions.create({
+                ...requestParams,
+                messages: continueMessages,
+            });
+            responseMessage = response.choices[0].message;
         }
 
         return { response, responseMessage };
@@ -455,14 +479,15 @@ async function* streamChat(options) {
         history = [],
         images = [],
         maxTokens = 16384,
-        enableSearch = false
+        enableSearch = false,
+        mcpTools = []
     } = options;
-    
+
     const resolvedModel = resolveModel(model);
     const modelInfo = OPENAI_MODELS[resolvedModel] || {};
-    
+
     const messages = buildMessages(message, history, images, systemPrompt);
-    
+
     const requestParams = {
         model: resolvedModel,
         messages,
@@ -482,9 +507,11 @@ async function* streamChat(options) {
         requestParams.max_tokens = tokenLimit;
     }
 
-    // Add web search tool if enabled
+    // Collect all tools (web search + MCP)
+    const allTools = [];
+
     if (enableSearch && searchService && searchService.isAvailable()) {
-        requestParams.tools = [{
+        allTools.push({
             type: 'function',
             function: {
                 name: 'web_search',
@@ -497,57 +524,80 @@ async function* streamChat(options) {
                     required: ['query']
                 }
             }
-        }];
+        });
+    }
+
+    if (mcpTools.length > 0) {
+        allTools.push(...mcpTools);
+    }
+
+    if (allTools.length > 0) {
+        requestParams.tools = allTools;
         requestParams.tool_choice = 'auto';
     }
     
+    // Callback for MCP tool execution
+    const onMcpToolUse = options.onMcpToolUse || null;
+
     try {
         const stream = await client.chat.completions.create(requestParams);
-        
+
         let toolCallBuffer = null;
         let promptTokens = 0;
         let completionTokens = 0;
-        
+
         for await (const chunk of stream) {
             const delta = chunk.choices[0]?.delta;
-            
+
             if (delta?.content) {
                 yield { type: 'text', content: delta.content };
             }
-            
+
             // Handle streaming tool calls
             if (delta?.tool_calls) {
                 const toolDelta = delta.tool_calls[0];
-                if (toolDelta.function?.name === 'web_search') {
-                    if (!toolCallBuffer) {
-                        toolCallBuffer = {
-                            id: toolDelta.id,
-                            name: toolDelta.function.name,
-                            arguments: ''
-                        };
+                if (toolDelta.function?.name && !toolCallBuffer) {
+                    toolCallBuffer = {
+                        id: toolDelta.id,
+                        name: toolDelta.function.name,
+                        arguments: ''
+                    };
+                    if (toolDelta.function.name === 'web_search') {
                         yield { type: 'search_start', query: '' };
+                    } else if (toolDelta.function.name.startsWith('mcp__')) {
+                        yield { type: 'mcp_tool_start', toolName: toolDelta.function.name };
                     }
                 }
-                if (toolDelta.function?.arguments) {
+                if (toolDelta.function?.arguments && toolCallBuffer) {
                     toolCallBuffer.arguments += toolDelta.function.arguments;
                 }
             }
-            
+
             // Track usage if provided
             if (chunk.usage) {
                 promptTokens = chunk.usage.prompt_tokens || 0;
                 completionTokens = chunk.usage.completion_tokens || 0;
             }
-            
+
             // Check for tool call completion
             if (chunk.choices[0]?.finish_reason === 'tool_calls' && toolCallBuffer) {
                 try {
                     const args = JSON.parse(toolCallBuffer.arguments);
-                    yield { type: 'search_query', query: args.query };
-                    
-                    const searchResults = await searchService.search(args.query);
-                    yield { type: 'search_complete', results: searchResults };
-                    
+                    let toolResultContent;
+
+                    if (toolCallBuffer.name === 'web_search') {
+                        yield { type: 'search_query', query: args.query };
+                        const searchResults = await searchService.search(args.query);
+                        yield { type: 'search_complete', results: searchResults };
+                        toolResultContent = JSON.stringify(searchResults);
+                    } else if (toolCallBuffer.name.startsWith('mcp__') && onMcpToolUse) {
+                        const mcpResult = await onMcpToolUse(toolCallBuffer.name, args);
+                        yield { type: 'mcp_tool_result', toolName: toolCallBuffer.name, isError: mcpResult.isError };
+                        toolResultContent = mcpResult.content;
+                    } else {
+                        toolResultContent = JSON.stringify({ error: `Unknown tool: ${toolCallBuffer.name}` });
+                    }
+
                     // Continue with tool result
                     const continueMessages = [
                         ...messages,
@@ -565,16 +615,16 @@ async function* streamChat(options) {
                         {
                             role: 'tool',
                             tool_call_id: toolCallBuffer.id,
-                            content: JSON.stringify(searchResults)
+                            content: toolResultContent
                         }
                     ];
-                    
+
                     const continueStream = await client.chat.completions.create({
                         ...requestParams,
                         messages: continueMessages,
                         stream: true
                     });
-                    
+
                     for await (const continueChunk of continueStream) {
                         const continueDelta = continueChunk.choices[0]?.delta;
                         if (continueDelta?.content) {
