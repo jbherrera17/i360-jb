@@ -113,6 +113,45 @@
             border-left: 3px solid var(--primary);
         }
 
+        .chat-history-panel .conversation-title-row {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-bottom: 0.25rem;
+            min-width: 0;
+        }
+
+        .chat-history-panel .conversation-star {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.15s, color 0.15s;
+        }
+
+        .chat-history-panel .conversation-item:hover .conversation-star,
+        .chat-history-panel .conversation-star.active {
+            opacity: 1;
+        }
+
+        .chat-history-panel .conversation-star.active {
+            color: var(--warning, #f59e0b);
+        }
+
+        .chat-history-panel .conversation-star:hover {
+            color: var(--warning, #f59e0b);
+        }
+
+        .chat-history-panel .conversation-star i {
+            width: 13px;
+            height: 13px;
+        }
+
         .chat-history-panel .conversation-title {
             font-size: 0.85rem;
             font-weight: 500;
@@ -120,20 +159,21 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 0.25rem;
         }
 
         .chat-history-panel .conversation-meta {
             display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
         }
 
         .chat-history-panel .conversation-info {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
+            gap: 0.5rem;
+            min-width: 0;
+            flex: 1;
         }
 
         .chat-history-panel .conversation-user {
@@ -238,6 +278,182 @@
             border-radius: var(--radius-sm);
             background: var(--bg-secondary);
             color: var(--text-primary);
+        }
+
+        /* Search bar */
+        .conversation-search {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .conversation-search-input {
+            width: 100%;
+            padding: 0.4rem 0.6rem 0.4rem 2rem;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .conversation-search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .conversation-search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .conversation-search-wrapper {
+            position: relative;
+        }
+
+        .conversation-search-wrapper .search-icon {
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .conversation-search-wrapper .search-clear {
+            position: absolute;
+            right: 0.35rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.15rem;
+            display: none;
+            border-radius: var(--radius-sm);
+        }
+
+        .conversation-search-wrapper .search-clear:hover {
+            color: var(--text-primary);
+        }
+
+        .conversation-search-wrapper .search-clear i {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* Filter toolbar */
+        .conversation-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .conversation-filter-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .conversation-filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .conversation-filter-btn.active {
+            background: var(--primary-soft);
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .conversation-filter-btn i {
+            width: 11px;
+            height: 11px;
+        }
+
+        /* Bulk actions bar */
+        .conversation-bulk-bar {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--primary-soft);
+            flex-shrink: 0;
+        }
+
+        .conversation-bulk-bar.visible {
+            display: flex;
+        }
+
+        .conversation-bulk-bar .bulk-count {
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .conversation-bulk-bar .bulk-action {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+        }
+
+        .conversation-bulk-bar .bulk-action:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .conversation-bulk-bar .bulk-action.bulk-delete:hover {
+            color: var(--danger);
+        }
+
+        .conversation-bulk-bar .bulk-action i {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Conversation checkbox for bulk select */
+        .conversation-item .conversation-checkbox {
+            display: none;
+            flex-shrink: 0;
+        }
+
+        .conversation-item.select-mode .conversation-checkbox {
+            display: block;
+            accent-color: var(--primary);
+        }
+
+        /* Section headers in conversation list */
+        .conversation-section-header {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            padding: 0.75rem 0.75rem 0.25rem;
         }
 
         /* Organization badge in conversation list */
@@ -406,9 +622,14 @@
         <aside class="chat-history-panel">
             <div class="chat-history-header">
                 <h3>Conversations</h3>
-                <button onclick="startNewChat()" class="btn-icon" title="New Chat">
-                    <i data-lucide="plus"></i>
-                </button>
+                <div style="display:flex;gap:0.25rem;">
+                    <button onclick="toggleBulkMode()" class="btn-icon" title="Select multiple" id="bulkModeBtn">
+                        <i data-lucide="check-square"></i>
+                    </button>
+                    <button onclick="startNewChat()" class="btn-icon" title="New Chat">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
             </div>
             <!-- Admin filter controls (hidden by default, shown for platform admins) -->
             <div id="adminConversationFilters" class="conversation-filters" style="display: none;">
@@ -423,6 +644,47 @@
                         <option value="">All Organizations</option>
                     </select>
                 </div>
+            </div>
+            <!-- Search -->
+            <div class="conversation-search">
+                <div class="conversation-search-wrapper">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="conversationSearchInput" class="conversation-search-input" placeholder="Search conversations..." oninput="filterConversationsLocal()" />
+                    <button class="search-clear" id="searchClearBtn" onclick="clearConversationSearch()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Filter pills -->
+            <div class="conversation-filter-bar" id="conversationFilterBar">
+                <button class="conversation-filter-btn active" data-filter="all" onclick="setConversationFilter('all')">
+                    All
+                </button>
+                <button class="conversation-filter-btn" data-filter="starred" onclick="setConversationFilter('starred')">
+                    <i data-lucide="star"></i> Starred
+                </button>
+                <button class="conversation-filter-btn" data-filter="archived" onclick="setConversationFilter('archived')">
+                    <i data-lucide="archive"></i> Archived
+                </button>
+            </div>
+            <!-- Bulk actions bar -->
+            <div class="conversation-bulk-bar" id="conversationBulkBar">
+                <span class="bulk-count" id="bulkCount">0 selected</span>
+                <button class="bulk-action" onclick="bulkStarConversations()" title="Star selected">
+                    <i data-lucide="star"></i>
+                </button>
+                <button class="bulk-action" onclick="bulkArchiveConversations()" title="Archive selected">
+                    <i data-lucide="archive"></i>
+                </button>
+                <button class="bulk-action" onclick="bulkExportConversations()" title="Export selected">
+                    <i data-lucide="download"></i>
+                </button>
+                <button class="bulk-action bulk-delete" onclick="bulkDeleteConversations()" title="Delete selected">
+                    <i data-lucide="trash-2"></i>
+                </button>
+                <button class="bulk-action" onclick="exitBulkMode()" title="Cancel">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <div id="conversationList" class="conversation-list">
                 <!-- Populated by JS -->

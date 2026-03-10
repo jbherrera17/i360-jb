@@ -1231,7 +1231,7 @@ function buildMultimodalContent(text, files) {
 /**
  * Load conversations from API
  */
-async function loadConversations() {
+async function loadConversations(filterOverrides = {}) {
     try {
         let url;
         if (isPlatformAdmin && showAllConversations) {
@@ -1242,7 +1242,11 @@ async function loadConversations() {
             }
         } else {
             // Normal user view - get own conversations
-            url = '/api/conversations?limit=50';
+            const params = new URLSearchParams({ limit: '50' });
+            if (filterOverrides.starredOnly) params.set('starredOnly', 'true');
+            if (filterOverrides.archivedOnly) params.set('archivedOnly', 'true');
+            if (filterOverrides.search) params.set('search', filterOverrides.search);
+            url = `/api/conversations?${params.toString()}`;
         }
 
         const response = await fetch(url);
@@ -1265,16 +1269,58 @@ function renderConversationList() {
     const conversationList = document.getElementById('conversationList');
     if (!conversationList) return;
 
-    if (conversations.length === 0) {
+    // Apply local search filter
+    let filtered = conversations;
+    if (conversationSearchQuery) {
+        filtered = filtered.filter(c =>
+            c.title?.toLowerCase().includes(conversationSearchQuery) ||
+            c.users?.display_name?.toLowerCase().includes(conversationSearchQuery) ||
+            c.users?.email?.toLowerCase().includes(conversationSearchQuery)
+        );
+    }
+
+    if (filtered.length === 0) {
+        const emptyMsg = conversationSearchQuery ? 'No matching conversations' :
+            conversationFilter === 'archived' ? 'No archived conversations' :
+            conversationFilter === 'starred' ? 'No starred conversations' :
+            'No conversations yet';
         conversationList.innerHTML = `
             <div class="empty-conversations">
-                <p>No conversations yet</p>
+                <p>${emptyMsg}</p>
             </div>
         `;
         return;
     }
 
-    conversationList.innerHTML = conversations.map(conv => {
+    const isArchiveView = conversationFilter === 'archived';
+    const selectModeClass = isBulkMode ? ' select-mode' : '';
+
+    // Separate starred and non-starred for section rendering (only in 'all' view)
+    const starred = (conversationFilter === 'all') ? filtered.filter(c => c.is_starred) : [];
+    const nonStarred = (conversationFilter === 'all') ? filtered.filter(c => !c.is_starred) : filtered;
+
+    let html = '';
+
+    // Starred section header
+    if (starred.length > 0) {
+        html += `<div class="conversation-section-header">Starred</div>`;
+        html += starred.map(conv => renderConversationItem(conv, isArchiveView, selectModeClass)).join('');
+        if (nonStarred.length > 0) {
+            html += `<div class="conversation-section-header">Recent</div>`;
+        }
+    }
+
+    // Main list
+    html += nonStarred.map(conv => renderConversationItem(conv, isArchiveView, selectModeClass)).join('');
+
+    conversationList.innerHTML = html;
+    lucide.createIcons();
+}
+
+/**
+ * Render a single conversation item
+ */
+function renderConversationItem(conv, isArchiveView, selectModeClass) {
         // Get user display name if available
         const userName = conv.users?.display_name || conv.users?.email || '';
         const userDisplay = userName ? `<span class="conversation-user">${escapeHtml(userName)}</span>` : '';
@@ -1283,11 +1329,29 @@ function renderConversationList() {
         const orgName = conv.users?.organization?.name || '';
         const orgDisplay = (showAllConversations && orgName) ? `<span class="conversation-org">${escapeHtml(orgName)}</span>` : '';
 
+        const archiveBtn = isArchiveView
+            ? `<button class="conversation-action" onclick="event.stopPropagation(); unarchiveConversation('${conv.id}')" title="Restore">
+                    <i data-lucide="archive-restore"></i>
+                </button>`
+            : `<button class="conversation-action" onclick="event.stopPropagation(); archiveConversation('${conv.id}')" title="Archive">
+                    <i data-lucide="archive"></i>
+                </button>`;
+
+        const bulkCheckbox = isBulkMode
+            ? `<input type="checkbox" class="conversation-checkbox" ${bulkSelectedIds.has(conv.id) ? 'checked' : ''} onclick="toggleBulkSelect('${conv.id}', event)" />`
+            : '';
+
         return `
-        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}"
-             onclick="loadConversation('${conv.id}')"
+        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}${selectModeClass}"
+             onclick="${isBulkMode ? `toggleBulkSelect('${conv.id}', event)` : `loadConversation('${conv.id}')`}"
              data-id="${conv.id}">
-            <div class="conversation-title">${escapeHtml(conv.title)}${orgDisplay}</div>
+            <div class="conversation-title-row">
+                ${bulkCheckbox}
+                <button class="conversation-star${conv.is_starred ? ' active' : ''}" onclick="event.stopPropagation(); toggleStarConversation('${conv.id}')" title="${conv.is_starred ? 'Unstar' : 'Star'}">
+                    <i data-lucide="star"></i>
+                </button>
+                <span class="conversation-title">${escapeHtml(conv.title)}${orgDisplay}</span>
+            </div>
             <div class="conversation-meta">
                 <div class="conversation-info">
                     ${userDisplay}
@@ -1297,15 +1361,17 @@ function renderConversationList() {
                     <button class="conversation-action" onclick="renameConversation('${conv.id}', event)" title="Rename">
                         <i data-lucide="pencil"></i>
                     </button>
+                    ${archiveBtn}
+                    <button class="conversation-action" onclick="event.stopPropagation(); exportConversation('${conv.id}')" title="Export">
+                        <i data-lucide="download"></i>
+                    </button>
                     <button class="conversation-action conversation-delete" onclick="event.stopPropagation(); deleteConversation('${conv.id}')" title="Delete">
                         <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </div>
         </div>
-    `}).join('');
-
-    lucide.createIcons();
+    `;
 }
 
 /**
@@ -1424,7 +1490,18 @@ async function saveMessage(role, content, model = null) {
  * Delete a conversation
  */
 async function deleteConversation(conversationId) {
-    if (!confirm('Delete this conversation?')) return;
+    let confirmed = false;
+    if (typeof ModalService !== 'undefined') {
+        confirmed = await ModalService.confirm({
+            title: 'Delete Conversation',
+            message: 'Delete this conversation? This cannot be undone.',
+            confirmText: 'Delete',
+            confirmClass: 'btn-danger'
+        });
+    } else {
+        confirmed = confirm('Delete this conversation?');
+    }
+    if (!confirmed) return;
 
     try {
         const response = await fetch(`/api/conversations/${conversationId}`, {
@@ -1508,7 +1585,20 @@ async function renameConversation(conversationId, event) {
     const conversation = conversations.find(c => c.id === conversationId);
     if (!conversation) return;
 
-    const newTitle = prompt('Enter new conversation title:', conversation.title);
+    let newTitle;
+    if (typeof ModalService !== 'undefined') {
+        const result = await ModalService.form({
+            title: 'Rename Conversation',
+            fields: [
+                { name: 'title', label: 'Title', type: 'text', required: true, value: conversation.title }
+            ],
+            submitText: 'Rename'
+        });
+        if (!result) return;
+        newTitle = result.title;
+    } else {
+        newTitle = prompt('Enter new conversation title:', conversation.title);
+    }
     if (!newTitle || newTitle.trim() === '' || newTitle === conversation.title) return;
 
     try {
@@ -1573,6 +1663,298 @@ function startNewChat() {
     conversationHistory = [];
     renderConversationList();
     showWelcomeMessage();
+}
+
+// ============================================
+// Conversation Filter & Search State
+// ============================================
+let conversationFilter = 'all'; // 'all', 'starred', 'archived'
+let conversationSearchQuery = '';
+let bulkSelectedIds = new Set();
+let isBulkMode = false;
+
+/**
+ * Filter conversations locally by search query
+ */
+function filterConversationsLocal() {
+    const input = document.getElementById('conversationSearchInput');
+    const clearBtn = document.getElementById('searchClearBtn');
+    conversationSearchQuery = (input?.value || '').trim().toLowerCase();
+    if (clearBtn) clearBtn.style.display = conversationSearchQuery ? 'block' : 'none';
+    renderConversationList();
+}
+
+/**
+ * Clear conversation search
+ */
+function clearConversationSearch() {
+    const input = document.getElementById('conversationSearchInput');
+    if (input) input.value = '';
+    conversationSearchQuery = '';
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    renderConversationList();
+}
+
+/**
+ * Set active filter (all, starred, archived)
+ */
+function setConversationFilter(filter) {
+    conversationFilter = filter;
+    // Update pill button active state
+    document.querySelectorAll('.conversation-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    // Reload from API for archive filter (different query)
+    if (filter === 'archived') {
+        loadConversations({ archivedOnly: true });
+    } else if (filter === 'starred') {
+        loadConversations({ starredOnly: true });
+    } else {
+        loadConversations();
+    }
+}
+
+/**
+ * Toggle star on a conversation
+ */
+async function toggleStarConversation(conversationId) {
+    const conv = conversations.find(c => c.id === conversationId);
+    if (!conv) return;
+
+    const newValue = !conv.is_starred;
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_starred: newValue })
+        });
+
+        if (response.ok) {
+            conv.is_starred = newValue;
+            renderConversationList();
+            setStatus(newValue ? 'Conversation starred' : 'Conversation unstarred');
+        }
+    } catch (error) {
+        console.error('Error toggling star:', error);
+    }
+}
+
+/**
+ * Archive a conversation
+ */
+async function archiveConversation(conversationId) {
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_archived: true })
+        });
+
+        if (response.ok) {
+            conversations = conversations.filter(c => c.id !== conversationId);
+            if (currentConversationId === conversationId) {
+                currentConversationId = null;
+                conversationHistory = [];
+                showWelcomeMessage();
+            }
+            renderConversationList();
+            // Show undo toast
+            if (typeof showToast === 'function') {
+                showToast('Conversation archived. <a href="#" onclick="unarchiveConversation(\'' + conversationId + '\'); return false;" style="color:var(--primary);text-decoration:underline;">Undo</a>', 'success', 5000);
+            } else {
+                setStatus('Conversation archived');
+            }
+        }
+    } catch (error) {
+        console.error('Error archiving conversation:', error);
+    }
+}
+
+/**
+ * Unarchive a conversation
+ */
+async function unarchiveConversation(conversationId) {
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_archived: false })
+        });
+
+        if (response.ok) {
+            conversations = conversations.filter(c => c.id !== conversationId);
+            renderConversationList();
+            setStatus('Conversation restored');
+        }
+    } catch (error) {
+        console.error('Error unarchiving conversation:', error);
+    }
+}
+
+/**
+ * Export a single conversation
+ */
+async function exportConversation(conversationId, format = 'markdown') {
+    try {
+        const response = await fetch(`/api/conversations/export/${conversationId}?format=${format}`);
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = format === 'markdown' ? 'md' : 'json';
+        const conv = conversations.find(c => c.id === conversationId);
+        const filename = (conv?.title || 'conversation').replace(/[^a-z0-9]/gi, '_');
+        a.download = `${filename}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setStatus('Conversation exported');
+    } catch (error) {
+        console.error('Error exporting conversation:', error);
+        setStatus('Export failed');
+    }
+}
+
+// ============================================
+// Bulk Operations
+// ============================================
+
+/**
+ * Toggle bulk select mode
+ */
+function toggleBulkMode() {
+    isBulkMode = !isBulkMode;
+    bulkSelectedIds.clear();
+    updateBulkBar();
+    renderConversationList();
+}
+
+/**
+ * Exit bulk select mode
+ */
+function exitBulkMode() {
+    isBulkMode = false;
+    bulkSelectedIds.clear();
+    updateBulkBar();
+    renderConversationList();
+}
+
+/**
+ * Toggle selection of a conversation in bulk mode
+ */
+function toggleBulkSelect(conversationId, event) {
+    if (event) event.stopPropagation();
+    if (bulkSelectedIds.has(conversationId)) {
+        bulkSelectedIds.delete(conversationId);
+    } else {
+        bulkSelectedIds.add(conversationId);
+    }
+    updateBulkBar();
+    // Update checkbox state without full re-render
+    const item = document.querySelector(`.conversation-item[data-id="${conversationId}"]`);
+    if (item) {
+        const cb = item.querySelector('.conversation-checkbox');
+        if (cb) cb.checked = bulkSelectedIds.has(conversationId);
+    }
+}
+
+/**
+ * Update bulk action bar visibility and count
+ */
+function updateBulkBar() {
+    const bar = document.getElementById('conversationBulkBar');
+    const count = document.getElementById('bulkCount');
+    if (bar) {
+        bar.classList.toggle('visible', isBulkMode && bulkSelectedIds.size > 0);
+    }
+    if (count) {
+        count.textContent = `${bulkSelectedIds.size} selected`;
+    }
+}
+
+/**
+ * Bulk star selected conversations
+ */
+async function bulkStarConversations() {
+    if (bulkSelectedIds.size === 0) return;
+    try {
+        await fetch('/api/conversations/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'star', conversationIds: [...bulkSelectedIds] })
+        });
+        setStatus(`${bulkSelectedIds.size} conversations starred`);
+        exitBulkMode();
+        await loadConversations();
+    } catch (error) {
+        console.error('Bulk star error:', error);
+    }
+}
+
+/**
+ * Bulk archive selected conversations
+ */
+async function bulkArchiveConversations() {
+    if (bulkSelectedIds.size === 0) return;
+    try {
+        await fetch('/api/conversations/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'archive', conversationIds: [...bulkSelectedIds] })
+        });
+        setStatus(`${bulkSelectedIds.size} conversations archived`);
+        exitBulkMode();
+        await loadConversations();
+    } catch (error) {
+        console.error('Bulk archive error:', error);
+    }
+}
+
+/**
+ * Bulk export selected conversations
+ */
+async function bulkExportConversations() {
+    if (bulkSelectedIds.size === 0) return;
+    for (const id of bulkSelectedIds) {
+        await exportConversation(id, 'markdown');
+    }
+    setStatus(`${bulkSelectedIds.size} conversations exported`);
+    exitBulkMode();
+}
+
+/**
+ * Bulk delete selected conversations
+ */
+async function bulkDeleteConversations() {
+    if (bulkSelectedIds.size === 0) return;
+    if (typeof ModalService !== 'undefined') {
+        const confirmed = await ModalService.confirm({
+            title: 'Delete Conversations',
+            message: `Delete ${bulkSelectedIds.size} selected conversations? This cannot be undone.`,
+            confirmText: 'Delete',
+            confirmClass: 'btn-danger'
+        });
+        if (!confirmed) return;
+    } else {
+        if (!confirm(`Delete ${bulkSelectedIds.size} selected conversations?`)) return;
+    }
+
+    try {
+        await fetch('/api/conversations/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', conversationIds: [...bulkSelectedIds] })
+        });
+        setStatus(`${bulkSelectedIds.size} conversations deleted`);
+        exitBulkMode();
+        await loadConversations();
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+    }
 }
 
 /**

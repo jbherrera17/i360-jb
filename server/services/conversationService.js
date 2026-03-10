@@ -52,7 +52,11 @@ async function getConversations(options = {}) {
         limit = 50,
         offset = 0,
         userId = null,
-        includeUserInfo = true
+        includeUserInfo = true,
+        includeArchived = false,
+        starredOnly = false,
+        archivedOnly = false,
+        search = null
     } = options;
 
     let query = supabase
@@ -64,14 +68,34 @@ async function getConversations(options = {}) {
             metadata,
             created_at,
             updated_at,
-            user_id
+            user_id,
+            is_archived,
+            is_starred
         `)
+        .order('is_starred', { ascending: false })
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
     // Filter by user_id if provided
     if (userId) {
         query = query.eq('user_id', userId);
+    }
+
+    // Archive filtering
+    if (archivedOnly) {
+        query = query.eq('is_archived', true);
+    } else if (!includeArchived) {
+        query = query.eq('is_archived', false);
+    }
+
+    // Starred filter
+    if (starredOnly) {
+        query = query.eq('is_starred', true);
+    }
+
+    // Search by title
+    if (search) {
+        query = query.ilike('title', `%${search}%`);
     }
 
     const { data: conversations, error } = await query;
@@ -90,22 +114,27 @@ async function getConversations(options = {}) {
         const userIds = [...new Set(conversations.map(c => c.user_id).filter(Boolean))];
 
         if (userIds.length > 0) {
-            const { data: users } = await supabase
+            const { data: users, error: userError } = await supabase
                 .from('users')
                 .select('id, email, display_name')
                 .in('id', userIds);
 
-            if (users) {
+            if (userError) {
+                console.error('Error fetching user info for conversations:', userError);
+            }
+
+            if (users && users.length > 0) {
                 const userMap = new Map(users.map(u => [u.id, u]));
                 return conversations.map(conv => ({
                     ...conv,
-                    users: conv.user_id ? userMap.get(conv.user_id) : null
+                    users: conv.user_id ? (userMap.get(conv.user_id) || null) : null
                 }));
             }
         }
     }
 
-    return conversations;
+    // Return conversations with null users so frontend doesn't break
+    return conversations.map(conv => ({ ...conv, users: null }));
 }
 
 /**
@@ -159,7 +188,7 @@ async function getConversation(conversationId, userId = null) {
  * @returns {object} Updated conversation
  */
 async function updateConversation(conversationId, updates) {
-    const allowedFields = ['title', 'model'];
+    const allowedFields = ['title', 'model', 'is_starred', 'is_archived'];
     const filteredUpdates = {};
 
     for (const field of allowedFields) {
@@ -669,6 +698,37 @@ async function getAdminConversation(conversationId) {
     }
 }
 
+/**
+ * Export conversation as Markdown
+ * @param {object} conversation - Conversation with messages
+ * @returns {string} Markdown formatted export
+ */
+function exportAsMarkdown(conversation) {
+    const lines = [
+        `# ${conversation.title}`,
+        '',
+        `**Model:** ${conversation.model || 'N/A'}`,
+        `**Created:** ${new Date(conversation.created_at).toLocaleString()}`,
+        `**Last Updated:** ${new Date(conversation.updated_at).toLocaleString()}`,
+        '',
+        '---',
+        ''
+    ];
+
+    for (const msg of (conversation.messages || [])) {
+        const role = msg.role === 'user' ? 'User' : 'Assistant';
+        const time = new Date(msg.created_at).toLocaleString();
+        lines.push(`### ${role} *(${time})*`);
+        lines.push('');
+        lines.push(msg.content);
+        lines.push('');
+        lines.push('---');
+        lines.push('');
+    }
+
+    return lines.join('\n');
+}
+
 module.exports = {
     createConversation,
     getConversations,
@@ -680,5 +740,6 @@ module.exports = {
     generateTitle,
     getAdminConversations,
     getConversationStats,
-    getAdminConversation
+    getAdminConversation,
+    exportAsMarkdown
 };

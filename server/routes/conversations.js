@@ -132,18 +132,112 @@ router.delete('/admin/:id', async (req, res) => {
 // ============================================
 
 /**
+ * POST /api/conversations/bulk
+ * Bulk operations on conversations (star, archive, delete)
+ */
+router.post('/bulk', async (req, res) => {
+    try {
+        const { action, conversationIds } = req.body;
+        const userId = getUserId(req);
+
+        if (!action || !Array.isArray(conversationIds) || conversationIds.length === 0) {
+            return res.status(400).json({ success: false, error: 'action and conversationIds[] required' });
+        }
+
+        let results = [];
+        for (const id of conversationIds) {
+            try {
+                switch (action) {
+                    case 'star':
+                        await conversationService.updateConversation(id, { is_starred: true });
+                        break;
+                    case 'unstar':
+                        await conversationService.updateConversation(id, { is_starred: false });
+                        break;
+                    case 'archive':
+                        await conversationService.updateConversation(id, { is_archived: true });
+                        break;
+                    case 'unarchive':
+                        await conversationService.updateConversation(id, { is_archived: false });
+                        break;
+                    case 'delete':
+                        await conversationService.deleteConversation(id);
+                        break;
+                    default:
+                        return res.status(400).json({ success: false, error: `Unknown action: ${action}` });
+                }
+                results.push({ id, success: true });
+            } catch (err) {
+                results.push({ id, success: false, error: err.message });
+            }
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('Error in bulk operation:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/conversations/export/:id
+ * Export a conversation with messages in specified format
+ */
+router.get('/export/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { format = 'json' } = req.query;
+        const userId = getUserId(req);
+
+        const conversation = await conversationService.getConversation(id, userId);
+        if (!conversation) {
+            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        }
+
+        if (format === 'markdown') {
+            const md = conversationService.exportAsMarkdown(conversation);
+            res.setHeader('Content-Type', 'text/markdown');
+            res.setHeader('Content-Disposition', `attachment; filename="${conversation.title.replace(/[^a-z0-9]/gi, '_')}.md"`);
+            return res.send(md);
+        }
+
+        // Default: JSON
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${conversation.title.replace(/[^a-z0-9]/gi, '_')}.json"`);
+        res.json({
+            title: conversation.title,
+            model: conversation.model,
+            created_at: conversation.created_at,
+            updated_at: conversation.updated_at,
+            messages: conversation.messages.map(m => ({
+                role: m.role,
+                content: m.content,
+                model: m.model,
+                created_at: m.created_at
+            }))
+        });
+    } catch (error) {
+        console.error('Error exporting conversation:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * GET /api/conversations
  * List all conversations for the current user
  */
 router.get('/', async (req, res) => {
     try {
-        const { limit = 50, offset = 0, includeArchived = false } = req.query;
+        const { limit = 50, offset = 0, includeArchived, starredOnly, archivedOnly, search } = req.query;
         const userId = getUserId(req);
 
         const conversations = await conversationService.getConversations({
             limit: parseInt(limit),
             offset: parseInt(offset),
             includeArchived: includeArchived === 'true',
+            starredOnly: starredOnly === 'true',
+            archivedOnly: archivedOnly === 'true',
+            search: search || null,
             userId
         });
 
