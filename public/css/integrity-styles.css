@@ -148,8 +148,8 @@
     font-size: 1.5rem;
 }
 
-.trend-value.up { color: #10b981; }
-.trend-value.down { color: #ef4444; }
+.trend-value.up, .trend-value.improving { color: #10b981; }
+.trend-value.down, .trend-value.declining { color: #ef4444; }
 .trend-value.stable { color: var(--text-muted); }
 
 .trend-label {
@@ -854,4 +854,340 @@
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* ==========================================
+   Period Selector
+   ========================================== */
+
+.period-selector {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.period-btn {
+    background: none;
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.period-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.period-btn:hover:not(.active) {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* ==========================================
+   Generic Component Detail Panel
+   ========================================== */
+
+.component-detail-panel {
+    border-top: 1px solid var(--border);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+.component-detail-panel.collapsed {
+    display: none;
+}
+
+.component-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.component-detail-row:last-child {
+    border-bottom: none;
+}
+
+.component-detail-label {
+    color: var(--text-secondary);
+}
+
+.component-detail-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.component-detail-value.positive { color: var(--success, #10b981); }
+.component-detail-value.negative { color: var(--error, #ef4444); }
+.component-detail-value.neutral  { color: var(--warning, #f59e0b); }
+
+/* ==========================================
+   Alignment Audit Card — Expandable Panel
+   ========================================== */
+
+/* Incomplete state: faint amber left border on the card */
+.component-card.alignment-incomplete {
+    border-left: 2px solid rgba(245, 158, 11, 0.4);
+}
+
+/* Incomplete state body: replaces score + bar */
+.alignment-incomplete-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding-top: 0.25rem;
+}
+
+.alignment-incomplete-msg {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.alignment-incomplete-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: var(--radius-sm);
+    color: #f59e0b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.alignment-incomplete-cta:hover {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.55);
+}
+
+/* Partial-data bar (one source present, one missing) */
+.component-bar-fill.alignment-partial {
+    background: rgba(245, 158, 11, 0.2);
+    width: 100% !important;
+    transition: none;
+}
+
+/* Expand toggle in the component header */
+.component-expand-btn {
+    background: none;
+    border: none;
+    padding: 0.15rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+    margin-left: 0.5rem;
+}
+
+.component-expand-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.component-expand-btn svg {
+    transition: transform 0.2s;
+}
+
+.component-expand-btn[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+/* Detail panel */
+.alignment-detail-panel {
+    border-top: 1px solid var(--border);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+.alignment-detail-panel.collapsed {
+    display: none;
+}
+
+/* Audit meta row (last-run + Run Audit button) */
+.alignment-audit-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.alignment-audit-meta-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.alignment-run-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.alignment-run-btn:hover {
+    background: var(--primary-dark);
+}
+
+.alignment-run-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Per-value rows */
+.alignment-values-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.alignment-value-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+
+.alignment-value-row:hover {
+    background: var(--bg-tertiary);
+}
+
+.alignment-value-name {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.alignment-value-score {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* Gap badge — shares structure with .incident-type-badge */
+.gap-badge {
+    padding: 0.18rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.67rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+
+.gap-badge.aligned {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.gap-badge.moderate {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.gap-badge.significant {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.gap-badge.critical {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.gap-badge.not-found {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.gap-badge.unstated {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--primary);
+}
+
+/* Unstated values separator */
+.alignment-unstated-sep {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding: 0.4rem 0.5rem 0.2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.25rem;
+}
+
+/* Show-all toggle */
+.alignment-show-all-btn {
+    background: none;
+    border: none;
+    font-size: 0.78rem;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    display: block;
+    margin-top: 0.15rem;
+    transition: color 0.15s;
+}
+
+.alignment-show-all-btn:hover {
+    color: var(--primary-dark);
+}
+
+/* Drift alert */
+.alignment-drift-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.6rem;
+    line-height: 1.4;
+}
+
+/* Top recommendation row */
+.alignment-recommendation {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+    line-height: 1.4;
+    border-top: 1px solid var(--border);
 }

@@ -17,12 +17,34 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const valuesAlignmentService = require('./valuesAlignmentService');
 
 // Initialize Supabase client
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
 );
+
+/**
+ * Parse a free-text financial impact string into a numeric dollar amount.
+ * Returns null if unparseable.
+ * Handles: "$3.7B", "£450M", "€2 billion", "3.7 billion", "$45,000"
+ */
+function parseFinancialImpact(text) {
+    if (!text || typeof text !== 'string') return null;
+    const clean = text.replace(/,/g, '').trim();
+    const pattern = /[\$£€¥]?\s*([\d]+(?:\.[\d]+)?)\s*(billion|bn|million|mn|trillion|tn|B|M|T|K)?/i;
+    const match = clean.match(pattern);
+    if (!match) return null;
+    let value = parseFloat(match[1]);
+    if (isNaN(value)) return null;
+    const multiplier = (match[2] || '').toLowerCase();
+    if (['trillion', 'tn', 't'].includes(multiplier)) value *= 1e12;
+    else if (['billion', 'bn', 'b'].includes(multiplier)) value *= 1e9;
+    else if (['million', 'mn', 'm'].includes(multiplier)) value *= 1e6;
+    else if (multiplier === 'k') value *= 1e3;
+    return value;
+}
 
 /**
  * Stakes levels for determining ethical framework application
@@ -344,6 +366,7 @@ function formatEthicalContext(ethicalContext) {
  */
 async function logEthicalEvaluation(evaluation) {
     const {
+        orgId,
         conversationId,
         agentId,
         userId,
@@ -364,6 +387,7 @@ async function logEthicalEvaluation(evaluation) {
     const { data, error } = await supabase
         .from('ethical_evaluations')
         .insert({
+            org_id: orgId,
             conversation_id: conversationId,
             agent_id: agentId,
             user_id: userId,
@@ -520,6 +544,10 @@ async function getBrightLineIncidents(orgId, filters = {}) {
         query = query.is('resolved_at', null);
     }
 
+    if (filters.createdAfter) {
+        query = query.gte('created_at', filters.createdAfter);
+    }
+
     const { data, error } = await query;
 
     if (error) throw error;
@@ -559,10 +587,11 @@ async function calculateIntegrityMetrics(orgId, days = 30) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Get ethical evaluations
+    // Get ethical evaluations (scoped to org)
     const { data: evaluations, error: evalError } = await supabase
         .from('ethical_evaluations')
         .select('stakes_level, requires_human_review, reviewed_at')
+        .eq('org_id', orgId)
         .gte('created_at', startDate.toISOString());
 
     if (evalError) throw evalError;
@@ -575,6 +604,42 @@ async function calculateIntegrityMetrics(orgId, days = 30) {
         .gte('created_at', startDate.toISOString());
 
     if (incidentError) throw incidentError;
+
+    // Get real alignment audit score
+    let realAlignmentScore = null;
+    try {
+        const auditHistory = await valuesAlignmentService.getAuditHistory(orgId, 1);
+        if (auditHistory && auditHistory.length > 0) {
+            realAlignmentScore = auditHistory[0].overall_score;
+        }
+    } catch (e) {
+        // Fall back to proxy formula if service fails
+    }
+
+    // Get industry baseline for counterfactual enrichment
+    let baselineFinancialTotal = 0;
+    let baselineEntryCount = 0;
+    try {
+        const { data: baselineAssets } = await supabase
+            .from('context_assets')
+            .select('content_json')
+            .eq('org_id', orgId)
+            .eq('asset_type', 'industry_baseline')
+            .limit(1);
+
+        if (baselineAssets && baselineAssets.length > 0) {
+            const entries = baselineAssets[0].content_json?.entries || [];
+            baselineEntryCount = entries.length;
+            for (const entry of entries) {
+                const num = entry.financialImpactNumber
+                    || parseFinancialImpact(entry.financialImpact)
+                    || 0;
+                baselineFinancialTotal += num;
+            }
+        }
+    } catch (e) {
+        // Non-critical, proceed without baseline data
+    }
 
     // Calculate metrics
     const totalEvaluations = evaluations?.length || 0;
@@ -591,21 +656,155 @@ async function calculateIntegrityMetrics(orgId, days = 30) {
     const nearMisses = incidents?.filter(i => i.incident_type === 'near_miss').length || 0;
     const resolvedIncidents = incidents?.filter(i => i.resolved_at).length || 0;
 
-    // Calculate integrity yield (composite score 0-100)
-    // Based on: low incident rate, high review completion, ethical awareness
+    // Calculate base rates
     const incidentRate = totalEvaluations > 0 ? violations / totalEvaluations : 0;
     const reviewCompletionRate = humanReviewRequired > 0 ?
         humanReviewCompleted / humanReviewRequired : 1;
     const resolutionRate = totalIncidents > 0 ? resolvedIncidents / totalIncidents : 1;
+    const highStakesRatio = totalEvaluations > 0 ? highStakesCount / totalEvaluations : 0;
+    const hasActivity = totalEvaluations > 0 || totalIncidents > 0;
 
-    const integrityYield = Math.round(
-        (1 - incidentRate) * 40 +  // 40% weight on low incidents
-        reviewCompletionRate * 30 +  // 30% weight on review completion
-        resolutionRate * 30  // 30% weight on incident resolution
+    // Component 1: Trust Velocity (30%) — resolution rate + low incident rate
+    const trustVelocity = Math.round(
+        resolutionRate * 50 + (1 - incidentRate) * 50
     );
+
+    // Component 2: Intervention Effectiveness (25%) — review completion + detection activity
+    const detectionScore = hasActivity ? Math.min(100, totalEvaluations * 2) : 0;
+    const interventionEffectiveness = Math.round(
+        reviewCompletionRate * 60 + (detectionScore / 100) * 40
+    );
+
+    // Component 3: Alignment Audit (25%) — real score from values alignment audit
+    // Falls back to proxy formula when no audit has been run
+    let alignmentAudit;
+    if (realAlignmentScore !== null) {
+        alignmentAudit = realAlignmentScore;
+    } else {
+        const activityScore = hasActivity ? Math.min(100, totalEvaluations * 3) : 0;
+        alignmentAudit = Math.round(
+            (activityScore / 100) * 50 + (1 - highStakesRatio) * 50
+        );
+    }
+
+    // Component 4: Counterfactual Value (20%) — enriched with industry baseline
+    const nearMissScore = nearMisses > 0 ? Math.min(100, nearMisses * 20) : 0;
+    const cleanRecord = violations === 0 ? 100 : Math.max(0, 100 - violations * 25);
+    const baselineCoverageBonus = baselineEntryCount > 0
+        ? Math.min(20, Math.round((baselineEntryCount / 5) * 20))
+        : 0;
+    const counterfactualBase = Math.round(
+        nearMissScore * 0.3 + resolutionRate * 100 * 0.35 + cleanRecord * 0.35
+    );
+    const counterfactualValue = Math.min(100, counterfactualBase + baselineCoverageBonus);
+
+    // Weighted composite
+    const integrityYield = Math.round(
+        trustVelocity * 0.30 +
+        interventionEffectiveness * 0.25 +
+        alignmentAudit * 0.25 +
+        counterfactualValue * 0.20
+    );
+
+    // Interpretation
+    let interpretation;
+    if (integrityYield >= 80) interpretation = 'strong';
+    else if (integrityYield >= 60) interpretation = 'adequate';
+    else if (integrityYield >= 40) interpretation = 'gaps';
+    else interpretation = 'critical';
+
+    // Fetch previous period snapshot for trend calculation
+    let trend = { change: 0, direction: 'stable' };
+    try {
+        const { data: prevSnapshots } = await supabase
+            .from('integrity_score_history')
+            .select('integrity_yield, recorded_at')
+            .eq('org_id', orgId)
+            .eq('period_days', days)
+            .order('recorded_at', { ascending: false })
+            .limit(1);
+
+        if (prevSnapshots && prevSnapshots.length >= 1) {
+            const prevYield = prevSnapshots[0].integrity_yield;
+            const change = integrityYield - prevYield;
+            trend = {
+                change: Math.abs(change),
+                direction: change > 2 ? 'improving' : change < -2 ? 'declining' : 'stable'
+            };
+        }
+    } catch (e) {
+        // Non-critical
+    }
+
+    // Save snapshot for historical trend (fire-and-forget, throttled to max once per hour)
+    supabase
+        .from('integrity_score_history')
+        .select('recorded_at')
+        .eq('org_id', orgId)
+        .eq('period_days', days)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .then(({ data: recent }) => {
+            const lastRecorded = recent?.[0]?.recorded_at;
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+            if (lastRecorded && lastRecorded > oneHourAgo) return; // Skip if recent snapshot exists
+
+            return supabase
+                .from('integrity_score_history')
+                .insert({
+                    org_id: orgId,
+                    period_days: days,
+                    integrity_yield: integrityYield,
+                    trust_velocity: trustVelocity,
+                    intervention_effectiveness: interventionEffectiveness,
+                    alignment_audit: alignmentAudit,
+                    counterfactual_value: counterfactualValue,
+                    interpretation,
+                    snapshot_data: {
+                        evaluations: { totalEvaluations, highStakesCount, humanReviewRequired, humanReviewCompleted },
+                        incidents: { totalIncidents, violations, nearMisses, resolvedIncidents },
+                        baselineEntryCount,
+                        baselineFinancialTotal
+                    }
+                });
+        })
+        .catch(err => console.error('Failed to save integrity snapshot:', err));
+
+    // Leading indicators — use real alignment data when available
+    const alignmentIndicator = realAlignmentScore !== null
+        ? {
+            name: 'Values alignment',
+            status: realAlignmentScore >= 75 ? 'positive' : realAlignmentScore >= 50 ? 'neutral' : 'negative',
+            note: `Alignment score: ${realAlignmentScore}/100`
+        }
+        : {
+            name: 'Values alignment trend',
+            status: highStakesRatio < 0.3 ? 'positive' : highStakesRatio < 0.6 ? 'neutral' : 'negative',
+            note: totalEvaluations > 0 ? `${Math.round((1 - highStakesRatio) * 100)}% low/medium stakes` : 'No evaluations yet'
+        };
+
+    const leadingIndicators = [
+        alignmentIndicator,
+        {
+            name: 'Bright line awareness',
+            status: violations === 0 ? 'positive' : violations <= 2 ? 'neutral' : 'negative',
+            note: `${violations} violation${violations !== 1 ? 's' : ''}, ${nearMisses} near-miss${nearMisses !== 1 ? 'es' : ''}`
+        },
+        {
+            name: 'Review completion',
+            status: reviewCompletionRate >= 0.8 ? 'positive' : reviewCompletionRate >= 0.5 ? 'neutral' : 'negative',
+            note: humanReviewRequired > 0 ? `${humanReviewCompleted}/${humanReviewRequired} reviews completed` : 'No reviews required'
+        },
+        {
+            name: 'Incident resolution',
+            status: resolutionRate >= 0.8 ? 'positive' : resolutionRate >= 0.5 ? 'neutral' : 'negative',
+            note: totalIncidents > 0 ? `${resolvedIncidents}/${totalIncidents} incidents resolved` : 'No incidents'
+        }
+    ];
 
     return {
         period: { days, startDate: startDate.toISOString() },
+        trend,
         evaluations: {
             total: totalEvaluations,
             highStakes: highStakesCount,
@@ -623,7 +822,55 @@ async function calculateIntegrityMetrics(orgId, days = 30) {
             incidentRate: Math.round(incidentRate * 100),
             reviewCompletionRate: Math.round(reviewCompletionRate * 100),
             resolutionRate: Math.round(resolutionRate * 100)
-        }
+        },
+        components: {
+            trustVelocity: {
+                score: trustVelocity,
+                weight: 0.30,
+                detail: {
+                    resolutionRate: Math.round(resolutionRate * 100),
+                    incidentRate: Math.round(incidentRate * 100),
+                    violations,
+                    nearMisses,
+                    resolvedIncidents,
+                    totalIncidents
+                }
+            },
+            interventionEffectiveness: {
+                score: interventionEffectiveness,
+                weight: 0.25,
+                detail: {
+                    reviewCompletionRate: Math.round(reviewCompletionRate * 100),
+                    humanReviewRequired,
+                    humanReviewCompleted,
+                    pendingReviews: humanReviewRequired - humanReviewCompleted,
+                    detectionScore: Math.round(detectionScore),
+                    highStakesCount,
+                    totalEvaluations
+                }
+            },
+            alignmentAudit: {
+                score: alignmentAudit,
+                weight: 0.25,
+                isRealScore: realAlignmentScore !== null
+            },
+            counterfactualValue: {
+                score: counterfactualValue,
+                weight: 0.20,
+                detail: {
+                    nearMissScore,
+                    cleanRecord,
+                    baselineCoverageBonus,
+                    baselineEntryCount,
+                    baselineFinancialTotal,
+                    estimatedCostAvoided: baselineEntryCount > 0
+                        ? Math.round((baselineFinancialTotal / Math.max(baselineEntryCount, 1)) * (nearMisses + 1))
+                        : null
+                }
+            }
+        },
+        leadingIndicators,
+        interpretation
     };
 }
 
@@ -742,6 +989,7 @@ module.exports = {
     resolveBrightLineIncident,
     calculateIntegrityMetrics,
     analyzeThroughLenses,
+    parseFinancialImpact,
     STAKES_LEVELS,
     STAKES_KEYWORDS
 };

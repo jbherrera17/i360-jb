@@ -426,6 +426,8 @@
             display: flex;
             gap: 0.75rem;
         }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -852,6 +854,29 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="shield-alert" style="width:18px;height:18px;color:var(--warning);vertical-align:middle;"></i>
+                                Industry Baseline
+                            </div>
+                            <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+                                Document real integrity incidents in your industry. This data powers your Counterfactual Value score on the Integrity Dashboard, quantifying the cost of failures your practices help avoid.
+                            </p>
+                            <div class="form-group">
+                                <button class="btn btn-secondary" id="generate-baseline-btn" onclick="generateBaseline()" style="gap:0.5rem;">
+                                    <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+                                    Generate with AI
+                                </button>
+                                <span id="baseline-status" style="color:var(--text-muted);font-size:0.85rem;margin-left:0.75rem;"></span>
+                            </div>
+                            <div id="wizard-baseline-entries" style="display:none;">
+                                <!-- Populated by generateBaseline() -->
+                            </div>
+                            <p id="baseline-empty-hint" style="color:var(--text-muted);font-size:0.8rem;font-style:italic;">
+                                No baseline entries yet. Click "Generate with AI" to research incidents in your industry, or add them manually on the Integrity Dashboard after setup.
+                            </p>
+                        </div>
                     </div>
                     <div class="panel-footer">
                         <button class="btn btn-secondary" onclick="prevStep()">
@@ -974,6 +999,7 @@
 
         let configId = null;
         let orgId = null;
+        let wizardBaselineEntries = [];
 
         // Platform bright lines (immutable)
         const platformBrightLines = [
@@ -1580,6 +1606,10 @@
 
                 const data = await response.json();
                 if (data.success) {
+                    // Save baseline entries to context_assets if any were generated
+                    if (wizardBaselineEntries.length > 0) {
+                        await saveBaselineEntries();
+                    }
                     showToast('Soul configuration published and activated!', 'success');
                     showNextStepsPanel();
                 } else {
@@ -1587,6 +1617,30 @@
                 }
             } catch (e) {
                 showToast('Failed to publish: ' + e.message, 'error');
+            }
+        }
+
+        async function saveBaselineEntries() {
+            try {
+                const response = await fetch('/api/context/assets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-org-id': orgId
+                    },
+                    body: JSON.stringify({
+                        name: `Industry Baseline - ${soulConfig.domain?.industry || 'General'}`,
+                        asset_type: 'industry_baseline',
+                        description: `Industry baseline data with ${wizardBaselineEntries.length} entries generated during soul configuration setup.`,
+                        content_json: { entries: wizardBaselineEntries }
+                    })
+                });
+
+                if (response.ok) {
+                    showToast(`Saved ${wizardBaselineEntries.length} industry baseline entries`, 'success');
+                }
+            } catch (e) {
+                console.error('Failed to save baseline entries:', e);
             }
         }
 
@@ -1623,6 +1677,90 @@
             `;
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Industry Baseline generation
+        async function generateBaseline() {
+            const industry = soulConfig.domain?.industry || document.getElementById('org-industry')?.value;
+            if (!industry) {
+                showToast('Please set your industry in Step 1 before generating baseline data', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generate-baseline-btn');
+            const status = document.getElementById('baseline-status');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width:16px;height:16px;animation:spin 1s linear infinite;"></i> Researching...';
+            status.textContent = 'AI is researching real incidents in your industry...';
+
+            try {
+                const domain = soulConfig.domain?.challenges || '';
+                const response = await fetch('/api/soul-config/generate-industry-baseline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orgId, industry, domain })
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error || 'Generation failed');
+
+                wizardBaselineEntries = data.data.entries || [];
+                status.textContent = `Generated ${wizardBaselineEntries.length} entries. Review and remove any that don't apply.`;
+                renderWizardBaselineEntries();
+                showToast(`Generated ${wizardBaselineEntries.length} industry baseline entries`, 'success');
+            } catch (e) {
+                status.textContent = '';
+                showToast('Failed to generate baseline: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Generate with AI';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        function escHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderWizardBaselineEntries() {
+            const container = document.getElementById('wizard-baseline-entries');
+            const hint = document.getElementById('baseline-empty-hint');
+
+            if (!wizardBaselineEntries.length) {
+                container.style.display = 'none';
+                hint.style.display = 'block';
+                return;
+            }
+
+            hint.style.display = 'none';
+            container.style.display = 'block';
+            container.innerHTML = wizardBaselineEntries.map((entry, i) => `
+                <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:var(--bg-tertiary);border-radius:8px;margin-bottom:0.5rem;border:1px solid var(--border);">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;color:var(--text-primary);font-size:0.9rem;">${escHtml(entry.incident || '')}</div>
+                        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.35rem;">
+                            <span style="color:var(--text-secondary);font-size:0.8rem;">${escHtml(entry.industry || '')}</span>
+                            <span style="color:var(--error);font-size:0.8rem;font-weight:500;">${escHtml(entry.financialImpact || '')}</span>
+                            <span style="color:var(--text-muted);font-size:0.8rem;">${escHtml(entry.date || '')}</span>
+                        </div>
+                        ${entry.source ? `<div style="color:var(--text-muted);font-size:0.75rem;margin-top:0.25rem;">Source: ${escHtml(entry.source)}</div>` : ''}
+                    </div>
+                    <button onclick="removeWizardBaselineEntry(${i})" title="Remove" style="background:none;border:none;cursor:pointer;padding:0.25rem;color:var(--text-muted);flex-shrink:0;">
+                        <i data-lucide="x" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function removeWizardBaselineEntry(index) {
+            wizardBaselineEntries.splice(index, 1);
+            renderWizardBaselineEntries();
+            document.getElementById('baseline-status').textContent =
+                wizardBaselineEntries.length ? `${wizardBaselineEntries.length} entries remaining` : '';
         }
 
         // Toast notifications

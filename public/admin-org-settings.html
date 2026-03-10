@@ -1543,6 +1543,14 @@
                 priority: 'recommended',
                 check: (data) => data.contextCount > 0
             },
+            {
+                id: 'industry-baseline',
+                title: 'Industry Baseline Data',
+                icon: 'shield-alert',
+                link: 'integrity.html',
+                priority: 'recommended',
+                check: (data) => data.hasBaseline
+            },
 
             // === OPTIONAL ===
             {
@@ -1582,19 +1590,21 @@
                 hasResources: false,
                 soulConfig: null,
                 hasConversations: false,
-                hasBranding: false
+                hasBranding: false,
+                hasBaseline: false
             };
 
             try {
                 // Load data in parallel
-                const [membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes] = await Promise.allSettled([
+                const [membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes, baselineRes] = await Promise.allSettled([
                     fetch(`/api/org-members/${orgId}`, { headers }),
                     fetch('/api/departments', { headers }),
                     fetch('/api/roles', { headers }),
                     fetch('/api/agents?limit=100', { headers }),
                     fetch('/api/context/assets?limit=1', { headers }),
                     fetch(`/api/soul-config?org_id=${orgId}&scope=organization`, { headers }),
-                    fetch('/api/conversations?limit=1', { headers })
+                    fetch('/api/conversations?limit=1', { headers }),
+                    fetch('/api/context/assets?type=industry_baseline&limit=1', { headers })
                 ]);
 
                 if (membersRes.status === 'fulfilled' && membersRes.value?.ok) {
@@ -1634,6 +1644,11 @@
                     const data = await convoRes.value.json();
                     const convos = data.data || data.conversations || [];
                     setupData.hasConversations = convos.length > 0;
+                }
+
+                if (baselineRes.status === 'fulfilled' && baselineRes.value?.ok) {
+                    const data = await baselineRes.value.json();
+                    setupData.hasBaseline = (data.data || []).length > 0;
                 }
 
             } catch (error) {

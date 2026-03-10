@@ -16,6 +16,8 @@ const express = require('express');
 const soulConfigService = require('../services/soulConfigService');
 const ethicalContextService = require('../services/ethicalContextService');
 const valuesAlignmentService = require('../services/valuesAlignmentService');
+const Anthropic = require('@anthropic-ai/sdk');
+const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 /**
  * Soul Configuration Routes Factory
@@ -745,12 +747,13 @@ module.exports = function(supabase) {
     router.get('/bright-line-incidents/:orgId', async (req, res) => {
         try {
             const { orgId } = req.params;
-            const { incident_type, severity, resolved } = req.query;
+            const { incident_type, severity, resolved, created_after } = req.query;
 
             const filters = {};
             if (incident_type) filters.incidentType = incident_type;
             if (severity) filters.severity = severity;
             if (resolved !== undefined) filters.resolved = resolved === 'true';
+            if (created_after) filters.createdAfter = created_after;
 
             const incidents = await ethicalContextService.getBrightLineIncidents(orgId, filters);
 
@@ -836,6 +839,141 @@ module.exports = function(supabase) {
         };
         return descriptions[level] || descriptions.low;
     }
+
+    // ================================================================
+    // INDUSTRY BASELINE AI GENERATION
+    // ================================================================
+
+    /**
+     * POST /api/soul-config/generate-industry-baseline
+     * AI-generates 5-8 real industry integrity incidents for review
+     */
+    router.post('/generate-industry-baseline', async (req, res) => {
+        try {
+            const { orgId, industry, domain } = req.body;
+
+            if (!orgId || !industry) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'orgId and industry are required'
+                });
+            }
+
+            if (!process.env.ANTHROPIC_API_KEY) {
+                return res.status(503).json({ success: false, error: 'Anthropic API not configured' });
+            }
+
+            const systemPrompt = `You are an expert researcher specializing in corporate ethics, regulatory enforcement, and organizational integrity failures.
+
+Your task is to research and compile REAL, verifiable integrity incidents from the specified industry. These incidents serve as an industry baseline to help organizations understand the financial and reputational risks they avoid through strong integrity practices.
+
+Rules:
+- Only include real, documented incidents (not hypothetical)
+- Prefer incidents with publicly reported financial consequences (fines, settlements, revenue loss, market cap loss)
+- Include incidents from the last 10 years where possible, but historical landmark cases are acceptable
+- Vary the incident types: regulatory fines, fraud, safety failures, data breaches, discrimination, accounting scandals
+- Be specific: use company names, case names, or regulatory body references
+- Financial impact should be the total cost (fines + settlements + remediation where known)
+- Source should be the regulatory body, court case, or reputable news source`;
+
+            const userMessage = `Research and compile 5-8 real integrity incidents for this industry:
+
+Industry: ${industry}
+Domain context: ${domain || industry}
+
+Use the save_industry_baseline tool to return the results.`;
+
+            const baselineTool = {
+                name: 'save_industry_baseline',
+                description: 'Save the compiled industry baseline incidents for review',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        entries: {
+                            type: 'array',
+                            description: 'Array of real industry integrity incidents',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    industry: {
+                                        type: 'string',
+                                        description: 'Company name or industry sector'
+                                    },
+                                    incident: {
+                                        type: 'string',
+                                        description: 'Concise description of the integrity failure (1-2 sentences)'
+                                    },
+                                    financialImpact: {
+                                        type: 'string',
+                                        description: 'Human-readable financial impact (e.g. "$3.7 billion in fines")'
+                                    },
+                                    financialImpactNumber: {
+                                        type: 'number',
+                                        description: 'Numeric dollar amount of total financial impact (e.g. 3700000000)'
+                                    },
+                                    date: {
+                                        type: 'string',
+                                        description: 'Approximate date (e.g. "2016-09" or "2020")'
+                                    },
+                                    source: {
+                                        type: 'string',
+                                        description: 'Source reference (e.g. "CFPB enforcement action", "SEC filing")'
+                                    }
+                                },
+                                required: ['industry', 'incident', 'financialImpact', 'date', 'source']
+                            },
+                            minItems: 5,
+                            maxItems: 8
+                        }
+                    },
+                    required: ['entries']
+                }
+            };
+
+            const rawResponse = await anthropicClient.messages.create({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 4096,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: userMessage }],
+                tools: [baselineTool],
+                tool_choice: { type: 'tool', name: 'save_industry_baseline' }
+            });
+
+            const toolUseBlock = rawResponse.content.find(
+                c => c.type === 'tool_use' && c.name === 'save_industry_baseline'
+            );
+
+            if (!toolUseBlock) {
+                return res.status(422).json({
+                    success: false,
+                    error: 'AI did not return structured baseline data. Try again.'
+                });
+            }
+
+            const entries = toolUseBlock.input.entries || [];
+            const timestampedEntries = entries.map(entry => ({
+                ...entry,
+                financialImpactNumber: entry.financialImpactNumber || null,
+                addedAt: new Date().toISOString(),
+                generatedByAI: true
+            }));
+
+            res.json({
+                success: true,
+                data: {
+                    entries: timestampedEntries,
+                    industry,
+                    generatedAt: new Date().toISOString()
+                }
+            });
+        } catch (error) {
+            console.error('Error generating industry baseline:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message || 'Failed to generate industry baseline'
+            });
+        }
+    });
 
     return router;
 };

@@ -26,6 +26,11 @@
                     <p class="header-subtitle">Making the Invisible Visible</p>
                 </div>
                 <div class="header-actions">
+                    <div class="period-selector">
+                        <button class="period-btn" data-days="7" onclick="setPeriod(7)">7d</button>
+                        <button class="period-btn active" data-days="30" onclick="setPeriod(30)">30d</button>
+                        <button class="period-btn" data-days="90" onclick="setPeriod(90)">90d</button>
+                    </div>
                     <button class="btn-secondary" onclick="refreshData()">
                         <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                         Recalculate
@@ -44,6 +49,16 @@
 
     <script>
         // Integrity Dashboard JavaScript
+
+        let selectedPeriod = 30; // 7, 30, or 90
+
+        function setPeriod(days) {
+            selectedPeriod = days;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.days) === days);
+            });
+            loadDashboard();
+        }
 
         // Build auth headers with org context
         function getIntegrityHeaders() {
@@ -109,12 +124,17 @@
             try {
                 const headers = getIntegrityHeaders();
 
-                // Fetch metrics, soul config, incidents, and baseline in parallel
-                const [metricsRes, soulRes, incidentsRes, baselineRes] = await Promise.all([
-                    fetch(`/api/soul-config/integrity-metrics/${orgId}?days=30`, { headers }).then(r => r.json()).catch(() => ({})),
+                // Fetch metrics, soul config, incidents, baseline, and alignment audit in parallel
+                const periodStart = new Date();
+                periodStart.setDate(periodStart.getDate() - selectedPeriod);
+                const sinceISO = periodStart.toISOString();
+
+                const [metricsRes, soulRes, incidentsRes, baselineRes, alignmentRes] = await Promise.all([
+                    fetch(`/api/soul-config/integrity-metrics/${orgId}?days=${selectedPeriod}`, { headers }).then(r => r.json()).catch(() => ({})),
                     fetch(`/api/soul-config/resolve/${orgId}`, { headers }).then(r => r.json()).catch(() => ({})),
-                    fetch(`/api/soul-config/bright-line-incidents/${orgId}`, { headers }).then(r => r.json()).catch(() => ({})),
-                    fetch(`/api/context/assets?type=industry_baseline`, { headers }).then(r => r.json()).catch(() => ({}))
+                    fetch(`/api/soul-config/bright-line-incidents/${orgId}?created_after=${sinceISO}`, { headers }).then(r => r.json()).catch(() => ({})),
+                    fetch(`/api/context/assets?type=industry_baseline`, { headers }).then(r => r.json()).catch(() => ({})),
+                    fetch(`/api/soul-config/values-alignment/history/${orgId}?limit=1`, { headers }).then(r => r.json()).catch(() => ({}))
                 ]);
 
                 const metrics = metricsRes.success ? metricsRes.data : null;
@@ -123,13 +143,20 @@
                 const baselineAssets = baselineRes.success ? (baselineRes.data || []) : [];
                 const baselineAsset = baselineAssets[0] || null;
                 const baselineEntries = baselineAsset?.content_json?.entries || [];
+                // Latest audit record (may be null if never run)
+                const latestAudit = (alignmentRes.success && alignmentRes.data?.length) ? alignmentRes.data[0] : null;
 
                 if (metrics) {
-                    const data = mapMetricsToDashboard(metrics);
+                    const hasSoulConfig = !!(soulConfig?.values?.length);
+                    const hasAlign120 = !!(latestAudit?.discovered_values?.length);
+                    const data = mapMetricsToDashboard(metrics, hasSoulConfig, hasAlign120);
                     data.assets = buildAssetReadiness(soulConfig, metrics, incidents, baselineEntries);
                     data.incidents = incidents;
                     data.baselineAsset = baselineAsset;
                     data.baselineEntries = baselineEntries;
+                    data.latestAudit = latestAudit;
+                    data.hasSoulConfig = hasSoulConfig;
+                    data.hasAlign120 = hasAlign120;
                     renderDashboard(container, data);
                 } else {
                     renderEmptyState(container);
@@ -144,7 +171,7 @@
             }
         }
 
-        function mapMetricsToDashboard(metrics) {
+        function mapMetricsToDashboard(metrics, hasSoulConfig, hasAlign120) {
             const score = metrics.metrics?.integrityYield || 0;
             const interpretation = metrics.interpretation || (score >= 80 ? 'strong' : score >= 60 ? 'adequate' : score >= 40 ? 'gaps' : 'critical');
 
@@ -152,7 +179,7 @@
                 integrityYield: {
                     score,
                     interpretation,
-                    trend: { change: 0, direction: 'stable' },
+                    trend: metrics.trend || { change: 0, direction: 'stable' },
                     period: `Last ${metrics.period?.days || 30} days`
                 },
                 components: {
@@ -176,7 +203,7 @@
                         note: `${metrics.incidents?.violations || 0} violations, ${metrics.incidents?.nearMisses || 0} near-misses`
                     }
                 ],
-                actionItems: generateActionItems(metrics),
+                actionItems: generateActionItems(metrics, hasSoulConfig, hasAlign120),
                 assets: {} // filled by caller
             };
         }
@@ -227,7 +254,7 @@
             };
         }
 
-        function generateActionItems(metrics) {
+        function generateActionItems(metrics, hasSoulConfig, hasAlign120) {
             const items = [];
             if (metrics.incidents?.violations > 0 && metrics.incidents?.resolved < metrics.incidents?.total) {
                 items.push({
@@ -255,6 +282,24 @@
                     title: 'Improve integrity posture',
                     description: 'Your integrity yield is below 60. Focus on resolving incidents and completing reviews to raise your score.',
                     priority: 'high'
+                });
+            }
+            // Alignment audit prerequisites
+            if (!hasSoulConfig) {
+                items.push({
+                    title: 'Define your values to enable Alignment Audit',
+                    description: 'The Alignment Audit requires a Soul Configuration with stated values. Complete the Soul Wizard to unlock this component.',
+                    priority: 'medium',
+                    cta: 'Soul Wizard',
+                    action: "window.location.href='/soul-wizard.html'"
+                });
+            } else if (!hasAlign120) {
+                items.push({
+                    title: 'Complete Align 120 to enable Alignment Audit',
+                    description: 'Your values are defined. Complete the Align 120 Module 2 assessment to generate discovered values and run a live alignment audit.',
+                    priority: 'medium',
+                    cta: 'Open Align 120',
+                    action: "window.location.href='/align120.html'"
                 });
             }
             return items;
@@ -450,66 +495,10 @@
 
                 <!-- Component Scores -->
                 <div class="components-grid">
-                    <div class="component-card">
-                        <div class="component-header">
-                            <div class="component-icon trust"><i data-lucide="trending-up" style="width: 24px; height: 24px;"></i></div>
-                            <span class="component-weight">${(data.components.trustVelocity.weight * 100)}%</span>
-                        </div>
-                        <h4 class="component-title">Trust Velocity</h4>
-                        <p class="component-description">Compounding vs. eroding relationships</p>
-                        <div class="component-score">
-                            <span class="component-score-value">${data.components.trustVelocity.score}</span>
-                            <span class="component-score-max">/ 100</span>
-                        </div>
-                        <div class="component-bar">
-                            <div class="component-bar-fill trust" style="width: ${data.components.trustVelocity.score}%"></div>
-                        </div>
-                    </div>
-                    <div class="component-card">
-                        <div class="component-header">
-                            <div class="component-icon intervention"><i data-lucide="zap" style="width: 24px; height: 24px;"></i></div>
-                            <span class="component-weight">${(data.components.interventionEffectiveness.weight * 100)}%</span>
-                        </div>
-                        <h4 class="component-title">Intervention Effectiveness</h4>
-                        <p class="component-description">Human oversight in automated systems</p>
-                        <div class="component-score">
-                            <span class="component-score-value">${data.components.interventionEffectiveness.score}</span>
-                            <span class="component-score-max">/ 100</span>
-                        </div>
-                        <div class="component-bar">
-                            <div class="component-bar-fill intervention" style="width: ${data.components.interventionEffectiveness.score}%"></div>
-                        </div>
-                    </div>
-                    <div class="component-card">
-                        <div class="component-header">
-                            <div class="component-icon alignment"><i data-lucide="target" style="width: 24px; height: 24px;"></i></div>
-                            <span class="component-weight">${(data.components.alignmentAudit.weight * 100)}%</span>
-                        </div>
-                        <h4 class="component-title">Alignment Audit</h4>
-                        <p class="component-description">Stated vs. stress values gap</p>
-                        <div class="component-score">
-                            <span class="component-score-value">${data.components.alignmentAudit.score}</span>
-                            <span class="component-score-max">/ 100</span>
-                        </div>
-                        <div class="component-bar">
-                            <div class="component-bar-fill alignment" style="width: ${data.components.alignmentAudit.score}%"></div>
-                        </div>
-                    </div>
-                    <div class="component-card">
-                        <div class="component-header">
-                            <div class="component-icon counterfactual"><i data-lucide="dollar-sign" style="width: 24px; height: 24px;"></i></div>
-                            <span class="component-weight">${(data.components.counterfactualValue.weight * 100)}%</span>
-                        </div>
-                        <h4 class="component-title">Counterfactual Value</h4>
-                        <p class="component-description">ROI on integrity investments</p>
-                        <div class="component-score">
-                            <span class="component-score-value">${data.components.counterfactualValue.score}</span>
-                            <span class="component-score-max">/ 100</span>
-                        </div>
-                        <div class="component-bar">
-                            <div class="component-bar-fill counterfactual" style="width: ${data.components.counterfactualValue.score}%"></div>
-                        </div>
-                    </div>
+                    ${renderTrustVelocityCard(data)}
+                    ${renderInterventionCard(data)}
+                    ${renderAlignmentCard(data)}
+                    ${renderCounterfactualCard(data)}
                 </div>
 
                 <!-- Leading & Lagging Indicators -->
@@ -543,7 +532,7 @@
                         </button>
                     </div>
                     <div class="assets-grid">
-                        ${renderAssetStatusCards(data.assets)}
+                        ${renderAssetStatusCards(data.assets, data.hasSoulConfig, data.hasAlign120)}
                     </div>
                 </div>
 
@@ -574,7 +563,448 @@
             `;
         }
 
-        function renderAssetStatusCards(assets) {
+        // ==========================================
+        // Shared Component Card Helpers
+        // ==========================================
+
+        function toggleComponentPanel(cardId) {
+            const panel = document.getElementById(`${cardId}-detail`);
+            const btn = document.getElementById(`${cardId}-expand-btn`);
+            if (!panel || !btn) return;
+            const isOpen = !panel.classList.contains('collapsed');
+            panel.classList.toggle('collapsed', isOpen);
+            btn.setAttribute('aria-expanded', String(!isOpen));
+        }
+
+        function formatCurrency(amount) {
+            if (!amount || amount === 0) return 'N/A';
+            if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
+            if (amount >= 1e6) return `$${(amount / 1e6).toFixed(1)}M`;
+            if (amount >= 1e3) return `$${(amount / 1e3).toFixed(0)}K`;
+            return `$${amount.toFixed(0)}`;
+        }
+
+        function detailRow(label, value, statusClass) {
+            return `<div class="component-detail-row">
+                <span class="component-detail-label">${label}</span>
+                <span class="component-detail-value ${statusClass || ''}">${value}</span>
+            </div>`;
+        }
+
+        function expandBtnHtml(cardId) {
+            return `<button class="component-expand-btn"
+                    id="${cardId}-expand-btn"
+                    aria-expanded="false"
+                    aria-controls="${cardId}-detail"
+                    onclick="toggleComponentPanel('${cardId}')"
+                    title="View details">
+                <i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+            </button>`;
+        }
+
+        // ==========================================
+        // Trust Velocity Card
+        // ==========================================
+
+        function renderTrustVelocityCard(data) {
+            const { score, weight, detail } = data.components.trustVelocity;
+            const pct = weight * 100;
+            const cardId = 'trust-velocity';
+            const detailHtml = detail ? `
+                ${detailRow('Resolution rate', `${detail.resolutionRate}%`, detail.resolutionRate >= 80 ? 'positive' : detail.resolutionRate >= 50 ? 'neutral' : 'negative')}
+                ${detailRow('Incident rate', `${detail.incidentRate}%`, detail.incidentRate === 0 ? 'positive' : detail.incidentRate <= 5 ? 'neutral' : 'negative')}
+                ${detailRow('Violations / Near-misses', `${detail.violations} / ${detail.nearMisses}`)}
+                ${detailRow('Resolved incidents', `${detail.resolvedIncidents} of ${detail.totalIncidents}`)}
+            ` : '<div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0;">No incident data yet</div>';
+
+            return `<div class="component-card">
+                <div class="component-header">
+                    <div class="component-icon trust"><i data-lucide="trending-up" style="width:24px;height:24px;"></i></div>
+                    <div style="display:flex;align-items:center;gap:0.25rem;margin-left:auto;">
+                        <span class="component-weight">${pct}%</span>
+                        ${expandBtnHtml(cardId)}
+                    </div>
+                </div>
+                <h4 class="component-title">Trust Velocity</h4>
+                <p class="component-description">Compounding vs. eroding relationships</p>
+                <div class="component-score">
+                    <span class="component-score-value">${score}</span>
+                    <span class="component-score-max">/ 100</span>
+                </div>
+                <div class="component-bar">
+                    <div class="component-bar-fill trust" style="width:${score}%"></div>
+                </div>
+                <div class="component-detail-panel collapsed" id="${cardId}-detail">
+                    ${detailHtml}
+                </div>
+            </div>`;
+        }
+
+        // ==========================================
+        // Intervention Effectiveness Card
+        // ==========================================
+
+        function renderInterventionCard(data) {
+            const { score, weight, detail } = data.components.interventionEffectiveness;
+            const pct = weight * 100;
+            const cardId = 'intervention';
+            const detailHtml = detail ? `
+                ${detailRow('Review completion', `${detail.reviewCompletionRate}%`, detail.reviewCompletionRate >= 80 ? 'positive' : detail.reviewCompletionRate >= 50 ? 'neutral' : 'negative')}
+                ${detailRow('Reviews completed', `${detail.humanReviewCompleted} of ${detail.humanReviewRequired}`)}
+                ${detailRow('Pending reviews', `${detail.pendingReviews}`, detail.pendingReviews > 0 ? 'negative' : 'positive')}
+                ${detailRow('High-stakes evaluations', `${detail.highStakesCount}`)}
+                ${detailRow('Total evaluations', `${detail.totalEvaluations}`)}
+            ` : '<div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0;">No evaluation data yet</div>';
+
+            return `<div class="component-card">
+                <div class="component-header">
+                    <div class="component-icon intervention"><i data-lucide="zap" style="width:24px;height:24px;"></i></div>
+                    <div style="display:flex;align-items:center;gap:0.25rem;margin-left:auto;">
+                        <span class="component-weight">${pct}%</span>
+                        ${expandBtnHtml(cardId)}
+                    </div>
+                </div>
+                <h4 class="component-title">Intervention Effectiveness</h4>
+                <p class="component-description">Human oversight in automated systems</p>
+                <div class="component-score">
+                    <span class="component-score-value">${score}</span>
+                    <span class="component-score-max">/ 100</span>
+                </div>
+                <div class="component-bar">
+                    <div class="component-bar-fill intervention" style="width:${score}%"></div>
+                </div>
+                <div class="component-detail-panel collapsed" id="${cardId}-detail">
+                    ${detailHtml}
+                </div>
+            </div>`;
+        }
+
+        // ==========================================
+        // Counterfactual Value Card
+        // ==========================================
+
+        function renderCounterfactualCard(data) {
+            const { score, weight, detail } = data.components.counterfactualValue;
+            const pct = weight * 100;
+            const cardId = 'counterfactual';
+            const detailHtml = detail ? `
+                ${detailRow('Industry baseline entries', `${detail.baselineEntryCount}`)}
+                ${detailRow('Baseline financial exposure', formatCurrency(detail.baselineFinancialTotal))}
+                ${detailRow('Baseline coverage bonus', `+${detail.baselineCoverageBonus} pts`, detail.baselineCoverageBonus > 0 ? 'positive' : '')}
+                ${detailRow('Near-miss score', `${detail.nearMissScore}`)}
+                ${detailRow('Clean record score', `${detail.cleanRecord}`, detail.cleanRecord >= 75 ? 'positive' : detail.cleanRecord >= 50 ? 'neutral' : 'negative')}
+                ${detail.estimatedCostAvoided !== null ? detailRow('Est. cost avoided', formatCurrency(detail.estimatedCostAvoided), 'positive') : ''}
+            ` : '<div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0;">No counterfactual data yet</div>';
+
+            return `<div class="component-card">
+                <div class="component-header">
+                    <div class="component-icon counterfactual"><i data-lucide="dollar-sign" style="width:24px;height:24px;"></i></div>
+                    <div style="display:flex;align-items:center;gap:0.25rem;margin-left:auto;">
+                        <span class="component-weight">${pct}%</span>
+                        ${expandBtnHtml(cardId)}
+                    </div>
+                </div>
+                <h4 class="component-title">Counterfactual Value</h4>
+                <p class="component-description">ROI on integrity investments</p>
+                <div class="component-score">
+                    <span class="component-score-value">${score}</span>
+                    <span class="component-score-max">/ 100</span>
+                </div>
+                <div class="component-bar">
+                    <div class="component-bar-fill counterfactual" style="width:${score}%"></div>
+                </div>
+                <div class="component-detail-panel collapsed" id="${cardId}-detail">
+                    ${detailHtml}
+                </div>
+            </div>`;
+        }
+
+        // ==========================================
+        // Alignment Audit Card
+        // ==========================================
+
+        function renderAlignmentCard(data) {
+            const weight = (data.components.alignmentAudit.weight * 100);
+            const hasSoulConfig = data.hasSoulConfig;
+            const hasAlign120 = data.hasAlign120;
+            const audit = data.latestAudit;
+
+            // --- Incomplete: no soul config at all ---
+            if (!hasSoulConfig) {
+                return `
+                    <div class="component-card alignment-incomplete">
+                        <div class="component-header">
+                            <div class="component-icon alignment"><i data-lucide="target" style="width: 24px; height: 24px;"></i></div>
+                            <span class="component-weight">${weight}%</span>
+                        </div>
+                        <h4 class="component-title">Alignment Audit</h4>
+                        <p class="component-description">Stated vs. stress values gap</p>
+                        <div class="alignment-incomplete-body">
+                            <span class="alignment-incomplete-msg">Values not yet defined. Complete the Soul Wizard first, then run an audit.</span>
+                            <button class="alignment-incomplete-cta" onclick="window.location.href='/soul-wizard.html'">
+                                <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+                                Open Soul Wizard
+                            </button>
+                        </div>
+                        <div class="component-bar" style="margin-top:0.75rem;">
+                            <div class="component-bar-fill alignment-partial"></div>
+                        </div>
+                    </div>`;
+            }
+
+            // --- Incomplete: soul config present, Align 120 missing ---
+            if (!hasAlign120) {
+                return `
+                    <div class="component-card alignment-incomplete">
+                        <div class="component-header">
+                            <div class="component-icon alignment"><i data-lucide="target" style="width: 24px; height: 24px;"></i></div>
+                            <span class="component-weight">${weight}%</span>
+                        </div>
+                        <h4 class="component-title">Alignment Audit</h4>
+                        <p class="component-description">Stated vs. stress values gap</p>
+                        <div class="alignment-incomplete-body">
+                            <span class="alignment-incomplete-msg">Values defined. Complete Align 120 Module 2 to generate discovered values.</span>
+                            <button class="alignment-incomplete-cta" onclick="window.location.href='/align120.html'">
+                                <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+                                Complete Align 120
+                            </button>
+                        </div>
+                        <div class="component-bar" style="margin-top:0.75rem;">
+                            <div class="component-bar-fill alignment-partial"></div>
+                        </div>
+                    </div>`;
+            }
+
+            // --- Live: both data sources present ---
+            const score = data.components.alignmentAudit.score;
+
+            return `
+                <div class="component-card">
+                    <div class="component-header">
+                        <div class="component-icon alignment"><i data-lucide="target" style="width: 24px; height: 24px;"></i></div>
+                        <div style="display:flex;align-items:center;gap:0.25rem;margin-left:auto;">
+                            <span class="component-weight">${weight}%</span>
+                            <button class="component-expand-btn"
+                                    id="alignment-expand-btn"
+                                    aria-expanded="false"
+                                    aria-controls="alignment-detail-panel"
+                                    onclick="toggleAlignmentPanel()"
+                                    title="View value breakdown">
+                                <i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h4 class="component-title">Alignment Audit</h4>
+                    <p class="component-description">Stated vs. stress values gap</p>
+                    <div class="component-score">
+                        <span class="component-score-value">${score}</span>
+                        <span class="component-score-max">/ 100</span>
+                    </div>
+                    <div class="component-bar">
+                        <div class="component-bar-fill alignment" style="width: ${score}%"></div>
+                    </div>
+                    <div class="alignment-detail-panel collapsed" id="alignment-detail-panel">
+                        ${renderAlignmentPanel(audit)}
+                    </div>
+                </div>`;
+        }
+
+        function renderAlignmentPanel(audit) {
+            const lastAuditText = audit?.audit_date
+                ? `Last audited: ${formatDate(audit.audit_date)}`
+                : 'No audit run yet';
+
+            const scores = audit?.alignment_scores || [];
+            const drift = audit?.drift_details || null;
+            const recommendations = audit?.recommendations || [];
+
+            return `
+                <div class="alignment-audit-meta">
+                    <span class="alignment-audit-meta-text">${lastAuditText}</span>
+                    <button class="alignment-run-btn" id="alignment-run-btn" onclick="runAlignmentAudit()">
+                        <i data-lucide="play" style="width:12px;height:12px;"></i>
+                        Run Audit
+                    </button>
+                </div>
+                ${renderAlignmentValueRows(scores)}
+                ${renderDriftAlert(drift)}
+                ${renderAlignmentRecommendation(recommendations)}`;
+        }
+
+        function renderAlignmentValueRows(scores) {
+            if (!scores || scores.length === 0) {
+                return `<div class="section-empty-state" style="padding:0.75rem 0.5rem;">
+                    <i data-lucide="info" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                    <span>No audit data yet. Run an audit to see per-value scores.</span>
+                </div>`;
+            }
+
+            // Sort: worst first (not_found, critical, significant, moderate, aligned), then unstated at end
+            const gapOrder = { not_found: 0, critical: 1, significant: 2, moderate: 3, aligned: 4, unstated: 99 };
+            const stated = scores
+                .filter(s => s.gap !== 'unstated')
+                .sort((a, b) => (gapOrder[a.gap] ?? 5) - (gapOrder[b.gap] ?? 5));
+            const unstated = scores.filter(s => s.gap === 'unstated');
+
+            const SHOW_LIMIT = 5;
+            const showAll = stated.length <= SHOW_LIMIT;
+            const visibleStated = showAll ? stated : stated.slice(0, SHOW_LIMIT);
+
+            const statedRows = visibleStated.map(s => renderValueRow(s)).join('');
+            const hiddenCount = stated.length - SHOW_LIMIT;
+            const showAllBtn = !showAll
+                ? `<button class="alignment-show-all-btn"
+                          onclick="expandAlignmentValues()"
+                          id="alignment-show-all-btn">
+                       Show all ${stated.length} values
+                   </button>`
+                : '';
+
+            // Hidden rows (initially display:none)
+            const hiddenRows = !showAll
+                ? `<div id="alignment-hidden-values" style="display:none;">
+                       ${stated.slice(SHOW_LIMIT).map(s => renderValueRow(s)).join('')}
+                   </div>`
+                : '';
+
+            const unstatedSection = unstated.length > 0
+                ? `<div class="alignment-unstated-sep">Observed but not stated (${unstated.length})</div>
+                   ${unstated.map(s => renderValueRow(s)).join('')}`
+                : '';
+
+            return `<div class="alignment-values-list">
+                ${statedRows}
+                ${hiddenRows}
+                ${showAllBtn}
+                ${unstatedSection}
+            </div>`;
+        }
+
+        function renderValueRow(s) {
+            const gapLabel = { aligned: 'Aligned', moderate: 'Moderate', significant: 'Gap', critical: 'Critical', not_found: 'Missing', unstated: 'Unstated' };
+            const dotClass = { aligned: 'green', moderate: 'yellow', significant: 'yellow', critical: 'red', not_found: 'red', unstated: 'green' };
+            const badgeClass = { aligned: 'aligned', moderate: 'moderate', significant: 'significant', critical: 'critical', not_found: 'not-found', unstated: 'unstated' };
+            const scoreText = s.alignmentScore !== null ? `${s.alignmentScore}/100` : '—';
+
+            return `<div class="alignment-value-row">
+                <div class="indicator-status ${dotClass[s.gap] || 'yellow'}"></div>
+                <span class="alignment-value-name" title="${escapeHtml(s.valueName)}">${escapeHtml(s.valueName)}</span>
+                <span class="gap-badge ${badgeClass[s.gap] || ''}">${gapLabel[s.gap] || s.gap}</span>
+                <span class="alignment-value-score">${scoreText}</span>
+            </div>`;
+        }
+
+        function renderDriftAlert(drift) {
+            if (!drift?.driftDetected) return '';
+            const summary = drift.summary || `${drift.driftedValues?.length || 'Some'} values shifted since last audit`;
+            return `<div class="alignment-drift-alert">
+                <i data-lucide="alert-triangle" style="width:15px;height:15px;flex-shrink:0;color:#f59e0b;"></i>
+                <span>Values drift detected — ${escapeHtml(summary)}</span>
+            </div>`;
+        }
+
+        function renderAlignmentRecommendation(recommendations) {
+            if (!recommendations || recommendations.length === 0) return '';
+            const first = typeof recommendations[0] === 'string'
+                ? recommendations[0]
+                : recommendations[0].text || recommendations[0].recommendation || String(recommendations[0]);
+            const viewAllLink = recommendations.length > 1
+                ? ` <button class="alignment-show-all-btn" style="display:inline;padding:0;" onclick="showAllAlignmentRecommendations()">View all ${recommendations.length}</button>`
+                : '';
+            return `<div class="alignment-recommendation">
+                <i data-lucide="lightbulb" style="width:14px;height:14px;flex-shrink:0;color:var(--primary);margin-top:0.05rem;"></i>
+                <span>${escapeHtml(first)}${viewAllLink}</span>
+            </div>`;
+        }
+
+        function toggleAlignmentPanel() {
+            const panel = document.getElementById('alignment-detail-panel');
+            const btn = document.getElementById('alignment-expand-btn');
+            if (!panel || !btn) return;
+            const isOpen = !panel.classList.contains('collapsed');
+            panel.classList.toggle('collapsed', isOpen);
+            btn.setAttribute('aria-expanded', String(!isOpen));
+        }
+
+        function expandAlignmentValues() {
+            const hidden = document.getElementById('alignment-hidden-values');
+            const btn = document.getElementById('alignment-show-all-btn');
+            if (hidden) hidden.style.display = '';
+            if (btn) btn.remove();
+        }
+
+        async function runAlignmentAudit() {
+            const orgId = localStorage.getItem('currentOrgId');
+            if (!orgId) return;
+
+            const btn = document.getElementById('alignment-run-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader-2" style="width:12px;height:12px;animation:spin 1s linear infinite;"></i> Running...';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            try {
+                const headers = getIntegrityHeaders();
+                const res = await fetch('/api/soul-config/values-alignment/audit', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ orgId })
+                });
+                const result = await res.json();
+
+                if (result.success && result.data?.status === 'complete') {
+                    if (typeof showToast === 'function') showToast('Alignment audit complete', 'success');
+                    // Re-render just the panel with fresh data
+                    const panel = document.getElementById('alignment-detail-panel');
+                    if (panel) {
+                        panel.innerHTML = renderAlignmentPanel(result.data);
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                } else if (result.data?.status === 'incomplete') {
+                    if (typeof showToast === 'function') showToast(result.data.message || 'Audit prerequisites not met', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i data-lucide="play" style="width:12px;height:12px;"></i> Run Audit';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                } else {
+                    throw new Error(result.error || 'Audit failed');
+                }
+            } catch (err) {
+                console.error('Alignment audit error:', err);
+                if (typeof showToast === 'function') showToast('Audit failed. Try again.', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="play" style="width:12px;height:12px;"></i> Run Audit';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        }
+
+        async function showAllAlignmentRecommendations() {
+            if (typeof ModalService === 'undefined') return;
+            const orgId = localStorage.getItem('currentOrgId');
+            if (!orgId) return;
+            try {
+                const headers = getIntegrityHeaders();
+                const res = await fetch(`/api/soul-config/values-alignment/history/${orgId}?limit=1`, { headers });
+                const result = await res.json();
+                const recs = result.data?.[0]?.recommendations || [];
+                const body = recs.map((r, i) => {
+                    const text = typeof r === 'string' ? r : r.text || r.recommendation || String(r);
+                    return `${i + 1}. ${text}`;
+                }).join('\n\n');
+                await ModalService.alert({
+                    title: 'Alignment Audit Recommendations',
+                    message: body || 'No recommendations available.'
+                });
+            } catch (err) {
+                console.error('Failed to load recommendations:', err);
+            }
+        }
+
+        function renderAssetStatusCards(assets, hasSoulConfig, hasAlign120) {
             const assetTypes = {
                 bright_lines: { icon: 'ban', name: 'Bright Lines', layer: 'Foundation', href: '/soul-configuration.html', setupHref: '/soul-wizard.html' },
                 values_map: { icon: 'map', name: 'Values Map', layer: 'Foundation', href: '/soul-configuration.html', setupHref: '/soul-wizard.html' },
@@ -610,7 +1040,12 @@
                 if (value.populated && isAuto) {
                     metaText = 'Auto-computed from chat';
                 } else if (value.populated && value.source === 'soul-config') {
-                    metaText = 'From Soul Configuration';
+                    // If values are configured but Align 120 is missing, annotate to guide the user
+                    if (key === 'values_map' && hasSoulConfig && !hasAlign120) {
+                        metaText = 'Align 120 needed for audit';
+                    } else {
+                        metaText = 'From Soul Configuration';
+                    }
                 } else if (value.populated && value.source === 'incidents') {
                     metaText = 'From incident tracking';
                 } else if (value.populated) {
@@ -805,7 +1240,7 @@
 
         async function openLogIncidentForm() {
             if (typeof ModalService === 'undefined') {
-                alert('ModalService not loaded');
+                showToast('Modal service not available', 'error');
                 return;
             }
             const orgId = localStorage.getItem('currentOrgId');
