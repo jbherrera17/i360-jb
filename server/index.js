@@ -243,6 +243,18 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
+        // Allow Chrome extension origins
+        if (origin && origin.startsWith('chrome-extension://')) {
+            const allowedExtensions = process.env.ALLOWED_EXTENSION_IDS?.split(',').map(id => id.trim()) || [];
+            const extId = origin.replace('chrome-extension://', '');
+            if (allowedExtensions.includes(extId) || allowedExtensions.includes('*')) {
+                return callback(null, true);
+            }
+            // In development, allow all extensions
+            if (process.env.NODE_ENV !== 'production') {
+                return callback(null, true);
+            }
+        }
         return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     credentials: true

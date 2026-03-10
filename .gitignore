@@ -43,9 +43,11 @@ Thumbs.db
 .classpath
 .settings/
 
-# Test coverage
+# Test coverage & reports
 coverage/
 .nyc_output/
+playwright-report/
+test-results/
 
 # Temporary files
 tmp/
@@ -93,6 +95,14 @@ local/
 
 # Documentation builds
 docs/_build/
+
+# In-progress / local working folders
+synergi website/
+extension/
+
+# Claude Code local config
+.claude/agent-memory/
+.claude/agents/
 
 # Secrets (various formats)
 secrets/
