@@ -12,6 +12,7 @@ const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
 const { assembleContext, estimateTokens } = require('../services/contextInjection');
 const { executeAgent, streamAgent } = require('../services/agentService');
+const unifiedRuntime = require('../services/unifiedRuntime');
 const { generateSignedEmbedUrl } = require('../services/mindstudioService');
 const { canEditAgent, canDeleteAgent } = require('../middleware/auth');
 const { buildAgentAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
@@ -35,7 +36,7 @@ module.exports = function(supabase) {
     router.get('/', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const {
                 category,
                 suite,
@@ -439,11 +440,21 @@ module.exports = function(supabase) {
      */
     router.get('/departments', async (req, res) => {
         try {
-            const { data, error } = await supabase
+            const orgId = req.query.org_id || req.headers['x-org-id'] || req.orgId;
+
+            let query = supabase
                 .from('departments')
                 .select('id, name, description, icon')
                 .eq('is_active', true)
                 .order('sort_order');
+
+            if (orgId) {
+                query = query.eq('org_id', orgId);
+            } else {
+                query = query.not('org_id', 'is', null);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -1416,12 +1427,53 @@ module.exports = function(supabase) {
             }
 
             const userId = req.userId || null;
-
-            const result = await executeAgent(id, {
-                userMessage: message,
-                conversationHistory: conversation_history,
-                userId
+            const runtimeResult = await unifiedRuntime.execute({
+                supabase,
+                module: 'agents',
+                org_id: req.headers['x-org-id'] || null,
+                user_id: userId,
+                agent_id: id,
+                quota_resource_type: 'agents',
+                profile_hint: 'agent_full',
+                risk_level: 'medium',
+                requires_rich_context: true,
+                provider_hint: 'agent',
+                operation: async () => executeAgent(id, {
+                    userMessage: message,
+                    conversationHistory: conversation_history,
+                    userId
+                }),
+                legacyOperation: async () => executeAgent(id, {
+                    userMessage: message,
+                    conversationHistory: conversation_history,
+                    userId
+                })
             });
+
+            if (runtimeResult.status === 'blocked') {
+                return res.status(503).json({
+                    success: false,
+                    error: runtimeResult.error?.message || 'Agent execution blocked by runtime controls',
+                    meta: {
+                        runtime: runtimeResult.runtime || null
+                    }
+                });
+            }
+            if (runtimeResult.status === 'error') {
+                return res.status(500).json({
+                    success: false,
+                    error: runtimeResult.error?.message || 'Agent execution failed in runtime',
+                    meta: {
+                        runtime: runtimeResult.runtime || null
+                    }
+                });
+            }
+
+            const result = runtimeResult.raw || runtimeResult;
+            result.meta = {
+                ...(result.meta || {}),
+                runtime: runtimeResult.runtime || null
+            };
 
             res.json({
                 success: true,
@@ -1474,23 +1526,55 @@ module.exports = function(supabase) {
 
             const userId = req.userId || null;
 
-            await streamAgent(id, {
-                userMessage: message,
-                conversationHistory: conversation_history,
-                userId,
-                modelOverride: model_override,
-                sessionId: session_id,
-                includeOnDemand: include_context,
+            await unifiedRuntime.stream({
+                supabase,
+                module: 'agents',
+                org_id: req.headers['x-org-id'] || null,
+                user_id: userId,
+                agent_id: id,
+                quota_resource_type: 'agents',
+                profile_hint: 'agent_full',
+                risk_level: 'medium',
+                requires_rich_context: true,
+                provider_hint: 'agent',
+                streamOperation: ({ onToken, onComplete, onError }) => streamAgent(id, {
+                    userMessage: message,
+                    conversationHistory: conversation_history,
+                    userId,
+                    modelOverride: model_override,
+                    sessionId: session_id,
+                    includeOnDemand: include_context,
+                    onToken,
+                    onComplete,
+                    onError
+                }),
+                legacyStreamOperation: ({ onToken, onComplete, onError }) => streamAgent(id, {
+                    userMessage: message,
+                    conversationHistory: conversation_history,
+                    userId,
+                    modelOverride: model_override,
+                    sessionId: session_id,
+                    includeOnDemand: include_context,
+                    onToken,
+                    onComplete,
+                    onError
+                })
+            }, {
                 onToken: (token) => {
                     res.write(`data: ${JSON.stringify({ type: 'token', content: token })}\n\n`);
                 },
-                onComplete: (result) => {
-                    res.write(`data: ${JSON.stringify({ type: 'complete', ...result })}\n\n`);
+                onComplete: (runtimeResult) => {
+                    const completion = runtimeResult.raw || runtimeResult;
+                    completion.meta = {
+                        ...(completion.meta || {}),
+                        runtime: runtimeResult.runtime || null
+                    };
+                    res.write(`data: ${JSON.stringify({ type: 'complete', ...completion })}\n\n`);
                     res.write('data: [DONE]\n\n');
                     res.end();
                 },
-                onError: (error) => {
-                    res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+                onError: (error, runtimeMeta) => {
+                    res.write(`data: ${JSON.stringify({ type: 'error', error: error.message, meta: { runtime: runtimeMeta || null } })}\n\n`);
                     res.end();
                 }
             });

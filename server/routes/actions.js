@@ -12,6 +12,7 @@
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
 const anthropicService = require('../services/anthropic');
+const unifiedRuntime = require('../services/unifiedRuntime');
 const { getUserId } = require('../utils/auth');
 
 /**
@@ -89,7 +90,7 @@ module.exports = function(supabase) {
     router.use(async (req, res, next) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             // Skip check if no user context (will fail auth later anyway)
             if (!userId) {
@@ -179,7 +180,7 @@ module.exports = function(supabase) {
             }
 
             // === PHASE 46: Organization filtering ===
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (orgId) {
                 // Show actions belonging to this org OR system actions (no org)
                 query = query.or(`org_id.eq.${orgId},org_id.is.null`);
@@ -813,10 +814,11 @@ module.exports = function(supabase) {
             let output_data;
             let aiEngine = 'native';
             let modelUsed = 'claude-sonnet-4-5-20250929';
+            let runtimeMeta = null;
 
             try {
                 // Build system prompt from action configuration
-                const systemPrompt = buildActionSystemPrompt(action);
+                let systemPrompt = buildActionSystemPrompt(action);
 
                 // Build user message from input data
                 const userMessage = buildActionUserMessage(action, input_data);
@@ -825,20 +827,77 @@ module.exports = function(supabase) {
                 modelUsed = action.ai_engine?.native?.model || 'claude-sonnet-4-5-20250929';
                 aiEngine = action.ai_engine?.type || 'native';
 
-                // Call AI service
-                const aiResponse = await anthropicService.chat({
-                    message: userMessage,
+                // Collect always-injected context assets for richer execution context
+                const { data: alwaysAssets } = await supabase
+                    .from('action_context_assets')
+                    .select('max_tokens, context_assets(name, asset_type, content_text)')
+                    .eq('action_id', id)
+                    .eq('injection_mode', 'always')
+                    .order('priority', { ascending: false });
+
+                if (alwaysAssets?.length) {
+                    const assetBlock = alwaysAssets.map((asset) => {
+                        const content = asset.context_assets?.content_text || '';
+                        if (asset.max_tokens && content.length > asset.max_tokens * 4) {
+                            return `## ${asset.context_assets?.name} (${asset.context_assets?.asset_type})\n${content.slice(0, asset.max_tokens * 4)}...`;
+                        }
+                        return `## ${asset.context_assets?.name} (${asset.context_assets?.asset_type})\n${content}`;
+                    }).join('\n\n---\n\n');
+
+                    if (assetBlock.trim()) {
+                        systemPrompt += `\n\n# Action Context Assets\n\n${assetBlock}`;
+                    }
+                }
+
+                // Execute through unified runtime backbone
+                const runtimeResult = await unifiedRuntime.execute({
+                    supabase,
+                    module: 'actions',
+                    org_id: req.headers['x-org-id'] || null,
+                    user_id: userId,
+                    department_id,
+                    action_id: id,
+                    quota_resource_type: 'actions',
+                    profile_hint: 'policy',
+                    risk_level: action.requires_approval ? 'medium' : 'low',
+                    requires_rich_context: !!alwaysAssets?.length,
+                    context_refs: (alwaysAssets || []).map(a => a.context_assets?.name).filter(Boolean),
+                    provider_hint: 'anthropic',
                     model: modelUsed,
-                    systemPrompt: systemPrompt,
-                    maxTokens: action.ai_engine?.native?.max_tokens || 4096
+                    max_tokens: action.ai_engine?.native?.max_tokens || 4096,
+                    operation: async ({ policy }) => anthropicService.chat({
+                        message: userMessage,
+                        model: modelUsed,
+                        systemPrompt,
+                        maxTokens: Math.min(action.ai_engine?.native?.max_tokens || 4096, policy.max_tokens || 4096)
+                    }),
+                    legacyOperation: async () => anthropicService.chat({
+                        message: userMessage,
+                        model: modelUsed,
+                        systemPrompt,
+                        maxTokens: action.ai_engine?.native?.max_tokens || 4096
+                    })
                 });
 
+                if (runtimeResult.status === 'blocked') {
+                    throw new Error(runtimeResult.error?.message || 'Action execution blocked by runtime controls');
+                }
+                if (runtimeResult.status === 'error') {
+                    throw new Error(runtimeResult.error?.message || 'Action execution failed in runtime');
+                }
+
+                runtimeMeta = runtimeResult.runtime || null;
+                const aiResponse = runtimeResult.raw || runtimeResult;
+
                 output_data = {
-                    response: aiResponse.text,
+                    response: aiResponse.content || aiResponse.text || '',
                     action_name: action.name,
                     input_received: input_data,
                     usage: aiResponse.usage,
-                    model: modelUsed
+                    model: modelUsed,
+                    meta: {
+                        runtime: runtimeMeta
+                    }
                 };
             } catch (aiError) {
                 console.error('Action AI execution error:', aiError);
@@ -893,7 +952,10 @@ module.exports = function(supabase) {
                 data: {
                     execution_id: executionId,
                     output: output_data,
-                    duration_ms: durationMs
+                    duration_ms: durationMs,
+                    meta: {
+                        runtime: runtimeMeta
+                    }
                 }
             });
 

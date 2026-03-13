@@ -15,6 +15,10 @@
  */
 
 // Navigation structure with categories
+// NOTE: This is the FALLBACK config used when /api/modules is unavailable.
+// The dynamic nav (from API) is authoritative. Keep this in sync with platform_modules table.
+// - nav_group determines sidebar placement (primary, ai-systems, dashboards, modules, agency, admin)
+// - category is a logical tag for access control grouping (dashboard, system, tool, agency, admin)
 const navConfig = {
     // Primary items - always visible at top level
     primary: [
@@ -35,7 +39,8 @@ const navConfig = {
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
-                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' }
+                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' },
+                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' }
             ]
         },
         {
@@ -54,21 +59,22 @@ const navConfig = {
             label: 'Modules',
             icon: 'boxes',
             items: [
+                { href: '/easy-start.html', icon: 'sparkles', label: 'Easy Start' },
                 { href: '/align120.html', icon: 'compass', label: 'Align 120' },
                 { href: '/strategy.html', icon: 'milestone', label: 'Strategy (S2E)' },
                 { href: '/research-studio.html', icon: 'book-open-text', label: 'Research Studio' },
                 { href: '/thought-leadership.html', icon: 'lightbulb', label: 'Thought Leadership' },
-                { href: '/social-media.html', icon: 'share-2', label: 'Social Media' },
                 { href: '/briefing.html', icon: 'newspaper', label: 'Briefing' },
                 { href: '/guides.html', icon: 'book-open', label: 'Guides' },
-                { href: '/easy-start.html', icon: 'sparkles', label: 'Easy Start' }
+                { href: '/social-media.html', icon: 'share-2', label: 'Social Media' },
+                { href: '/digest.html', icon: 'rss', label: 'AI Digest' }
             ]
         },
         {
             id: 'agency',
             label: 'Agency',
             icon: 'building',
-            adminOnly: true,
+            adminOnly: true, // Static fallback guard — dynamic nav uses API tier filtering instead
             items: [
                 { href: '/agency-dashboard.html', icon: 'gauge', label: 'Agency Dashboard' },
                 { href: '/admin-org-customization.html', icon: 'palette', label: 'Customization' },
@@ -80,9 +86,12 @@ const navConfig = {
             id: 'admin',
             label: 'Administration',
             icon: 'settings',
-            adminOnly: true,
+            adminOnly: true, // Static fallback guard — dynamic nav uses API tier filtering instead
             items: [
-                { href: '/administrator.html', icon: 'shield', label: 'Administrator' }
+                { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
+                { href: '/admin-resource-access.html', icon: 'shield-check', label: 'Resource Access' },
+                { href: '/integrations.html', icon: 'plug', label: 'Integrations' },
+                { href: '/mcp-connections.html', icon: 'plug-zap', label: 'MCP Connections' }
             ]
         }
     ]

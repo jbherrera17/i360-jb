@@ -37,15 +37,31 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/s2e/foundations
-     * List all strategic foundations
+     * List strategic foundations scoped to the user's organization
      */
     router.get('/foundations', async (req, res) => {
         try {
-            const { data, error } = await supabase
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+
+            let query = supabase
                 .from('strategic_foundations')
                 .select('*')
                 .order('created_at', { ascending: false });
 
+            // Scope to org members if org context provided
+            if (orgId) {
+                const { data: members } = await supabase
+                    .from('organization_members')
+                    .select('user_id')
+                    .eq('org_id', orgId)
+                    .eq('status', 'active');
+                const memberIds = (members || []).map(m => m.user_id);
+                if (memberIds.length > 0) {
+                    query = query.in('user_id', memberIds);
+                }
+            }
+
+            const { data, error } = await query;
             if (error) throw error;
 
             res.json({ success: true, data: data || [] });

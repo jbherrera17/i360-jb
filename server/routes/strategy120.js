@@ -29,7 +29,7 @@ module.exports = function(supabase) {
     router.use(async (req, res, next) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             // Skip check if no user context (will fail auth later anyway)
             if (!userId) {
@@ -72,11 +72,12 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/strategy120/initiatives
-     * List all strategy initiatives with optional filters
+     * List strategy initiatives scoped to the user's organization
      */
     router.get('/initiatives', async (req, res) => {
         try {
             const { status, perspective, theme_id, priority_min } = req.query;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             let query = supabase
                 .from('strategy_initiatives')
@@ -87,6 +88,19 @@ module.exports = function(supabase) {
                 `)
                 .order('priority', { ascending: false })
                 .order('created_at', { ascending: false });
+
+            // Scope to org members if org context provided
+            if (orgId) {
+                const { data: members } = await supabase
+                    .from('organization_members')
+                    .select('user_id')
+                    .eq('org_id', orgId)
+                    .eq('status', 'active');
+                const memberIds = (members || []).map(m => m.user_id);
+                if (memberIds.length > 0) {
+                    query = query.in('user_id', memberIds);
+                }
+            }
 
             if (status) query = query.eq('status', status);
             if (perspective) query = query.eq('perspective_type', perspective);

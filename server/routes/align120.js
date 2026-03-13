@@ -14,6 +14,7 @@ const express = require('express');
 const agentService = require('../services/agentService');
 const integrationService = require('../services/align120IntegrationService');
 const webScraperService = require('../services/webScraperService');
+const soulConfigService = require('../services/soulConfigService');
 const { getUserId, isAdminAsync } = require('../utils/auth');
 
 /**
@@ -29,7 +30,7 @@ module.exports = function(supabase) {
     router.use(async (req, res, next) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             // Skip check if no user context (will fail auth later anyway)
             if (!userId) {
@@ -661,12 +662,45 @@ module.exports = function(supabase) {
 
             if (agentError) throw agentError;
 
+            // Fetch soul configuration for context enrichment
+            let soulContextBlock = '';
+            try {
+                const orgId = session.org_id;
+                let soulConfig = null;
+                if (orgId) {
+                    soulConfig = await soulConfigService.resolveInheritedSoulConfig({ orgId });
+                } else {
+                    const configs = await soulConfigService.listSoulConfigs({ scope_type: 'platform', is_active: true });
+                    soulConfig = configs[0] || null;
+                }
+                if (soulConfig) {
+                    const parts = [];
+                    if (soulConfig.values?.length) {
+                        parts.push('Core Values: ' + soulConfig.values.map(v => `${v.name} (${v.meaning || ''})`).join(', '));
+                    }
+                    if (soulConfig.bright_lines?.length) {
+                        parts.push('Bright Lines: ' + soulConfig.bright_lines.map(b => `${b.name}: ${b.description || ''}`).join('; '));
+                    }
+                    if (soulConfig.voice?.tone?.length) {
+                        parts.push('Brand Voice Tone: ' + soulConfig.voice.tone.join(', '));
+                    }
+                    if (soulConfig.identity?.description) {
+                        parts.push('Organization Identity: ' + soulConfig.identity.description);
+                    }
+                    if (parts.length) {
+                        soulContextBlock = '\n\nExisting Soul Configuration (already defined — reference and build upon these, do not ask the user to redefine them):\n' + parts.join('\n');
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load soul config for Align 120 module:', e.message);
+            }
+
             // Build context message for agents
             const contextMessage = `
 You are running an Align 120 assessment for ${session.company_name}.
 Module: ${moduleNum} - ${moduleNames[moduleNum]}
 
-${companyContext ? `Company Context:\n${companyContext}\n\n` : ''}
+${companyContext ? `Company Context:\n${companyContext}\n\n` : ''}${soulContextBlock}
 Please provide a comprehensive assessment based on the available information.
 Format your response as a structured analysis with clear sections and actionable insights.
 `;

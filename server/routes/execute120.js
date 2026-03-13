@@ -7,6 +7,7 @@
 
 const express = require('express');
 const { getUserId } = require('../utils/auth');
+const WorkflowEngine = require('../services/workflowEngine');
 
 /**
  * Execute 120 Routes Factory
@@ -21,7 +22,7 @@ module.exports = function(supabase) {
     router.use(async (req, res, next) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             // Skip check if no user context (will fail auth later anyway)
             if (!userId) {
@@ -68,7 +69,9 @@ module.exports = function(supabase) {
      */
     router.get('/departments', async (req, res) => {
         try {
-            const { data: departments, error } = await supabase
+            const orgId = req.query.org_id || req.headers['x-org-id'] || req.orgId;
+
+            let query = supabase
                 .from('departments')
                 .select(`
                     id,
@@ -86,6 +89,14 @@ module.exports = function(supabase) {
                 `)
                 .eq('is_active', true)
                 .order('sort_order', { ascending: true });
+
+            if (orgId) {
+                query = query.eq('org_id', orgId);
+            } else {
+                query = query.not('org_id', 'is', null);
+            }
+
+            const { data: departments, error } = await query;
 
             if (error) throw error;
 
@@ -1821,94 +1832,37 @@ module.exports = function(supabase) {
         try {
             const { id, stepNumber } = req.params;
             const { user_input } = req.body;
+            const workflowEngine = new WorkflowEngine(supabase);
+            const parsedStepNumber = parseInt(stepNumber, 10);
+            const stepResult = await workflowEngine.executeStep(
+                id,
+                parsedStepNumber,
+                {
+                    ...(user_input || {}),
+                    user_id: getUserId(req),
+                    org_id: req.headers['x-org-id'] || null,
+                    module: 'execute120'
+                }
+            );
 
-            // Get execution and workflow
-            const { data: execution, error: execError } = await supabase
-                .from('workflow_executions')
-                .select(`
-                    *,
-                    workflow:workflows(
-                        id,
-                        steps:workflow_steps(
-                            *,
-                            agent:agents(*)
-                        )
-                    )
-                `)
-                .eq('id', id)
-                .single();
-
-            if (execError) throw execError;
-
-            // Find the current step
-            const step = execution.workflow.steps.find(s => s.step_number === parseInt(stepNumber));
-            if (!step) {
-                return res.status(404).json({
+            if (!stepResult.success) {
+                return res.status(500).json({
                     success: false,
-                    error: 'Step not found'
+                    error: stepResult.error || 'Failed to execute step',
+                    meta: {
+                        runtime: stepResult.runtime || null
+                    }
                 });
             }
 
-            // Handle different step types
-            let stepOutput = null;
-
-            switch (step.step_type) {
-                case 'user_input':
-                    // Store user input in variables
-                    stepOutput = user_input;
-                    break;
-
-                case 'agent_chat':
-                    // Process template with variables
-                    let processedPrompt = step.prompt_template || '';
-                    const allVariables = { ...execution.variables, ...execution.step_outputs };
-
-                    // Replace {{variable.path}} with actual values
-                    processedPrompt = processedPrompt.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
-                        const parts = path.trim().split('.');
-                        let value = allVariables;
-                        for (const part of parts) {
-                            value = value?.[part];
-                        }
-                        return value !== undefined ? (typeof value === 'object' ? JSON.stringify(value) : value) : match;
-                    });
-
-                    // Return the processed prompt for frontend to execute
-                    stepOutput = {
-                        processed_prompt: processedPrompt,
-                        agent_id: step.agent_id,
-                        agent: step.agent
-                    };
-                    break;
-
-                case 'review':
-                case 'output':
-                    stepOutput = user_input;
-                    break;
-
-                case 'decision':
-                    stepOutput = user_input;
-                    break;
-
-                default:
-                    stepOutput = user_input;
+            if (stepResult.nextAction?.action === 'proceed') {
+                await workflowEngine.advanceToNextStep(id);
             }
-
-            // Update execution with step output
-            const updatedStepOutputs = {
-                ...execution.step_outputs,
-                [stepNumber]: stepOutput
-            };
 
             const { data: updatedExecution, error: updateError } = await supabase
                 .from('workflow_executions')
-                .update({
-                    step_outputs: updatedStepOutputs,
-                    current_step: parseInt(stepNumber) + 1,
-                    updated_at: new Date().toISOString()
-                })
+                .select('*')
                 .eq('id', id)
-                .select()
                 .single();
 
             if (updateError) throw updateError;
@@ -1916,8 +1870,12 @@ module.exports = function(supabase) {
             res.json({
                 success: true,
                 data: {
-                    step_output: stepOutput,
-                    execution: updatedExecution
+                    step_output: stepResult.result?.output ?? null,
+                    execution: updatedExecution,
+                    next_action: stepResult.nextAction,
+                    meta: {
+                        runtime: stepResult.runtime || null
+                    }
                 }
             });
         } catch (error) {

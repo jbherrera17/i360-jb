@@ -153,6 +153,7 @@ const easyStartRoutes = require('./routes/easyStart');
 const openBrainRoutes = require('./routes/openBrain');
 const platformMcpRoutes = require('./routes/platformMcp');
 const mcpRoutes = require('./routes/mcp');
+const digestRoutes = require('./routes/digest');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -221,7 +222,7 @@ app.use(compression({
         if (req.headers.accept === 'text/event-stream') {
             return false;
         }
-        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream') {
+        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream') {
             return false;
         }
         // Use default compression for everything else
@@ -291,7 +292,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/my-capabilities', '/my-capabilities.html',
     '/client-comparison', '/client-comparison.html',
     '/integrations', '/integrations.html',
-    '/easy-start', '/easy-start.html'];
+    '/easy-start', '/easy-start.html',
+    '/digest', '/digest.html', '/digest-sources', '/digest-sources.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -597,6 +599,9 @@ function initializeServices() {
 
         // Phase 60: Social Media Publishing (Postiz Integration)
         app.use('/api/social', socialPublishRoutes(supabase));
+
+        // Phase 66: AI Digest - Content aggregation and intelligent summarization
+        app.use('/api/digest', digestRoutes(supabase));
 
         // Phase 57: Public Pricing API (unauthenticated, whitelisted in auth middleware)
         app.use('/api/pricing', pricingRoutes(supabase));

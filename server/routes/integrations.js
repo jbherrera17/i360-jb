@@ -139,7 +139,7 @@ module.exports = function(supabase) {
             }
 
             // OAuth flow - generate authorization URL
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const state = credentialManager.generateOAuthState(userId, providerSlug);
             const scopes = req.body.scopes || undefined;
             const redirectUri = `${req.protocol}://${req.get('host')}/api/integrations/oauth/${providerSlug}/callback`;
@@ -242,7 +242,7 @@ module.exports = function(supabase) {
      */
     router.get('/org', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             const integrations = await integrationRegistry.getOrgIntegrations(supabase, orgId);
@@ -259,7 +259,7 @@ module.exports = function(supabase) {
      */
     router.post('/org/:provider', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             const { data: providerData } = await supabase
@@ -305,7 +305,7 @@ module.exports = function(supabase) {
      */
     router.put('/org/:provider', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             const { instanceUrl, instanceName, syncSettings, status } = req.body;
@@ -349,7 +349,7 @@ module.exports = function(supabase) {
      */
     router.delete('/org/:provider', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             const { data: providerData } = await supabase
@@ -387,7 +387,7 @@ module.exports = function(supabase) {
      */
     router.get('/subscriptions', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             const { data, error } = await supabase
@@ -410,7 +410,7 @@ module.exports = function(supabase) {
      */
     router.post('/subscriptions', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             const { providerId, addonType } = req.body;
@@ -638,7 +638,7 @@ module.exports = function(supabase) {
      */
     router.get('/usage', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) return res.status(400).json({ success: false, error: 'Organization ID required' });
 
             // Get subscriptions with usage

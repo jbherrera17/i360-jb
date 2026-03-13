@@ -92,8 +92,26 @@ async function isAdminAsync(req, supabase) {
     }
 }
 
+/**
+ * Get the organization ID from the request
+ * Standardized across all routes to ensure consistent org-scoping.
+ *
+ * Priority:
+ * 1. req.query.org_id (explicit query param)
+ * 2. req.headers['x-org-id'] (header from authFetch or manual)
+ * 3. req.orgId (set by auth middleware from user's default_org_id)
+ * 4. null (no org context)
+ *
+ * @param {Request} req - Express request object
+ * @returns {string|null} Organization ID or null
+ */
+function getOrgId(req) {
+    return req.query.org_id || req.headers['x-org-id'] || req.orgId || null;
+}
+
 module.exports = {
     getUserId,
+    getOrgId,
     isAuthenticated,
     getUserRole,
     isAdmin,

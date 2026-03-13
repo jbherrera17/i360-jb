@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Digest - Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .digest-tabs { display: flex; gap: var(--spacing-xs); border-bottom: 1px solid var(--border); padding: 0 var(--spacing-xl); margin-bottom: 0; }
+        .digest-tab { padding: var(--spacing-sm) var(--spacing-lg); cursor: pointer; border: none; background: none; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .digest-tab:hover { color: var(--text-primary); }
+        .digest-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .digest-tab-content { display: none; padding: var(--spacing-xl); }
+        .digest-tab-content.active { display: block; }
+
+        .digest-section-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: var(--spacing-lg); overflow: hidden; }
+        .digest-section-header { display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-md) var(--spacing-lg); background: var(--surface); cursor: pointer; user-select: none; }
+        .digest-section-header h3 { margin: 0; font-size: 1rem; flex: 1; }
+        .digest-section-header .section-meta { font-size: 0.8rem; color: var(--text-secondary); }
+        .digest-section-body { padding: var(--spacing-lg); }
+
+        .digest-item { border-bottom: 1px solid var(--border); padding: var(--spacing-md) 0; }
+        .digest-item:last-child { border-bottom: none; }
+        .digest-item-title { font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-xs); }
+        .digest-item-title a { color: var(--primary); text-decoration: none; }
+        .digest-item-title a:hover { text-decoration: underline; }
+        .digest-item-summary { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: var(--spacing-sm); }
+        .digest-item-meta { display: flex; gap: var(--spacing-md); font-size: 0.75rem; color: var(--text-tertiary); flex-wrap: wrap; }
+
+        .key-points { margin: var(--spacing-sm) 0; padding-left: var(--spacing-lg); }
+        .key-points li { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: var(--spacing-xs); }
+
+        .context-analysis { background: var(--surface); border-left: 3px solid var(--primary); padding: var(--spacing-md); margin: var(--spacing-sm) 0; border-radius: 0 var(--radius) var(--radius) 0; }
+        .context-analysis h4 { font-size: 0.85rem; color: var(--primary); margin: 0 0 var(--spacing-xs); }
+        .context-analysis p { font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+        .context-analysis .opportunities { color: var(--success); }
+        .context-analysis .threats { color: var(--warning); }
+
+        .topic-tag { display: inline-block; padding: 2px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; font-size: 0.7rem; color: var(--text-secondary); margin-right: 4px; }
+        .sentiment-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; }
+        .sentiment-positive { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .sentiment-negative { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .sentiment-neutral { background: var(--surface); color: var(--text-secondary); }
+
+        .search-container { display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-lg); }
+        .search-container input { flex: 1; }
+        .search-filters { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; margin-bottom: var(--spacing-md); }
+        .search-result { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--spacing-md); margin-bottom: var(--spacing-sm); }
+        .search-result mark { background: rgba(245, 158, 11, 0.3); color: inherit; border-radius: 2px; padding: 0 2px; }
+        .search-result .result-type { font-size: 0.7rem; text-transform: uppercase; color: var(--primary); font-weight: 600; }
+
+        .config-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-lg); margin-bottom: var(--spacing-lg); }
+        .config-panel h3 { margin: 0 0 var(--spacing-md); }
+        .config-section-list { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+        .config-section-item { display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); background: var(--surface); border-radius: var(--radius); }
+        .config-section-item .section-info { flex: 1; }
+        .config-section-item .section-name { font-weight: 600; }
+        .config-section-item .section-desc { font-size: 0.8rem; color: var(--text-secondary); }
+        .config-section-item .processing-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+
+        .empty-state { text-align: center; padding: var(--spacing-2xl); color: var(--text-secondary); }
+        .empty-state i { margin-bottom: var(--spacing-md); opacity: 0.5; }
+        .empty-state h3 { color: var(--text-primary); margin-bottom: var(--spacing-sm); }
+
+        .generating-overlay { padding: var(--spacing-xl); text-align: center; }
+        .generating-progress { margin: var(--spacing-md) 0; }
+        .generating-progress .section-status { display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; font-size: 0.9rem; }
+        .generating-progress .section-status i { width: 16px; height: 16px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="rss" style="width:28px;height:28px;color:var(--primary);"></i>
+                        AI Digest
+                    </h1>
+                    <p class="header-subtitle">Context-aware content intelligence from your sources</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <a href="/digest-sources.html" class="btn btn-secondary" title="Manage Sources">
+                        <i data-lucide="database"></i> Sources
+                    </a>
+                    <button class="btn btn-primary" id="generateBtn" title="Generate Digest">
+                        <i data-lucide="sparkles"></i> Generate
+                    </button>
+                </div>
+            </header>
+
+            <div class="digest-tabs">
+                <button class="digest-tab active" data-tab="today">Today's Digest</button>
+                <button class="digest-tab" data-tab="search">Search</button>
+                <button class="digest-tab" data-tab="history">History</button>
+                <button class="digest-tab" data-tab="config">Configuration</button>
+            </div>
+
+            <!-- TODAY'S DIGEST -->
+            <div class="digest-tab-content active" id="tab-today">
+                <div id="todayContent">
+                    <div class="empty-state">
+                        <i data-lucide="rss" style="width:48px;height:48px;"></i>
+                        <h3>No digest yet</h3>
+                        <p>Configure your sources and sections, then generate your first digest.</p>
+                        <button class="btn btn-primary" onclick="generateDigest()" style="margin-top: var(--spacing-md);">
+                            <i data-lucide="sparkles"></i> Generate Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEARCH -->
+            <div class="digest-tab-content" id="tab-search">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search across all digest content..." />
+                    <button class="btn btn-primary" onclick="performSearch()">
+                        <i data-lucide="search"></i> Search
+                    </button>
+                </div>
+                <div class="search-filters">
+                    <select id="searchType" class="form-control" style="width:auto;">
+                        <option value="all">All Content</option>
+                        <option value="items">Source Items</option>
+                        <option value="summaries">Summaries</option>
+                    </select>
+                    <input type="date" id="searchDateFrom" class="form-control" style="width:auto;" />
+                    <input type="date" id="searchDateTo" class="form-control" style="width:auto;" />
+                </div>
+                <div id="searchResults"></div>
+            </div>
+
+            <!-- HISTORY -->
+            <div class="digest-tab-content" id="tab-history">
+                <div id="historyContent">
+                    <div class="empty-state">
+                        <i data-lucide="clock" style="width:48px;height:48px;"></i>
+                        <h3>No history yet</h3>
+                        <p>Generated digests will appear here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIGURATION -->
+            <div class="digest-tab-content" id="tab-config">
+                <div id="configContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let currentConfig = null;
+        let allSources = [];
+        let allAgents = [];
+        let allContextAssets = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Tab switching
+            document.querySelectorAll('.digest-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.digest-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.digest-tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                    if (tab.dataset.tab === 'history') loadHistory();
+                    if (tab.dataset.tab === 'config') loadConfig();
+                });
+            });
+
+            // Generate button
+            document.getElementById('generateBtn').addEventListener('click', generateDigest);
+
+            // Search on enter
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+
+            // Load initial data
+            await Promise.all([loadLatestDigest(), loadSources(), loadAgents(), loadContextAssets()]);
+        });
+
+        // ====================================================================
+        // DATA LOADING
+        // ====================================================================
+
+        async function loadLatestDigest() {
+            try {
+                const resp = await fetch('/api/digest/latest');
+                const json = await resp.json();
+                if (json.success && json.data) {
+                    renderDigest(json.data);
+                }
+            } catch (err) { console.error('Failed to load latest digest:', err); }
+        }
+
+        async function loadSources() {
+            try {
+                const resp = await fetch('/api/digest/sources');
+                const json = await resp.json();
+                if (json.success) allSources = json.data || [];
+            } catch (err) { console.error('Failed to load sources:', err); }
+        }
+
+        async function loadAgents() {
+            try {
+                const resp = await fetch('/api/digest/agents');
+                const json = await resp.json();
+                if (json.success) allAgents = json.data || [];
+            } catch (err) { console.error('Failed to load agents:', err); }
+        }
+
+        async function loadContextAssets() {
+            try {
+                const resp = await fetch('/api/digest/context-assets');
+                const json = await resp.json();
+                if (json.success) allContextAssets = json.data || [];
+            } catch (err) { console.error('Failed to load context assets:', err); }
+        }
+
+        async function loadHistory() {
+            try {
+                const resp = await fetch('/api/digest/history?limit=20');
+                const json = await resp.json();
+                if (json.success) renderHistory(json.data || [], json.pagination);
+            } catch (err) { console.error('Failed to load history:', err); }
+        }
+
+        async function loadConfig() {
+            try {
+                const resp = await fetch('/api/digest/configs');
+                const json = await resp.json();
+                if (json.success) {
+                    currentConfig = json.data && json.data.length > 0 ? json.data[0] : null;
+                    renderConfig();
+                }
+            } catch (err) { console.error('Failed to load config:', err); }
+        }
+
+        // ====================================================================
+        // DIGEST RENDERING
+        // ====================================================================
+
+        function renderDigest(digest) {
+            const container = document.getElementById('todayContent');
+            if (!digest || !digest.content || !digest.content.sections || digest.content.sections.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i data-lucide="rss" style="width:48px;height:48px;"></i><h3>No digest content</h3><p>Generate a digest to see results here.</p></div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-lg);">
+                <div><strong>Digest for ${digest.date}</strong> <span style="color:var(--text-secondary);font-size:0.85rem;">${digest.total_items_processed} items | ${digest.total_tokens_used} tokens</span></div>
+                <span class="sentiment-badge sentiment-${digest.status === 'completed' ? 'positive' : digest.status === 'partial' ? 'neutral' : 'negative'}">${digest.status}</span>
+            </div>`;
+
+            for (const section of digest.content.sections) {
+                html += renderSection(section);
+            }
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderSection(section) {
+            const itemCount = section.items?.length || 0;
+            const icon = section.icon || 'file-text';
+
+            let itemsHtml = '';
+            if (section.items && section.items.length > 0) {
+                for (const item of section.items) {
+                    itemsHtml += renderDigestItem(item);
+                }
+            } else {
+                itemsHtml = `<p style="color:var(--text-secondary);font-style:italic;">${section.message || 'No items in this section'}</p>`;
+            }
+
+            return `
+            <div class="digest-section-card">
+                <div class="digest-section-header" onclick="this.parentElement.querySelector('.digest-section-body').classList.toggle('collapsed')">
+                    <i data-lucide="${icon}" style="width:18px;height:18px;color:var(--primary);"></i>
+                    <h3>${section.name}</h3>
+                    <span class="section-meta">${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+                    <i data-lucide="chevron-down" style="width:16px;height:16px;"></i>
+                </div>
+                <div class="digest-section-body">
+                    ${itemsHtml}
+                </div>
+            </div>`;
+        }
+
+        function renderDigestItem(item) {
+            const titleLink = item.source_url
+                ? `<a href="${item.source_url}" target="_blank" rel="noopener">${item.title}</a>`
+                : item.title;
+
+            let html = `<div class="digest-item">
+                <div class="digest-item-title">${titleLink}</div>
+                <div class="digest-item-summary">${item.summary || ''}</div>`;
+
+            // Key points
+            if (item.key_points && item.key_points.length > 0) {
+                html += `<ul class="key-points">`;
+                for (const point of item.key_points) {
+                    html += `<li>${typeof point === 'string' ? point : point.point || point}</li>`;
+                }
+                html += `</ul>`;
+            }
+
+            // Context analysis
+            if (item.context_analysis && (item.context_analysis.alignment_notes || item.context_analysis.opportunities?.length > 0)) {
+                html += `<div class="context-analysis">
+                    <h4><i data-lucide="compass" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Strategic Context</h4>`;
+                if (item.context_analysis.alignment_notes) {
+                    html += `<p>${item.context_analysis.alignment_notes}</p>`;
+                }
+                if (item.context_analysis.opportunities?.length > 0) {
+                    html += `<p class="opportunities" style="margin-top:4px;"><strong>Opportunities:</strong> ${item.context_analysis.opportunities.join('; ')}</p>`;
+                }
+                if (item.context_analysis.threats?.length > 0) {
+                    html += `<p class="threats" style="margin-top:4px;"><strong>Risks:</strong> ${item.context_analysis.threats.join('; ')}</p>`;
+                }
+                if (item.context_analysis.action_items?.length > 0) {
+                    html += `<p style="margin-top:4px;"><strong>Actions:</strong> ${item.context_analysis.action_items.join('; ')}</p>`;
+                }
+                html += `</div>`;
+            }
+
+            // Meta row: topics, sentiment, source
+            html += `<div class="digest-item-meta">`;
+            if (item.topics && item.topics.length > 0) {
+                html += item.topics.map(t => `<span class="topic-tag">${t}</span>`).join('');
+            }
+            if (item.sentiment && item.sentiment.label) {
+                const cls = item.sentiment.label === 'positive' ? 'positive' : item.sentiment.label === 'negative' ? 'negative' : 'neutral';
+                html += `<span class="sentiment-badge sentiment-${cls}">${item.sentiment.label}</span>`;
+            }
+            if (item.source_title) {
+                html += `<span>${item.source_title}</span>`;
+            }
+            if (item.published_at) {
+                html += `<span>${new Date(item.published_at).toLocaleDateString()}</span>`;
+            }
+            html += `</div></div>`;
+
+            return html;
+        }
+
+        // ====================================================================
+        // GENERATION
+        // ====================================================================
+
+        async function generateDigest() {
+            if (!currentConfig) {
+                await loadConfig();
+            }
+            if (!currentConfig) {
+                // Need to create a config first
+                if (typeof showToast === 'function') showToast('Please create a digest configuration first', 'error');
+                document.querySelector('[data-tab="config"]').click();
+                return;
+            }
+
+            const container = document.getElementById('todayContent');
+            container.innerHTML = `<div class="generating-overlay">
+                <h3>Generating Digest...</h3>
+                <div class="generating-progress" id="genProgress"></div>
+            </div>`;
+            lucide.createIcons();
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+
+            try {
+                const evtSource = new EventSource(`/api/digest/generate/stream?config_id=${currentConfig.id}`);
+                const progress = document.getElementById('genProgress');
+
+                evtSource.addEventListener('section_start', (e) => {
+                    const data = JSON.parse(e.data);
+                    progress.innerHTML += `<div class="section-status" id="sec-${data.index}">
+                        <i data-lucide="loader" style="animation: spin 1s linear infinite;"></i>
+                        <span>Generating: ${data.name} (${data.index + 1}/${data.total})</span>
+                    </div>`;
+                    lucide.createIcons();
+                });
+
+                evtSource.addEventListener('section_complete', (e) => {
+                    const data = JSON.parse(e.data);
+                    const el = document.getElementById(`sec-${data.index}`);
+                    if (el) {
+                        const icon = data.status === 'completed' ? 'check-circle' : 'alert-circle';
+                        const color = data.status === 'completed' ? 'var(--success)' : 'var(--warning)';
+                        el.innerHTML = `<i data-lucide="${icon}" style="color:${color};"></i>
+                            <span>${data.name}: ${data.item_count} items (${data.tokens_used} tokens)</span>`;
+                        lucide.createIcons();
+                    }
+                });
+
+                evtSource.addEventListener('complete', (e) => {
+                    evtSource.close();
+                    btn.disabled = false;
+                    const data = JSON.parse(e.data);
+                    if (typeof showToast === 'function') showToast(`Digest generated: ${data.total_items} items`, 'success');
+                    loadLatestDigest();
+                });
+
+                evtSource.addEventListener('error', (e) => {
+                    evtSource.close();
+                    btn.disabled = false;
+                    try {
+                        const data = JSON.parse(e.data);
+                        if (typeof showToast === 'function') showToast(`Generation error: ${data.message}`, 'error');
+                    } catch {
+                        if (typeof showToast === 'function') showToast('Generation failed', 'error');
+                    }
+                    loadLatestDigest();
+                });
+
+                evtSource.onerror = () => {
+                    evtSource.close();
+                    btn.disabled = false;
+                };
+            } catch (err) {
+                btn.disabled = false;
+                if (typeof showToast === 'function') showToast('Failed to start generation', 'error');
+            }
+        }
+
+        // ====================================================================
+        // SEARCH
+        // ====================================================================
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query.length < 2) {
+                if (typeof showToast === 'function') showToast('Search query must be at least 2 characters', 'error');
+                return;
+            }
+
+            const type = document.getElementById('searchType').value;
+            const dateFrom = document.getElementById('searchDateFrom').value;
+            const dateTo = document.getElementById('searchDateTo').value;
+
+            const params = new URLSearchParams({ q: query, type });
+            if (dateFrom) params.append('date_from', dateFrom);
+            if (dateTo) params.append('date_to', dateTo);
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Searching...</p>';
+
+            try {
+                const resp = await fetch(`/api/digest/search?${params}`);
+                const json = await resp.json();
+
+                if (!json.success || !json.data || json.data.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty-state"><h3>No results found</h3><p>Try different keywords or filters.</p></div>';
+                    return;
+                }
+
+                let html = `<p style="color:var(--text-secondary);margin-bottom:var(--spacing-md);">${json.data.length} result${json.data.length !== 1 ? 's' : ''} for "${query}"</p>`;
+
+                for (const result of json.data) {
+                    html += `<div class="search-result">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-xs);">
+                            <span class="result-type">${result.content_type}</span>
+                            ${result.source_name ? `<span style="font-size:0.75rem;color:var(--text-secondary);">${result.source_name}</span>` : ''}
+                        </div>
+                        <div class="digest-item-title">${result.url ? `<a href="${result.url}" target="_blank" rel="noopener">${result.title || 'Untitled'}</a>` : (result.title || 'Untitled')}</div>
+                        <div class="digest-item-summary">${result.snippet || ''}</div>
+                        <div class="digest-item-meta">
+                            ${result.topics?.length > 0 ? result.topics.map(t => `<span class="topic-tag">${t}</span>`).join('') : ''}
+                            ${result.published_at ? `<span>${new Date(result.published_at).toLocaleDateString()}</span>` : ''}
+                        </div>
+                    </div>`;
+                }
+
+                resultsDiv.innerHTML = html;
+            } catch (err) {
+                resultsDiv.innerHTML = `<p style="color:var(--danger);">Search failed: ${err.message}</p>`;
+            }
+        }
+
+        // ====================================================================
+        // HISTORY
+        // ====================================================================
+
+        function renderHistory(digests, pagination) {
+            const container = document.getElementById('historyContent');
+            if (!digests || digests.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i data-lucide="clock" style="width:48px;height:48px;"></i><h3>No history yet</h3><p>Generated digests will appear here.</p></div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '<div style="display:flex;flex-direction:column;gap:var(--spacing-sm);">';
+            for (const d of digests) {
+                const statusCls = d.status === 'completed' ? 'positive' : d.status === 'partial' ? 'neutral' : 'negative';
+                html += `<div class="config-section-item" style="cursor:pointer;" onclick="viewDigest('${d.id}')">
+                    <i data-lucide="calendar" style="width:20px;height:20px;color:var(--primary);"></i>
+                    <div class="section-info">
+                        <div class="section-name">${d.date}</div>
+                        <div class="section-desc">${d.total_items_processed} items | ${d.total_tokens_used} tokens${d.generation_completed_at ? ' | ' + new Date(d.generation_completed_at).toLocaleTimeString() : ''}</div>
+                    </div>
+                    <span class="sentiment-badge sentiment-${statusCls}">${d.status}</span>
+                </div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function viewDigest(id) {
+            try {
+                const resp = await fetch(`/api/digest/${id}`);
+                const json = await resp.json();
+                if (json.success && json.data) {
+                    document.querySelector('[data-tab="today"]').click();
+                    renderDigest(json.data);
+                }
+            } catch (err) { console.error('Failed to view digest:', err); }
+        }
+
+        // ====================================================================
+        // CONFIGURATION
+        // ====================================================================
+
+        function renderConfig() {
+            const container = document.getElementById('configContent');
+
+            if (!currentConfig) {
+                container.innerHTML = `<div class="config-panel">
+                    <h3>Create Digest Configuration</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:var(--spacing-md);">Set up your first digest to start aggregating content from your sources.</p>
+                    <button class="btn btn-primary" onclick="createConfig()"><i data-lucide="plus"></i> Create Configuration</button>
+                </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            const sections = currentConfig.sections || [];
+            let sectionsHtml = '';
+            if (sections.length > 0) {
+                sectionsHtml = sections.sort((a, b) => a.sort_order - b.sort_order).map(s => {
+                    const modeLabel = s.processing_mode === 'agent' ? 'Agent' : s.processing_mode === 'raw' ? 'Raw' : 'AI Summary';
+                    return `<div class="config-section-item">
+                        <i data-lucide="${s.icon || 'file-text'}" style="width:20px;height:20px;color:var(--primary);"></i>
+                        <div class="section-info">
+                            <div class="section-name">${s.name}</div>
+                            <div class="section-desc">${s.description || 'No description'} | ${s.summary_depth} depth | ${s.max_items} items max</div>
+                        </div>
+                        <span class="processing-badge">${modeLabel}</span>
+                        ${s.context_asset_ids?.length > 0 ? '<span class="processing-badge" style="border-color:var(--primary);color:var(--primary);">Context</span>' : ''}
+                        <button class="btn btn-sm btn-ghost" onclick="editSection('${s.id}')" title="Edit"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+                        <button class="btn btn-sm btn-ghost" onclick="deleteSection('${s.id}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;color:var(--danger);"></i></button>
+                    </div>`;
+                }).join('');
+            } else {
+                sectionsHtml = '<p style="color:var(--text-secondary);font-style:italic;">No sections configured. Add a section to define how your digest is organized.</p>';
+            }
+
+            container.innerHTML = `
+            <div class="config-panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
+                    <div>
+                        <h3 style="margin:0;">${currentConfig.name}</h3>
+                        <p style="color:var(--text-secondary);font-size:0.85rem;margin:var(--spacing-xs) 0 0;">
+                            Depth: ${currentConfig.summary_depth} | Max items: ${currentConfig.max_items_per_digest} | Sources: ${(currentConfig.source_ids || []).length}
+                        </p>
+                    </div>
+                    <div style="display:flex;gap:var(--spacing-sm);">
+                        <button class="btn btn-secondary btn-sm" onclick="editConfig()"><i data-lucide="settings" style="width:14px;height:14px;"></i> Settings</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
+                    <h3 style="margin:0;">Sections</h3>
+                    <button class="btn btn-primary btn-sm" onclick="addSection()"><i data-lucide="plus" style="width:14px;height:14px;"></i> Add Section</button>
+                </div>
+                <div class="config-section-list">
+                    ${sectionsHtml}
+                </div>
+            </div>`;
+            lucide.createIcons();
+        }
+
+        async function createConfig() {
+            if (!ModalService) return;
+
+            const result = await ModalService.form({
+                title: 'Create Digest Configuration',
+                fields: [
+                    { name: 'name', label: 'Name', type: 'text', required: true, value: 'My Digest' },
+                    { name: 'summary_depth', label: 'Default Summary Depth', type: 'select', options: [
+                        { value: 'headline', label: 'Headline (1-2 sentences)' },
+                        { value: 'brief', label: 'Brief (3-5 sentences)' },
+                        { value: 'detailed', label: 'Detailed (full paragraph)' }
+                    ], value: 'brief' },
+                    { name: 'max_items_per_digest', label: 'Max Items Per Digest', type: 'number', value: 20 }
+                ],
+                submitText: 'Create'
+            });
+
+            if (!result) return;
+
+            try {
+                const resp = await fetch('/api/digest/configs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        summary_depth: result.summary_depth,
+                        max_items_per_digest: parseInt(result.max_items_per_digest) || 20,
+                        source_ids: allSources.map(s => s.id)
+                    })
+                });
+                const json = await resp.json();
+                if (json.success) {
+                    currentConfig = json.data;
+                    if (typeof showToast === 'function') showToast('Configuration created', 'success');
+                    loadConfig();
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to create config', 'error');
+            }
+        }
+
+        async function editConfig() {
+            if (!ModalService || !currentConfig) return;
+
+            const result = await ModalService.form({
+                title: 'Edit Digest Settings',
+                fields: [
+                    { name: 'name', label: 'Name', type: 'text', value: currentConfig.name },
+                    { name: 'summary_depth', label: 'Default Summary Depth', type: 'select', options: [
+                        { value: 'headline', label: 'Headline' },
+                        { value: 'brief', label: 'Brief' },
+                        { value: 'detailed', label: 'Detailed' }
+                    ], value: currentConfig.summary_depth },
+                    { name: 'max_items_per_digest', label: 'Max Items', type: 'number', value: currentConfig.max_items_per_digest }
+                ],
+                submitText: 'Save'
+            });
+
+            if (!result) return;
+
+            try {
+                await fetch(`/api/digest/configs/${currentConfig.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        summary_depth: result.summary_depth,
+                        max_items_per_digest: parseInt(result.max_items_per_digest) || 20
+                    })
+                });
+                if (typeof showToast === 'function') showToast('Settings saved', 'success');
+                loadConfig();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to save', 'error');
+            }
+        }
+
+        async function addSection() {
+            if (!ModalService || !currentConfig) return;
+
+            const sourceOptions = allSources.map(s => ({ value: s.id, label: `${s.name} (${s.source_type})` }));
+            const agentOptions = [{ value: '', label: 'None (AI Summary)' }, ...allAgents.map(a => ({ value: a.id, label: a.name }))];
+            const contextOptions = allContextAssets.map(a => ({ value: a.id, label: `${a.name} (${a.type})` }));
+
+            const result = await ModalService.form({
+                title: 'Add Digest Section',
+                fields: [
+                    { name: 'name', label: 'Section Name', type: 'text', required: true, placeholder: 'e.g., Industry News' },
+                    { name: 'description', label: 'Description', type: 'text', placeholder: 'Optional description' },
+                    { name: 'icon', label: 'Icon (Lucide)', type: 'text', value: 'file-text', placeholder: 'Lucide icon name' },
+                    { name: 'processing_mode', label: 'Processing Mode', type: 'select', options: [
+                        { value: 'ai_summary', label: 'AI Summary (structured extraction)' },
+                        { value: 'agent', label: 'Agent (use existing agent)' },
+                        { value: 'raw', label: 'Raw (no AI processing)' }
+                    ]},
+                    { name: 'agent_id', label: 'Agent (for Agent mode)', type: 'select', options: agentOptions },
+                    { name: 'summary_depth', label: 'Summary Depth', type: 'select', options: [
+                        { value: 'headline', label: 'Headline' },
+                        { value: 'brief', label: 'Brief' },
+                        { value: 'detailed', label: 'Detailed' }
+                    ], value: 'brief' },
+                    { name: 'max_items', label: 'Max Items', type: 'number', value: 10 },
+                    { name: 'enrichment_prompt', label: 'Custom Enrichment Prompt', type: 'textarea', placeholder: 'Optional: custom instructions for how to analyze content with your context assets' }
+                ],
+                submitText: 'Add Section'
+            });
+
+            if (!result) return;
+
+            try {
+                const resp = await fetch(`/api/digest/configs/${currentConfig.id}/sections`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        description: result.description || null,
+                        icon: result.icon || 'file-text',
+                        processing_mode: result.processing_mode,
+                        agent_id: result.agent_id || null,
+                        summary_depth: result.summary_depth,
+                        max_items: parseInt(result.max_items) || 10,
+                        enrichment_prompt: result.enrichment_prompt || null,
+                        source_ids: allSources.map(s => s.id)
+                    })
+                });
+                const json = await resp.json();
+                if (json.success) {
+                    if (typeof showToast === 'function') showToast('Section added', 'success');
+                    loadConfig();
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to add section', 'error');
+            }
+        }
+
+        async function editSection(sectionId) {
+            const section = currentConfig?.sections?.find(s => s.id === sectionId);
+            if (!section || !ModalService) return;
+
+            const agentOptions = [{ value: '', label: 'None' }, ...allAgents.map(a => ({ value: a.id, label: a.name }))];
+
+            const result = await ModalService.form({
+                title: 'Edit Section',
+                fields: [
+                    { name: 'name', label: 'Name', type: 'text', value: section.name },
+                    { name: 'description', label: 'Description', type: 'text', value: section.description || '' },
+                    { name: 'icon', label: 'Icon', type: 'text', value: section.icon },
+                    { name: 'processing_mode', label: 'Processing Mode', type: 'select', options: [
+                        { value: 'ai_summary', label: 'AI Summary' },
+                        { value: 'agent', label: 'Agent' },
+                        { value: 'raw', label: 'Raw' }
+                    ], value: section.processing_mode },
+                    { name: 'agent_id', label: 'Agent', type: 'select', options: agentOptions, value: section.agent_id || '' },
+                    { name: 'summary_depth', label: 'Depth', type: 'select', options: [
+                        { value: 'headline', label: 'Headline' },
+                        { value: 'brief', label: 'Brief' },
+                        { value: 'detailed', label: 'Detailed' }
+                    ], value: section.summary_depth },
+                    { name: 'max_items', label: 'Max Items', type: 'number', value: section.max_items },
+                    { name: 'enrichment_prompt', label: 'Custom Prompt', type: 'textarea', value: section.enrichment_prompt || '' }
+                ],
+                submitText: 'Save'
+            });
+
+            if (!result) return;
+
+            try {
+                await fetch(`/api/digest/sections/${sectionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        description: result.description || null,
+                        icon: result.icon,
+                        processing_mode: result.processing_mode,
+                        agent_id: result.agent_id || null,
+                        summary_depth: result.summary_depth,
+                        max_items: parseInt(result.max_items) || 10,
+                        enrichment_prompt: result.enrichment_prompt || null
+                    })
+                });
+                if (typeof showToast === 'function') showToast('Section updated', 'success');
+                loadConfig();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to update section', 'error');
+            }
+        }
+
+        async function deleteSection(sectionId) {
+            if (!ModalService) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Section',
+                message: 'Are you sure you want to delete this section?',
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
+
+            try {
+                await fetch(`/api/digest/sections/${sectionId}`, { method: 'DELETE' });
+                if (typeof showToast === 'function') showToast('Section deleted', 'success');
+                loadConfig();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to delete section', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -232,6 +232,20 @@ const HelpRegistry = {
         '/admin-mcp-catalog': {
             file: '/api/docs/mcp-catalog-user-guide.md',
             title: 'MCP Catalog Help'
+        },
+        // AI Digest (Phase 66)
+        '/digest': {
+            file: '/api/docs/digest-user-guide.md',
+            title: 'AI Digest Help'
+        },
+        '/digest-sources': {
+            file: '/api/docs/digest-sources-user-guide.md',
+            title: 'Digest Sources Help'
+        },
+        // Chrome Extension documentation (accessible via Higgins chat)
+        '/chrome-extension': {
+            file: '/api/docs/chrome-extension-user-guide.md',
+            title: 'Chrome Extension Help'
         }
     },
 

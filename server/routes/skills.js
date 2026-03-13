@@ -13,6 +13,8 @@
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
 const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
+const anthropicService = require('../services/anthropic');
+const unifiedRuntime = require('../services/unifiedRuntime');
 
 /**
  * Skills Routes Factory
@@ -33,7 +35,7 @@ module.exports = function(supabase) {
     router.get('/', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const {
                 category,
                 suite,
@@ -1042,21 +1044,49 @@ module.exports = function(supabase) {
                 systemPrompt += `\n\n# Expected Output Format\n\n${skill.output_format}`;
             }
 
-            // Execute via Anthropic
-            const Anthropic = require('@anthropic-ai/sdk');
-            const anthropic = new Anthropic();
-
             const startTime = Date.now();
-            const response = await anthropic.messages.create({
+            const runtimeResult = await unifiedRuntime.execute({
+                supabase,
+                module: 'skills',
+                org_id: req.headers['x-org-id'] || null,
+                user_id: req.user?.id || req.userId || null,
+                skill_id: id,
+                quota_resource_type: 'skills',
+                profile_hint: 'skill_test',
+                risk_level: 'low',
+                requires_rich_context: context_asset_ids.length > 0,
+                context_refs: context_asset_ids,
+                provider_hint: 'anthropic',
                 model,
-                max_tokens: 4096,
-                system: systemPrompt,
-                messages: [{ role: 'user', content: message }]
+                operation: async ({ policy }) => anthropicService.chat({
+                    message,
+                    model,
+                    systemPrompt,
+                    maxTokens: policy.max_tokens || 4096
+                }),
+                legacyOperation: async () => anthropicService.chat({
+                    message,
+                    model,
+                    systemPrompt,
+                    maxTokens: 4096
+                })
             });
-            const duration = Date.now() - startTime;
 
-            const output = response.content[0]?.text || '';
-            const totalTokens = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
+            if (runtimeResult.status === 'blocked') {
+                return res.status(503).json({
+                    success: false,
+                    error: runtimeResult.error?.message || 'Skill execution blocked by runtime controls',
+                    meta: { runtime: runtimeResult.runtime || null }
+                });
+            }
+            if (runtimeResult.status === 'error') {
+                throw new Error(runtimeResult.error?.message || 'Skill execution failed in runtime');
+            }
+
+            const duration = Date.now() - startTime;
+            const response = runtimeResult.raw || runtimeResult;
+            const output = response.content || response.response || '';
+            const totalTokens = (response.usage?.prompt_tokens || 0) + (response.usage?.completion_tokens || 0);
 
             // Record execution
             const userId = req.user?.id || null;
@@ -1090,13 +1120,16 @@ module.exports = function(supabase) {
                     output,
                     model_used: model,
                     tokens_used: {
-                        input: response.usage?.input_tokens || 0,
-                        output: response.usage?.output_tokens || 0,
+                        input: response.usage?.prompt_tokens || 0,
+                        output: response.usage?.completion_tokens || 0,
                         total: totalTokens
                     },
                     context_tokens: contextTokens,
                     duration_ms: duration,
-                    context_assets_used: context_asset_ids.length
+                    context_assets_used: context_asset_ids.length,
+                    meta: {
+                        runtime: runtimeResult.runtime || null
+                    }
                 }
             });
 

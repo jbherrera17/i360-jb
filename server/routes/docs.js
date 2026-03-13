@@ -91,7 +91,14 @@ const ALLOWED_DOCS = [
     'easy-start-user-guide.md',
     // MCP Integration
     'mcp-connections-user-guide.md',
-    'mcp-catalog-user-guide.md'
+    'mcp-catalog-user-guide.md',
+    // AI Digest (Phase 66)
+    'digest-user-guide.md',
+    'digest-sources-user-guide.md',
+    'digest-technical-guide.md',
+    // Chrome Extension
+    'chrome-extension-user-guide.md',
+    'chrome-extension-technical-guide.md'
 ];
 
 /**

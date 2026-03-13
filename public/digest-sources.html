@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digest Sources - Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .source-tabs { display: flex; gap: var(--spacing-xs); border-bottom: 1px solid var(--border); padding: 0 var(--spacing-xl); }
+        .source-tab { padding: var(--spacing-sm) var(--spacing-lg); cursor: pointer; border: none; background: none; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .source-tab:hover { color: var(--text-primary); }
+        .source-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .source-tab-content { display: none; padding: var(--spacing-xl); }
+        .source-tab-content.active { display: block; }
+
+        .source-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: var(--spacing-lg); }
+        .source-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-lg); position: relative; }
+        .source-card-header { display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md); }
+        .source-card-header h3 { margin: 0; font-size: 1rem; flex: 1; }
+        .source-type-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; font-weight: 600; }
+        .source-type-rss { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .source-type-website { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .source-type-document { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .source-type-newsletter { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .source-type-manual { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        .source-meta { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--spacing-md); }
+        .source-meta div { margin-bottom: 2px; }
+
+        .health-bar { height: 4px; background: var(--surface); border-radius: 2px; overflow: hidden; margin-top: var(--spacing-xs); }
+        .health-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+        .health-good { background: var(--success); }
+        .health-warn { background: var(--warning); }
+        .health-bad { background: var(--danger); }
+
+        .source-actions { display: flex; gap: var(--spacing-xs); margin-top: var(--spacing-md); border-top: 1px solid var(--border); padding-top: var(--spacing-md); }
+        .source-actions button { flex: 1; }
+
+        .items-list { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+        .item-row { display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); }
+        .item-row .item-info { flex: 1; min-width: 0; }
+        .item-row .item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-row .item-meta { font-size: 0.75rem; color: var(--text-secondary); }
+        .item-status { font-size: 0.7rem; padding: 2px 6px; border-radius: 8px; }
+        .item-status-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .item-status-completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .item-status-failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .item-status-processing { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+        .health-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl); }
+        .health-stat { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--spacing-md); text-align: center; }
+        .health-stat .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .health-stat .stat-label { font-size: 0.75rem; color: var(--text-secondary); }
+
+        .empty-state { text-align: center; padding: var(--spacing-2xl); color: var(--text-secondary); }
+        .empty-state i { margin-bottom: var(--spacing-md); opacity: 0.5; }
+        .empty-state h3 { color: var(--text-primary); }
+
+        .context-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: var(--spacing-xs); }
+        .context-badge { font-size: 0.65rem; padding: 1px 6px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="database" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Digest Sources
+                    </h1>
+                    <p class="header-subtitle">Manage content sources for your AI Digest</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <a href="/digest.html" class="btn btn-secondary">
+                        <i data-lucide="rss"></i> Back to Digest
+                    </a>
+                    <button class="btn btn-primary" id="addSourceBtn">
+                        <i data-lucide="plus"></i> Add Source
+                    </button>
+                </div>
+            </header>
+
+            <div class="source-tabs">
+                <button class="source-tab active" data-tab="sources">Sources</button>
+                <button class="source-tab" data-tab="items">All Items</button>
+                <button class="source-tab" data-tab="health">Health</button>
+            </div>
+
+            <!-- SOURCES -->
+            <div class="source-tab-content active" id="tab-sources">
+                <div class="source-grid" id="sourcesGrid"></div>
+            </div>
+
+            <!-- ITEMS -->
+            <div class="source-tab-content" id="tab-items">
+                <div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-lg);">
+                    <select id="itemSourceFilter" class="form-control" style="width:auto;">
+                        <option value="">All Sources</option>
+                    </select>
+                    <select id="itemStatusFilter" class="form-control" style="width:auto;">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="processing">Processing</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="loadItems()"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Refresh</button>
+                </div>
+                <div class="items-list" id="itemsList"></div>
+            </div>
+
+            <!-- HEALTH -->
+            <div class="source-tab-content" id="tab-health">
+                <div id="healthContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let sources = [];
+        let contextAssets = [];
+        let agents = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Tab switching
+            document.querySelectorAll('.source-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.source-tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                    if (tab.dataset.tab === 'items') loadItems();
+                    if (tab.dataset.tab === 'health') loadHealth();
+                });
+            });
+
+            document.getElementById('addSourceBtn').addEventListener('click', addSource);
+
+            await Promise.all([loadSources(), loadContextAssets(), loadAgents()]);
+        });
+
+        // ====================================================================
+        // DATA
+        // ====================================================================
+
+        async function loadSources() {
+            try {
+                const resp = await fetch('/api/digest/sources');
+                const json = await resp.json();
+                if (json.success) {
+                    sources = json.data || [];
+                    renderSources();
+                    populateSourceFilter();
+                }
+            } catch (err) { console.error('Failed to load sources:', err); }
+        }
+
+        async function loadContextAssets() {
+            try {
+                const resp = await fetch('/api/digest/context-assets');
+                const json = await resp.json();
+                if (json.success) contextAssets = json.data || [];
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadAgents() {
+            try {
+                const resp = await fetch('/api/digest/agents');
+                const json = await resp.json();
+                if (json.success) agents = json.data || [];
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadItems() {
+            const sourceId = document.getElementById('itemSourceFilter').value;
+            const status = document.getElementById('itemStatusFilter').value;
+            const params = new URLSearchParams({ limit: '100' });
+            if (sourceId) params.append('source_id', sourceId);
+            if (status) params.append('status', status);
+
+            try {
+                const resp = await fetch(`/api/digest/items?${params}`);
+                const json = await resp.json();
+                renderItems(json.data || []);
+            } catch (err) {
+                document.getElementById('itemsList').innerHTML = '<p style="color:var(--danger);">Failed to load items</p>';
+            }
+        }
+
+        async function loadHealth() {
+            try {
+                const resp = await fetch('/api/digest/health');
+                const json = await resp.json();
+                if (json.success) renderHealth(json.data);
+            } catch (err) { console.error(err); }
+        }
+
+        // ====================================================================
+        // RENDERING
+        // ====================================================================
+
+        function renderSources() {
+            const grid = document.getElementById('sourcesGrid');
+            if (sources.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+                    <i data-lucide="database" style="width:48px;height:48px;"></i>
+                    <h3>No sources configured</h3>
+                    <p>Add RSS feeds, websites, documents, or newsletters to start aggregating content.</p>
+                </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = sources.map(s => {
+                const typeIcon = { rss: 'rss', website: 'globe', document: 'file-text', newsletter: 'mail', manual: 'edit-3' }[s.source_type] || 'file';
+                const healthPct = Math.round((s.health_score || 0) * 100);
+                const healthClass = healthPct >= 70 ? 'health-good' : healthPct >= 30 ? 'health-warn' : 'health-bad';
+                const contextCount = (s.default_context_asset_ids || []).length;
+                const agentName = s.agent?.name;
+
+                return `<div class="source-card">
+                    <div class="source-card-header">
+                        <i data-lucide="${typeIcon}" style="width:20px;height:20px;color:var(--primary);"></i>
+                        <h3>${s.name}</h3>
+                        <span class="source-type-badge source-type-${s.source_type}">${s.source_type}</span>
+                    </div>
+                    <div class="source-meta">
+                        ${s.config?.url ? `<div>URL: <a href="${s.config.url}" target="_blank" rel="noopener" style="color:var(--primary);">${s.config.url.substring(0, 50)}${s.config.url.length > 50 ? '...' : ''}</a></div>` : ''}
+                        <div>Fetches: ${s.fetch_count || 0} | Errors: ${s.error_count || 0}</div>
+                        <div>Last fetch: ${s.last_fetch_at ? new Date(s.last_fetch_at).toLocaleString() : 'Never'} ${s.last_fetch_status ? `(${s.last_fetch_status})` : ''}</div>
+                        ${s.fetch_schedule ? `<div>Schedule: ${s.fetch_schedule}</div>` : ''}
+                        ${agentName ? `<div>Default Agent: ${agentName}</div>` : ''}
+                        <div class="health-bar"><div class="health-bar-fill ${healthClass}" style="width:${healthPct}%"></div></div>
+                    </div>
+                    ${contextCount > 0 ? `<div class="context-badges">${s.default_context_asset_ids.map(id => {
+                        const asset = contextAssets.find(a => a.id === id);
+                        return asset ? `<span class="context-badge">${asset.name}</span>` : '';
+                    }).join('')}</div>` : ''}
+                    <div class="source-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="fetchSource('${s.id}')"><i data-lucide="download" style="width:12px;height:12px;"></i> Fetch</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editSource('${s.id}')"><i data-lucide="edit-2" style="width:12px;height:12px;"></i> Edit</button>
+                        ${s.source_type === 'document' ? `<button class="btn btn-sm btn-secondary" onclick="uploadDocument('${s.id}')"><i data-lucide="upload" style="width:12px;height:12px;"></i> Upload</button>` : ''}
+                        ${s.source_type === 'newsletter' ? `<button class="btn btn-sm btn-secondary" onclick="pasteNewsletter('${s.id}')"><i data-lucide="clipboard" style="width:12px;height:12px;"></i> Paste</button>` : ''}
+                        <button class="btn btn-sm btn-ghost" onclick="deleteSource('${s.id}')" title="Delete"><i data-lucide="trash-2" style="width:12px;height:12px;color:var(--danger);"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function renderItems(items) {
+            const container = document.getElementById('itemsList');
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No items</h3><p>Fetch sources to see items here.</p></div>';
+                return;
+            }
+
+            container.innerHTML = items.map(item => {
+                const statusClass = `item-status-${item.processing_status}`;
+                return `<div class="item-row">
+                    <div class="item-info">
+                        <div class="item-title">${item.url ? `<a href="${item.url}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${item.title || 'Untitled'}</a>` : (item.title || 'Untitled')}</div>
+                        <div class="item-meta">
+                            ${item.source?.name || 'Unknown source'} |
+                            ${item.published_at ? new Date(item.published_at).toLocaleString() : 'No date'} |
+                            ${item.metadata?.word_count ? item.metadata.word_count + ' words' : ''}
+                        </div>
+                    </div>
+                    <span class="item-status ${statusClass}">${item.processing_status}</span>
+                    <button class="btn btn-sm btn-ghost" onclick="summarizeItem('${item.id}')" title="Summarize"><i data-lucide="sparkles" style="width:14px;height:14px;"></i></button>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function renderHealth(health) {
+            const container = document.getElementById('healthContent');
+            const s = health.summary;
+
+            container.innerHTML = `
+            <div class="health-summary">
+                <div class="health-stat"><div class="stat-value">${s.total}</div><div class="stat-label">Total Sources</div></div>
+                <div class="health-stat"><div class="stat-value">${s.enabled}</div><div class="stat-label">Enabled</div></div>
+                <div class="health-stat"><div class="stat-value" style="color:var(--success);">${s.healthy}</div><div class="stat-label">Healthy</div></div>
+                <div class="health-stat"><div class="stat-value" style="color:var(--warning);">${s.degraded}</div><div class="stat-label">Degraded</div></div>
+                <div class="health-stat"><div class="stat-value" style="color:var(--danger);">${s.failing}</div><div class="stat-label">Failing</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:var(--spacing-sm);">
+                ${(health.sources || []).map(src => {
+                    const pct = Math.round((src.health_score || 0) * 100);
+                    const cls = pct >= 70 ? 'health-good' : pct >= 30 ? 'health-warn' : 'health-bad';
+                    return `<div class="item-row">
+                        <div class="item-info">
+                            <div class="item-title">${src.name}</div>
+                            <div class="item-meta">${src.source_type} | ${src.fetch_count} fetches | ${src.error_count} errors | Last: ${src.last_fetch_at ? new Date(src.last_fetch_at).toLocaleString() : 'Never'}</div>
+                        </div>
+                        <div style="width:100px;">
+                            <div style="text-align:right;font-size:0.75rem;font-weight:600;">${pct}%</div>
+                            <div class="health-bar"><div class="health-bar-fill ${cls}" style="width:${pct}%"></div></div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+            lucide.createIcons();
+        }
+
+        function populateSourceFilter() {
+            const select = document.getElementById('itemSourceFilter');
+            select.innerHTML = '<option value="">All Sources</option>';
+            for (const s of sources) {
+                select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            }
+        }
+
+        // ====================================================================
+        // ACTIONS
+        // ====================================================================
+
+        async function addSource() {
+            if (!ModalService) return;
+
+            const agentOptions = [{ value: '', label: 'None' }, ...agents.map(a => ({ value: a.id, label: a.name }))];
+
+            const result = await ModalService.form({
+                title: 'Add Content Source',
+                fields: [
+                    { name: 'name', label: 'Source Name', type: 'text', required: true, placeholder: 'e.g., TechCrunch AI Feed' },
+                    { name: 'source_type', label: 'Source Type', type: 'select', options: [
+                        { value: 'rss', label: 'RSS Feed' },
+                        { value: 'website', label: 'Website' },
+                        { value: 'document', label: 'Document Upload' },
+                        { value: 'newsletter', label: 'Newsletter (paste)' },
+                        { value: 'manual', label: 'Manual Entry' }
+                    ]},
+                    { name: 'url', label: 'URL (for RSS/Website)', type: 'text', placeholder: 'https://example.com/feed.xml' },
+                    { name: 'default_agent_id', label: 'Default Processing Agent', type: 'select', options: agentOptions },
+                    { name: 'tags', label: 'Tags (comma separated)', type: 'text', placeholder: 'ai, industry, news' }
+                ],
+                submitText: 'Add Source'
+            });
+
+            if (!result) return;
+
+            const config = {};
+            if (result.url && (result.source_type === 'rss' || result.source_type === 'website')) {
+                config.url = result.url;
+            }
+
+            try {
+                const resp = await fetch('/api/digest/sources', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        source_type: result.source_type,
+                        config,
+                        default_agent_id: result.default_agent_id || null,
+                        tags: result.tags ? result.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+                    })
+                });
+                const json = await resp.json();
+                if (json.success) {
+                    if (typeof showToast === 'function') showToast('Source added', 'success');
+                    loadSources();
+                } else {
+                    if (typeof showToast === 'function') showToast(json.error || 'Failed', 'error');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to add source', 'error');
+            }
+        }
+
+        async function editSource(sourceId) {
+            const source = sources.find(s => s.id === sourceId);
+            if (!source || !ModalService) return;
+
+            const agentOptions = [{ value: '', label: 'None' }, ...agents.map(a => ({ value: a.id, label: a.name }))];
+
+            const result = await ModalService.form({
+                title: 'Edit Source',
+                fields: [
+                    { name: 'name', label: 'Name', type: 'text', value: source.name },
+                    { name: 'url', label: 'URL', type: 'text', value: source.config?.url || '' },
+                    { name: 'is_enabled', label: 'Enabled', type: 'select', options: [
+                        { value: 'true', label: 'Yes' },
+                        { value: 'false', label: 'No' }
+                    ], value: String(source.is_enabled) },
+                    { name: 'fetch_schedule', label: 'Fetch Schedule (cron)', type: 'text', value: source.fetch_schedule || '' },
+                    { name: 'default_agent_id', label: 'Default Agent', type: 'select', options: agentOptions, value: source.default_agent_id || '' },
+                    { name: 'tags', label: 'Tags', type: 'text', value: (source.tags || []).join(', ') }
+                ],
+                submitText: 'Save'
+            });
+
+            if (!result) return;
+
+            const config = { ...source.config };
+            if (result.url) config.url = result.url;
+
+            try {
+                await fetch(`/api/digest/sources/${sourceId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        config,
+                        is_enabled: result.is_enabled === 'true',
+                        fetch_schedule: result.fetch_schedule || null,
+                        default_agent_id: result.default_agent_id || null,
+                        tags: result.tags ? result.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+                    })
+                });
+                if (typeof showToast === 'function') showToast('Source updated', 'success');
+                loadSources();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to update', 'error');
+            }
+        }
+
+        async function deleteSource(sourceId) {
+            if (!ModalService) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Source',
+                message: 'This will delete the source and all its items. Continue?',
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
+
+            try {
+                await fetch(`/api/digest/sources/${sourceId}`, { method: 'DELETE' });
+                if (typeof showToast === 'function') showToast('Source deleted', 'success');
+                loadSources();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to delete', 'error');
+            }
+        }
+
+        async function fetchSource(sourceId) {
+            const source = sources.find(s => s.id === sourceId);
+            if (typeof showToast === 'function') showToast(`Fetching ${source?.name || 'source'}...`, 'info');
+
+            try {
+                const resp = await fetch(`/api/digest/sources/${sourceId}/fetch`, { method: 'POST' });
+                const json = await resp.json();
+                if (json.success) {
+                    if (typeof showToast === 'function') showToast(`Fetched ${json.data.new_items} new items (${json.data.duplicates} duplicates)`, 'success');
+                    loadSources();
+                } else {
+                    if (typeof showToast === 'function') showToast(json.error || 'Fetch failed', 'error');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Fetch failed', 'error');
+            }
+        }
+
+        async function uploadDocument(sourceId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.pdf,.docx,.txt,.md,.csv';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('source_id', sourceId);
+
+                if (typeof showToast === 'function') showToast('Uploading...', 'info');
+
+                try {
+                    const resp = await fetch('/api/digest/sources/upload', { method: 'POST', body: formData });
+                    const json = await resp.json();
+                    if (json.success) {
+                        if (typeof showToast === 'function') showToast('Document uploaded', 'success');
+                    } else {
+                        if (typeof showToast === 'function') showToast(json.error || 'Upload failed', 'error');
+                    }
+                } catch (err) {
+                    if (typeof showToast === 'function') showToast('Upload failed', 'error');
+                }
+            };
+            input.click();
+        }
+
+        async function pasteNewsletter(sourceId) {
+            if (!ModalService) return;
+
+            const result = await ModalService.form({
+                title: 'Paste Newsletter Content',
+                fields: [
+                    { name: 'subject', label: 'Subject/Title', type: 'text', placeholder: 'Newsletter subject line' },
+                    { name: 'sender', label: 'Sender', type: 'text', placeholder: 'newsletter@example.com' },
+                    { name: 'content', label: 'Content (paste HTML or text)', type: 'textarea', required: true, placeholder: 'Paste the newsletter content here...' }
+                ],
+                submitText: 'Add Newsletter'
+            });
+
+            if (!result) return;
+
+            try {
+                const resp = await fetch(`/api/digest/sources/${sourceId}/newsletter`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: result.content,
+                        subject: result.subject || null,
+                        sender: result.sender || null
+                    })
+                });
+                const json = await resp.json();
+                if (json.success) {
+                    if (typeof showToast === 'function') showToast('Newsletter added', 'success');
+                } else {
+                    if (typeof showToast === 'function') showToast(json.error || 'Failed', 'error');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed', 'error');
+            }
+        }
+
+        async function summarizeItem(itemId) {
+            if (typeof showToast === 'function') showToast('Summarizing...', 'info');
+            try {
+                const resp = await fetch(`/api/digest/items/${itemId}/summarize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ depth: 'brief' })
+                });
+                const json = await resp.json();
+                if (json.success) {
+                    if (typeof showToast === 'function') showToast('Summary generated', 'success');
+                    loadItems();
+                } else {
+                    if (typeof showToast === 'function') showToast(json.error || 'Failed', 'error');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Summarization failed', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

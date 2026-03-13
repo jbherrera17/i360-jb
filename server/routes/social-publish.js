@@ -23,7 +23,7 @@ module.exports = function(supabase) {
     router.use(async (req, res, next) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             if (!userId) {
                 return next();
@@ -64,7 +64,7 @@ module.exports = function(supabase) {
      */
     router.get('/config', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required (x-org-id header)' });
             }
@@ -89,7 +89,7 @@ module.exports = function(supabase) {
      */
     router.get('/usage', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -115,7 +115,7 @@ module.exports = function(supabase) {
      */
     router.post('/config', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const userId = req.userId;
 
             if (!orgId) {
@@ -172,7 +172,7 @@ module.exports = function(supabase) {
      */
     router.get('/accounts', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -205,7 +205,7 @@ module.exports = function(supabase) {
      */
     router.post('/accounts/sync', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const userId = req.userId;
 
             if (!orgId) {
@@ -241,7 +241,7 @@ module.exports = function(supabase) {
      */
     router.get('/accounts/oauth-url/:platform', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -273,7 +273,7 @@ module.exports = function(supabase) {
      */
     router.post('/posts', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const userId = req.userId;
 
             if (!orgId) {
@@ -332,7 +332,7 @@ module.exports = function(supabase) {
      */
     router.get('/posts', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -357,7 +357,7 @@ module.exports = function(supabase) {
      */
     router.get('/posts/:id', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -380,7 +380,7 @@ module.exports = function(supabase) {
      */
     router.delete('/posts/:id', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -399,7 +399,7 @@ module.exports = function(supabase) {
      */
     router.get('/scheduled', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -464,7 +464,7 @@ module.exports = function(supabase) {
      */
     router.get('/analytics', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -485,7 +485,7 @@ module.exports = function(supabase) {
      */
     router.get('/optimal-time/:platform', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }
@@ -515,7 +515,7 @@ module.exports = function(supabase) {
      */
     router.post('/media', express.raw({ type: '*/*', limit: '50mb' }), async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             if (!orgId) {
                 return res.status(400).json({ error: 'Organization ID required' });
             }

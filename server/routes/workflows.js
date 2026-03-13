@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { getUserId } = require('../utils/auth');
+const WorkflowEngine = require('../services/workflowEngine');
 
 /**
  * GET /api/workflows
@@ -48,7 +49,7 @@ router.get('/', async (req, res) => {
         }
 
         // === PHASE 46: Organization filtering ===
-        const orgId = req.headers['x-org-id'];
+        const orgId = req.headers['x-org-id'] || req.orgId || null;
         if (orgId) {
             // Show workflows belonging to this org OR system workflows (no org)
             query = query.or(`org_id.eq.${orgId},org_id.is.null`);
@@ -178,7 +179,7 @@ router.post('/', async (req, res) => {
         const workflowData = req.body;
 
         // Check organization resource limits (Phase 44)
-        const orgId = req.headers['x-org-id'] || workflowData.org_id;
+        const orgId = req.headers['x-org-id'] || workflowData.org_id || req.orgId || null;
         if (orgId) {
             const { data: limits, error: limitError } = await supabase
                 .rpc('check_org_limits', {
@@ -632,84 +633,68 @@ router.put('/executions/:executionId', async (req, res) => {
 router.post('/executions/:executionId/steps/:stepNumber', async (req, res) => {
     try {
         const supabase = req.supabase;
+        const workflowEngine = new WorkflowEngine(supabase);
         const { executionId, stepNumber } = req.params;
         const { action, input_data, output_data, gate_response } = req.body;
+        const parsedStepNumber = parseInt(stepNumber, 10);
 
-        // Get the step definition
-        const { data: execution } = await supabase
-            .from('workflow_executions')
-            .select('workflow_id')
-            .eq('id', executionId)
-            .single();
-
-        const { data: step } = await supabase
-            .from('workflow_steps')
-            .select('*')
-            .eq('workflow_id', execution.workflow_id)
-            .eq('step_number', parseInt(stepNumber))
-            .single();
-
-        if (!step) {
-            return res.status(404).json({ error: 'Step not found' });
+        let normalizedInput = input_data || {};
+        if (action === 'approve') {
+            normalizedInput = {
+                approved: true,
+                response: gate_response || null
+            };
+        } else if (action === 'reject') {
+            normalizedInput = {
+                approved: false,
+                response: gate_response || null
+            };
+        } else if (output_data) {
+            normalizedInput = output_data;
         }
 
-        // Check if step execution exists
-        const { data: existingStepExec } = await supabase
+        const stepResult = await workflowEngine.executeStep(
+            executionId,
+            parsedStepNumber,
+            {
+                ...normalizedInput,
+                user_id: getUserId(req),
+                org_id: req.headers['x-org-id'] || null,
+                module: 'workflows'
+            }
+        );
+
+        if (!stepResult.success) {
+            return res.status(500).json({
+                success: false,
+                error: stepResult.error || 'Step execution failed',
+                meta: {
+                    runtime: stepResult.runtime || null
+                }
+            });
+        }
+
+        if (stepResult.nextAction?.action === 'proceed') {
+            await workflowEngine.advanceToNextStep(executionId);
+        }
+
+        const { data: stepExecution, error: fetchError } = await supabase
             .from('workflow_step_executions')
             .select('*')
             .eq('execution_id', executionId)
-            .eq('step_number', parseInt(stepNumber))
+            .eq('step_number', parsedStepNumber)
             .single();
 
-        if (existingStepExec) {
-            // Update existing step execution
-            const updateData = {};
-            if (action === 'approve') {
-                updateData.gate_status = 'approved';
-                updateData.gate_response = gate_response;
-                updateData.status = 'completed';
-                updateData.completed_at = new Date().toISOString();
-            } else if (action === 'reject') {
-                updateData.gate_status = 'rejected';
-                updateData.gate_response = gate_response;
-                updateData.status = 'rejected';
-            } else if (output_data) {
-                updateData.output_data = output_data;
-                updateData.status = 'completed';
-                updateData.completed_at = new Date().toISOString();
+        if (fetchError) throw fetchError;
+
+        res.json({
+            success: true,
+            step_execution: stepExecution,
+            next_action: stepResult.nextAction,
+            meta: {
+                runtime: stepResult.runtime || null
             }
-
-            const { data, error } = await supabase
-                .from('workflow_step_executions')
-                .update(updateData)
-                .eq('id', existingStepExec.id)
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            res.json({ success: true, step_execution: data });
-        } else {
-            // Create new step execution
-            const { data, error } = await supabase
-                .from('workflow_step_executions')
-                .insert({
-                    execution_id: executionId,
-                    step_id: step.id,
-                    step_number: parseInt(stepNumber),
-                    status: step.execution_mode === 'gate' ? 'waiting_approval' : 'running',
-                    input_data: input_data || {},
-                    agent_id: step.agent_id,
-                    skill_id: step.skill_id,
-                    started_at: new Date().toISOString()
-                })
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            res.json({ success: true, step_execution: data });
-        }
+        });
     } catch (error) {
         console.error('Error executing step:', error);
         res.status(500).json({ error: error.message });

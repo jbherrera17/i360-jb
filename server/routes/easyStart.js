@@ -42,7 +42,7 @@ module.exports = function (supabase) {
         }
 
         const { messages = [] } = req.body;
-        const orgId = req.headers['x-org-id'] || req.body.org_id;
+        const orgId = req.headers['x-org-id'] || req.body.org_id || req.orgId || null;
         const userId = req.userId || null;
         const isAdmin = req.isAdmin || false;
         const supabaseClient = req.supabase || supabase;
@@ -279,7 +279,7 @@ module.exports = function (supabase) {
     router.get('/departments', async (req, res) => {
         try {
             const supabaseClient = req.supabase || supabase;
-            const orgId = req.headers['x-org-id'];
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             let query = supabaseClient
                 .from('departments')

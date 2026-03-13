@@ -131,6 +131,12 @@ function createTestApp(options = {}) {
     app.use('/api/bugs', bugsRoutes);
   }
 
+  if (routes.includes('conversations')) {
+    // Conversations routes use module.exports = router pattern (no factory)
+    const conversationsRoutes = require('../../server/routes/conversations');
+    app.use('/api/conversations', conversationsRoutes);
+  }
+
   if (routes.includes('organizations')) {
     const organizationsRoutes = require('../../server/routes/organizations');
     app.use('/api/organizations', organizationsRoutes(mockSupabase));

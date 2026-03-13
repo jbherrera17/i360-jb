@@ -834,21 +834,67 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/auth/users
-     * Admin: List all users with roles
+     * Admin: List users — platform admins see all, org admins see their org's members only
      */
     router.get('/users', requireAdmin, async (req, res) => {
         try {
+            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId || null;
+
+            // Check if caller is a platform admin or system admin
+            let isPlatformAdmin = req.userRole === 'admin'; // System admins get full visibility
+            if (!isPlatformAdmin) {
+                try {
+                    const { data: adminRecord } = await supabase
+                        .from('platform_admins')
+                        .select('role')
+                        .eq('user_id', req.user.id)
+                        .eq('is_active', true)
+                        .maybeSingle();
+                    if (adminRecord) isPlatformAdmin = true;
+                } catch (e) {
+                    // platform_admins table may not exist
+                }
+            }
+
+            if (isPlatformAdmin) {
+                // Platform admins see all users (optionally filtered by org)
+                if (orgId) {
+                    const { data, error } = await supabase
+                        .from('organization_members')
+                        .select('user_id, role, status, users(id, email, display_name, role, department_id, business_role, created_at, updated_at)')
+                        .eq('org_id', orgId)
+                        .eq('status', 'active')
+                        .order('created_at', { ascending: false, foreignTable: 'users' });
+
+                    if (error) throw error;
+                    const users = (data || []).map(m => ({ ...m.users, org_role: m.role, member_status: m.status }));
+                    return res.json({ success: true, data: users });
+                }
+
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id, email, display_name, role, department_id, business_role, created_at, updated_at')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                return res.json({ success: true, data: data || [] });
+            }
+
+            // Org admins: scope to their org's members
+            if (!orgId) {
+                return res.status(400).json({ success: false, error: 'Organization context required (x-org-id header)' });
+            }
+
             const { data, error } = await supabase
-                .from('users')
-                .select('id, email, display_name, role, department_id, business_role, created_at, updated_at')
-                .order('created_at', { ascending: false });
+                .from('organization_members')
+                .select('user_id, role, status, users(id, email, display_name, role, department_id, business_role, created_at, updated_at)')
+                .eq('org_id', orgId)
+                .eq('status', 'active')
+                .order('created_at', { ascending: false, foreignTable: 'users' });
 
             if (error) throw error;
-
-            res.json({
-                success: true,
-                data: data || []
-            });
+            const users = (data || []).map(m => ({ ...m.users, org_role: m.role, member_status: m.status }));
+            res.json({ success: true, data: users });
 
         } catch (error) {
             console.error('List users error:', error);

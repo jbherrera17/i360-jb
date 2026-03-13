@@ -519,7 +519,7 @@ router.get('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const userId = getUserId(req);
-        let orgId = req.headers['x-org-id'];
+        let orgId = req.headers['x-org-id'] || req.orgId || null;
         const {
             type,
             search,
