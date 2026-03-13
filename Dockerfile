@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install production dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && echo "deps-v2"
 
 # Copy application code
 COPY server/ ./server/
