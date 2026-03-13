@@ -1,0 +1,663 @@
+{
+  "info": {
+    "_postman_id": "3b8ffac8-a7ef-4a20-b6cb-2de3d5f4db51",
+    "name": "Insight 360 - Unified Runtime Backbone v1 UAT",
+    "description": "UAT collection for unified runtime backbone v1 across agents/actions/skills/workflows/execute120 with governance controls and isolation checks.\n\nPrereqs:\n1) Set `baseUrl`, `accessToken`, `orgId`\n2) Run folder `00 Setup & Discovery` first to auto-populate IDs\n3) For robust workflow step tests, point workflow variables to workflows with known step behavior.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const orgId = pm.collectionVariables.get('orgId');",
+          "if (orgId) {",
+          "  pm.request.headers.upsert({ key: 'x-org-id', value: orgId });",
+          "}",
+          "pm.request.headers.upsert({ key: 'Content-Type', value: 'application/json' });"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "orgId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "departmentId", "value": "" },
+
+    { "key": "agentId", "value": "" },
+    { "key": "actionId", "value": "" },
+    { "key": "skillId", "value": "" },
+    { "key": "workflowId", "value": "" },
+    { "key": "execute120WorkflowId", "value": "" },
+
+    { "key": "workflowExecutionId", "value": "" },
+    { "key": "execute120ExecutionId", "value": "" },
+    { "key": "workflowStepNumber", "value": "1" },
+    { "key": "execute120StepNumber", "value": "1" },
+
+    { "key": "flagIdKillSwitchActions", "value": "" },
+    { "key": "flagIdShadowAgents", "value": "" },
+    { "key": "flagIdBackboneActions", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 Setup & Discovery",
+      "item": [
+        {
+          "name": "Get Agents (capture agentId)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/agents?active=true&limit=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Agents query succeeded', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.data?.[0]?.id;",
+                  "if (id) pm.collectionVariables.set('agentId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Actions (capture actionId)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/actions?limit=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Actions query succeeded', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.data?.[0]?.id;",
+                  "if (id) pm.collectionVariables.set('actionId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Skills (capture skillId)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/skills?limit=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Skills query succeeded', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.data?.[0]?.id;",
+                  "if (id) pm.collectionVariables.set('skillId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Workflows (capture workflowId)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/workflows"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Workflows query succeeded', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.workflows?.[0]?.id;",
+                  "if (id) pm.collectionVariables.set('workflowId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Execute120 Workflows (capture execute120WorkflowId)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/execute120/workflows"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Execute120 workflows query succeeded', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.data?.[0]?.id;",
+                  "if (id) pm.collectionVariables.set('execute120WorkflowId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Feature Flags (capture runtime flag IDs)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/governance/feature-flags"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Feature flags query succeeded', () => pm.expect(json.success).to.eql(true));",
+                  "const flags = json?.data || [];",
+                  "const byKey = Object.fromEntries(flags.map(f => [f.feature_key, f]));",
+                  "if (byKey['runtime.kill_switch.actions']) pm.collectionVariables.set('flagIdKillSwitchActions', byKey['runtime.kill_switch.actions'].id);",
+                  "if (byKey['runtime.shadow.enabled.agents']) pm.collectionVariables.set('flagIdShadowAgents', byKey['runtime.shadow.enabled.agents'].id);",
+                  "if (byKey['runtime.backbone.enabled.actions']) pm.collectionVariables.set('flagIdBackboneActions', byKey['runtime.backbone.enabled.actions'].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Runtime Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/governance/runtime/status?org_id={{orgId}}&department_id={{departmentId}}&user_id={{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Runtime status shape', () => {",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.expect(json.data).to.have.property('runtime');",
+                  "  pm.expect(json.data).to.have.property('modules');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Agents",
+      "item": [
+        {
+          "name": "Agent Execute (non-stream)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/agents/{{agentId}}/execute",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Explain the top 3 priorities for this quarter in 5 concise bullets.\",\n  \"conversation_history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Agent execute success', () => pm.expect(json.success).to.eql(true));",
+                  "const runtime = json?.data?.meta?.runtime || json?.data?.runtime || null;",
+                  "if (runtime) {",
+                  "  pm.test('Runtime metadata present', () => {",
+                  "    pm.expect(runtime).to.have.property('trace_id');",
+                  "    pm.expect(runtime).to.have.property('module');",
+                  "  });",
+                  "  if (runtime.profile_used) {",
+                  "    pm.test('Profile is recognized', () => pm.expect(['agent_full','fast_direct','workflow_step','skill_test']).to.include(runtime.profile_used));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agent Execute Stream (SSE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "text/event-stream" }
+            ],
+            "url": "{{baseUrl}}/api/agents/{{agentId}}/execute/stream",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Stream a one paragraph response about operational priorities.\",\n  \"conversation_history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('SSE endpoint returns 200', () => pm.response.to.have.status(200));",
+                  "const ct = pm.response.headers.get('Content-Type') || '';",
+                  "pm.test('SSE content type present', () => pm.expect(ct.toLowerCase()).to.include('text/event-stream'));",
+                  "const txt = pm.response.text();",
+                  "pm.test('Stream completed', () => pm.expect(txt).to.include('[DONE]'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Actions",
+      "item": [
+        {
+          "name": "Action Execute",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/actions/{{actionId}}/execute",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input_data\": {\n    \"objective\": \"Draft a concise leadership update.\",\n    \"audience\": \"Executive team\",\n    \"tone\": \"direct\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Action execute success', () => pm.expect(json.success).to.eql(true));",
+                  "const runtime = json?.data?.meta?.runtime || json?.data?.output?.meta?.runtime || null;",
+                  "if (runtime) {",
+                  "  pm.test('Runtime metadata present', () => {",
+                  "    pm.expect(runtime).to.have.property('trace_id');",
+                  "    pm.expect(runtime).to.have.property('module');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Skills",
+      "item": [
+        {
+          "name": "Skill Test",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/skills/{{skillId}}/test",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Produce a short structured output for runtime UAT.\",\n  \"context_asset_ids\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Skill test success', () => pm.expect(json.success).to.eql(true));",
+                  "const runtime = json?.data?.meta?.runtime || null;",
+                  "if (runtime) {",
+                  "  pm.test('Skill test profile expected', () => pm.expect(['skill_test','agent_full','fast_direct']).to.include(runtime.profile_used));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Workflows",
+      "item": [
+        {
+          "name": "Start Workflow Execution",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/workflows/{{workflowId}}/execute",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"initial_variables\": {\n    \"topic\": \"unified-runtime-uat\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Workflow execution started', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.execution?.id;",
+                  "if (id) pm.collectionVariables.set('workflowExecutionId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Execute Workflow Step",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/workflows/executions/{{workflowExecutionId}}/steps/{{workflowStepNumber}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"proceed\",\n  \"input_data\": {\n    \"message\": \"Continue workflow step for UAT\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "This validates route delegation to WorkflowEngine. If your selected workflow step is unsupported in v1, an explicit unsupported error is acceptable."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Workflow step success', () => pm.expect(json.success).to.eql(true));",
+                  "} else {",
+                  "  let json = {};",
+                  "  try { json = pm.response.json(); } catch (e) {}",
+                  "  const msg = (json?.error || pm.response.text() || '').toLowerCase();",
+                  "  pm.test('Workflow step failed explicitly', () => pm.expect(msg).to.match(/unsupported_in_v1|step execution failed|failed to execute step|blocked|approval|input/));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Execute120",
+      "item": [
+        {
+          "name": "Start Execute120 Workflow",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/execute120/workflows/{{execute120WorkflowId}}/execute",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"initial_variables\": {\n    \"topic\": \"execute120-runtime-uat\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Execute120 execution started', () => pm.expect(json.success).to.eql(true));",
+                  "const id = json?.data?.id;",
+                  "if (id) pm.collectionVariables.set('execute120ExecutionId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Execute Execute120 Step",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/execute120/executions/{{execute120ExecutionId}}/step/{{execute120StepNumber}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_input\": {\n    \"message\": \"Continue Execute120 step for UAT\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Execute120 step success', () => pm.expect(json.success).to.eql(true));",
+                  "} else {",
+                  "  const text = pm.response.text().toLowerCase();",
+                  "  pm.test('Execute120 step failed explicitly', () => pm.expect(text).to.match(/unsupported_in_v1|failed to execute step|blocked|error/));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Governance, Flags, Isolation",
+      "item": [
+        {
+          "name": "Check backbone flag (actions)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/governance/feature-flags/check/runtime.backbone.enabled.actions?org_id={{orgId}}&department_id={{departmentId}}&user_id={{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Flag check shape', () => {",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.expect(json).to.have.property('enabled');",
+                  "  pm.expect(['user','department','org','global']).to.include(json.scope);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check kill switch flag (actions)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/governance/feature-flags/check/runtime.kill_switch.actions?org_id={{orgId}}&department_id={{departmentId}}&user_id={{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Kill switch check shape', () => {",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.expect(json).to.have.property('enabled');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enable kill switch (actions)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/governance/feature-flags/{{flagIdKillSwitchActions}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_enabled\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Kill switch enabled', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Action execute while kill-switched (expect blocked)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/actions/{{actionId}}/execute",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input_data\": {\n    \"objective\": \"This should be blocked by kill switch.\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Blocked status code', () => pm.expect([500,503]).to.include(pm.response.code));",
+                  "const text = pm.response.text().toLowerCase();",
+                  "pm.test('Blocked message present', () => pm.expect(text).to.include('blocked'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agent execute while actions kill-switched (should still work)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/agents/{{agentId}}/execute",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Confirm service remains healthy while actions module is kill-switched.\",\n  \"conversation_history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Agent still healthy', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disable kill switch (actions)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/governance/feature-flags/{{flagIdKillSwitchActions}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_enabled\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Kill switch disabled', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Runtime Status (post-isolation check)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/governance/runtime/status?org_id={{orgId}}&department_id={{departmentId}}&user_id={{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Isolation and stats visible', () => {",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.expect(json.data.runtime).to.have.property('stats');",
+                  "  pm.expect(json.data.runtime).to.have.property('isolation');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
