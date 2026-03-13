@@ -1,7 +1,7 @@
 /**
  * Users API Routes - Insight 360
  * Admin endpoints for user management
- * Version: 1.0.0
+ * Version: 1.1.0
  */
 
 const express = require('express');
@@ -15,10 +15,109 @@ const supabase = createClient(
 );
 
 /**
+ * Authorization middleware for user management routes.
+ * Requires platform admin OR org owner/admin role.
+ * Write operations (PUT assignments) require platform admin only.
+ */
+const requireUserManagementAccess = async (req, res, next) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, error: 'Authentication required' });
+        }
+
+        // Check platform admin first
+        const { data: isAdmin } = await supabase
+            .rpc('is_platform_admin', { p_user_id: userId });
+
+        if (isAdmin) {
+            req.isPlatformAdmin = true;
+            return next();
+        }
+
+        // For non-platform-admins, check org admin role
+        const orgId = req.headers['x-org-id'] || req.query.org_id;
+        if (orgId) {
+            const { data: membership } = await supabase
+                .from('organization_members')
+                .select('role')
+                .eq('org_id', orgId)
+                .eq('user_id', userId)
+                .eq('status', 'active')
+                .single();
+
+            if (membership && ['owner', 'admin'].includes(membership.role)) {
+                req.isPlatformAdmin = false;
+                req.orgRole = membership.role;
+                return next();
+            }
+        }
+
+        return res.status(403).json({
+            success: false,
+            error: 'Platform admin or organization admin access required'
+        });
+    } catch (error) {
+        console.error('User management auth error:', error);
+        return res.status(500).json({ success: false, error: 'Authorization check failed' });
+    }
+};
+
+/**
+ * Stricter middleware for sensitive operations (platform admin, assignments).
+ * Requires platform admin only.
+ */
+const requirePlatformAdminAccess = async (req, res, next) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, error: 'Authentication required' });
+        }
+
+        const { data: isAdmin } = await supabase
+            .rpc('is_platform_admin', { p_user_id: userId });
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                error: 'Platform admin access required'
+            });
+        }
+
+        req.isPlatformAdmin = true;
+        next();
+    } catch (error) {
+        console.error('Platform admin auth error:', error);
+        return res.status(500).json({ success: false, error: 'Authorization check failed' });
+    }
+};
+
+/**
+ * Log role changes to the role_change_audit table.
+ */
+async function logRoleChange({ target_user_id, changed_by, change_type, entity_type, entity_id, old_value, new_value, reason }) {
+    try {
+        await supabase.from('role_change_audit').insert({
+            target_user_id,
+            changed_by,
+            change_type,
+            entity_type,
+            entity_id,
+            old_value,
+            new_value,
+            reason
+        });
+    } catch (err) {
+        console.error('Failed to log role change:', err);
+        // Non-blocking — don't fail the request if audit logging fails
+    }
+}
+
+/**
  * GET /api/users
  * List all users (admin only)
  */
-router.get('/', async (req, res) => {
+router.get('/', requireUserManagementAccess, async (req, res) => {
     try {
         const { limit = 100, offset = 0, department_id, business_role, search } = req.query;
 
@@ -95,7 +194,7 @@ router.get('/', async (req, res) => {
  * Get all users with their organization assignments (platform, org members, client portal)
  * For unified user management UI
  */
-router.get('/unified', async (req, res) => {
+router.get('/unified', requireUserManagementAccess, async (req, res) => {
     try {
         const { limit = 100, offset = 0, search, filter } = req.query;
 
@@ -256,7 +355,7 @@ router.get('/unified', async (req, res) => {
  * GET /api/users/:id
  * Get a single user
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireUserManagementAccess, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -310,7 +409,7 @@ router.get('/:id', async (req, res) => {
  * PUT /api/users/:id
  * Update a user (admin only)
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePlatformAdminAccess, async (req, res) => {
     try {
         const { id } = req.params;
         const { display_name, business_role, department_id } = req.body;
@@ -331,6 +430,27 @@ router.put('/:id', async (req, res) => {
             throw new Error(`Failed to update user: ${error.message}`);
         }
 
+        // Also update business_role in organization_members if changed
+        if (business_role !== undefined) {
+            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            if (orgId) {
+                // Update for specific org
+                await supabase
+                    .from('organization_members')
+                    .update({ business_role })
+                    .eq('user_id', id)
+                    .eq('org_id', orgId)
+                    .eq('status', 'active');
+            } else {
+                // Update all active memberships (backward compat)
+                await supabase
+                    .from('organization_members')
+                    .update({ business_role })
+                    .eq('user_id', id)
+                    .in('status', ['active', 'pending']);
+            }
+        }
+
         res.json({
             success: true,
             data
@@ -348,7 +468,7 @@ router.put('/:id', async (req, res) => {
  * PUT /api/users/:id/assignments
  * Update user's organization assignments (platform admin, org memberships, client access)
  */
-router.put('/:id/assignments', async (req, res) => {
+router.put('/:id/assignments', requirePlatformAdminAccess, async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -394,6 +514,16 @@ router.put('/:id/assignments', async (req, res) => {
                     console.error('Error removing platform admin:', removeError);
                 }
                 results.platform_admin = { removed: true };
+                await logRoleChange({
+                    target_user_id: id,
+                    changed_by: req.userId,
+                    change_type: 'platform_admin_removed',
+                    entity_type: 'platform_admins',
+                    entity_id: id,
+                    old_value: 'active',
+                    new_value: 'inactive',
+                    reason: 'Platform admin status removed via assignments endpoint'
+                });
             } else if (platform_admin.role) {
                 // Add or update platform admin
                 const { data: existing } = await supabase
@@ -423,6 +553,16 @@ router.put('/:id/assignments', async (req, res) => {
                     if (insertError) throw insertError;
                 }
                 results.platform_admin = { role: platform_admin.role };
+                await logRoleChange({
+                    target_user_id: id,
+                    changed_by: req.userId,
+                    change_type: existing ? 'platform_admin_updated' : 'platform_admin_granted',
+                    entity_type: 'platform_admins',
+                    entity_id: id,
+                    old_value: existing ? 'existing' : null,
+                    new_value: platform_admin.role,
+                    reason: 'Platform admin assigned via assignments endpoint'
+                });
             }
         }
 

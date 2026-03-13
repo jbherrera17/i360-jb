@@ -762,7 +762,7 @@ module.exports = function(supabase) {
             const userRole = req.userRole || 'user';
             const userId = req.userId || null;
 
-            if (!canEditAgent(userRole, userId, agent)) {
+            if (!canEditAgent(userRole, userId, agent, req)) {
                 return res.status(403).json({
                     success: false,
                     error: agent.is_system
@@ -861,7 +861,7 @@ module.exports = function(supabase) {
             const userRole = req.userRole || 'user';
             const userId = req.userId || null;
 
-            if (!canDeleteAgent(userRole, userId, agent)) {
+            if (!canDeleteAgent(userRole, userId, agent, req)) {
                 return res.status(403).json({
                     success: false,
                     error: agent.is_system

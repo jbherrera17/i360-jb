@@ -387,6 +387,72 @@
         .access-denied p {
             color: var(--text-secondary);
         }
+
+        /* Role Audit Tab */
+        .members-table-container {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .audit-change-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .audit-badge-invite { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .audit-badge-role-change { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .audit-badge-removal { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .audit-badge-admin { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+        .audit-badge-client { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .audit-badge-activate { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .audit-badge-suspend { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .audit-badge-transfer { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .audit-badge-default { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+        .audit-detail-arrow {
+            color: var(--text-muted);
+            margin: 0 0.25rem;
+        }
+
+        .audit-user-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .audit-user-name {
+            font-weight: 500;
+        }
+
+        .audit-user-email {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .audit-reason {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .audit-no-reason {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -464,6 +530,7 @@
                     <button class="tab" data-tab="admins">Platform Admins</button>
                     <button class="tab" data-tab="voice">Voice</button>
                     <button class="tab" data-tab="config">Configuration</button>
+                    <button class="tab" data-tab="role-audit">Role Audit</button>
                 </div>
 
                 <!-- Organizations Tab -->
@@ -881,6 +948,112 @@
                     </div>
                 </div>
 
+                <!-- Role Audit Tab -->
+                <div class="tab-content" id="tab-role-audit">
+                    <div class="section">
+                        <!-- Summary Stats -->
+                        <div class="stats-grid" id="auditSummaryGrid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 1.5rem;">
+                            <div class="stat-card">
+                                <div class="stat-label">Changes (30 days)</div>
+                                <div class="stat-value" id="auditStatTotal">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Members Invited</div>
+                                <div class="stat-value" id="auditStatInvited" style="color: var(--info);">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Role Changes</div>
+                                <div class="stat-value" id="auditStatRoleChanges" style="color: var(--warning);">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Removals</div>
+                                <div class="stat-value" id="auditStatRemovals" style="color: var(--danger);">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Admin Changes</div>
+                                <div class="stat-value" id="auditStatAdminChanges" style="color: var(--primary);">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="search-bar" style="margin-bottom: 1rem;">
+                            <input type="text" class="search-input" id="auditSearchInput" placeholder="Search by user name or email..." oninput="filterAuditTable()">
+                            <select class="filter-select" id="auditChangeTypeFilter" onchange="loadAuditData()">
+                                <option value="">All Change Types</option>
+                                <option value="platform_admin_granted">Platform Admin Granted</option>
+                                <option value="platform_admin_updated">Platform Admin Role Updated</option>
+                                <option value="platform_admin_removed">Platform Admin Removed</option>
+                                <option value="org_member_invited">Member Invited</option>
+                                <option value="org_member_role_changed">Member Role Changed</option>
+                                <option value="org_member_activated">Member Activated</option>
+                                <option value="org_member_suspended">Member Suspended</option>
+                                <option value="org_member_removed">Member Removed</option>
+                                <option value="org_ownership_transferred">Ownership Transferred</option>
+                                <option value="business_role_changed">Business Role Changed</option>
+                                <option value="client_access_granted">Client Access Granted</option>
+                                <option value="client_access_role_changed">Client Access Role Changed</option>
+                                <option value="client_access_removed">Client Access Removed</option>
+                            </select>
+                            <select class="filter-select" id="auditOrgFilter" onchange="loadAuditData()">
+                                <option value="">All Organizations</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                            <select class="filter-select" id="auditDateRange" onchange="loadAuditData()">
+                                <option value="30">Last 30 days</option>
+                                <option value="7">Last 7 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="365">Last 365 days</option>
+                                <option value="">All time</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="loadAuditData()">
+                                <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                                Refresh
+                            </button>
+                        </div>
+
+                        <div class="members-table-container">
+                            <div class="table-header">
+                                <span class="section-title" style="font-size: 0.9rem;">
+                                    <i data-lucide="file-clock" style="width:16px;height:16px;color:var(--primary);"></i>
+                                    Role Change History
+                                </span>
+                                <span id="auditRecordCount" style="font-size: 0.8rem; color: var(--text-secondary);"></span>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table class="data-table" id="auditTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width:140px;">Date / Time</th>
+                                            <th style="min-width:160px;">Changed By</th>
+                                            <th style="min-width:160px;">User Affected</th>
+                                            <th style="min-width:140px;">Organization</th>
+                                            <th style="min-width:160px;">Change Type</th>
+                                            <th style="min-width:180px;">Details</th>
+                                            <th style="min-width:140px;">Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="auditTableBody">
+                                        <tr>
+                                            <td colspan="7" class="empty-state">Loading audit trail...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="auditPagination" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-top: 1px solid var(--border);">
+                                <button class="btn btn-secondary btn-sm" id="auditPrevBtn" onclick="auditChangePage(-1)" disabled>
+                                    <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+                                    Previous
+                                </button>
+                                <span id="auditPageInfo" style="font-size: 0.85rem; color: var(--text-secondary);"></span>
+                                <button class="btn btn-secondary btn-sm" id="auditNextBtn" onclick="auditChangePage(1)" disabled>
+                                    Next
+                                    <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Danger Zone -->
                 <div class="section">
                     <div class="config-card" style="border: 2px solid var(--danger);">
@@ -901,7 +1074,7 @@
                                     </p>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.75rem; white-space: nowrap;">
-                                    <select id="dangerOrgSelect" style="padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); min-width: 200px;">
+                                    <select id="dangerOrgSelect" style="padding: 0.5rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); min-width: 200px;">
                                         <option value="">Select organization...</option>
                                     </select>
                                     <button class="btn btn-danger" onclick="confirmDeleteSelectedOrg()">
@@ -996,6 +1169,7 @@
         }
 
         // Setup tab navigation
+        let auditTabLoaded = false;
         function setupTabs() {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
@@ -1007,6 +1181,13 @@
                     const tabId = tab.dataset.tab;
                     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                     document.getElementById(`tab-${tabId}`).classList.add('active');
+
+                    // Lazy-load audit data on first visit
+                    if (tabId === 'role-audit' && !auditTabLoaded) {
+                        auditTabLoaded = true;
+                        populateAuditOrgFilter();
+                        loadAuditData();
+                    }
                 });
             });
         }
@@ -2654,6 +2835,248 @@
             if (!org) return;
 
             await confirmDeleteOrg(orgId, org.name, true);
+        }
+
+        // ============================================
+        // TEST DATA RESET
+        // ============================================
+
+        // ============================================
+        // ROLE AUDIT TRAIL
+        // ============================================
+
+        let auditEntries = [];
+        let auditPage = 0;
+        const AUDIT_PAGE_SIZE = 25;
+
+        const CHANGE_TYPE_LABELS = {
+            platform_admin_granted: 'Platform Admin Granted',
+            platform_admin_updated: 'Platform Admin Role Updated',
+            platform_admin_removed: 'Platform Admin Removed',
+            org_member_invited: 'Member Invited',
+            org_member_role_changed: 'Member Role Changed',
+            org_member_activated: 'Member Activated',
+            org_member_suspended: 'Member Suspended',
+            org_member_removed: 'Member Removed',
+            org_ownership_transferred: 'Ownership Transferred',
+            business_role_changed: 'Business Role Changed',
+            client_access_granted: 'Client Access Granted',
+            client_access_role_changed: 'Client Access Role Changed',
+            client_access_removed: 'Client Access Removed'
+        };
+
+        function getAuditBadgeClass(changeType) {
+            if (['platform_admin_granted', 'platform_admin_updated', 'platform_admin_removed'].includes(changeType)) return 'audit-badge-admin';
+            if (changeType === 'org_member_invited') return 'audit-badge-invite';
+            if (['org_member_role_changed', 'business_role_changed'].includes(changeType)) return 'audit-badge-role-change';
+            if (['org_member_removed', 'platform_admin_removed', 'client_access_removed'].includes(changeType)) return 'audit-badge-removal';
+            if (changeType === 'org_member_activated') return 'audit-badge-activate';
+            if (changeType === 'org_member_suspended') return 'audit-badge-suspend';
+            if (changeType === 'org_ownership_transferred') return 'audit-badge-transfer';
+            if (['client_access_granted', 'client_access_role_changed'].includes(changeType)) return 'audit-badge-client';
+            return 'audit-badge-default';
+        }
+
+        function populateAuditOrgFilter() {
+            const select = document.getElementById('auditOrgFilter');
+            if (!select || !organizations.length) return;
+            const options = organizations.map(o =>
+                `<option value="${o.id}">${escapeHtml(o.name)}</option>`
+            ).join('');
+            select.innerHTML = `<option value="">All Organizations</option>${options}`;
+        }
+
+        async function loadAuditSummary() {
+            const token = localStorage.getItem('insight360_token');
+            try {
+                const res = await fetch('/api/role-audit/summary?days=30', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const s = data.data || {};
+
+                document.getElementById('auditStatTotal').textContent = s.total_changes ?? '-';
+                document.getElementById('auditStatInvited').textContent = s.by_type?.org_member_invited ?? '0';
+
+                const roleChanges = (s.by_type?.org_member_role_changed ?? 0)
+                    + (s.by_type?.business_role_changed ?? 0)
+                    + (s.by_type?.client_access_role_changed ?? 0);
+                document.getElementById('auditStatRoleChanges').textContent = roleChanges;
+
+                const removals = (s.by_type?.org_member_removed ?? 0)
+                    + (s.by_type?.platform_admin_removed ?? 0)
+                    + (s.by_type?.client_access_removed ?? 0);
+                document.getElementById('auditStatRemovals').textContent = removals;
+
+                const adminChanges = (s.by_type?.platform_admin_granted ?? 0)
+                    + (s.by_type?.platform_admin_updated ?? 0)
+                    + (s.by_type?.platform_admin_removed ?? 0);
+                document.getElementById('auditStatAdminChanges').textContent = adminChanges;
+            } catch (err) {
+                console.error('Failed to load audit summary:', err);
+            }
+        }
+
+        async function loadAuditData() {
+            const token = localStorage.getItem('insight360_token');
+            const tbody = document.getElementById('auditTableBody');
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Loading audit trail...</td></tr>`;
+
+            auditPage = 0;
+
+            const changeType = document.getElementById('auditChangeTypeFilter').value;
+            const orgId = document.getElementById('auditOrgFilter').value;
+            const days = document.getElementById('auditDateRange').value;
+
+            const params = new URLSearchParams({ limit: 200, offset: 0 });
+            if (changeType) params.set('change_type', changeType);
+            if (orgId) params.set('org_id', orgId);
+            if (days) {
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - parseInt(days, 10));
+                params.set('start_date', startDate.toISOString().split('T')[0]);
+            }
+
+            try {
+                const res = await fetch(`/api/role-audit?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--danger);">
+                        Failed to load audit trail: ${escapeHtml(err.error || 'API error')}.
+                        <br><small>Make sure the Phase 70 role_change_audit table has been deployed.</small>
+                    </td></tr>`;
+                    return;
+                }
+                const data = await res.json();
+                auditEntries = data.data || [];
+                renderAuditTable();
+                loadAuditSummary();
+            } catch (err) {
+                console.error('Failed to load audit data:', err);
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--danger);">Network error loading audit trail.</td></tr>`;
+            }
+        }
+
+        function filterAuditTable() {
+            auditPage = 0;
+            renderAuditTable();
+        }
+
+        function renderAuditTable() {
+            const search = (document.getElementById('auditSearchInput').value || '').toLowerCase().trim();
+            const tbody = document.getElementById('auditTableBody');
+
+            let filtered = auditEntries;
+            if (search) {
+                filtered = auditEntries.filter(e => {
+                    const changedByName = (e.changed_by_name || '').toLowerCase();
+                    const changedByEmail = (e.changed_by_email || '').toLowerCase();
+                    const targetName = (e.target_user_name || '').toLowerCase();
+                    const targetEmail = (e.target_user_email || '').toLowerCase();
+                    return changedByName.includes(search)
+                        || changedByEmail.includes(search)
+                        || targetName.includes(search)
+                        || targetEmail.includes(search);
+                });
+            }
+
+            const total = filtered.length;
+            const start = auditPage * AUDIT_PAGE_SIZE;
+            const end = Math.min(start + AUDIT_PAGE_SIZE, total);
+            const page = filtered.slice(start, end);
+            const totalPages = Math.ceil(total / AUDIT_PAGE_SIZE) || 1;
+
+            document.getElementById('auditRecordCount').textContent =
+                total > 0 ? `${start + 1}–${end} of ${total} entries` : `${total} entries`;
+            document.getElementById('auditPageInfo').textContent =
+                `Page ${auditPage + 1} of ${totalPages}`;
+            document.getElementById('auditPrevBtn').disabled = auditPage <= 0;
+            document.getElementById('auditNextBtn').disabled = end >= total;
+
+            if (!page.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No audit entries found matching current filters.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = page.map(e => {
+                const dt = new Date(e.created_at);
+                const dateStr = dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                const timeStr = dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+                const label = CHANGE_TYPE_LABELS[e.change_type] || e.change_type;
+                const badgeClass = getAuditBadgeClass(e.change_type);
+
+                const oldVal = e.old_value ? escapeHtml(e.old_value) : '';
+                const newVal = e.new_value ? escapeHtml(e.new_value) : '';
+                let detailHtml = '';
+                if (oldVal && newVal) {
+                    detailHtml = `<span style="color:var(--text-secondary);">${oldVal}</span>
+                        <span class="audit-detail-arrow">→</span>
+                        <span>${newVal}</span>`;
+                } else if (newVal) {
+                    detailHtml = `<span>${newVal}</span>`;
+                } else if (oldVal) {
+                    detailHtml = `<span style="color:var(--text-secondary);">${oldVal}</span>`;
+                } else if (e.metadata) {
+                    try {
+                        const meta = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata;
+                        detailHtml = `<span style="font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(JSON.stringify(meta).slice(0, 60))}</span>`;
+                    } catch (_) {
+                        detailHtml = `<span style="color:var(--text-muted);">—</span>`;
+                    }
+                } else {
+                    detailHtml = `<span style="color:var(--text-muted);">—</span>`;
+                }
+
+                const orgName = e.org_name ? escapeHtml(e.org_name) : '<span style="color:var(--text-muted);">—</span>';
+                const reason = e.reason
+                    ? `<span class="audit-reason">${escapeHtml(e.reason)}</span>`
+                    : `<span class="audit-no-reason">—</span>`;
+
+                return `<tr>
+                    <td>
+                        <div style="font-size:0.875rem;">${dateStr}</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);">${timeStr}</div>
+                    </td>
+                    <td>
+                        <div class="audit-user-cell">
+                            <span class="audit-user-name">${escapeHtml(e.changed_by_name || 'System')}</span>
+                            <span class="audit-user-email">${escapeHtml(e.changed_by_email || '')}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="audit-user-cell">
+                            <span class="audit-user-name">${escapeHtml(e.target_user_name || '—')}</span>
+                            <span class="audit-user-email">${escapeHtml(e.target_user_email || '')}</span>
+                        </div>
+                    </td>
+                    <td>${orgName}</td>
+                    <td><span class="audit-change-badge ${badgeClass}">${label}</span></td>
+                    <td style="font-size:0.875rem;">${detailHtml}</td>
+                    <td>${reason}</td>
+                </tr>`;
+            }).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function auditChangePage(delta) {
+            const search = (document.getElementById('auditSearchInput').value || '').toLowerCase().trim();
+            let filtered = auditEntries;
+            if (search) {
+                filtered = auditEntries.filter(e => {
+                    return (e.changed_by_name || '').toLowerCase().includes(search)
+                        || (e.changed_by_email || '').toLowerCase().includes(search)
+                        || (e.target_user_name || '').toLowerCase().includes(search)
+                        || (e.target_user_email || '').toLowerCase().includes(search);
+                });
+            }
+            const totalPages = Math.ceil(filtered.length / AUDIT_PAGE_SIZE) || 1;
+            auditPage = Math.max(0, Math.min(auditPage + delta, totalPages - 1));
+            renderAuditTable();
         }
 
         // ============================================

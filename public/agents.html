@@ -2949,7 +2949,7 @@
             const btnEdit = document.getElementById('btnEdit');
             const btnDelete = document.getElementById('btnDelete');
             const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-            const isAdmin = currentUser?.role === 'admin';
+            const isAdmin = currentUser?.is_platform_admin === true || ['admin', 'owner'].includes(currentUser?.org_role);
 
             if (agent.is_system && !isAdmin) {
                 btnEdit.style.display = 'none';

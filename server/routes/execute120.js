@@ -216,14 +216,13 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Get user profile with department and business role
+            // Get user profile with department
             const { data: user, error: userError } = await supabase
                 .from('users')
                 .select(`
                     id,
                     email,
                     display_name,
-                    business_role,
                     department_id
                 `)
                 .eq('id', userId)
@@ -231,6 +230,25 @@ module.exports = function(supabase) {
 
             if (userError && userError.code !== 'PGRST116') {
                 console.error('Error fetching user:', userError);
+            }
+
+            // Get business_role from organization_members (per-org, Phase 70b)
+            const orgId = req.headers['x-org-id'] || null;
+            let userBusinessRole = 'ic';
+            if (user) {
+                const memberQuery = supabase
+                    .from('organization_members')
+                    .select('business_role')
+                    .eq('user_id', userId)
+                    .eq('status', 'active');
+
+                if (orgId) {
+                    memberQuery.eq('org_id', orgId);
+                }
+
+                const { data: membership } = await memberQuery.limit(1).maybeSingle();
+                userBusinessRole = membership?.business_role || 'ic';
+                if (user) user.business_role = userBusinessRole;
             }
 
             // Get department details if user has one
@@ -246,11 +264,11 @@ module.exports = function(supabase) {
 
             // Get business role info
             let roleInfo = null;
-            if (user?.business_role) {
+            if (userBusinessRole) {
                 const { data: roleData } = await supabase
                     .from('business_role_levels')
                     .select('id, name, level, icon')
-                    .eq('id', user.business_role)
+                    .eq('id', userBusinessRole)
                     .single();
                 roleInfo = roleData;
             }
@@ -307,15 +325,32 @@ module.exports = function(supabase) {
             if (userId) {
                 const { data: userData } = await supabase
                     .from('users')
-                    .select('department_id, business_role')
+                    .select('department_id')
                     .eq('id', userId)
                     .single();
                 user = userData;
             }
 
+            // Get business_role from organization_members (per-org, Phase 70b)
+            let userBusinessRole = 'ic';
+            if (userId) {
+                const memberQuery = supabase
+                    .from('organization_members')
+                    .select('business_role')
+                    .eq('user_id', userId)
+                    .eq('status', 'active');
+
+                if (orgId) {
+                    memberQuery.eq('org_id', orgId);
+                }
+
+                const { data: membership } = await memberQuery.limit(1).maybeSingle();
+                userBusinessRole = membership?.business_role || 'ic';
+            }
+
             // Use explicit department_id param if provided, else user's own department
             const deptId = department_id || user?.department_id;
-            const roleLevel = user?.business_role || 'ic';
+            const roleLevel = userBusinessRole;
 
             // Get user's role level number for filtering
             let userRoleLevelNum = 1; // Default IC level

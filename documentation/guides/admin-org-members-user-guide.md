@@ -1,7 +1,7 @@
 # Team Members User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 22, 2026
+**Last Updated:** March 13, 2026
 
 ---
 
@@ -41,12 +41,12 @@ Team Members management enables collaboration within your organization. By invit
 1. Click the **Invite Member** button
 2. Enter the member's email address
 3. Select an appropriate role:
-   - **Admin**: Full access, can manage members
-   - **Consultant**: Can work with clients and data
+   - **Admin**: Full access, can manage members and content
+   - **Member**: Can work with agents, workflows, and data
    - **Viewer**: Read-only access
 4. Click **Send Invitation**
 
-**Note:** The user must already have an Insight 360 account. If they don't, ask them to register first.
+**Note:** If the email address is not yet registered on the platform, Insight 360 will automatically send an invitation email and create the account when the user accepts. You do not need to ask them to register first.
 
 ### Changing a Member's Role
 
@@ -55,7 +55,11 @@ Team Members management enables collaboration within your organization. By invit
 3. Select the new role from the dropdown
 4. Click **Save Changes**
 
-**Note:** You cannot change an owner's role, and only owners/admins can edit roles.
+**Notes:**
+- Only owners and admins can change member roles.
+- You cannot change the owner's role unless you are the owner.
+- Admins cannot promote anyone to owner. Ownership transfer is a separate, explicit operation that only the current owner can perform.
+- All role changes are recorded in the platform audit trail.
 
 ### Removing a Member
 
@@ -78,10 +82,12 @@ Team Members management enables collaboration within your organization. By invit
 
 | Role | Description | Permissions |
 |------|-------------|-------------|
-| **Owner** | Organization creator/primary admin | Full access, can delete org, manage all members |
-| **Admin** | Trusted team lead | Full access except deleting org, can manage members |
-| **Consultant** | Active team member | Can create/edit clients, run agents, access data |
+| **Owner** | Organization creator/primary admin | Full access, can delete org, manage all members, transfer ownership |
+| **Admin** | Trusted team lead | Full access except deleting org, can invite/remove members, change roles (cannot promote to owner) |
+| **Member** | Active team member | Can create/edit clients, run agents, use workflows and data |
 | **Viewer** | Read-only observer | Can view data but cannot make changes |
+
+**Important:** Ownership transfer is intentionally restricted. An admin cannot elevate themselves or any other user to owner. Only the current owner can transfer ownership. This protects against unauthorized privilege escalation.
 
 ---
 
@@ -98,9 +104,10 @@ Team Members management enables collaboration within your organization. By invit
 
 | Issue | Solution |
 |-------|----------|
-| Can't invite member | "User not found" - the email must be registered in Insight 360 first |
+| Can't invite member | Verify the email address is correct. The system will create the account if it doesn't exist yet. |
 | Can't see Edit/Remove buttons | You need Admin or Owner role to manage members |
-| Can't change owner's role | Owners cannot be demoted. Transfer ownership through database admin. |
-| Owner can't leave | Owners must delete the organization or contact support to transfer ownership |
-| Invitation not appearing | The invited user should refresh their page or log out and back in |
-| Member status shows "Pending" | The member hasn't accepted yet (if invitation system is email-based) |
+| Can't change owner's role | Only the owner can initiate ownership transfer. Contact the current owner or a platform admin. |
+| "Only the current owner can transfer ownership" error | You are attempting to set a role to "owner" as a non-owner admin. Only the current owner may do this. |
+| Owner can't leave | Owners must transfer ownership to another member before they can leave. |
+| Invitation not appearing | The invited user should check their email and accept the invitation link. |
+| Member status shows "Pending" | The member has been invited but has not accepted the invitation email yet. |

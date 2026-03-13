@@ -98,7 +98,10 @@ const ALLOWED_DOCS = [
     'digest-technical-guide.md',
     // Chrome Extension
     'chrome-extension-user-guide.md',
-    'chrome-extension-technical-guide.md'
+    'chrome-extension-technical-guide.md',
+    // Role Audit (Phase 70)
+    'role-audit-user-guide.md',
+    'role-audit-technical-guide.md'
 ];
 
 /**

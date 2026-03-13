@@ -40,7 +40,7 @@ class DirectionModalService {
     show(user) {
         if (!this.overlay) this.init();
 
-        const isAdmin = user.role === 'admin';
+        const isAdmin = user.is_platform_admin === true || ['admin', 'owner'].includes(user.org_role);
         const displayName = user.display_name || user.email?.split('@')[0] || 'User';
         const initials = this.getInitials(user);
         const roleLabel = (user.role || 'user').charAt(0).toUpperCase() + (user.role || 'user').slice(1);

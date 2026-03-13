@@ -154,6 +154,7 @@ const openBrainRoutes = require('./routes/openBrain');
 const platformMcpRoutes = require('./routes/platformMcp');
 const mcpRoutes = require('./routes/mcp');
 const digestRoutes = require('./routes/digest');
+const roleAuditRoutes = require('./routes/roleAudit');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -564,6 +565,7 @@ function initializeServices() {
         app.use('/api/visualizations', visualizationsRoutes);
         app.use('/api/research-studios', researchStudioRoutes(supabase));
         app.use('/api/users', usersRoutes);
+        app.use('/api/role-audit', roleAuditRoutes(supabase));
         app.use('/api/organizations', organizationsRoutes(supabase));
         app.use('/api/org-members', orgMembersRoutes(supabase));
         app.use('/api/clients', clientsRoutes(supabase));

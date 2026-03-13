@@ -175,18 +175,20 @@ module.exports = function(supabase) {
 
             // Check org membership role (admin/owner in their default org)
             let org_role = null;
+            let org_business_role = null;
             const defaultOrgId = profile?.default_org_id || null;
             if (defaultOrgId) {
                 try {
                     const { data: membership } = await supabase
                         .from('organization_members')
-                        .select('role')
+                        .select('role, business_role')
                         .eq('user_id', data.user.id)
                         .eq('org_id', defaultOrgId)
                         .eq('status', 'active')
                         .maybeSingle();
                     if (membership) {
                         org_role = membership.role;
+                        org_business_role = membership.business_role;
                     }
                 } catch (e) {
                     console.warn('Could not check org membership role at login:', e.message);
@@ -197,12 +199,23 @@ module.exports = function(supabase) {
                 id: data.user.id,
                 email: data.user.email,
                 display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
-                role: profile?.role || 'user',
+                role: profile?.role || 'user', // DEPRECATED
                 preferences: profile?.preferences || {},
                 default_org_id: defaultOrgId,
                 is_platform_admin,
                 platform_admin_role,
-                org_role
+                org_role,
+                roles: {
+                    platform: {
+                        is_admin: is_platform_admin,
+                        role: platform_admin_role
+                    },
+                    org: {
+                        org_id: defaultOrgId,
+                        role: org_role,
+                        business_role: org_business_role || null
+                    }
+                }
             };
 
             // Cache the profile for subsequent requests
@@ -467,6 +480,25 @@ module.exports = function(supabase) {
                     .eq('id', userId);
             }
 
+            // Activate pending organization memberships
+            try {
+                const { data: pendingMemberships, error: pendingError } = await supabase
+                    .from('organization_members')
+                    .update({
+                        status: 'active',
+                        joined_at: new Date().toISOString()
+                    })
+                    .eq('user_id', userId)
+                    .eq('status', 'pending')
+                    .select();
+
+                if (!pendingError && pendingMemberships?.length > 0) {
+                    console.log(`Activated ${pendingMemberships.length} pending org membership(s) for user ${sessionData.user.email}`);
+                }
+            } catch (membershipError) {
+                console.error('Error activating org memberships (non-fatal):', membershipError);
+            }
+
             // Get updated user info
             const { data: user } = await supabase
                 .from('users')
@@ -673,7 +705,7 @@ module.exports = function(supabase) {
                     success: true,
                     user: {
                         ...cachedProfile,
-                        is_admin: cachedProfile.role === 'admin' || cachedProfile.is_platform_admin === true || ['admin', 'owner'].includes(cachedProfile.org_role)
+                        is_admin: cachedProfile.is_platform_admin === true || ['admin', 'owner'].includes(cachedProfile.org_role) // DEPRECATED
                     }
                 });
             }
@@ -709,6 +741,7 @@ module.exports = function(supabase) {
 
             // Check org membership role
             let org_role = null;
+            let org_business_role = null;
             const defaultOrgId = profile?.default_org_id || null;
             // Try stored default_org_id first, then fall back to x-org-id header
             const effectiveOrgId = defaultOrgId || req.headers['x-org-id'] || null;
@@ -716,13 +749,14 @@ module.exports = function(supabase) {
                 try {
                     const { data: membership } = await supabase
                         .from('organization_members')
-                        .select('role')
+                        .select('role, business_role')
                         .eq('user_id', user.id)
                         .eq('org_id', effectiveOrgId)
                         .eq('status', 'active')
                         .maybeSingle();
                     if (membership) {
                         org_role = membership.role;
+                        org_business_role = membership.business_role;
                     }
                 } catch (e) {
                     console.warn('Could not check org membership role:', e.message);
@@ -733,12 +767,24 @@ module.exports = function(supabase) {
                 id: user.id,
                 email: user.email,
                 display_name: profile?.display_name || user.user_metadata?.display_name || user.email.split('@')[0],
-                role: profile?.role || 'user',
+                role: profile?.role || 'user', // DEPRECATED: kept for backward compat
                 preferences: profile?.preferences || {},
                 created_at: profile?.created_at || user.created_at,
                 is_platform_admin,
                 platform_admin_role,
-                org_role
+                org_role,
+                // Structured roles object (new canonical format)
+                roles: {
+                    platform: {
+                        is_admin: is_platform_admin,
+                        role: platform_admin_role
+                    },
+                    org: {
+                        org_id: effectiveOrgId || null,
+                        role: org_role,
+                        business_role: org_business_role || null
+                    }
+                }
             };
 
             // Cache the profile
@@ -748,7 +794,7 @@ module.exports = function(supabase) {
                 success: true,
                 user: {
                     ...userResponse,
-                    is_admin: userResponse.role === 'admin' || is_platform_admin || ['admin', 'owner'].includes(org_role)
+                    is_admin: is_platform_admin || ['admin', 'owner'].includes(org_role) // DEPRECATED: backward compat
                 }
             });
 
@@ -788,27 +834,34 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Check if user is admin (system role OR platform admin)
-            const { data: profile } = await supabase
-                .from('users')
-                .select('role')
-                .eq('id', user.id)
-                .single();
+            // Check platform admin status
+            let isAdmin = false;
+            try {
+                const { data: adminRecord } = await supabase
+                    .from('platform_admins')
+                    .select('role')
+                    .eq('user_id', user.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                if (adminRecord) isAdmin = true;
+            } catch (e) {
+                // platform_admins table may not exist
+            }
 
-            let isAdmin = profile?.role === 'admin';
-
-            // Also check platform_admins table
+            // Also check org admin/owner role
             if (!isAdmin) {
-                try {
-                    const { data: adminRecord } = await supabase
-                        .from('platform_admins')
+                const orgId = req.headers['x-org-id'] || req.query.org_id || null;
+                if (orgId) {
+                    const { data: membership } = await supabase
+                        .from('organization_members')
                         .select('role')
                         .eq('user_id', user.id)
-                        .eq('is_active', true)
+                        .eq('org_id', orgId)
+                        .eq('status', 'active')
                         .maybeSingle();
-                    if (adminRecord) isAdmin = true;
-                } catch (e) {
-                    // platform_admins table may not exist
+                    if (membership && ['owner', 'admin'].includes(membership.role)) {
+                        isAdmin = true;
+                    }
                 }
             }
 
@@ -820,7 +873,6 @@ module.exports = function(supabase) {
             }
 
             req.user = user;
-            req.userRole = profile?.role || 'user';
             next();
 
         } catch (error) {
@@ -840,20 +892,18 @@ module.exports = function(supabase) {
         try {
             const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId || null;
 
-            // Check if caller is a platform admin or system admin
-            let isPlatformAdmin = req.userRole === 'admin'; // System admins get full visibility
-            if (!isPlatformAdmin) {
-                try {
-                    const { data: adminRecord } = await supabase
-                        .from('platform_admins')
-                        .select('role')
-                        .eq('user_id', req.user.id)
-                        .eq('is_active', true)
-                        .maybeSingle();
-                    if (adminRecord) isPlatformAdmin = true;
-                } catch (e) {
-                    // platform_admins table may not exist
-                }
+            // Check if caller is a platform admin
+            let isPlatformAdmin = false;
+            try {
+                const { data: adminRecord } = await supabase
+                    .from('platform_admins')
+                    .select('role')
+                    .eq('user_id', req.user.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                if (adminRecord) isPlatformAdmin = true;
+            } catch (e) {
+                // platform_admins table may not exist
             }
 
             if (isPlatformAdmin) {

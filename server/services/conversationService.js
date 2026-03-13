@@ -372,16 +372,24 @@ async function getAdminConversations(options = {}) {
         }
 
         if (businessRole) {
-            // business_role IS a direct column on users
-            const { data: roleUsers, error: roleError } = await supabase
-                .from('users')
-                .select('id')
-                .eq('business_role', businessRole);
+            // business_role is per-org on organization_members (Phase 70b)
+            let roleQuery = supabase
+                .from('organization_members')
+                .select('user_id')
+                .eq('business_role', businessRole)
+                .eq('status', 'active');
+
+            // Scope to org if available
+            if (orgId) {
+                roleQuery = roleQuery.eq('org_id', orgId);
+            }
+
+            const { data: roleMembers, error: roleError } = await roleQuery;
 
             if (roleError) {
                 console.error('Error filtering by business_role:', roleError);
             } else {
-                const roleUserIds = (roleUsers || []).map(u => u.id);
+                const roleUserIds = (roleMembers || []).map(m => m.user_id);
                 // Intersect with existing filter if org filter was also applied
                 if (filteredUserIds) {
                     filteredUserIds = filteredUserIds.filter(id => roleUserIds.includes(id));
@@ -465,7 +473,6 @@ async function getAdminConversations(options = {}) {
                     id,
                     email,
                     display_name,
-                    business_role,
                     default_org_id
                 `)
                 .in('id', userIds);
@@ -475,18 +482,20 @@ async function getAdminConversations(options = {}) {
             }
         }
 
-        // Fetch org membership for these users
+        // Fetch org membership for these users (includes business_role per-org)
         let userOrgMap = new Map();
+        let userBusinessRoleMap = new Map();
         if (userIds.length > 0) {
             const { data: memberships, error: memError } = await supabase
                 .from('organization_members')
-                .select('user_id, org_id')
+                .select('user_id, org_id, business_role')
                 .in('user_id', userIds)
                 .eq('status', 'active');
 
             if (!memError && memberships) {
                 for (const m of memberships) {
                     userOrgMap.set(m.user_id, m.org_id);
+                    userBusinessRoleMap.set(m.user_id, m.business_role || 'ic');
                 }
             }
         }
@@ -515,6 +524,7 @@ async function getAdminConversations(options = {}) {
             const effectiveOrgId = memberOrgId || u.default_org_id;
             return [u.id, {
                 ...u,
+                business_role: userBusinessRoleMap.get(u.id) || 'ic',
                 org_id: effectiveOrgId,
                 organization: effectiveOrgId ? orgMap.get(effectiveOrgId) : null
             }];
@@ -576,9 +586,24 @@ async function getConversationStats() {
         if (userIds.length > 0) {
             const { data: userData } = await supabase
                 .from('users')
-                .select('id, department_id, business_role')
+                .select('id, department_id')
                 .in('id', userIds);
             users = userData || [];
+        }
+
+        // Fetch business_role from organization_members (per-org, Phase 70b)
+        let userBusinessRoleMap = new Map();
+        if (userIds.length > 0) {
+            const { data: memberships } = await supabase
+                .from('organization_members')
+                .select('user_id, business_role')
+                .in('user_id', userIds)
+                .eq('status', 'active');
+            if (memberships) {
+                for (const m of memberships) {
+                    userBusinessRoleMap.set(m.user_id, m.business_role || 'ic');
+                }
+            }
         }
 
         // Fetch department names
@@ -604,7 +629,7 @@ async function getConversationStats() {
             const user = conv.user_id ? userMap.get(conv.user_id) : null;
             const deptId = user?.department_id || 'unassigned';
             const deptName = deptId !== 'unassigned' ? deptMap.get(deptId) || 'Unknown' : 'Unassigned';
-            const role = user?.business_role || 'unassigned';
+            const role = (conv.user_id ? userBusinessRoleMap.get(conv.user_id) : null) || 'unassigned';
 
             if (!deptStats[deptId]) {
                 deptStats[deptId] = { id: deptId, name: deptName, count: 0 };
@@ -654,11 +679,21 @@ async function getAdminConversation(conversationId) {
         if (conversation.user_id) {
             const { data: userData } = await supabase
                 .from('users')
-                .select('id, email, display_name, business_role, department_id')
+                .select('id, email, display_name, department_id')
                 .eq('id', conversation.user_id)
                 .single();
 
             if (userData) {
+                // Get business_role from organization_members (per-org, Phase 70b)
+                const { data: membership } = await supabase
+                    .from('organization_members')
+                    .select('business_role')
+                    .eq('user_id', userData.id)
+                    .eq('status', 'active')
+                    .limit(1)
+                    .maybeSingle();
+                userData.business_role = membership?.business_role || 'ic';
+
                 userInfo = userData;
 
                 // Get department info

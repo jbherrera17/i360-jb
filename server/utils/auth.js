@@ -48,7 +48,7 @@ function getUserRole(req) {
     if (!isAuthenticated(req)) {
         return 'anonymous';
     }
-    return req.userRole || 'user';
+    return req.orgRole || req.userRole || 'user';
 }
 
 /**
@@ -57,7 +57,7 @@ function getUserRole(req) {
  * @returns {boolean} True if user is an admin
  */
 function isAdmin(req) {
-    return getUserRole(req) === 'admin';
+    return req.isPlatformAdmin === true || ['admin', 'owner'].includes(req.orgRole);
 }
 
 /**
@@ -69,7 +69,10 @@ function isAdmin(req) {
  */
 async function isAdminAsync(req, supabase) {
     // First check if already set on request
-    if (req.userRole === 'admin') {
+    if (req.isPlatformAdmin) {
+        return true;
+    }
+    if (['admin', 'owner'].includes(req.orgRole)) {
         return true;
     }
 
@@ -79,13 +82,9 @@ async function isAdminAsync(req, supabase) {
     }
 
     try {
-        const { data } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', userId)
-            .single();
-
-        return data?.role === 'admin';
+        const { data: isAdmin } = await supabase
+            .rpc('is_platform_admin', { p_user_id: userId });
+        return !!isAdmin;
     } catch (error) {
         console.error('Error checking admin status:', error);
         return false;

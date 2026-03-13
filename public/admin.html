@@ -2697,7 +2697,7 @@
                 return;
             }
 
-            if (!user.is_admin) {
+            if (!user.is_platform_admin && !['admin', 'owner'].includes(user.org_role)) {
                 document.getElementById('accessDenied').style.display = 'flex';
                 lucide.createIcons();
                 return;

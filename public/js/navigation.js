@@ -90,6 +90,7 @@ const navConfig = {
             items: [
                 { href: '/administrator.html', icon: 'shield', label: 'Administrator' },
                 { href: '/admin-resource-access.html', icon: 'shield-check', label: 'Resource Access' },
+                { href: '/admin-role-audit.html', icon: 'file-clock', label: 'Role Audit' },
                 { href: '/integrations.html', icon: 'plug', label: 'Integrations' },
                 { href: '/mcp-connections.html', icon: 'plug-zap', label: 'MCP Connections' }
             ]
@@ -323,7 +324,12 @@ function getCurrentUserRole() {
 function isCurrentUserAdmin() {
     const user = getCurrentUser();
     if (!user) return false;
-    return user.role === 'admin' || user.is_platform_admin === true || ['admin', 'owner'].includes(user.org_role);
+    // Use structured roles if available, fall back to flat fields
+    if (user.roles) {
+        return user.roles.platform?.is_admin === true || ['admin', 'owner'].includes(user.roles.org?.role);
+    }
+    // Backward compat: flat fields
+    return user.is_platform_admin === true || ['admin', 'owner'].includes(user.org_role);
 }
 
 /**
@@ -539,8 +545,9 @@ function generateUserProfileHTML() {
     const initials = getUserInitials(user);
     const displayName = user.display_name || user.email?.split('@')[0] || 'User';
     // Sanitize role to only allow alphanumeric characters (prevents XSS in class name)
-    const role = (user.role || 'user').replace(/[^a-zA-Z0-9]/g, '');
-    // Show "Platform Admin" for platform admins instead of their system role
+    const orgRole = user.org_role || user.role || 'user';
+    const role = orgRole.replace(/[^a-zA-Z0-9]/g, '');
+    // Show "Platform Admin" for platform admins, org role otherwise
     const roleLabel = user.is_platform_admin
         ? 'Platform Admin'
         : role.charAt(0).toUpperCase() + role.slice(1);
@@ -560,7 +567,7 @@ function generateUserProfileHTML() {
                     <i data-lucide="user"></i>
                     <span>Profile</span>
                 </a>
-                <a href="/administrator.html" class="user-menu-item ${(role !== 'admin' && !user.is_platform_admin && !['admin', 'owner'].includes(user.org_role)) ? 'hidden' : ''}">
+                <a href="/administrator.html" class="user-menu-item ${!isCurrentUserAdmin() ? 'hidden' : ''}">
                     <i data-lucide="shield"></i>
                     <span>Administrator</span>
                 </a>
@@ -669,6 +676,7 @@ async function _refreshUserSession() {
         stored.is_admin = data.user.is_admin || false;
         stored.role = data.user.role || stored.role || 'user';
         stored.org_role = data.user.org_role || null;
+        stored.roles = data.user.roles || null;
         localStorage.setItem('insight360_user', JSON.stringify(stored));
     } catch (e) {
         // Non-critical — navigation renders from whatever is cached

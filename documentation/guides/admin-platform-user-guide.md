@@ -1,7 +1,7 @@
 # Platform Administration User Guide
 
 **For:** Synergi Platform Administrators
-**Last Updated:** Wednesday, February 12, 2026
+**Last Updated:** March 13, 2026
 
 ---
 
@@ -300,3 +300,25 @@ When a platform admin or organization owner deletes an organization:
 - Roles: `super_admin`, `admin`, or `support`
 - Support role has view-only access to most features
 - User management (suspend/reactivate) requires `admin` or `super_admin` role
+
+### User Management API Access (Phase 70 Hardening)
+
+All `/api/users` endpoints now enforce explicit authorization:
+
+| Operation | Required Access |
+|-----------|----------------|
+| View user list or individual user | Platform admin, OR org owner/admin (scoped to their org) |
+| Update a user's profile | Platform admin only |
+| Update a user's org/platform assignments | Platform admin only |
+
+Org admins who call the user list endpoints must pass their organization ID (via the `x-org-id` header or `org_id` query parameter). Without it, the request will be rejected even for org admins.
+
+### Role Change Audit Trail (Phase 70)
+
+All role and permission changes across the platform are now recorded in the `role_change_audit` table. This includes:
+- Platform admin grants, updates, and removals
+- Organization membership invitations, role changes, and removals
+- Ownership transfers
+- Client portal access grants and removals
+
+Platform admins can query the full audit trail. Org admins can query audit entries scoped to their own organization. See the [Role Audit Technical Guide](./role-audit-technical-guide.md) for API details.

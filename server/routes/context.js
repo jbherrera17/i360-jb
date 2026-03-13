@@ -561,12 +561,10 @@ router.get('/assets', async (req, res) => {
         }
         // === END PHASE 45 ===
 
-        // === PHASE 46: Organization filtering ===
-        if (orgId) {
-            // Show resources belonging to this org OR system resources (no org)
-            query = query.or(`org_id.eq.${orgId},org_id.is.null`);
-        }
-        // === END PHASE 46 ===
+        // NOTE: Organization filtering is handled by buildResourceAccessFilter above.
+        // A previous Phase 46 org filter was removed here because chaining two .or()
+        // filters creates a malformed Supabase query (the second .or() conflicts with
+        // the first from buildResourceAccessFilter, causing zero results).
 
         // Filter by type
         if (type) {

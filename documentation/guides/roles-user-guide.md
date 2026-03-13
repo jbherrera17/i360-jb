@@ -342,7 +342,7 @@ Templates can be customized or used as-is.
 |-------|-------|
 | [Tag Management Guide](./tags-user-guide.md) | Understanding and managing tags |
 | [SynergiNexus Guide](./synerginexus-user-guide.md) | AI governance system |
-| [User Administration Guide](./admin-user-guide.md) | Managing users and permissions |
+| [Platform Administration Guide](./admin-platform-user-guide.md) | Managing users and permissions |
 | [Execute 120 Guide](./execute120-user-guide.md) | Personalized execution hub |
 
 ---

@@ -9,6 +9,27 @@ const router = express.Router();
 module.exports = function(supabase) {
 
     /**
+     * Log role changes to the role_change_audit table.
+     */
+    async function logRoleChange({ target_user_id, changed_by, change_type, entity_type, entity_id, org_id, old_value, new_value, reason }) {
+        try {
+            await supabase.from('role_change_audit').insert({
+                target_user_id,
+                changed_by,
+                change_type,
+                entity_type,
+                entity_id,
+                org_id,
+                old_value,
+                new_value,
+                reason
+            });
+        } catch (err) {
+            console.error('Failed to log role change:', err);
+        }
+    }
+
+    /**
      * GET /api/org-members/:orgId
      * List all members of an organization
      */
@@ -253,10 +274,12 @@ module.exports = function(supabase) {
                 .single();
 
             if (existingMember) {
-                if (existingMember.status === 'active') {
+                if (existingMember.status === 'active' || existingMember.status === 'pending') {
                     return res.status(400).json({
                         success: false,
-                        error: 'User is already a member of this organization'
+                        error: existingMember.status === 'pending'
+                            ? 'User has already been invited and is pending acceptance'
+                            : 'User is already a member of this organization'
                     });
                 }
                 // Reactivate if previously removed
@@ -264,9 +287,8 @@ module.exports = function(supabase) {
                     .from('organization_members')
                     .update({
                         role,
-                        status: 'active',
-                        invited_by: userId,
-                        joined_at: new Date().toISOString()
+                        status: 'pending',
+                        invited_by: userId
                     })
                     .eq('id', existingMember.id)
                     .select()
@@ -283,14 +305,25 @@ module.exports = function(supabase) {
                     org_id: orgId,
                     user_id: invitee.id,
                     role,
-                    status: 'active',
-                    invited_by: userId,
-                    joined_at: new Date().toISOString()
+                    status: 'pending',
+                    invited_by: userId
                 })
                 .select()
                 .single();
 
             if (error) throw error;
+
+            await logRoleChange({
+                target_user_id: invitee.id,
+                changed_by: userId,
+                change_type: 'org_member_invited',
+                entity_type: 'organization_members',
+                entity_id: data.id,
+                org_id: orgId,
+                old_value: null,
+                new_value: role,
+                reason: `Invited to organization with role: ${role}`
+            });
 
             res.status(201).json({
                 success: true,
@@ -361,6 +394,14 @@ module.exports = function(supabase) {
                 });
             }
 
+            // Owner transfer is a separate explicit operation — admins cannot promote to owner
+            if (role === 'owner' && membership.role !== 'owner') {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Only the current owner can transfer ownership. Use the ownership transfer operation instead.'
+                });
+            }
+
             // Validate role
             const validRoles = ['owner', 'admin', 'member', 'viewer'];
             if (role && !validRoles.includes(role)) {
@@ -381,6 +422,20 @@ module.exports = function(supabase) {
                 .single();
 
             if (error) throw error;
+
+            if (role && role !== targetMember.role) {
+                await logRoleChange({
+                    target_user_id: targetMember.user_id,
+                    changed_by: userId,
+                    change_type: role === 'owner' ? 'org_ownership_transferred' : 'org_member_role_changed',
+                    entity_type: 'organization_members',
+                    entity_id: memberId,
+                    org_id: orgId,
+                    old_value: targetMember.role,
+                    new_value: role,
+                    reason: `Role changed from ${targetMember.role} to ${role}`
+                });
+            }
 
             res.json({
                 success: true,
@@ -457,6 +512,18 @@ module.exports = function(supabase) {
                 .eq('id', memberId);
 
             if (error) throw error;
+
+            await logRoleChange({
+                target_user_id: targetMember.user_id,
+                changed_by: userId,
+                change_type: 'org_member_removed',
+                entity_type: 'organization_members',
+                entity_id: memberId,
+                org_id: orgId,
+                old_value: targetMember.role,
+                new_value: 'removed',
+                reason: 'Member removed from organization'
+            });
 
             res.json({
                 success: true,

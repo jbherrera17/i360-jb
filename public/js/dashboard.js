@@ -217,7 +217,8 @@ async function loadLLMProviderStatus() {
     try {
         // Check if user is admin to show check button
         const userRole = await getCurrentUserRole();
-        if (checkBtnEl && (userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'owner')) {
+        const user = JSON.parse(localStorage.getItem('insight360-user') || '{}');
+        if (checkBtnEl && (user.is_platform_admin || userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'owner')) {
             checkBtnEl.style.display = 'inline-flex';
         }
 

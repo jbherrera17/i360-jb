@@ -1,8 +1,8 @@
 # Role Management Technical Guide
 
 **For:** Developers and System Administrators
-**Version:** 3.0
-**Last Updated:** January 9, 2026
+**Version:** 3.1
+**Last Updated:** March 13, 2026
 
 ---
 
@@ -499,6 +499,37 @@ CREATE POLICY roles_select ON department_roles
 
 ---
 
+## Security Hardening (Phase 70)
+
+### /api/users Authorization Requirements
+
+All `/api/users` endpoints now enforce explicit authorization middleware before any database access:
+
+| Endpoint | Required Role |
+|----------|---------------|
+| `GET /api/users` | Platform admin OR org owner/admin (with `x-org-id` header or `org_id` query param) |
+| `GET /api/users/unified` | Platform admin OR org owner/admin |
+| `GET /api/users/:id` | Platform admin OR org owner/admin |
+| `PUT /api/users/:id` | Platform admin only |
+| `PUT /api/users/:id/assignments` | Platform admin only |
+
+Two middleware functions enforce this in `server/routes/users.js`:
+- `requireUserManagementAccess` — allows platform admin OR org owner/admin
+- `requirePlatformAdminAccess` — allows platform admin only
+
+Org context is resolved from the `x-org-id` request header or the `org_id` query parameter.
+
+### Owner Transfer Protection
+
+`PUT /api/org-members/:orgId/:memberId` (in `server/routes/org-members.js`) enforces two checks before applying any role update:
+
+1. **Cannot change the owner's role unless you are the owner.** If `targetMember.role === 'owner'` and `targetMember.user_id !== userId`, the request is rejected with HTTP 403.
+2. **Cannot promote to owner unless you are the owner.** If `role === 'owner'` and `membership.role !== 'owner'`, the request is rejected with HTTP 403 and the message: "Only the current owner can transfer ownership. Use the ownership transfer operation instead."
+
+This prevents privilege escalation via the standard role-change endpoint.
+
+---
+
 ## Seed Data
 
 System templates are pre-populated for each department:
@@ -536,6 +567,7 @@ const seedRoles = [
 | Document | Purpose |
 |----------|---------|
 | [Roles User Guide](./roles-user-guide.md) | End-user documentation |
+| [Role Audit Technical Guide](./role-audit-technical-guide.md) | Phase 70 audit trail — schema, API, and RLS |
 | [Tags Technical Guide](./tags-technical-guide.md) | Tag management API |
 | [SynergiNexus Technical Guide](./synerginexus-technical-guide.md) | Governance system |
-| [User Administration Guide](./admin-user-guide.md) | User management |
+| [Team Members User Guide](./admin-org-members-user-guide.md) | Org member management (end-user) |

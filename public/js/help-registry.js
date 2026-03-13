@@ -160,6 +160,11 @@ const HelpRegistry = {
             file: '/api/docs/admin-tier-setup-user-guide.md',
             title: 'Tier Setup Help'
         },
+        // Phase 70: Role Change Audit Trail
+        '/admin-role-audit': {
+            file: '/api/docs/role-audit-user-guide.md',
+            title: 'Role Change Audit Help'
+        },
         // Phase 45: Resource Access Control
         '/admin-resource-access': {
             file: '/api/docs/admin-resource-access-user-guide.md',

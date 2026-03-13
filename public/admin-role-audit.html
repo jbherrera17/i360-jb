@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Change Audit | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Summary stats */
+        .audit-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .audit-stat-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border);
+        }
+
+        .audit-stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .audit-stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Filters */
+        .filter-bar {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .filter-bar input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .filter-bar select {
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            min-width: 160px;
+        }
+
+        /* Table container */
+        .table-container {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-toolbar-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .audit-table th,
+        .audit-table td {
+            padding: 0.875rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .audit-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .audit-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .audit-table tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.875rem 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .pagination-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Badges */
+        .change-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-invite { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .badge-role-change { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .badge-removal { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .badge-admin { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+        .badge-client { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-activate { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-suspend { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .badge-transfer { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .badge-default { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+        /* User cell */
+        .user-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Detail cell */
+        .detail-arrow {
+            color: var(--text-muted);
+            margin: 0 0.25rem;
+        }
+
+        .reason-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.625rem;
+            font-size: 0.8rem;
+        }
+
+        /* Access denied */
+        .access-denied {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+
+        .access-denied svg {
+            width: 64px;
+            height: 64px;
+            color: var(--danger);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .access-denied h2 {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .access-denied p {
+            color: var(--text-secondary);
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+
+            <!-- Access denied state -->
+            <div id="accessDenied" class="access-denied hidden">
+                <i data-lucide="shield-x"></i>
+                <h2>Access Denied</h2>
+                <p>You need org admin or owner permissions to view the role audit trail.</p>
+                <a href="/" class="btn btn-primary" style="margin-top: var(--spacing-md);">
+                    <i data-lucide="home" style="width:16px;height:16px;"></i>
+                    Return to Dashboard
+                </a>
+            </div>
+
+            <!-- Main content -->
+            <div id="mainContent" class="hidden">
+                <header class="page-header">
+                    <div class="header-content">
+                        <h1>
+                            <i data-lucide="file-clock" style="width:28px;height:28px;color:var(--primary);"></i>
+                            Role Change Audit
+                        </h1>
+                        <p class="header-subtitle">Track all membership and role changes within your organization</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                            <i data-lucide="help-circle"></i>
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadAuditData()">
+                            <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </header>
+
+                <div style="padding: var(--spacing-xl);">
+
+                    <!-- Summary Stats -->
+                    <div class="audit-stats-grid" id="summaryGrid">
+                        <div class="audit-stat-card">
+                            <div class="audit-stat-label">Changes (30 days)</div>
+                            <div class="audit-stat-value" id="statTotal">-</div>
+                        </div>
+                        <div class="audit-stat-card">
+                            <div class="audit-stat-label">Members Invited</div>
+                            <div class="audit-stat-value" id="statInvited" style="color: var(--info);">-</div>
+                        </div>
+                        <div class="audit-stat-card">
+                            <div class="audit-stat-label">Role Changes</div>
+                            <div class="audit-stat-value" id="statRoleChanges" style="color: var(--warning);">-</div>
+                        </div>
+                        <div class="audit-stat-card">
+                            <div class="audit-stat-label">Members Removed</div>
+                            <div class="audit-stat-value" id="statRemovals" style="color: var(--danger);">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" placeholder="Search by name or email..." oninput="filterTable()">
+                        <select id="changeTypeFilter" onchange="loadAuditData()">
+                            <option value="">All Change Types</option>
+                            <option value="org_member_invited">Member Invited</option>
+                            <option value="org_member_role_changed">Member Role Changed</option>
+                            <option value="org_member_activated">Member Activated</option>
+                            <option value="org_member_suspended">Member Suspended</option>
+                            <option value="org_member_removed">Member Removed</option>
+                            <option value="org_ownership_transferred">Ownership Transferred</option>
+                            <option value="business_role_changed">Business Role Changed</option>
+                            <option value="client_access_granted">Client Access Granted</option>
+                            <option value="client_access_role_changed">Client Access Role Changed</option>
+                            <option value="client_access_removed">Client Access Removed</option>
+                        </select>
+                        <select id="dateRangeFilter" onchange="loadAuditData()">
+                            <option value="30">Last 30 days</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last 365 days</option>
+                            <option value="">All time</option>
+                        </select>
+                    </div>
+
+                    <!-- Audit Table -->
+                    <div class="table-container">
+                        <div class="table-toolbar">
+                            <div class="table-toolbar-title">
+                                <i data-lucide="list" style="width:16px;height:16px;color:var(--primary);"></i>
+                                Role Change History
+                            </div>
+                            <span id="recordCount" style="font-size: 0.8rem; color: var(--text-secondary);"></span>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="audit-table" id="auditTable">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:130px;">Date / Time</th>
+                                        <th style="min-width:160px;">Changed By</th>
+                                        <th style="min-width:160px;">User Affected</th>
+                                        <th style="min-width:160px;">Change Type</th>
+                                        <th style="min-width:180px;">Details</th>
+                                        <th style="min-width:140px;">Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auditTableBody">
+                                    <tr>
+                                        <td colspan="6" class="empty-state">Loading audit trail...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination">
+                            <button class="btn btn-secondary btn-sm" id="prevBtn" onclick="changePage(-1)" disabled>
+                                <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+                                Previous
+                            </button>
+                            <span class="pagination-info" id="pageInfo"></span>
+                            <button class="btn btn-secondary btn-sm" id="nextBtn" onclick="changePage(1)" disabled>
+                                Next
+                                <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        const PAGE_SIZE = 25;
+        let auditEntries = [];
+        let currentPage = 0;
+        let currentOrgId = null;
+
+        const CHANGE_TYPE_LABELS = {
+            platform_admin_granted: 'Platform Admin Granted',
+            platform_admin_updated: 'Platform Admin Role Updated',
+            platform_admin_removed: 'Platform Admin Removed',
+            org_member_invited: 'Member Invited',
+            org_member_role_changed: 'Member Role Changed',
+            org_member_activated: 'Member Activated',
+            org_member_suspended: 'Member Suspended',
+            org_member_removed: 'Member Removed',
+            org_ownership_transferred: 'Ownership Transferred',
+            business_role_changed: 'Business Role Changed',
+            client_access_granted: 'Client Access Granted',
+            client_access_role_changed: 'Client Access Role Changed',
+            client_access_removed: 'Client Access Removed'
+        };
+
+        function getBadgeClass(changeType) {
+            if (['platform_admin_granted', 'platform_admin_updated', 'platform_admin_removed'].includes(changeType)) return 'badge-admin';
+            if (changeType === 'org_member_invited') return 'badge-invite';
+            if (['org_member_role_changed', 'business_role_changed'].includes(changeType)) return 'badge-role-change';
+            if (['org_member_removed', 'platform_admin_removed', 'client_access_removed'].includes(changeType)) return 'badge-removal';
+            if (changeType === 'org_member_activated') return 'badge-activate';
+            if (changeType === 'org_member_suspended') return 'badge-suspend';
+            if (changeType === 'org_ownership_transferred') return 'badge-transfer';
+            if (['client_access_granted', 'client_access_role_changed'].includes(changeType)) return 'badge-client';
+            return 'badge-default';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        async function checkAccess() {
+            const token = localStorage.getItem('insight360_token');
+            if (!token) return false;
+            try {
+                const res = await fetch('/api/org-members/my-memberships', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return false;
+                const data = await res.json();
+                const memberships = data.data || [];
+                // Find an org where user is owner or admin
+                const adminMembership = memberships.find(m =>
+                    m.org_role === 'owner' || m.org_role === 'admin'
+                );
+                if (adminMembership) {
+                    currentOrgId = adminMembership.org_id;
+                    return true;
+                }
+                // Also accept platform admins (they can see all)
+                const platformRes = await fetch('/api/platform/config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                return platformRes.ok;
+            } catch (err) {
+                console.error('Access check failed:', err);
+                return false;
+            }
+        }
+
+        async function loadSummary() {
+            const token = localStorage.getItem('insight360_token');
+            const params = new URLSearchParams({ days: 30 });
+            if (currentOrgId) params.set('org_id', currentOrgId);
+            try {
+                const res = await fetch(`/api/role-audit/summary?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const s = data.data || {};
+                document.getElementById('statTotal').textContent = s.total_changes ?? '0';
+                document.getElementById('statInvited').textContent = s.by_type?.org_member_invited ?? '0';
+                const roleChanges = (s.by_type?.org_member_role_changed ?? 0)
+                    + (s.by_type?.business_role_changed ?? 0)
+                    + (s.by_type?.client_access_role_changed ?? 0);
+                document.getElementById('statRoleChanges').textContent = roleChanges;
+                const removals = (s.by_type?.org_member_removed ?? 0)
+                    + (s.by_type?.client_access_removed ?? 0);
+                document.getElementById('statRemovals').textContent = removals;
+            } catch (err) {
+                console.error('Failed to load summary:', err);
+            }
+        }
+
+        async function loadAuditData() {
+            const token = localStorage.getItem('insight360_token');
+            const tbody = document.getElementById('auditTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Loading...</td></tr>`;
+
+            currentPage = 0;
+
+            const changeType = document.getElementById('changeTypeFilter').value;
+            const days = document.getElementById('dateRangeFilter').value;
+
+            const params = new URLSearchParams({ limit: 200, offset: 0 });
+            if (currentOrgId) params.set('org_id', currentOrgId);
+            if (changeType) params.set('change_type', changeType);
+            if (days) {
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - parseInt(days, 10));
+                params.set('start_date', startDate.toISOString().split('T')[0]);
+            }
+
+            try {
+                const res = await fetch(`/api/role-audit?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger);">
+                        Failed to load audit trail: ${escapeHtml(err.error || 'API error')}.
+                        <br><small>Make sure the Phase 70 role_change_audit table has been deployed.</small>
+                    </td></tr>`;
+                    return;
+                }
+                const data = await res.json();
+                auditEntries = data.data || [];
+                renderTable();
+                loadSummary();
+            } catch (err) {
+                console.error('Failed to load audit data:', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger);">Network error loading audit trail.</td></tr>`;
+            }
+        }
+
+        function filterTable() {
+            currentPage = 0;
+            renderTable();
+        }
+
+        function renderTable() {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            const tbody = document.getElementById('auditTableBody');
+
+            let filtered = auditEntries;
+            if (search) {
+                filtered = auditEntries.filter(e =>
+                    (e.changed_by_name || '').toLowerCase().includes(search)
+                    || (e.changed_by_email || '').toLowerCase().includes(search)
+                    || (e.target_user_name || '').toLowerCase().includes(search)
+                    || (e.target_user_email || '').toLowerCase().includes(search)
+                );
+            }
+
+            const total = filtered.length;
+            const start = currentPage * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, total);
+            const page = filtered.slice(start, end);
+            const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+
+            document.getElementById('recordCount').textContent =
+                total > 0 ? `${start + 1}–${end} of ${total} entries` : '0 entries';
+            document.getElementById('pageInfo').textContent = `Page ${currentPage + 1} of ${totalPages}`;
+            document.getElementById('prevBtn').disabled = currentPage <= 0;
+            document.getElementById('nextBtn').disabled = end >= total;
+
+            if (!page.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No audit entries found matching current filters.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = page.map(e => {
+                const dt = new Date(e.created_at);
+                const dateStr = dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                const timeStr = dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+                const label = CHANGE_TYPE_LABELS[e.change_type] || e.change_type;
+                const badgeClass = getBadgeClass(e.change_type);
+
+                const oldVal = e.old_value ? escapeHtml(e.old_value) : '';
+                const newVal = e.new_value ? escapeHtml(e.new_value) : '';
+                let detailHtml = '';
+                if (oldVal && newVal) {
+                    detailHtml = `<span style="color:var(--text-secondary);">${oldVal}</span>
+                        <span class="detail-arrow">→</span>
+                        <span>${newVal}</span>`;
+                } else if (newVal) {
+                    detailHtml = `<span>${newVal}</span>`;
+                } else if (oldVal) {
+                    detailHtml = `<span style="color:var(--text-secondary);">${oldVal}</span>`;
+                } else if (e.metadata) {
+                    try {
+                        const meta = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata;
+                        detailHtml = `<span style="font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(JSON.stringify(meta).slice(0, 60))}</span>`;
+                    } catch (_) {
+                        detailHtml = `<span style="color:var(--text-muted);">—</span>`;
+                    }
+                } else {
+                    detailHtml = `<span style="color:var(--text-muted);">—</span>`;
+                }
+
+                const reason = e.reason
+                    ? `<span class="reason-text">${escapeHtml(e.reason)}</span>`
+                    : `<span style="color:var(--text-muted);font-size:0.8rem;">—</span>`;
+
+                return `<tr>
+                    <td>
+                        <div style="font-size:0.875rem;">${dateStr}</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);">${timeStr}</div>
+                    </td>
+                    <td>
+                        <div class="user-cell">
+                            <span class="user-name">${escapeHtml(e.changed_by_name || 'System')}</span>
+                            <span class="user-email">${escapeHtml(e.changed_by_email || '')}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="user-cell">
+                            <span class="user-name">${escapeHtml(e.target_user_name || '—')}</span>
+                            <span class="user-email">${escapeHtml(e.target_user_email || '')}</span>
+                        </div>
+                    </td>
+                    <td><span class="change-badge ${badgeClass}">${label}</span></td>
+                    <td style="font-size:0.875rem;">${detailHtml}</td>
+                    <td>${reason}</td>
+                </tr>`;
+            }).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function changePage(delta) {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            let filtered = auditEntries;
+            if (search) {
+                filtered = auditEntries.filter(e =>
+                    (e.changed_by_name || '').toLowerCase().includes(search)
+                    || (e.changed_by_email || '').toLowerCase().includes(search)
+                    || (e.target_user_name || '').toLowerCase().includes(search)
+                    || (e.target_user_email || '').toLowerCase().includes(search)
+                );
+            }
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+            currentPage = Math.max(0, Math.min(currentPage + delta, totalPages - 1));
+            renderTable();
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (typeof ModalServiceLoader !== 'undefined') await ModalServiceLoader.load();
+
+            const hasAccess = await checkAccess();
+            if (!hasAccess) {
+                document.getElementById('accessDenied').classList.remove('hidden');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+
+            document.getElementById('mainContent').classList.remove('hidden');
+            await loadAuditData();
+        });
+    </script>
+</body>
+</html>

@@ -100,32 +100,62 @@ async function authenticate(req, res, next) {
                 req.user = user;
                 req.isAnonymous = false;
 
-                // Fetch user role from database
+                // Fetch user's default org
                 try {
                     const { data: profile } = await supabase
                         .from('users')
-                        .select('role, default_org_id')
+                        .select('default_org_id')
                         .eq('id', user.id)
                         .single();
 
-                    req.userRole = profile?.role || 'user';
                     req.orgId = profile?.default_org_id || null;
                 } catch (profileError) {
-                    console.warn('Could not fetch user role:', profileError.message);
-                    req.userRole = 'user';
+                    console.warn('Could not fetch user profile:', profileError.message);
                 }
+
+                // Fetch org membership role (replaces legacy users.role)
+                if (req.orgId) {
+                    try {
+                        const { data: membership } = await supabase
+                            .from('organization_members')
+                            .select('role, business_role')
+                            .eq('user_id', user.id)
+                            .eq('org_id', req.orgId)
+                            .eq('status', 'active')
+                            .single();
+                        req.orgRole = membership?.role || null;
+                        req.businessRole = membership?.business_role || 'ic';
+                    } catch (e) {
+                        req.orgRole = null;
+                        req.businessRole = 'ic';
+                    }
+                }
+
+                // Check platform admin status
+                try {
+                    const { data: isAdmin } = await supabase
+                        .rpc('is_platform_admin', { p_user_id: user.id });
+                    req.isPlatformAdmin = !!isAdmin;
+                } catch (e) {
+                    req.isPlatformAdmin = false;
+                }
+
+                // Legacy compat: set userRole for any code that still reads it during transition
+                req.userRole = req.isPlatformAdmin ? 'admin' : (req.orgRole || 'user');
 
                 // Check for active impersonation (platform admin "Act As")
                 const impersonationStore = req.app?.locals?.impersonationStore;
                 if (impersonationStore) {
                     const impersonation = impersonationStore.get(user.id);
                     if (impersonation) {
-                        req.realUserRole = req.userRole;
+                        req.realOrgRole = req.orgRole;
                         req.realOrgId = req.orgId;
-                        req.userRole = impersonation.role;
+                        req.orgRole = impersonation.role;
                         req.orgId = impersonation.org_id;
                         req.isImpersonating = true;
                         req.impersonation = impersonation;
+                        // Legacy compat
+                        req.userRole = impersonation.role;
                     }
                 }
             }
@@ -187,12 +217,10 @@ function optionalAuth(req, res, next) {
  * Use this for endpoints that must have admin access
  */
 function requireAdmin(req, res, next) {
-    // Development mode bypass with admin role - ONLY when explicitly enabled
-    // Security fix: removed !process.env.NODE_ENV check to prevent auth bypass in production
     if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
         if (!req.userId) {
             req.userId = process.env.DEV_USER_ID || 'dev-user-001';
-            req.userRole = 'admin';
+            req.isPlatformAdmin = true;
             req.isAnonymous = false;
         }
         return next();
@@ -206,24 +234,25 @@ function requireAdmin(req, res, next) {
         });
     }
 
-    if (req.userRole !== 'admin') {
-        return res.status(403).json({
-            success: false,
-            error: 'Admin access required',
-            code: 'ADMIN_REQUIRED'
-        });
+    // Check platform admin or org admin/owner
+    if (req.isPlatformAdmin || ['admin', 'owner'].includes(req.orgRole)) {
+        return next();
     }
 
-    next();
+    return res.status(403).json({
+        success: false,
+        error: 'Admin access required',
+        code: 'ADMIN_REQUIRED'
+    });
 }
 
 /**
  * Check if user can edit an agent
  * Admins can edit all agents; users can only edit their own non-system agents
  */
-function canEditAgent(userRole, userId, agent) {
-    // Admins can edit everything
-    if (userRole === 'admin') {
+function canEditAgent(userRole, userId, agent, req) {
+    // Platform admins and org admins can edit everything
+    if (req?.isPlatformAdmin || ['admin', 'owner'].includes(req?.orgRole)) {
         return true;
     }
 
@@ -240,8 +269,8 @@ function canEditAgent(userRole, userId, agent) {
  * Check if user can delete an agent
  * Same rules as editing
  */
-function canDeleteAgent(userRole, userId, agent) {
-    return canEditAgent(userRole, userId, agent);
+function canDeleteAgent(userRole, userId, agent, req) {
+    return canEditAgent(userRole, userId, agent, req);
 }
 
 /**
@@ -250,12 +279,10 @@ function canDeleteAgent(userRole, userId, agent) {
  */
 function requireRole(...allowedRoles) {
     return (req, res, next) => {
-        // Development mode bypass - ONLY when explicitly enabled
-        // Security fix: removed !process.env.NODE_ENV check to prevent auth bypass in production
         if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true') {
             if (!req.userId) {
                 req.userId = process.env.DEV_USER_ID || 'dev-user-001';
-                req.userRole = 'admin';
+                req.isPlatformAdmin = true;
                 req.isAnonymous = false;
             }
             return next();
@@ -269,7 +296,13 @@ function requireRole(...allowedRoles) {
             });
         }
 
-        if (!allowedRoles.includes(req.userRole)) {
+        // Platform admins bypass role checks
+        if (req.isPlatformAdmin) {
+            return next();
+        }
+
+        const effectiveRole = req.orgRole || 'user';
+        if (!allowedRoles.includes(effectiveRole)) {
             return res.status(403).json({
                 success: false,
                 error: `Access denied. Required role: ${allowedRoles.join(' or ')}`,
