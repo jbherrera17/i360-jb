@@ -545,10 +545,11 @@ function generateUserProfileHTML() {
     const initials = getUserInitials(user);
     const displayName = user.display_name || user.email?.split('@')[0] || 'User';
     // Sanitize role to only allow alphanumeric characters (prevents XSS in class name)
-    const orgRole = user.org_role || user.role || 'user';
+    // Priority: structured roles > flat org_role > legacy role field
+    const orgRole = user.roles?.org?.role || user.org_role || user.role || 'user';
     const role = orgRole.replace(/[^a-zA-Z0-9]/g, '');
     // Show "Platform Admin" for platform admins, org role otherwise
-    const roleLabel = user.is_platform_admin
+    const roleLabel = (user.roles?.platform?.is_admin || user.is_platform_admin)
         ? 'Platform Admin'
         : role.charAt(0).toUpperCase() + role.slice(1);
 
@@ -664,7 +665,7 @@ async function _refreshUserSession() {
         const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         if (orgId) headers['x-org-id'] = orgId;
 
-        const response = await fetch('/api/auth/me', { headers });
+        const response = await fetch('/api/auth/me', { headers, credentials: 'include' });
         if (!response.ok) return;
 
         const data = await response.json();

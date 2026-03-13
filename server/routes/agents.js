@@ -79,12 +79,10 @@ module.exports = function(supabase) {
             }
             // === END PHASE 45 ===
 
-            // === PHASE 46: Organization filtering ===
-            if (orgId) {
-                // Show agents belonging to this org OR system agents (no org)
-                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
-            }
-            // === END PHASE 46 ===
+            // NOTE: Organization filtering is handled by buildAgentAccessFilter above.
+            // A previous Phase 46 org filter was removed here because chaining two .or()
+            // filters creates a malformed Supabase query (the second .or() conflicts with
+            // the first from buildAgentAccessFilter, causing incorrect results).
 
             // Apply filters
             if (category && category !== 'all') {

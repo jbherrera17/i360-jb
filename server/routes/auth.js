@@ -173,17 +173,38 @@ module.exports = function(supabase) {
                 console.warn('Could not check platform admin status at login:', e.message);
             }
 
-            // Check org membership role (admin/owner in their default org)
+            // Check org membership role
             let org_role = null;
             let org_business_role = null;
-            const defaultOrgId = profile?.default_org_id || null;
-            if (defaultOrgId) {
+            let effectiveOrgId = profile?.default_org_id || null;
+
+            // If no default_org_id, find the user's first active membership and set it
+            if (!effectiveOrgId) {
+                try {
+                    const { data: firstMembership } = await supabase
+                        .from('organization_members')
+                        .select('org_id, role, business_role')
+                        .eq('user_id', data.user.id)
+                        .eq('status', 'active')
+                        .limit(1)
+                        .maybeSingle();
+                    if (firstMembership) {
+                        effectiveOrgId = firstMembership.org_id;
+                        org_role = firstMembership.role;
+                        org_business_role = firstMembership.business_role;
+                        // Backfill default_org_id so future logins are faster
+                        await supabase.from('users').update({ default_org_id: effectiveOrgId }).eq('id', data.user.id);
+                    }
+                } catch (e) {
+                    console.warn('Could not find active membership for user:', e.message);
+                }
+            } else {
                 try {
                     const { data: membership } = await supabase
                         .from('organization_members')
                         .select('role, business_role')
                         .eq('user_id', data.user.id)
-                        .eq('org_id', defaultOrgId)
+                        .eq('org_id', effectiveOrgId)
                         .eq('status', 'active')
                         .maybeSingle();
                     if (membership) {
@@ -201,7 +222,7 @@ module.exports = function(supabase) {
                 display_name: profile?.display_name || data.user.user_metadata?.display_name || email.split('@')[0],
                 role: profile?.role || 'user', // DEPRECATED
                 preferences: profile?.preferences || {},
-                default_org_id: defaultOrgId,
+                default_org_id: effectiveOrgId,
                 is_platform_admin,
                 platform_admin_role,
                 org_role,
@@ -211,7 +232,7 @@ module.exports = function(supabase) {
                         role: platform_admin_role
                     },
                     org: {
-                        org_id: defaultOrgId,
+                        org_id: effectiveOrgId,
                         role: org_role,
                         business_role: org_business_role || null
                     }
@@ -664,16 +685,22 @@ module.exports = function(supabase) {
      */
     router.get('/me', async (req, res) => {
         try {
-            // Get token from header
+            // Get token from header or cookie
             const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            const cookies = req.headers.cookie || '';
+            const cookieTokenMatch = cookies.match(/auth_token=([^;]+)/);
+            const cookieToken = cookieTokenMatch ? cookieTokenMatch[1] : null;
+
+            const token = authHeader?.startsWith('Bearer ')
+                ? authHeader.substring(7)
+                : cookieToken;
+
+            if (!token) {
                 return res.status(401).json({
                     success: false,
                     error: 'No authentication token provided'
                 });
             }
-
-            const token = authHeader.substring(7);
 
             // Check token validation cache first
             let user = null;
@@ -713,7 +740,7 @@ module.exports = function(supabase) {
             // Get user profile with role from database
             const { data: profile, error: profileError } = await supabase
                 .from('users')
-                .select('id, email, display_name, role, preferences, created_at')
+                .select('id, email, display_name, role, preferences, created_at, default_org_id')
                 .eq('id', user.id)
                 .single();
 
@@ -744,8 +771,29 @@ module.exports = function(supabase) {
             let org_business_role = null;
             const defaultOrgId = profile?.default_org_id || null;
             // Try stored default_org_id first, then fall back to x-org-id header
-            const effectiveOrgId = defaultOrgId || req.headers['x-org-id'] || null;
-            if (effectiveOrgId) {
+            let effectiveOrgId = defaultOrgId || req.headers['x-org-id'] || null;
+
+            // If no org context at all, find the user's first active membership
+            if (!effectiveOrgId) {
+                try {
+                    const { data: firstMembership } = await supabase
+                        .from('organization_members')
+                        .select('org_id, role, business_role')
+                        .eq('user_id', user.id)
+                        .eq('status', 'active')
+                        .limit(1)
+                        .maybeSingle();
+                    if (firstMembership) {
+                        effectiveOrgId = firstMembership.org_id;
+                        org_role = firstMembership.role;
+                        org_business_role = firstMembership.business_role;
+                        // Backfill default_org_id
+                        await supabase.from('users').update({ default_org_id: effectiveOrgId }).eq('id', user.id);
+                    }
+                } catch (e) {
+                    console.warn('Could not find active membership for user:', e.message);
+                }
+            } else {
                 try {
                     const { data: membership } = await supabase
                         .from('organization_members')
