@@ -265,8 +265,8 @@ app.use(cors({
 // BODY PARSING
 // ============================================
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // ============================================
 // PAGE AUTHENTICATION (before static files)
