@@ -247,6 +247,27 @@ const HelpRegistry = {
             file: '/api/docs/digest-sources-user-guide.md',
             title: 'Digest Sources Help'
         },
+        // Customer Support AI (Phase 71)
+        '/support-dashboard': {
+            file: '/api/docs/support-user-guide.md',
+            title: 'Support Dashboard Help'
+        },
+        '/support-conversations': {
+            file: '/api/docs/support-user-guide.md',
+            title: 'Support Conversations Help'
+        },
+        '/support-conversation-detail': {
+            file: '/api/docs/support-user-guide.md',
+            title: 'Conversation Detail Help'
+        },
+        '/support-actions': {
+            file: '/api/docs/support-user-guide.md',
+            title: 'Support Actions Help'
+        },
+        '/support-settings': {
+            file: '/api/docs/support-user-guide.md',
+            title: 'Support Settings Help'
+        },
         // Chrome Extension documentation (accessible via Higgins chat)
         '/chrome-extension': {
             file: '/api/docs/chrome-extension-user-guide.md',

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Actions | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-card {
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+        }
+
+        .stat-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .stat-approved {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .stat-denied {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .stat-expired {
+            background: rgba(107, 114, 128, 0.15);
+            color: #6b7280;
+        }
+
+        .filter-toolbar {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .filter-toolbar label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-right: 0.25rem;
+        }
+
+        .filter-toolbar select {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .table-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .actions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .actions-table thead {
+            background: var(--bg-tertiary);
+        }
+
+        .actions-table th {
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .actions-table td {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .actions-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .type-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .type-cell svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .customer-name {
+            font-weight: 500;
+        }
+
+        .customer-email {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .conversation-link {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .conversation-link:hover {
+            text-decoration: underline;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .badge-approved { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-denied { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .badge-executed { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .badge-failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .badge-expired { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        .action-btn {
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-approve {
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .btn-approve:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .btn-deny {
+            border-color: #ef4444;
+            color: #ef4444;
+            margin-left: 0.5rem;
+        }
+
+        .btn-deny:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-view {
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-view:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+            gap: 1rem;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        .details-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .time-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .filter-toolbar {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="clipboard-check" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Support Actions
+                    </h1>
+                    <p class="header-subtitle">Review and manage automated support actions</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card stat-pending">
+                        <div class="stat-value" id="stat-pending">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card stat-approved">
+                        <div class="stat-value" id="stat-approved">0</div>
+                        <div class="stat-label">Approved</div>
+                    </div>
+                    <div class="stat-card stat-denied">
+                        <div class="stat-value" id="stat-denied">0</div>
+                        <div class="stat-label">Denied</div>
+                    </div>
+                    <div class="stat-card stat-expired">
+                        <div class="stat-value" id="stat-expired">0</div>
+                        <div class="stat-label">Expired</div>
+                    </div>
+                </div>
+
+                <!-- Filter Toolbar -->
+                <div class="filter-toolbar">
+                    <label for="filter-status">Status:</label>
+                    <select id="filter-status">
+                        <option value="">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="denied">Denied</option>
+                        <option value="executed">Executed</option>
+                        <option value="failed">Failed</option>
+                        <option value="expired">Expired</option>
+                    </select>
+
+                    <label for="filter-type">Type:</label>
+                    <select id="filter-type">
+                        <option value="">All</option>
+                        <option value="refund">Refund</option>
+                        <option value="tier_change">Tier Change</option>
+                        <option value="escalation">Escalation</option>
+                        <option value="knowledge_lookup">Knowledge Lookup</option>
+                        <option value="customer_lookup">Customer Lookup</option>
+                    </select>
+                </div>
+
+                <!-- Data Table -->
+                <div class="table-container">
+                    <table class="actions-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Conversation</th>
+                                <th>Customer</th>
+                                <th>Details</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="actions-tbody">
+                        </tbody>
+                    </table>
+                    <div id="empty-state" class="empty-state" style="display:none;">
+                        <i data-lucide="clipboard-check"></i>
+                        <p>No actions found</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let allActions = [];
+
+        // Auth
+        function getAuthToken() {
+            const token = localStorage.getItem('insight360_token') || localStorage.getItem('auth_token');
+            if (token) return token;
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'auth_token') return value;
+            }
+            return null;
+        }
+
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Not authenticated');
+            }
+            const orgId = localStorage.getItem('insight360-current-org');
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...(orgId ? { 'x-org-id': orgId } : {}),
+                ...(options.headers || {})
+            };
+            const response = await fetch(url, { ...options, headers });
+            if (response.status === 401) {
+                localStorage.removeItem('insight360_token');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Session expired');
+            }
+            return response;
+        }
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const colors = { success: '#10b981', error: '#ef4444', info: '#3b82f6', warning: '#f59e0b' };
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px;
+                padding: 12px 24px; border-radius: 8px;
+                background: ${colors[type] || colors.info}; color: white;
+                font-size: 0.9rem; font-weight: 500; z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Type config
+        const typeConfig = {
+            refund: { icon: 'receipt', label: 'Refund' },
+            tier_change: { icon: 'layers', label: 'Tier Change' },
+            escalation: { icon: 'alert-triangle', label: 'Escalation' },
+            knowledge_lookup: { icon: 'search', label: 'Knowledge Lookup' },
+            customer_lookup: { icon: 'user-search', label: 'Customer Lookup' }
+        };
+
+        // Relative time
+        function relativeTime(dateStr) {
+            const now = new Date();
+            const date = new Date(dateStr);
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHr = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHr / 24);
+
+            if (diffSec < 60) return 'just now';
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHr < 24) return `${diffHr}h ago`;
+            if (diffDay < 30) return `${diffDay}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Format details
+        function formatDetails(action) {
+            const params = action.parameters || action.params || {};
+            switch (action.action_type) {
+                case 'refund':
+                    return `$${parseFloat(params.amount || 0).toFixed(2)}`;
+                case 'tier_change':
+                    return `${params.current_tier || 'N/A'} → ${params.requested_tier || 'N/A'}`;
+                case 'escalation':
+                    return params.reason || 'No reason provided';
+                case 'knowledge_lookup':
+                    return params.query || 'Lookup';
+                case 'customer_lookup':
+                    return params.query || params.email || 'Lookup';
+                default:
+                    return JSON.stringify(params).substring(0, 50);
+            }
+        }
+
+        // Update stats
+        function updateStats(actions) {
+            const counts = { pending: 0, approved: 0, denied: 0, expired: 0 };
+            actions.forEach(a => {
+                if (counts.hasOwnProperty(a.status)) counts[a.status]++;
+            });
+            document.getElementById('stat-pending').textContent = counts.pending;
+            document.getElementById('stat-approved').textContent = counts.approved;
+            document.getElementById('stat-denied').textContent = counts.denied;
+            document.getElementById('stat-expired').textContent = counts.expired;
+        }
+
+        // Render table
+        function renderTable(actions) {
+            const tbody = document.getElementById('actions-tbody');
+            const emptyState = document.getElementById('empty-state');
+
+            if (!actions || actions.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'flex';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tbody.innerHTML = actions.map(action => {
+                const tc = typeConfig[action.action_type] || { icon: 'circle', label: action.action_type };
+                const conv = action.support_conversation || action.conversation || {};
+                const subject = conv.subject || conv.title || 'Untitled';
+                const customerName = conv.customer_name || 'Unknown';
+                const customerEmail = conv.customer_email || '';
+                const convId = action.conversation_id || conv.id || '';
+
+                let actionsHtml = '';
+                if (action.status === 'pending') {
+                    actionsHtml = `
+                        <button class="action-btn btn-approve" onclick="approveAction('${action.id}')">Approve</button>
+                        <button class="action-btn btn-deny" onclick="denyAction('${action.id}')">Deny</button>
+                    `;
+                } else {
+                    actionsHtml = `<button class="action-btn btn-view" onclick="viewAction('${action.id}')">View</button>`;
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="type-cell">
+                                <i data-lucide="${tc.icon}"></i>
+                                <span>${tc.label}</span>
+                            </div>
+                        </td>
+                        <td>
+                            ${convId
+                                ? `<a href="/support-conversations.html?id=${convId}" class="conversation-link">${escapeHtml(subject)}</a>`
+                                : `<span>${escapeHtml(subject)}</span>`
+                            }
+                        </td>
+                        <td>
+                            <div class="customer-name">${escapeHtml(customerName)}</div>
+                            ${customerEmail ? `<div class="customer-email">${escapeHtml(customerEmail)}</div>` : ''}
+                        </td>
+                        <td><span class="details-text">${escapeHtml(formatDetails(action))}</span></td>
+                        <td><span class="status-badge badge-${action.status}">${action.status}</span></td>
+                        <td><span class="time-text">${relativeTime(action.created_at)}</span></td>
+                        <td>${actionsHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Load actions
+        async function loadActions() {
+            try {
+                const orgId = localStorage.getItem('insight360-current-org');
+                const statusFilter = document.getElementById('filter-status').value;
+                const typeFilter = document.getElementById('filter-type').value;
+
+                let url = `/api/support/actions?org_id=${orgId || ''}`;
+                if (statusFilter) url += `&status=${statusFilter}`;
+                if (typeFilter) url += `&action_type=${typeFilter}`;
+
+                const response = await authFetch(url);
+                if (!response.ok) throw new Error('Failed to load actions');
+
+                const data = await response.json();
+                allActions = data.actions || data.data || data || [];
+                if (!Array.isArray(allActions)) allActions = [];
+
+                updateStats(allActions);
+                renderTable(allActions);
+            } catch (err) {
+                console.error('Error loading actions:', err);
+                showToast('Failed to load support actions', 'error');
+                renderTable([]);
+            }
+        }
+
+        // Approve
+        async function approveAction(id) {
+            try {
+                await ModalServiceLoader.load();
+                const confirmed = await ModalService.confirm({
+                    title: 'Approve Action',
+                    message: 'Approve this action? It will be executed automatically once approved.',
+                    confirmText: 'Approve',
+                    confirmClass: 'btn-success'
+                });
+
+                if (!confirmed) return;
+
+                const response = await authFetch(`/api/support/actions/${id}/approve`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to approve action');
+
+                showToast('Action approved successfully', 'success');
+                await loadActions();
+            } catch (err) {
+                console.error('Error approving action:', err);
+                showToast('Failed to approve action', 'error');
+            }
+        }
+
+        // Deny
+        async function denyAction(id) {
+            try {
+                await ModalServiceLoader.load();
+                const result = await ModalService.form({
+                    title: 'Deny Action',
+                    fields: [
+                        {
+                            name: 'reason',
+                            label: 'Reason for denial',
+                            type: 'textarea',
+                            required: true,
+                            placeholder: 'Explain why this action is being denied...'
+                        }
+                    ],
+                    submitText: 'Deny',
+                    submitClass: 'btn-danger'
+                });
+
+                if (!result) return;
+
+                const response = await authFetch(`/api/support/actions/${id}/deny`, {
+                    method: 'POST',
+                    body: JSON.stringify({ reason: result.reason })
+                });
+
+                if (!response.ok) throw new Error('Failed to deny action');
+
+                showToast('Action denied', 'success');
+                await loadActions();
+            } catch (err) {
+                console.error('Error denying action:', err);
+                showToast('Failed to deny action', 'error');
+            }
+        }
+
+        // View (show details in alert)
+        async function viewAction(id) {
+            const action = allActions.find(a => a.id === id);
+            if (!action) return;
+
+            await ModalServiceLoader.load();
+            const tc = typeConfig[action.action_type] || { label: action.action_type };
+            const details = formatDetails(action);
+
+            await ModalService.alert({
+                title: `${tc.label} Action Details`,
+                message: `
+                    Status: ${action.status}
+                    Details: ${details}
+                    Created: ${new Date(action.created_at).toLocaleString()}
+                    ${action.resolved_at ? 'Resolved: ' + new Date(action.resolved_at).toLocaleString() : ''}
+                    ${action.denial_reason ? 'Denial Reason: ' + action.denial_reason : ''}
+                `.trim()
+            });
+        }
+
+        // Setup filters
+        function setupFilters() {
+            document.getElementById('filter-status').addEventListener('change', loadActions);
+            document.getElementById('filter-type').addEventListener('change', loadActions);
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            setupFilters();
+            await loadActions();
+        });
+    </script>
+</body>
+</html>

@@ -192,6 +192,13 @@ function createTestApp(options = {}) {
     app.use('/api/modules', modulesRoutes(mockSupabase));
   }
 
+  if (routes.includes('support')) {
+    const supportRoutes = require('../../server/routes/support');
+    const supportActionsRoutes = require('../../server/routes/supportActions');
+    app.use('/api/support/conversations', supportRoutes(mockSupabase));
+    app.use('/api/support/actions', supportActionsRoutes(mockSupabase));
+  }
+
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Test app error:', err);

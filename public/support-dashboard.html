@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Dashboard | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: var(--spacing-lg);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-card-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .stat-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-card-value {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .stat-card-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .icon-blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .icon-green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .icon-orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .icon-primary { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+
+        /* Two-Column Layout */
+        .dashboard-columns {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: var(--spacing-lg);
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-link {
+            font-size: 0.8rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .panel-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Conversations Table */
+        .conv-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .conv-table th {
+            text-align: left;
+            padding: 0.75rem var(--spacing-lg);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .conv-table td {
+            padding: 0.75rem var(--spacing-lg);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .conv-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .conv-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+
+        .conv-table a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .conv-table a:hover {
+            color: var(--primary);
+        }
+
+        .customer-name {
+            font-weight: 600;
+        }
+
+        /* Status & Priority Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            line-height: 1.4;
+        }
+
+        .badge-open { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .badge-waiting { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .badge-escalated { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .badge-resolved { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-closed { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        .badge-low { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+        .badge-normal { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .badge-high { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .badge-urgent { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        /* Action type badges */
+        .badge-action {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-md);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        /* Pending Actions List */
+        .actions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .action-item {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .action-item:last-child {
+            border-bottom: none;
+        }
+
+        .action-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .action-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .action-item-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .action-item-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .action-item-amount {
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-self: flex-end;
+        }
+
+        .btn-approve, .btn-deny {
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-approve {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .btn-approve:hover {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-deny {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .btn-deny:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem var(--spacing-lg);
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-state i {
+            margin-bottom: var(--spacing-md);
+            opacity: 0.4;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-row {
+            height: 44px;
+            margin: 0.5rem var(--spacing-lg);
+        }
+
+        .skeleton-stat {
+            height: 72px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="headset" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Support Dashboard
+                    </h1>
+                    <p class="header-subtitle">AI-powered customer support command center</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/support-conversations.html" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:var(--radius-md);background:var(--bg-tertiary);color:var(--text-primary);text-decoration:none;font-size:0.85rem;font-weight:500;border:1px solid var(--border);">
+                        <i data-lucide="message-square" style="width:16px;height:16px;"></i>
+                        All Conversations
+                    </a>
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <!-- Stats Row -->
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-label">Total Conversations</span>
+                            <div class="stat-card-icon icon-blue">
+                                <i data-lucide="message-square" style="width:18px;height:18px;"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="stat-total">--</div>
+                        <div class="stat-card-sub">All time</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-label">Open</span>
+                            <div class="stat-card-icon icon-green">
+                                <i data-lucide="circle-dot" style="width:18px;height:18px;"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="stat-open" style="color:#10b981;">--</div>
+                        <div class="stat-card-sub">Active conversations</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-label">Escalated</span>
+                            <div class="stat-card-icon icon-orange">
+                                <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="stat-escalated" style="color:#f97316;">--</div>
+                        <div class="stat-card-sub">Needs attention</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-label">Resolved</span>
+                            <div class="stat-card-icon icon-green">
+                                <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="stat-resolved" style="color:#10b981;">--</div>
+                        <div class="stat-card-sub">Successfully closed</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-label">Avg CSAT</span>
+                            <div class="stat-card-icon icon-primary">
+                                <i data-lucide="star" style="width:18px;height:18px;"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="stat-csat" style="color:var(--primary);">--</div>
+                        <div class="stat-card-sub">out of 5.0</div>
+                    </div>
+                </div>
+
+                <!-- Two-Column Layout -->
+                <div class="dashboard-columns">
+                    <!-- Recent Conversations -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <span class="panel-title">
+                                <i data-lucide="message-square" style="width:16px;height:16px;color:var(--primary);"></i>
+                                Recent Conversations
+                            </span>
+                            <a href="/support-conversations.html" class="panel-link">View all</a>
+                        </div>
+                        <div id="conversations-body">
+                            <div class="skeleton skeleton-row"></div>
+                            <div class="skeleton skeleton-row"></div>
+                            <div class="skeleton skeleton-row"></div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Actions -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <span class="panel-title">
+                                <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--primary);"></i>
+                                Pending Actions
+                            </span>
+                        </div>
+                        <div id="actions-body">
+                            <div class="skeleton skeleton-row"></div>
+                            <div class="skeleton skeleton-row"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        const orgId = localStorage.getItem('insight360-current-org');
+
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            if (orgId) headers['x-org-id'] = orgId;
+            return headers;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '--';
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diff = now - d;
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            if (diff < 604800000) return Math.floor(diff / 86400000) + 'd ago';
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function statusBadge(status) {
+            const s = (status || 'open').toLowerCase();
+            return `<span class="badge badge-${s}">${s}</span>`;
+        }
+
+        function priorityBadge(priority) {
+            const p = (priority || 'normal').toLowerCase();
+            return `<span class="badge badge-${p}">${p}</span>`;
+        }
+
+        function formatActionType(type) {
+            if (!type) return '';
+            return type.replace(/_/g, ' ');
+        }
+
+        function formatAmount(amount) {
+            if (amount == null) return '';
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        }
+
+        async function loadDashboard() {
+            await Promise.all([
+                loadMetrics(),
+                loadConversations(),
+                loadPendingActions()
+            ]);
+        }
+
+        async function loadMetrics() {
+            try {
+                const res = await authFetch('/api/support/conversations/metrics/dashboard', {
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error('Failed to load metrics');
+                const data = await res.json();
+
+                document.getElementById('stat-total').textContent = data.total ?? 0;
+                document.getElementById('stat-open').textContent = data.open ?? 0;
+                document.getElementById('stat-escalated').textContent = data.escalated ?? 0;
+                document.getElementById('stat-resolved').textContent = data.resolved ?? 0;
+                document.getElementById('stat-csat').textContent =
+                    data.avg_csat != null ? Number(data.avg_csat).toFixed(1) : '--';
+            } catch (err) {
+                console.error('Metrics load error:', err);
+                showToast('Failed to load dashboard metrics', 'error');
+            }
+        }
+
+        async function loadConversations() {
+            const container = document.getElementById('conversations-body');
+            try {
+                const res = await authFetch('/api/support/conversations?limit=10', {
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error('Failed to load conversations');
+                const data = await res.json();
+                const conversations = Array.isArray(data) ? data : (data.conversations || data.data || []);
+
+                if (!conversations.length) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i data-lucide="message-square-off" style="width:40px;height:40px;"></i>
+                            <p>No conversations yet</p>
+                        </div>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="conv-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Intent</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${conversations.map(c => `
+                                <tr>
+                                    <td>
+                                        <a href="/support-conversation-detail.html?id=${c.id}" class="customer-name">
+                                            ${escapeHtml(c.customer_name || c.customer_email || 'Unknown')}
+                                        </a>
+                                    </td>
+                                    <td title="${escapeHtml(c.subject || '')}">
+                                        <a href="/support-conversation-detail.html?id=${c.id}">
+                                            ${escapeHtml(c.subject || 'No subject')}
+                                        </a>
+                                    </td>
+                                    <td>${statusBadge(c.status)}</td>
+                                    <td>${priorityBadge(c.priority)}</td>
+                                    <td style="color:var(--text-secondary);font-size:0.8rem;">${escapeHtml(c.detected_intent || '--')}</td>
+                                    <td style="color:var(--text-muted);font-size:0.8rem;">${formatDate(c.created_at)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>`;
+            } catch (err) {
+                console.error('Conversations load error:', err);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="alert-circle" style="width:40px;height:40px;"></i>
+                        <p>Failed to load conversations</p>
+                    </div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        async function loadPendingActions() {
+            const container = document.getElementById('actions-body');
+            try {
+                const res = await authFetch('/api/support/actions?status=pending&limit=5', {
+                    headers: getHeaders()
+                });
+                if (!res.ok) throw new Error('Failed to load actions');
+                const data = await res.json();
+                const actions = Array.isArray(data) ? data : (data.actions || data.data || []);
+
+                if (!actions.length) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i data-lucide="check-circle-2" style="width:40px;height:40px;"></i>
+                            <p>No pending actions</p>
+                        </div>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = `
+                    <ul class="actions-list">
+                        ${actions.map(a => `
+                            <li class="action-item">
+                                <div class="action-item-header">
+                                    <div class="action-item-info">
+                                        <div class="action-item-title">
+                                            <span class="badge-action">${escapeHtml(formatActionType(a.action_type))}</span>
+                                        </div>
+                                        <div class="action-item-detail">
+                                            ${escapeHtml(a.details || a.description || a.reason || 'No details')}
+                                        </div>
+                                    </div>
+                                    ${a.amount != null ? `<span class="action-item-amount">${formatAmount(a.amount)}</span>` : ''}
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn-approve" onclick="handleAction('${a.id}', 'approved')" title="Approve">
+                                        <i data-lucide="check" style="width:14px;height:14px;"></i> Approve
+                                    </button>
+                                    <button class="btn-deny" onclick="handleAction('${a.id}', 'denied')" title="Deny">
+                                        <i data-lucide="x" style="width:14px;height:14px;"></i> Deny
+                                    </button>
+                                </div>
+                            </li>
+                        `).join('')}
+                    </ul>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (err) {
+                console.error('Actions load error:', err);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="alert-circle" style="width:40px;height:40px;"></i>
+                        <p>Failed to load pending actions</p>
+                    </div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        async function handleAction(actionId, decision) {
+            try {
+                const confirmed = await ModalService.confirm({
+                    title: decision === 'approved' ? 'Approve Action' : 'Deny Action',
+                    message: `Are you sure you want to ${decision === 'approved' ? 'approve' : 'deny'} this action?`,
+                    confirmText: decision === 'approved' ? 'Approve' : 'Deny',
+                    confirmClass: decision === 'approved' ? 'btn-success' : 'btn-danger'
+                });
+                if (!confirmed) return;
+
+                const res = await authFetch(`/api/support/actions/${actionId}`, {
+                    method: 'PATCH',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ status: decision })
+                });
+                if (!res.ok) throw new Error('Failed to update action');
+
+                showToast(`Action ${decision} successfully`, 'success');
+                await Promise.all([loadPendingActions(), loadMetrics()]);
+            } catch (err) {
+                console.error('Action update error:', err);
+                showToast('Failed to update action', 'error');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            await loadDashboard();
+        });
+    </script>
+</body>
+</html>

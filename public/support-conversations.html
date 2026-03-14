@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Conversations | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .filter-toolbar {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            flex-wrap: wrap;
+        }
+
+        .filter-toolbar select,
+        .filter-toolbar input {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-family: inherit;
+            min-width: 140px;
+        }
+
+        .filter-toolbar select:focus,
+        .filter-toolbar input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .filter-toolbar input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .table-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .table-container.with-toolbar {
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        .conversations-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .conversations-table thead th {
+            background: var(--bg-tertiary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem 1.5rem;
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .conversations-table tbody tr {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .conversations-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .conversations-table tbody td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .conversations-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .customer-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .customer-email {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .subject-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+
+        .badge-open { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .badge-waiting { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+        .badge-escalated { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+        .badge-resolved { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+        .badge-closed { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+        .badge-low { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+        .badge-normal { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .badge-high { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+        .badge-urgent { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+        .sentiment-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .sentiment-positive { background: #4ade80; }
+        .sentiment-neutral { background: #94a3b8; }
+        .sentiment-negative { background: #fb923c; }
+        .sentiment-frustrated { background: #f87171; }
+
+        .intent-text {
+            text-transform: capitalize;
+            color: var(--text-secondary);
+        }
+
+        .msg-count {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .time-cell {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .btn-view {
+            padding: 0.35rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-view:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            margin: 0 0 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="messages-square" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Support Conversations
+                    </h1>
+                    <p class="header-subtitle">Manage customer support conversations</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-primary" id="btn-new-conversation">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                        New Conversation
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <div class="filter-toolbar">
+                    <select id="filter-status">
+                        <option value="">All Statuses</option>
+                        <option value="open">Open</option>
+                        <option value="waiting">Waiting</option>
+                        <option value="escalated">Escalated</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                    <select id="filter-priority">
+                        <option value="">All Priorities</option>
+                        <option value="low">Low</option>
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                    <select id="filter-intent">
+                        <option value="">All Intents</option>
+                        <option value="refund">Refund</option>
+                        <option value="billing">Billing</option>
+                        <option value="tier_change">Tier Change</option>
+                        <option value="technical">Technical</option>
+                        <option value="account">Account</option>
+                        <option value="cancellation">Cancellation</option>
+                        <option value="legal">Legal</option>
+                        <option value="security">Security</option>
+                        <option value="general">General</option>
+                    </select>
+                    <input type="text" id="filter-search" placeholder="Search by name, email, or subject..." />
+                </div>
+
+                <div class="table-container with-toolbar" id="table-container">
+                    <div class="loading-state" id="loading-state">Loading conversations...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let conversations = [];
+        let searchTimeout = null;
+
+        function getOrgId() {
+            return localStorage.getItem('insight360-current-org');
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            if (seconds < 60) return 'just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 30) return `${days}d ago`;
+            return new Date(date).toLocaleDateString();
+        }
+
+        function truncate(str, len) {
+            if (!str) return '';
+            return str.length > len ? str.substring(0, len) + '...' : str;
+        }
+
+        function getStatusBadge(status) {
+            const cls = `badge badge-${status || 'open'}`;
+            return `<span class="${cls}">${status || 'open'}</span>`;
+        }
+
+        function getPriorityBadge(priority) {
+            const cls = `badge badge-${priority || 'normal'}`;
+            return `<span class="${cls}">${priority || 'normal'}</span>`;
+        }
+
+        function getSentimentDot(sentiment) {
+            const s = sentiment || 'neutral';
+            return `<span class="sentiment-dot sentiment-${s}" title="${s}"></span>`;
+        }
+
+        function renderTable(data) {
+            const container = document.getElementById('table-container');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="messages-square" style="width:48px;height:48px;"></i>
+                        <h3>No conversations found</h3>
+                        <p>Create your first support conversation to get started.</p>
+                        <button class="btn btn-primary" onclick="createConversation()">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                            Create your first support conversation
+                        </button>
+                    </div>
+                `;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+
+            let html = `
+                <table class="conversations-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Intent</th>
+                            <th>Sentiment</th>
+                            <th>Messages</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const conv of data) {
+                html += `
+                    <tr onclick="viewConversation('${conv.id}')" data-id="${conv.id}">
+                        <td>
+                            <div class="customer-cell">
+                                <span class="customer-name">${escapeHtml(conv.customer_name || 'Unknown')}</span>
+                                <span class="customer-email">${escapeHtml(conv.customer_email || '')}</span>
+                            </div>
+                        </td>
+                        <td class="subject-cell" title="${escapeHtml(conv.subject || '')}">${escapeHtml(truncate(conv.subject, 40))}</td>
+                        <td>${getStatusBadge(conv.status)}</td>
+                        <td>${getPriorityBadge(conv.priority)}</td>
+                        <td><span class="intent-text">${escapeHtml(conv.intent || 'general')}</span></td>
+                        <td>${getSentimentDot(conv.sentiment)}</td>
+                        <td class="msg-count">${conv.message_count || 0}</td>
+                        <td class="time-cell">${timeAgo(conv.created_at)}</td>
+                        <td>
+                            <button class="btn-view" onclick="event.stopPropagation(); viewConversation('${conv.id}')">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function viewConversation(id) {
+            window.location.href = `/support-conversation-detail.html?id=${id}`;
+        }
+
+        async function loadConversations() {
+            const container = document.getElementById('table-container');
+            container.innerHTML = '<div class="loading-state">Loading conversations...</div>';
+
+            const orgId = getOrgId();
+            if (!orgId) {
+                container.innerHTML = '<div class="loading-state">No organization selected. Please select an organization first.</div>';
+                return;
+            }
+
+            const status = document.getElementById('filter-status').value;
+            const priority = document.getElementById('filter-priority').value;
+            const intent = document.getElementById('filter-intent').value;
+            const search = document.getElementById('filter-search').value.trim();
+
+            const params = new URLSearchParams();
+            if (status) params.set('status', status);
+            if (priority) params.set('priority', priority);
+            if (intent) params.set('intent', intent);
+            if (search) params.set('search', search);
+
+            const queryString = params.toString();
+            const url = `/api/support/conversations${queryString ? '?' + queryString : ''}`;
+
+            try {
+                const fetcher = typeof window.authFetch === 'function' ? window.authFetch : fetch;
+                const response = await fetcher(url, {
+                    headers: {
+                        'x-org-id': orgId
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load conversations: ${response.status}`);
+                }
+
+                const data = await response.json();
+                conversations = Array.isArray(data) ? data : (data.conversations || data.data || []);
+                renderTable(conversations);
+            } catch (err) {
+                console.error('Error loading conversations:', err);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="alert-circle" style="width:48px;height:48px;color:var(--text-muted);"></i>
+                        <h3>Error loading conversations</h3>
+                        <p>${escapeHtml(err.message)}</p>
+                        <button class="btn btn-primary" onclick="loadConversations()">Retry</button>
+                    </div>
+                `;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        async function createConversation() {
+            if (typeof ModalServiceLoader !== 'undefined') {
+                await ModalServiceLoader.load();
+            }
+
+            const result = await ModalService.form({
+                title: 'New Support Conversation',
+                fields: [
+                    { name: 'customer_name', label: 'Customer Name', type: 'text', required: true },
+                    { name: 'customer_email', label: 'Customer Email', type: 'email', required: true },
+                    { name: 'subject', label: 'Subject', type: 'text', required: true },
+                    { name: 'priority', label: 'Priority', type: 'select', options: [
+                        { value: 'low', label: 'Low' },
+                        { value: 'normal', label: 'Normal' },
+                        { value: 'high', label: 'High' },
+                        { value: 'urgent', label: 'Urgent' }
+                    ]},
+                    { name: 'channel', label: 'Channel', type: 'select', options: [
+                        { value: 'widget', label: 'Widget' },
+                        { value: 'api', label: 'API' },
+                        { value: 'slack', label: 'Slack' },
+                        { value: 'email', label: 'Email' }
+                    ]}
+                ],
+                submitText: 'Create Conversation'
+            });
+
+            if (!result) return;
+
+            const orgId = getOrgId();
+            if (!orgId) {
+                if (typeof showToast === 'function') {
+                    showToast('No organization selected', 'error');
+                }
+                return;
+            }
+
+            try {
+                const fetcher = typeof window.authFetch === 'function' ? window.authFetch : fetch;
+                const response = await fetcher('/api/support/conversations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-org-id': orgId
+                    },
+                    body: JSON.stringify({
+                        customer_name: result.customer_name,
+                        customer_email: result.customer_email,
+                        subject: result.subject,
+                        priority: result.priority || 'normal',
+                        channel: result.channel || 'widget',
+                        org_id: orgId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `Failed to create conversation: ${response.status}`);
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('Conversation created successfully', 'success');
+                }
+
+                await loadConversations();
+            } catch (err) {
+                console.error('Error creating conversation:', err);
+                if (typeof showToast === 'function') {
+                    showToast(err.message || 'Failed to create conversation', 'error');
+                }
+            }
+        }
+
+        function setupFilters() {
+            const statusFilter = document.getElementById('filter-status');
+            const priorityFilter = document.getElementById('filter-priority');
+            const intentFilter = document.getElementById('filter-intent');
+            const searchInput = document.getElementById('filter-search');
+
+            statusFilter.addEventListener('change', () => loadConversations());
+            priorityFilter.addEventListener('change', () => loadConversations());
+            intentFilter.addEventListener('change', () => loadConversations());
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => loadConversations(), 300);
+            });
+
+            document.getElementById('btn-new-conversation').addEventListener('click', createConversation);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            setupFilters();
+            await loadConversations();
+        });
+    </script>
+</body>
+</html>

@@ -101,7 +101,9 @@ const ALLOWED_DOCS = [
     'chrome-extension-technical-guide.md',
     // Role Audit (Phase 70)
     'role-audit-user-guide.md',
-    'role-audit-technical-guide.md'
+    'role-audit-technical-guide.md',
+    // Customer Support AI (Phase 71)
+    'support-user-guide.md'
 ];
 
 /**

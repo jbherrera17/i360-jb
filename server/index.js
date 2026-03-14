@@ -155,6 +155,8 @@ const platformMcpRoutes = require('./routes/platformMcp');
 const mcpRoutes = require('./routes/mcp');
 const digestRoutes = require('./routes/digest');
 const roleAuditRoutes = require('./routes/roleAudit');
+const supportRoutes = require('./routes/support');
+const supportActionsRoutes = require('./routes/supportActions');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -223,7 +225,7 @@ app.use(compression({
         if (req.headers.accept === 'text/event-stream') {
             return false;
         }
-        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream') {
+        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream' || req.path.match(/^\/api\/support\/conversations\/[^/]+\/stream$/)) {
             return false;
         }
         // Use default compression for everything else
@@ -605,6 +607,10 @@ function initializeServices() {
         // Phase 66: AI Digest - Content aggregation and intelligent summarization
         app.use('/api/digest', digestRoutes(supabase));
 
+        // Phase 71: Customer Support Agent System
+        app.use('/api/support/conversations', supportRoutes(supabase));
+        app.use('/api/support/actions', supportActionsRoutes(supabase));
+
         // Phase 57: Public Pricing API (unauthenticated, whitelisted in auth middleware)
         app.use('/api/pricing', pricingRoutes(supabase));
 
@@ -647,6 +653,7 @@ function initializeServices() {
         console.log('  ✅ Department Roles routes registered (Phase 3.0)');
         console.log('  ✅ User Profile routes registered (Phase 3.0)');
         console.log('  ✅ SynergiNexus routes registered (Phase 3.0)');
+        console.log('  ✅ Support routes registered (Phase 71)');
 
         // Initialize briefing scheduler
         schedulerService.initializeScheduler()

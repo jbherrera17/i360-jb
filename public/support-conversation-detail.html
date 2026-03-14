@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation Detail | Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ── Two-column layout ── */
+        .detail-layout {
+            display: flex;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-xl);
+            height: calc(100vh - 140px);
+            min-height: 0;
+        }
+
+        .thread-column {
+            flex: 0 0 65%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .info-column {
+            flex: 0 0 calc(35% - var(--spacing-lg));
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            overflow-y: auto;
+        }
+
+        /* ── Message thread container ── */
+        .thread-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        /* ── Chat bubbles ── */
+        .message-row {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+        }
+
+        .message-row.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message-row.assistant {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-row.system {
+            align-self: center;
+            align-items: center;
+            max-width: 90%;
+        }
+
+        .message-bubble {
+            padding: var(--spacing-sm) var(--spacing-md);
+            line-height: 1.55;
+            font-size: 0.925rem;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message-row.user .message-bubble {
+            background: rgba(99, 102, 241, 0.15);
+            border-radius: 12px 12px 0 12px;
+            color: var(--text-primary);
+        }
+
+        .message-row.assistant .message-bubble {
+            background: var(--bg-tertiary);
+            border-radius: 12px 12px 12px 0;
+            color: var(--text-primary);
+        }
+
+        .message-row.system .message-bubble {
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-style: italic;
+            text-align: center;
+            padding: var(--spacing-xs) var(--spacing-sm);
+        }
+
+        .message-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        /* ── Tool call badges ── */
+        .tool-calls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .tool-badge i { width: 12px; height: 12px; }
+
+        /* ── Thinking indicator ── */
+        .thinking-indicator {
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-tertiary);
+            border-radius: 12px 12px 12px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .thinking-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: thinkBounce 1.4s infinite ease-in-out both;
+        }
+
+        .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes thinkBounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ── Input area ── */
+        .input-area {
+            padding: var(--spacing-md);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: flex-end;
+        }
+
+        .input-area textarea {
+            flex: 1;
+            resize: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 42px;
+            max-height: 120px;
+            line-height: 1.4;
+        }
+
+        .input-area textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .input-area textarea::placeholder { color: var(--text-muted); }
+
+        .input-area .btn-send {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: #fff;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .input-area .btn-send:hover { background: var(--primary-dark); }
+        .input-area .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        .input-area .btn-send i { width: 18px; height: 18px; }
+
+        .input-disabled-msg {
+            padding: var(--spacing-md);
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        /* ── Info sidebar cards ── */
+        .info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md, 8px);
+            padding: var(--spacing-md);
+        }
+
+        .info-card-title {
+            font-family: var(--font-heading, 'Orbitron', sans-serif);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* Customer info */
+        .customer-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .customer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .customer-name { font-weight: 600; color: var(--text-primary); }
+        .customer-email { font-size: 0.82rem; color: var(--text-muted); }
+
+        .channel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+            margin-top: var(--spacing-sm);
+        }
+
+        .customer-created {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: var(--spacing-xs);
+        }
+
+        /* Detail rows */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-row:last-child { border-bottom: none; }
+
+        .detail-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .detail-value {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .detail-row select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            padding: 2px 6px;
+            cursor: pointer;
+        }
+
+        .detail-row select:focus { outline: none; border-color: var(--primary); }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-badge.open { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .status-badge.waiting { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-badge.escalated { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .status-badge.resolved { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .status-badge.closed { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+        /* Sentiment */
+        .sentiment-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+        }
+
+        .sentiment-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .sentiment-dot.positive { background: #10b981; }
+        .sentiment-dot.neutral { background: #6b7280; }
+        .sentiment-dot.negative { background: #ef4444; }
+        .sentiment-dot.frustrated { background: #f97316; }
+
+        /* CSAT stars */
+        .csat-stars { color: #f59e0b; font-size: 0.9rem; letter-spacing: 1px; }
+        .csat-stars .empty { color: var(--text-muted); opacity: 0.3; }
+
+        /* ── Actions log ── */
+        .actions-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .action-item {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            background: var(--bg-primary);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .action-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .action-icon i { width: 16px; height: 16px; color: var(--primary); }
+
+        .action-body { flex: 1; min-width: 0; }
+
+        .action-type {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: capitalize;
+        }
+
+        .action-params {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .action-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .action-status {
+            display: inline-flex;
+            font-size: 0.68rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-left: 6px;
+            text-transform: capitalize;
+        }
+
+        .action-status.pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .action-status.approved { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .action-status.denied { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .action-status.executed { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .action-buttons button {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-approve {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .btn-approve:hover { background: rgba(16, 185, 129, 0.25); }
+
+        .btn-deny {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .btn-deny:hover { background: rgba(239, 68, 68, 0.25); }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: var(--spacing-lg) 0;
+        }
+
+        /* ── Header tweaks ── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: var(--primary); }
+        .back-link i { width: 16px; height: 16px; }
+
+        .header-actions { display: flex; align-items: center; gap: var(--spacing-sm); }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .detail-layout {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .thread-column {
+                flex: none;
+                height: 60vh;
+            }
+
+            .info-column {
+                flex: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <a href="/support-conversations.html" class="back-link">
+                        <i data-lucide="arrow-left"></i>
+                        Back to Conversations
+                    </a>
+                    <h1 id="conversationSubject">
+                        <i data-lucide="message-square" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Loading...
+                    </h1>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button id="btnEscalate" class="btn btn-secondary" onclick="handleEscalate()">
+                        <i data-lucide="alert-triangle"></i>
+                        Escalate
+                    </button>
+                    <button id="btnResolve" class="btn btn-primary" onclick="handleResolve()">
+                        <i data-lucide="check-circle"></i>
+                        Resolve
+                    </button>
+                </div>
+            </header>
+
+            <div class="detail-layout">
+                <!-- Left: Message Thread -->
+                <div class="thread-column">
+                    <div class="thread-container">
+                        <div id="messagesArea" class="messages-area">
+                            <div class="empty-state">Loading messages...</div>
+                        </div>
+                        <div id="inputArea"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Info Sidebar -->
+                <div class="info-column">
+                    <!-- Customer Info -->
+                    <div class="info-card">
+                        <div class="info-card-title">Customer</div>
+                        <div id="customerInfo">
+                            <div class="empty-state">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Conversation Details -->
+                    <div class="info-card">
+                        <div class="info-card-title">Conversation Details</div>
+                        <div id="conversationDetails">
+                            <div class="empty-state">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Actions Log -->
+                    <div class="info-card">
+                        <div class="info-card-title">Actions Log</div>
+                        <div id="actionsLog">
+                            <div class="empty-state">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // ── State ──
+        let conversationId = null;
+        let conversationData = null;
+        const orgId = localStorage.getItem('insight360-current-org');
+
+        // ── Helpers ──
+        function getHeaders() {
+            const h = { 'Content-Type': 'application/json' };
+            if (orgId) h['x-org-id'] = orgId;
+            return h;
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            const now = new Date();
+            const isToday = d.toDateString() === now.toDateString();
+            const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (isToday) return time;
+            return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + time;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '';
+            return new Date(ts).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        const ACTION_ICONS = {
+            refund: 'receipt',
+            tier_change: 'layers',
+            escalation: 'alert-triangle',
+            knowledge_lookup: 'search',
+            customer_lookup: 'user-search'
+        };
+
+        function getActionIcon(type) {
+            return ACTION_ICONS[type] || 'zap';
+        }
+
+        function showToast(msg, type) {
+            if (typeof window.showToast === 'function') {
+                window.showToast(msg, type);
+            } else {
+                console.log(`[${type}] ${msg}`);
+            }
+        }
+
+        // ── Load Conversation ──
+        async function loadConversation(id) {
+            try {
+                const resp = await authFetch(`/api/support/conversations/${id}`, {
+                    headers: getHeaders()
+                });
+                if (!resp.ok) throw new Error('Failed to load conversation');
+                const data = await resp.json();
+                conversationData = data.conversation || data;
+                renderConversation();
+            } catch (err) {
+                console.error('Load conversation error:', err);
+                showToast('Failed to load conversation', 'error');
+            }
+        }
+
+        function renderConversation() {
+            const conv = conversationData;
+            if (!conv) return;
+
+            // Title
+            const subjectEl = document.getElementById('conversationSubject');
+            subjectEl.innerHTML = `
+                <i data-lucide="message-square" style="width:28px;height:28px;color:var(--primary);"></i>
+                ${escapeHtml(conv.subject || 'Conversation')}
+            `;
+
+            // Show/hide action buttons based on status
+            const canAct = ['open', 'waiting'].includes(conv.status);
+            document.getElementById('btnEscalate').style.display = canAct ? '' : 'none';
+            document.getElementById('btnResolve').style.display = canAct ? '' : 'none';
+
+            renderMessages(conv.messages || []);
+            renderInputArea(conv.status);
+            renderCustomerInfo(conv);
+            renderConversationDetails(conv);
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // ── Messages ──
+        function renderMessages(messages) {
+            const area = document.getElementById('messagesArea');
+
+            if (!messages || messages.length === 0) {
+                area.innerHTML = '<div class="empty-state">No messages yet</div>';
+                return;
+            }
+
+            area.innerHTML = messages.map(msg => {
+                const role = msg.role || 'system';
+                const rowClass = role === 'user' ? 'user' : role === 'assistant' ? 'assistant' : 'system';
+
+                let toolCallsHtml = '';
+                if (msg.tool_calls && msg.tool_calls.length > 0) {
+                    toolCallsHtml = `<div class="tool-calls">
+                        ${msg.tool_calls.map(tc => {
+                            const icon = getActionIcon(tc.type || tc.name);
+                            const summary = tc.result_summary || tc.name || tc.type || 'Tool';
+                            return `<span class="tool-badge">
+                                <i data-lucide="${icon}"></i>
+                                ${escapeHtml(summary)}
+                            </span>`;
+                        }).join('')}
+                    </div>`;
+                }
+
+                return `<div class="message-row ${rowClass}">
+                    <div class="message-bubble">${escapeHtml(msg.content || '')}</div>
+                    ${toolCallsHtml}
+                    <div class="message-meta">${formatTime(msg.created_at || msg.timestamp)}</div>
+                </div>`;
+            }).join('');
+
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const area = document.getElementById('messagesArea');
+            requestAnimationFrame(() => {
+                area.scrollTop = area.scrollHeight;
+            });
+        }
+
+        // ── Input Area ──
+        function renderInputArea(status) {
+            const container = document.getElementById('inputArea');
+            const canInput = ['open', 'waiting'].includes(status);
+
+            if (!canInput) {
+                container.innerHTML = `<div class="input-disabled-msg">This conversation is ${status}</div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="input-area">
+                    <textarea id="messageInput" placeholder="Type a message..." rows="1"
+                        onkeydown="handleInputKeydown(event)"></textarea>
+                    <button class="btn-send" id="btnSend" onclick="sendMessage()" title="Send">
+                        <i data-lucide="send"></i>
+                    </button>
+                </div>
+            `;
+
+            // Auto-resize textarea
+            const textarea = document.getElementById('messageInput');
+            textarea.addEventListener('input', () => {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            });
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function handleInputKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const textarea = document.getElementById('messageInput');
+            const btn = document.getElementById('btnSend');
+            const message = textarea.value.trim();
+            if (!message) return;
+
+            // Disable input
+            textarea.disabled = true;
+            btn.disabled = true;
+
+            // Add user message to UI immediately
+            const area = document.getElementById('messagesArea');
+            const userRow = document.createElement('div');
+            userRow.className = 'message-row user';
+            userRow.innerHTML = `
+                <div class="message-bubble">${escapeHtml(message)}</div>
+                <div class="message-meta">${formatTime(new Date().toISOString())}</div>
+            `;
+            area.appendChild(userRow);
+
+            // Show thinking indicator
+            const thinkingEl = document.createElement('div');
+            thinkingEl.className = 'thinking-indicator';
+            thinkingEl.id = 'thinkingIndicator';
+            thinkingEl.innerHTML = `
+                <div class="thinking-dots"><span></span><span></span><span></span></div>
+                AI is thinking...
+            `;
+            area.appendChild(thinkingEl);
+            scrollToBottom();
+
+            textarea.value = '';
+            textarea.style.height = 'auto';
+
+            try {
+                const resp = await authFetch(`/api/support/conversations/${conversationId}/messages`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ message })
+                });
+
+                if (!resp.ok) throw new Error('Failed to send message');
+                const data = await resp.json();
+
+                // Remove thinking indicator
+                const thinking = document.getElementById('thinkingIndicator');
+                if (thinking) thinking.remove();
+
+                // Add assistant response
+                const reply = data.reply || data.message || data;
+                if (reply && reply.content) {
+                    const assistantRow = document.createElement('div');
+                    assistantRow.className = 'message-row assistant';
+
+                    let toolCallsHtml = '';
+                    if (reply.tool_calls && reply.tool_calls.length > 0) {
+                        toolCallsHtml = `<div class="tool-calls">
+                            ${reply.tool_calls.map(tc => {
+                                const icon = getActionIcon(tc.type || tc.name);
+                                const summary = tc.result_summary || tc.name || tc.type || 'Tool';
+                                return `<span class="tool-badge">
+                                    <i data-lucide="${icon}"></i>
+                                    ${escapeHtml(summary)}
+                                </span>`;
+                            }).join('')}
+                        </div>`;
+                    }
+
+                    assistantRow.innerHTML = `
+                        <div class="message-bubble">${escapeHtml(reply.content)}</div>
+                        ${toolCallsHtml}
+                        <div class="message-meta">${formatTime(reply.created_at || new Date().toISOString())}</div>
+                    `;
+                    area.appendChild(assistantRow);
+
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+
+                scrollToBottom();
+
+                // Reload actions in case new ones were created
+                await loadActions(conversationId);
+            } catch (err) {
+                console.error('Send error:', err);
+                const thinking = document.getElementById('thinkingIndicator');
+                if (thinking) thinking.remove();
+                showToast('Failed to send message', 'error');
+            } finally {
+                textarea.disabled = false;
+                btn.disabled = false;
+                textarea.focus();
+            }
+        }
+
+        // ── Customer Info ──
+        function renderCustomerInfo(conv) {
+            const container = document.getElementById('customerInfo');
+            const name = conv.customer_name || conv.customer_email || 'Unknown';
+            const email = conv.customer_email || '';
+            const channel = conv.channel || 'widget';
+            const created = conv.created_at;
+
+            container.innerHTML = `
+                <div class="customer-header">
+                    <div class="customer-avatar">${getInitials(name)}</div>
+                    <div>
+                        <div class="customer-name">${escapeHtml(name)}</div>
+                        ${email ? `<div class="customer-email">${escapeHtml(email)}</div>` : ''}
+                    </div>
+                </div>
+                <div class="channel-badge">
+                    <i data-lucide="${channel === 'email' ? 'mail' : channel === 'slack' ? 'hash' : channel === 'api' ? 'code' : 'message-circle'}" style="width:12px;height:12px;"></i>
+                    ${escapeHtml(channel)}
+                </div>
+                ${created ? `<div class="customer-created">Created ${formatDate(created)}</div>` : ''}
+            `;
+        }
+
+        // ── Conversation Details ──
+        function renderConversationDetails(conv) {
+            const container = document.getElementById('conversationDetails');
+            const sentiment = conv.sentiment || 'neutral';
+            const csat = conv.csat_score;
+            const messageCount = (conv.messages || []).length;
+
+            const statusOptions = ['open', 'waiting', 'escalated', 'resolved', 'closed'];
+            const priorityOptions = ['low', 'medium', 'high', 'urgent'];
+
+            container.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <select id="statusSelect" onchange="updateField('status', this.value)">
+                        ${statusOptions.map(s => `<option value="${s}" ${s === conv.status ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Priority</span>
+                    <select id="prioritySelect" onchange="updateField('priority', this.value)">
+                        ${priorityOptions.map(p => `<option value="${p}" ${p === conv.priority ? 'selected' : ''}>${p.charAt(0).toUpperCase() + p.slice(1)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Intent</span>
+                    <span class="detail-value"><span class="status-badge open">${escapeHtml(conv.intent || 'general')}</span></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Sentiment</span>
+                    <span class="sentiment-indicator">
+                        <span class="sentiment-dot ${sentiment}"></span>
+                        ${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Messages</span>
+                    <span class="detail-value">${messageCount}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">CSAT</span>
+                    <span class="detail-value">${csat ? renderCsatStars(csat) : '<span style="color:var(--text-muted);font-size:0.82rem;">Not rated</span>'}</span>
+                </div>
+            `;
+        }
+
+        function renderCsatStars(score) {
+            const max = 5;
+            const filled = Math.round(score);
+            let html = '<span class="csat-stars">';
+            for (let i = 1; i <= max; i++) {
+                html += i <= filled ? '\u2605' : '<span class="empty">\u2605</span>';
+            }
+            html += `</span> <span style="font-size:0.78rem;color:var(--text-muted);">${score}/5</span>`;
+            return html;
+        }
+
+        async function updateField(field, value) {
+            try {
+                const body = {};
+                body[field] = value;
+                const resp = await authFetch(`/api/support/conversations/${conversationId}`, {
+                    method: 'PATCH',
+                    headers: getHeaders(),
+                    body: JSON.stringify(body)
+                });
+                if (!resp.ok) throw new Error(`Failed to update ${field}`);
+                showToast(`${field.charAt(0).toUpperCase() + field.slice(1)} updated`, 'success');
+
+                // Reload to reflect changes (e.g. input area visibility)
+                if (field === 'status') {
+                    await loadConversation(conversationId);
+                }
+            } catch (err) {
+                console.error('Update error:', err);
+                showToast(`Failed to update ${field}`, 'error');
+            }
+        }
+
+        // ── Actions Log ──
+        async function loadActions(id) {
+            try {
+                const resp = await authFetch(`/api/support/actions/conversation/${id}`, {
+                    headers: getHeaders()
+                });
+                if (!resp.ok) throw new Error('Failed to load actions');
+                const data = await resp.json();
+                renderActions(data.actions || data || []);
+            } catch (err) {
+                console.error('Load actions error:', err);
+                document.getElementById('actionsLog').innerHTML =
+                    '<div class="empty-state">Failed to load actions</div>';
+            }
+        }
+
+        function renderActions(actions) {
+            const container = document.getElementById('actionsLog');
+
+            if (!actions || actions.length === 0) {
+                container.innerHTML = '<div class="empty-state">No actions recorded</div>';
+                return;
+            }
+
+            container.innerHTML = `<div class="actions-list">
+                ${actions.map(a => {
+                    const icon = getActionIcon(a.action_type || a.type);
+                    const typeName = (a.action_type || a.type || 'action').replace(/_/g, ' ');
+                    const status = a.status || 'pending';
+                    const params = a.params ? (typeof a.params === 'string' ? a.params : JSON.stringify(a.params).slice(0, 80)) : '';
+
+                    let buttonsHtml = '';
+                    if (status === 'pending') {
+                        buttonsHtml = `
+                            <div class="action-buttons">
+                                <button class="btn-approve" onclick="approveAction('${a.id}')">Approve</button>
+                                <button class="btn-deny" onclick="denyAction('${a.id}')">Deny</button>
+                            </div>
+                        `;
+                    }
+
+                    return `<div class="action-item">
+                        <div class="action-icon"><i data-lucide="${icon}"></i></div>
+                        <div class="action-body">
+                            <div>
+                                <span class="action-type">${escapeHtml(typeName)}</span>
+                                <span class="action-status ${status}">${status}</span>
+                            </div>
+                            ${params ? `<div class="action-params">${escapeHtml(params)}</div>` : ''}
+                            ${buttonsHtml}
+                            <div class="action-time">${formatTime(a.created_at)}</div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function approveAction(actionId) {
+            try {
+                const resp = await authFetch(`/api/support/actions/${actionId}/approve`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                if (!resp.ok) throw new Error('Failed to approve action');
+                showToast('Action approved', 'success');
+                await loadActions(conversationId);
+            } catch (err) {
+                console.error('Approve error:', err);
+                showToast('Failed to approve action', 'error');
+            }
+        }
+
+        async function denyAction(actionId) {
+            try {
+                await ModalServiceLoader.load();
+                const result = await ModalService.form({
+                    title: 'Deny Action',
+                    fields: [
+                        { name: 'reason', label: 'Reason for denial', type: 'textarea', required: true }
+                    ],
+                    submitText: 'Deny'
+                });
+                if (!result) return;
+
+                const resp = await authFetch(`/api/support/actions/${actionId}/deny`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ reason: result.reason })
+                });
+                if (!resp.ok) throw new Error('Failed to deny action');
+                showToast('Action denied', 'success');
+                await loadActions(conversationId);
+            } catch (err) {
+                console.error('Deny error:', err);
+                showToast('Failed to deny action', 'error');
+            }
+        }
+
+        // ── Escalate ──
+        async function handleEscalate() {
+            try {
+                await ModalServiceLoader.load();
+                const result = await ModalService.form({
+                    title: 'Escalate Conversation',
+                    fields: [
+                        { name: 'reason', label: 'Escalation Reason', type: 'textarea', required: true },
+                        {
+                            name: 'priority', label: 'Priority', type: 'select',
+                            options: [
+                                { value: 'medium', label: 'Medium' },
+                                { value: 'high', label: 'High' },
+                                { value: 'urgent', label: 'Urgent' }
+                            ]
+                        }
+                    ],
+                    submitText: 'Escalate'
+                });
+                if (!result) return;
+
+                const resp = await authFetch(`/api/support/conversations/${conversationId}/escalate`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(result)
+                });
+                if (!resp.ok) throw new Error('Failed to escalate');
+                showToast('Conversation escalated', 'success');
+                await loadConversation(conversationId);
+            } catch (err) {
+                console.error('Escalate error:', err);
+                showToast('Failed to escalate conversation', 'error');
+            }
+        }
+
+        // ── Resolve ──
+        async function handleResolve() {
+            try {
+                await ModalServiceLoader.load();
+                const result = await ModalService.form({
+                    title: 'Resolve Conversation',
+                    fields: [
+                        { name: 'resolution_summary', label: 'Resolution Summary', type: 'textarea', required: true }
+                    ],
+                    submitText: 'Resolve'
+                });
+                if (!result) return;
+
+                const resp = await authFetch(`/api/support/conversations/${conversationId}/resolve`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(result)
+                });
+                if (!resp.ok) throw new Error('Failed to resolve');
+                showToast('Conversation resolved', 'success');
+                await loadConversation(conversationId);
+            } catch (err) {
+                console.error('Resolve error:', err);
+                showToast('Failed to resolve conversation', 'error');
+            }
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            conversationId = new URLSearchParams(window.location.search).get('id');
+            if (!conversationId) {
+                window.location.href = '/support-conversations.html';
+                return;
+            }
+
+            await loadConversation(conversationId);
+            await loadActions(conversationId);
+        });
+    </script>
+</body>
+</html>

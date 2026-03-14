@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Settings | Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Settings Tabs */
+        .settings-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .settings-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .settings-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .settings-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Phase Notice */
+        .phase-notice {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1.25rem;
+            background: rgba(var(--primary-rgb, 99, 102, 241), 0.08);
+            border: 1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .phase-notice i {
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        /* Section Cards */
+        .settings-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .settings-section-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .settings-section-title i {
+            width: 18px;
+            height: 18px;
+            color: var(--primary);
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .form-label-hint {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Color Input Group */
+        .color-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .color-swatch {
+            width: 42px;
+            height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 2px;
+            background: var(--bg-primary);
+        }
+
+        .color-swatch::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-swatch::-webkit-color-swatch {
+            border: none;
+            border-radius: 6px;
+        }
+
+        .color-hex-input {
+            flex: 1;
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .toggle-label-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .toggle-label-text span:first-child {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .toggle-label-text span:last-child {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-tertiary);
+            border-radius: 26px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        /* Pre-chat Fields */
+        .fields-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .field-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            min-width: 200px;
+        }
+
+        .field-card-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .field-card-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .field-card-type {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-required-badge {
+            padding: 0.15rem 0.5rem;
+            background: rgba(var(--primary-rgb, 99, 102, 241), 0.1);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .field-remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .field-remove-btn:hover {
+            color: var(--danger, #ef4444);
+        }
+
+        /* Domain Tags */
+        .domain-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .domain-tag {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .domain-tag-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .domain-tag-remove:hover {
+            color: var(--danger, #ef4444);
+        }
+
+        .domain-add-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .domain-add-row .form-input {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        /* Avatar Preview */
+        .avatar-preview-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar-preview-group .form-input {
+            flex: 1;
+        }
+
+        .avatar-preview {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-preview i {
+            color: var(--text-muted);
+        }
+
+        /* Connection Cards */
+        .connections-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        @media (max-width: 768px) {
+            .connections-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .connection-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .connection-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .connection-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .connection-icon i {
+            width: 24px;
+            height: 24px;
+            color: var(--text-secondary);
+        }
+
+        .connection-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .connection-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        .connection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Policy Cards */
+        .policy-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .policy-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .policy-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .policy-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(var(--primary-rgb, 99, 102, 241), 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .policy-icon i {
+            width: 18px;
+            height: 18px;
+            color: var(--primary);
+        }
+
+        .policy-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .policy-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .policy-steps {
+            list-style: decimal;
+            padding-left: 1.5rem;
+            margin: 0 0 1rem 0;
+        }
+
+        .policy-steps li {
+            padding: 0.35rem 0;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .policy-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .policy-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .policy-badge.input {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+        }
+
+        .policy-badge.output {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+        }
+
+        .policies-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .policies-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Save Button */
+        .save-bar {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: var(--spacing-md);
+        }
+
+        .btn-save {
+            padding: 0.75rem 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .btn-save:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: rgba(var(--primary-rgb, 99, 102, 241), 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="settings" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Support Settings
+                    </h1>
+                    <p class="header-subtitle">Configure your support AI system</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <!-- Tabs -->
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="widget" onclick="switchTab('widget')">
+                        <i data-lucide="layout" style="width:16px;height:16px;"></i>
+                        Widget Config
+                    </button>
+                    <button class="settings-tab" data-tab="connections" onclick="switchTab('connections')">
+                        <i data-lucide="plug" style="width:16px;height:16px;"></i>
+                        Connections
+                    </button>
+                    <button class="settings-tab" data-tab="policies" onclick="switchTab('policies')">
+                        <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+                        Policies
+                    </button>
+                </div>
+
+                <!-- Tab 1: Widget Config -->
+                <div class="tab-content active" id="tab-widget">
+                    <div class="phase-notice">
+                        <i data-lucide="info" style="width:18px;height:18px;"></i>
+                        <span>Widget API coming in Phase 2. The form below shows default values and is fully interactive for preview purposes.</span>
+                    </div>
+
+                    <!-- Enable/Disable -->
+                    <div class="settings-section">
+                        <div class="toggle-group">
+                            <div class="toggle-label-text">
+                                <span>Enable Support Widget</span>
+                                <span>When enabled, the support chat widget will appear on your configured domains</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="widget-enabled" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Appearance -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <i data-lucide="palette"></i>
+                            Appearance
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Primary Color</label>
+                                <div class="color-input-group">
+                                    <input type="color" class="color-swatch" id="widget-color" value="#6366f1"
+                                           oninput="document.getElementById('widget-color-hex').value = this.value">
+                                    <input type="text" class="form-input color-hex-input" id="widget-color-hex" value="#6366f1"
+                                           oninput="updateColorSwatch(this.value)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Font Family</label>
+                                <input type="text" class="form-input" id="widget-font" value="Inter, sans-serif">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Border Radius</label>
+                                <input type="text" class="form-input" id="widget-radius" value="12px">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Position</label>
+                                <select class="form-select" id="widget-position">
+                                    <option value="bottom-right" selected>Bottom Right</option>
+                                    <option value="bottom-left">Bottom Left</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <i data-lucide="message-square"></i>
+                            Content
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Welcome Message</label>
+                            <textarea class="form-textarea" id="widget-welcome">Hi there! How can we help you today?</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Avatar URL <span class="form-label-hint">Optional</span></label>
+                            <div class="avatar-preview-group">
+                                <input type="text" class="form-input" id="widget-avatar" placeholder="https://example.com/avatar.png"
+                                       oninput="updateAvatarPreview(this.value)">
+                                <div class="avatar-preview" id="avatar-preview">
+                                    <i data-lucide="user" style="width:20px;height:20px;"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Voice / Tone</label>
+                                <select class="form-select" id="widget-tone">
+                                    <option value="professional" selected>Professional</option>
+                                    <option value="friendly">Friendly</option>
+                                    <option value="casual">Casual</option>
+                                    <option value="formal">Formal</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="visibility: hidden;">Spacer</label>
+                                <div></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Offline Message</label>
+                            <textarea class="form-textarea" id="widget-offline">We're currently offline. Please leave a message and we'll get back to you soon.</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Pre-chat Fields -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <i data-lucide="list-checks"></i>
+                            Pre-chat Fields
+                        </div>
+
+                        <div class="fields-grid" id="fields-container">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <button class="btn-outline" onclick="addField()">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                            Add Field
+                        </button>
+                    </div>
+
+                    <!-- Allowed Domains -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <i data-lucide="globe"></i>
+                            Allowed Domains
+                        </div>
+
+                        <div class="domain-tags" id="domains-container">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="domain-add-row">
+                            <input type="text" class="form-input" id="domain-input" placeholder="example.com"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();addDomain();}">
+                            <button class="btn-outline" onclick="addDomain()">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Save -->
+                    <div class="save-bar">
+                        <button class="btn-save" onclick="saveWidgetConfig()">
+                            <i data-lucide="save" style="width:18px;height:18px;"></i>
+                            Save Configuration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Connections -->
+                <div class="tab-content" id="tab-connections">
+                    <div class="phase-notice">
+                        <i data-lucide="info" style="width:18px;height:18px;"></i>
+                        <span>Third-party connections will be available in Phase 2. Preview the integration options below.</span>
+                    </div>
+
+                    <div class="connections-grid">
+                        <!-- Stripe Card -->
+                        <div class="connection-card disabled">
+                            <div class="connection-icon">
+                                <i data-lucide="credit-card"></i>
+                            </div>
+                            <div class="connection-name">Stripe</div>
+                            <div class="connection-status">
+                                <span class="status-dot"></span>
+                                Disconnected
+                            </div>
+                            <div class="connection-desc">
+                                Stripe connection enables automated refund processing for customer support tickets.
+                            </div>
+                            <button class="btn-outline" disabled>Connect Stripe</button>
+                            <div class="connection-badge">
+                                <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                                Coming in Phase 2
+                            </div>
+                        </div>
+
+                        <!-- Slack Card -->
+                        <div class="connection-card disabled">
+                            <div class="connection-icon">
+                                <i data-lucide="hash"></i>
+                            </div>
+                            <div class="connection-name">Slack</div>
+                            <div class="connection-status">
+                                <span class="status-dot"></span>
+                                Disconnected
+                            </div>
+                            <div class="connection-desc">
+                                Slack connection enables escalation notifications and real-time agent handoff alerts.
+                            </div>
+                            <button class="btn-outline" disabled>Connect Slack</button>
+                            <div class="connection-badge">
+                                <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                                Coming in Phase 2
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Policies -->
+                <div class="tab-content" id="tab-policies">
+                    <a href="/processes.html" class="policies-link">
+                        <i data-lucide="external-link" style="width:14px;height:14px;"></i>
+                        Edit policies in the Processes module
+                    </a>
+
+                    <div id="policies-container">
+                        <!-- Populated by JS with defaults -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // ── State ──────────────────────────────────────────────
+        let widgetConfig = {
+            is_enabled: true,
+            theme: {
+                primary_color: '#6366f1',
+                font_family: 'Inter, sans-serif',
+                border_radius: '12px',
+                position: 'bottom-right'
+            },
+            welcome_message: 'Hi there! How can we help you today?',
+            avatar_url: '',
+            voice_tone: 'professional',
+            offline_message: "We're currently offline. Please leave a message and we'll get back to you soon.",
+            prechat_fields: [
+                { name: 'name', label: 'Name', type: 'text', required: true },
+                { name: 'email', label: 'Email', type: 'email', required: true }
+            ],
+            allowed_domains: ['localhost']
+        };
+
+        const defaultPolicies = [
+            {
+                title: 'General Inquiry Resolution',
+                description: 'Standard process for handling general customer inquiries and questions.',
+                icon: 'message-circle',
+                steps: [
+                    'Greet customer and identify their inquiry topic',
+                    'Search knowledge base for relevant answers',
+                    'Provide clear, concise response with supporting links',
+                    'Confirm the answer addresses their question',
+                    'Offer additional assistance before closing'
+                ],
+                inputs: ['Customer message', 'Knowledge base'],
+                outputs: ['Resolution response', 'Satisfaction rating']
+            },
+            {
+                title: 'Refund & Billing Policy',
+                description: 'Process for handling refund requests and billing inquiries within policy guidelines.',
+                icon: 'receipt',
+                steps: [
+                    'Verify customer identity and locate their account',
+                    'Review purchase history and refund eligibility',
+                    'Check against refund policy (30-day window, usage limits)',
+                    'Process approved refund or explain denial reason',
+                    'Send confirmation email with refund details',
+                    'Escalate to manager if outside policy bounds'
+                ],
+                inputs: ['Customer ID', 'Order number', 'Refund reason'],
+                outputs: ['Refund decision', 'Confirmation email', 'Escalation ticket']
+            },
+            {
+                title: 'Escalation Protocol',
+                description: 'Guidelines for escalating tickets to human agents when AI cannot resolve.',
+                icon: 'arrow-up-circle',
+                steps: [
+                    'Detect escalation triggers (sentiment, complexity, request)',
+                    'Summarize conversation context for receiving agent',
+                    'Tag ticket with priority level and category',
+                    'Notify assigned agent via configured channel (Slack/email)',
+                    'Provide warm handoff message to customer',
+                    'Log escalation reason for analytics'
+                ],
+                inputs: ['Conversation history', 'Sentiment score', 'Customer tier'],
+                outputs: ['Escalation ticket', 'Agent notification', 'Customer message']
+            }
+        ];
+
+        // ── Tab Switching ──────────────────────────────────────
+        function switchTab(tabId) {
+            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // ── Color ──────────────────────────────────────────────
+        function updateColorSwatch(hex) {
+            if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+                document.getElementById('widget-color').value = hex;
+            }
+        }
+
+        // ── Avatar Preview ─────────────────────────────────────
+        function updateAvatarPreview(url) {
+            const container = document.getElementById('avatar-preview');
+            if (url && url.trim()) {
+                container.innerHTML = `<img src="${escapeHtml(url)}" alt="Avatar" onerror="this.parentElement.innerHTML='<i data-lucide=\\'user\\' style=\\'width:20px;height:20px;\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();">`;
+            } else {
+                container.innerHTML = '<i data-lucide="user" style="width:20px;height:20px;"></i>';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        // ── Pre-chat Fields ────────────────────────────────────
+        function renderFields() {
+            const container = document.getElementById('fields-container');
+            if (!widgetConfig.prechat_fields.length) {
+                container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No pre-chat fields configured.</p>';
+                return;
+            }
+            container.innerHTML = widgetConfig.prechat_fields.map((f, i) => `
+                <div class="field-card">
+                    <div class="field-card-info">
+                        <span class="field-card-name">${escapeHtml(f.label || f.name)}</span>
+                        <span class="field-card-type">${escapeHtml(f.type)}</span>
+                    </div>
+                    ${f.required ? '<span class="field-required-badge">Required</span>' : ''}
+                    <button class="field-remove-btn" onclick="removeField(${i})" title="Remove field">
+                        <i data-lucide="x" style="width:14px;height:14px;"></i>
+                    </button>
+                </div>
+            `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function addField() {
+            if (typeof ModalService === 'undefined') {
+                await ModalServiceLoader.load();
+            }
+            const result = await ModalService.form({
+                title: 'Add Pre-chat Field',
+                fields: [
+                    { name: 'name', label: 'Field Name', type: 'text', required: true, placeholder: 'e.g. company' },
+                    { name: 'label', label: 'Display Label', type: 'text', required: true, placeholder: 'e.g. Company Name' },
+                    { name: 'type', label: 'Field Type', type: 'select', options: [
+                        { value: 'text', label: 'Text' },
+                        { value: 'email', label: 'Email' },
+                        { value: 'phone', label: 'Phone' },
+                        { value: 'select', label: 'Select' }
+                    ]},
+                    { name: 'required', label: 'Required', type: 'checkbox' }
+                ],
+                submitText: 'Add Field'
+            });
+            if (result) {
+                widgetConfig.prechat_fields.push({
+                    name: result.name,
+                    label: result.label,
+                    type: result.type || 'text',
+                    required: !!result.required
+                });
+                renderFields();
+            }
+        }
+
+        function removeField(index) {
+            widgetConfig.prechat_fields.splice(index, 1);
+            renderFields();
+        }
+
+        // ── Domains ────────────────────────────────────────────
+        function renderDomains() {
+            const container = document.getElementById('domains-container');
+            if (!widgetConfig.allowed_domains.length) {
+                container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No domains configured. The widget will not appear on any site.</p>';
+                return;
+            }
+            container.innerHTML = widgetConfig.allowed_domains.map((d, i) => `
+                <span class="domain-tag">
+                    ${escapeHtml(d)}
+                    <button class="domain-tag-remove" onclick="removeDomain(${i})" title="Remove domain">&times;</button>
+                </span>
+            `).join('');
+        }
+
+        function addDomain() {
+            const input = document.getElementById('domain-input');
+            const domain = input.value.trim().toLowerCase();
+            if (!domain) return;
+            if (widgetConfig.allowed_domains.includes(domain)) {
+                if (typeof showToast === 'function') showToast('Domain already added', 'warning');
+                return;
+            }
+            widgetConfig.allowed_domains.push(domain);
+            input.value = '';
+            renderDomains();
+        }
+
+        function removeDomain(index) {
+            widgetConfig.allowed_domains.splice(index, 1);
+            renderDomains();
+        }
+
+        // ── Policies ───────────────────────────────────────────
+        function renderPolicies() {
+            const container = document.getElementById('policies-container');
+            container.innerHTML = defaultPolicies.map(p => `
+                <div class="policy-card">
+                    <div class="policy-header">
+                        <div class="policy-icon">
+                            <i data-lucide="${p.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="policy-title">${escapeHtml(p.title)}</div>
+                            <div class="policy-desc">${escapeHtml(p.description)}</div>
+                        </div>
+                    </div>
+                    <ol class="policy-steps">
+                        ${p.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+                    </ol>
+                    <div class="policy-badges">
+                        ${p.inputs.map(inp => `<span class="policy-badge input">IN: ${escapeHtml(inp)}</span>`).join('')}
+                        ${p.outputs.map(out => `<span class="policy-badge output">OUT: ${escapeHtml(out)}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // ── Save ───────────────────────────────────────────────
+        function collectFormData() {
+            widgetConfig.is_enabled = document.getElementById('widget-enabled').checked;
+            widgetConfig.theme.primary_color = document.getElementById('widget-color-hex').value;
+            widgetConfig.theme.font_family = document.getElementById('widget-font').value;
+            widgetConfig.theme.border_radius = document.getElementById('widget-radius').value;
+            widgetConfig.theme.position = document.getElementById('widget-position').value;
+            widgetConfig.welcome_message = document.getElementById('widget-welcome').value;
+            widgetConfig.avatar_url = document.getElementById('widget-avatar').value;
+            widgetConfig.voice_tone = document.getElementById('widget-tone').value;
+            widgetConfig.offline_message = document.getElementById('widget-offline').value;
+            return widgetConfig;
+        }
+
+        function saveWidgetConfig() {
+            const config = collectFormData();
+            console.log('Widget config to save:', config);
+            if (typeof showToast === 'function') {
+                showToast('Configuration saved (local preview only)', 'success');
+            }
+        }
+
+        // ── Helpers ────────────────────────────────────────────
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ── Init ───────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            renderFields();
+            renderDomains();
+            renderPolicies();
+        });
+    </script>
+</body>
+</html>
