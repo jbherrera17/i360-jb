@@ -116,9 +116,10 @@ async function evaluateRefundEligibility({ amount, daysSincePurchase, priorRefun
  * @param {number} params.failedAttempts - Number of failed resolution attempts
  * @param {boolean} params.humanRequested - Customer explicitly asked for human
  * @param {string} params.customerTier - Customer tier (e.g. 'vip')
+ * @param {boolean} params.knowledgeGap - AI could not find an answer in the knowledge base
  * @returns {object} { should_escalate, trigger, sla_minutes }
  */
-async function evaluateEscalationRequired({ sentiment, intent, failedAttempts, humanRequested, customerTier }) {
+async function evaluateEscalationRequired({ sentiment, intent, failedAttempts, humanRequested, customerTier, knowledgeGap }) {
     // Priority-ordered trigger evaluation
     if (humanRequested) {
         return {
@@ -165,6 +166,14 @@ async function evaluateEscalationRequired({ sentiment, intent, failedAttempts, h
             should_escalate: true,
             trigger: 'vip_customer',
             sla_minutes: 15
+        };
+    }
+
+    if (knowledgeGap) {
+        return {
+            should_escalate: true,
+            trigger: 'knowledge_gap_unresolved',
+            sla_minutes: 120
         };
     }
 

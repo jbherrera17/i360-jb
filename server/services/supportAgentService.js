@@ -204,13 +204,15 @@ Your role is to help customers resolve their issues efficiently while maintainin
 - Remove or redact any Personally Identifiable Information (PII) such as full credit card numbers, social security numbers, or passwords from your responses. If a customer shares PII, acknowledge receipt without repeating it back
 - When citing information from the knowledge base, reference the source article name so the customer can find it themselves
 - Only provide information that is grounded in the knowledge base, customer data, or organization policies. If you are unsure about something, say so — do not speculate or guess
+- When you cannot find the answer after searching the knowledge base, do NOT leave the customer without a path forward. Instead, use escalate_to_human to connect them with someone who can help. Never end a conversation turn with only "I'm not sure" or "I don't know" — always offer the next step
 
 ## TOOL USAGE
 - Use lookup_customer before processing any account-related action
 - Use search_knowledge_base to find answers to product questions. When results are returned, cite the article name in your response
+- If search_knowledge_base returns zero results and you cannot answer from conversation context, use escalate_to_human with reason "unable_to_resolve" so the customer gets human assistance
 - Use process_refund only after verifying eligibility with the customer
 - Use change_tier only when the customer explicitly requests a tier change
-- Use escalate_to_human when you cannot resolve the issue or the customer asks for a human
+- Use escalate_to_human when you cannot resolve the issue, the customer asks for a human, or you have exhausted your available knowledge
 
 ## EXAMPLE INTERACTIONS
 
@@ -606,16 +608,50 @@ async function processMessage(conversationId, userMessage, options = {}) {
             .eq('id', conversationId);
 
         // Step 7: Check escalation
+        // Detect knowledge gaps — AI searched KB but found nothing useful
+        const kbSearches = toolCalls.filter(tc => tc.tool === 'search_knowledge_base');
+        const knowledgeGap = kbSearches.length > 0 && kbSearches.every(tc => (tc.result?.count || 0) === 0);
+
+        // Detect if AI already escalated via tool use
+        const alreadyEscalatedByTool = toolCalls.some(tc => tc.tool === 'escalate_to_human');
+
+        // Track failed attempts from conversation metadata
+        const { data: convMeta } = await supabase
+            .from('support_conversations')
+            .select('metadata')
+            .eq('id', conversationId)
+            .single();
+
+        const prevFailedAttempts = convMeta?.metadata?.failed_attempts || 0;
+        const currentFailedAttempts = knowledgeGap ? prevFailedAttempts + 1 : prevFailedAttempts;
+
+        // Persist failed attempt count
+        if (currentFailedAttempts !== prevFailedAttempts) {
+            await supabase
+                .from('support_conversations')
+                .update({
+                    metadata: {
+                        ...(convMeta?.metadata || {}),
+                        failed_attempts: currentFailedAttempts
+                    }
+                })
+                .eq('id', conversationId);
+        }
+
+        // Resolve customer tier from conversation metadata
+        const customerTier = convMeta?.metadata?.customer_tier || null;
+
         const escalationCheck = await supportPolicy.evaluateEscalationRequired({
             sentiment,
             intent,
-            failedAttempts: 0, // TODO: track in conversation metadata
+            failedAttempts: currentFailedAttempts,
             humanRequested: /\b(human|agent|person|representative|operator)\b/i.test(userMessage),
-            customerTier: null
+            customerTier,
+            knowledgeGap
         });
 
-        let escalated = false;
-        if (escalationCheck.should_escalate) {
+        let escalated = alreadyEscalatedByTool;
+        if (escalationCheck.should_escalate && !alreadyEscalatedByTool) {
             // Only auto-escalate if not already escalated
             const { data: conv } = await supabase
                 .from('support_conversations')

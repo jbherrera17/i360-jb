@@ -183,6 +183,37 @@ describe('Support Policy Service', () => {
 
             expect(result.should_escalate).toBe(false);
         });
+
+        it('should escalate on knowledge gap when AI cannot answer', async () => {
+            const result = await evaluateEscalationRequired({
+                sentiment: 'neutral',
+                intent: 'general',
+                failedAttempts: 0,
+                humanRequested: false,
+                customerTier: null,
+                knowledgeGap: true
+            });
+
+            expect(result.should_escalate).toBe(true);
+            expect(result.trigger).toBe('knowledge_gap_unresolved');
+            expect(result.sla_minutes).toBe(120);
+        });
+
+        it('should not escalate on knowledge gap when higher-priority trigger fires first', async () => {
+            const result = await evaluateEscalationRequired({
+                sentiment: 'frustrated',
+                intent: 'general',
+                failedAttempts: 0,
+                humanRequested: false,
+                customerTier: null,
+                knowledgeGap: true
+            });
+
+            // Frustrated sentiment has higher priority than knowledge gap
+            expect(result.should_escalate).toBe(true);
+            expect(result.trigger).toBe('frustrated_sentiment');
+            expect(result.sla_minutes).toBe(15);
+        });
     });
 
     // ── Tier Change Evaluation ───────────────────────────────
