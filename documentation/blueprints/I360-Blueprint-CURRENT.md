@@ -1,26 +1,84 @@
-# Insight 360 Blueprint v3.72
+# Insight 360 Blueprint v3.73
 
-**Version:** 3.72
+**Version:** 3.73
 **Date:** March 14, 2026
-**Status:** Current | Phase 72
+**Status:** Current | Phase 73
 **Codename:** Ethos
-**Previous Version:** v3.71 (Customer Support Agent System)
-**Latest Update:** Phase 72: Platform Reliability, PM Agent Team & Annie PRD
+**Previous Version:** v3.72 (Platform Reliability, PM Agent Team & Annie PRD)
+**Latest Update:** Phase 73: Infrastructure Integration & Admin Reorganization
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.72 delivers **Phase 72: Platform Reliability, PM Agent Team & Annie PRD** — a session focused on critical bug fixes, developer tooling, and strategic product planning for a new embeddable chat agent.
+Insight 360 v3.73 delivers **Phase 73: Infrastructure Integration & Admin Reorganization** — fixing 6 critical infrastructure disconnections in the Support AI module, reorganizing the administrator dashboard, and establishing mandatory integration standards for all future module development.
 
 Key deliverables:
-1. **Critical nav panel fix** — modules route now falls back to auth middleware org_id, resolving empty navigation for all users
-2. **Phase 70 follow-up** — cookie auth support, org membership fallback on login, duplicate Supabase `.or()` filter bug fix
-3. **PM Agent Team** — 11 specialist Claude Code skills forming a complete product management workflow
-4. **Phase 67/68 migrations** — digest discovery, unified runtime backbone, and tags org-scoping
-5. **Annie Chat Agent PRD** — comprehensive product requirements for an embeddable chat widget with Calendly scheduling and conversation review dashboard
+1. **Infrastructure integration fixes** — Support module now properly connects to Parthenon processes API, Context Assets, and uses correct data scoping patterns
+2. **Admin dashboard reorganization** — 6 priority-ordered sections with 30 tiles (was 4 sections, 19 tiles), 11 missing admin pages added
+3. **New Module Integration Checklist** — Mandatory 30+ checkbox checklist in CLAUDE.md preventing isolated module development
+4. **Documentation restructure** — Blueprint, Roadmap, and Release Notes reorganized into single living documents with git-versioned history and archived snapshots
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 73: What Was Completed
+
+### 1. Infrastructure Integration Fixes (Support AI Module)
+
+Phase 71 shipped the Customer Support AI module with 6 infrastructure disconnections. All fixed:
+
+| # | Issue | Fix | File(s) |
+|---|-------|-----|---------|
+| 1 | `processes` table has no `org_id` — KB search returned empty | Query via `department_id` → `departments.org_id` join (Parthenon pattern) | `supportAgentService.js` |
+| 2 | Support Settings Policies tab was hardcoded JS array | Wired to live Parthenon API (`/api/parthenon/processes`) | `support-settings.html` |
+| 3 | Context assets KB search missed `content_text` | Added `content_text` to `.or()` filter | `supportAgentService.js` |
+| 4 | Dead link to `/processes.html` (doesn't exist) | Changed to `/parthenon.html#processes` | `support-settings.html` |
+| 5 | No guidance connecting Support to existing infrastructure | Added explanatory text linking to Parthenon and Context Assets | `support-settings.html` |
+| 6 | `auth-fetch.js` missing from support-settings | Added include; all API calls now use `authFetch()` | `support-settings.html` |
+
+### 2. Administrator Dashboard Reorganization
+
+Restructured from 4 flat sections to 6 priority-ordered sections:
+
+| Section | Tiles | Purpose |
+|---------|-------|---------|
+| **Organization Setup** | 8 | Org settings, customization, departments, members, users, roles, clients |
+| **AI & Values** | 7 | Soul config, Parthenon, agent categories, dept AI, responsibilities, OKR capabilities |
+| **Platform & Access** | 8 | Platform dashboard, tiers, resource access, role audit, support settings, digest sources, integrations, MCP |
+| **Content & Assets** | 2 | Tags, asset types |
+| **Monitoring & Data** | 4 | System health, SynergiNexus, conversations, Align 120 sessions |
+
+**Changes:**
+- Added 11 missing admin pages (Role Audit, Client Portal Users, Dept AI, MCP Connections, OKR Capabilities, Org Customization, Responsibilities, Responsibility AI Mapping, Support AI Settings, Digest Sources, MCP Connections)
+- Removed dev/test pages (Modals, Icon Library)
+- Removed duplicate Soul Configuration tile
+- Priority ordering: most important tiles first in each section
+
+### 3. Mandatory Module Integration Checklist
+
+Added to `CLAUDE.md` — enforced on every future Claude Code session. 8 categories, 30+ checkboxes:
+1. Platform Module Registration (DB)
+2. Route Registration (Server)
+3. Data Scoping (DB Queries)
+4. Frontend Integration
+5. Infrastructure Connections
+6. Documentation Chain
+7. Testing
+8. Verification
+
+**Rule:** If any item is unchecked, the module is NOT complete.
+
+### 4. Documentation Restructure
+
+| Before | After |
+|--------|-------|
+| 95 blueprint files (flat, date-stamped) | 1 living document (`I360-Blueprint-CURRENT.md`) + archive |
+| 54 roadmap files (flat, date-stamped) | 1 living document (`I360-ROADMAP-CURRENT.md`) + archive |
+| 0 release notes files | `release-notes/` directory with per-release files |
+
+Git history preserves all versions. Archive directory retains old snapshots.
 
 ---
 

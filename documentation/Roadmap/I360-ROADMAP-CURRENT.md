@@ -2,17 +2,17 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 3.72
+**Version:** 3.73
 **Last Updated:** March 14, 2026
-**Current System Version:** v3.72 (Phase 72)
+**Current System Version:** v3.73 (Phase 73)
 
 ---
 
 ## Executive Summary
 
-Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, and a **PM agent team** for structured product governance. Version 3.72 delivers critical platform reliability fixes (nav panel, auth), 11 PM specialist skills, Phase 67/68 migrations, and a comprehensive PRD for the Annie embeddable chat agent.
+Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, and a **PM agent team** for structured product governance. Version 3.73 fixes critical infrastructure disconnections in the Support AI module, reorganizes the admin dashboard with 30 tiles across 6 sections, and establishes mandatory integration standards for future development.
 
-**Current Production Readiness Score: 10.0/10** *(v3.72)*
+**Current Production Readiness Score: 10.0/10** *(v3.73)*
 
 | Area | Score | Risk Level | Notes |
 |------|-------|------------|-------|
@@ -33,16 +33,33 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 | Enterprise Features | 10/10 | Low | Route integration + impersonation |
 | Resource Access | 10/10 | Low | 5-layer access control, **duplicate .or() filter fixed** |
 | User Management | 10/10 | Low | Email invitations + PKCE + resend + accept + activate lifecycle |
-| Admin Experience | 10/10 | Low | Tier-aware visibility, platform admin gating |
+| Admin Experience | 10/10 | Low | **30-tile admin dashboard**, tier-aware visibility, platform admin gating |
 | Integrations | 9.5/10 | Low | Provider registry, OAuth, sync, webhooks |
 | DB Security | 10/10 | Low | All views SECURITY INVOKER, RLS on all tables |
 | Auth Infrastructure | 10/10 | Low | **HttpOnly cookies + Bearer token**, email invitations + PKCE, org membership fallback |
-| Support AI | 10/10 | Low | AI agent + policy engine + 5 admin pages + 53 tests |
+| Support AI | 10/10 | Low | AI agent + policy engine + 5 admin pages + 53 tests, **infrastructure integrated** |
 | PM Tooling | 10/10 | Low | **11 specialist skills, 8 workflows, orchestrator pattern** |
 
 ---
 
-## What's New in v3.72
+## What's New in v3.73
+
+### Phase 73: Infrastructure Integration & Admin Reorganization
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| KB Search Fix | Processes query uses dept-based org-scoping (was broken `.eq('org_id')`) | Support AI can now search org policies |
+| Policies Tab | Wired to live Parthenon API (was hardcoded JS array) | Admins see real policies, not static defaults |
+| Content Search | Added `content_text` to KB `.or()` filter | AI finds answers in full content, not just titles |
+| Dead Link Fix | `/processes.html` → `/parthenon.html#processes` | No more 404s from Support Settings |
+| Admin Dashboard | 6 sections, 30 tiles, priority-ordered | All admin pages discoverable from one place |
+| 11 Missing Pages | Role Audit, Dept AI, MCP, Support Settings, etc. | Complete admin surface area |
+| Integration Checklist | 30+ mandatory checks in CLAUDE.md | Prevents isolated module development |
+| Doc Restructure | Living documents + archive + release notes dir | Sustainable documentation workflow |
+
+---
+
+## What Was New in v3.72
 
 ### Phase 72: Platform Reliability, PM Agent Team & Annie PRD
 
