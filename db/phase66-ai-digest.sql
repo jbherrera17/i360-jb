@@ -462,9 +462,11 @@ CREATE POLICY digest_analytics_select ON digest_analytics FOR SELECT
 
 INSERT INTO platform_modules (id, name, description, icon, route_path, nav_group, min_tier, display_order)
 VALUES
-    ('ai_digest', 'AI Digest', 'Intelligent content digests from RSS, websites, documents, and newsletters', 'rss', '/digest.html', 'create', 'business', 62),
-    ('ai_digest_admin', 'Digest Administration', 'Monitor and manage digest sources and analytics', 'shield-check', '/admin-digest.html', 'admin', 'enterprise', 95)
-ON CONFLICT (id) DO NOTHING;
+    ('ai_digest', 'AI Digest', 'Intelligent content digests from RSS, websites, documents, and newsletters', 'rss', '/digest.html', 'modules', 'business', 62),
+    ('ai_digest_admin', 'Digest Administration', 'Monitor and manage digest sources and analytics', 'shield-check', '/digest-sources.html', 'admin', 'enterprise', 95)
+ON CONFLICT (id) DO UPDATE SET
+    route_path = EXCLUDED.route_path,
+    nav_group = EXCLUDED.nav_group;
 
 -- ============================================================================
 -- GRANT SERVICE KEY ACCESS (bypasses RLS for server-side operations)
