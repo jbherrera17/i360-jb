@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <script src="/js/navigation.js"></script>
+    <script src="/js/auth-fetch.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Settings Tabs */
@@ -883,13 +884,20 @@
 
                 <!-- Tab 3: Policies -->
                 <div class="tab-content" id="tab-policies">
-                    <a href="/processes.html" class="policies-link">
+                    <a href="/parthenon.html#processes" class="policies-link">
                         <i data-lucide="external-link" style="width:14px;height:14px;"></i>
-                        Edit policies in the Processes module
+                        Manage policies in the Parthenon Processes module
                     </a>
+                    <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 var(--spacing-lg) 0;">
+                        Support policies are managed as Processes in the Parthenon framework. Changes there are automatically reflected in the AI agent's behavior.
+                        To add knowledge base articles, use <a href="/context.html" style="color:var(--primary);">Context Assets</a>.
+                    </p>
 
                     <div id="policies-container">
-                        <!-- Populated by JS with defaults -->
+                        <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
+                            <i data-lucide="loader" class="spin" style="width:24px;height:24px;"></i>
+                            <p>Loading policies...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -920,52 +928,22 @@
             allowed_domains: ['localhost']
         };
 
-        const defaultPolicies = [
-            {
-                title: 'General Inquiry Resolution',
-                description: 'Standard process for handling general customer inquiries and questions.',
-                icon: 'message-circle',
-                steps: [
-                    'Greet customer and identify their inquiry topic',
-                    'Search knowledge base for relevant answers',
-                    'Provide clear, concise response with supporting links',
-                    'Confirm the answer addresses their question',
-                    'Offer additional assistance before closing'
-                ],
-                inputs: ['Customer message', 'Knowledge base'],
-                outputs: ['Resolution response', 'Satisfaction rating']
-            },
-            {
-                title: 'Refund & Billing Policy',
-                description: 'Process for handling refund requests and billing inquiries within policy guidelines.',
-                icon: 'receipt',
-                steps: [
-                    'Verify customer identity and locate their account',
-                    'Review purchase history and refund eligibility',
-                    'Check against refund policy (30-day window, usage limits)',
-                    'Process approved refund or explain denial reason',
-                    'Send confirmation email with refund details',
-                    'Escalate to manager if outside policy bounds'
-                ],
-                inputs: ['Customer ID', 'Order number', 'Refund reason'],
-                outputs: ['Refund decision', 'Confirmation email', 'Escalation ticket']
-            },
-            {
-                title: 'Escalation Protocol',
-                description: 'Guidelines for escalating tickets to human agents when AI cannot resolve.',
-                icon: 'arrow-up-circle',
-                steps: [
-                    'Detect escalation triggers (sentiment, complexity, request)',
-                    'Summarize conversation context for receiving agent',
-                    'Tag ticket with priority level and category',
-                    'Notify assigned agent via configured channel (Slack/email)',
-                    'Provide warm handoff message to customer',
-                    'Log escalation reason for analytics'
-                ],
-                inputs: ['Conversation history', 'Sentiment score', 'Customer tier'],
-                outputs: ['Escalation ticket', 'Agent notification', 'Customer message']
-            }
-        ];
+        // Icon mapping for process types
+        const processIconMap = {
+            'support': 'headset',
+            'refund': 'receipt',
+            'escalation': 'arrow-up-circle',
+            'billing': 'receipt',
+            'default': 'file-text'
+        };
+
+        function getProcessIcon(process) {
+            const name = (process.name || '').toLowerCase();
+            if (name.includes('refund') || name.includes('billing')) return 'receipt';
+            if (name.includes('escalat')) return 'arrow-up-circle';
+            if (name.includes('support') || name.includes('inquiry')) return 'message-circle';
+            return processIconMap[process.type] || 'file-text';
+        }
 
         // ── Tab Switching ──────────────────────────────────────
         function switchTab(tabId) {
@@ -1085,29 +1063,68 @@
         }
 
         // ── Policies ───────────────────────────────────────────
-        function renderPolicies() {
+        async function renderPolicies() {
             const container = document.getElementById('policies-container');
-            container.innerHTML = defaultPolicies.map(p => `
-                <div class="policy-card">
-                    <div class="policy-header">
-                        <div class="policy-icon">
-                            <i data-lucide="${p.icon}"></i>
-                        </div>
-                        <div>
-                            <div class="policy-title">${escapeHtml(p.title)}</div>
-                            <div class="policy-desc">${escapeHtml(p.description)}</div>
-                        </div>
-                    </div>
-                    <ol class="policy-steps">
-                        ${p.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
-                    </ol>
-                    <div class="policy-badges">
-                        ${p.inputs.map(inp => `<span class="policy-badge input">IN: ${escapeHtml(inp)}</span>`).join('')}
-                        ${p.outputs.map(out => `<span class="policy-badge output">OUT: ${escapeHtml(out)}</span>`).join('')}
-                    </div>
-                </div>
-            `).join('');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            try {
+                // Fetch support-related processes from Parthenon API
+                const res = await authFetch('/api/parthenon/processes?search=Support');
+                if (!res.ok) throw new Error('Failed to load policies');
+                const json = await res.json();
+                const processes = (json.data || []).filter(p =>
+                    p.name && p.name.toLowerCase().includes('support')
+                );
+
+                if (processes.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
+                            <i data-lucide="info" style="width:24px;height:24px;margin-bottom:8px;"></i>
+                            <p>No support policies found.</p>
+                            <p style="font-size:0.85rem;">Create support processes in the
+                                <a href="/parthenon.html#processes" style="color:var(--primary);">Parthenon module</a>
+                                to see them here.
+                            </p>
+                        </div>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = processes.map(p => {
+                    const steps = (p.steps || []);
+                    const inputs = (p.inputs || []);
+                    const outputs = (p.outputs || []);
+                    const icon = getProcessIcon(p);
+                    return `
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <div class="policy-icon">
+                                    <i data-lucide="${icon}"></i>
+                                </div>
+                                <div>
+                                    <div class="policy-title">${escapeHtml(p.name)}</div>
+                                    <div class="policy-desc">${escapeHtml(p.description || '')}</div>
+                                </div>
+                            </div>
+                            ${steps.length > 0 ? `
+                            <ol class="policy-steps">
+                                ${steps.map(s => `<li>${escapeHtml(typeof s === 'string' ? s : s.title || s.name || JSON.stringify(s))}</li>`).join('')}
+                            </ol>` : ''}
+                            <div class="policy-badges">
+                                ${inputs.map(inp => `<span class="policy-badge input">IN: ${escapeHtml(typeof inp === 'string' ? inp : inp.name || JSON.stringify(inp))}</span>`).join('')}
+                                ${outputs.map(out => `<span class="policy-badge output">OUT: ${escapeHtml(typeof out === 'string' ? out : out.name || JSON.stringify(out))}</span>`).join('')}
+                            </div>
+                        </div>`;
+                }).join('');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (err) {
+                console.error('Error loading policies:', err);
+                container.innerHTML = `
+                    <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
+                        <i data-lucide="alert-triangle" style="width:24px;height:24px;color:var(--warning);margin-bottom:8px;"></i>
+                        <p>Could not load policies from the server.</p>
+                        <p style="font-size:0.85rem;">Check your connection and try refreshing the page.</p>
+                    </div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
         }
 
         // ── Save ───────────────────────────────────────────────

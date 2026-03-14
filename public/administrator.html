@@ -869,106 +869,46 @@
                         <p style="color: var(--text-muted);">Loading dashboard...</p>
                     </div>
 
-                    <!-- Platform Administration -->
+                    <!-- Organization Setup -->
                     <div id="platformAdminSection">
                         <div class="section-header" style="margin-top: 2rem;">
-                            <i data-lucide="crown"></i>
-                            <h2>Platform Administration</h2>
+                            <i data-lucide="building-2"></i>
+                            <h2>Organization Setup</h2>
                         </div>
                         <div class="admin-grid" style="margin-bottom: 2rem;">
-                            <div class="admin-card" onclick="switchTab('setup')">
-                                <div class="admin-card-header">
-                                    <div class="admin-card-icon green">
-                                        <i data-lucide="sparkles"></i>
-                                    </div>
-                                    <div class="admin-card-title">Setup New Organization</div>
-                                </div>
-                                <div class="admin-card-description">Launch the setup wizard to create and configure a new organization</div>
-                            </div>
-
-                            <div class="admin-card" onclick="switchTab('onboarding')">
-                                <div class="admin-card-header">
-                                    <div class="admin-card-icon blue">
-                                        <i data-lucide="list-checks"></i>
-                                    </div>
-                                    <div class="admin-card-title">Onboarding Status</div>
-                                </div>
-                                <div class="admin-card-description">Track onboarding progress and checklist completion for organizations</div>
-                            </div>
-
-                            <a href="/admin-platform.html" class="admin-card">
+                            <a href="/admin-org-settings.html" class="admin-card">
                                 <div class="admin-card-header">
                                     <div class="admin-card-icon indigo">
-                                        <i data-lucide="crown"></i>
+                                        <i data-lucide="building-2"></i>
                                     </div>
-                                    <div class="admin-card-title">Platform Dashboard</div>
+                                    <div class="admin-card-title">Organization Settings</div>
                                 </div>
-                                <div class="admin-card-description">Manage all organizations and global settings</div>
+                                <div class="admin-card-description">Manage organization name, branding, and configuration</div>
                             </a>
 
-                            <a href="/admin-tier-setup.html" class="admin-card">
-                                <div class="admin-card-header">
-                                    <div class="admin-card-icon purple">
-                                        <i data-lucide="layers"></i>
-                                    </div>
-                                    <div class="admin-card-title">Tier Configuration</div>
-                                </div>
-                                <div class="admin-card-description">Configure subscription tiers and limits</div>
-                            </a>
-
-                            <a href="/admin-resource-access.html" class="admin-card">
-                                <div class="admin-card-header">
-                                    <div class="admin-card-icon cyan">
-                                        <i data-lucide="shield"></i>
-                                    </div>
-                                    <div class="admin-card-title">Resource Access</div>
-                                </div>
-                                <div class="admin-card-description">Configure resource visibility settings</div>
-                            </a>
-
-                            <a href="/integrations.html" class="admin-card">
-                                <div class="admin-card-header">
-                                    <div class="admin-card-icon green">
-                                        <i data-lucide="plug"></i>
-                                    </div>
-                                    <div class="admin-card-title">Integrations</div>
-                                </div>
-                                <div class="admin-card-description">Connect external services and APIs</div>
-                            </a>
-
-                            <a href="/soul-configuration.html" class="admin-card">
+                            <a href="/admin-org-customization.html" class="admin-card">
                                 <div class="admin-card-header">
                                     <div class="admin-card-icon pink">
-                                        <i data-lucide="heart"></i>
+                                        <i data-lucide="palette"></i>
                                     </div>
-                                    <div class="admin-card-title">Soul Configuration</div>
+                                    <div class="admin-card-title">Org Customization</div>
                                 </div>
-                                <div class="admin-card-description">Define organizational values and ethics</div>
+                                <div class="admin-card-description">Customize branding, themes, and appearance</div>
                             </a>
 
-                            <a href="/admin-agent-categories.html" class="admin-card">
+                            <a href="/admin-departments.html" class="admin-card">
                                 <div class="admin-card-header">
-                                    <div class="admin-card-icon amber">
-                                        <i data-lucide="tags"></i>
+                                    <div class="admin-card-icon green">
+                                        <i data-lucide="git-branch"></i>
                                     </div>
-                                    <div class="admin-card-title">Agent Categories</div>
+                                    <div class="admin-card-title">Departments</div>
                                 </div>
-                                <div class="admin-card-description">Manage agent category taxonomy and organization</div>
-                            </a>
-
-                            <a href="/admin.html" class="admin-card">
-                                <div class="admin-card-header">
-                                    <div class="admin-card-icon blue">
-                                        <i data-lucide="users"></i>
-                                    </div>
-                                    <div class="admin-card-title">User Management</div>
-                                </div>
-                                <div class="admin-card-description">Manage user accounts, roles, and permissions</div>
+                                <div class="admin-card-description">Manage department structure and hierarchy</div>
                             </a>
 
                             <a href="/admin-org-members.html" class="admin-card">
                                 <div class="admin-card-header">
-                                    <div class="admin-card-icon green">
+                                    <div class="admin-card-icon blue">
                                         <i data-lucide="users"></i>
                                     </div>
                                     <div class="admin-card-title">Team Members</div>
@@ -976,27 +916,45 @@
                                 <div class="admin-card-description">Manage organization team members and permissions</div>
                             </a>
 
-                            <div class="admin-card" onclick="showConversationsPanel()">
+                            <a href="/admin.html" class="admin-card">
                                 <div class="admin-card-header">
-                                    <div class="admin-card-icon indigo">
-                                        <i data-lucide="message-square"></i>
+                                    <div class="admin-card-icon cyan">
+                                        <i data-lucide="user-cog"></i>
                                     </div>
-                                    <div class="admin-card-title">Conversations</div>
+                                    <div class="admin-card-title">User Management</div>
                                 </div>
-                                <div class="admin-card-description">View and manage all user conversations</div>
-                                <div id="conversationCount" class="admin-card-badge">Loading...</div>
-                            </div>
+                                <div class="admin-card-description">Manage user accounts, roles, and permissions</div>
+                            </a>
 
-                            <div class="admin-card" onclick="showSessionsPanel()">
+                            <a href="/roles.html" class="admin-card">
                                 <div class="admin-card-header">
                                     <div class="admin-card-icon purple">
-                                        <i data-lucide="clipboard-list"></i>
+                                        <i data-lucide="id-card"></i>
                                     </div>
-                                    <div class="admin-card-title">Align 120 Sessions</div>
+                                    <div class="admin-card-title">Title Management</div>
                                 </div>
-                                <div class="admin-card-description">View and manage all Align 120 sessions</div>
-                                <div id="sessionCount" class="admin-card-badge">Loading...</div>
-                            </div>
+                                <div class="admin-card-description">Configure business roles and titles</div>
+                            </a>
+
+                            <a href="/admin-clients.html" class="admin-card">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon orange">
+                                        <i data-lucide="briefcase"></i>
+                                    </div>
+                                    <div class="admin-card-title">Clients</div>
+                                </div>
+                                <div class="admin-card-description">Manage agency clients and accounts</div>
+                            </a>
+
+                            <a href="/admin-client-users.html" class="admin-card">
+                                <div class="admin-card-header">
+                                    <div class="admin-card-icon amber">
+                                        <i data-lucide="user-check"></i>
+                                    </div>
+                                    <div class="admin-card-title">Client Portal Users</div>
+                                </div>
+                                <div class="admin-card-description">Manage client portal access and user accounts</div>
+                            </a>
                         </div>
 
                         <!-- Expandable Panels (for Conversations & Sessions) -->
@@ -1004,20 +962,20 @@
                         <div id="sessionsPanel" style="display: none; margin-bottom: 1.5rem;"></div>
                     </div>
 
-                    <!-- System Management -->
+                    <!-- AI & Values -->
                     <div class="section-header">
-                        <i data-lucide="server"></i>
-                        <h2>System Management</h2>
+                        <i data-lucide="heart"></i>
+                        <h2>AI & Values</h2>
                     </div>
                     <div class="admin-grid" style="margin-bottom: 2rem;">
-                        <a href="/system-health.html" class="admin-card">
+                        <a href="/soul-configuration.html" class="admin-card">
                             <div class="admin-card-header">
-                                <div class="admin-card-icon green">
-                                    <i data-lucide="activity"></i>
+                                <div class="admin-card-icon pink">
+                                    <i data-lucide="heart"></i>
                                 </div>
-                                <div class="admin-card-title">System Health</div>
+                                <div class="admin-card-title">Soul Configuration</div>
                             </div>
-                            <div class="admin-card-description">Monitor API status and system performance</div>
+                            <div class="admin-card-description">Define organizational values, ethics, bright lines, and voice</div>
                         </a>
 
                         <a href="/parthenon.html" class="admin-card">
@@ -1027,96 +985,145 @@
                                 </div>
                                 <div class="admin-card-title">Parthenon</div>
                             </div>
-                            <div class="admin-card-description">Governance framework and compliance</div>
+                            <div class="admin-card-description">Governance framework — OKRs, processes, roles, and compliance</div>
                         </a>
 
-                        <a href="/synerginexus.html" class="admin-card">
+                        <a href="/admin-agent-categories.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon amber">
+                                    <i data-lucide="tags"></i>
+                                </div>
+                                <div class="admin-card-title">Agent Categories</div>
+                            </div>
+                            <div class="admin-card-description">Manage agent category taxonomy and organization</div>
+                        </a>
+
+                        <a href="/admin-department-ai.html" class="admin-card">
                             <div class="admin-card-header">
                                 <div class="admin-card-icon cyan">
-                                    <i data-lucide="brain-circuit"></i>
+                                    <i data-lucide="brain"></i>
                                 </div>
-                                <div class="admin-card-title">SynergiNexus</div>
+                                <div class="admin-card-title">Department AI</div>
                             </div>
-                            <div class="admin-card-description">Multi-agent orchestration</div>
+                            <div class="admin-card-description">Configure AI behavior and settings per department</div>
                         </a>
 
-                        <a href="/admin-icons.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon purple">
-                                    <i data-lucide="image"></i>
-                                </div>
-                                <div class="admin-card-title">Icon Library</div>
-                            </div>
-                            <div class="admin-card-description">Browse available icons</div>
-                        </a>
-
-                        <a href="/modal-test.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon indigo">
-                                    <i data-lucide="layout-grid"></i>
-                                </div>
-                                <div class="admin-card-title">Modals</div>
-                            </div>
-                            <div class="admin-card-description">Test modal components and dialogs</div>
-                        </a>
-                    </div>
-
-                    <!-- Organization & Agency -->
-                    <div class="section-header">
-                        <i data-lucide="link"></i>
-                        <h2>Organization & Agency</h2>
-                    </div>
-                    <div class="admin-grid" style="margin-bottom: 2rem;">
-                        <a href="/admin-org-settings.html" class="admin-card">
-                            <div class="admin-card-header">
-                                <div class="admin-card-icon indigo">
-                                    <i data-lucide="building-2"></i>
-                                </div>
-                                <div class="admin-card-title">Organization Settings</div>
-                            </div>
-                            <div class="admin-card-description">Manage organization configuration</div>
-                        </a>
-
-                        <a href="/admin-departments.html" class="admin-card">
+                        <a href="/admin-responsibilities.html" class="admin-card">
                             <div class="admin-card-header">
                                 <div class="admin-card-icon green">
-                                    <i data-lucide="git-branch"></i>
+                                    <i data-lucide="list-todo"></i>
                                 </div>
-                                <div class="admin-card-title">Departments</div>
+                                <div class="admin-card-title">Responsibilities</div>
                             </div>
-                            <div class="admin-card-description">Manage department structure</div>
+                            <div class="admin-card-description">Define and manage role responsibilities</div>
                         </a>
 
-                        <a href="/admin-clients.html" class="admin-card">
+                        <a href="/admin-responsibility-ai.html" class="admin-card">
                             <div class="admin-card-header">
-                                <div class="admin-card-icon orange">
-                                    <i data-lucide="briefcase"></i>
+                                <div class="admin-card-icon indigo">
+                                    <i data-lucide="brain-circuit"></i>
                                 </div>
-                                <div class="admin-card-title">Clients</div>
+                                <div class="admin-card-title">Responsibility AI Mapping</div>
                             </div>
-                            <div class="admin-card-description">Manage agency clients</div>
+                            <div class="admin-card-description">Map AI agents to role responsibilities</div>
                         </a>
 
-                        <a href="/roles.html" class="admin-card">
+                        <a href="/admin-okr-capabilities.html" class="admin-card">
                             <div class="admin-card-header">
                                 <div class="admin-card-icon blue">
-                                    <i data-lucide="user-cog"></i>
+                                    <i data-lucide="target"></i>
                                 </div>
-                                <div class="admin-card-title">Title Management</div>
+                                <div class="admin-card-title">OKR Capabilities</div>
                             </div>
-                            <div class="admin-card-description">Configure business roles</div>
+                            <div class="admin-card-description">Map supporting capabilities to OKR objectives</div>
+                        </a>
+                    </div>
+
+                    <!-- Platform & Access -->
+                    <div class="section-header">
+                        <i data-lucide="shield"></i>
+                        <h2>Platform & Access</h2>
+                    </div>
+                    <div class="admin-grid" style="margin-bottom: 2rem;">
+                        <a href="/admin-platform.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon indigo">
+                                    <i data-lucide="crown"></i>
+                                </div>
+                                <div class="admin-card-title">Platform Dashboard</div>
+                            </div>
+                            <div class="admin-card-description">Manage all organizations, admins, and global settings</div>
                         </a>
 
-                        <a href="/soul-configuration.html" class="admin-card">
+                        <a href="/admin-tier-setup.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon purple">
+                                    <i data-lucide="layers"></i>
+                                </div>
+                                <div class="admin-card-title">Tier Configuration</div>
+                            </div>
+                            <div class="admin-card-description">Configure subscription tiers, limits, and pricing</div>
+                        </a>
+
+                        <a href="/admin-resource-access.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon cyan">
+                                    <i data-lucide="shield-check"></i>
+                                </div>
+                                <div class="admin-card-title">Resource Access</div>
+                            </div>
+                            <div class="admin-card-description">Configure resource visibility and access controls</div>
+                        </a>
+
+                        <a href="/admin-role-audit.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon orange">
+                                    <i data-lucide="file-clock"></i>
+                                </div>
+                                <div class="admin-card-title">Role Audit</div>
+                            </div>
+                            <div class="admin-card-description">Review role changes, access grants, and audit trail</div>
+                        </a>
+
+                        <a href="/support-settings.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon green">
+                                    <i data-lucide="headset"></i>
+                                </div>
+                                <div class="admin-card-title">Support AI Settings</div>
+                            </div>
+                            <div class="admin-card-description">Configure support widget, policies, and AI behavior</div>
+                        </a>
+
+                        <a href="/digest-sources.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon amber">
+                                    <i data-lucide="rss"></i>
+                                </div>
+                                <div class="admin-card-title">Digest Sources</div>
+                            </div>
+                            <div class="admin-card-description">Manage AI Digest content sources and feeds</div>
+                        </a>
+
+                        <a href="/integrations.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon blue">
+                                    <i data-lucide="plug"></i>
+                                </div>
+                                <div class="admin-card-title">Integrations</div>
+                            </div>
+                            <div class="admin-card-description">Connect external services and APIs</div>
+                        </a>
+
+                        <a href="/mcp-connections.html" class="admin-card">
                             <div class="admin-card-header">
                                 <div class="admin-card-icon pink">
-                                    <i data-lucide="sparkles"></i>
+                                    <i data-lucide="plug-zap"></i>
                                 </div>
-                                <div class="admin-card-title">Values & Ethics</div>
+                                <div class="admin-card-title">MCP Connections</div>
                             </div>
-                            <div class="admin-card-description">Manage organization values, bright lines, and voice</div>
+                            <div class="admin-card-description">Manage Model Context Protocol server connections</div>
                         </a>
-
                     </div>
 
                     <!-- Content & Assets -->
@@ -1124,7 +1131,7 @@
                         <i data-lucide="folder-cog"></i>
                         <h2>Content & Assets</h2>
                     </div>
-                    <div class="admin-grid">
+                    <div class="admin-grid" style="margin-bottom: 2rem;">
                         <a href="/tags.html" class="admin-card">
                             <div class="admin-card-header">
                                 <div class="admin-card-icon orange">
@@ -1132,7 +1139,7 @@
                                 </div>
                                 <div class="admin-card-title">Tag Management</div>
                             </div>
-                            <div class="admin-card-description">Organize tags for categorization</div>
+                            <div class="admin-card-description">Organize tags for categorization across the platform</div>
                         </a>
 
                         <a href="/asset-types.html" class="admin-card">
@@ -1142,9 +1149,57 @@
                                 </div>
                                 <div class="admin-card-title">Asset Types</div>
                             </div>
-                            <div class="admin-card-description">Define context asset schemas</div>
+                            <div class="admin-card-description">Define context asset type schemas and fields</div>
+                        </a>
+                    </div>
+
+                    <!-- Monitoring & Data -->
+                    <div class="section-header">
+                        <i data-lucide="activity"></i>
+                        <h2>Monitoring & Data</h2>
+                    </div>
+                    <div class="admin-grid" style="margin-bottom: 2rem;">
+                        <a href="/system-health.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon green">
+                                    <i data-lucide="activity"></i>
+                                </div>
+                                <div class="admin-card-title">System Health</div>
+                            </div>
+                            <div class="admin-card-description">Monitor API status, uptime, and system performance</div>
                         </a>
 
+                        <a href="/synerginexus.html" class="admin-card">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon cyan">
+                                    <i data-lucide="brain-circuit"></i>
+                                </div>
+                                <div class="admin-card-title">SynergiNexus</div>
+                            </div>
+                            <div class="admin-card-description">Multi-agent orchestration and coordination</div>
+                        </a>
+
+                        <div class="admin-card" onclick="showConversationsPanel()">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon indigo">
+                                    <i data-lucide="message-square"></i>
+                                </div>
+                                <div class="admin-card-title">Conversations</div>
+                            </div>
+                            <div class="admin-card-description">View and manage all user conversations</div>
+                            <div id="conversationCount" class="admin-card-badge">Loading...</div>
+                        </div>
+
+                        <div class="admin-card" onclick="showSessionsPanel()">
+                            <div class="admin-card-header">
+                                <div class="admin-card-icon purple">
+                                    <i data-lucide="clipboard-list"></i>
+                                </div>
+                                <div class="admin-card-title">Align 120 Sessions</div>
+                            </div>
+                            <div class="admin-card-description">View and manage all Align 120 sessions</div>
+                            <div id="sessionCount" class="admin-card-badge">Loading...</div>
+                        </div>
                     </div>
                 </div>
 

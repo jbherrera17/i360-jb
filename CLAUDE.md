@@ -445,6 +445,71 @@ This whitelist is required for security - the docs API will return 404 for files
 ### 5. Higgins Context Integration
 User guides are automatically available to Higgins (chat.html) via the `/api/docs/` endpoint, enabling AI-assisted help for users. Write guides with clear, searchable language.
 
+## New Module Integration Checklist (MANDATORY)
+
+**CRITICAL:** Every new module, feature, or page MUST integrate with existing infrastructure. Do NOT build isolated functionality. Before considering any module complete, every item below must be verified. This checklist exists because Phase 71 shipped with broken navigation, missing role access, hardcoded data instead of API calls, dead links, and schema bugs — all because infrastructure integration was skipped.
+
+### 1. Platform Module Registration (Database)
+- [ ] `platform_modules` row with ALL fields: `id`, `name`, `description`, `icon`, `category`, `min_tier`, `is_active`, `is_beta`, **`route_path`**, **`nav_group`**, **`display_order`**
+- [ ] Use `ON CONFLICT (id) DO UPDATE SET` (not `DO NOTHING`) so re-runs fix missing fields
+- [ ] `role_module_access` rows seeded for appropriate business roles (executive, director, manager, supervisor at minimum)
+- [ ] Verify module appears in navigation sidebar with a working link (not null)
+
+### 2. Route Registration (Server)
+- [ ] Route file created with factory pattern: `module.exports = function(supabase)`
+- [ ] Route registered in `server/index.js` with `app.use('/api/...', routeFile(supabase))`
+- [ ] `requireModule('module_id')` middleware on all routes
+- [ ] `checkResourceLimit('resource_type')` on creation endpoints if resource has limits
+- [ ] Parameterized routes (`/:id`) registered AFTER literal routes (`/metrics/dashboard`)
+- [ ] SSE endpoints added to compression skip list if applicable
+
+### 3. Data Scoping (Database Queries)
+- [ ] Tables with `org_id` column: use `.eq('org_id', orgId)` directly
+- [ ] Tables WITHOUT `org_id` (e.g., `processes`): scope via `department_id` → `departments.org_id` join (the Parthenon pattern)
+- [ ] Never assume a column exists — verify the schema before writing queries
+- [ ] RLS policies on all new tables following the org member check pattern
+
+### 4. Frontend Integration
+- [ ] `<script src="/js/auth-fetch.js"></script>` included — use `authFetch()` for ALL API calls (never raw `fetch` with manual tokens)
+- [ ] `<script src="/js/navigation.js"></script>` included with `<aside class="sidebar"></aside>`
+- [ ] `<script src="/js/modal-service/loader.js" data-auto-load></script>` — use ModalService, never inline modals
+- [ ] Help button in page header with `HelpModal.open()`
+- [ ] Standard template structure (see HTML Template Structure section above)
+- [ ] All data loaded from APIs — never hardcode data that exists in the database
+
+### 5. Infrastructure Connections
+- [ ] Use existing APIs and services — do NOT duplicate functionality:
+  - Processes/Policies → Parthenon API (`/api/parthenon/processes`)
+  - Knowledge base content → Context Assets (`/api/context/assets`)
+  - User/org data → existing auth middleware (`req.user`, `req.user.org_id`)
+  - Soul/values config → Soul Config Service
+  - Guardrails → Guardrail Enforcement Service
+- [ ] Links between pages point to real, existing pages (no dead links like `/processes.html`)
+- [ ] Cross-module links use correct paths (e.g., `/parthenon.html#processes` not `/processes.html`)
+- [ ] Search queries include all relevant fields (e.g., `content_text` not just `name` and `description`)
+
+### 6. Documentation Chain (ALL FOUR required)
+- [ ] User guide: `documentation/guides/{page-name}-user-guide.md`
+- [ ] Help registry: entry added to `public/js/help-registry.js`
+- [ ] Docs whitelist: filename added to `ALLOWED_DOCS` in `server/routes/docs.js`
+- [ ] Technical guide: `documentation/guides/{page-name}-technical-guide.md` (for complex features)
+
+### 7. Testing
+- [ ] Unit tests for service logic
+- [ ] Integration tests for routes (auth, module gating, CRUD)
+- [ ] All existing tests still pass (`npm test`)
+
+### 8. Verification (Before Declaring Complete)
+- [ ] Server starts without errors (`npm run dev`)
+- [ ] Module appears in sidebar navigation with correct link
+- [ ] Page loads successfully when clicked from nav
+- [ ] Non-platform-admin user can access the page (role access works)
+- [ ] Data displays from database, not hardcoded defaults
+- [ ] All cross-page links work (no 404s)
+- [ ] Help button opens documentation
+
+**If any item is unchecked, the module is NOT complete.** Do not move on to the next task.
+
 ## Environment Variables
 
 Required in `.env` (see `.env.example`):

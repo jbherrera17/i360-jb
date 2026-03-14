@@ -283,22 +283,32 @@ async function executeTool(toolName, toolInput, conversationId, orgId) {
         }
 
         case 'search_knowledge_base': {
-            // Search context assets as knowledge base — search name and description
+            // Search context assets as knowledge base — search name, description, and content
             const searchTerm = `%${toolInput.query}%`;
             const { data: articles } = await supabase
                 .from('context_assets')
                 .select('id, name, description, type')
                 .eq('org_id', orgId)
-                .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
+                .or(`name.ilike.${searchTerm},description.ilike.${searchTerm},content_text.ilike.${searchTerm}`)
                 .limit(5);
 
-            // Also search processes (policies, procedures)
-            const { data: processes } = await supabase
-                .from('processes')
-                .select('id, name, description')
-                .eq('org_id', orgId)
-                .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
-                .limit(3);
+            // Also search processes (policies, procedures) — scoped via department → org
+            const { data: orgDepts } = await supabase
+                .from('departments')
+                .select('id')
+                .eq('org_id', orgId);
+            const deptIds = (orgDepts || []).map(d => d.id);
+
+            let processes = [];
+            if (deptIds.length > 0) {
+                const { data: procData } = await supabase
+                    .from('processes')
+                    .select('id, name, description')
+                    .in('department_id', deptIds)
+                    .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
+                    .limit(3);
+                processes = procData || [];
+            }
 
             const allResults = [
                 ...(articles || []).map(a => ({
