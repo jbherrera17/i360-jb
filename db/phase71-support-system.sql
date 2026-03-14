@@ -368,7 +368,7 @@ CREATE INDEX IF NOT EXISTS idx_support_actions_idempotency ON support_actions(id
 -- SEED: Module Registration
 -- ============================================================================
 
-INSERT INTO platform_modules (id, name, description, icon, category, min_tier, is_active, is_beta)
+INSERT INTO platform_modules (id, name, description, icon, category, min_tier, is_active, is_beta, route_path, nav_group, display_order)
 VALUES (
     'support_ai',
     'Customer Support AI',
@@ -377,12 +377,18 @@ VALUES (
     'tool',
     NULL,
     true,
-    true
+    true,
+    '/support-dashboard.html',
+    'modules',
+    65
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
-    is_beta = EXCLUDED.is_beta;
+    is_beta = EXCLUDED.is_beta,
+    route_path = EXCLUDED.route_path,
+    nav_group = EXCLUDED.nav_group,
+    display_order = EXCLUDED.display_order;
 
 -- ============================================================================
 -- SEED: Support Policies (as processes)
