@@ -20,7 +20,8 @@ module.exports = function(supabase) {
     router.get('/', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            // Fallback to req.orgId (set by auth middleware from user's default_org_id)
+            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId;
 
             if (!userId) {
                 return res.status(401).json({
@@ -72,7 +73,7 @@ module.exports = function(supabase) {
     router.get('/usage', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId;
 
             if (!userId) {
                 return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -229,7 +230,7 @@ module.exports = function(supabase) {
         try {
             const userId = req.userId;
             const { moduleId } = req.params;
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId;
 
             if (!userId) {
                 return res.status(401).json({

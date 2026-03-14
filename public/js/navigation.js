@@ -144,6 +144,12 @@ async function fetchAccessibleModules() {
             return null;
         }
 
+        // If modules array is empty, fall back to static nav
+        if (!result.data.modules || result.data.modules.length === 0) {
+            console.warn('Navigation: No modules returned, using static nav');
+            return null;
+        }
+
         return result.data;
     } catch (error) {
         console.warn('Navigation: Error fetching modules:', error);
