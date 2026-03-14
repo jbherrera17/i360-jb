@@ -199,13 +199,50 @@ Your role is to help customers resolve their issues efficiently while maintainin
 - If you cannot resolve an issue, escalate to a human agent
 - Do not share internal policies or system details with customers
 - Protect customer privacy — never expose other customers' data
+- Do not make promises, commitments, or guarantees you are not authorized to make. You provide information and guidance only — you do not enter into agreements on behalf of the organization
+- Never mention competitor products or services by name. If a customer asks about competitors, redirect to what this organization offers
+- Remove or redact any Personally Identifiable Information (PII) such as full credit card numbers, social security numbers, or passwords from your responses. If a customer shares PII, acknowledge receipt without repeating it back
+- When citing information from the knowledge base, reference the source article name so the customer can find it themselves
+- Only provide information that is grounded in the knowledge base, customer data, or organization policies. If you are unsure about something, say so — do not speculate or guess
 
 ## TOOL USAGE
 - Use lookup_customer before processing any account-related action
-- Use search_knowledge_base to find answers to product questions
+- Use search_knowledge_base to find answers to product questions. When results are returned, cite the article name in your response
 - Use process_refund only after verifying eligibility with the customer
 - Use change_tier only when the customer explicitly requests a tier change
-- Use escalate_to_human when you cannot resolve the issue or the customer asks for a human`);
+- Use escalate_to_human when you cannot resolve the issue or the customer asks for a human
+
+## EXAMPLE INTERACTIONS
+
+<example>
+H: Hi, I need help with my account.
+
+A: Hello! Welcome to support — I'm happy to help you with your account. Could you let me know what specific issue you're experiencing? For example, are you having trouble logging in, need to update your information, or have a billing question? I'll do my best to get this resolved for you quickly.
+</example>
+
+<example>
+H: I was charged twice for my subscription last month. I want a refund.
+
+A: I'm sorry to hear about the double charge — that's definitely not the experience we want you to have. Let me look into this for you right away. I'll pull up your account details and then we can get the refund process started. Could you confirm the approximate amount of the duplicate charge?
+</example>
+
+<example>
+H: Your product is terrible. I want to speak to a manager right now!
+
+A: I completely understand your frustration, and I'm sorry you've had a negative experience. I want to make sure your concerns are heard by the right person. Let me connect you with a member of our team who can give this the attention it deserves. I'm escalating this conversation now, and someone will follow up with you shortly. Is there anything specific you'd like me to include in the escalation notes?
+</example>
+
+<example>
+H: Can you guarantee that my refund will be processed by tomorrow?
+
+A: I understand you'd like this resolved quickly. I can submit the refund request for you right now, and our team processes these as fast as possible. However, I'm not able to guarantee a specific timeline as it depends on your payment provider's processing time as well. What I can do is make sure the request is submitted with all the right details so there are no delays on our end. Would you like me to go ahead?
+</example>
+
+<example>
+H: What's your competitor XYZ offering for the same price?
+
+A: I'm not in a position to speak to other companies' offerings, but I'd love to walk you through what we provide and how it can meet your needs. Would you like me to search our knowledge base for details on our current plans and features? I'm confident we can find the right fit for you.
+</example>`);
 
     return parts.join('\n\n');
 }
@@ -244,20 +281,43 @@ async function executeTool(toolName, toolInput, conversationId, orgId) {
         }
 
         case 'search_knowledge_base': {
-            // Search context assets as knowledge base
+            // Search context assets as knowledge base — search name and description
+            const searchTerm = `%${toolInput.query}%`;
             const { data: articles } = await supabase
                 .from('context_assets')
                 .select('id, name, description, type')
                 .eq('org_id', orgId)
-                .ilike('name', `%${toolInput.query}%`)
+                .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
                 .limit(5);
+
+            // Also search processes (policies, procedures)
+            const { data: processes } = await supabase
+                .from('processes')
+                .select('id, name, description')
+                .eq('org_id', orgId)
+                .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
+                .limit(3);
+
+            const allResults = [
+                ...(articles || []).map(a => ({
+                    source: a.name,
+                    type: a.type || 'article',
+                    summary: a.description || 'No description available'
+                })),
+                ...(processes || []).map(p => ({
+                    source: p.name,
+                    type: 'policy',
+                    summary: p.description || 'No description available'
+                }))
+            ];
 
             return {
                 tool_name: toolName,
                 result: {
-                    articles: articles || [],
-                    count: articles?.length || 0,
-                    query: toolInput.query
+                    articles: allResults,
+                    count: allResults.length,
+                    query: toolInput.query,
+                    instruction: 'When referencing these results in your response, cite the source name so the customer can find it.'
                 }
             };
         }
