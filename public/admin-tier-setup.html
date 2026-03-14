@@ -459,6 +459,7 @@
         </div>
     </div>
 
+    <script src="/js/auth-fetch.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
@@ -566,13 +567,7 @@
 
         async function checkPlatformAdminAccess() {
             try {
-                const token = getAuthToken();
-                if (!token) return false;
-
-                const response = await fetch('/api/platform/tiers', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
+                const response = await authFetch('/api/platform/tiers');
                 return response.ok;
             } catch (error) {
                 return false;
@@ -582,10 +577,7 @@
         async function loadTiers() {
             try {
                 showLoading('Loading Tiers', 'Fetching subscription tier data...');
-                const token = getAuthToken();
-                const response = await fetch('/api/platform/tiers', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await authFetch('/api/platform/tiers');
 
                 if (!response.ok) throw new Error('Failed to load tiers');
 
@@ -608,14 +600,10 @@
         }
 
         async function loadTierModules() {
-            const token = getAuthToken();
-
             // Load modules per tier and all modules in parallel
             const promises = tiers.map(async tier => {
                 try {
-                    const response = await fetch(`/api/platform/tiers/${tier.id}/modules`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
+                    const response = await authFetch(`/api/platform/tiers/${tier.id}/modules`);
                     if (response.ok) {
                         const data = await response.json();
                         tierModules[tier.id] = data.data || { modules: [], by_nav_group: {} };
@@ -629,7 +617,7 @@
             // Also fetch all modules for addon pricing config
             promises.push((async () => {
                 try {
-                    const response = await fetch('/api/pricing/modules');
+                    const response = await authFetch('/api/pricing/modules');
                     if (response.ok) {
                         const data = await response.json();
                         allModules = data.data?.modules || [];
@@ -998,17 +986,12 @@
         }
 
         async function saveAllChanges() {
-            const token = getAuthToken();
-
             try {
                 showLoading('Saving Changes', 'Updating subscription tiers...');
                 for (const tier of tiers) {
-                    const response = await fetch(`/api/platform/tiers/${tier.id}`, {
+                    const response = await authFetch(`/api/platform/tiers/${tier.id}`, {
                         method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             price_monthly: tier.price_monthly,
                             price_yearly: tier.price_yearly,
@@ -1039,12 +1022,9 @@
                 const addonModuleIds = Object.keys(addonPricingChanges);
                 for (const moduleId of addonModuleIds) {
                     const changes = addonPricingChanges[moduleId];
-                    const addonResponse = await fetch(`/api/platform/modules/${moduleId}/addon-pricing`, {
+                    const addonResponse = await authFetch(`/api/platform/modules/${moduleId}/addon-pricing`, {
                         method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(changes)
                     });
 

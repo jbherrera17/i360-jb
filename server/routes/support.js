@@ -92,6 +92,53 @@ module.exports = function (supabase) {
         }
     });
 
+    // ── METRICS DASHBOARD ────────────────────────────────────
+    // NOTE: Must be registered BEFORE /:id to avoid Express treating "metrics" as a conversation ID
+    router.get('/metrics/dashboard', async (req, res) => {
+        try {
+            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            if (!orgId) {
+                return res.status(400).json({ success: false, error: 'org_id is required' });
+            }
+
+            // Aggregate metrics
+            const [
+                { data: totalConvs },
+                { data: openConvs },
+                { data: escalatedConvs },
+                { data: resolvedConvs },
+                { data: avgCsat },
+                { data: totalActions }
+            ] = await Promise.all([
+                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
+                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'open'),
+                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'escalated'),
+                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'resolved'),
+                supabase.from('support_conversations').select('csat_score').eq('org_id', orgId).not('csat_score', 'is', null),
+                supabase.from('support_actions').select('id', { count: 'exact', head: true }).eq('org_id', orgId)
+            ]);
+
+            const csatScores = avgCsat || [];
+            const avgCsatScore = csatScores.length > 0
+                ? (csatScores.reduce((sum, r) => sum + r.csat_score, 0) / csatScores.length).toFixed(2)
+                : null;
+
+            res.json({
+                success: true,
+                data: {
+                    total_conversations: totalConvs?.length || 0,
+                    open: openConvs?.length || 0,
+                    escalated: escalatedConvs?.length || 0,
+                    resolved: resolvedConvs?.length || 0,
+                    avg_csat: avgCsatScore ? parseFloat(avgCsatScore) : null,
+                    total_actions: totalActions?.length || 0
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     // ── GET CONVERSATION ─────────────────────────────────────
     router.get('/:id', async (req, res) => {
         try {
@@ -290,52 +337,6 @@ module.exports = function (supabase) {
 
             if (error) throw error;
             res.json({ success: true, data });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
-
-    // ── METRICS DASHBOARD ────────────────────────────────────
-    router.get('/metrics/dashboard', async (req, res) => {
-        try {
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
-            if (!orgId) {
-                return res.status(400).json({ success: false, error: 'org_id is required' });
-            }
-
-            // Aggregate metrics
-            const [
-                { data: totalConvs },
-                { data: openConvs },
-                { data: escalatedConvs },
-                { data: resolvedConvs },
-                { data: avgCsat },
-                { data: totalActions }
-            ] = await Promise.all([
-                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
-                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'open'),
-                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'escalated'),
-                supabase.from('support_conversations').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'resolved'),
-                supabase.from('support_conversations').select('csat_score').eq('org_id', orgId).not('csat_score', 'is', null),
-                supabase.from('support_actions').select('id', { count: 'exact', head: true }).eq('org_id', orgId)
-            ]);
-
-            const csatScores = avgCsat || [];
-            const avgCsatScore = csatScores.length > 0
-                ? (csatScores.reduce((sum, r) => sum + r.csat_score, 0) / csatScores.length).toFixed(2)
-                : null;
-
-            res.json({
-                success: true,
-                data: {
-                    total_conversations: totalConvs?.length || 0,
-                    open: openConvs?.length || 0,
-                    escalated: escalatedConvs?.length || 0,
-                    resolved: resolvedConvs?.length || 0,
-                    avg_csat: avgCsatScore ? parseFloat(avgCsatScore) : null,
-                    total_actions: totalActions?.length || 0
-                }
-            });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
         }

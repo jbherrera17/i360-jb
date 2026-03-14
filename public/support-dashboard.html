@@ -521,9 +521,10 @@
                     headers: getHeaders()
                 });
                 if (!res.ok) throw new Error('Failed to load metrics');
-                const data = await res.json();
+                const json = await res.json();
+                const data = json.data || json;
 
-                document.getElementById('stat-total').textContent = data.total ?? 0;
+                document.getElementById('stat-total').textContent = data.total_conversations ?? 0;
                 document.getElementById('stat-open').textContent = data.open ?? 0;
                 document.getElementById('stat-escalated').textContent = data.escalated ?? 0;
                 document.getElementById('stat-resolved').textContent = data.resolved ?? 0;
@@ -531,7 +532,6 @@
                     data.avg_csat != null ? Number(data.avg_csat).toFixed(1) : '--';
             } catch (err) {
                 console.error('Metrics load error:', err);
-                showToast('Failed to load dashboard metrics', 'error');
             }
         }
 
@@ -667,18 +667,16 @@
                 });
                 if (!confirmed) return;
 
-                const res = await authFetch(`/api/support/actions/${actionId}`, {
-                    method: 'PATCH',
-                    headers: getHeaders(),
-                    body: JSON.stringify({ status: decision })
+                const endpoint = decision === 'approved' ? 'approve' : 'deny';
+                const res = await authFetch(`/api/support/actions/${actionId}/${endpoint}`, {
+                    method: 'POST',
+                    headers: getHeaders()
                 });
                 if (!res.ok) throw new Error('Failed to update action');
 
-                showToast(`Action ${decision} successfully`, 'success');
                 await Promise.all([loadPendingActions(), loadMetrics()]);
             } catch (err) {
                 console.error('Action update error:', err);
-                showToast('Failed to update action', 'error');
             }
         }
 
