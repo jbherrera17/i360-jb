@@ -158,7 +158,8 @@ const digestRoutes = require('./routes/digest');
 const roleAuditRoutes = require('./routes/roleAudit');
 const supportRoutes = require('./routes/support');
 const supportActionsRoutes = require('./routes/supportActions');
-const widgetChatRoutes = require('./routes/widgetChat');
+let widgetChatRoutes;
+try { widgetChatRoutes = require('./routes/widgetChat'); } catch (_e) { /* Widget routes not yet deployed */ }
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
