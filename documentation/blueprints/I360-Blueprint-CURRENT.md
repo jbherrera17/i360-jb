@@ -1,17 +1,17 @@
-# Insight 360 Blueprint v3.74
+# Insight 360 Blueprint v3.75
 
-**Version:** 3.74
+**Version:** 3.75
 **Date:** March 15, 2026
-**Status:** Current | Phase 74
+**Status:** Current | Phase 75
 **Codename:** Chronicle
-**Previous Version:** v3.73 (Infrastructure Integration & Admin Reorganization)
-**Latest Update:** Phase 74: Thought Leadership Publishing Pipeline
+**Previous Version:** v3.74 (Thought Leadership Publishing Pipeline)
+**Latest Update:** Phase 75: Annie Embeddable Chat Widget
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.74 delivers **Phase 74: Thought Leadership Publishing Pipeline** — transforming the Thought Leadership module from a content generation tool into a complete publishing platform with one-click distribution to Blog, Notion, Social Media, and Substack.
+Insight 360 v3.75 delivers **Phase 75: Annie Embeddable Chat Widget** — a secure, compliant, public-facing chat system for external websites. The module enables any i360 agent to be deployed as an embeddable chat widget via iframe, with HMAC token authentication, PII redaction, Haiku/Sonnet cost optimization, Google Sheets data sync, Calendly scheduling integration, and a full conversation review dashboard.
 
 Key deliverables:
 1. **Publishing pipeline** — Unified publish-package endpoint distributes articles to Blog, Notion, Postiz social media (8+ platforms), and Substack (beta) in one action
@@ -23,6 +23,90 @@ Key deliverables:
 7. **Notion property fixes** — Corrected Status (→status type), Goal (→select type), added Month/YR, Quarter, URL setters
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 75: What Was Completed
+
+### 1. Embeddable Chat Widget Module
+
+Complete public-facing chat system for external websites with full WF-01 governance (PRD v2, security review, compliance audit, FMEA, test plan, metrics framework).
+
+| Component | Type | Description |
+|-----------|------|-------------|
+| `widgetAgentService.js` | New service | Security-isolated LLM execution with restricted tools (KB search + escalate only), Haiku/Sonnet routing, conversation summarization, guardrail screening, output filtering |
+| `piiRedactionService.js` | New service | 10-pattern PII detection/redaction (email, phone, SSN, DOB, CC, MRN, address, ZIP, insurance) |
+| `sheets.js` | New service | Google Sheets data connector with sanitization, sync to context_assets |
+| `calendly.js` | New provider | Calendly integration (OAuth + Personal Access Token, event types, availability) |
+| `widgetChat.js` | New route | Public SSE chat with HMAC auth, CORS enforcement, rate limiting, privacy policy, data deletion |
+| `widgets.js` | New route | Authenticated CRUD for widget management, token rotation, usage stats |
+| `conversationReview.js` | New route | Conversation search, export (CSV/JSON), Export to Context Asset knowledge loop |
+| `chat-widget.js` | New frontend | Embeddable widget (28KB) with 4 pre-chat modes, consent, SSE streaming |
+| `conversation-review.html` | New page | Two-panel review dashboard with search, transcript, notes, multi-select export |
+| `support-settings.html` | Modified | 4 new admin tabs: Chat Widgets, Privacy & Compliance, Data Sources, Integrations |
+| `phase73-embeddable-chat-widgets.sql` | Migration | `chat_widgets`, `widget_sessions` tables, RLS, module registration, role access, Calendly provider |
+| `public/demo/` | New (6 pages) | Medical practice demo site with Annie widget embedded |
+
+### 2. Security Controls (15 Requirements)
+
+All 15 security requirements from the STRIDE threat model implemented:
+
+| ID | Control | Implementation |
+|----|---------|----------------|
+| SEC-01 | HMAC widget token | Per-widget signing secret, timing-safe validation |
+| SEC-02 | CORS domain enforcement | Server-side origin check against `cors_origins` |
+| SEC-03 | Public routes before auth | Widget routes registered before `authenticate` middleware |
+| SEC-04 | Restricted tool set | Only `search_knowledge_base` + `escalate_to_human` |
+| SEC-05 | org_id from token only | Never from request body/headers |
+| SEC-06 | Stripped system prompt | No internal org details, no full soul config |
+| SEC-07 | Guardrail screening | `screenMessage()` on every inbound message |
+| SEC-08 | Output filtering | Strip system prompt fragments, internal URLs, table names |
+| SEC-09 | Spend caps | Daily LLM spend cap + per-session message cap |
+| SEC-10 | Rate limiting | 30/min per IP, 200/min per widget |
+| SEC-11 | SSE connection limit | Max 100 concurrent streams per widget |
+| SEC-14 | Message length limit | 2000 character max |
+| SEC-15 | Active check | `is_active` verified on every request |
+
+### 3. Compliance Controls (9 Requirements)
+
+| ID | Control | Implementation |
+|----|---------|----------------|
+| R-01/R-02 | PII redaction | 10-pattern redaction before storage; BAA confirmed unnecessary |
+| R-03 | AI transparency | Pre-chat disclosure displayed |
+| R-04/R-05 | Medical disclaimer | Permanent footer + system prompt guardrails |
+| R-06 | Data retention | Configurable (30-365 days), automated cleanup |
+| R-07 | Right-to-delete | `DELETE /api/chat/public/:widget_id/data/:session_id` |
+| R-08 | Consent mechanism | Checkbox (lead_capture/optional) or implicit (open_chat) |
+| R-09 | Privacy policy | Editable template, served at public endpoint |
+
+### 4. Pre-Chat Configuration (4 Modes)
+
+| Mode | Email | Form? | Use Case |
+|------|-------|-------|----------|
+| `lead_capture` | Required | Yes | Annie/Jon — lead generation |
+| `open_chat` | Hidden | No | Customer support — zero friction |
+| `optional_info` | Optional | Skippable | Balanced approach |
+| `custom` | Per-field | Yes | Admin-configured |
+
+### 5. Cost Optimization
+
+- Haiku-first routing (~$0.04/conversation avg vs $0.11 Sonnet-only)
+- Conversation summarization after turn 3 reduces token replay
+- Soft cap + auto-degrade at usage ceiling (never kills widget)
+- Daily spend caps: $5 Starter, $25 Business, $100 Enterprise
+
+### 6. Demo Environment
+
+6-page medical practice simulation at `/demo/` for sales demonstrations. No authentication required. Widget embedded on facelift page with test HMAC token.
+
+### 7. PRD v2 & Governance
+
+Full WF-01 governance workflow with 5 subordinate agent delegations:
+- Spec Writer (Reese): PRD v2 with 34 acceptance criteria
+- Security Analyst (Alex): 21 STRIDE threats, 15 security requirements
+- Compliance Auditor (Riley): 8 regulatory domains, 9 compliance controls
+- QA Analyst (Morgan): 128 test cases
+- Metrics Analyst (Quinn): 6 SLOs, 17 Prometheus metrics, corrected cost model
 
 ---
 
