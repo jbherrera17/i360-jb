@@ -1122,13 +1122,21 @@ ${research_findings}` : ''}
 ${additional_context ? `**Additional Context:**
 ${additional_context}` : ''}
 
-Write the complete article now, following the Voice DNA exactly. Include:
-- A hook opening that creates curiosity
-- Clear thesis statement
-- Supporting sections with evidence
-- Specific examples
-- Actionable takeaways
-- Reflective close`;
+Write the complete article now. Your Voice DNA profile is provided in the agent context — follow it precisely:
+- Use the sentence architecture patterns (open with story, follow with principle, close with takeaway)
+- Match the rhythm variations (long reflective sentences alternating with short punchy statements)
+- Use the signature concepts and transitional habits from the linguistic fingerprint
+- Apply the rhetorical toolkit (personal storytelling, rhetorical questions, direct address)
+- Respect the voice boundaries — NEVER sound like a hype-driven tech evangelist or corporate bureaucrat
+- End with the closing signature: "Make today your masterpiece."
+
+Article structure:
+- A hook opening with a personal story or vivid memory
+- Clear thesis statement anchored in values
+- Supporting sections with evidence and lived examples
+- Specific, concrete examples (not hypothetical)
+- Actionable takeaways grounded in practical wisdom
+- Reflective close with a call to think, not just act`;
 
             // Execute the TL Article Writer agent
             const startTime = Date.now();
@@ -1440,7 +1448,7 @@ ${research_findings}` : ''}
 ${additional_context ? `**Additional Context:**
 ${additional_context}` : ''}
 
-Write the complete article now, following the Voice DNA exactly.`;
+Write the complete article now. Your Voice DNA profile is provided in the agent context — follow it precisely. Use the sentence architecture patterns, signature concepts, rhetorical toolkit, and emotional palette. Respect the voice boundaries. End with "Make today your masterpiece."`;
 
                 const articleResult = await executeAgent(TL_AGENTS.ARTICLE_WRITER, {
                     userMessage: articlePrompt,
