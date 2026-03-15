@@ -121,11 +121,11 @@ class NotionService {
 
         const filterConditions = [];
 
-        // Status filter
+        // Status filter (uses Notion 'status' type, not 'select')
         if (filters.status) {
             filterConditions.push({
                 property: 'Status',
-                select: { equals: filters.status }
+                status: { equals: filters.status }
             });
         }
 
@@ -414,8 +414,11 @@ class NotionService {
             pillar: getSelect(props['Pillar']),
             event_type: getSelect(props['Event Type']),
             status: getStatus(props['Status']),
-            goal: getRichText(props['Goal']),
+            goal: getSelect(props['Goal']),
             monthly_topic: getRichText(props['Monthly Topic']),
+            month_yr: getRichText(props['Month/YR']),
+            quarter: getSelect(props['Quarter']),
+            url: props['userDefined:URL']?.url || props['URL']?.url || null,
 
             // Week info
             week_number: getNumber(props['Week']),
@@ -465,22 +468,44 @@ class NotionService {
             };
         }
 
+        // Status uses Notion's 'status' property type (NOT 'select')
         if (entry.status !== undefined) {
             properties['Status'] = {
-                select: entry.status ? { name: entry.status } : null
+                status: entry.status ? { name: entry.status } : null
             };
         }
 
-        // Rich text properties
+        // Goal is a 'select' property (NOT 'rich_text')
         if (entry.goal !== undefined) {
             properties['Goal'] = {
-                rich_text: [{ text: { content: entry.goal || '' } }]
+                select: entry.goal ? { name: entry.goal } : null
             };
         }
 
         if (entry.monthly_topic !== undefined) {
             properties['Monthly Topic'] = {
                 rich_text: [{ text: { content: entry.monthly_topic || '' } }]
+            };
+        }
+
+        // Month/YR (rich text)
+        if (entry.month_yr !== undefined) {
+            properties['Month/YR'] = {
+                rich_text: [{ text: { content: entry.month_yr || '' } }]
+            };
+        }
+
+        // Quarter (select)
+        if (entry.quarter !== undefined) {
+            properties['Quarter'] = {
+                select: entry.quarter ? { name: entry.quarter } : null
+            };
+        }
+
+        // URL (url type, mapped to 'userDefined:URL' in the database schema)
+        if (entry.url !== undefined) {
+            properties['URL'] = {
+                url: entry.url || null
             };
         }
 
@@ -1015,6 +1040,236 @@ class NotionService {
             url: page.url,
             blocksCreated: blocksToAppend.length + (options.toggleTitle ? 1 : 0)
         };
+    }
+
+    /**
+     * Publish a full Thought Leadership article page to the Content Calendar database.
+     * Creates a database entry with all properties + 4 toggle sections:
+     *   1. Image — header image
+     *   2. Article — human-readable article
+     *   3. AI Article — AI-optimized structured article
+     *   4. Marketing — LinkedIn posts with schedule
+     *
+     * @param {Object} article - Article data
+     * @param {string} article.title - Article title
+     * @param {string} article.articleMarkdown - Human-readable article content
+     * @param {string} article.articleAiOptimized - AI-optimized article content
+     * @param {string} article.headerImageUrl - Header image URL (Supabase Storage)
+     * @param {Object[]} article.linkedinPosts - Array of 5 LinkedIn posts
+     * @param {Object} properties - Notion database properties
+     * @param {string} properties.pillar - Content pillar name
+     * @param {string} properties.goal - Content goal
+     * @param {string} properties.monthlyTopic - Monthly topic
+     * @param {string} properties.quarter - e.g. "Q1 2026"
+     * @param {string} properties.monthYr - e.g. "Mar 2026"
+     * @param {string} properties.scheduledDate - ISO date string
+     * @param {string} properties.url - Published article URL
+     * @param {Object} properties.publishTargets - Checkbox values for each platform
+     * @returns {Object} - { success, pageId, url, blocksCreated }
+     */
+    async publishArticlePage(article, properties = {}) {
+        if (!this.isCalendarConfigured()) {
+            throw new Error('Content Calendar is not configured.');
+        }
+
+        const {
+            title,
+            articleMarkdown,
+            articleAiOptimized,
+            headerImageUrl,
+            linkedinPosts = []
+        } = article;
+
+        if (!title || !articleMarkdown) {
+            throw new Error('Title and article content are required');
+        }
+
+        // Step 1: Create the database page with all properties
+        const entryData = {
+            title,
+            scheduled_date: properties.scheduledDate || new Date().toISOString().split('T')[0],
+            event_type: 'Article',
+            pillar: properties.pillar || null,
+            goal: properties.goal || null,
+            status: 'Published',
+            monthly_topic: properties.monthlyTopic || null,
+            month_yr: properties.monthYr || null,
+            quarter: properties.quarter || null,
+            url: properties.url || null,
+            // Publishing checkboxes
+            publish_substack: properties.publishTargets?.substack || false,
+            publish_x: properties.publishTargets?.x || false,
+            publish_li_page: properties.publishTargets?.li_page || false,
+            publish_li_personal: properties.publishTargets?.li_personal || false,
+            publish_website: properties.publishTargets?.website || false,
+            publish_facebook_personal: properties.publishTargets?.fb_personal || false,
+            publish_facebook_page: properties.publishTargets?.fb_page || false,
+            publish_facebook_group: properties.publishTargets?.fb_group || false
+        };
+
+        const calendarProperties = this.buildCalendarProperties(entryData);
+
+        const page = await this.client.pages.create({
+            parent: { database_id: this.contentCalendarDbId },
+            properties: calendarProperties
+        });
+
+        const pageId = page.id;
+        let totalBlocks = 0;
+
+        // Step 2: Add Image toggle section
+        if (headerImageUrl) {
+            const imageToggle = {
+                object: 'block',
+                type: 'heading_1',
+                heading_1: {
+                    rich_text: [{ type: 'text', text: { content: 'Image' } }],
+                    is_toggleable: true,
+                    color: 'default'
+                }
+            };
+
+            const imageToggleResult = await this.client.blocks.children.append({
+                block_id: pageId,
+                children: [imageToggle]
+            });
+
+            const imageToggleId = imageToggleResult.results[0].id;
+
+            // Add image block inside toggle
+            await this.client.blocks.children.append({
+                block_id: imageToggleId,
+                children: [{
+                    object: 'block',
+                    type: 'image',
+                    image: {
+                        type: 'external',
+                        external: { url: headerImageUrl }
+                    }
+                }]
+            });
+
+            totalBlocks += 2;
+        }
+
+        // Step 3: Add Article toggle section
+        await this._appendToggleSection(pageId, 'Article', articleMarkdown);
+        totalBlocks += 1;
+
+        // Step 4: Add AI Article toggle section (if available)
+        if (articleAiOptimized) {
+            await this._appendToggleSection(pageId, 'AI Article', articleAiOptimized);
+            totalBlocks += 1;
+        }
+
+        // Step 5: Add Marketing toggle section (LinkedIn posts)
+        if (linkedinPosts && linkedinPosts.length > 0) {
+            const marketingContent = this._buildMarketingMarkdown(linkedinPosts, title);
+            await this._appendToggleSection(pageId, 'Marketing', marketingContent);
+            totalBlocks += 1;
+        }
+
+        console.log(`[NotionService] Published article page: ${pageId} with ${totalBlocks} sections`);
+
+        return {
+            success: true,
+            pageId: page.id,
+            url: page.url,
+            blocksCreated: totalBlocks,
+            entry: this.parseCalendarPage(page)
+        };
+    }
+
+    /**
+     * Helper: Append a toggle section with markdown content to a page
+     * @private
+     */
+    async _appendToggleSection(pageId, toggleTitle, markdownContent) {
+        // Create the toggle heading
+        const toggleBlock = {
+            object: 'block',
+            type: 'heading_1',
+            heading_1: {
+                rich_text: [{ type: 'text', text: { content: toggleTitle } }],
+                is_toggleable: true,
+                color: 'default'
+            }
+        };
+
+        const toggleResult = await this.client.blocks.children.append({
+            block_id: pageId,
+            children: [toggleBlock]
+        });
+
+        const toggleId = toggleResult.results[0].id;
+
+        // Convert markdown to blocks and append as children
+        const contentBlocks = this.markdownToBlocks(markdownContent);
+
+        // Notion API limits to 100 blocks per request
+        for (let i = 0; i < contentBlocks.length; i += 100) {
+            const chunk = contentBlocks.slice(i, i + 100);
+            if (chunk.length > 0) {
+                await this.client.blocks.children.append({
+                    block_id: toggleId,
+                    children: chunk
+                });
+            }
+        }
+
+        return toggleId;
+    }
+
+    /**
+     * Helper: Build marketing section markdown from LinkedIn posts
+     * @private
+     */
+    _buildMarketingMarkdown(linkedinPosts, articleTitle) {
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const dayThemes = {
+            monday: 'Insight Launch',
+            tuesday: 'Problem Spotlight',
+            wednesday: 'Framework Reveal',
+            thursday: 'Story/Example',
+            friday: 'Call to Reflect'
+        };
+
+        let md = `# LinkedIn Posts: ${articleTitle}\n\n`;
+        md += `**Article:** ${articleTitle}\n\n---\n\n`;
+
+        for (let i = 0; i < linkedinPosts.length; i++) {
+            const post = linkedinPosts[i];
+            const dayName = dayNames[i] || `Day ${i + 1}`;
+            const day = post.day || dayName.toLowerCase();
+            const theme = post.theme || dayThemes[day] || '';
+
+            md += `## **${dayName}: ${theme}**\n\n`;
+
+            if (post.content) {
+                md += `${post.content}\n\n`;
+            }
+
+            if (post.hashtags && post.hashtags.length > 0) {
+                md += `${post.hashtags.map(h => h.startsWith('#') ? h : `#${h}`).join(' ')}\n\n`;
+            }
+
+            md += `---\n\n`;
+        }
+
+        // Post scheduling summary
+        md += `## **Post Scheduling Summary**\n\n`;
+        md += `| Day | Post | Hashtags |\n`;
+        md += `|-----|------|----------|\n`;
+
+        for (let i = 0; i < linkedinPosts.length; i++) {
+            const post = linkedinPosts[i];
+            const dayName = dayNames[i] || `Day ${i + 1}`;
+            const theme = post.theme || dayThemes[post.day] || '';
+            const hashtags = (post.hashtags || []).map(h => h.startsWith('#') ? h : `#${h}`).join(', ');
+            md += `| ${dayName} | ${theme} | ${hashtags} |\n`;
+        }
+
+        return md;
     }
 
     /**

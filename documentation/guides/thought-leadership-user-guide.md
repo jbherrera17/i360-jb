@@ -1,7 +1,7 @@
 # Thought Leadership User Guide
 
 **For:** Insight 360 Users
-**Last Updated:** January 12, 2026
+**Last Updated:** March 15, 2026
 
 ---
 
@@ -28,6 +28,9 @@ The Thought Leadership interface provides:
 | **Content Calendar** | Plan and schedule content with Notion sync |
 | **Weekly Pipeline** | Guided workflow from topic to publication |
 | **Quick Actions** | Direct access to specialized AI agents |
+| **Publish** | One-click publishing to blog, Notion, social media, and Substack |
+| **Pre-Flight Checks** | Verify all integrations before starting a workflow |
+| **Header Images** | AI-generated header images for every article |
 
 ---
 
@@ -284,6 +287,144 @@ The atomic claim is your thesis distilled to one sentence:
 
 ---
 
+## Pre-Flight Integration Checks
+
+Before generating or publishing content, verify that all integrations are working:
+
+1. In the **Publish** section, click **Check Integrations**
+2. Review the status of each integration:
+
+| Status | Meaning |
+|--------|---------|
+| Green dot | Ready — integration is working |
+| Yellow dot | Degraded — working with warnings (e.g., expiring credentials) |
+| Red dot | Unavailable — integration is down or not configured |
+
+Integrations checked:
+- **Image Generation** — verifies your preferred image model (GPT Image 1.5 or DALL-E 3) is accessible
+- **Notion** — confirms API key and Content Calendar database access
+- **Social Media** — checks Postiz configuration and connected platforms
+- **Substack** (beta) — verifies session cookies and publication URL
+- **LinkedIn** — checks direct connection token validity
+- **Blog** — always ready (local publishing)
+
+If an integration shows red, you can still proceed — the system will skip that target and let you know what succeeded and what didn't.
+
+---
+
+## Header Images
+
+Every article now includes an automatically generated header image.
+
+### How It Works
+
+When you generate an article (via Write Article or the Weekly Pipeline), a header image is created automatically using AI image generation. The image is based on your article's content, style preferences, and content pillar.
+
+### Image Model Options
+
+| Model | Status | Best For |
+|-------|--------|----------|
+| **GPT Image 1.5** | Default | Better instruction-following, latest model |
+| **DALL-E 3** | Deprecated May 2026 | Higher detail, photorealistic style |
+| **DALL-E 2** | Legacy | Fastest generation, lower quality |
+
+### Setting Your Preferred Model
+
+Your image model preference is saved in your TL profile. To change it:
+1. Go to your profile settings
+2. Set **Preferred Image Model** (default: GPT Image 1.5)
+3. Set **Preferred Image Style** (default: Professional)
+
+### Image Styles
+
+| Style | Description |
+|-------|-------------|
+| **Professional** | Clean, modern business aesthetic with subtle colors |
+| **Abstract** | Conceptual art with bold, vibrant colors |
+| **Illustrative** | Editorial illustration with hand-drawn feel |
+| **Minimalist** | Simple shapes, limited palette, lots of white space |
+| **Futuristic** | Tech-forward, neon accents, AI themes |
+
+### Opting Out
+
+If you don't want an image generated, set `generate_image: false` when generating an article. You can always generate an image later from the image generation panel.
+
+---
+
+## Publishing Content
+
+The Publish section lets you distribute your content to multiple platforms in one action.
+
+### Publish Targets
+
+| Target | Description | Auth Required |
+|--------|-------------|--------------|
+| **Blog** | Public article page at `/blog/{slug}` with SEO meta tags | Automatic |
+| **Notion** | Full page in Content Calendar with Image, Article, AI Article, and Marketing toggle sections | Notion API key |
+| **Social Media** | Post via Postiz to LinkedIn, X, Facebook, Instagram, and more | Postiz connection |
+| **Substack** (beta) | Publish as newsletter post | Substack session cookies |
+
+### Publishing Step by Step
+
+1. **Select your article** from the dropdown in the Publish section (only articles with content appear)
+2. **Check the targets** you want to publish to (Blog and Notion are checked by default)
+3. Click **Check Integrations** to verify everything is ready (recommended)
+4. Click **Publish Package**
+5. Review the results — each target shows success or failure with details
+
+### Understanding Publish Results
+
+After publishing, each target shows its result:
+- **Green check** — published successfully, with a link to the published content
+- **Red X** — failed, with an error message and suggested fix
+
+Publishing is resilient — if one target fails, others still succeed. You can retry failed targets individually.
+
+### Blog Publishing Details
+
+When you publish to the Blog:
+- A public page is created at `/blog/{your-article-slug}`
+- The page includes your header image, formatted article, author info, and pillar tag
+- SEO meta tags (Open Graph, Twitter Card) are set automatically using your header image
+- Previous/next article navigation is included
+- View counts are tracked
+
+### Notion Publishing Details
+
+When you publish to Notion, a page is created in your Content Calendar database with:
+- **Properties**: Title, Date, Event Type (Article), Pillar, Goal, Monthly Topic, Status (Published), Quarter, Month/YR, URL, and publishing checkboxes
+- **Page body** with 4 toggle sections:
+  - **Image** — your header image
+  - **Article** — full human-readable article
+  - **AI Article** — AI-optimized structured version
+  - **Marketing** — LinkedIn posts with daily themes and schedule table
+
+### Substack Publishing (Beta)
+
+Substack publishing uses an unofficial API and requires session cookies:
+
+1. **Setup**: Go to TL settings and add your Substack publication URL and session cookies
+2. **Cookie refresh**: Session cookies expire periodically — you'll see a yellow warning when they're about to expire
+3. **Publishing**: Your article is published as a newsletter post with the header image as cover art
+
+**Note**: This is a beta feature. The Substack API is unofficial and may occasionally change.
+
+---
+
+## Add-On Access (Starter Tier)
+
+The Thought Leadership module is included in Business tier and above. Starter tier organizations can purchase it as an add-on:
+
+| Plan | Price | Article Limit | LinkedIn Posts |
+|------|-------|---------------|---------------|
+| **Starter Add-On** | $49/month | 4 articles/month | 20 posts/month |
+| **Business** (included) | — | 16 articles/month | 80 posts/month |
+| **Enterprise** (included) | — | Unlimited | Unlimited |
+
+To purchase the add-on, contact your account administrator or use the module catalog.
+
+---
+
 ## Tips for Best Results
 
 ### Content Strategy
@@ -333,6 +474,26 @@ The atomic claim is your thesis distilled to one sentence:
 - Run new visibility check
 - Allow 24-48 hours between checks
 - Verify web search is working
+
+**Image not generating with article:**
+- Check that your preferred image model is available (run Check Integrations)
+- If DALL-E 3 is selected, consider switching to GPT Image 1.5 (DALL-E 3 deprecated May 2026)
+- You can retry image generation separately from the image panel
+- Set `generate_image: false` to skip image generation if needed
+
+**Blog publish failing:**
+- Ensure the article has content (generate an article first)
+- Check for slug collisions (rare — system auto-appends suffix)
+
+**Notion publish not creating full page:**
+- Run Check Integrations to verify Notion API access
+- Ensure NOTION_API_KEY is configured in environment
+- Check that the Content Calendar database is accessible
+
+**Substack cookies expired:**
+- Go to TL settings and refresh your session cookies
+- Copy fresh cookies from your browser's DevTools (substack.sid, connect.sid)
+- Substack is beta — occasional failures are expected
 
 ---
 

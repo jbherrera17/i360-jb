@@ -129,6 +129,7 @@ const departmentRolesRoutes = require('./routes/department-roles');
 const userProfileRoutes = require('./routes/user-profile');
 const synerginexusRoutes = require('./routes/synerginexus');
 const thoughtLeadershipRoutes = require('./routes/thought-leadership');
+const blogRoutes = require('./routes/blog');
 const oauthRoutes = require('./routes/oauth');
 const modelAvailabilityRoutes = require('./routes/model-availability');
 const visualizationsRoutes = require('./routes/visualizations');
@@ -157,6 +158,7 @@ const digestRoutes = require('./routes/digest');
 const roleAuditRoutes = require('./routes/roleAudit');
 const supportRoutes = require('./routes/support');
 const supportActionsRoutes = require('./routes/supportActions');
+const widgetChatRoutes = require('./routes/widgetChat');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -225,7 +227,7 @@ app.use(compression({
         if (req.headers.accept === 'text/event-stream') {
             return false;
         }
-        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream' || req.path.match(/^\/api\/support\/conversations\/[^/]+\/stream$/)) {
+        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream' || req.path.match(/^\/api\/support\/conversations\/[^/]+\/stream$/) || req.path.match(/^\/api\/chat\/public\/[^/]+\/stream$/)) {
             return false;
         }
         // Use default compression for everything else
@@ -520,7 +522,16 @@ function initializeServices() {
         serviceStatus.supabase = true;
         console.log('  ✅ Supabase (Database) - Ready');
 
-        // Apply authentication middleware BEFORE routes
+        // [SEC-03] Register PUBLIC widget routes BEFORE auth middleware
+        // These endpoints use HMAC token auth, not Supabase auth
+        try {
+            app.use('/api/chat/public', widgetChatRoutes(supabase));
+            console.log('  ✅ Widget public chat routes registered (before auth)');
+        } catch (error) {
+            console.log('  ⚠️  Widget chat routes not loaded:', error.message);
+        }
+
+        // Apply authentication middleware BEFORE authenticated routes
         try {
             const { authenticate, rateLimit } = require('./middleware/auth');
             app.use('/api', authenticate);
@@ -562,6 +573,7 @@ function initializeServices() {
         app.use('/api/user-profile', userProfileRoutes(supabase));
         app.use('/api/synerginexus', synerginexusRoutes(supabase));
         app.use('/api/thought-leadership', thoughtLeadershipRoutes(supabase));
+        app.use('/blog', blogRoutes(supabase));  // Public — no auth middleware
         app.use('/api/oauth', oauthRoutes(supabase));
         app.use('/api/models', modelAvailabilityRoutes);
         app.use('/api/visualizations', visualizationsRoutes);

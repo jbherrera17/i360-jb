@@ -55,10 +55,23 @@ const IMAGE_STYLES = {
     }
 };
 
-// Default image settings
-const DEFAULT_SIZE = '1792x1024';  // Wide format for article headers
-const DEFAULT_QUALITY = 'standard';
-const DEFAULT_MODEL = 'dall-e-3';
+// Default image settings — gpt-image-1.5 is the new default (DALL-E 3 deprecated May 2026)
+const DEFAULT_MODEL = 'gpt-image-1.5';
+const DEFAULT_QUALITY = 'medium';
+
+// Size mapping per model (wide format for article headers)
+const MODEL_SIZES = {
+    'gpt-image-1.5': '1536x1024',
+    'dall-e-3': '1792x1024',
+    'dall-e-2': '1024x1024'
+};
+
+// Quality mapping per model
+const MODEL_QUALITIES = {
+    'gpt-image-1.5': { low: 'low', standard: 'medium', medium: 'medium', high: 'high', hd: 'high' },
+    'dall-e-3': { low: 'standard', standard: 'standard', medium: 'standard', high: 'hd', hd: 'hd' },
+    'dall-e-2': { low: 'standard', standard: 'standard', medium: 'standard', high: 'standard', hd: 'standard' }
+};
 
 /**
  * Generate an optimized DALL-E prompt from article content
@@ -193,8 +206,7 @@ async function generateArticleImage(articleContent, options = {}) {
 
     const {
         style = 'professional',
-        size = DEFAULT_SIZE,
-        quality = DEFAULT_QUALITY,
+        model = DEFAULT_MODEL,
         pillar = null,
         thesis = null,
         topic = null,
@@ -202,9 +214,18 @@ async function generateArticleImage(articleContent, options = {}) {
         userId = null
     } = options;
 
+    // Resolve model-specific settings
+    const resolvedModel = model || DEFAULT_MODEL;
+    const size = options.size || MODEL_SIZES[resolvedModel] || MODEL_SIZES[DEFAULT_MODEL];
+    const qualityInput = options.quality || DEFAULT_QUALITY;
+    const qualityMap = MODEL_QUALITIES[resolvedModel] || MODEL_QUALITIES[DEFAULT_MODEL];
+    const quality = qualityMap[qualityInput] || qualityInput;
+
     const styleConfig = IMAGE_STYLES[style] || IMAGE_STYLES.professional;
+    const isGptImage = resolvedModel.startsWith('gpt-image');
 
     logger.info('[TL Image] Starting image generation', {
+        model: resolvedModel,
         style,
         size,
         quality,
@@ -223,21 +244,38 @@ async function generateArticleImage(articleContent, options = {}) {
 
         logger.info('[TL Image] Generated prompt', { promptLength: imagePrompt.length });
 
-        // Step 2: Generate image with DALL-E
-        const dalleResult = await openaiService.generateImage(imagePrompt, {
-            model: DEFAULT_MODEL,
+        // Step 2: Generate image — handle model-specific API params
+        const imageParams = {
+            model: resolvedModel,
             size,
-            quality,
-            style: styleConfig.dalleStyle
-        });
+            quality
+        };
 
-        const dalleUrl = dalleResult.images[0].url;
-        const revisedPrompt = dalleResult.images[0].revisedPrompt;
+        // Only DALL-E 3 supports the 'style' API parameter (vivid/natural)
+        // GPT Image models don't use it — style is applied via prompt modifiers instead
+        if (!isGptImage && styleConfig.dalleStyle) {
+            imageParams.style = styleConfig.dalleStyle;
+        }
 
-        logger.info('[TL Image] DALL-E generation complete');
+        const dalleResult = await openaiService.generateImage(imagePrompt, imageParams);
 
-        // Step 3: Download and upload to Supabase Storage
-        const imageBuffer = await downloadImage(dalleUrl);
+        // Handle both URL (DALL-E) and base64 (GPT Image) response formats
+        const imageData = dalleResult.images[0];
+        const dalleUrl = imageData.url || null;
+        const base64Data = imageData.b64_json || null;
+        const revisedPrompt = imageData.revisedPrompt;
+
+        logger.info('[TL Image] Image generation complete', { model: resolvedModel });
+
+        // Step 3: Get image buffer — from URL download or base64 decode
+        let imageBuffer;
+        if (dalleUrl) {
+            imageBuffer = await downloadImage(dalleUrl);
+        } else if (base64Data) {
+            imageBuffer = Buffer.from(base64Data, 'base64');
+        } else {
+            throw new Error('Image generation returned no URL or base64 data');
+        }
 
         // Generate unique filename
         const timestamp = Date.now();
@@ -250,7 +288,8 @@ async function generateArticleImage(articleContent, options = {}) {
 
         logger.info('[TL Image] Upload complete', {
             generationTimeMs,
-            filename
+            filename,
+            model: resolvedModel
         });
 
         // Step 4: Save to database if userId provided
@@ -259,8 +298,8 @@ async function generateArticleImage(articleContent, options = {}) {
                 prompt: imagePrompt,
                 revisedPrompt,
                 imageUrl: permanentUrl,
-                dalleUrl,
-                model: DEFAULT_MODEL,
+                dalleUrl: dalleUrl || null,
+                model: resolvedModel,
                 size,
                 quality,
                 style,
@@ -272,12 +311,12 @@ async function generateArticleImage(articleContent, options = {}) {
             url: permanentUrl,
             prompt: imagePrompt,
             revisedPrompt,
-            dalleUrl,  // Original URL (will expire)
+            dalleUrl: dalleUrl || null,
             style,
             styleName: styleConfig.name,
             size,
             quality,
-            model: DEFAULT_MODEL,
+            model: resolvedModel,
             generationTimeMs,
             metadata: {
                 bucket: STORAGE_BUCKET,

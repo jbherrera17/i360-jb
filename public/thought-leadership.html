@@ -1249,6 +1249,177 @@
             font-size: 0.85rem;
             color: var(--text-muted);
         }
+
+        /* Publish Section (Phase 72) */
+        .publish-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg, 12px);
+            padding: var(--spacing-lg);
+        }
+
+        .publish-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .publish-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .publish-title h3 { margin: 0; }
+
+        /* Pre-flight results */
+        .preflight-results {
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md, 8px);
+        }
+
+        .preflight-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .preflight-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .preflight-item.ready { border-color: var(--success); }
+        .preflight-item.ready .preflight-dot { background: var(--success); }
+        .preflight-item.degraded { border-color: var(--warning); }
+        .preflight-item.degraded .preflight-dot { background: var(--warning); }
+        .preflight-item.unavailable, .preflight-item.expired, .preflight-item.not_configured {
+            border-color: var(--danger);
+            opacity: 0.8;
+        }
+        .preflight-item.unavailable .preflight-dot,
+        .preflight-item.expired .preflight-dot,
+        .preflight-item.not_configured .preflight-dot { background: var(--danger); }
+
+        .preflight-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .preflight-message {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Publish targets */
+        .publish-targets {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .publish-target {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .publish-target:hover { border-color: var(--primary); }
+
+        .publish-target input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        .publish-target input[type="checkbox"]:checked ~ .target-info .target-name {
+            color: var(--primary);
+        }
+
+        .target-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .target-icon i { width: 16px; height: 16px; }
+
+        .target-info { display: flex; flex-direction: column; }
+        .target-name { font-weight: 600; font-size: 0.9rem; }
+        .target-desc { font-size: 0.75rem; color: var(--text-muted); }
+        .target-desc-beta {
+            font-size: 0.75rem;
+            color: var(--warning);
+        }
+
+        /* Publish actions */
+        .publish-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+
+        .publish-entry-select {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        /* Publish results */
+        .publish-results {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md, 8px);
+        }
+
+        .publish-result-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .publish-result-item + .publish-result-item {
+            border-top: 1px solid var(--border);
+        }
+
+        .result-success { color: var(--success); }
+        .result-error { color: var(--danger); }
+        .result-link { color: var(--primary); text-decoration: none; }
+        .result-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -1663,6 +1834,79 @@
                             <div class="step-name">Publish</div>
                             <div class="step-status">Pending</div>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Publish Pipeline (Phase 72) -->
+                <section class="publish-section" id="publish-section">
+                    <div class="publish-header">
+                        <div class="publish-title">
+                            <i data-lucide="send"></i>
+                            <h3>Publish</h3>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="runPreflightChecks()" id="preflight-btn">
+                            <i data-lucide="shield-check"></i>
+                            Check Integrations
+                        </button>
+                    </div>
+
+                    <!-- Pre-flight Status (hidden until checked) -->
+                    <div id="preflight-results" class="preflight-results" style="display:none;">
+                        <div class="preflight-grid" id="preflight-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Publish Targets -->
+                    <div class="publish-targets">
+                        <label class="publish-target">
+                            <input type="checkbox" id="pub-target-web" checked>
+                            <div class="target-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);"><i data-lucide="globe"></i></div>
+                            <div class="target-info">
+                                <span class="target-name">Blog</span>
+                                <span class="target-desc">Public article page</span>
+                            </div>
+                        </label>
+                        <label class="publish-target">
+                            <input type="checkbox" id="pub-target-notion" checked>
+                            <div class="target-icon" style="background: linear-gradient(135deg, #1a1a2e, #333);"><i data-lucide="book-open"></i></div>
+                            <div class="target-info">
+                                <span class="target-name">Notion</span>
+                                <span class="target-desc">Content Calendar page</span>
+                            </div>
+                        </label>
+                        <label class="publish-target">
+                            <input type="checkbox" id="pub-target-social">
+                            <div class="target-icon" style="background: linear-gradient(135deg, #0077b5, #004182);"><i data-lucide="share-2"></i></div>
+                            <div class="target-info">
+                                <span class="target-name">Social Media</span>
+                                <span class="target-desc">Via Postiz (8+ platforms)</span>
+                            </div>
+                        </label>
+                        <label class="publish-target">
+                            <input type="checkbox" id="pub-target-substack">
+                            <div class="target-icon" style="background: linear-gradient(135deg, #ff6719, #ff4500);"><i data-lucide="mail"></i></div>
+                            <div class="target-info">
+                                <span class="target-name">Substack</span>
+                                <span class="target-desc-beta">Newsletter (beta)</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Publish Actions -->
+                    <div class="publish-actions">
+                        <select id="pub-calendar-entry" class="publish-entry-select" aria-label="Select article to publish">
+                            <option value="">Select article to publish...</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="publishPackage()" id="publish-btn" disabled>
+                            <i data-lucide="send"></i>
+                            Publish Package
+                        </button>
+                    </div>
+
+                    <!-- Publish Results (hidden until published) -->
+                    <div id="publish-results" class="publish-results" style="display:none;">
+                        <div id="publish-results-content"></div>
                     </div>
                 </section>
 
@@ -2922,13 +3166,177 @@ Start by asking about their current online presence and platforms.`
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('oauth_success') === 'linkedin') {
-                alert('LinkedIn connected successfully!');
+                showToast && showToast('LinkedIn connected successfully!', 'success');
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else if (urlParams.get('oauth_error')) {
-                alert('LinkedIn connection failed: ' + urlParams.get('oauth_error'));
+                showToast && showToast('LinkedIn connection failed: ' + urlParams.get('oauth_error'), 'error');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
+
+            // Load publishable entries for the publish dropdown
+            loadPublishableEntries();
         });
+
+        // ============================================================
+        // PUBLISH PIPELINE (Phase 72)
+        // ============================================================
+
+        const STATUS_ICONS = {
+            ready: '<i data-lucide="check-circle" style="width:14px;height:14px;color:var(--success)"></i>',
+            degraded: '<i data-lucide="alert-triangle" style="width:14px;height:14px;color:var(--warning)"></i>',
+            unavailable: '<i data-lucide="x-circle" style="width:14px;height:14px;color:var(--danger)"></i>',
+            expired: '<i data-lucide="clock" style="width:14px;height:14px;color:var(--danger)"></i>',
+            not_configured: '<i data-lucide="minus-circle" style="width:14px;height:14px;color:var(--text-muted)"></i>'
+        };
+
+        const SERVICE_LABELS = {
+            image: 'Image Generation',
+            notion: 'Notion',
+            social: 'Social Media',
+            substack: 'Substack',
+            linkedin: 'LinkedIn',
+            web: 'Blog'
+        };
+
+        async function runPreflightChecks() {
+            const btn = document.getElementById('preflight-btn');
+            const grid = document.getElementById('preflight-grid');
+            const container = document.getElementById('preflight-results');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader"></i> Checking...';
+            grid.innerHTML = '';
+            container.style.display = 'block';
+
+            try {
+                const res = await fetchAPI('/api/thought-leadership/preflight?targets=image,notion,social,substack,linkedin,web');
+
+                if (!res.checks) throw new Error('Invalid preflight response');
+
+                for (const [key, check] of Object.entries(res.checks)) {
+                    const item = document.createElement('div');
+                    item.className = `preflight-item ${check.status}`;
+                    item.innerHTML = `
+                        <span class="preflight-dot"></span>
+                        <strong>${SERVICE_LABELS[key] || key}</strong>
+                        <span class="preflight-message" title="${check.message || ''}">${check.message || check.status}</span>
+                        ${check.beta ? '<span style="font-size:0.7rem;color:var(--warning);font-weight:600;">BETA</span>' : ''}
+                    `;
+                    grid.appendChild(item);
+                }
+
+                lucide && lucide.createIcons();
+            } catch (err) {
+                grid.innerHTML = `<div class="preflight-item unavailable"><span class="preflight-dot"></span>Pre-flight check failed: ${err.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="shield-check"></i> Check Integrations';
+                lucide && lucide.createIcons();
+            }
+        }
+
+        async function loadPublishableEntries() {
+            const select = document.getElementById('pub-calendar-entry');
+            const publishBtn = document.getElementById('publish-btn');
+
+            try {
+                const res = await fetchAPI('/api/thought-leadership/calendar');
+                const entries = (res.entries || res || []).filter(e =>
+                    e.article_markdown && ['drafting', 'review', 'ready'].includes(e.status)
+                );
+
+                entries.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = e.id;
+                    opt.textContent = `${e.title || 'Untitled'} (${e.status})`;
+                    select.appendChild(opt);
+                });
+
+                select.addEventListener('change', () => {
+                    publishBtn.disabled = !select.value;
+                });
+            } catch (err) {
+                console.warn('Could not load publishable entries:', err);
+            }
+        }
+
+        async function publishPackage() {
+            const calendarEntryId = document.getElementById('pub-calendar-entry').value;
+            if (!calendarEntryId) {
+                showToast && showToast('Select an article to publish', 'warning');
+                return;
+            }
+
+            const targets = [];
+            if (document.getElementById('pub-target-web').checked) targets.push('web');
+            if (document.getElementById('pub-target-notion').checked) targets.push('notion');
+            if (document.getElementById('pub-target-social').checked) targets.push('social');
+            if (document.getElementById('pub-target-substack').checked) targets.push('substack');
+
+            if (targets.length === 0) {
+                showToast && showToast('Select at least one publish target', 'warning');
+                return;
+            }
+
+            const publishBtn = document.getElementById('publish-btn');
+            publishBtn.disabled = true;
+            publishBtn.innerHTML = '<i data-lucide="loader"></i> Publishing...';
+
+            const resultsDiv = document.getElementById('publish-results');
+            const resultsContent = document.getElementById('publish-results-content');
+            resultsDiv.style.display = 'none';
+
+            try {
+                const res = await fetchAPI('/api/thought-leadership/publish/package', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        calendar_entry_id: calendarEntryId,
+                        targets,
+                        social_platforms: ['linkedin', 'twitter', 'facebook']
+                    })
+                });
+
+                // Display results
+                resultsContent.innerHTML = '';
+                for (const [target, result] of Object.entries(res.results || {})) {
+                    const item = document.createElement('div');
+                    item.className = 'publish-result-item';
+                    if (result.success) {
+                        const url = result.url || result.notion_url || result.substack_url || '';
+                        item.innerHTML = `
+                            <span class="result-success"><i data-lucide="check-circle" style="width:16px;height:16px;"></i></span>
+                            <strong>${SERVICE_LABELS[target] || target}</strong>
+                            ${url ? `<a href="${url}" target="_blank" class="result-link">${url}</a>` : 'Published'}
+                        `;
+                    } else {
+                        item.innerHTML = `
+                            <span class="result-error"><i data-lucide="x-circle" style="width:16px;height:16px;"></i></span>
+                            <strong>${SERVICE_LABELS[target] || target}</strong>
+                            <span style="color:var(--text-muted);font-size:0.85rem;">${result.error || 'Failed'}</span>
+                        `;
+                    }
+                    resultsContent.appendChild(item);
+                }
+
+                resultsDiv.style.display = 'block';
+                lucide && lucide.createIcons();
+
+                if (res.success) {
+                    showToast && showToast('Published to all targets successfully', 'success');
+                } else if (res.partial) {
+                    showToast && showToast('Published to some targets. Check results for details.', 'warning');
+                } else {
+                    showToast && showToast('Publishing failed. Check results for details.', 'error');
+                }
+            } catch (err) {
+                showToast && showToast('Publish failed: ' + err.message, 'error');
+            } finally {
+                publishBtn.disabled = false;
+                publishBtn.innerHTML = '<i data-lucide="send"></i> Publish Package';
+                lucide && lucide.createIcons();
+            }
+        }
     </script>
     <script src="/js/help-modal.js"></script>
     <script>

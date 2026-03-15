@@ -17,6 +17,7 @@ const { executeAgent } = require('../services/agentService');
 const tlImageService = require('../services/tlImageService');
 const linkedinService = require('../services/linkedinService');
 const schedulerService = require('../services/schedulerService');
+const preflightService = require('../services/preflightService');
 
 // TL Agent IDs (from seed-thought-leadership-agents.sql)
 const TL_AGENTS = {
@@ -70,6 +71,54 @@ module.exports = function(supabase) {
         } catch (err) {
             console.error('Module access middleware error:', err);
             next();
+        }
+    });
+
+    // ============================================================================
+    // PRE-FLIGHT CHECK ENDPOINT
+    // ============================================================================
+
+    /**
+     * GET /api/thought-leadership/preflight
+     * Run pre-flight checks on all downstream integrations before starting a workflow.
+     * Returns status map so users know what will/won't work upfront.
+     *
+     * Query params:
+     *   targets - comma-separated list (default: image,notion,social,substack,linkedin,web)
+     */
+    router.get('/preflight', async (req, res) => {
+        try {
+            const userId = req.userId;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+
+            // Parse requested targets
+            const targetsParam = req.query.targets || 'image,notion,social,substack,linkedin,web';
+            const targets = targetsParam.split(',').map(t => t.trim());
+
+            // Get user's preferred image model
+            let preferredImageModel = 'gpt-image-1.5';
+            if (userId) {
+                const { data: profile } = await supabase
+                    .from('thought_leadership_profiles')
+                    .select('preferred_image_model')
+                    .eq('user_id', userId)
+                    .single();
+                if (profile?.preferred_image_model) {
+                    preferredImageModel = profile.preferred_image_model;
+                }
+            }
+
+            const result = await preflightService.runPreflightChecks({
+                orgId,
+                userId,
+                targets,
+                preferredImageModel
+            });
+
+            res.json(result);
+        } catch (err) {
+            console.error('Error running preflight checks:', err);
+            res.status(500).json({ error: err.message });
         }
     });
 
@@ -1024,7 +1073,10 @@ Format as structured markdown with clear sections.`;
                 format = 'medium',
                 calendar_entry_id,
                 additional_context,
-                research_findings
+                research_findings,
+                generate_image = true,
+                image_style = null,
+                image_model = null
             } = req.body;
 
             if (!topic) {
@@ -1042,10 +1094,10 @@ Format as structured markdown with clear sections.`;
                 pillarInfo = pillar;
             }
 
-            // Get user's TL profile for thesis/claim context
+            // Get user's TL profile for thesis/claim context + image preferences
             const { data: profile } = await supabase
                 .from('thought_leadership_profiles')
-                .select('core_thesis, atomic_claim, positioning_framework')
+                .select('core_thesis, atomic_claim, positioning_framework, preferred_image_model, preferred_image_style')
                 .eq('user_id', userId)
                 .single();
 
@@ -1119,9 +1171,47 @@ Write the complete article now, following the Voice DNA exactly. Include:
                     .eq('id', calendar_entry_id);
             }
 
+            // Generate header image automatically (unless opted out)
+            let imageResult = null;
+            let imageError = null;
+            if (generate_image && result.response) {
+                const resolvedStyle = image_style || profile?.preferred_image_style || 'professional';
+                const resolvedModel = image_model || profile?.preferred_image_model || 'gpt-image-1.5';
+
+                console.log(`[TL Article] Generating ${resolvedStyle} header image with ${resolvedModel}`);
+                try {
+                    imageResult = await tlImageService.generateArticleImage(result.response, {
+                        style: resolvedStyle,
+                        model: resolvedModel,
+                        topic,
+                        pillar: pillarInfo?.name,
+                        thesis: profile?.core_thesis,
+                        calendarEntryId: calendar_entry_id,
+                        userId
+                    });
+                } catch (imgErr) {
+                    console.error('[TL Article] Image generation failed:', imgErr);
+                    imageError = {
+                        message: imgErr.message,
+                        recoverable: true,
+                        hint: 'You can retry image generation separately via the image generation panel'
+                    };
+                }
+            }
+
             res.json({
                 success: true,
                 article: result.response,
+                image: imageResult ? {
+                    url: imageResult.url,
+                    prompt: imageResult.prompt,
+                    revisedPrompt: imageResult.revisedPrompt,
+                    style: imageResult.style,
+                    styleName: imageResult.styleName,
+                    model: imageResult.model,
+                    generationTimeMs: imageResult.generationTimeMs
+                } : null,
+                image_error: imageError,
                 metadata: {
                     topic,
                     format,
@@ -1129,8 +1219,10 @@ Write the complete article now, following the Voice DNA exactly. Include:
                     execution_id: result.execution_id,
                     model: result.model,
                     tokens_used: result.usage?.total_tokens,
-                    duration_ms,
-                    saved_output_id: savedOutput?.id
+                    duration_ms: Date.now() - startTime,
+                    saved_output_id: savedOutput?.id,
+                    image_generated: !!imageResult,
+                    image_model: imageResult?.model || null
                 }
             });
         } catch (err) {
@@ -1291,7 +1383,8 @@ Generate all 5 posts now in JSON format:
                 research_findings,
                 additional_context,
                 generate_image = true,
-                image_style = 'professional'
+                image_style = null,
+                image_model = null
             } = req.body;
 
             if (!topic) {
@@ -1318,10 +1411,10 @@ Generate all 5 posts now in JSON format:
                 pillarInfo = pillar;
             }
 
-            // Get user's TL profile
+            // Get user's TL profile (including image preferences)
             const { data: profile } = await supabase
                 .from('thought_leadership_profiles')
-                .select('core_thesis, atomic_claim')
+                .select('core_thesis, atomic_claim, preferred_image_model, preferred_image_style')
                 .eq('user_id', userId)
                 .single();
 
@@ -1452,10 +1545,13 @@ Generate all 5 posts in JSON format:
 
             // STEP 4: Generate Header Image (only if article succeeded and image generation enabled)
             if (results.article && generate_image) {
-                console.log(`[TL Package] Step 4: Generating ${image_style} header image`);
+                const resolvedStyle = image_style || profile?.preferred_image_style || 'professional';
+                const resolvedModel = image_model || profile?.preferred_image_model || 'gpt-image-1.5';
+                console.log(`[TL Package] Step 4: Generating ${resolvedStyle} header image with ${resolvedModel}`);
                 try {
                     const imageResult = await tlImageService.generateArticleImage(results.article.content, {
-                        style: image_style,
+                        style: resolvedStyle,
+                        model: resolvedModel,
                         topic,
                         pillar: pillarInfo?.name,
                         thesis: profile?.core_thesis,
@@ -1469,11 +1565,17 @@ Generate all 5 posts in JSON format:
                         revisedPrompt: imageResult.revisedPrompt,
                         style: imageResult.style,
                         styleName: imageResult.styleName,
+                        model: imageResult.model,
                         generationTimeMs: imageResult.generationTimeMs
                     };
                 } catch (imageErr) {
                     console.error('[TL Package] Image generation failed:', imageErr);
-                    results.errors.push({ step: 'image', error: imageErr.message });
+                    results.errors.push({
+                        step: 'image',
+                        error: imageErr.message,
+                        recoverable: true,
+                        hint: 'You can retry image generation separately via the image generation panel'
+                    });
                 }
             }
 
@@ -1549,10 +1651,13 @@ Generate all 5 posts in JSON format:
             }
 
             const totalSteps = generate_image ? 4 : 3;
+            const hasErrors = results.errors.length > 0;
+            const hasCriticalError = results.errors.some(e => e.step === 'article');
             console.log(`[TL Package] Complete in ${totalDuration}ms with ${results.errors.length} errors`);
 
             res.json({
-                success: results.errors.length === 0,
+                success: !hasCriticalError,
+                partial: hasErrors && !hasCriticalError,
                 package: {
                     article: results.article?.content,
                     article_ai_optimized: results.article_ai?.content,
@@ -1564,12 +1669,14 @@ Generate all 5 posts in JSON format:
                     topic,
                     format,
                     pillar: pillarInfo?.name,
-                    image_style: generate_image ? image_style : null,
+                    image_style: generate_image ? (image_style || profile?.preferred_image_style || 'professional') : null,
+                    image_model: generate_image ? (image_model || profile?.preferred_image_model || 'gpt-image-1.5') : null,
                     total_duration_ms: totalDuration,
                     steps_completed: totalSteps - results.errors.length,
-                    saved_outputs: savedOutputs,
-                    errors: results.errors.length > 0 ? results.errors : undefined
-                }
+                    steps_total: totalSteps,
+                    saved_outputs: savedOutputs
+                },
+                errors: hasErrors ? results.errors : undefined
             });
         } catch (err) {
             console.error('Error generating package:', err);
@@ -1743,7 +1850,414 @@ Generate all 5 posts in JSON format:
     });
 
     // ============================================================================
-    // PUBLISHING & SCHEDULING ENDPOINTS
+    // PUBLISHING PIPELINE ENDPOINTS (Phase 72)
+    // ============================================================================
+
+    /**
+     * POST /api/thought-leadership/publish/web
+     * Publish article to the public blog
+     */
+    router.post('/publish/web', async (req, res) => {
+        try {
+            const userId = req.userId;
+            const orgId = req.headers['x-org-id'] || req.orgId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const { calendar_entry_id } = req.body;
+            if (!calendar_entry_id) return res.status(400).json({ error: 'calendar_entry_id is required' });
+
+            // Get calendar entry with article content
+            const { data: entry, error: entryErr } = await supabase
+                .from('content_calendar_entries')
+                .select('*, content_pillars(name, color)')
+                .eq('id', calendar_entry_id)
+                .single();
+
+            if (entryErr || !entry) return res.status(404).json({ error: 'Calendar entry not found' });
+            if (!entry.article_markdown) return res.status(400).json({ error: 'No article content to publish. Generate an article first.' });
+
+            // Get user profile for author info
+            const { data: profile } = await supabase
+                .from('thought_leadership_profiles')
+                .select('author_bio')
+                .eq('user_id', userId)
+                .single();
+
+            const { data: user } = await supabase
+                .from('users')
+                .select('full_name')
+                .eq('id', userId)
+                .single();
+
+            // Generate slug
+            const { generateSlug, renderMarkdown } = require('./blog');
+            let slug = generateSlug(entry.title);
+
+            // Handle slug collision — append suffix
+            const { data: existing } = await supabase
+                .from('blog_articles')
+                .select('slug')
+                .like('slug', `${slug}%`);
+
+            if (existing && existing.length > 0) {
+                const existingSlugs = existing.map(e => e.slug);
+                if (existingSlugs.includes(slug)) {
+                    let suffix = 2;
+                    while (existingSlugs.includes(`${slug}-${suffix}`)) suffix++;
+                    slug = `${slug}-${suffix}`;
+                }
+            }
+
+            // Render HTML from markdown (sanitized)
+            const articleHtml = renderMarkdown(entry.article_markdown);
+
+            // Extract subtitle from first paragraph if not set
+            const subtitleMatch = entry.article_markdown.match(/^(?:#.*\n+)?([^#\n].{20,150})/);
+            const subtitle = subtitleMatch ? subtitleMatch[1].replace(/\*\*/g, '').trim() : null;
+
+            // Create SEO metadata
+            const seoTitle = entry.title.substring(0, 60);
+            const seoDescription = (subtitle || entry.title).substring(0, 160);
+
+            // Upsert blog article
+            const { data: blogArticle, error: blogErr } = await supabase
+                .from('blog_articles')
+                .upsert({
+                    calendar_entry_id,
+                    org_id: orgId,
+                    user_id: userId,
+                    slug,
+                    title: entry.title,
+                    subtitle,
+                    article_html: articleHtml,
+                    article_markdown: entry.article_markdown,
+                    header_image_url: entry.header_image_url || null,
+                    author_name: user?.full_name || 'Synergi AI',
+                    author_bio: profile?.author_bio || null,
+                    pillar: entry.content_pillars?.name || null,
+                    pillar_color: entry.content_pillars?.color || null,
+                    published_at: new Date().toISOString(),
+                    seo_title: seoTitle,
+                    seo_description: seoDescription,
+                    og_image_url: entry.header_image_url || null,
+                    is_published: true
+                }, { onConflict: 'calendar_entry_id' })
+                .select()
+                .single();
+
+            if (blogErr) throw blogErr;
+
+            // Update calendar entry
+            await supabase
+                .from('content_calendar_entries')
+                .update({
+                    blog_slug: slug,
+                    blog_published: true,
+                    blog_published_at: new Date().toISOString()
+                })
+                .eq('id', calendar_entry_id);
+
+            const publicUrl = `/blog/${slug}`;
+
+            console.log(`[TL Publish] Published to web: ${publicUrl}`);
+
+            res.json({
+                success: true,
+                url: publicUrl,
+                slug,
+                blog_article_id: blogArticle.id
+            });
+        } catch (err) {
+            console.error('Error publishing to web:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * POST /api/thought-leadership/publish/notion
+     * Publish full article page to Notion Content Calendar
+     */
+    router.post('/publish/notion', async (req, res) => {
+        try {
+            const userId = req.userId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const { calendar_entry_id, publish_url } = req.body;
+            if (!calendar_entry_id) return res.status(400).json({ error: 'calendar_entry_id is required' });
+
+            // Get calendar entry with all content
+            const { data: entry, error: entryErr } = await supabase
+                .from('content_calendar_entries')
+                .select('*, content_pillars(name)')
+                .eq('id', calendar_entry_id)
+                .single();
+
+            if (entryErr || !entry) return res.status(404).json({ error: 'Calendar entry not found' });
+            if (!entry.article_markdown) return res.status(400).json({ error: 'No article content. Generate an article first.' });
+
+            // Derive quarter and month/yr from scheduled_date
+            const pubDate = entry.scheduled_date ? new Date(entry.scheduled_date) : new Date();
+            const quarter = `Q${Math.ceil((pubDate.getMonth() + 1) / 3)} ${pubDate.getFullYear()}`;
+            const monthYr = pubDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+            // Publish to Notion with full page structure
+            const result = await notionService.publishArticlePage(
+                {
+                    title: entry.title,
+                    articleMarkdown: entry.article_markdown,
+                    articleAiOptimized: entry.article_ai_optimized || null,
+                    headerImageUrl: entry.header_image_url || null,
+                    linkedinPosts: entry.linkedin_posts || []
+                },
+                {
+                    pillar: entry.content_pillars?.name || null,
+                    goal: entry.goal || null,
+                    monthlyTopic: entry.monthly_topic || null,
+                    quarter,
+                    monthYr,
+                    scheduledDate: entry.scheduled_date || new Date().toISOString().split('T')[0],
+                    url: publish_url || entry.blog_slug ? `/blog/${entry.blog_slug}` : null,
+                    publishTargets: {
+                        website: entry.publish_website || !!entry.blog_published,
+                        substack: entry.publish_substack || false,
+                        li_personal: entry.publish_li_personal || false,
+                        li_page: entry.publish_li_page || false,
+                        x: entry.publish_x || false,
+                        fb_personal: entry.publish_facebook_personal || false,
+                        fb_page: entry.publish_facebook_page || false,
+                        fb_group: entry.publish_facebook_group || false
+                    }
+                }
+            );
+
+            // Update calendar entry
+            await supabase
+                .from('content_calendar_entries')
+                .update({
+                    notion_page_id: result.pageId,
+                    notion_url: result.url,
+                    notion_content_synced: true,
+                    notion_content_synced_at: new Date().toISOString(),
+                    sync_status: 'synced'
+                })
+                .eq('id', calendar_entry_id);
+
+            console.log(`[TL Publish] Published to Notion: ${result.url}`);
+
+            res.json({
+                success: true,
+                notion_page_id: result.pageId,
+                notion_url: result.url,
+                blocks_created: result.blocksCreated
+            });
+        } catch (err) {
+            console.error('Error publishing to Notion:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * POST /api/thought-leadership/publish/substack
+     * Publish article to Substack (beta)
+     */
+    router.post('/publish/substack', async (req, res) => {
+        try {
+            const userId = req.userId;
+            const orgId = req.headers['x-org-id'] || req.orgId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const { calendar_entry_id } = req.body;
+            if (!calendar_entry_id) return res.status(400).json({ error: 'calendar_entry_id is required' });
+
+            const substackService = require('../services/substackService');
+
+            // Check if Substack is configured
+            const configured = await substackService.isConfigured(orgId);
+            if (!configured) {
+                return res.status(400).json({
+                    error: 'Substack not configured',
+                    hint: 'Add your Substack credentials in Thought Leadership settings'
+                });
+            }
+
+            // Get calendar entry
+            const { data: entry, error: entryErr } = await supabase
+                .from('content_calendar_entries')
+                .select('title, article_markdown, header_image_url')
+                .eq('id', calendar_entry_id)
+                .single();
+
+            if (entryErr || !entry) return res.status(404).json({ error: 'Calendar entry not found' });
+            if (!entry.article_markdown) return res.status(400).json({ error: 'No article content. Generate an article first.' });
+
+            const result = await substackService.publishArticle(orgId, {
+                title: entry.title,
+                subtitle: '',
+                markdown: entry.article_markdown,
+                headerImageUrl: entry.header_image_url || null
+            });
+
+            console.log(`[TL Publish] Published to Substack: ${result.url}`);
+
+            res.json({
+                success: true,
+                beta: true,
+                substack_url: result.url,
+                substack_post_id: result.postId
+            });
+        } catch (err) {
+            console.error('Error publishing to Substack:', err);
+            res.status(500).json({
+                error: err.message,
+                beta: true,
+                hint: err.message.includes('expired') ? 'Refresh your Substack cookies in settings' : undefined
+            });
+        }
+    });
+
+    /**
+     * POST /api/thought-leadership/publish/package
+     * Unified publish to all selected targets in one action
+     * Runs pre-flight checks first, then publishes to each target
+     */
+    router.post('/publish/package', async (req, res) => {
+        try {
+            const userId = req.userId;
+            const orgId = req.headers['x-org-id'] || req.orgId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const {
+                calendar_entry_id,
+                targets = ['web', 'notion'],
+                social_platforms = [],
+                social_content
+            } = req.body;
+
+            if (!calendar_entry_id) return res.status(400).json({ error: 'calendar_entry_id is required' });
+
+            const results = {};
+            const startTime = Date.now();
+
+            // Publish to Web
+            if (targets.includes('web')) {
+                try {
+                    const webRes = await fetch(`http://localhost:${process.env.PORT || 3000}/api/thought-leadership/publish/web`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Cookie': req.headers.cookie,
+                            'x-org-id': orgId
+                        },
+                        body: JSON.stringify({ calendar_entry_id })
+                    });
+                    results.web = await webRes.json();
+                } catch (webErr) {
+                    results.web = { success: false, error: webErr.message };
+                }
+            }
+
+            // Publish to Notion
+            if (targets.includes('notion')) {
+                try {
+                    const notionRes = await fetch(`http://localhost:${process.env.PORT || 3000}/api/thought-leadership/publish/notion`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Cookie': req.headers.cookie,
+                            'x-org-id': orgId
+                        },
+                        body: JSON.stringify({
+                            calendar_entry_id,
+                            publish_url: results.web?.url || null
+                        })
+                    });
+                    results.notion = await notionRes.json();
+                } catch (notionErr) {
+                    results.notion = { success: false, error: notionErr.message };
+                }
+            }
+
+            // Publish to Social Media (via Postiz)
+            if (targets.includes('social') && social_platforms.length > 0) {
+                try {
+                    const { data: entry } = await supabase
+                        .from('content_calendar_entries')
+                        .select('title, article_markdown, header_image_url, linkedin_posts')
+                        .eq('id', calendar_entry_id)
+                        .single();
+
+                    const contentAdapter = require('../services/contentAdapterService');
+                    const postizService = require('../services/postizService');
+                    const postContent = social_content || entry?.title || '';
+
+                    const adapted = contentAdapter.adaptForAllPlatforms(postContent, {
+                        articleUrl: results.web?.url ? `${process.env.ALLOWED_ORIGINS || 'http://localhost:3000'}${results.web.url}` : null,
+                        articleTitle: entry?.title,
+                        hashtags: []
+                    });
+
+                    const socialResult = await postizService.createPost(orgId, userId, {
+                        platforms: social_platforms,
+                        content: postContent,
+                        mediaUrls: entry?.header_image_url ? [entry.header_image_url] : [],
+                        platformContent: adapted,
+                        sourceType: 'thought_leadership',
+                        sourceId: calendar_entry_id
+                    });
+
+                    results.social = { success: true, post_id: socialResult.id, platforms: social_platforms };
+                } catch (socialErr) {
+                    results.social = { success: false, error: socialErr.message };
+                }
+            }
+
+            // Publish to Substack (beta)
+            if (targets.includes('substack')) {
+                try {
+                    const substackService = require('../services/substackService');
+                    const { data: entry } = await supabase
+                        .from('content_calendar_entries')
+                        .select('title, article_markdown, header_image_url')
+                        .eq('id', calendar_entry_id)
+                        .single();
+
+                    const substackResult = await substackService.publishArticle(orgId, {
+                        title: entry.title,
+                        subtitle: '',
+                        markdown: entry.article_markdown,
+                        headerImageUrl: entry.header_image_url
+                    });
+
+                    results.substack = { success: true, beta: true, url: substackResult.url };
+                } catch (substackErr) {
+                    results.substack = { success: false, beta: true, error: substackErr.message };
+                }
+            }
+
+            // Compute overall result
+            const targetResults = Object.values(results);
+            const allSucceeded = targetResults.every(r => r.success);
+            const someSucceeded = targetResults.some(r => r.success);
+
+            res.json({
+                success: allSucceeded,
+                partial: !allSucceeded && someSucceeded,
+                results,
+                metadata: {
+                    targets_requested: targets,
+                    targets_succeeded: Object.entries(results).filter(([_, r]) => r.success).map(([k]) => k),
+                    targets_failed: Object.entries(results).filter(([_, r]) => !r.success).map(([k]) => k),
+                    duration_ms: Date.now() - startTime
+                }
+            });
+        } catch (err) {
+            console.error('Error in publish package:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ============================================================================
+    // LEGACY PUBLISHING & SCHEDULING ENDPOINTS
     // ============================================================================
 
     /**
