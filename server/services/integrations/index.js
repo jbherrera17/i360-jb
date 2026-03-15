@@ -100,6 +100,7 @@ async function getOrgIntegrations(supabase, orgId) {
 function initializeProviders() {
     const providerModules = {
         google: './providers/google',
+        calendly: './providers/calendly',
         salesforce: './providers/crm/salesforce',
         hubspot: './providers/crm/hubspot',
         espocrm: './providers/crm/espocrm',

@@ -1,0 +1,249 @@
+/* Demo Site Styles — Simulated Medical Practice Website */
+:root {
+    --demo-primary: #1a5276;
+    --demo-accent: #2e86c1;
+    --demo-bg: #f8f9fa;
+    --demo-text: #2c3e50;
+    --demo-light: #ecf0f1;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--demo-text);
+    background: var(--demo-bg);
+    line-height: 1.7;
+}
+
+/* Navigation */
+.demo-nav {
+    background: var(--demo-primary);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.demo-nav .logo {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 1rem 0;
+    text-decoration: none;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.demo-nav .logo span {
+    color: #85c1e9;
+    font-weight: 300;
+}
+
+.demo-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 0;
+}
+
+.demo-nav a {
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    font-family: 'Helvetica Neue', sans-serif;
+    transition: background 0.2s;
+    display: block;
+}
+
+.demo-nav a:hover,
+.demo-nav a.active {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* Hero */
+.demo-hero {
+    background: linear-gradient(135deg, var(--demo-primary), var(--demo-accent));
+    color: white;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.demo-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 300;
+}
+
+.demo-hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Content */
+.demo-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.demo-content h2 {
+    font-size: 1.8rem;
+    color: var(--demo-primary);
+    margin-bottom: 1rem;
+    font-weight: 400;
+}
+
+.demo-content p {
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+}
+
+/* Procedure Grid */
+.procedure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.procedure-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.procedure-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.procedure-card-img {
+    height: 180px;
+    background: linear-gradient(135deg, var(--demo-accent), var(--demo-primary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.procedure-card-body {
+    padding: 1.25rem;
+}
+
+.procedure-card-body h3 {
+    font-size: 1.2rem;
+    color: var(--demo-primary);
+    margin-bottom: 0.5rem;
+    font-family: 'Helvetica Neue', sans-serif;
+    font-weight: 600;
+}
+
+.procedure-card-body p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.procedure-card-body a {
+    color: var(--demo-accent);
+    text-decoration: none;
+    font-family: 'Helvetica Neue', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.procedure-card-body a:hover { text-decoration: underline; }
+
+/* Procedure Detail Page */
+.procedure-detail {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.procedure-info h2 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.procedure-info h3 {
+    font-size: 1.3rem;
+    color: var(--demo-primary);
+    margin: 2rem 0 0.75rem;
+    font-weight: 400;
+}
+
+.procedure-info ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.procedure-info li {
+    margin-bottom: 0.5rem;
+}
+
+.widget-container {
+    position: sticky;
+    top: 80px;
+}
+
+.widget-placeholder {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.widget-placeholder h4 {
+    font-family: 'Helvetica Neue', sans-serif;
+    color: var(--demo-primary);
+    margin-bottom: 0.5rem;
+}
+
+.widget-placeholder p {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+/* Footer */
+.demo-footer {
+    background: var(--demo-primary);
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.85rem;
+    font-family: 'Helvetica Neue', sans-serif;
+    margin-top: 3rem;
+}
+
+/* Demo Banner */
+.demo-banner {
+    background: #fef3cd;
+    color: #856404;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.demo-banner a { color: #533f03; }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .procedure-detail { grid-template-columns: 1fr; }
+    .demo-nav ul { display: none; }
+    .demo-hero h1 { font-size: 1.8rem; }
+    .procedure-grid { grid-template-columns: 1fr; }
+}

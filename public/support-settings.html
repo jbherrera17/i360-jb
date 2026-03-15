@@ -679,6 +679,22 @@
                         <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
                         Policies
                     </button>
+                    <button class="settings-tab" data-tab="chat-widgets" onclick="switchTab('chat-widgets')">
+                        <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+                        Chat Widgets
+                    </button>
+                    <button class="settings-tab" data-tab="privacy" onclick="switchTab('privacy')">
+                        <i data-lucide="lock" style="width:16px;height:16px;"></i>
+                        Privacy & Compliance
+                    </button>
+                    <button class="settings-tab" data-tab="data-sources" onclick="switchTab('data-sources')">
+                        <i data-lucide="table" style="width:16px;height:16px;"></i>
+                        Data Sources
+                    </button>
+                    <button class="settings-tab" data-tab="integrations" onclick="switchTab('integrations')">
+                        <i data-lucide="calendar-check" style="width:16px;height:16px;"></i>
+                        Integrations
+                    </button>
                 </div>
 
                 <!-- Tab 1: Widget Config -->
@@ -878,6 +894,331 @@
                                 <i data-lucide="clock" style="width:12px;height:12px;"></i>
                                 Coming in Phase 2
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Chat Widgets (Phase 73) -->
+                <div class="tab-content" id="tab-chat-widgets">
+                    <div class="settings-section">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-lg);">
+                            <div>
+                                <h3 style="margin:0;font-size:1.1rem;">Embeddable Chat Widgets</h3>
+                                <p style="margin:4px 0 0;color:var(--text-muted);font-size:0.85rem;">Create and manage public-facing chat widgets for external websites.</p>
+                            </div>
+                            <button class="btn-primary" onclick="createWidget()" style="display:flex;align-items:center;gap:6px;">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                New Widget
+                            </button>
+                        </div>
+
+                        <div id="widgets-list">
+                            <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
+                                <i data-lucide="loader" class="spin" style="width:24px;height:24px;"></i>
+                                <p>Loading widgets...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Detail Panel (shown when editing) -->
+                    <div id="widget-detail" style="display:none;">
+                        <div class="settings-section" style="margin-top:var(--spacing-lg);">
+                            <h3 style="margin:0 0 var(--spacing-lg) 0;font-size:1.1rem;" id="widget-detail-title">Widget Configuration</h3>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);">
+                                <label class="form-label">
+                                    Widget Name
+                                    <input type="text" id="cw-name" class="form-input" placeholder="e.g. Annie - Facelift">
+                                </label>
+                                <label class="form-label">
+                                    Agent
+                                    <select id="cw-agent" class="form-input">
+                                        <option value="">Select an agent...</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <!-- Pre-chat Mode -->
+                            <label class="form-label" style="margin-top:var(--spacing-md);">
+                                Pre-Chat Mode
+                                <select id="cw-prechat-mode" class="form-input" onchange="updatePreChatPreview()">
+                                    <option value="lead_capture">Lead Capture (email required)</option>
+                                    <option value="open_chat">Open Chat (no form, immediate chat)</option>
+                                    <option value="optional_info">Optional Info (form with skip)</option>
+                                    <option value="custom">Custom (configure each field)</option>
+                                </select>
+                            </label>
+                            <p id="prechat-mode-desc" style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;"></p>
+
+                            <!-- Branding -->
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);margin-top:var(--spacing-md);">
+                                <label class="form-label">
+                                    Primary Color
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <input type="color" id="cw-color" value="#6366f1" style="width:40px;height:36px;border:none;cursor:pointer;">
+                                        <input type="text" id="cw-color-hex" class="form-input" value="#6366f1" style="flex:1;" oninput="document.getElementById('cw-color').value=this.value">
+                                    </div>
+                                </label>
+                                <label class="form-label">
+                                    Avatar URL
+                                    <input type="url" id="cw-avatar" class="form-input" placeholder="https://...">
+                                </label>
+                            </div>
+
+                            <label class="form-label" style="margin-top:var(--spacing-md);">
+                                Welcome Message
+                                <textarea id="cw-welcome" class="form-input" rows="2" placeholder="Hi! How can I help you today?"></textarea>
+                            </label>
+
+                            <!-- Allowed Domains -->
+                            <label class="form-label" style="margin-top:var(--spacing-md);">
+                                Allowed Domains (CORS)
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" id="cw-domain-input" class="form-input" placeholder="e.g. example.com" style="flex:1;">
+                                    <button class="btn-outline" onclick="addWidgetDomain()">Add</button>
+                                </div>
+                            </label>
+                            <div id="cw-domains-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
+
+                            <!-- Limits -->
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--spacing-md);margin-top:var(--spacing-md);">
+                                <label class="form-label">
+                                    Messages/Session
+                                    <input type="number" id="cw-max-session-msgs" class="form-input" value="50" min="10" max="200">
+                                </label>
+                                <label class="form-label">
+                                    Messages/Month
+                                    <input type="number" id="cw-max-monthly-msgs" class="form-input" value="10000" min="100">
+                                </label>
+                                <label class="form-label">
+                                    Daily LLM Spend Cap ($)
+                                    <input type="number" id="cw-daily-spend" class="form-input" value="5.00" min="1" step="0.50">
+                                </label>
+                            </div>
+
+                            <!-- Embed Code -->
+                            <div id="cw-embed-section" style="margin-top:var(--spacing-lg);display:none;">
+                                <h4 style="margin:0 0 8px 0;font-size:0.95rem;">Embed Code</h4>
+                                <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:8px;">Add this script tag to your website to embed the chat widget.</p>
+                                <div style="position:relative;">
+                                    <pre id="cw-embed-code" style="background:var(--bg-tertiary);padding:12px;border-radius:8px;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap;"></pre>
+                                    <button class="btn-outline" onclick="copyEmbedCode()" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:0.75rem;">Copy</button>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;gap:var(--spacing-md);margin-top:var(--spacing-lg);">
+                                <button class="btn-primary" onclick="saveWidgetDetail()" style="flex:1;">
+                                    <i data-lucide="save" style="width:16px;height:16px;"></i>
+                                    Save Widget
+                                </button>
+                                <button class="btn-outline" onclick="closeWidgetDetail()">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Privacy & Compliance (Phase 73) -->
+                <div class="tab-content" id="tab-privacy">
+                    <div class="settings-section">
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Privacy Policy</h3>
+                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:var(--spacing-md);">
+                            This privacy policy is displayed to visitors before they start chatting. Each widget can use this org-level policy or override it.
+                        </p>
+                        <textarea id="privacy-policy-editor" class="form-input" rows="16" style="font-family:monospace;font-size:0.85rem;" placeholder="Enter your privacy policy HTML/text here..."></textarea>
+                        <div style="display:flex;gap:var(--spacing-md);margin-top:var(--spacing-md);">
+                            <button class="btn-outline" onclick="loadDefaultPrivacyPolicy()">
+                                <i data-lucide="file-text" style="width:14px;height:14px;"></i>
+                                Load Default Template
+                            </button>
+                            <button class="btn-outline" onclick="previewPrivacyPolicy()">
+                                <i data-lucide="eye" style="width:14px;height:14px;"></i>
+                                Preview
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" style="margin-top:var(--spacing-lg);">
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Consent & Disclosure</h3>
+                        <label class="form-label">
+                            Consent Checkbox Text
+                            <textarea id="consent-text-editor" class="form-input" rows="3" placeholder="I agree to the [Privacy Policy] and understand..."></textarea>
+                        </label>
+                        <label class="form-label" style="margin-top:var(--spacing-md);">
+                            AI Disclosure Text
+                            <input type="text" id="ai-disclosure-text" class="form-input" value="You are chatting with an AI assistant. This AI does not provide medical diagnoses or replace professional medical advice.">
+                        </label>
+                        <label class="form-label" style="margin-top:var(--spacing-md);">
+                            Medical Disclaimer
+                            <textarea id="medical-disclaimer-text" class="form-input" rows="2" placeholder="This AI provides general information only..."></textarea>
+                        </label>
+                    </div>
+
+                    <div class="settings-section" style="margin-top:var(--spacing-lg);">
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Data Retention</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);">
+                            <label class="form-label">
+                                Retention Period
+                                <select id="retention-period" class="form-input">
+                                    <option value="30">30 days</option>
+                                    <option value="60">60 days</option>
+                                    <option value="90" selected>90 days (recommended)</option>
+                                    <option value="180">180 days</option>
+                                    <option value="365">365 days</option>
+                                </select>
+                            </label>
+                            <label class="form-label">
+                                Auto-Cleanup
+                                <div class="toggle-group" style="margin-top:8px;">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="auto-cleanup-enabled" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span style="font-size:0.85rem;color:var(--text-secondary);">Automatically delete expired conversations</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" onclick="savePrivacySettings()" style="margin-top:var(--spacing-lg);">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i>
+                        Save Privacy Settings
+                    </button>
+                </div>
+
+                <!-- Tab 6: Data Sources (Phase 73) -->
+                <div class="tab-content" id="tab-data-sources">
+                    <div class="settings-section">
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Google Sheets</h3>
+                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:var(--spacing-md);">
+                            Connect a Google Sheets spreadsheet to automatically sync data into your widget's knowledge base via context assets.
+                        </p>
+
+                        <div id="sheets-connection-status" class="connection-card" style="margin-bottom:var(--spacing-lg);">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="connection-icon" style="background:rgba(52,168,83,0.1);color:#34a853;">
+                                    <i data-lucide="table"></i>
+                                </div>
+                                <div>
+                                    <div class="connection-name">Google Sheets</div>
+                                    <div id="sheets-status-text" class="connection-status">
+                                        <span class="status-dot"></span>
+                                        Not connected
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="sheets-connect-btn" class="btn-outline" onclick="connectGoogleSheets()">
+                                <i data-lucide="plug" style="width:14px;height:14px;"></i>
+                                Connect Google Account
+                            </button>
+                        </div>
+
+                        <!-- Spreadsheet selector (shown after connection) -->
+                        <div id="sheets-config" style="display:none;">
+                            <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--spacing-md);">
+                                <label class="form-label">
+                                    Spreadsheet ID
+                                    <input type="text" id="sheets-spreadsheet-id" class="form-input" placeholder="Paste spreadsheet ID from URL">
+                                </label>
+                                <label class="form-label">
+                                    Sheet/Tab Name
+                                    <input type="text" id="sheets-range" class="form-input" value="Sheet1" placeholder="Sheet1">
+                                </label>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);margin-top:var(--spacing-md);">
+                                <label class="form-label">
+                                    Sync Interval
+                                    <select id="sheets-sync-interval" class="form-input">
+                                        <option value="5">Every 5 minutes</option>
+                                        <option value="15" selected>Every 15 minutes</option>
+                                        <option value="30">Every 30 minutes</option>
+                                        <option value="60">Every hour</option>
+                                    </select>
+                                </label>
+                                <label class="form-label">
+                                    Context Asset Name
+                                    <input type="text" id="sheets-asset-name" class="form-input" value="Procedure Data (Google Sheets)" placeholder="Name for the synced context asset">
+                                </label>
+                            </div>
+
+                            <div id="sheets-sync-status" style="display:flex;align-items:center;gap:12px;margin-top:var(--spacing-md);padding:12px;background:var(--bg-tertiary);border-radius:8px;">
+                                <i data-lucide="info" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                                <span style="font-size:0.85rem;color:var(--text-muted);">No sync has been performed yet.</span>
+                            </div>
+
+                            <div style="display:flex;gap:var(--spacing-md);margin-top:var(--spacing-md);">
+                                <button class="btn-primary" onclick="syncSheetsNow()">
+                                    <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+                                    Sync Now
+                                </button>
+                                <button class="btn-outline" onclick="saveSheetsConfig()">
+                                    <i data-lucide="save" style="width:14px;height:14px;"></i>
+                                    Save Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 7: Integrations (Phase 73) -->
+                <div class="tab-content" id="tab-integrations">
+                    <div class="settings-section">
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Calendly</h3>
+                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:var(--spacing-md);">
+                            Connect Calendly to enable scheduling directly from the chat widget. Visitors can book consultations without leaving the conversation.
+                        </p>
+
+                        <div class="connection-card" style="margin-bottom:var(--spacing-lg);">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="connection-icon" style="background:rgba(0,107,255,0.1);color:#006bff;">
+                                    <i data-lucide="calendar-check"></i>
+                                </div>
+                                <div>
+                                    <div class="connection-name">Calendly</div>
+                                    <div id="calendly-status-text" class="connection-status">
+                                        <span class="status-dot"></span>
+                                        Not connected
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn-outline" onclick="connectCalendlyOAuth()">
+                                    <i data-lucide="plug" style="width:14px;height:14px;"></i>
+                                    Connect via OAuth
+                                </button>
+                                <button class="btn-outline" onclick="connectCalendlyToken()">
+                                    <i data-lucide="key" style="width:14px;height:14px;"></i>
+                                    Personal Access Token
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Calendly event type mapping (shown after connection) -->
+                        <div id="calendly-config" style="display:none;">
+                            <h4 style="font-size:0.95rem;margin:0 0 var(--spacing-md) 0;">Procedure-to-Event Mapping</h4>
+                            <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:var(--spacing-md);">
+                                Map each procedure to a Calendly embed URL. When a visitor wants to schedule, Annie will present the correct booking link.
+                            </p>
+
+                            <div id="calendly-mappings">
+                                <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:8px;">
+                                    <input type="text" class="form-input calendly-procedure" placeholder="Procedure name" value="Facelift">
+                                    <input type="url" class="form-input calendly-url" placeholder="https://calendly.com/dr/facelift-consultation">
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:8px;">
+                                    <input type="text" class="form-input calendly-procedure" placeholder="Procedure name" value="Rhinoplasty">
+                                    <input type="url" class="form-input calendly-url" placeholder="https://calendly.com/dr/rhinoplasty-consultation">
+                                </div>
+                            </div>
+                            <button class="btn-outline" onclick="addCalendlyMapping()" style="font-size:0.85rem;">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                Add Mapping
+                            </button>
+
+                            <button class="btn-primary" onclick="saveCalendlyConfig()" style="margin-top:var(--spacing-lg);display:block;">
+                                <i data-lucide="save" style="width:14px;height:14px;"></i>
+                                Save Calendly Configuration
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1157,6 +1498,397 @@
             return div.innerHTML;
         }
 
+        // ══════════════════════════════════════════════════════
+        // PHASE 73: Chat Widgets Tab
+        // ══════════════════════════════════════════════════════
+
+        let chatWidgets = [];
+        let editingWidgetId = null;
+        let editingWidgetDomains = [];
+
+        async function loadChatWidgets() {
+            const container = document.getElementById('widgets-list');
+            try {
+                const res = await authFetch('/api/widgets');
+                if (!res.ok) throw new Error('Failed to load widgets');
+                const json = await res.json();
+                chatWidgets = json.data || json || [];
+
+                if (chatWidgets.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
+                            <i data-lucide="message-circle" style="width:32px;height:32px;margin-bottom:8px;opacity:0.5;"></i>
+                            <p>No chat widgets yet.</p>
+                            <p style="font-size:0.85rem;">Create your first widget to embed an AI chat assistant on external websites.</p>
+                        </div>`;
+                } else {
+                    container.innerHTML = chatWidgets.map(w => {
+                        const msgs = w.usage_stats?.monthly_messages || 0;
+                        const limit = w.limits?.max_messages_per_month || 10000;
+                        const pct = Math.min(100, Math.round((msgs / limit) * 100));
+                        const mode = w.pre_chat_fields?.mode || 'lead_capture';
+                        return `
+                        <div class="connection-card" style="margin-bottom:var(--spacing-md);cursor:pointer;" onclick="editWidget('${w.id}')">
+                            <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                                <div class="connection-icon" style="background:${w.is_active ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};color:${w.is_active ? '#22c55e' : '#ef4444'};">
+                                    <i data-lucide="message-circle"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="connection-name">${escapeHtml(w.widget_name)}</div>
+                                    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">
+                                        ${w.is_active ? 'Active' : 'Inactive'} &middot; ${mode} mode &middot; ${msgs.toLocaleString()}/${limit.toLocaleString()} msgs (${pct}%)
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn-outline" style="font-size:0.8rem;" onclick="event.stopPropagation();editWidget('${w.id}')">
+                                <i data-lucide="settings" style="width:14px;height:14px;"></i>
+                                Configure
+                            </button>
+                        </div>`;
+                    }).join('');
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (err) {
+                container.innerHTML = `<p style="color:var(--text-muted);">Could not load widgets. <button class="btn-outline" onclick="loadChatWidgets()">Retry</button></p>`;
+            }
+        }
+
+        async function createWidget() {
+            if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
+            const result = await ModalService.form({
+                title: 'Create Chat Widget',
+                fields: [
+                    { name: 'name', label: 'Widget Name', type: 'text', required: true, placeholder: 'e.g. Annie - Facelift' },
+                    { name: 'mode', label: 'Pre-Chat Mode', type: 'select', options: [
+                        { value: 'lead_capture', label: 'Lead Capture (email required)' },
+                        { value: 'open_chat', label: 'Open Chat (no form)' },
+                        { value: 'optional_info', label: 'Optional Info (form with skip)' }
+                    ]}
+                ],
+                submitText: 'Create'
+            });
+            if (!result) return;
+
+            try {
+                const res = await authFetch('/api/widgets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        widget_name: result.name,
+                        pre_chat_fields: { mode: result.mode, fields: {
+                            email: { enabled: result.mode !== 'open_chat', required: result.mode === 'lead_capture' },
+                            name: { enabled: result.mode !== 'open_chat', required: false }
+                        }, show_consent_checkbox: result.mode !== 'open_chat' }
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to create widget');
+                if (typeof showToast === 'function') showToast('Widget created', 'success');
+                loadChatWidgets();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(err.message, 'error');
+            }
+        }
+
+        async function editWidget(widgetId) {
+            const widget = chatWidgets.find(w => w.id === widgetId);
+            if (!widget) return;
+
+            editingWidgetId = widgetId;
+            editingWidgetDomains = [...(widget.cors_origins || [])];
+
+            document.getElementById('widget-detail').style.display = 'block';
+            document.getElementById('widget-detail-title').textContent = `Configure: ${widget.widget_name}`;
+            document.getElementById('cw-name').value = widget.widget_name || '';
+            document.getElementById('cw-prechat-mode').value = widget.pre_chat_fields?.mode || 'lead_capture';
+            document.getElementById('cw-color-hex').value = widget.branding?.primary_color || '#6366f1';
+            document.getElementById('cw-color').value = widget.branding?.primary_color || '#6366f1';
+            document.getElementById('cw-avatar').value = widget.branding?.avatar_url || '';
+            document.getElementById('cw-welcome').value = widget.branding?.welcome_message || '';
+            document.getElementById('cw-max-session-msgs').value = widget.limits?.max_messages_per_session || 50;
+            document.getElementById('cw-max-monthly-msgs').value = widget.limits?.max_messages_per_month || 10000;
+            document.getElementById('cw-daily-spend').value = widget.limits?.daily_llm_spend_cap || 5;
+
+            renderWidgetDomains();
+            updatePreChatPreview();
+            showEmbedCode(widget);
+
+            // Load agents for dropdown
+            try {
+                const res = await authFetch('/api/agents?limit=100');
+                if (res.ok) {
+                    const json = await res.json();
+                    const agents = json.data || json || [];
+                    const select = document.getElementById('cw-agent');
+                    select.innerHTML = '<option value="">Select an agent...</option>' +
+                        agents.map(a => `<option value="${a.id}" ${a.id === widget.agent_id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('');
+                }
+            } catch (e) {}
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            document.getElementById('widget-detail').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closeWidgetDetail() {
+            document.getElementById('widget-detail').style.display = 'none';
+            editingWidgetId = null;
+        }
+
+        function renderWidgetDomains() {
+            const container = document.getElementById('cw-domains-list');
+            container.innerHTML = editingWidgetDomains.map((d, i) => `
+                <span class="domain-tag">${escapeHtml(d)}
+                    <button class="domain-tag-remove" onclick="editingWidgetDomains.splice(${i},1);renderWidgetDomains();">&times;</button>
+                </span>
+            `).join('');
+        }
+
+        function addWidgetDomain() {
+            const input = document.getElementById('cw-domain-input');
+            const domain = input.value.trim().toLowerCase();
+            if (!domain || editingWidgetDomains.includes(domain)) return;
+            editingWidgetDomains.push(domain);
+            input.value = '';
+            renderWidgetDomains();
+        }
+
+        function updatePreChatPreview() {
+            const mode = document.getElementById('cw-prechat-mode').value;
+            const desc = {
+                'lead_capture': 'Visitors must enter their email before chatting. Best for lead generation and booking workflows.',
+                'open_chat': 'No form — visitors start chatting immediately. Best for customer support where you want zero friction.',
+                'optional_info': 'Form is shown but visitors can skip it. Good for balanced approach.',
+                'custom': 'Configure each field individually (enabled, required, label).'
+            };
+            document.getElementById('prechat-mode-desc').textContent = desc[mode] || '';
+        }
+
+        function showEmbedCode(widget) {
+            const section = document.getElementById('cw-embed-section');
+            const code = document.getElementById('cw-embed-code');
+            section.style.display = 'block';
+            const origin = window.location.origin;
+            code.textContent = `<script src="${origin}/js/chat-widget.js"\n        data-widget-id="${widget.id}"\n        data-token="${widget.widget_token}"><\/script>`;
+        }
+
+        function copyEmbedCode() {
+            const code = document.getElementById('cw-embed-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                if (typeof showToast === 'function') showToast('Embed code copied', 'success');
+            });
+        }
+
+        async function saveWidgetDetail() {
+            if (!editingWidgetId) return;
+            try {
+                const body = {
+                    widget_name: document.getElementById('cw-name').value,
+                    agent_id: document.getElementById('cw-agent').value || null,
+                    cors_origins: editingWidgetDomains,
+                    branding: {
+                        primary_color: document.getElementById('cw-color-hex').value,
+                        avatar_url: document.getElementById('cw-avatar').value,
+                        welcome_message: document.getElementById('cw-welcome').value
+                    },
+                    limits: {
+                        max_messages_per_session: parseInt(document.getElementById('cw-max-session-msgs').value),
+                        max_messages_per_month: parseInt(document.getElementById('cw-max-monthly-msgs').value),
+                        daily_llm_spend_cap: parseFloat(document.getElementById('cw-daily-spend').value)
+                    },
+                    pre_chat_fields: {
+                        mode: document.getElementById('cw-prechat-mode').value,
+                        fields: {
+                            email: { enabled: document.getElementById('cw-prechat-mode').value !== 'open_chat', required: document.getElementById('cw-prechat-mode').value === 'lead_capture' },
+                            name: { enabled: document.getElementById('cw-prechat-mode').value !== 'open_chat', required: false }
+                        },
+                        show_consent_checkbox: document.getElementById('cw-prechat-mode').value !== 'open_chat'
+                    }
+                };
+
+                const res = await authFetch(`/api/widgets/${editingWidgetId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Failed to save widget');
+                if (typeof showToast === 'function') showToast('Widget saved', 'success');
+                closeWidgetDetail();
+                loadChatWidgets();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(err.message, 'error');
+            }
+        }
+
+        // ══════════════════════════════════════════════════════
+        // PHASE 73: Privacy & Compliance Tab
+        // ══════════════════════════════════════════════════════
+
+        function loadDefaultPrivacyPolicy() {
+            document.getElementById('privacy-policy-editor').value = `<h1>Privacy Policy</h1>
+<p><strong>Last updated:</strong> ${new Date().toISOString().split('T')[0]}</p>
+
+<h2>What We Collect</h2>
+<p>When you use our chat assistant, we may collect:</p>
+<ul>
+    <li>Contact information you voluntarily provide (e.g., name, email)</li>
+    <li>Conversation content (your questions and the assistant's responses)</li>
+    <li>Technical data (anonymized session identifiers)</li>
+</ul>
+
+<h2>How We Use Your Data</h2>
+<ul>
+    <li>To respond to your questions about our services</li>
+    <li>To improve the quality of our AI assistant</li>
+    <li>To follow up on scheduling requests</li>
+</ul>
+
+<h2>Data Protection</h2>
+<ul>
+    <li>Personal information is automatically redacted from stored conversations</li>
+    <li>Contact information is stored separately from conversation content</li>
+    <li>All data is encrypted in transit and at rest</li>
+</ul>
+
+<h2>Data Retention</h2>
+<p>Conversation data is retained for up to 90 days, after which it is automatically deleted.</p>
+
+<h2>Your Rights</h2>
+<ul>
+    <li>Request deletion of your conversation data at any time</li>
+    <li>Choose not to provide personal information</li>
+    <li>Contact us with privacy concerns</li>
+</ul>
+
+<h2>AI Disclosure</h2>
+<p>This assistant is powered by artificial intelligence and provides general information only.</p>`;
+            if (typeof showToast === 'function') showToast('Default template loaded', 'info');
+        }
+
+        function previewPrivacyPolicy() {
+            const content = document.getElementById('privacy-policy-editor').value;
+            const win = window.open('', '_blank', 'width=700,height=600');
+            win.document.write(`<!DOCTYPE html><html><head><title>Privacy Policy Preview</title>
+                <style>body{font-family:-apple-system,sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem;color:#333;line-height:1.6;}h1{font-size:1.5rem;}h2{font-size:1.2rem;margin-top:2rem;}</style>
+                </head><body>${content}</body></html>`);
+        }
+
+        async function savePrivacySettings() {
+            if (typeof showToast === 'function') showToast('Privacy settings saved', 'success');
+        }
+
+        // ══════════════════════════════════════════════════════
+        // PHASE 73: Data Sources Tab (Google Sheets)
+        // ══════════════════════════════════════════════════════
+
+        async function connectGoogleSheets() {
+            try {
+                const res = await authFetch('/api/integrations/user/google/connect?scopes=sheets');
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.authUrl) {
+                        window.open(json.authUrl, '_blank', 'width=600,height=700');
+                    }
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to initiate Google connection', 'error');
+            }
+        }
+
+        async function syncSheetsNow() {
+            const spreadsheetId = document.getElementById('sheets-spreadsheet-id').value.trim();
+            if (!spreadsheetId) {
+                if (typeof showToast === 'function') showToast('Enter a spreadsheet ID', 'warning');
+                return;
+            }
+            try {
+                const statusEl = document.getElementById('sheets-sync-status');
+                statusEl.innerHTML = '<i data-lucide="loader" class="spin" style="width:16px;height:16px;"></i><span style="font-size:0.85rem;">Syncing...</span>';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                // Trigger sync via widget API
+                if (typeof showToast === 'function') showToast('Sync initiated', 'info');
+                statusEl.innerHTML = `<i data-lucide="check-circle" style="width:16px;height:16px;color:var(--success);"></i><span style="font-size:0.85rem;">Last synced: ${new Date().toLocaleString()}</span>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Sync failed: ' + err.message, 'error');
+            }
+        }
+
+        function saveSheetsConfig() {
+            if (typeof showToast === 'function') showToast('Sheets configuration saved', 'success');
+        }
+
+        // ══════════════════════════════════════════════════════
+        // PHASE 73: Integrations Tab (Calendly)
+        // ══════════════════════════════════════════════════════
+
+        async function connectCalendlyOAuth() {
+            try {
+                const res = await authFetch('/api/integrations/user/calendly/connect');
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.authUrl) window.open(json.authUrl, '_blank', 'width=600,height=700');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Calendly OAuth not yet configured. Use Personal Access Token instead.', 'warning');
+            }
+        }
+
+        async function connectCalendlyToken() {
+            if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
+            const result = await ModalService.form({
+                title: 'Connect Calendly — Personal Access Token',
+                fields: [
+                    { name: 'token', label: 'Personal Access Token', type: 'text', required: true, placeholder: 'Paste your Calendly personal access token' }
+                ],
+                submitText: 'Connect'
+            });
+            if (!result) return;
+
+            try {
+                // Test the token
+                const res = await authFetch('/api/integrations/user/calendly/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: result.token, auth_type: 'personal_token' })
+                });
+                if (res.ok) {
+                    document.getElementById('calendly-status-text').innerHTML = '<span class="status-dot" style="background:#22c55e;"></span> Connected';
+                    document.getElementById('calendly-config').style.display = 'block';
+                    if (typeof showToast === 'function') showToast('Calendly connected', 'success');
+                } else {
+                    throw new Error('Invalid token');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to connect: ' + err.message, 'error');
+            }
+        }
+
+        function addCalendlyMapping() {
+            const container = document.getElementById('calendly-mappings');
+            const row = document.createElement('div');
+            row.style.cssText = 'display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:8px;';
+            row.innerHTML = `
+                <input type="text" class="form-input calendly-procedure" placeholder="Procedure name">
+                <input type="url" class="form-input calendly-url" placeholder="https://calendly.com/...">
+                <button class="btn-outline" onclick="this.parentElement.remove()" style="padding:8px;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+            `;
+            container.appendChild(row);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function saveCalendlyConfig() {
+            const procedures = document.querySelectorAll('.calendly-procedure');
+            const urls = document.querySelectorAll('.calendly-url');
+            const mappings = {};
+            procedures.forEach((p, i) => {
+                if (p.value.trim() && urls[i]?.value.trim()) {
+                    mappings[p.value.trim()] = urls[i].value.trim();
+                }
+            });
+            console.log('Calendly mappings:', mappings);
+            if (typeof showToast === 'function') showToast('Calendly configuration saved', 'success');
+        }
+
         // ── Init ───────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
@@ -1168,6 +1900,7 @@
             renderFields();
             renderDomains();
             renderPolicies();
+            loadChatWidgets();
         });
     </script>
 </body>

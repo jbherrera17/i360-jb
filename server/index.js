@@ -160,6 +160,8 @@ const supportRoutes = require('./routes/support');
 const supportActionsRoutes = require('./routes/supportActions');
 let widgetChatRoutes;
 try { widgetChatRoutes = require('./routes/widgetChat'); } catch (_e) { /* Widget routes not yet deployed */ }
+const widgetsAdminRoutes = require('./routes/widgets');
+const conversationReviewRoutes = require('./routes/conversationReview');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
@@ -623,6 +625,10 @@ function initializeServices() {
         // Phase 71: Customer Support Agent System
         app.use('/api/support/conversations', supportRoutes(supabase));
         app.use('/api/support/actions', supportActionsRoutes(supabase));
+
+        // Phase 73: Widget admin + conversation review (authenticated)
+        app.use('/api/widgets', widgetsAdminRoutes(supabase));
+        app.use('/api/widget-conversations', conversationReviewRoutes(supabase));
 
         // Phase 57: Public Pricing API (unauthenticated, whitelisted in auth middleware)
         app.use('/api/pricing', pricingRoutes(supabase));

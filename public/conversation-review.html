@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Conversations — Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/navigation.js"></script>
+    <script src="/js/auth-fetch.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .review-layout { display: grid; grid-template-columns: 380px 1fr; gap: var(--spacing-lg); height: calc(100vh - 140px); }
+        @media (max-width: 1024px) { .review-layout { grid-template-columns: 1fr; height: auto; } }
+
+        /* Conversation List */
+        .conv-list-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; }
+        .conv-list-header { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border); }
+        .conv-search { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; }
+        .conv-search:focus { outline: none; border-color: var(--primary); }
+        .search-wrapper { position: relative; }
+        .search-wrapper i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .conv-filters { display: flex; gap: 6px; margin-top: 8px; }
+        .conv-filters select { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); font-size: 0.8rem; }
+        .conv-list { flex: 1; overflow-y: auto; }
+        .conv-item { padding: 12px var(--spacing-lg); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+        .conv-item:hover { background: var(--bg-tertiary); }
+        .conv-item.active { background: rgba(99,102,241,0.08); border-left: 3px solid var(--primary); }
+        .conv-item-name { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+        .conv-item-preview { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .conv-item-meta { display: flex; gap: 8px; align-items: center; margin-top: 4px; font-size: 0.75rem; color: var(--text-muted); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .badge-open { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .badge-resolved { background: rgba(16,185,129,0.15); color: #10b981; }
+        .badge-escalated { background: rgba(249,115,22,0.15); color: #f97316; }
+        .sentiment-positive { color: #10b981; }
+        .sentiment-negative { color: #ef4444; }
+        .sentiment-frustrated { color: #dc2626; }
+        .sentiment-neutral { color: var(--text-muted); }
+
+        /* Transcript Panel */
+        .transcript-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; }
+        .transcript-header { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .transcript-header h3 { margin: 0; font-size: 1rem; }
+        .transcript-actions { display: flex; gap: 8px; }
+        .transcript-actions button { padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
+        .transcript-body { flex: 1; overflow-y: auto; padding: var(--spacing-lg); }
+        .msg-bubble { max-width: 80%; margin-bottom: var(--spacing-md); }
+        .msg-bubble.user { margin-left: auto; }
+        .msg-bubble.assistant { margin-right: auto; }
+        .msg-bubble.system { margin: var(--spacing-sm) auto; max-width: 90%; }
+        .msg-content { padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; }
+        .msg-bubble.user .msg-content { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .msg-bubble.assistant .msg-content { background: var(--bg-tertiary); color: var(--text-primary); border-bottom-left-radius: 4px; }
+        .msg-bubble.system .msg-content { background: rgba(245,158,11,0.1); color: var(--text-secondary); font-size: 0.8rem; font-style: italic; border-radius: 8px; text-align: center; }
+        .msg-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
+        .msg-bubble.user .msg-meta { text-align: right; }
+
+        /* Note Input */
+        .note-input-area { padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .note-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); }
+        .note-input:focus { outline: none; border-color: var(--primary); }
+
+        /* Empty State */
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); gap: 12px; }
+        .empty-state i { opacity: 0.3; }
+
+        /* Export to Asset Modal */
+        .conv-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+        .select-bar { display: flex; align-items: center; gap: 12px; padding: 8px var(--spacing-lg); background: rgba(99,102,241,0.06); border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="message-square-text" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Widget Conversations
+                    </h1>
+                    <p class="header-subtitle">Review, search, and export conversations from your embeddable chat widgets</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-outline" onclick="exportCSV()" style="font-size:0.85rem;">
+                        <i data-lucide="download" style="width:14px;height:14px;"></i>
+                        Export CSV
+                    </button>
+                    <button class="btn-outline" onclick="exportJSON()" style="font-size:0.85rem;">
+                        <i data-lucide="file-json" style="width:14px;height:14px;"></i>
+                        Export JSON
+                    </button>
+                    <button class="btn-primary" onclick="exportToAsset()" style="font-size:0.85rem;">
+                        <i data-lucide="brain" style="width:14px;height:14px;"></i>
+                        Export to Context Asset
+                    </button>
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <!-- Selection Bar -->
+                <div id="select-bar" class="select-bar" style="display:none;border-radius:var(--radius-md);margin-bottom:var(--spacing-md);">
+                    <input type="checkbox" class="conv-checkbox" id="select-all" onchange="toggleSelectAll()">
+                    <span id="select-count">0 selected</span>
+                    <button class="btn-outline" onclick="exportToAsset()" style="font-size:0.8rem;padding:4px 10px;">
+                        <i data-lucide="brain" style="width:12px;height:12px;"></i>
+                        Export Selected to Context Asset
+                    </button>
+                </div>
+
+                <div class="review-layout">
+                    <!-- Conversation List -->
+                    <div class="conv-list-panel">
+                        <div class="conv-list-header">
+                            <div class="search-wrapper">
+                                <i data-lucide="search" style="width:16px;height:16px;"></i>
+                                <input type="text" class="conv-search" id="conv-search" placeholder="Search conversations..." oninput="debounceSearch()">
+                            </div>
+                            <div class="conv-filters">
+                                <select id="filter-status" onchange="loadConversations()">
+                                    <option value="">All Status</option>
+                                    <option value="open">Open</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="escalated">Escalated</option>
+                                </select>
+                                <select id="filter-sentiment" onchange="loadConversations()">
+                                    <option value="">All Sentiment</option>
+                                    <option value="positive">Positive</option>
+                                    <option value="neutral">Neutral</option>
+                                    <option value="negative">Negative</option>
+                                    <option value="frustrated">Frustrated</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="conv-list" id="conv-list">
+                            <div class="empty-state" style="padding:2rem;">
+                                <i data-lucide="loader" class="spin" style="width:24px;height:24px;"></i>
+                                <p>Loading conversations...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transcript Panel -->
+                    <div class="transcript-panel">
+                        <div class="transcript-header" id="transcript-header" style="display:none;">
+                            <h3 id="transcript-title">Conversation</h3>
+                            <div class="transcript-actions">
+                                <button class="btn-outline" onclick="addNote()">
+                                    <i data-lucide="sticky-note" style="width:12px;height:12px;"></i>
+                                    Add Note
+                                </button>
+                            </div>
+                        </div>
+                        <div class="transcript-body" id="transcript-body">
+                            <div class="empty-state">
+                                <i data-lucide="message-square" style="width:48px;height:48px;"></i>
+                                <p>Select a conversation to view the transcript</p>
+                            </div>
+                        </div>
+                        <div class="note-input-area" id="note-area" style="display:none;">
+                            <input type="text" class="note-input" id="note-input" placeholder="Add an internal note..." maxlength="500">
+                            <button class="btn-primary" onclick="submitNote()" style="padding:8px 16px;font-size:0.85rem;">
+                                <i data-lucide="send" style="width:14px;height:14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        let conversations = [];
+        let selectedConvId = null;
+        let selectedConvIds = new Set();
+        let searchTimeout = null;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function timeAgo(dateStr) {
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 60) return `${mins}m ago`;
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return `${hrs}h ago`;
+            const days = Math.floor(hrs / 24);
+            return `${days}d ago`;
+        }
+
+        // ── Load Conversations ───────────────────────────────
+        async function loadConversations() {
+            const list = document.getElementById('conv-list');
+            const status = document.getElementById('filter-status').value;
+            const sentiment = document.getElementById('filter-sentiment').value;
+
+            let url = '/api/widget-conversations?limit=100';
+            if (status) url += `&status=${status}`;
+            if (sentiment) url += `&sentiment=${sentiment}`;
+
+            try {
+                const res = await authFetch(url);
+                if (!res.ok) throw new Error('Failed to load');
+                const json = await res.json();
+                conversations = json.data || [];
+                renderConversationList();
+            } catch (err) {
+                list.innerHTML = '<div class="empty-state"><p>Failed to load conversations</p></div>';
+            }
+        }
+
+        function renderConversationList() {
+            const list = document.getElementById('conv-list');
+            if (conversations.length === 0) {
+                list.innerHTML = '<div class="empty-state" style="padding:2rem;"><i data-lucide="inbox" style="width:32px;height:32px;"></i><p>No widget conversations yet</p></div>';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+
+            list.innerHTML = conversations.map(c => {
+                const isActive = c.id === selectedConvId ? 'active' : '';
+                const isChecked = selectedConvIds.has(c.id) ? 'checked' : '';
+                const sentimentClass = c.sentiment ? `sentiment-${c.sentiment}` : '';
+                const statusBadge = c.status ? `<span class="badge badge-${c.status}">${c.status}</span>` : '';
+                return `
+                <div class="conv-item ${isActive}" onclick="selectConversation('${c.id}')">
+                    <div style="display:flex;align-items:flex-start;gap:8px;">
+                        <input type="checkbox" class="conv-checkbox" ${isChecked}
+                               onclick="event.stopPropagation();toggleSelect('${c.id}',this.checked)">
+                        <div style="flex:1;min-width:0;">
+                            <div class="conv-item-name">${escapeHtml(c.customer_name || 'Anonymous Visitor')}</div>
+                            <div class="conv-item-preview">${escapeHtml(c.subject || 'Widget conversation')}</div>
+                            <div class="conv-item-meta">
+                                ${statusBadge}
+                                <span class="${sentimentClass}">${c.sentiment || ''}</span>
+                                <span>${c.message_count || 0} msgs</span>
+                                <span>${timeAgo(c.created_at)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            updateSelectBar();
+        }
+
+        // ── Selection ────────────────────────────────────────
+        function toggleSelect(id, checked) {
+            if (checked) selectedConvIds.add(id);
+            else selectedConvIds.delete(id);
+            updateSelectBar();
+        }
+
+        function toggleSelectAll() {
+            const allChecked = document.getElementById('select-all').checked;
+            if (allChecked) conversations.forEach(c => selectedConvIds.add(c.id));
+            else selectedConvIds.clear();
+            renderConversationList();
+        }
+
+        function updateSelectBar() {
+            const bar = document.getElementById('select-bar');
+            const count = selectedConvIds.size;
+            bar.style.display = count > 0 ? 'flex' : 'none';
+            document.getElementById('select-count').textContent = `${count} selected`;
+        }
+
+        // ── Select & View Transcript ─────────────────────────
+        async function selectConversation(id) {
+            selectedConvId = id;
+            renderConversationList();
+
+            const header = document.getElementById('transcript-header');
+            const body = document.getElementById('transcript-body');
+            const noteArea = document.getElementById('note-area');
+
+            header.style.display = 'flex';
+            noteArea.style.display = 'flex';
+            body.innerHTML = '<div class="empty-state"><i data-lucide="loader" class="spin" style="width:24px;height:24px;"></i></div>';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            try {
+                const res = await authFetch(`/api/widget-conversations/${id}`);
+                if (!res.ok) throw new Error('Failed to load');
+                const json = await res.json();
+
+                const conv = json.conversation;
+                document.getElementById('transcript-title').textContent =
+                    `${conv.customer_name || 'Anonymous'} — ${new Date(conv.created_at).toLocaleDateString()}`;
+
+                const messages = json.messages || [];
+                if (messages.length === 0) {
+                    body.innerHTML = '<div class="empty-state"><p>No messages in this conversation</p></div>';
+                    return;
+                }
+
+                body.innerHTML = messages.map(m => {
+                    const isNote = m.metadata?.type === 'internal_note';
+                    const roleClass = isNote ? 'system' : m.role;
+                    const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                    const noteLabel = isNote ? `<strong>Note by ${escapeHtml(m.metadata?.author || 'admin')}:</strong> ` : '';
+                    return `
+                    <div class="msg-bubble ${roleClass}">
+                        <div class="msg-content">${noteLabel}${escapeHtml(m.content)}</div>
+                        <div class="msg-meta">${time}${m.metadata?.model ? ` &middot; ${m.metadata.model}` : ''}${m.metadata?.degraded ? ' &middot; degraded' : ''}</div>
+                    </div>`;
+                }).join('');
+
+                body.scrollTop = body.scrollHeight;
+            } catch (err) {
+                body.innerHTML = '<div class="empty-state"><p>Failed to load transcript</p></div>';
+            }
+        }
+
+        // ── Search ───────────────────────────────────────────
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const q = document.getElementById('conv-search').value.trim();
+                if (q.length < 2) { loadConversations(); return; }
+
+                try {
+                    const res = await authFetch(`/api/widget-conversations/search?q=${encodeURIComponent(q)}`);
+                    if (!res.ok) throw new Error('Search failed');
+                    const json = await res.json();
+                    conversations = json.data || [];
+                    renderConversationList();
+                } catch (err) {
+                    console.error('Search error:', err);
+                }
+            }, 300);
+        }
+
+        // ── Notes ────────────────────────────────────────────
+        function addNote() {
+            const noteArea = document.getElementById('note-area');
+            noteArea.style.display = 'flex';
+            document.getElementById('note-input').focus();
+        }
+
+        async function submitNote() {
+            if (!selectedConvId) return;
+            const input = document.getElementById('note-input');
+            const note = input.value.trim();
+            if (!note) return;
+
+            try {
+                const res = await authFetch(`/api/widget-conversations/${selectedConvId}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note })
+                });
+                if (!res.ok) throw new Error('Failed to add note');
+                input.value = '';
+                selectConversation(selectedConvId); // Reload transcript
+                if (typeof showToast === 'function') showToast('Note added', 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to add note', 'error');
+            }
+        }
+
+        // ── Export ───────────────────────────────────────────
+        async function exportCSV() {
+            window.open('/api/widget-conversations/export/csv', '_blank');
+        }
+
+        async function exportJSON() {
+            window.open('/api/widget-conversations/export/json', '_blank');
+        }
+
+        async function exportToAsset() {
+            const ids = selectedConvIds.size > 0
+                ? [...selectedConvIds]
+                : conversations.slice(0, 20).map(c => c.id);
+
+            if (ids.length === 0) {
+                if (typeof showToast === 'function') showToast('No conversations to export', 'warning');
+                return;
+            }
+
+            if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
+            const result = await ModalService.form({
+                title: 'Export to Context Asset',
+                fields: [
+                    { name: 'name', label: 'Asset Name', type: 'text', required: true,
+                      placeholder: `Widget Insights (${new Date().toLocaleDateString()})` }
+                ],
+                submitText: `Export ${ids.length} Conversation(s)`
+            });
+            if (!result) return;
+
+            try {
+                const res = await authFetch('/api/widget-conversations/export-to-asset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ conversation_ids: ids, asset_name: result.name })
+                });
+                if (!res.ok) throw new Error('Export failed');
+                const json = await res.json();
+                if (typeof showToast === 'function') {
+                    showToast(`${json.action === 'created' ? 'Created' : 'Updated'} context asset: ${json.asset.name}`, 'success');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Export failed: ' + err.message, 'error');
+            }
+        }
+
+        // ── Init ─────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            document.getElementById('note-input').addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); submitNote(); }
+            });
+
+            loadConversations();
+        });
+    </script>
+</body>
+</html>

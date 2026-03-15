@@ -10,6 +10,7 @@ const logger = require('../../../logger');
 const GmailService = require('./gmail');
 const DriveService = require('./drive');
 const CalendarService = require('./calendar');
+const SheetsService = require('./sheets');
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -52,6 +53,7 @@ class GoogleProvider extends BaseIntegrationProvider {
         this.gmail = new GmailService();
         this.drive = new DriveService();
         this.calendar = new CalendarService();
+        this.sheets = new SheetsService();
     }
 
     getAuthorizationUrl(userId, scopes, redirectUri, state) {
