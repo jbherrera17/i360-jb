@@ -7,17 +7,17 @@
 -- 1. Insert Voice DNA as a context asset
 INSERT INTO context_assets (
     id,
-    org_id,
+    user_id,
     name,
     asset_type,
     description,
     content_json,
-    is_active,
+    is_current,
     version,
     created_by
 ) VALUES (
     'a0000001-0000-4000-b000-000000000001',
-    '57234ef8-5a4d-40e7-aec3-ca02e44db9ce',
+    '71fb8dfe-7469-4540-9a58-b96caa638da4',
     'JB Brand Voice DNA',
     'voice_dna',
     'Comprehensive voice profile defining tone, style, vocabulary, sentence patterns, rhetorical toolkit, and voice boundaries for thought leadership content generation',
