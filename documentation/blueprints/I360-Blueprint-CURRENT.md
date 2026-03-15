@@ -1,25 +1,67 @@
-# Insight 360 Blueprint v3.73
+# Insight 360 Blueprint v3.74
 
-**Version:** 3.73
-**Date:** March 14, 2026
-**Status:** Current | Phase 73
-**Codename:** Ethos
-**Previous Version:** v3.72 (Platform Reliability, PM Agent Team & Annie PRD)
-**Latest Update:** Phase 73: Infrastructure Integration & Admin Reorganization
+**Version:** 3.74
+**Date:** March 15, 2026
+**Status:** Current | Phase 74
+**Codename:** Chronicle
+**Previous Version:** v3.73 (Infrastructure Integration & Admin Reorganization)
+**Latest Update:** Phase 74: Thought Leadership Publishing Pipeline
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.73 delivers **Phase 73: Infrastructure Integration & Admin Reorganization** — fixing 6 critical infrastructure disconnections in the Support AI module, reorganizing the administrator dashboard, and establishing mandatory integration standards for all future module development.
+Insight 360 v3.74 delivers **Phase 74: Thought Leadership Publishing Pipeline** — transforming the Thought Leadership module from a content generation tool into a complete publishing platform with one-click distribution to Blog, Notion, Social Media, and Substack.
 
 Key deliverables:
-1. **Infrastructure integration fixes** — Support module now properly connects to Parthenon processes API, Context Assets, and uses correct data scoping patterns
-2. **Admin dashboard reorganization** — 6 priority-ordered sections with 30 tiles (was 4 sections, 19 tiles), 11 missing admin pages added
-3. **New Module Integration Checklist** — Mandatory 30+ checkbox checklist in CLAUDE.md preventing isolated module development
-4. **Documentation restructure** — Blueprint, Roadmap, and Release Notes reorganized into single living documents with git-versioned history and archived snapshots
+1. **Publishing pipeline** — Unified publish-package endpoint distributes articles to Blog, Notion, Postiz social media (8+ platforms), and Substack (beta) in one action
+2. **Pre-flight integration checks** — Platform-wide UX pattern verifying all downstream integrations before starting multi-step workflows
+3. **Multi-model image generation** — GPT Image 1.5 (default), DALL-E 3, DALL-E 2 with automatic header image generation on every article
+4. **Notion full-page publishing** — Creates database entries with 4 toggle sections (Image, Article, AI Article, Marketing) matching the editorial workflow
+5. **Public blog** — SEO-optimized article pages at `/blog/:slug` with XSS protection
+6. **Add-on pricing** — Starter tier can purchase TL module at $49/mo (4 articles/mo)
+7. **Notion property fixes** — Corrected Status (→status type), Goal (→select type), added Month/YR, Quarter, URL setters
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 74: What Was Completed
+
+### 1. Thought Leadership Publishing Pipeline
+
+Complete multi-target publishing system with pre-flight checks:
+
+| Component | Type | Description |
+|-----------|------|-------------|
+| `preflightService.js` | New service | Checks image API, Notion, Postiz, Substack, LinkedIn before workflows |
+| `substackService.js` | New service | Cookie-based Substack publishing (beta, AES-256-GCM encrypted) |
+| `blog.js` | New route | Public blog pages with marked + sanitize-html (XSS protection) |
+| `notionService.publishArticlePage()` | New method | Creates Notion pages with 4 toggle sections |
+| `tlImageService.js` | Updated | GPT Image 1.5 default, multi-model support, base64 handling |
+| `thought-leadership.js` | Updated | Pre-flight endpoint, image in article gen, 4 publish endpoints |
+| `thought-leadership.html` | Updated | Publish section UI with target toggles and pre-flight display |
+
+### 2. Notion Property Fixes
+
+| Property | Before | After |
+|----------|--------|-------|
+| Status | `select` type (API rejected) | `status` type (correct) |
+| Goal | `rich_text` (wrong type) | `select` (correct) |
+| Month/YR | Not set | `rich_text` setter added |
+| Quarter | Not set | `select` setter added |
+| URL | Not set | `url` setter added |
+
+### 3. Add-On Pricing ($49/mo)
+
+Thought Leadership module marked as purchasable add-on. Tier limits added to `subscription_tiers`:
+- Starter add-on: 4 articles/mo, 20 LinkedIn posts/mo
+- Business: 16 articles/mo, 80 posts/mo
+- Enterprise/Agency: Unlimited
+
+### 4. Database Migration (phase72-tl-publishing.sql)
+
+New tables: `blog_articles` (public blog), `substack_credentials` (encrypted cookies). Extended: `content_calendar_entries` (blog/notion sync columns), `thought_leadership_profiles` (image/style preferences), `subscription_tiers` (TL limits), `org_module_purchases` (settings JSONB).
 
 ---
 
