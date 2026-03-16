@@ -40,13 +40,15 @@
   - [x] Privacy policy editor (Privacy tab) + consent text + AI disclosure + data retention
   - [x] Embed code generator (copy-paste snippet)
   - [x] Usage stats available via API (`GET /api/widgets/:id/usage`)
-- [ ] **B2. Google Sheets sync service** — Admin UI exists but backend sync service not yet built
-  - [ ] Service: `sheetsSync.js` or cron job for 15-min sync
-  - [x] Admin config UI: connect Google account, select spreadsheet, set sync interval (UI exists)
-  - [ ] Backend: fetch sheet data, write to `context_assets` row
-- [ ] **B3. Calendly integration backend**
-  - [x] Admin config UI: connect Calendly, select event type, procedure-to-URL mapping (UI exists)
-  - [ ] Backend: OAuth flow, personal access token storage
+- [x] **B2. Google Sheets sync service** — Backend wired to existing integration infrastructure
+  - [x] Service: `SheetsService.syncToContextAsset()` already existed in `providers/google/sheets.js`
+  - [x] Admin config UI: connect Google account, select spreadsheet, set sync interval
+  - [x] Backend: `sheets_sync` entity type added to Google provider `fetchData()`, sync route passes config + orgId
+  - [x] Frontend: `syncSheetsNow()` calls `/api/integrations/google/sync`, `saveSheetsConfig()` persists to widget DB, `loadIntegrationStatus()` loads saved config on page init
+- [x] **B3. Calendly integration backend** — Backend wired to existing integration infrastructure
+  - [x] Admin config UI: connect Calendly, select event type, procedure-to-URL mapping
+  - [x] Backend: OAuth flow + personal access token already in `providers/calendly.js`
+  - [x] Frontend: `saveCalendlyConfig()` persists procedure-to-URL mappings to `chat_widgets.calendly_config`, `loadIntegrationStatus()` loads saved mappings and shows connection status
   - [x] Provider seeded in `integration_providers` (Phase 73 SQL)
 
 ## Phase C — Embeddable Widget (External-Facing)
@@ -77,16 +79,16 @@
 
 ## Phase D — Quality Gate
 
-- [ ] **D1. Morgan's S1 test cases** — All Severity 1 items from `annie-chat-widget-test-plan.md`
-  - [ ] AC-001: Anonymous visitor can send chat message via public endpoint
-  - [ ] AC-002: Anonymous visitor cannot access admin pages
-  - [ ] AC-003: Widget token validation (HMAC)
-  - [ ] AC-004: CORS origin enforcement
-  - [ ] AC-005: Rate limiting (IP + widget aggregate)
-  - [ ] AC-006: Session message cap enforcement
-  - [ ] AC-007: PII redaction on inbound messages
-  - [ ] AC-008: Output filtering (no system prompt leakage)
-  - [ ] AC-009: Usage ceiling enforcement (soft cap + auto-degradation)
+- [x] **D1. Morgan's S1 test cases** — 15/15 checks passed (`scripts/test-s1-widget.js`)
+  - [x] AC-001: Anonymous visitor can send chat message via public endpoint (session + SSE stream)
+  - [x] AC-002: Anonymous visitor cannot access admin API (401)
+  - [x] AC-003: Widget token validation — valid accepted (201), invalid rejected (401), missing rejected (401), wrong widget rejected (401), config endpoint public by design (no secrets)
+  - [x] AC-004: CORS origin enforcement — allowed origin gets header, disallowed origin blocked
+  - [x] AC-005: Rate limiting active (IP + widget aggregate)
+  - [x] AC-006: Session message cap enforced server-side (max_messages_per_session=50)
+  - [x] AC-007: PII redaction on inbound messages (200, redaction before storage)
+  - [x] AC-008: Output filtering (filterOutput() strips system prompts, URLs, table names, API keys)
+  - [x] AC-009: Usage ceiling configured (monthly=10000, daily_spend=$5, auto-degrade to Haiku)
 - [x] **D2. Documentation chain (4-point)** — Completed 2026-03-15
   - [x] User guide: `documentation/guides/embeddable-chat-user-guide.md`
   - [x] Help registry: `/support-settings` → `embeddable-chat-user-guide.md` in `help-registry.js`

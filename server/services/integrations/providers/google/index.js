@@ -161,6 +161,18 @@ class GoogleProvider extends BaseIntegrationProvider {
                 return this.drive.listFiles(credentials.accessToken, options);
             case 'events':
                 return this.calendar.getUpcoming(credentials.accessToken, options);
+            case 'sheets':
+                return this.sheets.getSheet(credentials.accessToken, options.spreadsheetId, {
+                    range: options.range || 'Sheet1',
+                    includeHeaders: true
+                });
+            case 'sheets_sync':
+                return this.sheets.syncToContextAsset(this.supabase, credentials.accessToken, {
+                    spreadsheetId: options.config?.spreadsheetId || options.spreadsheetId,
+                    range: options.config?.range || options.range || 'Sheet1',
+                    orgId: options.orgId || credentials.orgId,
+                    assetName: options.config?.assetName || options.assetName || 'Synced Sheet Data'
+                });
             default:
                 throw new Error(`Unknown entity type: ${entityType}`);
         }

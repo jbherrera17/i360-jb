@@ -1841,22 +1841,70 @@
                 if (typeof showToast === 'function') showToast('Enter a spreadsheet ID', 'warning');
                 return;
             }
+            const range = document.getElementById('sheets-range').value.trim() || 'Sheet1';
+            const assetName = document.getElementById('sheets-asset-name').value.trim() || 'Procedure Data (Google Sheets)';
+            const statusEl = document.getElementById('sheets-sync-status');
+
             try {
-                const statusEl = document.getElementById('sheets-sync-status');
                 statusEl.innerHTML = '<i data-lucide="loader" class="spin" style="width:16px;height:16px;"></i><span style="font-size:0.85rem;">Syncing...</span>';
                 if (typeof lucide !== 'undefined') lucide.createIcons();
 
-                // Trigger sync via widget API
-                if (typeof showToast === 'function') showToast('Sync initiated', 'info');
-                statusEl.innerHTML = `<i data-lucide="check-circle" style="width:16px;height:16px;color:var(--success);"></i><span style="font-size:0.85rem;">Last synced: ${new Date().toLocaleString()}</span>`;
+                const res = await authFetch('/api/integrations/google/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        entityType: 'sheets_sync',
+                        config: { spreadsheetId, range, assetName }
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || `Sync failed (${res.status})`);
+                }
+
+                const json = await res.json();
+                statusEl.innerHTML = `<i data-lucide="check-circle" style="width:16px;height:16px;color:var(--success);"></i><span style="font-size:0.85rem;">Last synced: ${new Date().toLocaleString()} — ${json.rowCount || '?'} rows</span>`;
                 if (typeof lucide !== 'undefined') lucide.createIcons();
+                if (typeof showToast === 'function') showToast(`Synced ${json.rowCount || ''} rows to context assets`, 'success');
             } catch (err) {
+                statusEl.innerHTML = `<i data-lucide="alert-triangle" style="width:16px;height:16px;color:var(--warning);"></i><span style="font-size:0.85rem;">${escapeHtml(err.message)}</span>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
                 if (typeof showToast === 'function') showToast('Sync failed: ' + err.message, 'error');
             }
         }
 
-        function saveSheetsConfig() {
-            if (typeof showToast === 'function') showToast('Sheets configuration saved', 'success');
+        async function saveSheetsConfig() {
+            const spreadsheetId = document.getElementById('sheets-spreadsheet-id').value.trim();
+            const range = document.getElementById('sheets-range').value.trim() || 'Sheet1';
+            const syncInterval = document.getElementById('sheets-sync-interval').value;
+            const assetName = document.getElementById('sheets-asset-name').value.trim();
+
+            if (!spreadsheetId) {
+                if (typeof showToast === 'function') showToast('Enter a spreadsheet ID', 'warning');
+                return;
+            }
+
+            try {
+                // Save sheets config to all widgets in the org
+                const res = await authFetch('/api/widgets');
+                if (!res.ok) throw new Error('Could not load widgets');
+                const widgets = (await res.json()).data || [];
+
+                for (const w of widgets) {
+                    await authFetch(`/api/widgets/${w.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sheets_config: { spreadsheetId, range, syncInterval: parseInt(syncInterval), assetName }
+                        })
+                    });
+                }
+
+                if (typeof showToast === 'function') showToast('Sheets configuration saved', 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to save: ' + err.message, 'error');
+            }
         }
 
         // ══════════════════════════════════════════════════════
@@ -1918,7 +1966,7 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        function saveCalendlyConfig() {
+        async function saveCalendlyConfig() {
             const procedures = document.querySelectorAll('.calendly-procedure');
             const urls = document.querySelectorAll('.calendly-url');
             const mappings = {};
@@ -1927,8 +1975,95 @@
                     mappings[p.value.trim()] = urls[i].value.trim();
                 }
             });
-            console.log('Calendly mappings:', mappings);
-            if (typeof showToast === 'function') showToast('Calendly configuration saved', 'success');
+
+            if (Object.keys(mappings).length === 0) {
+                if (typeof showToast === 'function') showToast('Add at least one procedure mapping', 'warning');
+                return;
+            }
+
+            try {
+                // Save calendly config to all widgets in the org
+                const res = await authFetch('/api/widgets');
+                if (!res.ok) throw new Error('Could not load widgets');
+                const widgets = (await res.json()).data || [];
+
+                for (const w of widgets) {
+                    await authFetch(`/api/widgets/${w.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            calendly_config: { mappings, updated_at: new Date().toISOString() }
+                        })
+                    });
+                }
+
+                if (typeof showToast === 'function') showToast(`Calendly configuration saved (${Object.keys(mappings).length} mappings)`, 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to save: ' + err.message, 'error');
+            }
+        }
+
+        // ── Integration Status ─────────────────────────────────
+        async function loadIntegrationStatus() {
+            try {
+                // Check which integrations are connected
+                const res = await authFetch('/api/integrations/user');
+                if (!res.ok) return;
+                const json = await res.json();
+                const integrations = json.data || json || [];
+
+                // Google Sheets status
+                const google = integrations.find(i => i.provider_slug === 'google' || i.provider?.slug === 'google');
+                if (google && google.status === 'active') {
+                    document.getElementById('sheets-status-text').innerHTML = '<span class="status-dot connected"></span> Connected';
+                    document.getElementById('sheets-connect-btn').textContent = 'Reconnect';
+                    document.getElementById('sheets-config').style.display = 'block';
+                }
+
+                // Calendly status
+                const calendly = integrations.find(i => i.provider_slug === 'calendly' || i.provider?.slug === 'calendly');
+                if (calendly && calendly.status === 'active') {
+                    document.getElementById('calendly-status-text').innerHTML = '<span class="status-dot connected"></span> Connected';
+                    document.getElementById('calendly-config').style.display = 'block';
+                }
+
+                // Load saved sheets config from first widget
+                const widgetRes = await authFetch('/api/widgets');
+                if (widgetRes.ok) {
+                    const widgets = (await widgetRes.json()).data || [];
+                    if (widgets.length > 0) {
+                        const sc = widgets[0].sheets_config;
+                        if (sc && sc.spreadsheetId) {
+                            document.getElementById('sheets-spreadsheet-id').value = sc.spreadsheetId || '';
+                            document.getElementById('sheets-range').value = sc.range || 'Sheet1';
+                            document.getElementById('sheets-sync-interval').value = String(sc.syncInterval || 15);
+                            document.getElementById('sheets-asset-name').value = sc.assetName || 'Procedure Data (Google Sheets)';
+                            if (google && google.status === 'active') {
+                                document.getElementById('sheets-config').style.display = 'block';
+                            }
+                        }
+                        // Load saved calendly config
+                        const cc = widgets[0].calendly_config;
+                        if (cc && cc.mappings) {
+                            const container = document.getElementById('calendly-mappings');
+                            container.innerHTML = '';
+                            for (const [proc, url] of Object.entries(cc.mappings)) {
+                                const row = document.createElement('div');
+                                row.style.cssText = 'display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:8px;';
+                                row.innerHTML = `
+                                    <input type="text" class="form-input calendly-procedure" value="${escapeHtml(proc)}">
+                                    <input type="url" class="form-input calendly-url" value="${escapeHtml(url)}">
+                                    <button class="btn-outline" onclick="this.parentElement.remove()" style="padding:8px;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                                `;
+                                container.appendChild(row);
+                            }
+                            if (typeof lucide !== 'undefined') lucide.createIcons();
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading integration status:', e);
+            }
         }
 
         // ── Init ───────────────────────────────────────────────
@@ -1944,6 +2079,7 @@
             renderPolicies();
             loadChatWidgets();
             loadPrivacySettings();
+            loadIntegrationStatus();
         });
     </script>
 </body>

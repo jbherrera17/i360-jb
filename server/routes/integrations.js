@@ -591,7 +591,8 @@ module.exports = function(supabase) {
                 return res.status(401).json({ success: false, error: 'Not connected to this provider' });
             }
 
-            const { entityType, syncType } = req.body;
+            const { entityType, syncType, config } = req.body;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
 
             await provider.logSync(supabase, {
                 integrationId: credentials.integrationId,
@@ -600,10 +601,11 @@ module.exports = function(supabase) {
                 entityType,
                 status: 'started',
                 results: {},
-                userId
+                userId,
+                orgId
             });
 
-            const result = await provider.fetchData(credentials, entityType, { syncType });
+            const result = await provider.fetchData(credentials, entityType, { syncType, config, orgId });
 
             await provider.logSync(supabase, {
                 integrationId: credentials.integrationId,
