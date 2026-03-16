@@ -1,28 +1,57 @@
-# Insight 360 Blueprint v3.75
+# Insight 360 Blueprint v3.76
 
-**Version:** 3.75
-**Date:** March 15, 2026
-**Status:** Current | Phase 75
+**Version:** 3.76
+**Date:** March 16, 2026
+**Status:** Current | Phase 76
 **Codename:** Chronicle
-**Previous Version:** v3.74 (Thought Leadership Publishing Pipeline)
-**Latest Update:** Phase 75: Annie Embeddable Chat Widget
+**Previous Version:** v3.75 (Annie Embeddable Chat Widget)
+**Latest Update:** Phase 76: TL Content Creation Workflow + Guardrail Fix
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.75 delivers **Phase 75: Annie Embeddable Chat Widget** — a secure, compliant, public-facing chat system for external websites. The module enables any i360 agent to be deployed as an embeddable chat widget via iframe, with HMAC token authentication, PII redaction, Haiku/Sonnet cost optimization, Google Sheets data sync, Calendly scheduling integration, and a full conversation review dashboard.
+Insight 360 v3.76 delivers **Phase 76: TL Content Creation Workflow** — a complete rewrite of the Thought Leadership content generation pipeline to match the proven Content Creation System workflow. The module now generates weekly packages (article + AI-optimized + 5 LinkedIn posts + header image) with full editorial calendar context, format-specific structure templates, brand hashtag rotation, quality gates, and user-selectable LLM models and context assets. Also includes a critical guardrail enforcement fix that eliminates systemic false positives across ALL agents.
 
 Key deliverables:
-1. **Publishing pipeline** — Unified publish-package endpoint distributes articles to Blog, Notion, Postiz social media (8+ platforms), and Substack (beta) in one action
-2. **Pre-flight integration checks** — Platform-wide UX pattern verifying all downstream integrations before starting multi-step workflows
-3. **Multi-model image generation** — GPT Image 1.5 (default), DALL-E 3, DALL-E 2 with automatic header image generation on every article
-4. **Notion full-page publishing** — Creates database entries with 4 toggle sections (Image, Article, AI Article, Marketing) matching the editorial workflow
-5. **Public blog** — SEO-optimized article pages at `/blog/:slug` with XSS protection
-6. **Add-on pricing** — Starter tier can purchase TL module at $49/mo (4 articles/mo)
-7. **Notion property fixes** — Corrected Status (→status type), Goal (→select type), added Month/YR, Quarter, URL setters
+1. **Content Creation Workflow** — tlContentService.js implements the editorial calendar hierarchy (annual theme → quarterly pillar → monthly theme → series → cornerstone pattern) with format-specific article templates
+2. **Generate Weekly Package modal** — Full-featured generation UI with editorial context preview, LLM/context selection, progress tracking, rendered content tabs, image preview, and quality checklist
+3. **LLM + Context Asset Selection** — Users choose their preferred model (Claude, GPT, Gemini) and context profiles (Voice DNA, ICP, Business Profile) with saved preferences
+4. **Quality Gates** — 7-check quality engine with actionable fix guidance for failures
+5. **Guardrail Fix** — Eliminated systemic false positives in bright line keyword matching; fixed broken incident logging
+6. **Image Fix** — GPT Image base64 response property mismatch resolved
+7. **UX Principles** — 8 workflow-first design principles and 6 content generation UX principles captured for Phase 77 redesign
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 76: What Was Completed
+
+### 1. TL Content Creation Workflow (tlContentService.js)
+
+Ports the proven VS Code Content Creation System workflow into the Insight 360 web UI:
+
+| Component | Description |
+|-----------|-------------|
+| `resolveEditorialContext()` | Resolves full editorial hierarchy from calendar entry: annual theme, quarterly pillar, monthly theme, series, cornerstone linking |
+| `buildArticlePrompt()` | Format-specific structure templates (long: 7 sections, medium: 5, short: 4) with word targets per section |
+| `buildLinkedInPrompt()` | Per-day templates (Mon=Insight Launch, Tue=Problem Spotlight, Wed=Framework Reveal, Thu=Story, Fri=Reflect) with brand hashtag rotation |
+| `buildAiOptimizedPrompt()` | YAML front matter spec, self-contained paragraphs, inline definitions, author attribution, cross-links |
+| `ensureYamlFrontMatter()` | Programmatic YAML construction from editorial context (never relies on LLM to produce valid YAML) |
+| `runQualityGates()` | 7 checks: format length, voice patterns, cornerstone link, AI optimization, LinkedIn char limits, hashtag compliance, actionable insights |
+
+### 2. Guardrail Enforcement Fix (Critical — All Agents)
+
+Fixed systemic false positives: bright line keywords included common English words (human, safety, first, provide, information). Added 50+ high-frequency words to stop filter and length-normalized match threshold. Fixed broken incident logging (CHECK constraint mismatch).
+
+### 3. Generation Settings (Phase 76b)
+
+LLM model and context asset selection with saved preferences on `thought_leadership_profiles`. Cascade: request override → saved preference → agent default.
+
+### 4. Frontend: Generate Weekly Package Modal
+
+Full generation UI with editorial context preview, collapsible generation settings, progress overlay, rendered markdown tabs, image preview with prompt/regenerate, and quality checklist with actionable fix hints.
 
 ---
 
