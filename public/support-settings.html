@@ -1225,21 +1225,32 @@
 
                 <!-- Tab 3: Policies -->
                 <div class="tab-content" id="tab-policies">
-                    <a href="/parthenon.html#processes?dept=Support" class="policies-link">
-                        <i data-lucide="external-link" style="width:14px;height:14px;"></i>
-                        Manage support policies in Parthenon Processes
-                    </a>
-                    <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 var(--spacing-lg) 0;">
-                        Support policies are managed as Processes in the Parthenon framework. Changes there are automatically reflected in the AI agent's behavior.
-                        To add knowledge base articles, use <a href="/context.html" style="color:var(--primary);">Context Assets</a>.
-                    </p>
+                    <div class="settings-section">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-lg);">
+                            <div>
+                                <h3 style="margin:0;font-size:1.1rem;">Support Policies & Processes</h3>
+                                <p style="margin:4px 0 0;color:var(--text-muted);font-size:0.85rem;">
+                                    These processes define how Annie handles support scenarios. Changes are reflected in the AI agent's behavior.
+                                </p>
+                            </div>
+                            <button class="btn-primary" onclick="createPolicy()" style="display:flex;align-items:center;gap:6px;">
+                                <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                New Policy
+                            </button>
+                        </div>
 
-                    <div id="policies-container">
-                        <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
-                            <i data-lucide="loader" class="spin" style="width:24px;height:24px;"></i>
-                            <p>Loading policies...</p>
+                        <div id="policies-container">
+                            <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
+                                <i data-lucide="loader" class="spin" style="width:24px;height:24px;"></i>
+                                <p>Loading policies...</p>
+                            </div>
                         </div>
                     </div>
+
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:var(--spacing-md);">
+                        Policies are synced with <a href="/parthenon.html#processes?dept=Support" style="color:var(--primary);">Parthenon Processes</a>.
+                        For knowledge base articles, use <a href="/context.html" style="color:var(--primary);">Context Assets</a>.
+                    </p>
                 </div>
             </div>
         </main>
@@ -1403,54 +1414,62 @@
             renderDomains();
         }
 
-        // ── Policies ───────────────────────────────────────────
+        // ── Policies (Inline CRUD) ─────────────────────────────
+        const SUPPORT_DEPT_ID = '0a36ea69-1fda-4295-8787-4c4376917d87';
+        let supportProcesses = [];
+
         async function renderPolicies() {
             const container = document.getElementById('policies-container');
             try {
-                // Fetch processes from Parthenon API
-                const res = await authFetch('/api/parthenon/processes');
+                const res = await authFetch(`/api/parthenon/processes?department_id=${SUPPORT_DEPT_ID}`);
                 if (!res.ok) throw new Error('Failed to load policies');
                 const json = await res.json();
-                const processes = json.data || [];
+                supportProcesses = json.data || [];
 
-                if (processes.length === 0) {
+                if (supportProcesses.length === 0) {
                     container.innerHTML = `
                         <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
-                            <i data-lucide="info" style="width:24px;height:24px;margin-bottom:8px;"></i>
-                            <p>No support policies found.</p>
-                            <p style="font-size:0.85rem;">Create support processes in the
-                                <a href="/parthenon.html#processes" style="color:var(--primary);">Parthenon module</a>
-                                to see them here.
-                            </p>
+                            <i data-lucide="shield-check" style="width:32px;height:32px;margin-bottom:8px;opacity:0.5;"></i>
+                            <p>No support policies yet.</p>
+                            <p style="font-size:0.85rem;">Create your first policy to define how Annie handles support scenarios.</p>
                         </div>`;
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                     return;
                 }
 
-                container.innerHTML = processes.map(p => {
+                container.innerHTML = supportProcesses.map(p => {
                     const steps = Array.isArray(p.steps) ? p.steps : [];
                     const inputs = Array.isArray(p.inputs) ? p.inputs : [];
                     const outputs = Array.isArray(p.outputs) ? p.outputs : [];
                     const icon = getProcessIcon(p);
                     return `
-                        <div class="policy-card">
+                        <div class="policy-card" style="cursor:pointer;" onclick="editPolicy('${p.id}')">
                             <div class="policy-header">
                                 <div class="policy-icon">
                                     <i data-lucide="${icon}"></i>
                                 </div>
-                                <div>
+                                <div style="flex:1;">
                                     <div class="policy-title">${escapeHtml(p.name)}</div>
                                     <div class="policy-desc">${escapeHtml(p.description || '')}</div>
+                                </div>
+                                <div style="display:flex;gap:4px;">
+                                    <button class="btn-outline" onclick="event.stopPropagation();editPolicy('${p.id}')" style="padding:4px 8px;font-size:0.75rem;">
+                                        <i data-lucide="pencil" style="width:12px;height:12px;"></i> Edit
+                                    </button>
+                                    <button class="btn-outline" onclick="event.stopPropagation();deletePolicy('${p.id}','${escapeHtml(p.name)}')" style="padding:4px 8px;font-size:0.75rem;color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">
+                                        <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+                                    </button>
                                 </div>
                             </div>
                             ${steps.length > 0 ? `
                             <ol class="policy-steps">
                                 ${steps.map(s => `<li>${escapeHtml(typeof s === 'string' ? s : s.title || s.name || JSON.stringify(s))}</li>`).join('')}
-                            </ol>` : ''}
+                            </ol>` : '<p style="color:var(--text-muted);font-size:0.85rem;margin:0;">No steps defined. Click to edit.</p>'}
+                            ${(inputs.length > 0 || outputs.length > 0) ? `
                             <div class="policy-badges">
                                 ${inputs.map(inp => `<span class="policy-badge input">IN: ${escapeHtml(typeof inp === 'string' ? inp : inp.name || JSON.stringify(inp))}</span>`).join('')}
                                 ${outputs.map(out => `<span class="policy-badge output">OUT: ${escapeHtml(typeof out === 'string' ? out : out.name || JSON.stringify(out))}</span>`).join('')}
-                            </div>
+                            </div>` : ''}
                         </div>`;
                 }).join('');
                 if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -1459,10 +1478,122 @@
                 container.innerHTML = `
                     <div style="text-align:center;padding:var(--spacing-xl);color:var(--text-muted);">
                         <i data-lucide="alert-triangle" style="width:24px;height:24px;color:var(--warning);margin-bottom:8px;"></i>
-                        <p>Could not load policies from the server.</p>
-                        <p style="font-size:0.85rem;">Check your connection and try refreshing the page.</p>
+                        <p>Could not load policies.</p>
+                        <button class="btn-outline" onclick="renderPolicies()">Retry</button>
                     </div>`;
                 if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        async function createPolicy() {
+            if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
+            const result = await ModalService.form({
+                title: 'Create Support Policy',
+                fields: [
+                    { name: 'name', label: 'Policy Name', type: 'text', required: true, placeholder: 'e.g. Refund Policy' },
+                    { name: 'description', label: 'Description', type: 'textarea', placeholder: 'What this policy covers...' },
+                    { name: 'type', label: 'Type', type: 'select', options: [
+                        { value: 'policy', label: 'Policy' },
+                        { value: 'procedure', label: 'Procedure' },
+                        { value: 'standard', label: 'Standard' },
+                        { value: 'checklist', label: 'Checklist' }
+                    ]},
+                    { name: 'steps', label: 'Steps (one per line)', type: 'textarea', placeholder: 'Step 1\nStep 2\nStep 3' }
+                ],
+                submitText: 'Create Policy'
+            });
+            if (!result) return;
+
+            try {
+                const steps = (result.steps || '').split('\n').map(s => s.trim()).filter(Boolean);
+                const res = await authFetch('/api/parthenon/processes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        description: result.description || '',
+                        department_id: SUPPORT_DEPT_ID,
+                        type: result.type || 'policy',
+                        steps: steps.map(s => ({ title: s })),
+                        status: 'active'
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to create policy');
+                if (typeof showToast === 'function') showToast('Policy created', 'success');
+                renderPolicies();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(err.message, 'error');
+            }
+        }
+
+        async function editPolicy(processId) {
+            const process = supportProcesses.find(p => p.id === processId);
+            if (!process) return;
+
+            if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
+            const steps = Array.isArray(process.steps) ? process.steps : [];
+            const stepsText = steps.map(s => typeof s === 'string' ? s : s.title || s.name || '').join('\n');
+
+            const result = await ModalService.form({
+                title: `Edit: ${process.name}`,
+                fields: [
+                    { name: 'name', label: 'Policy Name', type: 'text', required: true, value: process.name },
+                    { name: 'description', label: 'Description', type: 'textarea', value: process.description || '' },
+                    { name: 'type', label: 'Type', type: 'select', value: process.type || 'policy', options: [
+                        { value: 'policy', label: 'Policy' },
+                        { value: 'procedure', label: 'Procedure' },
+                        { value: 'standard', label: 'Standard' },
+                        { value: 'checklist', label: 'Checklist' }
+                    ]},
+                    { name: 'steps', label: 'Steps (one per line)', type: 'textarea', value: stepsText },
+                    { name: 'status', label: 'Status', type: 'select', value: process.status || 'active', options: [
+                        { value: 'active', label: 'Active' },
+                        { value: 'draft', label: 'Draft' },
+                        { value: 'archived', label: 'Archived' }
+                    ]}
+                ],
+                submitText: 'Save Changes'
+            });
+            if (!result) return;
+
+            try {
+                const updatedSteps = (result.steps || '').split('\n').map(s => s.trim()).filter(Boolean);
+                const res = await authFetch(`/api/parthenon/processes/${processId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: result.name,
+                        description: result.description || '',
+                        type: result.type || 'policy',
+                        steps: updatedSteps.map(s => ({ title: s })),
+                        status: result.status || 'active'
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to update policy');
+                if (typeof showToast === 'function') showToast('Policy updated', 'success');
+                renderPolicies();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(err.message, 'error');
+            }
+        }
+
+        async function deletePolicy(processId, processName) {
+            if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
+            const confirmed = await ModalService.confirm({
+                title: 'Delete Policy',
+                message: `Are you sure you want to delete "${processName}"? This action cannot be undone.`,
+                confirmText: 'Delete',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
+
+            try {
+                const res = await authFetch(`/api/parthenon/processes/${processId}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete policy');
+                if (typeof showToast === 'function') showToast('Policy deleted', 'success');
+                renderPolicies();
+            } catch (err) {
+                if (typeof showToast === 'function') showToast(err.message, 'error');
             }
         }
 
