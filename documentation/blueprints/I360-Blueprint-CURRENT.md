@@ -1,28 +1,90 @@
-# Insight 360 Blueprint v3.76
+# Insight 360 Blueprint v3.77
 
-**Version:** 3.76
+**Version:** 3.77
 **Date:** March 16, 2026
-**Status:** Current | Phase 76
+**Status:** Current | Phase 77
 **Codename:** Chronicle
-**Previous Version:** v3.75 (Annie Embeddable Chat Widget)
-**Latest Update:** Phase 76: TL Content Creation Workflow + Guardrail Fix
+**Previous Version:** v3.76 (TL Content Creation Workflow)
+**Latest Update:** Phase 77: TL Page UX Redesign — Two-Mode Workflow Cockpit
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.76 delivers **Phase 76: TL Content Creation Workflow** — a complete rewrite of the Thought Leadership content generation pipeline to match the proven Content Creation System workflow. The module now generates weekly packages (article + AI-optimized + 5 LinkedIn posts + header image) with full editorial calendar context, format-specific structure templates, brand hashtag rotation, quality gates, and user-selectable LLM models and context assets. Also includes a critical guardrail enforcement fix that eliminates systemic false positives across ALL agents.
+Insight 360 v3.77 delivers **Phase 77: TL Page UX Redesign** — a complete frontend restructure of the Thought Leadership page from a 7-section scrolling dashboard into a two-mode workflow cockpit. The default "This Week" mode auto-populates from the editorial calendar, provides one-click package generation with live pipeline progress, inline results with Preview/Edit/Regen, and publish-in-place. A "Settings" mode behind a gear icon houses all configuration (positioning, pillars, calendar, visibility, integrations) in 5 tabs. Content review lets users navigate to any past week and see their article, header image, and LinkedIn posts all in one place. Page reduced from 4,197 to 2,470 lines (41% smaller). Frontend-only change — no backend modifications.
 
 Key deliverables:
-1. **Content Creation Workflow** — tlContentService.js implements the editorial calendar hierarchy (annual theme → quarterly pillar → monthly theme → series → cornerstone pattern) with format-specific article templates
-2. **Generate Weekly Package modal** — Full-featured generation UI with editorial context preview, LLM/context selection, progress tracking, rendered content tabs, image preview, and quality checklist
-3. **LLM + Context Asset Selection** — Users choose their preferred model (Claude, GPT, Gemini) and context profiles (Voice DNA, ICP, Business Profile) with saved preferences
-4. **Quality Gates** — 7-check quality engine with actionable fix guidance for failures
-5. **Guardrail Fix** — Eliminated systemic false positives in bright line keyword matching; fixed broken incident logging
-6. **Image Fix** — GPT Image base64 response property mismatch resolved
-7. **UX Principles** — 8 workflow-first design principles and 6 content generation UX principles captured for Phase 77 redesign
+1. **Two-Mode Interface** — "This Week" execution mode (95% of visits) separated from "Settings" configuration mode (5%)
+2. **Smart Content Card** — Auto-populated from editorial calendar for current ISO week with pillar accent, format badges, editorial context
+3. **Live Generation Pipeline** — 5-step progress with 4 states per step (empty/active/done/failed), elapsed time, per-step retry
+4. **Inline Results & Content Review** — Article, AI version, image, LinkedIn posts displayed with Preview/Edit/Regen; auto-populates when viewing past weeks with stored content
+5. **Publishing Streak** — Consecutive-week counter motivates consistency
+6. **XSS Mitigation** — Markdown renderer hardened against script injection from LLM output
+7. **12 UX Principles Applied** — All workflow-first design principles from Phase 76 implemented in production
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 77: What Was Completed
+
+### 1. Two-Mode Page Restructure
+
+Replaced the 7-section scrolling dashboard with a two-mode workflow cockpit:
+
+| Mode | Components | Access |
+|------|-----------|--------|
+| **This Week** (default) | Content Card, Generate Card, Results Card, Upcoming, Recent | Page load |
+| **Settings** (gear icon) | 5 tabs: Position, Pillars, Calendar, Visibility, Publishing & Integrations | Header gear icon |
+
+### 2. Content Card Auto-Population
+
+Current week's editorial calendar entry loaded automatically with:
+- Title, pillar badge (4px left border in pillar color), format badge, status
+- Series name and editorial context
+- Empty state with "Go to Calendar Settings" CTA when no entry exists
+
+### 3. Generate Card with Live Progress
+
+- Ambient pre-flight dots loaded on page open (no button click required)
+- 5-step pipeline: Article → AI Version → Image → LinkedIn → Quality
+- 4 visual states per step: empty, in-progress (spinning + elapsed time), complete (check), failed (X + retry)
+- ~90 second time estimate
+
+### 4. Inline Results & Content Review
+
+Results Card shows per-output rows with actions:
+- Article: word count, Preview (rendered markdown), Edit (ModalService textarea)
+- AI Version: Preview
+- Image: thumbnail, Preview, Regenerate
+- LinkedIn: post count, Preview (5 daily posts with hashtags)
+- Quality checklist with pass/fail gates
+- Publish targets (Blog, Notion, Social, Substack) with Publish Package button
+
+**Content Review:** Navigating to a past week with stored content auto-populates the Results Card. Users review article, image, and marketing posts in one place.
+
+### 5. Week Navigation
+
+Clicking any week in Upcoming or Recent:
+- Updates Content Card to selected week
+- Updates header to show selected week number and date range
+- Loads existing content into Results Card if available
+- Changes Generate button to "Regenerate Package"
+
+### 6. Publishing Streak
+
+Simple counter ("10 weeks in a row") calculated from consecutive published weeks in the Recent section.
+
+### 7. XSS Mitigation
+
+Added sanitization to `renderPackageMarkdown()`: strips script tags, dangerous elements (iframe/object/embed/form), and neutralizes inline event handlers.
+
+### 8. Accessibility
+
+- `aria-live="polite"` on generation progress region
+- `role="tablist"` / `role="tab"` / `role="tabpanel"` on settings tabs
+- Focus management: Settings → first tab, This Week → generate CTA
+- All status indicators have text labels (not just color)
 
 ---
 

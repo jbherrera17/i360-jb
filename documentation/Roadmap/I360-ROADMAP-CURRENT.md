@@ -2,17 +2,17 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 3.74
-**Last Updated:** March 15, 2026
-**Current System Version:** v3.74 (Phase 74)
+**Version:** 3.77
+**Last Updated:** March 16, 2026
+**Current System Version:** v3.77 (Phase 77)
 
 ---
 
 ## Executive Summary
 
-Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, and a **complete thought leadership publishing pipeline**. Version 3.74 adds multi-target content publishing (Blog, Notion, Social Media, Substack), pre-flight integration checks, multi-model AI image generation, and add-on module pricing.
+Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, and a **workflow-first thought leadership content engine**. Version 3.77 restructures the TL page into a two-mode workflow cockpit with auto-populated content cards, one-click generation with live progress, inline content review, and publish-in-place.
 
-**Current Production Readiness Score: 10.0/10** *(v3.74)*
+**Current Production Readiness Score: 10.0/10** *(v3.77)*
 
 | Area | Score | Risk Level | Notes |
 |------|-------|------------|-------|
@@ -42,7 +42,39 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 
 ---
 
-## What's New in v3.74
+## What's New in v3.77
+
+### Phase 77: TL Page UX Redesign
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Two-Mode Interface | "This Week" execution + "Settings" configuration | 95% of visits need just one CTA |
+| Content Card | Auto-populated from editorial calendar for current week | No manual topic recall needed |
+| Live Generation | 5-step pipeline with 4 states, elapsed time, per-step retry | Transparent 90-second workflow |
+| Inline Results | Article, AI version, image, LinkedIn with Preview/Edit/Regen | Review everything in one place |
+| Content Review | Navigate to past weeks, auto-load stored content | Article + image + marketing all visible |
+| Settings Tabs | 5 tabs: Position, Pillars, Calendar, Visibility, Publishing | Configuration hidden when not needed |
+| Publishing Streak | Consecutive-week counter in Recent section | Motivates consistency |
+| XSS Mitigation | Markdown renderer hardened against script injection | Security improvement |
+| Page Size | 4,197 → 2,470 lines (41% reduction) | Cleaner, faster loading |
+
+---
+
+## What Was New in v3.76
+
+### Phase 76: TL Content Creation Workflow
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Content Pipeline | Editorial context hierarchy injected into generation | Articles match calendar strategy |
+| Format Templates | Long/medium/short with section-by-section specs | Consistent article structure |
+| LinkedIn Themes | 5 daily post templates with hashtag rotation | Professional daily cadence |
+| Quality Gates | 7-check engine with actionable fix guidance | Quality assurance before publish |
+| Guardrail Fix | Eliminated systemic false positives in keyword matching | All agents work correctly |
+
+---
+
+## What Was New in v3.74
 
 ### Phase 74: Thought Leadership Publishing Pipeline
 
@@ -157,8 +189,11 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 | 67-68 | — | Digest discovery, unified runtime, tags org-scoping | Done |
 | 70 | v3.70 | Role architecture streamlining | Done |
 | 71 | v3.71 | Customer Support Agent System | Done |
-| **74** | **v3.74** | **Thought Leadership Publishing Pipeline** | **Done** |
-| **72** | **v3.72** | **Platform reliability, PM Agent Team, Annie PRD** | **Done** |
+| **77** | **v3.77** | **TL Page UX Redesign — Two-Mode Workflow Cockpit** | **Done** |
+| 76 | v3.76 | TL Content Creation Workflow + Guardrail Fix | Done |
+| 75 | v3.75 | Annie Embeddable Chat Widget | Done |
+| 74 | v3.74 | Thought Leadership Publishing Pipeline | Done |
+| 72 | v3.72 | Platform reliability, PM Agent Team, Annie PRD | Done |
 | Annie | — | Embeddable chat widget module | Pending Approval |
 | 52 | — | Production Deployment | Planned |
 | 53 | — | Navigation Restructure | Planned |
