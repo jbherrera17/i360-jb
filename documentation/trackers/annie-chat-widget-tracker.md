@@ -66,11 +66,11 @@
   - [x] Privacy policy link in footer
   - [x] Typing indicator during AI response
   - [x] JS API: `I360Widget.init()`, `.toggle()`, `.destroy()`
-  - [ ] Session persistence (localStorage) — not yet implemented
-  - [ ] "Powered by Insight 360" branding — not yet implemented
-  - [ ] Data deletion request button in UI — not yet implemented
-  - [ ] `setUser()` API method — not yet implemented
-  - [ ] Event hooks (on('escalated'), on('resolved')) — not yet implemented
+  - [x] Session persistence (localStorage) — saves/restores sessionId + messages, 24h expiry
+  - [x] "Powered by Insight 360" branding — footer link below disclaimer
+  - [x] Data deletion request button in UI — "Delete My Data" link calls DELETE endpoint, clears localStorage
+  - [x] `setUser()` API method — `I360Widget.setUser({ name, email, metadata })` merges into session creation
+  - [x] Event hooks — `I360Widget.on('ready', 'message', 'error', 'sessionStart', 'sessionRestored', 'dataDeleted')` + `.off()`
 - [x] **C2. Demo site** — Already built in Phase 73 (`public/demo/`):
   - [x] Homepage with procedure grid
   - [x] 5 procedure pages (facelift, rhinoplasty, blepharoplasty, necklift, browlift)

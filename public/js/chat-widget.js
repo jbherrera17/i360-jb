@@ -15,7 +15,7 @@
     'use strict';
 
     // eslint-disable-next-line no-unused-vars
-    const WIDGET_VERSION = '1.0.0';
+    const WIDGET_VERSION = '1.1.0';
 
     // ── Configuration ────────────────────────────────────────
 
@@ -36,6 +36,8 @@
     let isInitialized = false;
     let container = null;
     let chatMessages = [];
+    let userData = null;
+    const eventHandlers = {};
 
     // ── API Helpers ──────────────────────────────────────────
 
@@ -147,6 +149,7 @@
         } catch (error) {
             removeTyping(typingEl);
             appendMessage('assistant', 'I\'m temporarily unavailable. Please try again or contact us directly.');
+            emitEvent('error', { type: 'message', message: error.message });
         }
     }
 
@@ -298,7 +301,17 @@
                     background: #fafafa;
                     border-top: 1px solid #f0f0f0;
                 }
-                .i360-disclaimer a { color: #666; }
+                .i360-disclaimer a { color: #666; text-decoration: none; }
+                .i360-disclaimer a:hover { text-decoration: underline; }
+                .i360-branding {
+                    padding: 4px 16px;
+                    font-size: 9px;
+                    color: #bbb;
+                    text-align: center;
+                    background: #fafafa;
+                }
+                .i360-branding a { color: #999; text-decoration: none; }
+                .i360-branding a:hover { text-decoration: underline; }
                 /* Pre-chat form */
                 .i360-prechat {
                     padding: 24px 20px;
@@ -372,6 +385,10 @@
                 <div class="i360-disclaimer">
                     ${disclaimer}
                     ${getPrivacyPolicyLink()}
+                    | <a href="#" onclick="I360Widget.deleteData();return false;">Delete My Data</a>
+                </div>
+                <div class="i360-branding">
+                    Powered by <a href="https://insight360.ai" target="_blank" rel="noopener">Insight 360</a>
                 </div>
             </div>
 
@@ -525,6 +542,13 @@
     }
 
     async function startSession(formData) {
+        // Merge userData from setUser() if available
+        if (userData) {
+            if (userData.name && !formData.name) formData.name = userData.name;
+            if (userData.email && !formData.email) formData.email = userData.email;
+            if (userData.metadata) formData.metadata = userData.metadata;
+        }
+
         const session = await createSession(formData);
         sessionId = session.session_id;
         sessionToken = session.session_token;
@@ -541,6 +565,10 @@
         // Show welcome message
         const branding = widgetConfig.branding || {};
         appendMessage('assistant', branding.welcome_message || 'Hi! How can I help you today?');
+
+        // Save session for persistence
+        saveSession();
+        emitEvent('sessionStart', { sessionId });
 
         // Focus input
         document.getElementById('i360-input').focus();
@@ -563,6 +591,8 @@
         messagesEl.appendChild(msgEl);
         messagesEl.scrollTop = messagesEl.scrollHeight;
         chatMessages.push({ role, content });
+        saveSession();
+        emitEvent('message', { role, content });
     }
 
     function showTyping() {
@@ -623,6 +653,70 @@
         return 'fp_' + Math.abs(hash).toString(36);
     }
 
+    // ── Session Persistence (localStorage) ──────────────────
+
+    const STORAGE_PREFIX = 'i360_widget_';
+
+    function saveSession() {
+        if (!config.widgetId || !sessionId) return;
+        try {
+            const data = {
+                sessionId,
+                sessionToken,
+                chatMessages,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(STORAGE_PREFIX + config.widgetId, JSON.stringify(data));
+        } catch (e) { /* localStorage not available or full */ }
+    }
+
+    function loadSession() {
+        if (!config.widgetId) return null;
+        try {
+            const raw = localStorage.getItem(STORAGE_PREFIX + config.widgetId);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            // Expire sessions after 24 hours
+            if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
+                localStorage.removeItem(STORAGE_PREFIX + config.widgetId);
+                return null;
+            }
+            return data;
+        } catch (e) { return null; }
+    }
+
+    function clearSession() {
+        if (config.widgetId) {
+            try { localStorage.removeItem(STORAGE_PREFIX + config.widgetId); } catch (e) { /* */ }
+        }
+        sessionId = null;
+        sessionToken = null;
+        chatMessages = [];
+    }
+
+    // ── Event Hooks ──────────────────────────────────────────
+
+    function emitEvent(eventName, data) {
+        const handlers = eventHandlers[eventName] || [];
+        for (const handler of handlers) {
+            try { handler(data); } catch (e) { console.error('[I360 Widget] Event handler error:', e); }
+        }
+    }
+
+    // ── Data Deletion ────────────────────────────────────────
+
+    async function requestDataDeletion() {
+        if (!sessionId) return;
+        try {
+            await apiCall(`/data/${sessionId}`, { method: 'DELETE' });
+            clearSession();
+            appendMessage('system', 'Your conversation data has been deleted.');
+            emitEvent('dataDeleted', { sessionId });
+        } catch (error) {
+            appendMessage('system', 'Could not delete data. Please contact us directly.');
+        }
+    }
+
     // ── Public API ───────────────────────────────────────────
 
     window.I360Widget = {
@@ -640,8 +734,10 @@
                 widgetConfig = await loadConfig();
                 createWidget();
                 isInitialized = true;
+                emitEvent('ready', { widgetId: config.widgetId });
             } catch (error) {
                 console.error('[I360 Widget] Failed to initialize:', error.message);
+                emitEvent('error', { type: 'init', message: error.message });
             }
         },
 
@@ -655,7 +751,34 @@
             toggleBtn.style.display = isOpen ? 'none' : 'flex';
 
             if (isOpen && !sessionId) {
-                renderPreChatForm();
+                // Check for saved session first
+                const saved = loadSession();
+                if (saved && saved.sessionId) {
+                    sessionId = saved.sessionId;
+                    sessionToken = saved.sessionToken;
+                    chatMessages = saved.chatMessages || [];
+                    // Restore messages in UI
+                    const formEl = document.getElementById('i360-prechat-form');
+                    const messagesEl = document.getElementById('i360-messages');
+                    const inputArea = document.getElementById('i360-input-area');
+                    formEl.style.display = 'none';
+                    messagesEl.style.display = 'flex';
+                    inputArea.style.display = 'flex';
+                    messagesEl.innerHTML = '';
+                    for (const msg of chatMessages) {
+                        const msgEl = document.createElement('div');
+                        msgEl.className = `i360-msg ${msg.role}`;
+                        msgEl.innerHTML = escapeHtml(msg.content)
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                            .replace(/\n/g, '<br>');
+                        messagesEl.appendChild(msgEl);
+                    }
+                    messagesEl.scrollTop = messagesEl.scrollHeight;
+                    emitEvent('sessionRestored', { sessionId });
+                } else {
+                    renderPreChatForm();
+                }
             }
 
             if (isOpen) {
@@ -675,7 +798,32 @@
             isOpen = false;
             sessionId = null;
             chatMessages = [];
-        }
+        },
+
+        /** Set user identity for authenticated sites */
+        setUser: function (user) {
+            userData = {
+                name: user.name || undefined,
+                email: user.email || undefined,
+                metadata: user.metadata || undefined
+            };
+        },
+
+        /** Register event handler: ready, message, error, sessionStart, sessionRestored, dataDeleted */
+        on: function (eventName, handler) {
+            if (typeof handler !== 'function') return;
+            if (!eventHandlers[eventName]) eventHandlers[eventName] = [];
+            eventHandlers[eventName].push(handler);
+        },
+
+        /** Remove event handler */
+        off: function (eventName, handler) {
+            if (!eventHandlers[eventName]) return;
+            eventHandlers[eventName] = eventHandlers[eventName].filter(h => h !== handler);
+        },
+
+        /** Request deletion of conversation data */
+        deleteData: requestDataDeletion
     };
 
     // ── Auto-init from script tag ────────────────────────────
