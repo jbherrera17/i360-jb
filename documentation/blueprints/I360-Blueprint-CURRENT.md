@@ -108,6 +108,35 @@ Full WF-01 governance workflow with 5 subordinate agent delegations:
 - QA Analyst (Morgan): 128 test cases
 - Metrics Analyst (Quinn): 6 SLOs, 17 Prometheus metrics, corrected cost model
 
+### 8. Post-Build Remediation (2026-03-15)
+
+Support Settings page audit and bug fixes following initial deployment:
+
+| # | Issue | Fix | File(s) |
+|---|-------|-----|---------|
+| 1 | Policies tab crash: `inputs.map is not a function` | `Array.isArray()` guard for non-array process data | `support-settings.html` |
+| 2 | Chat Widgets tab 400 error: `org_id required` | Added `req.orgId` to fallback chain (matches auth middleware pattern) | `widgets.js` |
+| 3 | Privacy tab invisible: toggle-slider covered entire page | Changed `<label class="toggle">` to `<label class="toggle-switch">` | `support-settings.html` |
+| 4 | Help modal overlay blocked content in some browsers | Moved `backdrop-filter` and `pointer-events` to `.open` state only | `help-modal.css` |
+| 5 | Privacy tab had no API persistence | Added `loadPrivacySettings()` and wired `savePrivacySettings()` to widget API | `support-settings.html` |
+| 6 | Policy badge colors hardcoded | Changed to `var(--primary)` and `var(--success)` theme variables | `support-settings.html` |
+| 7 | Stale "Phase 2" notice on Widget Config tab | Updated to reference Chat Widgets tab | `support-settings.html` |
+
+### 9. Support Department & Deep Linking
+
+- **Support department** added as standard department #7 (icon: `headset`, color: `#0ea5e9`)
+- **Parthenon deep linking** — `handleDeepLink()` added to `parthenon.html` supporting `#tabName?dept=DeptName` URL format
+- **Policies tab link** updated to `/parthenon.html#processes?dept=Support` for direct navigation
+- **UX rule established**: always deep-link to exact tab/filter where user can act; minimize cross-page navigation
+
+### 10. Taylor UI/UX Compliance Audit
+
+**Verdict: COMPLIANT WITH CAVEATS (97%)**
+- 28/31 checks passed, 1 low-severity accessibility caveat (toggle `aria-label`), 2 N/A
+- All required includes present (styles, navigation, ModalService, help system, Lucide)
+- Standard page header pattern, spacing variables, theme variables all correct
+- ModalService used for all dialogs; `showToast()` for all notifications
+
 ---
 
 ## Phase 74: What Was Completed

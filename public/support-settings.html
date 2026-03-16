@@ -574,13 +574,13 @@
         }
 
         .policy-badge.input {
-            background: rgba(59, 130, 246, 0.1);
-            color: #60a5fa;
+            background: rgba(var(--primary-rgb, 99, 102, 241), 0.1);
+            color: var(--primary);
         }
 
         .policy-badge.output {
-            background: rgba(16, 185, 129, 0.1);
-            color: #34d399;
+            background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+            color: var(--success);
         }
 
         .policies-link {
@@ -701,7 +701,7 @@
                 <div class="tab-content active" id="tab-widget">
                     <div class="phase-notice">
                         <i data-lucide="info" style="width:18px;height:18px;"></i>
-                        <span>Widget API coming in Phase 2. The form below shows default values and is fully interactive for preview purposes.</span>
+                        <span>This tab shows default widget appearance settings. To create and manage embeddable chat widgets, use the <strong>Chat Widgets</strong> tab.</span>
                     </div>
 
                     <!-- Enable/Disable -->
@@ -1069,7 +1069,7 @@
                             <label class="form-label">
                                 Auto-Cleanup
                                 <div class="toggle-group" style="margin-top:8px;">
-                                    <label class="toggle">
+                                    <label class="toggle-switch">
                                         <input type="checkbox" id="auto-cleanup-enabled" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
@@ -1225,9 +1225,9 @@
 
                 <!-- Tab 3: Policies -->
                 <div class="tab-content" id="tab-policies">
-                    <a href="/parthenon.html#processes" class="policies-link">
+                    <a href="/parthenon.html#processes?dept=Support" class="policies-link">
                         <i data-lucide="external-link" style="width:14px;height:14px;"></i>
-                        Manage policies in the Parthenon Processes module
+                        Manage support policies in Parthenon Processes
                     </a>
                     <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 var(--spacing-lg) 0;">
                         Support policies are managed as Processes in the Parthenon framework. Changes there are automatically reflected in the AI agent's behavior.
@@ -1407,13 +1407,11 @@
         async function renderPolicies() {
             const container = document.getElementById('policies-container');
             try {
-                // Fetch support-related processes from Parthenon API
-                const res = await authFetch('/api/parthenon/processes?search=Support');
+                // Fetch processes from Parthenon API
+                const res = await authFetch('/api/parthenon/processes');
                 if (!res.ok) throw new Error('Failed to load policies');
                 const json = await res.json();
-                const processes = (json.data || []).filter(p =>
-                    p.name && p.name.toLowerCase().includes('support')
-                );
+                const processes = json.data || [];
 
                 if (processes.length === 0) {
                     container.innerHTML = `
@@ -1430,9 +1428,9 @@
                 }
 
                 container.innerHTML = processes.map(p => {
-                    const steps = (p.steps || []);
-                    const inputs = (p.inputs || []);
-                    const outputs = (p.outputs || []);
+                    const steps = Array.isArray(p.steps) ? p.steps : [];
+                    const inputs = Array.isArray(p.inputs) ? p.inputs : [];
+                    const outputs = Array.isArray(p.outputs) ? p.outputs : [];
                     const icon = getProcessIcon(p);
                     return `
                         <div class="policy-card">
@@ -1771,8 +1769,52 @@
                 </head><body>${content}</body></html>`);
         }
 
+        async function loadPrivacySettings() {
+            try {
+                const res = await authFetch('/api/widgets');
+                if (!res.ok) return;
+                const json = await res.json();
+                const widgets = json.data || [];
+                if (widgets.length === 0) return;
+
+                // Load privacy config from the first widget as org-level defaults
+                const w = widgets[0];
+                if (w.privacy_policy) document.getElementById('privacy-policy-editor').value = w.privacy_policy;
+                if (w.consent_text) document.getElementById('consent-text-editor').value = w.consent_text;
+                if (w.data_retention_days) document.getElementById('retention-period').value = String(w.data_retention_days);
+            } catch (e) {
+                console.error('Error loading privacy settings:', e);
+            }
+        }
+
         async function savePrivacySettings() {
-            if (typeof showToast === 'function') showToast('Privacy settings saved', 'success');
+            try {
+                // Save privacy settings to all widgets in the org
+                const res = await authFetch('/api/widgets');
+                if (!res.ok) throw new Error('Could not load widgets');
+                const json = await res.json();
+                const widgets = json.data || [];
+
+                const privacyPolicy = document.getElementById('privacy-policy-editor').value;
+                const consentText = document.getElementById('consent-text-editor').value;
+                const retentionDays = parseInt(document.getElementById('retention-period').value);
+
+                for (const w of widgets) {
+                    await authFetch(`/api/widgets/${w.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            privacy_policy: privacyPolicy || null,
+                            consent_text: consentText || null,
+                            data_retention_days: retentionDays
+                        })
+                    });
+                }
+
+                if (typeof showToast === 'function') showToast('Privacy settings saved to all widgets', 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Failed to save: ' + err.message, 'error');
+            }
         }
 
         // ══════════════════════════════════════════════════════
@@ -1901,6 +1943,7 @@
             renderDomains();
             renderPolicies();
             loadChatWidgets();
+            loadPrivacySettings();
         });
     </script>
 </body>

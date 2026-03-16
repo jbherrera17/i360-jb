@@ -22,7 +22,7 @@ module.exports = function (supabase) {
 
     router.get('/', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             const { data, error } = await supabase
@@ -43,7 +43,7 @@ module.exports = function (supabase) {
 
     router.post('/', checkResourceLimit('chat_widgets'), async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             const {
@@ -105,7 +105,7 @@ module.exports = function (supabase) {
 
     router.get('/:id', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
             const { data, error } = await supabase
                 .from('chat_widgets')
                 .select('*')
@@ -124,7 +124,7 @@ module.exports = function (supabase) {
 
     router.put('/:id', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
             const updateFields = {};
             const allowed = [
                 'widget_name', 'agent_id', 'cors_origins', 'branding', 'limits',
@@ -163,7 +163,7 @@ module.exports = function (supabase) {
 
     router.delete('/:id', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
 
             const { error } = await supabase
                 .from('chat_widgets')
@@ -182,7 +182,7 @@ module.exports = function (supabase) {
 
     router.post('/:id/rotate-token', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
             const widgetId = req.params.id;
 
             const newSecret = crypto.randomBytes(32).toString('hex');
@@ -214,7 +214,7 @@ module.exports = function (supabase) {
 
     router.get('/:id/usage', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.headers['x-org-id'] || req.orgId || req.user?.org_id;
 
             const { data: widget } = await supabase
                 .from('chat_widgets')

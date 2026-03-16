@@ -209,17 +209,24 @@ function summarizeHistory(messages) {
 async function executeTool(toolName, toolInput, orgId) {
     switch (toolName) {
         case 'search_knowledge_base': {
-            const searchTerm = `%${toolInput.query}%`;
-            const { data: assets } = await supabase
+            // Split query into keywords and search for each individually
+            // PostgREST .or() requires * wildcard (not %) for ilike patterns
+            const keywords = toolInput.query.split(/\s+/).filter(w => w.length > 2).slice(0, 3);
+            const primaryKeyword = keywords[0] || toolInput.query;
+            const searchTerm = `*${primaryKeyword}*`;
+
+            let query = supabase
                 .from('context_assets')
-                .select('id, name, description, type, content_text')
+                .select('id, name, description, asset_type, content_text')
                 .eq('org_id', orgId)
                 .or(`name.ilike.${searchTerm},description.ilike.${searchTerm},content_text.ilike.${searchTerm}`)
                 .limit(5);
 
+            const { data: assets } = await query;
+
             const results = (assets || []).map(a => ({
                 source: a.name,
-                type: a.type || 'article',
+                type: a.asset_type || 'article',
                 summary: a.description || 'No description available',
                 content: a.content_text ? a.content_text.substring(0, 500) : null
             }));
@@ -272,7 +279,7 @@ async function runToolLoop(messages, systemPrompt, orgId, model) {
 
         try {
             response = await withTimeout(
-                anthropic.messages.create({
+                () => anthropic.messages.create({
                     model,
                     max_tokens: model === HAIKU_MODEL ? 1024 : 2048,
                     system: systemPrompt,

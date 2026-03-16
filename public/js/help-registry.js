@@ -265,8 +265,8 @@ const HelpRegistry = {
             title: 'Support Actions Help'
         },
         '/support-settings': {
-            file: '/api/docs/support-user-guide.md',
-            title: 'Support Settings Help'
+            file: '/api/docs/embeddable-chat-user-guide.md',
+            title: 'Embeddable Chat Widget Help'
         },
         // Chrome Extension documentation (accessible via Higgins chat)
         '/chrome-extension': {

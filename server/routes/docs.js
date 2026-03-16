@@ -103,7 +103,10 @@ const ALLOWED_DOCS = [
     'role-audit-user-guide.md',
     'role-audit-technical-guide.md',
     // Customer Support AI (Phase 71)
-    'support-user-guide.md'
+    'support-user-guide.md',
+    // Embeddable Chat Widget (Phase 73)
+    'embeddable-chat-user-guide.md',
+    'embeddable-chat-technical-guide.md'
 ];
 
 /**

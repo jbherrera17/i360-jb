@@ -4,7 +4,7 @@
 -- ============================================
 
 -- Delete existing departments first (safe for fresh installs)
-DELETE FROM departments WHERE name IN ('Sales', 'Marketing', 'Operations', 'Finance', 'HR', 'Executive');
+DELETE FROM departments WHERE name IN ('Sales', 'Marketing', 'Operations', 'Finance', 'HR', 'Executive', 'Support');
 
 -- Insert default departments with Execute 120 configuration
 INSERT INTO departments (name, description, icon, color, sort_order, tagline, metrics, quick_prompts)
@@ -38,6 +38,11 @@ VALUES
      'Lead with vision and strategic clarity',
      '[{"name": "Strategic Goals", "target": "5", "unit": "goals"}, {"name": "Team Alignment", "target": "90", "unit": "%"}, {"name": "Stakeholder Satisfaction", "target": "85", "unit": "%"}]',
      ARRAY['Prepare board meeting agenda', 'Draft strategic initiative proposal', 'Create stakeholder communication', 'Develop quarterly review presentation']
+    ),
+    ('Support', 'Customer support, service, and success', 'headset', '#0ea5e9', 7,
+     'Deliver exceptional customer experiences',
+     '[{"name": "CSAT Score", "target": "90", "unit": "%"}, {"name": "First Response Time", "target": "15", "unit": "min"}, {"name": "Resolution Rate", "target": "85", "unit": "%"}]',
+     ARRAY['Draft a support response template', 'Create an FAQ article', 'Write an escalation procedure', 'Develop a customer onboarding guide']
     );
 
 -- Verify departments were inserted

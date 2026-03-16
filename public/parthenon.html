@@ -1693,7 +1693,36 @@ Or paste JSON:
             await loadAlignmentSummary();
             await loadObjectivesForLinking();
             setupTabs();
+            handleDeepLink();
         });
+
+        // Deep link support: /parthenon.html#processes?dept=Support
+        function handleDeepLink() {
+            const hash = window.location.hash;
+            if (!hash) return;
+            const [tabPart, queryPart] = hash.substring(1).split('?');
+            if (tabPart) {
+                const tabBtn = document.querySelector(`.parthenon-tab[data-tab="${tabPart}"]`);
+                if (tabBtn) {
+                    tabBtn.click();
+                    // Apply department filter if specified
+                    if (queryPart) {
+                        const params = new URLSearchParams(queryPart);
+                        const deptName = params.get('dept');
+                        if (deptName) {
+                            const filterSelect = document.getElementById(tabPart === 'processes' ? 'processesDeptFilter' : tabPart === 'roles' ? 'rolesDeptFilter' : null);
+                            if (filterSelect) {
+                                const option = Array.from(filterSelect.options).find(o => o.textContent.trim() === deptName);
+                                if (option) {
+                                    filterSelect.value = option.value;
+                                    filterSelect.dispatchEvent(new Event('change'));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // Tab switching
         function setupTabs() {
