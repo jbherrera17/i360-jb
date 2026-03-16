@@ -330,12 +330,20 @@ module.exports = function (supabase) {
         req.on('error', cleanup);
 
         try {
+            // Stream callback — sends text chunks as SSE events in real-time
+            let streamedContent = '';
+            const onChunk = (text) => {
+                streamedContent += text;
+                res.write(`data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`);
+            };
+
             // Process message through widget agent
             const result = await widgetAgentService.processMessage({
                 widgetId,
                 sessionId: session_id,
                 message,
-                widgetConfig: widget
+                widgetConfig: widget,
+                onChunk
             });
 
             if (result.blocked) {
@@ -346,14 +354,16 @@ module.exports = function (supabase) {
                 return;
             }
 
-            // Stream the response (for now, send as a single chunk
-            // since widgetAgentService uses non-streaming API)
-            // TODO: Add true streaming support in Phase 2
-            res.write(`data: ${JSON.stringify({ type: 'text', content: result.response })}\n\n`);
+            // If no chunks were streamed (e.g., simple response without tool use),
+            // send the full response as a single text event
+            if (!streamedContent) {
+                res.write(`data: ${JSON.stringify({ type: 'text', content: result.response })}\n\n`);
+            }
 
-            // Send metadata
+            // Send done event with metadata
             res.write(`data: ${JSON.stringify({
                 type: 'done',
+                content: result.response,
                 model: result.model,
                 degraded: result.degraded,
                 toolCalls: result.toolCalls.map(tc => tc.tool)

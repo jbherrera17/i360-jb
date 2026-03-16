@@ -126,13 +126,13 @@
 - [ ] **Voice mode (STT/TTS)** — +$29/mo add-on, uses existing voice.js
 - [ ] **Avatar mode (static → animated → streaming)** — Premium tiers
 - [ ] **Welcome video** — Configurable per widget, auto-play on first open
-- [ ] **Proactive triggers** — Auto-open rules (time on page, scroll depth, exit intent)
+- [x] **Proactive triggers** — Time-on-page + scroll-depth auto-open with bubble notification, configurable via branding.proactive_triggers
 - [ ] **Rich media in chat** — Images, video, PDF, forms
 - [ ] **File upload** — Customer screenshot/file attachment
 - [ ] **Conversation history** — Returning users see previous conversations
-- [ ] **CSAT prompt** — Satisfaction rating at conversation close
-- [ ] **True SSE streaming** — Current impl sends single chunk (TODO in widgetChat.js line 349)
+- [x] **CSAT prompt** — 5-star rating after 6 messages, submitted to /session/csat endpoint
+- [x] **True SSE streaming** — Anthropic streaming API for final response after tool use; frontend progressive chunk rendering
 - [ ] **Kevin introduction** — Main website integration (held per Session 2 decision)
-- [ ] **White-label** — Remove "Powered by Insight 360" for Agency tier
+- [x] **White-label** — branding.hide_branding flag hides "Powered by Insight 360" footer
 - [ ] **Overage billing** — Automated billing for ceiling overage (needs Stripe)
 - [ ] **Data retention automation** — Auto-delete after configurable retention period (SQL function exists: `cleanup_expired_widget_data`)

@@ -264,7 +264,7 @@ async function executeTool(toolName, toolInput, orgId) {
 
 // ── Tool Loop ────────────────────────────────────────────────
 
-async function runToolLoop(messages, systemPrompt, orgId, model) {
+async function runToolLoop(messages, systemPrompt, orgId, model, onChunk) {
     let iteration = 0;
     let currentMessages = [...messages];
     let finalText = '';
@@ -278,16 +278,44 @@ async function runToolLoop(messages, systemPrompt, orgId, model) {
         let response;
 
         try {
-            response = await withTimeout(
-                () => anthropic.messages.create({
-                    model,
-                    max_tokens: model === HAIKU_MODEL ? 1024 : 2048,
-                    system: systemPrompt,
-                    tools: WIDGET_TOOLS,
-                    messages: currentMessages
-                }),
-                30000
-            );
+            // On iterations after tool use, try streaming the final response
+            const isFollowUp = iteration > 1 && onChunk;
+
+            if (isFollowUp) {
+                // Stream the final response after tool use
+                const stream = await withTimeout(
+                    () => anthropic.messages.stream({
+                        model,
+                        max_tokens: model === HAIKU_MODEL ? 1024 : 2048,
+                        system: systemPrompt,
+                        tools: WIDGET_TOOLS,
+                        messages: currentMessages
+                    }),
+                    30000
+                );
+
+                const chunks = [];
+                for await (const event of stream) {
+                    if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+                        chunks.push(event.delta.text);
+                        onChunk(event.delta.text);
+                    }
+                }
+
+                const finalMessage = await stream.finalMessage();
+                response = finalMessage;
+            } else {
+                response = await withTimeout(
+                    () => anthropic.messages.create({
+                        model,
+                        max_tokens: model === HAIKU_MODEL ? 1024 : 2048,
+                        system: systemPrompt,
+                        tools: WIDGET_TOOLS,
+                        messages: currentMessages
+                    }),
+                    30000
+                );
+            }
         } catch (error) {
             logger.error('[WidgetAgent] LLM call failed', {
                 model,
@@ -422,7 +450,7 @@ async function checkAndUpdateUsage(widgetId, limits, estimatedCost) {
  * @param {object} params.widgetConfig - Widget configuration row
  * @returns {object} { response, model, toolCalls, blocked, degraded, cost }
  */
-async function processMessage({ widgetId, sessionId, message, widgetConfig }) {
+async function processMessage({ widgetId, sessionId, message, widgetConfig, onChunk }) {
     const orgId = widgetConfig.org_id;
 
     // Step 1: Message length check [SEC-14]
@@ -508,7 +536,7 @@ async function processMessage({ widgetId, sessionId, message, widgetConfig }) {
 
     // Step 9: Run tool loop
     const { text, toolCalls, iterations, inputTokens, outputTokens } = await runToolLoop(
-        messages, systemPrompt, orgId, model
+        messages, systemPrompt, orgId, model, onChunk
     );
 
     // Step 10: Filter output [SEC-08]

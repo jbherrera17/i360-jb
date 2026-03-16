@@ -104,7 +104,7 @@
         appendMessage('user', message);
 
         // Show typing indicator
-        const typingEl = showTyping();
+        let typingEl = showTyping();
 
         try {
             const response = await apiCall('/stream', {
@@ -117,6 +117,7 @@
             const decoder = new TextDecoder();
             let buffer = '';
             let fullResponse = '';
+            let streamingMsgEl = null;
 
             for (;;) { // eslint-disable-line no-constant-condition
                 const { done, value } = await reader.read();
@@ -130,8 +131,26 @@
                     if (!line.startsWith('data: ')) continue;
                     try {
                         const data = JSON.parse(line.slice(6));
-                        if (data.type === 'text') {
+                        if (data.type === 'chunk') {
+                            // Progressive streaming — append chunk to message
+                            if (!streamingMsgEl) {
+                                removeTyping(typingEl);
+                                typingEl = null;
+                                streamingMsgEl = document.createElement('div');
+                                streamingMsgEl.className = 'i360-msg assistant';
+                                document.getElementById('i360-messages').appendChild(streamingMsgEl);
+                            }
+                            fullResponse += data.content;
+                            streamingMsgEl.innerHTML = escapeHtml(fullResponse)
+                                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                                .replace(/\n/g, '<br>');
+                            document.getElementById('i360-messages').scrollTop = document.getElementById('i360-messages').scrollHeight;
+                        } else if (data.type === 'text') {
                             fullResponse = data.content;
+                        } else if (data.type === 'done') {
+                            // Use the final filtered content from done event if available
+                            if (data.content) fullResponse = data.content;
                         } else if (data.type === 'error') {
                             fullResponse = data.content;
                         }
@@ -141,9 +160,18 @@
                 }
             }
 
-            // Remove typing indicator and show response
-            removeTyping(typingEl);
-            if (fullResponse) {
+            // Remove typing indicator and show final response
+            if (typingEl) removeTyping(typingEl);
+            if (streamingMsgEl) {
+                // Update streaming message with final filtered content
+                streamingMsgEl.innerHTML = escapeHtml(fullResponse)
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                    .replace(/\n/g, '<br>');
+                chatMessages.push({ role: 'assistant', content: fullResponse });
+                saveSession();
+                emitEvent('message', { role: 'assistant', content: fullResponse });
+            } else if (fullResponse) {
                 appendMessage('assistant', fullResponse);
             }
         } catch (error) {
@@ -312,6 +340,38 @@
                 }
                 .i360-branding a { color: #999; text-decoration: none; }
                 .i360-branding a:hover { text-decoration: underline; }
+                .i360-csat {
+                    padding: 12px 16px;
+                    background: #f8f9fa;
+                    border-top: 1px solid #e5e5e5;
+                    text-align: center;
+                }
+                .i360-csat p { margin: 0 0 8px; font-size: 13px; color: #555; }
+                .i360-csat-stars { display: flex; justify-content: center; gap: 8px; }
+                .i360-csat-star {
+                    background: none; border: none; font-size: 24px;
+                    cursor: pointer; opacity: 0.4; transition: opacity 0.2s, transform 0.2s;
+                }
+                .i360-csat-star:hover, .i360-csat-star.active { opacity: 1; transform: scale(1.2); }
+                .i360-csat-thanks { font-size: 13px; color: #22c55e; }
+                .i360-proactive-bubble {
+                    position: absolute; bottom: 72px;
+                    ${config.position === 'bottom-left' ? 'left: 0;' : 'right: 0;'}
+                    background: white; color: #333;
+                    padding: 12px 16px; border-radius: 12px;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+                    font-size: 14px; max-width: 260px;
+                    animation: i360-fadeIn 0.3s;
+                    cursor: pointer;
+                }
+                .i360-proactive-bubble::after {
+                    content: ''; position: absolute; bottom: -8px;
+                    ${config.position === 'bottom-left' ? 'left: 24px;' : 'right: 24px;'}
+                    width: 16px; height: 16px; background: white;
+                    transform: rotate(45deg);
+                    box-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+                }
+                @keyframes i360-fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
                 /* Pre-chat form */
                 .i360-prechat {
                     padding: 24px 20px;
@@ -387,9 +447,10 @@
                     ${getPrivacyPolicyLink()}
                     | <a href="#" onclick="I360Widget.deleteData();return false;">Delete My Data</a>
                 </div>
-                <div class="i360-branding">
+                ${branding.hide_branding ? '' : `<div class="i360-branding">
                     Powered by <a href="https://insight360.ai" target="_blank" rel="noopener">Insight 360</a>
-                </div>
+                </div>`}
+                <div id="i360-csat-area"></div>
             </div>
 
             <button id="i360-toggle-btn" onclick="I360Widget.toggle()" aria-label="Open chat">
@@ -593,6 +654,7 @@
         chatMessages.push({ role, content });
         saveSession();
         emitEvent('message', { role, content });
+        checkCSAT();
     }
 
     function showTyping() {
@@ -703,6 +765,84 @@
         }
     }
 
+    // ── CSAT Rating ────────────────────────────────────────────
+
+    let csatShown = false;
+    const CSAT_TRIGGER_MESSAGES = 6; // Show after 6 messages (3 user + 3 assistant)
+
+    function checkCSAT() {
+        if (csatShown || chatMessages.length < CSAT_TRIGGER_MESSAGES) return;
+        csatShown = true;
+        const area = document.getElementById('i360-csat-area');
+        if (!area) return;
+        area.innerHTML = `
+            <div class="i360-csat">
+                <p>How was your experience?</p>
+                <div class="i360-csat-stars">
+                    ${[1,2,3,4,5].map(n => `<button class="i360-csat-star" data-rating="${n}" onclick="I360Widget._submitCSAT(${n})">&#9733;</button>`).join('')}
+                </div>
+            </div>`;
+    }
+
+    async function submitCSAT(rating) {
+        const area = document.getElementById('i360-csat-area');
+        if (area) area.innerHTML = '<div class="i360-csat"><p class="i360-csat-thanks">Thank you for your feedback!</p></div>';
+        // Highlight selected stars
+        emitEvent('csat', { rating, sessionId });
+        try {
+            await apiCall('/session/csat', {
+                method: 'POST',
+                body: JSON.stringify({ session_id: sessionId, rating })
+            });
+        } catch (e) { /* CSAT is best-effort */ }
+        setTimeout(() => { if (area) area.innerHTML = ''; }, 3000);
+    }
+
+    // ── Proactive Triggers ────────────────────────────────────
+
+    let proactiveTriggered = false;
+
+    function setupProactiveTriggers() {
+        const triggers = widgetConfig.branding?.proactive_triggers;
+        if (!triggers || isOpen || sessionId) return;
+
+        // Time on page trigger
+        if (triggers.time_on_page && triggers.time_on_page > 0) {
+            setTimeout(() => {
+                if (!isOpen && !proactiveTriggered && !sessionId) {
+                    showProactiveBubble(triggers.message || 'Need help? I\'m here to answer your questions.');
+                }
+            }, triggers.time_on_page * 1000);
+        }
+
+        // Scroll depth trigger
+        if (triggers.scroll_depth && triggers.scroll_depth > 0) {
+            const scrollHandler = () => {
+                const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+                if (scrollPercent >= triggers.scroll_depth && !isOpen && !proactiveTriggered && !sessionId) {
+                    showProactiveBubble(triggers.message || 'Questions about what you\'re reading? I can help!');
+                    window.removeEventListener('scroll', scrollHandler);
+                }
+            };
+            window.addEventListener('scroll', scrollHandler, { passive: true });
+        }
+    }
+
+    function showProactiveBubble(message) {
+        if (proactiveTriggered || !container) return;
+        proactiveTriggered = true;
+        const bubble = document.createElement('div');
+        bubble.className = 'i360-proactive-bubble';
+        bubble.textContent = message;
+        bubble.addEventListener('click', () => {
+            bubble.remove();
+            window.I360Widget.toggle();
+        });
+        container.appendChild(bubble);
+        // Auto-dismiss after 15 seconds
+        setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 15000);
+    }
+
     // ── Data Deletion ────────────────────────────────────────
 
     async function requestDataDeletion() {
@@ -734,6 +874,7 @@
                 widgetConfig = await loadConfig();
                 createWidget();
                 isInitialized = true;
+                setupProactiveTriggers();
                 emitEvent('ready', { widgetId: config.widgetId });
             } catch (error) {
                 console.error('[I360 Widget] Failed to initialize:', error.message);
@@ -823,7 +964,10 @@
         },
 
         /** Request deletion of conversation data */
-        deleteData: requestDataDeletion
+        deleteData: requestDataDeletion,
+
+        /** Internal: submit CSAT rating (called from inline onclick) */
+        _submitCSAT: submitCSAT
     };
 
     // ── Auto-init from script tag ────────────────────────────
