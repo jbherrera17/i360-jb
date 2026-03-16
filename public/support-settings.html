@@ -1462,11 +1462,24 @@
                                 </div>
                             </div>
                             ${steps.length > 0 ? `
-                            <ol class="policy-steps">
-                                ${steps.map(s => `<li>${escapeHtml(typeof s === 'string' ? s : s.title || s.name || JSON.stringify(s))}</li>`).join('')}
-                            </ol>` : '<p style="color:var(--text-muted);font-size:0.85rem;margin:0;">No steps defined. Click to edit.</p>'}
+                            <div style="margin-top:8px;">
+                                ${steps.map(s => {
+                                    const title = typeof s === 'string' ? s : (s.title || s.name || '');
+                                    const definition = s.definition || '';
+                                    const requirements = s.requirements || '';
+                                    const enforcement = s.enforcement || '';
+                                    const hasDetail = definition || requirements || enforcement;
+                                    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
+                                        <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">${escapeHtml(title)}</div>
+                                        ${definition ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">${escapeHtml(definition)}</div>` : ''}
+                                        ${requirements ? `<div style="font-size:0.8rem;color:var(--primary);margin-top:2px;">Requirements: ${escapeHtml(requirements)}</div>` : ''}
+                                        ${enforcement ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">Enforcement: ${escapeHtml(enforcement)}</div>` : ''}
+                                        ${!hasDetail ? '<div style="font-size:0.75rem;color:var(--warning,#f59e0b);margin-top:2px;">Needs definition — click Edit</div>' : ''}
+                                    </div>`;
+                                }).join('')}
+                            </div>` : '<p style="color:var(--warning,#f59e0b);font-size:0.85rem;margin:8px 0 0;">No sections defined. Click Edit to add policy requirements.</p>'}
                             ${(inputs.length > 0 || outputs.length > 0) ? `
-                            <div class="policy-badges">
+                            <div class="policy-badges" style="margin-top:8px;">
                                 ${inputs.map(inp => `<span class="policy-badge input">IN: ${escapeHtml(typeof inp === 'string' ? inp : inp.name || JSON.stringify(inp))}</span>`).join('')}
                                 ${outputs.map(out => `<span class="policy-badge output">OUT: ${escapeHtml(typeof out === 'string' ? out : out.name || JSON.stringify(out))}</span>`).join('')}
                             </div>` : ''}
@@ -1489,23 +1502,22 @@
             if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
             const result = await ModalService.form({
                 title: 'Create Support Policy',
+                width: '700px',
                 fields: [
-                    { name: 'name', label: 'Policy Name', type: 'text', required: true, placeholder: 'e.g. Refund Policy' },
-                    { name: 'description', label: 'Description', type: 'textarea', placeholder: 'What this policy covers...' },
+                    { name: 'name', label: 'Policy Name', type: 'text', required: true, placeholder: 'e.g. Data Storage Policy' },
+                    { name: 'description', label: 'Policy Purpose', type: 'textarea', placeholder: 'What this policy governs and why it exists...' },
                     { name: 'type', label: 'Type', type: 'select', options: [
-                        { value: 'policy', label: 'Policy' },
-                        { value: 'procedure', label: 'Procedure' },
-                        { value: 'standard', label: 'Standard' },
-                        { value: 'checklist', label: 'Checklist' }
-                    ]},
-                    { name: 'steps', label: 'Steps (one per line)', type: 'textarea', placeholder: 'Step 1\nStep 2\nStep 3' }
+                        { value: 'policy', label: 'Policy (enforceable rules)' },
+                        { value: 'procedure', label: 'Procedure (step-by-step process)' },
+                        { value: 'standard', label: 'Standard (quality benchmarks)' },
+                        { value: 'checklist', label: 'Checklist (verification steps)' }
+                    ]}
                 ],
-                submitText: 'Create Policy'
+                submitText: 'Create — then add sections'
             });
             if (!result) return;
 
             try {
-                const steps = (result.steps || '').split('\n').map(s => s.trim()).filter(Boolean);
                 const res = await authFetch('/api/parthenon/processes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1514,16 +1526,82 @@
                         description: result.description || '',
                         department_id: SUPPORT_DEPT_ID,
                         type: result.type || 'policy',
-                        steps: steps.map(s => ({ title: s })),
-                        status: 'active'
+                        steps: [],
+                        status: 'draft'
                     })
                 });
                 if (!res.ok) throw new Error('Failed to create policy');
-                if (typeof showToast === 'function') showToast('Policy created', 'success');
-                renderPolicies();
+                const json = await res.json();
+                if (typeof showToast === 'function') showToast('Policy created. Add sections now.', 'success');
+                await renderPolicies();
+                // Open edit immediately so user can add sections
+                if (json.data?.id) editPolicy(json.data.id);
             } catch (err) {
                 if (typeof showToast === 'function') showToast(err.message, 'error');
             }
+        }
+
+        function buildStepEditorHtml(steps) {
+            const stepItems = steps.map((s, i) => {
+                const title = typeof s === 'string' ? s : (s.title || s.name || '');
+                const definition = s.definition || '';
+                const requirements = s.requirements || '';
+                const enforcement = s.enforcement || '';
+                return `
+                    <div class="policy-step-editor" data-step-index="${i}" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <strong style="font-size:0.85rem;color:var(--text-primary);">Section ${i + 1}</strong>
+                            <button type="button" class="btn-outline" onclick="this.closest('.policy-step-editor').remove()" style="padding:2px 8px;font-size:0.7rem;color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">Remove</button>
+                        </div>
+                        <input type="text" class="form-input step-title" value="${escapeHtml(title)}" placeholder="Section title (e.g., Data Classification)" style="margin-bottom:6px;font-weight:600;">
+                        <textarea class="form-input step-definition" rows="2" placeholder="Definition: What this means and why it matters..."style="margin-bottom:6px;font-size:0.85rem;">${escapeHtml(definition)}</textarea>
+                        <textarea class="form-input step-requirements" rows="2" placeholder="Requirements: Specific rules to enforce (e.g., retention period, limits, thresholds)..." style="margin-bottom:6px;font-size:0.85rem;">${escapeHtml(requirements)}</textarea>
+                        <textarea class="form-input step-enforcement" rows="1" placeholder="Enforcement: How compliance is verified (e.g., automated cleanup, audit logs)..." style="font-size:0.85rem;">${escapeHtml(enforcement)}</textarea>
+                    </div>`;
+            }).join('');
+
+            return `
+                <div id="policy-steps-editor">
+                    ${stepItems || '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px;">No sections yet. Click "Add Section" to define policy requirements.</p>'}
+                </div>
+                <button type="button" class="btn-outline" onclick="addPolicyStepEditor()" style="margin-top:4px;">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Section
+                </button>`;
+        }
+
+        function addPolicyStepEditor() {
+            const container = document.getElementById('policy-steps-editor');
+            if (!container) return;
+            // Remove empty state message if present
+            const emptyMsg = container.querySelector('p');
+            if (emptyMsg) emptyMsg.remove();
+
+            const index = container.querySelectorAll('.policy-step-editor').length;
+            const div = document.createElement('div');
+            div.className = 'policy-step-editor';
+            div.dataset.stepIndex = index;
+            div.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;';
+            div.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong style="font-size:0.85rem;color:var(--text-primary);">Section ${index + 1}</strong>
+                    <button type="button" class="btn-outline" onclick="this.closest('.policy-step-editor').remove()" style="padding:2px 8px;font-size:0.7rem;color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">Remove</button>
+                </div>
+                <input type="text" class="form-input step-title" placeholder="Section title (e.g., Data Classification)" style="margin-bottom:6px;font-weight:600;">
+                <textarea class="form-input step-definition" rows="2" placeholder="Definition: What this means and why it matters..." style="margin-bottom:6px;font-size:0.85rem;"></textarea>
+                <textarea class="form-input step-requirements" rows="2" placeholder="Requirements: Specific rules to enforce (e.g., retention period, limits, thresholds)..." style="margin-bottom:6px;font-size:0.85rem;"></textarea>
+                <textarea class="form-input step-enforcement" rows="1" placeholder="Enforcement: How compliance is verified (e.g., automated cleanup, audit logs)..." style="font-size:0.85rem;"></textarea>`;
+            container.appendChild(div);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function collectStepsFromEditor() {
+            const editors = document.querySelectorAll('#policy-steps-editor .policy-step-editor');
+            return Array.from(editors).map(el => ({
+                title: el.querySelector('.step-title')?.value?.trim() || '',
+                definition: el.querySelector('.step-definition')?.value?.trim() || '',
+                requirements: el.querySelector('.step-requirements')?.value?.trim() || '',
+                enforcement: el.querySelector('.step-enforcement')?.value?.trim() || ''
+            })).filter(s => s.title);
         }
 
         async function editPolicy(processId) {
@@ -1532,32 +1610,39 @@
 
             if (typeof ModalService === 'undefined') await ModalServiceLoader.load();
             const steps = Array.isArray(process.steps) ? process.steps : [];
-            const stepsText = steps.map(s => typeof s === 'string' ? s : s.title || s.name || '').join('\n');
 
             const result = await ModalService.form({
                 title: `Edit: ${process.name}`,
+                width: '750px',
                 fields: [
                     { name: 'name', label: 'Policy Name', type: 'text', required: true, value: process.name },
-                    { name: 'description', label: 'Description', type: 'textarea', value: process.description || '' },
+                    { name: 'description', label: 'Policy Purpose', type: 'textarea', value: process.description || '' },
                     { name: 'type', label: 'Type', type: 'select', value: process.type || 'policy', options: [
-                        { value: 'policy', label: 'Policy' },
-                        { value: 'procedure', label: 'Procedure' },
-                        { value: 'standard', label: 'Standard' },
-                        { value: 'checklist', label: 'Checklist' }
+                        { value: 'policy', label: 'Policy (enforceable rules)' },
+                        { value: 'procedure', label: 'Procedure (step-by-step process)' },
+                        { value: 'standard', label: 'Standard (quality benchmarks)' },
+                        { value: 'checklist', label: 'Checklist (verification steps)' }
                     ]},
-                    { name: 'steps', label: 'Steps (one per line)', type: 'textarea', value: stepsText },
+                    { name: 'steps_html', label: 'Policy Sections', type: 'html', value: buildStepEditorHtml(steps) },
                     { name: 'status', label: 'Status', type: 'select', value: process.status || 'active', options: [
                         { value: 'active', label: 'Active' },
                         { value: 'draft', label: 'Draft' },
                         { value: 'archived', label: 'Archived' }
                     ]}
                 ],
-                submitText: 'Save Changes'
+                submitText: 'Save Policy',
+                onBeforeSubmit: () => {
+                    // Collect steps from the custom editor before form submission
+                    window._policyStepsCollected = collectStepsFromEditor();
+                    return true;
+                }
             });
             if (!result) return;
 
             try {
-                const updatedSteps = (result.steps || '').split('\n').map(s => s.trim()).filter(Boolean);
+                const collectedSteps = window._policyStepsCollected || [];
+                delete window._policyStepsCollected;
+
                 const res = await authFetch(`/api/parthenon/processes/${processId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -1565,7 +1650,7 @@
                         name: result.name,
                         description: result.description || '',
                         type: result.type || 'policy',
-                        steps: updatedSteps.map(s => ({ title: s })),
+                        steps: collectedSteps,
                         status: result.status || 'active'
                     })
                 });

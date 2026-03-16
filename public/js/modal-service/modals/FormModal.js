@@ -218,6 +218,15 @@ class FormModal extends ModalBase {
                 input = checkboxGroup;
                 break;
 
+            case 'html':
+                // Custom HTML content rendered directly (not a form input)
+                input = document.createElement('div');
+                input.className = 'i360-form-html-field';
+                input.innerHTML = initialValue || '';
+                // Re-init Lucide icons inside the custom HTML
+                setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+                break;
+
             default:
                 input = document.createElement('input');
                 input.type = field.type || 'text';
@@ -514,7 +523,7 @@ class FormModal extends ModalBase {
             return container;
         }
 
-        const picker = IconPicker.create(container, {
+        const picker = IconPicker.create(container, { // eslint-disable-line no-undef
             value: initialValue || '',
             onSelect: () => this._clearFieldError(field.name)
         });
@@ -562,6 +571,9 @@ class FormModal extends ModalBase {
             } else if (field.type === 'checkbox-group') {
                 const checked = el.querySelectorAll('input:checked');
                 values[field.name] = Array.from(checked).map(cb => cb.value);
+            } else if (field.type === 'html') {
+                // HTML fields are custom content — skip in form values
+                return;
             } else {
                 values[field.name] = el.value;
             }
@@ -713,6 +725,12 @@ class FormModal extends ModalBase {
             const firstError = this.elements.form.querySelector('.has-error');
             if (firstError) firstError.focus();
             return;
+        }
+
+        // Call onBeforeSubmit hook if provided (e.g., to collect custom data)
+        if (typeof this.formOptions.onBeforeSubmit === 'function') {
+            const result = this.formOptions.onBeforeSubmit();
+            if (result === false) return; // Hook can cancel submission
         }
 
         this._submitted = true;
