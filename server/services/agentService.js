@@ -688,7 +688,8 @@ async function executeAgent(agentId, options = {}) {
         userMessage,
         conversationHistory = [],
         userId = null,
-        includeOnDemand = []
+        includeOnDemand = [],
+        modelOverride = null  // Phase 76b: { provider, model } — overrides agent's configured LLM
     } = options;
 
     try {
@@ -697,6 +698,19 @@ async function executeAgent(agentId, options = {}) {
 
         if (!agent.is_active) {
             throw new Error('Agent is not active');
+        }
+
+        // Phase 76b: Apply model override if provided (validated against registry)
+        if (modelOverride?.provider && modelOverride?.model) {
+            const llmRegistry = require('./llmRegistry');
+            const validModel = llmRegistry.getModel(modelOverride.model);
+            if (validModel) {
+                agent.llm_provider = modelOverride.provider;
+                agent.llm_model = modelOverride.model;
+                console.log(`[Agent] Model override applied: ${modelOverride.provider}/${modelOverride.model}`);
+            } else {
+                console.warn(`[Agent] Invalid model override: ${modelOverride.model} — using agent default`);
+            }
         }
 
         // ── Guardrail Enforcement: Pre-screen ──

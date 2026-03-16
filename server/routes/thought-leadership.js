@@ -18,6 +18,7 @@ const tlImageService = require('../services/tlImageService');
 const linkedinService = require('../services/linkedinService');
 const schedulerService = require('../services/schedulerService');
 const preflightService = require('../services/preflightService');
+const tlContentService = require('../services/tlContentService');
 
 // TL Agent IDs (from seed-thought-leadership-agents.sql)
 const TL_AGENTS = {
@@ -1373,8 +1374,228 @@ Generate all 5 posts now in JSON format:
     });
 
     /**
+     * GET /api/thought-leadership/calendar/db
+     * Get calendar entries from the database (Phase 75 editorial calendar).
+     * Query params: year, status (comma-separated)
+     */
+    router.get('/calendar/db', async (req, res) => {
+        try {
+            const userId = req.userId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const year = parseInt(req.query.year) || new Date().getFullYear();
+            const statusFilter = req.query.status ? req.query.status.split(',') : null;
+
+            let query = supabase
+                .from('content_calendar_entries')
+                .select('id, title, scheduled_date, week_number, year, article_format, series_name, quarterly_pillar, monthly_topic, is_cornerstone, week_position_in_month, status, editorial_calendar_id')
+                .eq('user_id', userId)
+                .eq('year', year)
+                .order('week_number', { ascending: true });
+
+            if (statusFilter) {
+                query = query.in('status', statusFilter);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            res.json({ data: data || [] });
+        } catch (err) {
+            console.error('Error fetching DB calendar entries:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/editorial-context/:calendar_entry_id
+     * Resolve full editorial hierarchy for a calendar entry.
+     */
+    router.get('/editorial-context/:calendar_entry_id', async (req, res) => {
+        try {
+            const userId = req.userId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const context = await tlContentService.resolveEditorialContext(
+                req.params.calendar_entry_id, userId, supabase
+            );
+
+            if (!context) {
+                return res.status(404).json({ error: 'Calendar entry not found or not accessible' });
+            }
+
+            // Don't return cornerstone_content in this lightweight endpoint
+            const { cornerstone_content, ...safeContext } = context;
+            safeContext.has_cornerstone_content = !!cornerstone_content;
+
+            res.json({ data: safeContext });
+        } catch (err) {
+            console.error('Error resolving editorial context:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * POST /api/thought-leadership/quality-check
+     * Run quality gates on existing content.
+     */
+    router.post('/quality-check', async (req, res) => {
+        try {
+            const userId = req.userId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const { article_content, format = 'medium', ai_optimized_content, linkedin_posts, calendar_entry_id } = req.body;
+
+            if (!article_content) {
+                return res.status(400).json({ error: 'article_content is required' });
+            }
+
+            let editorialContext = null;
+            if (calendar_entry_id) {
+                editorialContext = await tlContentService.resolveEditorialContext(calendar_entry_id, userId, supabase);
+            }
+
+            const result = tlContentService.runQualityGates({
+                articleContent: article_content,
+                format,
+                aiOptimizedContent: ai_optimized_content,
+                linkedinPosts: linkedin_posts,
+                editorialContext
+            });
+
+            res.json({ data: result });
+        } catch (err) {
+            console.error('Error running quality check:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * GET /api/thought-leadership/generation-options
+     * Returns available LLM models and context assets for the generation settings UI.
+     */
+    router.get('/generation-options', async (req, res) => {
+        try {
+            const userId = req.userId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+            const orgId = req.headers['x-org-id'] || req.orgId;
+
+            // Get available models from registry
+            const llmRegistry = require('../services/llmRegistry');
+            const availableModels = llmRegistry.getAvailableModels({
+                anthropic: process.env.ANTHROPIC_API_KEY,
+                openai: process.env.OPENAI_API_KEY,
+                perplexity: process.env.PERPLEXITY_API_KEY,
+                google: process.env.GOOGLE_API_KEY
+            });
+
+            // Flatten models into a single list with provider labels
+            const models = [];
+            if (availableModels.anthropic) {
+                availableModels.anthropic.forEach(m => models.push({ ...m, provider: 'anthropic', providerName: 'Claude' }));
+            }
+            if (availableModels.openai) {
+                availableModels.openai.filter(m => !m.imageGen).forEach(m => models.push({ ...m, provider: 'openai', providerName: 'OpenAI' }));
+            }
+            if (availableModels.google) {
+                availableModels.google.forEach(m => models.push({ ...m, provider: 'google', providerName: 'Gemini' }));
+            }
+
+            // Get context assets scoped to this user's org (exclude templates)
+            const userOrgId = req.headers['x-org-id'] || req.orgId;
+
+            const assetQuery = (type) => {
+                let q = supabase
+                    .from('context_assets')
+                    .select('id, name, asset_type, description')
+                    .eq('asset_type', type)
+                    .eq('is_current', true)
+                    .eq('is_template', false);
+                if (userOrgId) q = q.eq('org_id', userOrgId);
+                return q.order('name');
+            };
+
+            const { data: voiceDna } = await assetQuery('voice_dna');
+            const { data: icps } = await assetQuery('icp');
+            const { data: bizProfiles } = await assetQuery('why_we_win');
+
+            // Get user's saved preferences
+            const { data: profile } = await supabase
+                .from('thought_leadership_profiles')
+                .select('preferred_llm_provider, preferred_llm_model, preferred_voice_dna_id, preferred_icp_id, preferred_business_profile_id')
+                .eq('user_id', userId)
+                .single();
+
+            // Get current agent defaults for reference
+            const { data: agentConfig } = await supabase
+                .from('agents')
+                .select('llm_provider, llm_model')
+                .eq('id', TL_AGENTS.ARTICLE_WRITER)
+                .single();
+
+            res.json({
+                models,
+                context_assets: {
+                    voice_dna: voiceDna || [],
+                    icp: icps || [],
+                    business_profile: bizProfiles || []
+                },
+                saved_preferences: profile ? {
+                    llm_provider: profile.preferred_llm_provider,
+                    llm_model: profile.preferred_llm_model,
+                    voice_dna_id: profile.preferred_voice_dna_id,
+                    icp_id: profile.preferred_icp_id,
+                    business_profile_id: profile.preferred_business_profile_id
+                } : null,
+                agent_defaults: {
+                    llm_provider: agentConfig?.llm_provider || 'anthropic',
+                    llm_model: agentConfig?.llm_model || 'claude-sonnet-4-5-20250929'
+                }
+            });
+        } catch (err) {
+            console.error('Error fetching generation options:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
+     * PUT /api/thought-leadership/generation-preferences
+     * Save user's preferred generation settings.
+     */
+    router.put('/generation-preferences', async (req, res) => {
+        try {
+            const userId = req.userId;
+            if (!userId) return res.status(401).json({ error: 'User ID required' });
+
+            const { llm_provider, llm_model, voice_dna_id, icp_id, business_profile_id } = req.body;
+
+            const updates = { updated_at: new Date().toISOString() };
+            if (llm_provider !== undefined) updates.preferred_llm_provider = llm_provider;
+            if (llm_model !== undefined) updates.preferred_llm_model = llm_model;
+            if (voice_dna_id !== undefined) updates.preferred_voice_dna_id = voice_dna_id;
+            if (icp_id !== undefined) updates.preferred_icp_id = icp_id;
+            if (business_profile_id !== undefined) updates.preferred_business_profile_id = business_profile_id;
+
+            const { data, error } = await supabase
+                .from('thought_leadership_profiles')
+                .update(updates)
+                .eq('user_id', userId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (err) {
+            console.error('Error saving generation preferences:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    /**
      * POST /api/thought-leadership/generate/package
      * Generate complete weekly package (article + AI-optimized + LinkedIn posts)
+     * Phase 76: Rewritten to use Content Creation System workflow via tlContentService.
      */
     router.post('/generate/package', async (req, res) => {
         try {
@@ -1392,7 +1613,13 @@ Generate all 5 posts now in JSON format:
                 additional_context,
                 generate_image = true,
                 image_style = null,
-                image_model = null
+                image_model = null,
+                // Phase 76b: Generation preferences (per-request override)
+                llm_provider = null,
+                llm_model = null,
+                voice_dna_id = null,
+                icp_id = null,
+                business_profile_id = null
             } = req.body;
 
             if (!topic) {
@@ -1408,7 +1635,17 @@ Generate all 5 posts now in JSON format:
                 errors: []
             };
 
-            // Get pillar info
+            // ── PHASE 76: Resolve editorial context from calendar ──
+            let editorialContext = null;
+            let resolvedFormat = format;
+            if (calendar_entry_id) {
+                editorialContext = await tlContentService.resolveEditorialContext(calendar_entry_id, userId, supabase);
+                if (editorialContext?.article_format) {
+                    resolvedFormat = editorialContext.article_format;
+                }
+            }
+
+            // Get pillar info (fallback for non-calendar requests)
             let pillarInfo = null;
             if (pillar_id) {
                 const { data: pillar } = await supabase
@@ -1419,41 +1656,49 @@ Generate all 5 posts now in JSON format:
                 pillarInfo = pillar;
             }
 
-            // Get user's TL profile (including image preferences)
+            // Get user's TL profile (including image + generation preferences)
             const { data: profile } = await supabase
                 .from('thought_leadership_profiles')
-                .select('core_thesis, atomic_claim, preferred_image_model, preferred_image_style')
+                .select('core_thesis, atomic_claim, preferred_image_model, preferred_image_style, preferred_llm_provider, preferred_llm_model, preferred_voice_dna_id, preferred_icp_id, preferred_business_profile_id')
                 .eq('user_id', userId)
                 .single();
 
-            // STEP 1: Generate Article
-            console.log(`[TL Package] Step 1: Generating article for topic "${topic}"`);
+            // ── Phase 76b: Resolve LLM model (request → saved preference → agent default) ──
+            const resolvedLlmProvider = llm_provider || profile?.preferred_llm_provider || null;
+            const resolvedLlmModel = llm_model || profile?.preferred_llm_model || null;
+
+            // Build includeOnDemand list from selected context assets
+            const contextOverrides = [];
+            const resolvedVoiceDna = voice_dna_id || profile?.preferred_voice_dna_id || null;
+            const resolvedIcp = icp_id || profile?.preferred_icp_id || null;
+            const resolvedBizProfile = business_profile_id || profile?.preferred_business_profile_id || null;
+            if (resolvedVoiceDna) contextOverrides.push(resolvedVoiceDna);
+            if (resolvedIcp) contextOverrides.push(resolvedIcp);
+            if (resolvedBizProfile) contextOverrides.push(resolvedBizProfile);
+
+            // Create execution options with model override
+            const agentOptions = {
+                userId,
+                conversationHistory: [],
+                ...(resolvedLlmProvider && { modelOverride: { provider: resolvedLlmProvider, model: resolvedLlmModel } }),
+                ...(contextOverrides.length > 0 && { includeOnDemand: contextOverrides })
+            };
+
+            // ── STEP 1: Generate Article (Phase 76 — Content Creation System workflow) ──
+            console.log(`[TL Package] Step 1: Generating article for topic "${topic}" (format: ${resolvedFormat})`);
             try {
-                const formatSpecs = {
-                    long: '2000+ words, comprehensive treatment with 5-7 major sections',
-                    medium: '1000-1500 words, standard article with 3-4 major sections',
-                    short: '500-800 words, focused single insight with 2-3 sections'
-                };
-
-                const articlePrompt = `Write a thought leadership article:
-
-**Topic:** ${topic}
-**Format:** ${format} (${formatSpecs[format] || formatSpecs.medium})
-${pillarInfo ? `**Content Pillar:** ${pillarInfo.name}
-**Pillar Description:** ${pillarInfo.description || 'N/A'}` : ''}
-${profile?.core_thesis ? `**Core Thesis:** ${profile.core_thesis}` : ''}
-${profile?.atomic_claim ? `**Atomic Claim:** ${profile.atomic_claim}` : ''}
-${research_findings ? `**Research Findings:**
-${research_findings}` : ''}
-${additional_context ? `**Additional Context:**
-${additional_context}` : ''}
-
-Write the complete article now. Your Voice DNA profile is provided in the agent context — follow it precisely. Use the sentence architecture patterns, signature concepts, rhetorical toolkit, and emotional palette. Respect the voice boundaries. End with "Make today your masterpiece."`;
+                const articlePrompt = tlContentService.buildArticlePrompt({
+                    topic,
+                    format: resolvedFormat,
+                    editorialContext,
+                    profile,
+                    researchFindings: research_findings,
+                    additionalContext: additional_context
+                });
 
                 const articleResult = await executeAgent(TL_AGENTS.ARTICLE_WRITER, {
-                    userMessage: articlePrompt,
-                    userId: userId,
-                    conversationHistory: []
+                    ...agentOptions,
+                    userMessage: articlePrompt
                 });
 
                 results.article = {
@@ -1466,32 +1711,27 @@ Write the complete article now. Your Voice DNA profile is provided in the agent 
                 results.errors.push({ step: 'article', error: articleErr.message });
             }
 
-            // STEP 2: Generate AI-Optimized Version (only if article succeeded)
+            // ── STEP 2: Generate AI-Optimized Version ──
             if (results.article) {
                 console.log('[TL Package] Step 2: Generating AI-optimized version');
                 try {
-                    const aiOptimizePrompt = `Transform this article into AI-optimized format for maximum visibility in AI search results:
-
-${results.article.content}
-
-Apply these optimizations:
-1. Add YAML front matter with: title, author, date, pillar, topics, key_claim, target_audience
-2. Restructure section headers as clear questions
-3. Make each paragraph self-contained and quotable
-4. Add explicit topic sentences
-5. Include author attribution markers
-6. Add section summaries
-
-Output the complete AI-optimized article.`;
+                    const aiOptimizePrompt = tlContentService.buildAiOptimizedPrompt(
+                        results.article.content, editorialContext, topic
+                    );
 
                     const aiResult = await executeAgent(TL_AGENTS.ARTICLE_WRITER, {
-                        userMessage: aiOptimizePrompt,
-                        userId: userId,
-                        conversationHistory: []
+                        ...agentOptions,
+                        userMessage: aiOptimizePrompt
                     });
 
+                    // Ensure YAML front matter is present (construct programmatically)
+                    const aiContentWithYaml = tlContentService.ensureYamlFrontMatter(
+                        aiResult.response,
+                        { topic, editorialContext, articleContent: results.article?.content }
+                    );
+
                     results.article_ai = {
-                        content: aiResult.response,
+                        content: aiContentWithYaml,
                         execution_id: aiResult.execution_id,
                         tokens_used: aiResult.usage?.total_tokens
                     };
@@ -1501,34 +1741,20 @@ Output the complete AI-optimized article.`;
                 }
             }
 
-            // STEP 3: Generate LinkedIn Posts (only if article succeeded)
+            // ── STEP 3: Generate LinkedIn Posts (Phase 76 — per-day templates + hashtag rotation) ──
             if (results.article) {
                 console.log('[TL Package] Step 3: Generating LinkedIn posts');
                 try {
-                    const linkedinPrompt = `Generate 5 LinkedIn posts for this article:
-
-**Article:**
-${results.article.content}
-
-**Daily Theme Framework:**
-- **Monday (Insight Launch)**: Lead with the counterintuitive insight
-- **Tuesday (Problem Spotlight)**: Highlight the pain point
-- **Wednesday (Framework Reveal)**: Share the practical how-to
-- **Thursday (Story/Example)**: Make it concrete with narrative
-- **Friday (Call to Reflect)**: End with meaning
-
-${pillarInfo?.hashtags ? `**Pillar hashtags:** ${pillarInfo.hashtags.join(', ')}` : ''}
-
-Generate all 5 posts in JSON format:
-{"posts": [{"day": "monday", "theme": "insight_launch", "content": "...", "hashtags": [...]}, ...]}`;
+                    const linkedinPrompt = tlContentService.buildLinkedInPrompt(
+                        results.article.content, editorialContext
+                    );
 
                     const linkedinResult = await executeAgent(TL_AGENTS.LINKEDIN_GENERATOR, {
-                        userMessage: linkedinPrompt,
-                        userId: userId,
-                        conversationHistory: []
+                        ...agentOptions,
+                        userMessage: linkedinPrompt
                     });
 
-                    // Parse JSON
+                    // Parse JSON from response
                     let posts = [];
                     try {
                         const jsonMatch = linkedinResult.response.match(/\{[\s\S]*"posts"[\s\S]*\}/);
@@ -1551,7 +1777,7 @@ Generate all 5 posts in JSON format:
                 }
             }
 
-            // STEP 4: Generate Header Image (only if article succeeded and image generation enabled)
+            // ── STEP 4: Generate Header Image ──
             if (results.article && generate_image) {
                 const resolvedStyle = image_style || profile?.preferred_image_style || 'professional';
                 const resolvedModel = image_model || profile?.preferred_image_model || 'gpt-image-1.5';
@@ -1561,7 +1787,7 @@ Generate all 5 posts in JSON format:
                         style: resolvedStyle,
                         model: resolvedModel,
                         topic,
-                        pillar: pillarInfo?.name,
+                        pillar: editorialContext?.quarterly_pillar || pillarInfo?.name,
                         thesis: profile?.core_thesis,
                         calendarEntryId: calendar_entry_id,
                         userId
@@ -1588,6 +1814,20 @@ Generate all 5 posts in JSON format:
             }
 
             const totalDuration = Date.now() - packageStartTime;
+
+            // ── STEP 5: Quality Gates (Phase 76) ──
+            let qualityChecklist = null;
+            try {
+                qualityChecklist = tlContentService.runQualityGates({
+                    articleContent: results.article?.content,
+                    format: resolvedFormat,
+                    aiOptimizedContent: results.article_ai?.content,
+                    linkedinPosts: results.linkedin_posts?.posts,
+                    editorialContext
+                });
+            } catch (qErr) {
+                console.warn('[TL Package] Quality gate check failed:', qErr.message);
+            }
 
             // Save outputs if calendar_entry_id provided
             const savedOutputs = [];
@@ -1663,6 +1903,14 @@ Generate all 5 posts in JSON format:
             const hasCriticalError = results.errors.some(e => e.step === 'article');
             console.log(`[TL Package] Complete in ${totalDuration}ms with ${results.errors.length} errors`);
 
+            // Build editorial context summary (exclude cornerstone_content from response)
+            let editorialSummary = null;
+            if (editorialContext) {
+                const { cornerstone_content, ...summary } = editorialContext;
+                summary.has_cornerstone_content = !!cornerstone_content;
+                editorialSummary = summary;
+            }
+
             res.json({
                 success: !hasCriticalError,
                 partial: hasErrors && !hasCriticalError,
@@ -1673,10 +1921,12 @@ Generate all 5 posts in JSON format:
                     linkedin_raw: results.linkedin_posts?.raw,
                     header_image: results.header_image || null
                 },
+                editorial_context: editorialSummary,
+                quality_checklist: qualityChecklist,
                 metadata: {
                     topic,
-                    format,
-                    pillar: pillarInfo?.name,
+                    format: resolvedFormat,
+                    pillar: editorialContext?.quarterly_pillar || pillarInfo?.name,
                     image_style: generate_image ? (image_style || profile?.preferred_image_style || 'professional') : null,
                     image_model: generate_image ? (image_model || profile?.preferred_image_model || 'gpt-image-1.5') : null,
                     total_duration_ms: totalDuration,

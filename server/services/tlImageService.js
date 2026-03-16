@@ -262,7 +262,7 @@ async function generateArticleImage(articleContent, options = {}) {
         // Handle both URL (DALL-E) and base64 (GPT Image) response formats
         const imageData = dalleResult.images[0];
         const dalleUrl = imageData.url || null;
-        const base64Data = imageData.b64_json || null;
+        const base64Data = imageData.b64_json || imageData.base64 || null;
         const revisedPrompt = imageData.revisedPrompt;
 
         logger.info('[TL Image] Image generation complete', { model: resolvedModel });

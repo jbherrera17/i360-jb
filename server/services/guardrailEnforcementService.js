@@ -118,7 +118,7 @@ async function screenMessage(userMessage, orgId, options = {}) {
                 reportedBy: options.userId
             });
         } catch (e) {
-            console.warn('Failed to log prompt injection incident:', e.message);
+            console.error('[Guardrail] Failed to log prompt injection incident:', e.message, '| Check bright_line_incidents table constraints');
         }
 
         return {
@@ -154,7 +154,7 @@ async function screenMessage(userMessage, orgId, options = {}) {
                 reportedBy: options.userId
             });
         } catch (e) {
-            console.warn('Failed to log bright line incident:', e.message);
+            console.error('[Guardrail] Failed to log bright line incident:', e.message, '| Check bright_line_incidents table constraints');
         }
 
         // Resolve response message from hierarchy
@@ -190,7 +190,7 @@ async function screenMessage(userMessage, orgId, options = {}) {
                     reportedBy: options.userId
                 });
             } catch (e) {
-                console.warn('Failed to log custom pattern incident:', e.message);
+                console.error('[Guardrail] Failed to log custom pattern incident:', e.message, '| Check bright_line_incidents table constraints');
             }
 
             return {
@@ -251,13 +251,21 @@ function screenAgainstBrightLines(message, config) {
     if (brightLines.length === 0) return { matched: false };
 
     const normalizedMessage = message.toLowerCase();
+    const messageWordCount = normalizedMessage.split(/\s+/).length;
 
     for (const bl of brightLines) {
         const keywords = extractBrightLineKeywords(bl);
-        // Require at least 2 keyword matches to reduce false positives
-        let matchCount = 0;
-        const matchThreshold = keywords.length <= 3 ? 2 : 3;
+        if (keywords.length === 0) continue;
 
+        // Phase 76 fix: Scale match threshold by message length.
+        // Short messages (user chat) keep the original low threshold.
+        // Long messages (articles, prompts with injected content) require
+        // proportionally more matches to trigger, reducing false positives.
+        const baseThreshold = keywords.length <= 3 ? 2 : 3;
+        const lengthBonus = Math.floor(messageWordCount / 200); // +1 per 200 words
+        const matchThreshold = Math.min(baseThreshold + lengthBonus, keywords.length);
+
+        let matchCount = 0;
         for (const keyword of keywords) {
             if (keyword.length >= 4 && normalizedMessage.includes(keyword)) {
                 matchCount++;
@@ -284,7 +292,14 @@ function extractBrightLineKeywords(brightLine) {
         ...(brightLine.violation_examples || [])
     ];
 
+    // Stop words: function words + high-frequency content words that produce
+    // false positives in bright line screening. These words appear in normal
+    // business/AI discourse and have near-zero signal value for violation detection.
+    // Phase 76 fix: Added high-frequency content words after systemic false positive
+    // analysis showed "Human Safety First" bright line matching 8/10 keywords
+    // against benign content about AI collaboration.
     const stopWords = new Set([
+        // Function words (original)
         'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
         'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
         'should', 'may', 'might', 'can', 'shall', 'must', 'and', 'but', 'or',
@@ -293,7 +308,19 @@ function extractBrightLineKeywords(brightLine) {
         'on', 'at', 'by', 'about', 'as', 'it', 'its', 'all', 'any', 'each',
         'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such',
         'only', 'own', 'same', 'our', 'your', 'their', 'which', 'who',
-        'when', 'where', 'how', 'what', 'why', 'never', 'always', 'without'
+        'when', 'where', 'how', 'what', 'why', 'never', 'always', 'without',
+        // High-frequency content words that appear in normal business/AI discourse
+        // and cause false positives when used as bright line keywords
+        'human', 'humans', 'first', 'provide', 'information', 'data', 'personal',
+        'safety', 'system', 'systems', 'tools', 'make', 'using', 'used', 'uses',
+        'enable', 'avoid', 'patterns', 'concerns', 'directly', 'language',
+        'refuse', 'requests', 'transparent', 'users', 'activity', 'based',
+        'approach', 'process', 'work', 'working', 'need', 'needs', 'help',
+        'ensure', 'create', 'building', 'also', 'just', 'like', 'well',
+        'many', 'even', 'still', 'take', 'keep', 'give', 'know', 'think',
+        'come', 'made', 'find', 'here', 'thing', 'things', 'people', 'time',
+        'very', 'much', 'long', 'good', 'right', 'look', 'back', 'over',
+        'after', 'through', 'between', 'under', 'before', 'being', 'while'
     ]);
 
     const keywords = new Set();

@@ -1420,6 +1420,73 @@
         .result-error { color: var(--danger); }
         .result-link { color: var(--primary); text-decoration: none; }
         .result-link:hover { text-decoration: underline; }
+
+        /* ── Phase 76: Generate Package Modal Styles ── */
+        .pkg-modal { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+        .pkg-section { background: var(--bg-secondary); border-radius: 8px; padding: var(--spacing-md) var(--spacing-lg); }
+        .pkg-section h4 { margin: 0 0 var(--spacing-sm); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+        .pkg-input-row { display: flex; gap: var(--spacing-md); align-items: end; }
+        .pkg-input-row .form-group { flex: 1; margin: 0; }
+        .pkg-input-row label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--spacing-xs); }
+        .pkg-input-row input,
+        .pkg-input-row select { width: 100%; padding: var(--spacing-sm); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; }
+        .pkg-context { display: none; }
+        .pkg-context.visible { display: block; }
+        .pkg-context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm); }
+        .pkg-context-item { display: flex; flex-direction: column; gap: 2px; }
+        .pkg-context-item .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+        .pkg-context-item .value { font-size: 0.9rem; color: var(--text-primary); font-weight: 500; }
+        .pkg-role-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: var(--primary-alpha, rgba(59,130,246,0.15)); color: var(--primary); }
+        .pkg-cornerstone { margin-top: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-sm); border-left: 3px solid var(--primary); background: var(--bg-tertiary); border-radius: 0 6px 6px 0; font-size: 0.85rem; color: var(--text-secondary); }
+        .pkg-progress { display: none; }
+        .pkg-progress.visible { display: block; }
+        .pkg-step { display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0; }
+        .pkg-step-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+        .pkg-step-icon.pending { background: var(--bg-tertiary); color: var(--text-muted); }
+        .pkg-step-icon.active { background: var(--primary); color: white; animation: pulse 1.5s infinite; }
+        .pkg-step-icon.done { background: var(--success); color: white; }
+        .pkg-step-icon.error { background: var(--danger); color: white; }
+        .pkg-step-name { font-size: 0.9rem; color: var(--text-primary); }
+        .pkg-step-detail { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .pkg-results { display: none; }
+        .pkg-results.visible { display: block; }
+        .pkg-result-tabs { display: flex; gap: var(--spacing-xs); border-bottom: 1px solid var(--border-color); margin-bottom: var(--spacing-md); }
+        .pkg-result-tab { padding: var(--spacing-sm) var(--spacing-md); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+        .pkg-result-tab:hover { color: var(--text-primary); }
+        .pkg-result-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 4px; }
+        .pkg-result-tab.active,
+        .pkg-result-tab[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+        .pkg-result-content { max-height: 400px; overflow-y: auto; }
+        .pkg-quality { margin-top: var(--spacing-md); }
+        .pkg-quality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm); }
+        .pkg-quality-item { display: flex; flex-direction: column; align-items: flex-start; padding: var(--spacing-sm) var(--spacing-sm); background: var(--bg-tertiary); border-radius: 6px; font-size: 0.8rem; }
+        .pkg-quality-item .pass { color: var(--success); }
+        .pkg-quality-item .fail { color: var(--danger); }
+        .pkg-generate-btn { width: 100%; padding: var(--spacing-sm); font-size: 1rem; }
+        .pkg-hashtags { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); margin-top: var(--spacing-sm); }
+        .pkg-hashtags .tag { font-size: 0.75rem; padding: 2px var(--spacing-sm); background: var(--bg-tertiary); border-radius: 12px; color: var(--primary); }
+
+        /* Details arrow animation */
+        details[open] .pkg-settings-arrow { transform: rotate(90deg); }
+        .pkg-settings-arrow { transition: transform 0.2s ease; display: inline-block; }
+
+        /* Loading overlay */
+        .pkg-loading-overlay {
+            position: sticky; top: 0; z-index: 10;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark, #6d28d9));
+            color: white; padding: var(--spacing-md) var(--spacing-lg); border-radius: 8px;
+            display: flex; align-items: center; gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md); animation: pulse 2s infinite;
+        }
+        .pkg-loading-overlay .spinner {
+            width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .pkg-loading-overlay #pkg-loading-status { font-weight: 600; font-size: 0.95rem; }
+        .pkg-loading-overlay #pkg-loading-substatus { font-size: 0.8rem; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -1433,12 +1500,15 @@
             <!-- Page Header -->
             <header class="page-header">
                 <div class="header-content">
-                    <h1 class="page-title">Thought Leadership</h1>
-                    <p class="page-subtitle">Build your authority and create consistent, impactful content</p>
+                    <h1>
+                        <i data-lucide="lightbulb" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Thought Leadership
+                    </h1>
+                    <p class="header-subtitle">Build your authority and create consistent, impactful content</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-secondary" onclick="HelpModal.open()" title="Help">
-                        <i data-lucide="info"></i>
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
                     </button>
                     <button class="btn btn-secondary" onclick="openStrategyChat()">
                         <i data-lucide="message-circle"></i>
@@ -1801,7 +1871,7 @@
                             <i data-lucide="git-branch"></i>
                             <h3>Weekly Pipeline</h3>
                         </div>
-                        <span class="pipeline-week">Week of January 13, 2026</span>
+                        <span class="pipeline-week" id="pipeline-week-label"></span>
                     </div>
                     <div id="pipeline-steps" class="pipeline-steps">
                         <div class="pipeline-step">
@@ -1912,6 +1982,15 @@
 
                 <!-- Quick Actions -->
                 <section class="quick-actions">
+                    <div class="action-card" onclick="openGeneratePackageModal()">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                            <i data-lucide="package"></i>
+                        </div>
+                        <div class="action-text">
+                            <h4>Generate Weekly Package</h4>
+                            <p>Article + AI version + 5 LinkedIn posts</p>
+                        </div>
+                    </div>
                     <div class="action-card" onclick="writeArticle()">
                         <div class="action-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
                             <i data-lucide="file-text"></i>
@@ -1965,6 +2044,15 @@
     </div><!-- /app-container -->
 
     <script>
+        // Toast helper (delegates to ModalService)
+        function showToast(message, type = 'success') {
+            if (typeof ModalService !== 'undefined' && ModalService.toast) {
+                ModalService.toast({ message, type });
+            } else {
+                console.log(`[Toast ${type}] ${message}`);
+            }
+        }
+
         // ============================================
         // Setup Flow State Management (Phase 34)
         // ============================================
@@ -1996,6 +2084,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             initPageFlow();
+
+            // Set current week label dynamically
+            const weekLabel = document.getElementById('pipeline-week-label');
+            if (weekLabel) {
+                const now = new Date();
+                const monday = new Date(now);
+                monday.setDate(now.getDate() - now.getDay() + 1);
+                weekLabel.textContent = `Week of ${monday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+            }
         });
 
         // Determine if setup or dashboard mode
@@ -3337,8 +3434,758 @@ Start by asking about their current online presence and platforms.`
                 lucide && lucide.createIcons();
             }
         }
+
+        // ============================================
+        // GENERATE WEEKLY PACKAGE (Phase 76)
+        // ============================================
+
+        let _packageEntries = [];
+
+        async function openGeneratePackageModal() {
+            // Load upcoming calendar entries
+            try {
+                const userId = getUserId();
+                const resp = await fetch('/api/thought-leadership/calendar?year=2026', {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }
+                });
+                const data = await resp.json();
+
+                // Also load from DB entries (editorial calendar entries with week_number)
+                const dbResp = await fetch('/api/thought-leadership/outputs?limit=1', {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }
+                }).catch(() => null);
+
+                // Build entry list from notion data that matches editorial calendar
+                _packageEntries = [];
+            } catch (e) {
+                console.warn('Could not load calendar entries:', e);
+            }
+
+            // Show the modal — load entries after DOM renders via the MutationObserver
+            _pkgNeedsLoad = true;
+            const result = await ModalService.content({
+                title: 'Generate Weekly Package',
+                content: buildPackageModalHTML(),
+                contentType: 'html',
+                width: '720px'
+            });
+        }
+
+        function buildPackageModalHTML() {
+            return `
+                <div class="pkg-modal">
+                    <!-- Step 1: Entry Selection -->
+                    <div class="pkg-section">
+                        <h4>Select Calendar Entry</h4>
+                        <div class="pkg-input-row">
+                            <div class="form-group">
+                                <label>Article Topic</label>
+                                <input type="text" id="pkg-topic" placeholder="Enter topic or select from calendar below">
+                            </div>
+                            <div class="form-group" style="flex: 0.4;">
+                                <label>Format</label>
+                                <select id="pkg-format">
+                                    <option value="medium">Medium (1,000-1,500)</option>
+                                    <option value="long">Long (2,000+)</option>
+                                    <option value="short">Short (500-800)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pkg-input-row" style="margin-top: 0.75rem;">
+                            <div class="form-group">
+                                <label>Calendar Entry (optional — enables editorial context)</label>
+                                <select id="pkg-calendar-entry" onchange="onPackageEntrySelected(this.value)">
+                                    <option value="">-- Select a calendar entry --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Editorial Context (shown after entry selected) -->
+                    <div class="pkg-section pkg-context" id="pkg-context">
+                        <h4>Editorial Context</h4>
+                        <div class="pkg-context-grid" id="pkg-context-grid"></div>
+                        <div id="pkg-cornerstone-info"></div>
+                        <div id="pkg-hashtag-preview"></div>
+                    </div>
+
+                    <!-- Step 2b: Generation Settings (collapsible) -->
+                    <details class="pkg-section" id="pkg-settings" style="cursor:pointer;">
+                        <summary style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); font-weight:600; list-style:none; display:flex; align-items:center; gap:0.5rem;">
+                            <span style="transition:transform 0.2s;" class="pkg-settings-arrow">&#9654;</span>
+                            Generation Settings
+                            <span style="font-size:0.7rem; font-weight:400; color:var(--text-muted); margin-left:auto;" id="pkg-settings-summary">Using defaults</span>
+                        </summary>
+                        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.75rem;">
+                            <div class="pkg-input-row">
+                                <div class="form-group">
+                                    <label>LLM Model</label>
+                                    <select id="pkg-llm-model" onchange="updateSettingsSummary()">
+                                        <option value="">Agent default</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pkg-input-row">
+                                <div class="form-group">
+                                    <label>Voice DNA</label>
+                                    <select id="pkg-voice-dna" onchange="updateSettingsSummary()">
+                                        <option value="">Agent default mapping</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Target ICP</label>
+                                    <select id="pkg-icp" onchange="updateSettingsSummary()">
+                                        <option value="">Agent default mapping</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pkg-input-row">
+                                <div class="form-group">
+                                    <label>Business Profile</label>
+                                    <select id="pkg-biz-profile" onchange="updateSettingsSummary()">
+                                        <option value="">Agent default mapping</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex:0 0 auto; align-self:end;">
+                                    <button class="btn btn-secondary btn-sm" onclick="saveGenerationPreferences()" style="white-space:nowrap;">
+                                        Save as defaults
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Generate Button -->
+                    <button class="btn btn-primary pkg-generate-btn" id="pkg-generate-btn" onclick="generateWeeklyPackage()">
+                        <i data-lucide="sparkles"></i>
+                        Generate Weekly Package
+                    </button>
+
+                    <!-- Step 3: Progress -->
+                    <div class="pkg-section pkg-progress" id="pkg-progress">
+                        <h4>Generation Progress</h4>
+                        <div id="pkg-steps">
+                            <div class="pkg-step" id="pkg-step-article"><div class="pkg-step-icon pending">1</div><div class="pkg-step-name">Generate Article</div><div class="pkg-step-detail"></div></div>
+                            <div class="pkg-step" id="pkg-step-ai"><div class="pkg-step-icon pending">2</div><div class="pkg-step-name">AI-Optimized Version</div><div class="pkg-step-detail"></div></div>
+                            <div class="pkg-step" id="pkg-step-linkedin"><div class="pkg-step-icon pending">3</div><div class="pkg-step-name">LinkedIn Posts (5)</div><div class="pkg-step-detail"></div></div>
+                            <div class="pkg-step" id="pkg-step-image"><div class="pkg-step-icon pending">4</div><div class="pkg-step-name">Header Image</div><div class="pkg-step-detail"></div></div>
+                            <div class="pkg-step" id="pkg-step-quality"><div class="pkg-step-icon pending">5</div><div class="pkg-step-name">Quality Gates</div><div class="pkg-step-detail"></div></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Results -->
+                    <div class="pkg-section pkg-results" id="pkg-results">
+                        <h4>Generated Package</h4>
+
+                        <!-- Image Preview (shown above tabs when image is generated) -->
+                        <div id="pkg-image-preview" style="display:none; margin-bottom:1rem;">
+                            <img id="pkg-image-img" src="" alt="Article header image"
+                                 style="width:100%; max-height:300px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);">
+                            <div id="pkg-image-meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem; font-size:0.75rem; color:var(--text-muted);">
+                                <span id="pkg-image-style"></span>
+                                <a id="pkg-image-link" href="#" target="_blank" style="color:var(--primary);">Open full image</a>
+                            </div>
+                            <details style="margin-top:0.5rem;">
+                                <summary style="cursor:pointer; font-size:0.8rem; color:var(--text-muted);">Image prompt &amp; regeneration</summary>
+                                <div style="margin-top:0.5rem; padding:0.75rem; background:var(--bg-tertiary); border-radius:6px;">
+                                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.5rem; white-space:pre-wrap;" id="pkg-image-prompt"></div>
+                                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                                        <button class="btn btn-secondary btn-sm" onclick="copyImagePrompt()" style="font-size:0.75rem;">Copy prompt</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="window.location.href='/chat.html'" style="font-size:0.75rem;">Regenerate in Higgins</button>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+
+                        <div class="pkg-result-tabs" id="pkg-result-tabs" role="tablist" aria-label="Generated content">
+                            <button class="pkg-result-tab active" role="tab" aria-selected="true" onclick="showPackageTab('article')">Article</button>
+                            <button class="pkg-result-tab" role="tab" aria-selected="false" onclick="showPackageTab('ai')">AI-Optimized</button>
+                            <button class="pkg-result-tab" role="tab" aria-selected="false" onclick="showPackageTab('linkedin')">LinkedIn (5)</button>
+                        </div>
+                        <div class="pkg-result-content" id="pkg-result-content"></div>
+                        <div class="pkg-quality" id="pkg-quality"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load editorial calendar entries into the package modal dropdown
+        async function loadPackageEntries() {
+            const select = document.getElementById('pkg-calendar-entry');
+            if (!select || select.options.length > 1) return; // Already loaded
+            try {
+                const userId = getUserId();
+                // Only get entries that have editorial_calendar_id (Phase 75 entries)
+                const calResp = await fetch(`/api/thought-leadership/calendar/db?year=2026`, {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }
+                });
+
+                if (calResp.ok) {
+                    const calData = await calResp.json();
+                    const entries = (calData.data || [])
+                        .filter(e => e.editorial_calendar_id && e.week_number) // Only Phase 75 editorial entries
+                        .sort((a, b) => a.week_number - b.week_number);
+                    entries.forEach(e => {
+                        const opt = document.createElement('option');
+                        opt.value = e.id;
+                        const statusBadge = e.status === 'published' ? ' [published]' : '';
+                        opt.textContent = `W${e.week_number} — ${e.title} (${e.article_format || 'medium'})${statusBadge}`;
+                        opt.dataset.title = e.title;
+                        opt.dataset.format = e.article_format || 'medium';
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not load calendar entries for package modal:', e);
+            }
+        }
+
+        async function onPackageEntrySelected(entryId) {
+            const ctxSection = document.getElementById('pkg-context');
+            const grid = document.getElementById('pkg-context-grid');
+            const cornerstoneInfo = document.getElementById('pkg-cornerstone-info');
+            const hashtagPreview = document.getElementById('pkg-hashtag-preview');
+
+            if (!entryId) {
+                ctxSection.classList.remove('visible');
+                return;
+            }
+
+            // Update topic and format from selected entry
+            const select = document.getElementById('pkg-calendar-entry');
+            const opt = select.selectedOptions[0];
+            if (opt?.dataset.title) {
+                document.getElementById('pkg-topic').value = opt.dataset.title;
+            }
+            if (opt?.dataset.format) {
+                document.getElementById('pkg-format').value = opt.dataset.format;
+            }
+
+            // Fetch editorial context
+            try {
+                const userId = getUserId();
+                const resp = await fetch(`/api/thought-leadership/editorial-context/${entryId}`, {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }
+                });
+                if (!resp.ok) throw new Error('Failed to load editorial context');
+                const { data: ctx } = await resp.json();
+
+                // Determine role label
+                let roleLabel = 'Standalone';
+                let roleClass = '';
+                if (ctx.is_cornerstone) roleLabel = `Foundation #${ctx.cornerstone_number}`;
+                else if (ctx.week_position_in_month === 2) roleLabel = 'Extension 1';
+                else if (ctx.week_position_in_month === 3) roleLabel = 'Extension 2';
+                else if (ctx.week_position_in_month === 4) roleLabel = 'Practical Guide';
+
+                grid.innerHTML = `
+                    <div class="pkg-context-item"><span class="label">Annual Theme</span><span class="value">${ctx.annual_theme || 'N/A'}</span></div>
+                    <div class="pkg-context-item"><span class="label">Quarterly Pillar</span><span class="value">${ctx.quarterly_pillar || 'N/A'}</span></div>
+                    <div class="pkg-context-item"><span class="label">Monthly Theme</span><span class="value">${ctx.monthly_theme || 'N/A'}</span></div>
+                    <div class="pkg-context-item"><span class="label">Series</span><span class="value">${ctx.series_name || 'N/A'}</span></div>
+                    <div class="pkg-context-item"><span class="label">Format</span><span class="value">${(ctx.article_format || 'medium').charAt(0).toUpperCase() + (ctx.article_format || 'medium').slice(1)}</span></div>
+                    <div class="pkg-context-item"><span class="label">Role</span><span class="value"><span class="pkg-role-badge">${roleLabel}</span></span></div>
+                `;
+
+                // Cornerstone reference
+                if (ctx.cornerstone_title && !ctx.is_cornerstone) {
+                    cornerstoneInfo.innerHTML = `<div class="pkg-cornerstone"><strong>Extends:</strong> ${ctx.cornerstone_title}${ctx.has_cornerstone_content ? ' <span style="color:var(--success);">(content available)</span>' : ' <span style="color:var(--warning);">(not yet written)</span>'}</div>`;
+                } else {
+                    cornerstoneInfo.innerHTML = '';
+                }
+
+                // Hashtag preview
+                const allTags = [...new Set([...(ctx.quarterly_hashtags || []), ...(ctx.monthly_hashtags || [])])];
+                if (allTags.length > 0) {
+                    hashtagPreview.innerHTML = `<div class="pkg-hashtags">${allTags.map(t => `<span class="tag">${t}</span>`).join('')}</div>`;
+                } else {
+                    hashtagPreview.innerHTML = '';
+                }
+
+                ctxSection.classList.add('visible');
+                window.__pkgEditorialCtx = ctx;
+            } catch (e) {
+                console.error('Error loading editorial context:', e);
+                grid.innerHTML = '<div style="color:var(--text-muted);">Could not load editorial context</div>';
+                ctxSection.classList.add('visible');
+            }
+        }
+
+        let _packageResult = null;
+
+        async function generateWeeklyPackage() {
+            const topic = document.getElementById('pkg-topic')?.value?.trim();
+            const format = document.getElementById('pkg-format')?.value || 'medium';
+            const calendarEntryId = document.getElementById('pkg-calendar-entry')?.value || null;
+            const btn = document.getElementById('pkg-generate-btn');
+
+            if (!topic) {
+                showToast && showToast('Please enter a topic or select a calendar entry', 'warning');
+                return;
+            }
+
+            // Show progress, hide results, hide the form section
+            const progressEl = document.getElementById('pkg-progress');
+            const resultsEl = document.getElementById('pkg-results');
+            progressEl.classList.add('visible');
+            resultsEl.classList.remove('visible');
+            btn.disabled = true;
+            btn.style.display = 'none'; // Hide button during generation
+
+            // Show loading overlay
+            let overlay = document.getElementById('pkg-loading-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'pkg-loading-overlay';
+                overlay.className = 'pkg-loading-overlay';
+                overlay.innerHTML = `
+                    <div class="spinner"></div>
+                    <div>
+                        <div id="pkg-loading-status">Generating your weekly package...</div>
+                        <div id="pkg-loading-substatus">Step 1 of 5: Writing article with editorial context</div>
+                    </div>
+                `;
+                progressEl.parentElement.insertBefore(overlay, progressEl);
+            } else {
+                overlay.style.display = 'flex';
+            }
+
+            // Scroll the overlay into view inside the modal
+            overlay.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Animate steps
+            const steps = ['article', 'ai', 'linkedin', 'image', 'quality'];
+            steps.forEach(s => setStepStatus(s, 'pending', ''));
+            setStepStatus('article', 'active', 'Writing...');
+
+            // Update loading status as steps progress
+            function updateLoadingStatus(step, num) {
+                const statusEl = document.getElementById('pkg-loading-status');
+                const subEl = document.getElementById('pkg-loading-substatus');
+                const msgs = {
+                    article: ['Writing article...', 'Step 1 of 5: Generating with editorial context and Voice DNA'],
+                    ai: ['Creating AI-optimized version...', 'Step 2 of 5: Adding YAML front matter and semantic structure'],
+                    linkedin: ['Generating LinkedIn posts...', 'Step 3 of 5: Creating 5 daily posts with hashtag strategy'],
+                    image: ['Generating header image...', 'Step 4 of 5: Creating visual with AI image generation'],
+                    quality: ['Running quality checks...', 'Step 5 of 5: Validating voice patterns, format, and compliance']
+                };
+                if (statusEl && msgs[step]) statusEl.textContent = msgs[step][0];
+                if (subEl && msgs[step]) subEl.textContent = msgs[step][1];
+            }
+            updateLoadingStatus('article');
+
+            // Simulate step progress while waiting (API returns all at once)
+            const progressTimers = [
+                setTimeout(() => { setStepStatus('article', 'active', 'Writing...'); updateLoadingStatus('article'); }, 0),
+                setTimeout(() => { setStepStatus('article', 'done', '~done'); setStepStatus('ai', 'active', 'Optimizing...'); updateLoadingStatus('ai'); }, 15000),
+                setTimeout(() => { setStepStatus('ai', 'done', '~done'); setStepStatus('linkedin', 'active', 'Creating posts...'); updateLoadingStatus('linkedin'); }, 30000),
+                setTimeout(() => { setStepStatus('linkedin', 'done', '~done'); setStepStatus('image', 'active', 'Generating...'); updateLoadingStatus('image'); }, 45000),
+                setTimeout(() => { setStepStatus('image', 'done', '~done'); setStepStatus('quality', 'active', 'Checking...'); updateLoadingStatus('quality'); }, 60000)
+            ];
+
+            try {
+                const userId = getUserId();
+                const resp = await fetch('/api/thought-leadership/generate/package', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' },
+                    body: JSON.stringify({
+                        topic,
+                        format,
+                        calendar_entry_id: calendarEntryId || undefined,
+                        generate_image: true,
+                        // Phase 76b: Generation settings overrides
+                        ...getGenerationOverrides()
+                    })
+                });
+
+                const data = await resp.json();
+                _packageResult = data;
+
+                // Clear simulated progress timers and hide overlay
+                progressTimers.forEach(t => clearTimeout(t));
+                const overlayEl = document.getElementById('pkg-loading-overlay');
+                if (overlayEl) overlayEl.style.display = 'none';
+
+                // Update step statuses based on results
+                if (data.package?.article) {
+                    setStepStatus('article', 'done', 'Complete');
+                } else {
+                    setStepStatus('article', 'error', data.errors?.find(e => e.step === 'article')?.error || 'Failed');
+                }
+
+                if (data.package?.article_ai_optimized) {
+                    setStepStatus('ai', 'done', 'Complete');
+                } else if (data.package?.article) {
+                    setStepStatus('ai', 'error', 'Failed');
+                }
+
+                if (data.package?.linkedin_posts?.length > 0) {
+                    setStepStatus('linkedin', 'done', `${data.package.linkedin_posts.length} posts`);
+                } else {
+                    setStepStatus('linkedin', data.package?.article ? 'error' : 'pending', '');
+                }
+
+                if (data.package?.header_image) {
+                    setStepStatus('image', 'done', 'Generated');
+                } else {
+                    const imgErr = data.errors?.find(e => e.step === 'image');
+                    setStepStatus('image', imgErr ? 'error' : 'pending', imgErr?.error || 'Skipped');
+                }
+
+                // Quality gates
+                if (data.quality_checklist) {
+                    const qc = data.quality_checklist;
+                    setStepStatus('quality', qc.overall === 'PASS' ? 'done' : 'error', qc.score);
+                } else {
+                    setStepStatus('quality', 'pending', 'N/A');
+                }
+
+                // Show image preview
+                const imgPreview = document.getElementById('pkg-image-preview');
+                if (data.package?.header_image?.url && imgPreview) {
+                    document.getElementById('pkg-image-img').src = data.package.header_image.url;
+                    document.getElementById('pkg-image-link').href = data.package.header_image.url;
+                    document.getElementById('pkg-image-style').textContent = `Style: ${data.package.header_image.styleName || data.package.header_image.style || 'professional'}`;
+                    const promptEl = document.getElementById('pkg-image-prompt');
+                    if (promptEl) {
+                        promptEl.textContent = data.package.header_image.prompt || data.package.header_image.revisedPrompt || 'Prompt not available';
+                        window.__pkgImagePrompt = data.package.header_image.prompt || data.package.header_image.revisedPrompt || '';
+                    }
+                    imgPreview.style.display = 'block';
+                }
+
+                // Show results
+                if (data.package?.article) {
+                    document.getElementById('pkg-results').classList.add('visible');
+                    showPackageTab('article');
+                    renderQualityChecklist(data.quality_checklist);
+                    // Scroll to results
+                    document.getElementById('pkg-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+                if (data.success) {
+                    showToast && showToast('Weekly package generated successfully!', 'success');
+                } else {
+                    showToast && showToast('Package generation had errors. Check results.', 'warning');
+                }
+            } catch (err) {
+                progressTimers.forEach(t => clearTimeout(t));
+                console.error('Package generation error:', err);
+                setStepStatus('article', 'error', err.message);
+                showToast && showToast('Generation failed: ' + err.message, 'error');
+                const overlayEl = document.getElementById('pkg-loading-overlay');
+                if (overlayEl) overlayEl.style.display = 'none';
+            } finally {
+                btn.disabled = false;
+                btn.style.display = '';
+                btn.innerHTML = '<i data-lucide="sparkles"></i> Regenerate Package';
+                lucide && lucide.createIcons();
+            }
+        }
+
+        function setStepStatus(step, status, detail) {
+            const el = document.getElementById(`pkg-step-${step}`);
+            if (!el) return;
+            const icon = el.querySelector('.pkg-step-icon');
+            const detailEl = el.querySelector('.pkg-step-detail');
+            icon.className = 'pkg-step-icon ' + status;
+            const icons = { pending: '&#8943;', active: '&#9679;', done: '&#10003;', error: '&#10007;' };
+            icon.innerHTML = icons[status] || icon.textContent;
+            if (detailEl) detailEl.textContent = detail || '';
+        }
+
+        /**
+         * Render markdown for the package modal — enhanced version that handles
+         * YAML front matter, code fences, and produces clean readable output.
+         */
+        function renderPackageMarkdown(md) {
+            if (!md) return '';
+            let text = md;
+
+            // Strip YAML front matter (```yaml ... ``` or --- ... ---)
+            text = text.replace(/^```yaml\s*\n---[\s\S]*?---\s*\n```\s*\n?/m, '');
+            text = text.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/m, '');
+
+            // Code fences → styled blocks
+            text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+                return `<div style="background:var(--bg-tertiary); border-radius:6px; padding:0.75rem; margin:0.75rem 0; font-family:monospace; font-size:0.82rem; white-space:pre-wrap; overflow-x:auto;">${escapeHtml(code.trim())}</div>`;
+            });
+
+            // Headers
+            text = text.replace(/^#### (.+)$/gm, '<h4 style="margin:14px 0 6px; font-size:0.95rem; font-weight:600; color:var(--text-primary);">$1</h4>');
+            text = text.replace(/^### (.+)$/gm, '<h3 style="margin:16px 0 8px; font-size:1.05rem; font-weight:600; color:var(--text-primary);">$1</h3>');
+            text = text.replace(/^## (.+)$/gm, '<h2 style="margin:20px 0 10px; font-size:1.15rem; font-weight:600; color:var(--primary);">$1</h2>');
+            text = text.replace(/^# (.+)$/gm, '<h1 style="margin:24px 0 12px; font-size:1.35rem; font-weight:700; color:var(--text-primary);">$1</h1>');
+
+            // Bold and italic
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+            // Inline code
+            text = text.replace(/`([^`]+)`/g, '<code style="background:var(--bg-tertiary); padding:1px 5px; border-radius:3px; font-size:0.85em;">$1</code>');
+
+            // Blockquotes
+            text = text.replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid var(--primary); padding-left:12px; margin:12px 0; color:var(--text-secondary); font-style:italic;">$1</blockquote>');
+
+            // Bullet lists
+            text = text.replace(/^- (.+)$/gm, '<div style="margin-left:1.25rem; padding:2px 0;"><span style="color:var(--primary); margin-right:0.5rem;">&#x2022;</span>$1</div>');
+
+            // Numbered lists
+            text = text.replace(/^(\d+)\. (.+)$/gm, '<div style="margin-left:1.25rem; padding:2px 0;"><span style="color:var(--primary); margin-right:0.5rem; font-weight:600;">$1.</span>$2</div>');
+
+            // Horizontal rules
+            text = text.replace(/^---+$/gm, '<hr style="border:none; border-top:1px solid var(--border-color); margin:1rem 0;">');
+
+            // Paragraphs (double newline)
+            text = text.replace(/\n\n+/g, '</p><p style="margin:10px 0; line-height:1.7;">');
+
+            // Single newlines
+            text = text.replace(/\n/g, '<br>');
+
+            return `<div style="line-height:1.7; font-size:0.92rem; color:var(--text-primary);"><p style="margin:10px 0; line-height:1.7;">${text}</p></div>`;
+        }
+
+        function showPackageTab(tab) {
+            if (!_packageResult) return;
+            const tabs = document.querySelectorAll('.pkg-result-tab');
+            tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+            const activeTab = Array.from(tabs).find(t => t.textContent.toLowerCase().includes(tab));
+            if (activeTab) { activeTab.classList.add('active'); activeTab.setAttribute('aria-selected', 'true'); }
+
+            const content = document.getElementById('pkg-result-content');
+            if (!content) return;
+
+            if (tab === 'article') {
+                content.innerHTML = renderPackageMarkdown(_packageResult.package?.article || 'No article generated');
+            } else if (tab === 'ai') {
+                content.innerHTML = renderPackageMarkdown(_packageResult.package?.article_ai_optimized || 'No AI version generated');
+            } else if (tab === 'linkedin') {
+                const posts = _packageResult.package?.linkedin_posts || [];
+                if (posts.length > 0) {
+                    content.innerHTML = posts.map((p, i) => {
+                        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                        const dayThemes = ['Insight Launch', 'Problem Spotlight', 'Framework Reveal', 'Story/Example', 'Call to Reflect'];
+                        const charCount = (p.content || '').length;
+                        const charColor = charCount <= 1300 ? 'var(--success)' : 'var(--danger)';
+                        return `<div style="margin-bottom:1rem; padding:1rem; background:var(--bg-tertiary); border-radius:8px; border-left:3px solid var(--primary);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <span style="font-weight:600; font-size:0.9rem; color:var(--primary);">${dayNames[i] || p.day}: ${dayThemes[i] || p.theme}</span>
+                                <span style="font-size:0.7rem; color:${charColor};">${charCount} chars</span>
+                            </div>
+                            <div style="font-size:0.9rem; line-height:1.6; white-space:pre-wrap;">${escapeHtml(p.content || '')}</div>
+                            ${p.hashtags?.length ? `<div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.35rem;">${p.hashtags.map(t => `<span style="font-size:0.75rem; padding:0.1rem 0.5rem; background:var(--bg-secondary); border-radius:12px; color:var(--primary);">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                        </div>`;
+                    }).join('');
+                } else {
+                    content.innerHTML = renderPackageMarkdown(_packageResult.package?.linkedin_raw || 'No LinkedIn posts generated');
+                }
+            }
+        }
+
+        function renderQualityChecklist(checklist) {
+            const container = document.getElementById('pkg-quality');
+            if (!container || !checklist) { if (container) container.innerHTML = ''; return; }
+
+            const gateConfig = {
+                format_length: { label: 'Format Length', fixHint: 'Regenerate with adjusted format or edit the article to match the target word count.' },
+                voice_patterns: { label: 'Voice DNA Patterns', fixHint: 'Edit the article to include more personal stories, rhetorical questions, and the closing signature.' },
+                cornerstone_link: { label: 'Cornerstone Link', fixHint: 'Generate the cornerstone article first (Week 1 of this month), then regenerate this extension.' },
+                ai_optimization: { label: 'AI Optimization', fixHint: 'The AI-optimized version needs YAML front matter and author attributions. Try regenerating.' },
+                linkedin_char_limits: { label: 'LinkedIn Char Limits', fixHint: 'Edit posts exceeding 1,300 characters before publishing.' },
+                hashtag_compliance: { label: 'Hashtag Compliance', fixHint: 'Each post needs 3-5 hashtags. Edit posts to add or remove hashtags.' },
+                actionable_insights: { label: 'Actionable Insights', fixHint: 'Add practical steps, frameworks, or "how-to" sections to increase actionability.' }
+            };
+
+            const gates = Object.entries(checklist.gates || {}).map(([key, gate]) => {
+                const icon = gate.pass ? '&#10003;' : '&#10007;';
+                const cls = gate.pass ? 'pass' : 'fail';
+                const cfg = gateConfig[key] || { label: key, fixHint: '' };
+                const hint = !gate.pass && cfg.fixHint ? `<div style="font-size:0.7rem; color:var(--warning); margin-top:0.25rem; font-style:italic;">${cfg.fixHint}</div>` : '';
+                return `<div class="pkg-quality-item" style="flex-direction:column; align-items:flex-start;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; width:100%;">
+                        <span class="${cls}">${icon}</span>
+                        <span>${cfg.label}</span>
+                        <span style="margin-left:auto; font-size:0.7rem; color:var(--text-muted);">${gate.detail || ''}</span>
+                    </div>
+                    ${hint}
+                </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <h4 style="margin:0 0 0.5rem; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                    Quality Checklist: ${checklist.overall} (${checklist.score})
+                </h4>
+                <div class="pkg-quality-grid">${gates}</div>
+            `;
+        }
+
+        function getGenerationOverrides() {
+            const overrides = {};
+            const modelVal = document.getElementById('pkg-llm-model')?.value || '';
+            if (modelVal && modelVal.includes('|')) {
+                const [provider, model] = modelVal.split('|');
+                overrides.llm_provider = provider;
+                overrides.llm_model = model;
+            }
+            const voiceDna = document.getElementById('pkg-voice-dna')?.value;
+            if (voiceDna) overrides.voice_dna_id = voiceDna;
+            const icp = document.getElementById('pkg-icp')?.value;
+            if (icp) overrides.icp_id = icp;
+            const biz = document.getElementById('pkg-biz-profile')?.value;
+            if (biz) overrides.business_profile_id = biz;
+            return overrides;
+        }
+
+        function copyImagePrompt() {
+            if (window.__pkgImagePrompt) {
+                navigator.clipboard.writeText(window.__pkgImagePrompt).then(() => {
+                    showToast('Image prompt copied to clipboard', 'success');
+                }).catch(() => {
+                    // Fallback: select and copy
+                    const el = document.getElementById('pkg-image-prompt');
+                    if (el) { window.getSelection().selectAllChildren(el); document.execCommand('copy'); }
+                    showToast('Image prompt copied', 'success');
+                });
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ── Generation Settings (Phase 76b) ──
+
+        async function loadGenerationOptions() {
+            try {
+                const userId = getUserId();
+                const resp = await fetch('/api/thought-leadership/generation-options', {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+
+                // Populate LLM model dropdown
+                const modelSelect = document.getElementById('pkg-llm-model');
+                if (modelSelect && data.models) {
+                    const defaultModel = data.agent_defaults?.llm_model || '';
+                    const savedModel = data.saved_preferences?.llm_model || '';
+                    let currentProvider = '';
+                    data.models.forEach(m => {
+                        if (m.provider !== currentProvider) {
+                            const optGroup = document.createElement('optgroup');
+                            optGroup.label = m.providerName;
+                            modelSelect.appendChild(optGroup);
+                            currentProvider = m.provider;
+                        }
+                        const opt = document.createElement('option');
+                        opt.value = m.provider + '|' + m.id;
+                        opt.textContent = m.name + (m.id === defaultModel ? ' (agent default)' : '');
+                        if (m.id === savedModel) opt.selected = true;
+                        modelSelect.lastElementChild.appendChild(opt);
+                    });
+                }
+
+                // Populate Voice DNA dropdown
+                const voiceSelect = document.getElementById('pkg-voice-dna');
+                if (voiceSelect && data.context_assets?.voice_dna) {
+                    const saved = data.saved_preferences?.voice_dna_id;
+                    data.context_assets.voice_dna.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.name;
+                        if (a.id === saved) opt.selected = true;
+                        voiceSelect.appendChild(opt);
+                    });
+                }
+
+                // Populate ICP dropdown
+                const icpSelect = document.getElementById('pkg-icp');
+                if (icpSelect && data.context_assets?.icp) {
+                    const saved = data.saved_preferences?.icp_id;
+                    data.context_assets.icp.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.name;
+                        if (a.id === saved) opt.selected = true;
+                        icpSelect.appendChild(opt);
+                    });
+                }
+
+                // Populate Business Profile dropdown
+                const bizSelect = document.getElementById('pkg-biz-profile');
+                if (bizSelect && data.context_assets?.business_profile) {
+                    const saved = data.saved_preferences?.business_profile_id;
+                    data.context_assets.business_profile.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.name;
+                        if (a.id === saved) opt.selected = true;
+                        bizSelect.appendChild(opt);
+                    });
+                }
+
+                updateSettingsSummary();
+            } catch (e) {
+                console.warn('Could not load generation options:', e);
+            }
+        }
+
+        function updateSettingsSummary() {
+            const summary = document.getElementById('pkg-settings-summary');
+            if (!summary) return;
+            const model = document.getElementById('pkg-llm-model')?.selectedOptions[0]?.textContent;
+            const voice = document.getElementById('pkg-voice-dna')?.selectedOptions[0]?.textContent;
+            const parts = [];
+            if (model && !model.includes('default')) parts.push(model.split('(')[0].trim());
+            if (voice && !voice.includes('default')) parts.push(voice);
+            summary.textContent = parts.length > 0 ? parts.join(' + ') : 'Using defaults';
+        }
+
+        async function saveGenerationPreferences() {
+            try {
+                const userId = getUserId();
+                const modelVal = document.getElementById('pkg-llm-model')?.value || '';
+                const [provider, model] = modelVal.includes('|') ? modelVal.split('|') : [null, null];
+
+                const body = {
+                    llm_provider: provider || null,
+                    llm_model: model || null,
+                    voice_dna_id: document.getElementById('pkg-voice-dna')?.value || null,
+                    icp_id: document.getElementById('pkg-icp')?.value || null,
+                    business_profile_id: document.getElementById('pkg-biz-profile')?.value || null
+                };
+
+                const resp = await fetch('/api/thought-leadership/generation-preferences', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' },
+                    body: JSON.stringify(body)
+                });
+
+                if (resp.ok) {
+                    showToast('Generation preferences saved', 'success');
+                } else {
+                    showToast('Failed to save preferences', 'error');
+                }
+            } catch (e) {
+                showToast('Error saving preferences: ' + e.message, 'error');
+            }
+        }
+
+        // Load entries when modal opens (via MutationObserver on modal container)
+        let _pkgNeedsLoad = false;
+        const _pkgObserver = new MutationObserver(() => {
+            if (_pkgNeedsLoad && document.getElementById('pkg-calendar-entry')) {
+                _pkgNeedsLoad = false;
+                loadPackageEntries();
+                loadGenerationOptions();
+            }
+        });
+        _pkgObserver.observe(document.body, { childList: true, subtree: true });
     </script>
     <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
     <script>
         // Initialize Help Modal
         HelpModal.init({
