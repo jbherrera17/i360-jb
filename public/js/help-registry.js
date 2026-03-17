@@ -268,6 +268,11 @@ const HelpRegistry = {
             file: '/api/docs/embeddable-chat-user-guide.md',
             title: 'Embeddable Chat Widget Help'
         },
+        // Open Brain (Phase 78)
+        '/open-brain': {
+            file: '/api/docs/open-brain-user-guide.md',
+            title: 'Open Brain Help'
+        },
         // Chrome Extension documentation (accessible via Higgins chat)
         '/chrome-extension': {
             file: '/api/docs/chrome-extension-user-guide.md',

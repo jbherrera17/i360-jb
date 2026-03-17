@@ -106,7 +106,9 @@ const ALLOWED_DOCS = [
     'support-user-guide.md',
     // Embeddable Chat Widget (Phase 73)
     'embeddable-chat-user-guide.md',
-    'embeddable-chat-technical-guide.md'
+    'embeddable-chat-technical-guide.md',
+    // Open Brain (Phase 78)
+    'open-brain-user-guide.md'
 ];
 
 /**

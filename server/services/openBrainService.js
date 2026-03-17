@@ -1,6 +1,6 @@
 /**
  * INSIGHT 360 - Open Brain MCP Service
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Connects i360 to Open Brain via MCP Streamable HTTP transport.
  * Open Brain stores and retrieves "thoughts" — insights, decisions,
@@ -19,6 +19,15 @@ const http = require('http');
 const MCP_URL = process.env.OPEN_BRAIN_MCP_URL;
 const MCP_KEY = process.env.OPEN_BRAIN_MCP_KEY;
 
+// Warn if HTTP is used in production
+if (MCP_URL && !MCP_URL.startsWith('https://')) {
+    if (process.env.NODE_ENV === 'production') {
+        console.error('[OpenBrain] WARNING: OPEN_BRAIN_MCP_URL is not HTTPS. This is insecure in production.');
+    } else {
+        console.warn('[OpenBrain] Note: OPEN_BRAIN_MCP_URL is using HTTP (acceptable for local dev only).');
+    }
+}
+
 let _requestId = 1;
 
 /**
@@ -29,7 +38,7 @@ let _requestId = 1;
  */
 async function mcpRequest(method, params = {}) {
     if (!MCP_URL || !MCP_KEY) {
-        throw new Error('Open Brain MCP is not configured. Set OPEN_BRAIN_MCP_URL and OPEN_BRAIN_MCP_KEY.');
+        throw new Error('Open Brain MCP is not configured.');
     }
 
     const url = new URL(MCP_URL);
@@ -44,6 +53,7 @@ async function mcpRequest(method, params = {}) {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
+            'Authorization': `Bearer ${MCP_KEY}`,
             'Content-Length': Buffer.byteLength(body)
         }
     };
@@ -61,17 +71,24 @@ async function mcpRequest(method, params = {}) {
                     const parsed = JSON.parse(jsonStr);
 
                     if (parsed.error) {
-                        reject(new Error(`MCP error ${parsed.error.code}: ${parsed.error.message}`));
+                        // Log full error server-side, throw generic message
+                        console.error(`[OpenBrain] MCP error ${parsed.error.code}: ${parsed.error.message}`);
+                        reject(new Error('Open Brain service returned an error'));
                     } else {
                         resolve(parsed.result);
                     }
                 } catch (e) {
-                    reject(new Error(`Failed to parse Open Brain response: ${e.message}. Raw: ${raw.slice(0, 200)}`));
+                    // Log full details server-side only — never expose raw MCP response to client
+                    console.error(`[OpenBrain] Parse failure: ${e.message}. Raw response: ${raw.slice(0, 500)}`);
+                    reject(new Error('Failed to parse Open Brain response'));
                 }
             });
         });
 
-        req.on('error', reject);
+        req.on('error', (err) => {
+            console.error(`[OpenBrain] Connection error: ${err.message}`);
+            reject(new Error('Open Brain service is unreachable'));
+        });
         req.write(body);
         req.end();
     });

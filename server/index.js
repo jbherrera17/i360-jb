@@ -609,8 +609,8 @@ function initializeServices() {
         // Easy Start: Conversational onboarding with tool-use
         app.use('/api/easy-start', easyStartRoutes(supabase));
 
-        // Open Brain MCP Integration
-        app.use('/api/open-brain', openBrainRoutes);
+        // Open Brain MCP Integration (factory pattern with auth + module access)
+        app.use('/api/open-brain', openBrainRoutes(supabase));
 
         // Phase 63: MCP Integration System
         app.use('/api/platform/mcp', platformMcpRoutes(supabase));
