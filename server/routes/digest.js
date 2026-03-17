@@ -221,7 +221,7 @@ module.exports = function (supabase) {
     router.get('/context-assets', async (req, res) => {
         try {
             const orgId = req.headers['x-org-id'] || req.orgId || null;
-            let query = supabase.from('context_assets').select('id, name, type, description').eq('is_active', true);
+            let query = supabase.from('context_assets').select('id, name, asset_type, description').eq('is_active', true);
             if (orgId) query = query.or(`org_id.eq.${orgId},org_id.is.null`);
             const { data, error } = await query.order('name');
             if (error) throw error;

@@ -2620,7 +2620,8 @@
 
         async function fetchContextAssets() {
             try {
-                const response = await fetch('/api/context/assets');
+                const fetchFn = window.authFetch || fetch;
+                const response = await fetchFn('/api/context/assets');
                 const data = await response.json();
                 if (data.success) {
                     contextAssets = data.data;
@@ -3374,8 +3375,11 @@
             `;
         }
 
-        function openContextModal() {
+        async function openContextModal() {
             if (!selectedAgent) return;
+
+            // Re-fetch context assets so newly created ones appear
+            await fetchContextAssets();
 
             contextMappingModal = ModalService.create({
                 title: 'Add Context Asset',

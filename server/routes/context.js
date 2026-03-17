@@ -626,14 +626,15 @@ router.get('/assets', async (req, res) => {
 router.get('/assets/:id', async (req, res) => {
     try {
         const supabase = getSupabase(req);
+        const userId = getUserId(req);
         const { id } = req.params;
-        
+
         const { data, error } = await supabase
             .from('context_assets')
             .select('*')
             .eq('id', id)
             .single();
-        
+
         if (error) throw error;
         if (!data) {
             return res.status(404).json({
@@ -641,7 +642,26 @@ router.get('/assets/:id', async (req, res) => {
                 error: 'Asset not found'
             });
         }
-        
+
+        // Org ownership check: asset must belong to user's org or be a platform/shared asset
+        if (data.org_id) {
+            let userOrgId = req.headers['x-org-id'] || req.orgId || null;
+            if (!userOrgId && userId) {
+                const { data: userRow } = await supabase
+                    .from('users')
+                    .select('default_org_id')
+                    .eq('id', userId)
+                    .maybeSingle();
+                if (userRow?.default_org_id) userOrgId = userRow.default_org_id;
+            }
+            if (userOrgId && data.org_id !== userOrgId) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Asset not found'
+                });
+            }
+        }
+
         res.json({
             success: true,
             data: {

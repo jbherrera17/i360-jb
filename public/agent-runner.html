@@ -1792,9 +1792,10 @@
         let addContextModalInstance = null;
 
         async function openAddContextModal() {
-            // Load available assets first
+            // Load available assets fresh (so newly created ones appear)
             try {
-                const response = await fetch('/api/context/assets?limit=100');
+                const fetchFn = window.authFetch || fetch;
+                const response = await fetchFn('/api/context/assets?limit=100');
                 const data = await response.json();
 
                 if (data.success && data.data) {

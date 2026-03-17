@@ -175,7 +175,8 @@
 
         async function loadContextAssets() {
             try {
-                const resp = await fetch('/api/digest/context-assets');
+                const fetchFn = window.authFetch || fetch;
+                const resp = await fetchFn('/api/digest/context-assets');
                 const json = await resp.json();
                 if (json.success) contextAssets = json.data || [];
             } catch (err) { console.error(err); }
@@ -337,6 +338,9 @@
         async function addSource() {
             if (!ModalService) return;
 
+            // Refresh context assets so newly created ones appear
+            await loadContextAssets();
+
             const agentOptions = [{ value: '', label: 'None' }, ...agents.map(a => ({ value: a.id, label: a.name }))];
 
             const result = await ModalService.form({
@@ -391,6 +395,9 @@
         async function editSource(sourceId) {
             const source = sources.find(s => s.id === sourceId);
             if (!source || !ModalService) return;
+
+            // Refresh context assets so newly created ones appear
+            await loadContextAssets();
 
             const agentOptions = [{ value: '', label: 'None' }, ...agents.map(a => ({ value: a.id, label: a.name }))];
 

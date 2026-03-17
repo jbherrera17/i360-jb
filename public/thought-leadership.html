@@ -2294,11 +2294,14 @@
         async function loadGenerationOptions() {
             try {
                 const userId = getUserId();
-                const resp = await fetch('/api/thought-leadership/generation-options', { headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' } });
+                const fetchFn = window.authFetch || fetch;
+                const resp = await fetchFn('/api/thought-leadership/generation-options', { headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' } });
                 if (!resp.ok) return;
                 const data = await resp.json();
                 const modelSelect = document.getElementById('pkg-llm-model');
                 if (modelSelect && data.models) {
+                    // Clear existing options before repopulating
+                    modelSelect.innerHTML = '<option value="">Use agent default</option>';
                     const savedModel = data.saved_preferences?.llm_model || '';
                     let currentProvider = '';
                     data.models.forEach(m => {
@@ -2311,16 +2314,22 @@
                 }
                 const voiceSelect = document.getElementById('pkg-voice-dna');
                 if (voiceSelect && data.context_assets?.voice_dna) {
+                    // Clear existing options before repopulating
+                    voiceSelect.innerHTML = '<option value="">None</option>';
                     const saved = data.saved_preferences?.voice_dna_id;
                     data.context_assets.voice_dna.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; if (a.id === saved) o.selected = true; voiceSelect.appendChild(o); });
                 }
                 const icpSelect = document.getElementById('pkg-icp');
                 if (icpSelect && data.context_assets?.icp) {
+                    // Clear existing options before repopulating
+                    icpSelect.innerHTML = '<option value="">None</option>';
                     const saved = data.saved_preferences?.icp_id;
                     data.context_assets.icp.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; if (a.id === saved) o.selected = true; icpSelect.appendChild(o); });
                 }
                 const bizSelect = document.getElementById('pkg-biz-profile');
                 if (bizSelect && data.context_assets?.business_profile) {
+                    // Clear existing options before repopulating
+                    bizSelect.innerHTML = '<option value="">None</option>';
                     const saved = data.saved_preferences?.business_profile_id;
                     data.context_assets.business_profile.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; if (a.id === saved) o.selected = true; bizSelect.appendChild(o); });
                 }

@@ -466,14 +466,14 @@ async function buildContextBlock(contextAssetIds, orgId) {
 
     const { data: assets, error } = await supabase
         .from('context_assets')
-        .select('name, type, content')
+        .select('name, asset_type, content_text')
         .in('id', contextAssetIds);
 
     if (error || !assets || assets.length === 0) return '';
 
     let block = '\n\n## ORGANIZATIONAL CONTEXT (Apply this lens when analyzing)\n\n';
     for (const asset of assets) {
-        block += `### ${asset.name} (${asset.type})\n${asset.content}\n\n`;
+        block += `### ${asset.name} (${asset.asset_type})\n${asset.content_text}\n\n`;
     }
     return block;
 }
