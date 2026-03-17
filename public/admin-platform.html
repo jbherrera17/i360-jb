@@ -2478,90 +2478,192 @@
             }
         }
 
-        // Create new user
-        async function createUser() {
-            // Build org options from cached orgs
-            const orgOptions = [
-                { value: '', label: 'None - No organization' },
-                ...organizations.map(org => ({
-                    value: org.id,
-                    label: org.name
-                }))
-            ];
-
-            const result = await ModalService.form({
-                title: 'Invite New User',
-                fields: [
-                    {
-                        name: 'email',
-                        label: 'Email Address',
-                        type: 'email',
-                        required: true,
-                        placeholder: 'user@example.com'
-                    },
-                    {
-                        name: 'display_name',
-                        label: 'Display Name',
-                        type: 'text',
-                        placeholder: 'John Doe'
-                    },
-                    {
-                        name: 'org_id',
-                        label: 'Organization',
-                        type: 'select',
-                        options: orgOptions
-                    },
-                    {
-                        name: 'role',
-                        label: 'Role in Organization',
-                        type: 'select',
-                        options: [
-                            { value: 'member', label: 'Member' },
-                            { value: 'admin', label: 'Admin' },
-                            { value: 'viewer', label: 'Viewer' }
-                        ]
-                    }
-                ],
-                submitText: 'Send Invitation',
-                submitClass: 'btn-primary'
-            });
-
-            if (!result) return;
-
-            // Validate
-            if (!result.email) {
-                showToast('Email is required', 'error');
-                return;
-            }
-
+        // Fetch departments for an organization
+        async function fetchOrgDepartments(orgId) {
+            if (!orgId) return [];
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch('/api/platform/users', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: result.email,
-                        display_name: result.display_name || null,
-                        org_id: result.org_id || null,
-                        role: result.role || 'member'
-                    })
+                const response = await fetch(`/api/platform/organizations/${orgId}/departments`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-
+                if (!response.ok) return [];
                 const data = await response.json();
-
-                if (response.ok) {
-                    showToast('Invitation sent! User will receive an email to set their password.', 'success');
-                    await loadAllData();
-                } else {
-                    showToast(data.error || 'Failed to send invitation', 'error');
-                }
+                return data.data || [];
             } catch (error) {
-                console.error('Error inviting user:', error);
-                showToast('Failed to send invitation', 'error');
+                console.error('Error fetching departments:', error);
+                return [];
             }
+        }
+
+        // Create new user — uses content modal with dynamic department loading
+        async function createUser() {
+            // Build org options HTML
+            const orgOptionsHtml = organizations.map(org =>
+                `<option value="${org.id}">${escapeHtml(org.name)}</option>`
+            ).join('');
+
+            const formHtml = `
+                <div style="display:flex;flex-direction:column;gap:1rem;padding:0.5rem 0;">
+                    <div class="i360-form-field">
+                        <label class="i360-form-label">Organization <span style="color:var(--danger)">*</span></label>
+                        <select id="invite-org" class="i360-form-input" style="width:100%">
+                            <option value="" disabled selected>Select an organization...</option>
+                            ${orgOptionsHtml}
+                        </select>
+                        <div id="invite-org-error" style="display:none;color:var(--danger);font-size:0.8rem;margin-top:0.25rem"></div>
+                    </div>
+                    <div class="i360-form-field">
+                        <label class="i360-form-label">Organization Role</label>
+                        <select id="invite-role" class="i360-form-input" style="width:100%">
+                            <option value="admin">Admin</option>
+                            <option value="member" selected>Member</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                    </div>
+                    <div class="i360-form-field">
+                        <label class="i360-form-label">Business Role</label>
+                        <select id="invite-business-role" class="i360-form-input" style="width:100%">
+                            <option value="executive">Executive</option>
+                            <option value="director">Director</option>
+                            <option value="manager">Manager</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="ic" selected>Individual Contributor</option>
+                        </select>
+                    </div>
+                    <div class="i360-form-field">
+                        <label class="i360-form-label">Department</label>
+                        <select id="invite-department" class="i360-form-input" style="width:100%" disabled>
+                            <option value="">Select an organization first...</option>
+                        </select>
+                        <div style="color:var(--text-muted);font-size:0.75rem;margin-top:0.25rem">Auto-selects Executive department when available</div>
+                    </div>
+                    <div class="i360-form-field">
+                        <label class="i360-form-label">Email Address <span style="color:var(--danger)">*</span></label>
+                        <input id="invite-email" type="email" class="i360-form-input" style="width:100%" placeholder="user@example.com" />
+                        <div id="invite-email-error" style="display:none;color:var(--danger);font-size:0.8rem;margin-top:0.25rem"></div>
+                    </div>
+                    <div class="i360-form-field">
+                        <label class="i360-form-label">Display Name</label>
+                        <input id="invite-name" type="text" class="i360-form-input" style="width:100%" placeholder="John Doe" />
+                    </div>
+                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:0.5rem">
+                        <button type="button" id="invite-cancel-btn" class="btn btn-secondary" style="padding:0.5rem 1.25rem">Cancel</button>
+                        <button type="button" id="invite-submit-btn" class="btn btn-primary" style="padding:0.5rem 1.25rem">Send Invitation</button>
+                    </div>
+                </div>
+            `;
+
+            const modal = ModalService.content({
+                title: 'Invite New User',
+                content: formHtml,
+                contentType: 'html',
+                width: '480px'
+            });
+
+            // Wire up org change to load departments dynamically
+            const orgSelect = document.getElementById('invite-org');
+            const deptSelect = document.getElementById('invite-department');
+
+            if (orgSelect && deptSelect) {
+                orgSelect.addEventListener('change', async () => {
+                    const selectedOrg = orgSelect.value;
+                    deptSelect.disabled = true;
+                    deptSelect.innerHTML = '<option value="">Loading departments...</option>';
+
+                    const departments = await fetchOrgDepartments(selectedOrg);
+
+                    if (departments.length === 0) {
+                        deptSelect.innerHTML = '<option value="">No departments found</option>';
+                    } else {
+                        deptSelect.innerHTML = '<option value="">None</option>' +
+                            departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+                        deptSelect.disabled = false;
+
+                        // Auto-select Executive department if available
+                        const execDept = departments.find(d => d.name.toLowerCase() === 'executive');
+                        if (execDept) {
+                            deptSelect.value = execDept.id;
+                        }
+                    }
+                });
+            }
+
+            // Wire up buttons
+            const cancelBtn = document.getElementById('invite-cancel-btn');
+            const submitBtn = document.getElementById('invite-submit-btn');
+
+            if (cancelBtn) cancelBtn.addEventListener('click', () => modal.close());
+
+            if (submitBtn) submitBtn.addEventListener('click', async () => {
+                // Validate
+                const email = document.getElementById('invite-email')?.value?.trim();
+                const orgId = document.getElementById('invite-org')?.value;
+                const orgError = document.getElementById('invite-org-error');
+                const emailError = document.getElementById('invite-email-error');
+
+                let valid = true;
+
+                if (!orgId) {
+                    if (orgError) { orgError.textContent = 'Organization is required'; orgError.style.display = ''; }
+                    valid = false;
+                } else if (orgError) {
+                    orgError.style.display = 'none';
+                }
+
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    if (emailError) { emailError.textContent = 'Valid email is required'; emailError.style.display = ''; }
+                    valid = false;
+                } else if (emailError) {
+                    emailError.style.display = 'none';
+                }
+
+                if (!valid) return;
+
+                const displayName = document.getElementById('invite-name')?.value?.trim() || null;
+                const role = document.getElementById('invite-role')?.value || 'member';
+                const businessRole = document.getElementById('invite-business-role')?.value || 'ic';
+                const departmentId = document.getElementById('invite-department')?.value || null;
+
+                // Disable button during submission
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
+
+                try {
+                    const token = localStorage.getItem('insight360_token');
+                    const response = await fetch('/api/platform/users', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email,
+                            display_name: displayName,
+                            org_id: orgId,
+                            role,
+                            business_role: businessRole,
+                            department_id: departmentId
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        modal.close();
+                        showToast('Invitation sent! User will receive an email to set their password.', 'success');
+                        await loadAllData();
+                    } else {
+                        showToast(data.error || 'Failed to send invitation', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Send Invitation';
+                    }
+                } catch (error) {
+                    console.error('Error inviting user:', error);
+                    showToast('Failed to send invitation', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Invitation';
+                }
+            });
         }
 
         // Resend invitation to a user with 'invited' status

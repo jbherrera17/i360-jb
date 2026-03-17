@@ -1116,6 +1116,36 @@ module.exports = function(supabase) {
     });
 
     /**
+     * GET /api/platform/organizations/:id/departments
+     * List departments for a specific organization (for user invite form)
+     */
+    router.get('/organizations/:id/departments', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data, error } = await supabase
+                .from('departments')
+                .select('id, name, icon, color, is_active')
+                .eq('org_id', id)
+                .eq('is_active', true)
+                .order('name');
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                data: data || []
+            });
+        } catch (error) {
+            console.error('Error fetching org departments:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    });
+
+    /**
      * PUT /api/platform/organizations/:id/tier
      * Change an organization's subscription tier
      */
@@ -1471,7 +1501,7 @@ module.exports = function(supabase) {
                             org_id,
                             role,
                             status,
-                            organization:organizations!inner(id, name, slug, settings)
+                            organization:organizations(id, name, slug, settings)
                         `)
                         .eq('user_id', user.id);
 
@@ -1725,7 +1755,7 @@ module.exports = function(supabase) {
      */
     router.post('/users', requireAdminWrite, async (req, res) => {
         try {
-            const { email, display_name, org_id, role } = req.body;
+            const { email, display_name, org_id, role, department_id, business_role } = req.body;
 
             if (!email) {
                 return res.status(400).json({
@@ -1785,7 +1815,8 @@ module.exports = function(supabase) {
                     status: 'invited',
                     invited_at: new Date().toISOString(),
                     invited_by: req.userId,
-                    default_org_id: org_id || null
+                    default_org_id: org_id || null,
+                    department_id: department_id || null
                 })
                 .select()
                 .single();
@@ -1802,16 +1833,19 @@ module.exports = function(supabase) {
 
             // If org_id provided, add user to organization
             if (org_id) {
+                const memberRecord = {
+                    user_id: userId,
+                    org_id,
+                    role: role || 'member',
+                    status: 'active',
+                    invited_by: req.userId,
+                    joined_at: new Date().toISOString()
+                };
+                if (business_role) memberRecord.business_role = business_role;
+
                 const { error: memberError } = await supabase
                     .from('organization_members')
-                    .insert({
-                        user_id: userId,
-                        org_id,
-                        role: role || 'member',
-                        status: 'active',
-                        invited_by: req.userId,
-                        joined_at: new Date().toISOString()
-                    });
+                    .insert(memberRecord);
 
                 if (memberError) {
                     console.error('Error adding user to org:', memberError);

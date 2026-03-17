@@ -10,7 +10,9 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/organizations
-     * List organizations the current user is a member of
+     * List organizations the current user is a member of.
+     * Platform admins see ALL organizations.
+     * During impersonation, returns only the impersonated org.
      */
     router.get('/', async (req, res) => {
         try {
@@ -22,6 +24,51 @@ module.exports = function(supabase) {
                 });
             }
 
+            // During impersonation: return only the impersonated org
+            if (req.isImpersonating && req.impersonation) {
+                const { data: impOrg, error: impError } = await supabase
+                    .from('organizations')
+                    .select('id, name, slug, owner_id, subscription_tier, subscription_status, settings, created_at')
+                    .eq('id', req.impersonation.org_id)
+                    .single();
+
+                if (impError) throw impError;
+
+                return res.json({
+                    success: true,
+                    data: [{
+                        ...impOrg,
+                        member_role: req.impersonation.role,
+                        member_status: 'active',
+                        joined_at: null
+                    }]
+                });
+            }
+
+            // Platform admins (not impersonating): return ALL organizations
+            if (req.isPlatformAdmin) {
+                const { data: allOrgs, error: allError } = await supabase
+                    .from('organizations')
+                    .select('id, name, slug, owner_id, subscription_tier, subscription_status, settings, created_at')
+                    .eq('is_active', true)
+                    .order('name');
+
+                if (allError) throw allError;
+
+                const organizations = (allOrgs || []).map(org => ({
+                    ...org,
+                    member_role: 'platform_admin',
+                    member_status: 'active',
+                    joined_at: null
+                }));
+
+                return res.json({
+                    success: true,
+                    data: organizations
+                });
+            }
+
+            // Regular users: return only orgs they're a member of
             const { data, error } = await supabase
                 .from('organization_members')
                 .select(`

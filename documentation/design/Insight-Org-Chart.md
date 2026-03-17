@@ -6,7 +6,7 @@
 
 ## Overview
 
-Insight 360 operates with **46 named AI agent skills** organized into five department teams, one cross-functional team, and utility skills. All agents follow an **orchestrator-to-specialist** delegation pattern aligned with the Parthenon governance framework.
+Insight 360 operates with **52 named AI agent skills** organized into six department teams, one cross-functional team, and utility skills. All agents follow an **orchestrator-to-specialist** delegation pattern aligned with the Parthenon governance framework.
 
 ```
                           ┌───────────────┐
@@ -14,15 +14,15 @@ Insight 360 operates with **46 named AI agent skills** organized into five depar
                           │   (James)     │
                           └──────┬────────┘
                                  │
-       ┌──────┬──────┬──────┬──────┬──────┬────────────┐
-       │      │      │      │      │      │            │
-  ┌────┴───┐┌─┴────┐┌┴─────┐┌┴─────┐┌┴─────┐┌─┴──────────┐
-  │Product ││Mktg  ││Sales ││Financ││Supprt││Cross-Funct.│
-  │pm-(11) ││mkt(9)││sal(8)││fin(6)││sup(6)││ biz-* (5)  │
-  │ Avery  ││Dakota││Tatum ││Marlow││Sloan ││(Any Orch)  │
-  └────┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬─────────┘
-       │       │       │       │       │       │
-   [10 agt][8 agt] [7 agt] [5 agt] [5 agt] [5 shared]
+       ┌──────┬──────┬──────┬──────┬──────┬──────┬────────────┐
+       │      │      │      │      │      │      │            │
+  ┌────┴───┐┌─┴────┐┌┴─────┐┌┴─────┐┌┴─────┐┌┴─────┐┌─┴──────────┐
+  │Product ││Mktg  ││Sales ││Financ││Supprt││  Ops ││Cross-Funct.│
+  │pm-(11) ││mkt(9)││sal(8)││fin(6)││sup(6)││ops(6)││ biz-* (5)  │
+  │ Avery  ││Dakota││Tatum ││Marlow││Sloan ││RilyO ││(Any Orch)  │
+  └────┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬─────────┘
+       │       │       │       │       │       │       │
+   [10 agt][8 agt] [7 agt] [5 agt] [5 agt] [5 agt] [5 shared]
 ```
 
 ---
@@ -197,6 +197,38 @@ Led by **Sloan** (Support Orchestrator). Manages the human operations layer AROU
 
 ---
 
+## Operations Team
+
+Led by **Riley-O** (Operations Orchestrator). Responsible for platform reliability, process optimization, vendor management, capacity planning, cost analysis, and SLA monitoring.
+
+| Agent | Persona | Skill ID | Role |
+|-------|---------|----------|------|
+| **Riley-O** | Operations Director | `ops-orchestrator` | Orchestrator — coordinates operations team, delegates, reviews, assembles deliverables |
+| **Kai** | Process Analyst | `ops-process-analyst` | Process audits, maturity assessment, SOP drafting, automation opportunities, post-mortems |
+| **Sage-O** | Vendor Manager | `ops-vendor-manager` | Vendor evaluation, RFP drafting, performance reviews, contract analysis |
+| **Nico** | Resource Planner | `ops-resource-planner` | Capacity planning, resource allocation, growth modeling, scaling recommendations |
+| **Rowan-O** | Cost Analyst | `ops-cost-analyst` | Spend tracking, cost optimization, budget variance, unit economics |
+| **Devon** | SLA Monitor | `ops-sla-monitor` | SLA compliance tracking, uptime analysis, incident impact, performance reporting |
+
+### Operations Workflows
+
+| ID | Workflow | Trigger |
+|----|----------|---------|
+| WF-OPS01 | Weekly Operations Review | Weekly cadence |
+| WF-OPS02 | Vendor Management Cycle | New vendor or renewal |
+| WF-OPS03 | Process Improvement Initiative | Audit or metrics trigger |
+| WF-OPS04 | Incident Response Coordination | Production incident |
+| WF-OPS05 | Capacity Planning & Scaling | Growth milestone or bottleneck |
+| WF-OPS06 | Operational Health Audit | Periodic or on-demand |
+
+### Cross-Team Connections
+- Rowan-O (ops-cost-analyst) complements Cameron (biz-finance) — ops-level cost tracking vs. ad-hoc business cases
+- Devon (ops-sla-monitor) feeds incident data to Sam (pm-incident-commander) for post-mortems
+- Nico (ops-resource-planner) validates capacity for Jordan (pm-release-coord) launch readiness
+- Sage-O (ops-vendor-manager) provides vendor data to Kendall (biz-pricing) for cost modeling
+
+---
+
 ## Cross-Functional Team (`biz-*`)
 
 No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Tatum, Marlowe, Sloan). Shared resources for capabilities that span multiple departments.
@@ -284,6 +316,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 | Synergi Sales Context | `.claude/skills/sales-shared/synergi-sales-context.md` | All `sales-*` skills |
 | Synergi Finance Context | `.claude/skills/fin-shared/synergi-finance-context.md` | All `fin-*` skills |
 | Synergi Support Context | `.claude/skills/sup-shared/synergi-support-context.md` | All `sup-*` skills |
+| Synergi Operations Context | `.claude/skills/ops-shared/synergi-operations-context.md` | All `ops-*` skills |
 | PM Context Assets | `.claude/skills/pm-spec-writer/context-assets.md` | `pm-*` skills |
 
 ---
@@ -294,7 +327,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 |---|-----------------|:------:|:---------:|:------------:|
 | 1 | Stakeholder Relations | Not Started | `sr-*` | TBD |
 | 2 | **Finance** | **Complete** | `fin-*` | Marlowe |
-| 3 | Operations | Not Started | `ops-*` | TBD |
+| 3 | **Operations** | **Complete** | `ops-*` | Riley-O |
 | 4 | **Sales** | **Complete** | `sales-*` | Tatum |
 | 5 | **Marketing** | **Complete** | `mkt-*` | Dakota |
 | 6 | Production | Not Started | `prod-*` | TBD |
@@ -312,7 +345,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 ### Delegation Model
 All teams use the same pattern:
 1. **Human PM** provides a task or decision
-2. **Orchestrator** (Avery, Dakota, Tatum, Marlowe, or Sloan) decomposes and delegates to specialists
+2. **Orchestrator** (Avery, Dakota, Tatum, Marlowe, Sloan, or Riley-O) decomposes and delegates to specialists
 3. **Specialists** produce structured outputs per their role
 4. **Orchestrator** reviews, resolves conflicts, assembles consolidated report
 5. **Human PM** approves or requests changes
@@ -344,8 +377,9 @@ All skills are designed for three deployment targets:
 | Insight 360 — Sales Team | 8 | -- | 8 |
 | Insight 360 — Finance Team | 6 | -- | 6 |
 | Insight 360 — Support Team | 6 | -- | 6 |
+| Insight 360 — Operations Team | 6 | -- | 6 |
 | Insight 360 — Cross-Functional | 5 | -- | 5 |
 | Insight 360 — Utilities | -- | 2 | 2 |
 | Content Creation System | -- | 23 | 23 |
 | Claude Skills (Marketplace) | -- | 2 | 2 |
-| **Total** | **45** | **27** | **72** |
+| **Total** | **51** | **27** | **78** |

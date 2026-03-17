@@ -529,6 +529,12 @@
         async function loadOrganizations() {
             try {
                 showLoading();
+
+                // Check impersonation state
+                const impersonationData = localStorage.getItem('insight360_impersonation');
+                let impersonation = null;
+                try { impersonation = impersonationData ? JSON.parse(impersonationData) : null; } catch (e) {}
+
                 const response = await authFetch('/api/organizations');
                 const result = await response.json();
 
@@ -536,15 +542,30 @@
                     organizations = result.data;
                     populateOrgSelect();
 
-                    // Load first org or saved preference
-                    const savedOrgId = localStorage.getItem('currentOrgId');
-                    const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+                    const select = document.getElementById('org-select');
 
-                    if (orgToLoad) {
-                        currentOrgId = orgToLoad.id;
-                        userRole = orgToLoad.member_role;
-                        document.getElementById('org-select').value = orgToLoad.id;
-                        await loadMembers();
+                    // During impersonation: lock to the impersonated org
+                    if (impersonation && impersonation.org_id) {
+                        const impOrg = organizations.find(o => o.id === impersonation.org_id);
+                        if (impOrg) {
+                            currentOrgId = impOrg.id;
+                            userRole = impersonation.role || impOrg.member_role;
+                            select.value = impOrg.id;
+                            select.disabled = true; // Lock dropdown during impersonation
+                            await loadMembers();
+                        }
+                    } else {
+                        // Normal: load first org or saved preference
+                        select.disabled = false;
+                        const savedOrgId = localStorage.getItem('currentOrgId');
+                        const orgToLoad = organizations.find(o => o.id === savedOrgId) || organizations[0];
+
+                        if (orgToLoad) {
+                            currentOrgId = orgToLoad.id;
+                            userRole = orgToLoad.member_role;
+                            select.value = orgToLoad.id;
+                            await loadMembers();
+                        }
                     }
 
                     updateUIForRole();
