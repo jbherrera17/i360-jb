@@ -205,7 +205,7 @@ let selectedOrgFilter = '';
 
 // Org filter state
 let userOrgId = null;
-let showOrgConversations = false;
+let conversationScope = 'mine'; // 'mine' | 'org' | 'all'
 
 // Panel collapse state
 let isPanelCollapsed = localStorage.getItem('chat-panel-collapsed') === 'true';
@@ -267,12 +267,15 @@ async function checkPlatformAdmin() {
         isPlatformAdmin = response.ok;
 
         if (isPlatformAdmin) {
-            // Show admin filter controls
-            const filterControls = document.getElementById('adminConversationFilters');
-            if (filterControls) {
-                filterControls.style.display = 'block';
+            // Add "All Organizations" option to scope selector
+            const scopeSelect = document.getElementById('conversationScope');
+            if (scopeSelect) {
+                const allOption = document.createElement('option');
+                allOption.value = 'all';
+                allOption.textContent = 'All Organizations';
+                scopeSelect.appendChild(allOption);
             }
-            // Load organizations for filter
+            // Load organizations for the admin org filter dropdown
             await loadOrganizations();
         }
     } catch (error) {
@@ -304,20 +307,23 @@ async function loadOrganizations() {
 }
 
 /**
- * Toggle between user's conversations and all conversations (admin)
+ * Handle conversation scope change (My / Org / All Organizations)
  */
-async function toggleAdminView() {
-    const checkbox = document.getElementById('showAllConversations');
-    showAllConversations = checkbox?.checked || false;
+async function changeConversationScope() {
+    const scopeSelect = document.getElementById('conversationScope');
+    conversationScope = scopeSelect?.value || 'mine';
 
-    // Show/hide org filter
-    const orgFilterRow = document.getElementById('orgFilterRow');
-    if (orgFilterRow) {
-        orgFilterRow.style.display = showAllConversations ? 'block' : 'none';
+    // Derive legacy flags from scope
+    showAllConversations = (conversationScope === 'all');
+
+    // Show org filter dropdown only for "All Organizations" scope
+    const scopeOrgFilter = document.getElementById('scopeOrgFilter');
+    if (scopeOrgFilter) {
+        scopeOrgFilter.style.display = (conversationScope === 'all') ? 'block' : 'none';
     }
 
-    // Reset org filter when toggling off
-    if (!showAllConversations) {
+    // Reset org filter when leaving "all" scope
+    if (conversationScope !== 'all') {
         selectedOrgFilter = '';
         const orgSelect = document.getElementById('orgFilter');
         if (orgSelect) orgSelect.value = '';
@@ -327,7 +333,7 @@ async function toggleAdminView() {
 }
 
 /**
- * Filter conversations by organization (admin)
+ * Filter conversations by organization (admin - within "All Organizations" scope)
  */
 async function filterByOrganization() {
     const orgSelect = document.getElementById('orgFilter');
@@ -361,7 +367,7 @@ function updatePanelToggleIcon() {
 }
 
 /**
- * Detect the current user's organization
+ * Detect the current user's organization and set up scope selector
  */
 async function detectUserOrg() {
     try {
@@ -369,24 +375,30 @@ async function detectUserOrg() {
         const data = await response.json();
         if (data.success && data.org_id) {
             userOrgId = data.org_id;
-            // Show org filter for users who belong to an org
-            const orgFilter = document.getElementById('orgConversationFilter');
-            if (orgFilter) {
-                orgFilter.style.display = 'block';
+            // Add "Organization" option to scope selector
+            const scopeSelect = document.getElementById('conversationScope');
+            if (scopeSelect) {
+                const orgOption = document.createElement('option');
+                orgOption.value = 'org';
+                orgOption.textContent = 'Organization';
+                // Insert before "All Organizations" if it exists, otherwise append
+                const allOption = scopeSelect.querySelector('option[value="all"]');
+                if (allOption) {
+                    scopeSelect.insertBefore(orgOption, allOption);
+                } else {
+                    scopeSelect.appendChild(orgOption);
+                }
             }
         }
+        // Show scope bar if user has an org OR is admin (more than just "mine" available)
+        const scopeBar = document.getElementById('conversationScopeBar');
+        const scopeSelect = document.getElementById('conversationScope');
+        if (scopeBar && scopeSelect && scopeSelect.options.length > 1) {
+            scopeBar.style.display = 'block';
+        }
     } catch (error) {
-        // No org context available - that's fine
+        // No org context available — scope bar stays hidden, only "mine" available
     }
-}
-
-/**
- * Toggle between user's own conversations and org-wide conversations
- */
-async function toggleOrgView() {
-    const checkbox = document.getElementById('showOrgConversations');
-    showOrgConversations = checkbox?.checked || false;
-    await loadConversations();
 }
 
 /**
@@ -1305,19 +1317,19 @@ function buildMultimodalContent(text, files) {
 async function loadConversations(filterOverrides = {}) {
     try {
         let url;
-        if (isPlatformAdmin && showAllConversations) {
-            // Admin view - get all conversations
+        if (conversationScope === 'all' && isPlatformAdmin) {
+            // Admin view - get all conversations across organizations
             url = '/api/conversations/admin/all?limit=50';
             if (selectedOrgFilter) {
                 url += `&org_id=${selectedOrgFilter}`;
             }
         } else {
-            // Normal user view - get own conversations (or org-wide if toggled)
+            // User view - own conversations or org-wide
             const params = new URLSearchParams({ limit: '50' });
             if (filterOverrides.starredOnly) params.set('starredOnly', 'true');
             if (filterOverrides.archivedOnly) params.set('archivedOnly', 'true');
             if (filterOverrides.search) params.set('search', filterOverrides.search);
-            if (showOrgConversations && userOrgId) params.set('org_id', userOrgId);
+            if (conversationScope === 'org' && userOrgId) params.set('org_id', userOrgId);
             url = `/api/conversations?${params.toString()}`;
         }
 
@@ -1395,11 +1407,11 @@ function renderConversationList() {
 function renderConversationItem(conv, isArchiveView, selectModeClass) {
         // Get user display name if available (show when viewing org or admin conversations)
         const userName = conv.users?.display_name || conv.users?.email || '';
-        const userDisplay = (showOrgConversations || showAllConversations) && userName ? `<span class="conversation-user">${escapeHtml(userName)}</span>` : '';
+        const userDisplay = (conversationScope !== 'mine') && userName ? `<span class="conversation-user">${escapeHtml(userName)}</span>` : '';
 
         // Get org name for admin view
         const orgName = conv.users?.organization?.name || '';
-        const orgDisplay = (showAllConversations && orgName) ? `<span class="conversation-org">${escapeHtml(orgName)}</span>` : '';
+        const orgDisplay = (conversationScope === 'all' && orgName) ? `<span class="conversation-org">${escapeHtml(orgName)}</span>` : '';
 
         const archiveBtn = isArchiveView
             ? `<button class="conversation-action" onclick="event.stopPropagation(); unarchiveConversation('${conv.id}')" title="Restore">

@@ -45,32 +45,55 @@
             pointer-events: none;
         }
 
-        /* Toggle button in chat header area */
+        /* Panel toggle button — sits in the chat header actions row */
         .panel-toggle-btn {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            z-index: 20;
-            background: var(--bg-tertiary);
+            background: none;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm, 6px);
             color: var(--text-secondary);
             cursor: pointer;
-            padding: 6px;
+            padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 0.35rem;
+            font-size: 0.8rem;
             transition: background 0.15s, color 0.15s;
         }
 
         .panel-toggle-btn:hover {
-            background: var(--bg-hover, var(--bg-secondary));
+            background: var(--bg-tertiary);
             color: var(--text-primary);
         }
 
         .panel-toggle-btn i {
             width: 16px;
             height: 16px;
+        }
+
+        /* Conversation scope selector — replaces dual checkboxes */
+        .conversation-scope-bar {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+        }
+
+        .conversation-scope-bar select {
+            width: 100%;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .conversation-scope-bar .scope-org-filter {
+            margin-top: 0.4rem;
+        }
+
+        .conversation-scope-bar .scope-org-filter select {
+            font-size: 0.75rem;
         }
 
         /* Resize handle on right edge of center panel */
@@ -514,6 +537,10 @@
             .panel-resize-handle {
                 display: none;
             }
+
+            .panel-toggle-btn {
+                display: none;
+            }
         }
 
         /* Prevent text selection while dragging */
@@ -580,6 +607,9 @@
                     </button>
                     <button class="help-btn" onclick="HelpModal.open()" title="Help">
                         <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="panel-toggle-btn" id="panelToggleBtn" onclick="toggleConversationPanel()" title="Toggle conversations panel">
+                        <i data-lucide="panel-right-open"></i>
                     </button>
                 </div>
             </header>
@@ -653,11 +683,6 @@
                 </div>
             </div>
 
-            <!-- Toggle button for conversation panel -->
-            <button class="panel-toggle-btn" id="panelToggleBtn" onclick="toggleConversationPanel()" title="Toggle conversations panel">
-                <i data-lucide="panel-right-open"></i>
-            </button>
-
             <!-- Resize handle on right edge of center panel -->
             <div class="panel-resize-handle" id="panelResizeHandle"></div>
         </main>
@@ -675,24 +700,14 @@
                     </button>
                 </div>
             </div>
-            <!-- Org filter (shown for all users with an org) -->
-            <div id="orgConversationFilter" class="conversation-filters" style="display: none;">
-                <div class="filter-row">
-                    <label class="filter-toggle">
-                        <input type="checkbox" id="showOrgConversations" onchange="toggleOrgView()">
-                        <span>Show org conversations</span>
-                    </label>
-                </div>
-            </div>
-            <!-- Admin filter controls (hidden by default, shown for platform admins) -->
-            <div id="adminConversationFilters" class="conversation-filters" style="display: none;">
-                <div class="filter-row">
-                    <label class="filter-toggle">
-                        <input type="checkbox" id="showAllConversations" onchange="toggleAdminView()">
-                        <span>Show all conversations</span>
-                    </label>
-                </div>
-                <div class="filter-row" id="orgFilterRow" style="display: none;">
+            <!-- Conversation scope selector -->
+            <div id="conversationScopeBar" class="conversation-scope-bar" style="display: none;">
+                <select id="conversationScope" onchange="changeConversationScope()">
+                    <option value="mine">My Conversations</option>
+                    <!-- "org" option added by JS if user has an org -->
+                    <!-- "all" option added by JS if user is platform admin -->
+                </select>
+                <div class="scope-org-filter" id="scopeOrgFilter" style="display: none;">
                     <select id="orgFilter" onchange="filterByOrganization()">
                         <option value="">All Organizations</option>
                     </select>
