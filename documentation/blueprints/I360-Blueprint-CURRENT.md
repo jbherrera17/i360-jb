@@ -1,28 +1,67 @@
-# Insight 360 Blueprint v3.77
+# Insight 360 Blueprint v3.78
 
-**Version:** 3.77
-**Date:** March 16, 2026
-**Status:** Current | Phase 77
+**Version:** 3.78
+**Date:** March 17, 2026
+**Status:** Current | Phase 78
 **Codename:** Chronicle
-**Previous Version:** v3.76 (TL Content Creation Workflow)
-**Latest Update:** Phase 77: TL Page UX Redesign — Two-Mode Workflow Cockpit
+**Previous Version:** v3.77 (TL Page UX Redesign)
+**Latest Update:** Phase 78: Context Asset Remediation + Open Brain Dashboard + Marketing Skills + Chat Fixes
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.77 delivers **Phase 77: TL Page UX Redesign** — a complete frontend restructure of the Thought Leadership page from a 7-section scrolling dashboard into a two-mode workflow cockpit. The default "This Week" mode auto-populates from the editorial calendar, provides one-click package generation with live pipeline progress, inline results with Preview/Edit/Regen, and publish-in-place. A "Settings" mode behind a gear icon houses all configuration (positioning, pillars, calendar, visibility, integrations) in 5 tabs. Content review lets users navigate to any past week and see their article, header image, and LinkedIn posts all in one place. Page reduced from 4,197 to 2,470 lines (41% smaller). Frontend-only change — no backend modifications.
+Insight 360 v3.78 delivers **Phase 78** — a four-workstream release addressing platform-wide context asset staleness, Open Brain visual dashboard redesign, the Marketing Skills Team launch, and chat/conversation fixes.
+
+The context asset remediation audited 20+ consumers across the application and fixed stale dropdown caches in 5 pages (agents, agent-runner, thought-leadership, digest-sources, digest), repaired the completely broken "Save as Context Asset" from Higgins chat, added org ownership enforcement on the single-asset API endpoint, and fixed silent data loss in the digest pipeline (wrong column names). Open Brain received a full visual dashboard rebuild with factory pattern routing and module access. The Marketing Skills Team (9 mkt-* Claude Code skills) marks the first Parthenon department rollout.
 
 Key deliverables:
-1. **Two-Mode Interface** — "This Week" execution mode (95% of visits) separated from "Settings" configuration mode (5%)
-2. **Smart Content Card** — Auto-populated from editorial calendar for current ISO week with pillar accent, format badges, editorial context
-3. **Live Generation Pipeline** — 5-step progress with 4 states per step (empty/active/done/failed), elapsed time, per-step retry
-4. **Inline Results & Content Review** — Article, AI version, image, LinkedIn posts displayed with Preview/Edit/Regen; auto-populates when viewing past weeks with stored content
-5. **Publishing Streak** — Consecutive-week counter motivates consistency
-6. **XSS Mitigation** — Markdown renderer hardened against script injection from LLM output
-7. **12 UX Principles Applied** — All workflow-first design principles from Phase 76 implemented in production
+1. **Context Asset Staleness Fix** — All dropdowns/selectors now re-fetch on modal/panel open; `authFetch()` on all consumers
+2. **Broken Chat Save Repaired** — `saveAsContextAsset()` corrected: right endpoint, right field names, right auth
+3. **Org Ownership on Asset Fetch** — `GET /api/context/assets/:id` now checks org membership (defense-in-depth)
+4. **Digest Pipeline Fix** — `digestPipeline.js` was querying non-existent columns; context blocks were silently empty
+5. **Open Brain Dashboard** — Visual redesign with factory pattern route, module access middleware, help system integration
+6. **Marketing Skills Team** — 9 specialized skills (Dakota, Harper, River, Sage, Blake, Finley, Rowan, Emery, Avery-M)
+7. **Chat/Conversation Enhancements** — Conversation service improvements and UI updates
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 78: What Was Completed
+
+### 1. Context Asset Consumer Remediation
+
+Audited 20+ locations where context assets are consumed. Fixed stale-cache pattern across all frontend consumers:
+
+| Page | Fix |
+|------|-----|
+| `agents.html` | Re-fetches on context modal open + `authFetch()` |
+| `agent-runner.html` | Switched to `authFetch()` |
+| `thought-leadership.html` | Clears selects before repopulating + `authFetch()` |
+| `digest-sources.html` | Re-fetches on source add/edit + `authFetch()` |
+| `digest.html` | Re-fetches on section add + `authFetch()` |
+
+Backend fixes:
+- `GET /api/context/assets/:id` — org ownership check (allows null-org platform assets)
+- `GET /api/digest/context-assets` — fixed column: `type` → `asset_type`
+- `digestPipeline.js` — fixed columns: `type, content` → `asset_type, content_text` (was silently empty)
+
+### 2. Chat Save as Context Asset (Broken → Fixed)
+
+`saveAsContextAsset()` in `chat.js` was posting to `/api/context` (non-existent) with invalid fields. Corrected to `/api/context/assets` with `asset_type: 'i360_knowledge'` and `content_json` via `authFetch()`.
+
+### 3. Open Brain Visual Dashboard Redesign
+
+Complete page rebuild with visual dashboard layout. Route converted to factory pattern with Supabase injection and `requireModule()` middleware. Help system integrated (user guide, help-registry, ALLOWED_DOCS).
+
+### 4. Marketing Skills Team (First Parthenon Dept Rollout)
+
+9 specialized Claude Code skills: orchestrator (Dakota), brand-voice (Harper), content (River), campaign (Sage), competitive (Blake), analytics (Finley), thought-leadership (Rowan), brand-review (Emery), icp-adapt (Avery-M). Shared context in `mkt-shared/synergi-context.md`.
+
+### 5. Chat/Conversation Enhancements
+
+Conversation route and service improvements with `chat.html` UI updates.
 
 ---
 
@@ -451,18 +490,19 @@ Comprehensive product requirements document for embedding Annie (Dr. Jon Mendels
 
 | Hash | Message |
 |------|---------|
-| `77311e0` | Phase 70 follow-up: fix cookie auth, org fallback, and duplicate .or() filter bug |
-| `f1d427e` | Add PM agent team skills, Phase 67/68 migrations, and unified runtime tests |
-| `171357c` | Add PM Agent Team executive summary documentation |
-| `5c10ff0` | Add Annie Chat Agent PRD with Calendly embed, conversation review, and pricing |
-| `4d4103f` | Fix nav panel: add org_id fallback to modules route, handle empty modules array |
+| `728c2bc` | Add Marketing Skills Team — 9 mkt-* Claude Code skills for Synergi marketing dept |
+| `3362cda` | Open Brain Visual Dashboard Redesign — factory pattern, auth, module access |
+| `d21b20e` | Chat & conversation enhancements + fix broken Save as Context Asset |
+| `100be16` | Fix stale context asset dropdowns across all consumers |
+| `3817eb4` | Add missing admin tiles: Embeddable Chat Widget, Customer Support AI, Open Brain, MCP Catalog |
 
 ---
 
 ## Next Steps
 
-1. **Annie Chat Agent** — Await pricing approval, then begin Phase 1 (widget infrastructure)
-2. **Phase 71b** — Deploy embeddable widget JS, Stripe/Slack connections
-3. **Phase 52** — Production deployment (Supabase Pro, custom domain)
-4. **Phase 53** — Navigation restructure
-5. **Security/FMEA review** — Run before Annie launch
+1. **EventBus for cross-page asset updates** — Consider BroadcastChannel API for real-time context asset sync across open tabs
+2. **Monitor digest context quality** — Previously empty context blocks should now contain actual content
+3. **Instrument Open Brain dashboard** — Frontend event tracking for usage analytics
+4. **Phase 52** — Production deployment (Supabase Pro, custom domain)
+5. **Phase 53** — Navigation restructure
+6. **Marketing department Parthenon rollout** — Configure agents and workflows using new mkt-* skills
