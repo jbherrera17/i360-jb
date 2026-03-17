@@ -1,12 +1,1 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//Users/jbh17/**)",
-      "Bash(gh auth status:*)",
-      "Bash(git rebase:*)",
-      "Bash(git hooks:*)",
-      "Bash(git hook run:*)",
-      "Bash(npm uninstall:*)"
-    ]
-  }
-}
+{}
