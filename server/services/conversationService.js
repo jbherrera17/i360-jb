@@ -52,12 +52,31 @@ async function getConversations(options = {}) {
         limit = 50,
         offset = 0,
         userId = null,
+        orgId = null,
         includeUserInfo = true,
         includeArchived = false,
         starredOnly = false,
         archivedOnly = false,
         search = null
     } = options;
+
+    // If org filtering requested, resolve org member user IDs first
+    let orgUserIds = null;
+    if (orgId) {
+        const { data: members, error: membersError } = await supabase
+            .from('organization_members')
+            .select('user_id')
+            .eq('org_id', orgId);
+
+        if (membersError) {
+            console.error('Error fetching org members for conversation filter:', membersError);
+        } else if (members && members.length > 0) {
+            orgUserIds = members.map(m => m.user_id);
+        } else {
+            // No members in org - return empty
+            return [];
+        }
+    }
 
     let query = supabase
         .from('conversations')
@@ -76,8 +95,10 @@ async function getConversations(options = {}) {
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-    // Filter by user_id if provided
-    if (userId) {
+    // Filter by org members or specific user
+    if (orgUserIds) {
+        query = query.in('user_id', orgUserIds);
+    } else if (userId) {
         query = query.eq('user_id', userId);
     }
 
@@ -764,6 +785,25 @@ function exportAsMarkdown(conversation) {
     return lines.join('\n');
 }
 
+/**
+ * Get the user's organization ID from organization_members
+ * @param {string} userId - User UUID
+ * @returns {string|null} Organization ID or null
+ */
+async function getUserOrgId(userId) {
+    if (!userId) return null;
+
+    const { data, error } = await supabase
+        .from('organization_members')
+        .select('org_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .single();
+
+    if (error || !data) return null;
+    return data.org_id;
+}
+
 module.exports = {
     createConversation,
     getConversations,
@@ -776,5 +816,6 @@ module.exports = {
     getAdminConversations,
     getConversationStats,
     getAdminConversation,
-    exportAsMarkdown
+    exportAsMarkdown,
+    getUserOrgId
 };

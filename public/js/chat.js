@@ -203,6 +203,13 @@ let showAllConversations = false;
 let organizations = [];
 let selectedOrgFilter = '';
 
+// Org filter state
+let userOrgId = null;
+let showOrgConversations = false;
+
+// Panel collapse state
+let isPanelCollapsed = localStorage.getItem('chat-panel-collapsed') === 'true';
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
     // Initialize icons
@@ -213,8 +220,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load available models
     await loadModels();
 
+    // Restore panel collapse state
+    if (isPanelCollapsed) {
+        const panel = document.querySelector('.chat-history-panel');
+        if (panel) panel.classList.add('collapsed');
+        updatePanelToggleIcon();
+    }
+
     // Check if user is platform admin
     await checkPlatformAdmin();
+
+    // Detect user's org for org filtering
+    await detectUserOrg();
 
     // Load saved conversations
     await loadConversations();
@@ -315,6 +332,60 @@ async function toggleAdminView() {
 async function filterByOrganization() {
     const orgSelect = document.getElementById('orgFilter');
     selectedOrgFilter = orgSelect?.value || '';
+    await loadConversations();
+}
+
+/**
+ * Toggle the conversation history panel open/closed
+ */
+function toggleConversationPanel() {
+    const panel = document.querySelector('.chat-history-panel');
+    if (!panel) return;
+
+    isPanelCollapsed = !isPanelCollapsed;
+    panel.classList.toggle('collapsed', isPanelCollapsed);
+    localStorage.setItem('chat-panel-collapsed', isPanelCollapsed);
+    updatePanelToggleIcon();
+}
+
+/**
+ * Update the panel toggle button icon based on state
+ */
+function updatePanelToggleIcon() {
+    const btn = document.getElementById('panelToggleBtn');
+    if (!btn) return;
+    const iconName = isPanelCollapsed ? 'panel-right-close' : 'panel-right-open';
+    btn.innerHTML = `<i data-lucide="${iconName}"></i>`;
+    btn.title = isPanelCollapsed ? 'Show conversations panel' : 'Hide conversations panel';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+/**
+ * Detect the current user's organization
+ */
+async function detectUserOrg() {
+    try {
+        const response = await fetch('/api/conversations/user-org');
+        const data = await response.json();
+        if (data.success && data.org_id) {
+            userOrgId = data.org_id;
+            // Show org filter for users who belong to an org
+            const orgFilter = document.getElementById('orgConversationFilter');
+            if (orgFilter) {
+                orgFilter.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        // No org context available - that's fine
+    }
+}
+
+/**
+ * Toggle between user's own conversations and org-wide conversations
+ */
+async function toggleOrgView() {
+    const checkbox = document.getElementById('showOrgConversations');
+    showOrgConversations = checkbox?.checked || false;
     await loadConversations();
 }
 
@@ -1241,11 +1312,12 @@ async function loadConversations(filterOverrides = {}) {
                 url += `&org_id=${selectedOrgFilter}`;
             }
         } else {
-            // Normal user view - get own conversations
+            // Normal user view - get own conversations (or org-wide if toggled)
             const params = new URLSearchParams({ limit: '50' });
             if (filterOverrides.starredOnly) params.set('starredOnly', 'true');
             if (filterOverrides.archivedOnly) params.set('archivedOnly', 'true');
             if (filterOverrides.search) params.set('search', filterOverrides.search);
+            if (showOrgConversations && userOrgId) params.set('org_id', userOrgId);
             url = `/api/conversations?${params.toString()}`;
         }
 
@@ -1321,9 +1393,9 @@ function renderConversationList() {
  * Render a single conversation item
  */
 function renderConversationItem(conv, isArchiveView, selectModeClass) {
-        // Get user display name if available
+        // Get user display name if available (show when viewing org or admin conversations)
         const userName = conv.users?.display_name || conv.users?.email || '';
-        const userDisplay = userName ? `<span class="conversation-user">${escapeHtml(userName)}</span>` : '';
+        const userDisplay = (showOrgConversations || showAllConversations) && userName ? `<span class="conversation-user">${escapeHtml(userName)}</span>` : '';
 
         // Get org name for admin view
         const orgName = conv.users?.organization?.name || '';
@@ -3378,19 +3450,17 @@ async function saveAsContextAsset() {
     if (!name) return;
 
     try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch('/api/context', {
+        const fetchFn = window.authFetch || fetch;
+        const response = await fetchFn('/api/context/assets', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 name: name,
-                type: 'knowledge',
-                content: currentArtifactContent,
-                description: `Saved from ${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} conversation`,
-                is_active: true
+                asset_type: 'i360_knowledge',
+                content_json: { content: currentArtifactContent },
+                description: `Saved from ${(typeof BrandingService !== 'undefined') ? BrandingService.getAssistantName() : 'Higgins'} conversation`
             })
         });
 

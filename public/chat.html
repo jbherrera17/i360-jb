@@ -32,6 +32,45 @@
         .chat-history-panel {
             width: var(--right-panel-width, 400px);
             flex-shrink: 0;
+            transition: width 0.25s ease, margin 0.25s ease, opacity 0.2s ease;
+        }
+
+        .chat-history-panel.collapsed {
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Toggle button in chat header area */
+        .panel-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            z-index: 20;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm, 6px);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .panel-toggle-btn:hover {
+            background: var(--bg-hover, var(--bg-secondary));
+            color: var(--text-primary);
+        }
+
+        .panel-toggle-btn i {
+            width: 16px;
+            height: 16px;
         }
 
         /* Resize handle on right edge of center panel */
@@ -614,6 +653,11 @@
                 </div>
             </div>
 
+            <!-- Toggle button for conversation panel -->
+            <button class="panel-toggle-btn" id="panelToggleBtn" onclick="toggleConversationPanel()" title="Toggle conversations panel">
+                <i data-lucide="panel-right-open"></i>
+            </button>
+
             <!-- Resize handle on right edge of center panel -->
             <div class="panel-resize-handle" id="panelResizeHandle"></div>
         </main>
@@ -629,6 +673,15 @@
                     <button onclick="startNewChat()" class="btn-icon" title="New Chat">
                         <i data-lucide="plus"></i>
                     </button>
+                </div>
+            </div>
+            <!-- Org filter (shown for all users with an org) -->
+            <div id="orgConversationFilter" class="conversation-filters" style="display: none;">
+                <div class="filter-row">
+                    <label class="filter-toggle">
+                        <input type="checkbox" id="showOrgConversations" onchange="toggleOrgView()">
+                        <span>Show org conversations</span>
+                    </label>
                 </div>
             </div>
             <!-- Admin filter controls (hidden by default, shown for platform admins) -->

@@ -223,12 +223,30 @@ router.get('/export/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/conversations/user-org
+ * Get the current user's organization ID for org filtering
+ */
+router.get('/user-org', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        if (!userId) {
+            return res.json({ success: true, org_id: null });
+        }
+        const orgId = await conversationService.getUserOrgId(userId);
+        res.json({ success: true, org_id: orgId });
+    } catch (error) {
+        console.error('Error getting user org:', error);
+        res.json({ success: true, org_id: null });
+    }
+});
+
+/**
  * GET /api/conversations
- * List all conversations for the current user
+ * List all conversations for the current user (or org-wide with org_id param)
  */
 router.get('/', async (req, res) => {
     try {
-        const { limit = 50, offset = 0, includeArchived, starredOnly, archivedOnly, search } = req.query;
+        const { limit = 50, offset = 0, includeArchived, starredOnly, archivedOnly, search, org_id } = req.query;
         const userId = getUserId(req);
 
         const conversations = await conversationService.getConversations({
@@ -238,7 +256,8 @@ router.get('/', async (req, res) => {
             starredOnly: starredOnly === 'true',
             archivedOnly: archivedOnly === 'true',
             search: search || null,
-            userId
+            userId,
+            orgId: org_id || null
         });
 
         res.json({
