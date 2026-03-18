@@ -1,30 +1,61 @@
-# Insight 360 Blueprint v3.78
+# Insight 360 Blueprint v3.79
 
-**Version:** 3.78
-**Date:** March 17, 2026
-**Status:** Current | Phase 78
+**Version:** 3.79
+**Date:** March 18, 2026
+**Status:** Current | Phase 79
 **Codename:** Chronicle
-**Previous Version:** v3.77 (TL Page UX Redesign)
-**Latest Update:** Phase 78: Context Asset Remediation + Open Brain Dashboard + Marketing Skills + Chat Fixes
+**Previous Version:** v3.78 (Context Asset Remediation + Open Brain Dashboard + Marketing Skills + Chat Fixes)
+**Latest Update:** Phase 79: Platform Admin Org Scope + Org Chart Updates
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.78 delivers **Phase 78** — a four-workstream release addressing platform-wide context asset staleness, Open Brain visual dashboard redesign, the Marketing Skills Team launch, and chat/conversation fixes.
+Insight 360 v3.79 delivers **Phase 79** — platform admin org scoping for the context assets page and comprehensive org chart documentation updates reflecting the completed Parthenon department rollout.
 
-The context asset remediation audited 20+ consumers across the application and fixed stale dropdown caches in 5 pages (agents, agent-runner, thought-leadership, digest-sources, digest), repaired the completely broken "Save as Context Asset" from Higgins chat, added org ownership enforcement on the single-asset API endpoint, and fixed silent data loss in the digest pipeline (wrong column names). Open Brain received a full visual dashboard rebuild with factory pattern routing and module access. The Marketing Skills Team (9 mkt-* Claude Code skills) marks the first Parthenon department rollout.
+Platform admins can now filter context assets by organization via a dropdown selector on the context page, with support for "All Organizations" view and impersonation-aware state locking. The org chart documentation was updated to reflect the completed Executive team (3 agents), three new cross-functional agents (Marley, Skyler, Jordan-B), and updated totals (58 named skills, 84 total).
 
 Key deliverables:
-1. **Context Asset Staleness Fix** — All dropdowns/selectors now re-fetch on modal/panel open; `authFetch()` on all consumers
-2. **Broken Chat Save Repaired** — `saveAsContextAsset()` corrected: right endpoint, right field names, right auth
-3. **Org Ownership on Asset Fetch** — `GET /api/context/assets/:id` now checks org membership (defense-in-depth)
-4. **Digest Pipeline Fix** — `digestPipeline.js` was querying non-existent columns; context blocks were silently empty
-5. **Open Brain Dashboard** — Visual redesign with factory pattern route, module access middleware, help system integration
-6. **Marketing Skills Team** — 9 specialized skills (Dakota, Harper, River, Sage, Blake, Finley, Rowan, Emery, Avery-M)
-7. **Chat/Conversation Enhancements** — Conversation service improvements and UI updates
+1. **Platform Admin Org Scope Selector** — Context page gets org-aware filtering for platform admins; regular users unaffected
+2. **Backend Org Scoping** — `GET /api/context/assets` route supports `x-org-id: all` header for cross-org asset visibility
+3. **Impersonation Awareness** — Org selector locks to impersonated org during admin impersonation sessions
+4. **Org Chart Updates** — Executive team added, cross-functional team expanded to 8, Parthenon rollout status updated
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 79: What Was Completed
+
+### 1. Platform Admin Org Scope Selector (Context Page)
+
+Platform admins now see an organization dropdown on the context assets page, enabling cross-org asset management:
+
+| Feature | Description |
+|---------|-------------|
+| Org dropdown | Populated from `/api/organizations`, shown only for verified platform admins |
+| "All Organizations" mode | Shows assets across all orgs (admin only) |
+| Per-org filtering | Select a specific org to see only their assets |
+| Impersonation lock | During impersonation, dropdown locks to the impersonated org |
+| Default behavior | Non-admin users see no change; scoping via `currentOrgId` as before |
+
+**Frontend changes:** `context.html` (org selector UI), `context.js` (state management, `initOrgScope()`, `apiCall()` org-aware routing)
+
+**Backend changes:** `context.js` route — `GET /api/context/assets` now handles `x-org-id: all` header, platform admins bypass visibility-based access control and see all assets optionally scoped by selected org.
+
+### 2. Org Chart Documentation Update
+
+Updated `Insight-Org-Chart.md` to reflect the complete Parthenon agent rollout:
+
+| Change | Before | After |
+|--------|--------|-------|
+| Named agent skills | 52 | 58 |
+| Total skills | 78 | 84 |
+| Executive team | Partial | Complete (Morgan-E, Quinn-E, Sage-E) |
+| Cross-functional team | 5 agents | 8 agents (+Marley, Skyler, Jordan-B) |
+| Parthenon Executive pillar | Not Started | Complete |
+| Parthenon Production pillar | Not Started | Covered by PM + Ops |
+| Parthenon Stakeholder Relations | Not Started | Deferred |
 
 ---
 
@@ -490,6 +521,7 @@ Comprehensive product requirements document for embedding Annie (Dr. Jon Mendels
 
 | Hash | Message |
 |------|---------|
+| `a42938f` | Add platform admin org scope selector to context page, update org chart |
 | `728c2bc` | Add Marketing Skills Team — 9 mkt-* Claude Code skills for Synergi marketing dept |
 | `3362cda` | Open Brain Visual Dashboard Redesign — factory pattern, auth, module access |
 | `d21b20e` | Chat & conversation enhancements + fix broken Save as Context Asset |
@@ -500,9 +532,8 @@ Comprehensive product requirements document for embedding Annie (Dr. Jon Mendels
 
 ## Next Steps
 
-1. **EventBus for cross-page asset updates** — Consider BroadcastChannel API for real-time context asset sync across open tabs
-2. **Monitor digest context quality** — Previously empty context blocks should now contain actual content
-3. **Instrument Open Brain dashboard** — Frontend event tracking for usage analytics
+1. **Extend org scope to other admin pages** — Apply the same org selector pattern to agents, skills, and other admin-facing pages
+2. **EventBus for cross-page asset updates** — Consider BroadcastChannel API for real-time context asset sync across open tabs
+3. **Monitor digest context quality** — Previously empty context blocks should now contain actual content
 4. **Phase 52** — Production deployment (Supabase Pro, custom domain)
 5. **Phase 53** — Navigation restructure
-6. **Marketing department Parthenon rollout** — Configure agents and workflows using new mkt-* skills
