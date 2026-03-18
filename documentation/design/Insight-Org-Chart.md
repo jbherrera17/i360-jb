@@ -6,7 +6,7 @@
 
 ## Overview
 
-Insight 360 operates with **52 named AI agent skills** organized into six department teams, one cross-functional team, and utility skills. All agents follow an **orchestrator-to-specialist** delegation pattern aligned with the Parthenon governance framework.
+Insight 360 operates with **58 named AI agent skills** organized into seven department teams, one cross-functional team, and utility skills. All agents follow an **orchestrator-to-specialist** delegation pattern aligned with the Parthenon governance framework.
 
 ```
                           ┌───────────────┐
@@ -14,15 +14,21 @@ Insight 360 operates with **52 named AI agent skills** organized into six depart
                           │   (James)     │
                           └──────┬────────┘
                                  │
-       ┌──────┬──────┬──────┬──────┬──────┬──────┬────────────┐
+                          ┌──────┴──────┐
+                          │  Executive  │
+                          │  exec-*(3)  │
+                          │  Morgan-E   │
+                          └──────┬──────┘
+                                 │
+       ┌──────┬──────┬──────┬────┴─┬──────┬──────┬────────────┐
        │      │      │      │      │      │      │            │
   ┌────┴───┐┌─┴────┐┌┴─────┐┌┴─────┐┌┴─────┐┌┴─────┐┌─┴──────────┐
   │Product ││Mktg  ││Sales ││Financ││Supprt││  Ops ││Cross-Funct.│
-  │pm-(11) ││mkt(9)││sal(8)││fin(6)││sup(6)││ops(6)││ biz-* (5)  │
+  │pm-(11) ││mkt(9)││sal(8)││fin(6)││sup(6)││ops(6)││ biz-* (8)  │
   │ Avery  ││Dakota││Tatum ││Marlow││Sloan ││RilyO ││(Any Orch)  │
   └────┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬─────────┘
        │       │       │       │       │       │       │
-   [10 agt][8 agt] [7 agt] [5 agt] [5 agt] [5 agt] [5 shared]
+   [10 agt][8 agt] [7 agt] [5 agt] [5 agt] [5 agt] [8 shared]
 ```
 
 ---
@@ -229,9 +235,36 @@ Led by **Riley-O** (Operations Orchestrator). Responsible for platform reliabili
 
 ---
 
+## Executive Team
+
+Led by **Morgan-E** (Executive Orchestrator). Sits ABOVE department orchestrators — coordinates cross-department strategic decisions, prepares JB for CEO-level decisions, and ensures departments work as one company.
+
+| Agent | Persona | Skill ID | Role |
+|-------|---------|----------|------|
+| **Morgan-E** | Executive Orchestrator | `exec-orchestrator` | Cross-dept coordination, strategic decisions, board prep, initiative prioritization |
+| **Quinn-E** | Chief of Staff | `exec-chief-of-staff` | Decision tracking, meeting prep, status consolidation, action item follow-through |
+| **Sage-E** | Strategic Advisor | `exec-strategic-advisor` | Market vision, scenario planning, competitive moats, innovation radar, strategic narrative |
+
+### Executive Workflows
+
+| ID | Workflow | Trigger |
+|----|----------|---------|
+| WF-EXEC01 | Strategic Planning Session | Quarterly or on-demand |
+| WF-EXEC02 | Cross-Department Decision | Inter-dept conflict or shared initiative |
+| WF-EXEC03 | Executive Review Preparation | Weekly/bi-weekly cadence |
+| WF-EXEC04 | Board/Investor Preparation | Quarterly or fundraising |
+| WF-EXEC05 | Initiative Prioritization | New initiative proposals |
+| WF-EXEC06 | Partnership Evaluation | Partnership opportunity |
+
+### Distinction: Sage-E vs. Ellis
+- **Ellis** (`biz-strategy`): Tactical strategy — OKR cascading, initiative prioritization, BSC, resource allocation. Thinks in quarters.
+- **Sage-E** (`exec-strategic-advisor`): Visionary strategy — market positioning, competitive moats, scenario planning, disruption radar. Thinks in years.
+
+---
+
 ## Cross-Functional Team (`biz-*`)
 
-No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Tatum, Marlowe, Sloan). Shared resources for capabilities that span multiple departments.
+No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Tatum, Marlowe, Sloan, Riley-O, Morgan-E). Shared resources for capabilities that span multiple departments.
 
 | Agent | Persona | Skill ID | Role | Accessed By |
 |-------|---------|----------|------|-------------|
@@ -240,6 +273,9 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 | **Cameron** | Finance Analyst | `biz-finance` | Ad-hoc business cases, unit economics, P&L projections | All orchestrators |
 | **Ellis** | Strategic Planner | `biz-strategy` | OKR cascading, initiative prioritization, BSC, strategic alignment | All orchestrators |
 | **Peyton** | Customer Success | `biz-customer-success` | Customer health scores, churn risk, retention, QBR prep | All orchestrators |
+| **Marley** | Follow-Up Manager | `biz-follow-up` | Scheduled follow-ups, drift signals, trigger tracking, deadline monitoring | All orchestrators |
+| **Skyler** | Data Analyst | `biz-data` | Cross-dept dashboards, KPI analysis, trend detection, correlation analysis | All orchestrators |
+| **Jordan-B** | Partnerships & BD | `biz-partnerships` | Partner evaluation, integration opportunities, channel strategy, co-marketing | All orchestrators |
 
 ---
 
@@ -317,6 +353,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 | Synergi Finance Context | `.claude/skills/fin-shared/synergi-finance-context.md` | All `fin-*` skills |
 | Synergi Support Context | `.claude/skills/sup-shared/synergi-support-context.md` | All `sup-*` skills |
 | Synergi Operations Context | `.claude/skills/ops-shared/synergi-operations-context.md` | All `ops-*` skills |
+| Synergi Executive Context | `.claude/skills/exec-shared/synergi-executive-context.md` | All `exec-*` skills |
 | PM Context Assets | `.claude/skills/pm-spec-writer/context-assets.md` | `pm-*` skills |
 
 ---
@@ -325,14 +362,14 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 
 | # | Parthenon Pillar | Status | Namespace | Orchestrator |
 |---|-----------------|:------:|:---------:|:------------:|
-| 1 | Stakeholder Relations | Not Started | `sr-*` | TBD |
+| 1 | Stakeholder Relations | Deferred | `sr-*` | TBD |
 | 2 | **Finance** | **Complete** | `fin-*` | Marlowe |
 | 3 | **Operations** | **Complete** | `ops-*` | Riley-O |
 | 4 | **Sales** | **Complete** | `sales-*` | Tatum |
 | 5 | **Marketing** | **Complete** | `mkt-*` | Dakota |
-| 6 | Production | Not Started | `prod-*` | TBD |
+| 6 | Production | Covered by PM + Ops | — | Avery + Riley-O |
 | 7 | **Support (Service)** | **Complete** | `sup-*` | Sloan |
-| 8 | Executive | Partial | `exec-*` | TBD |
+| 8 | **Executive** | **Complete** | `exec-*` | Morgan-E |
 
 **Product Management** (`pm-*`, Avery) predates the Parthenon rollout but is fully operational.
 **Cross-Functional** (`biz-*`, 5 skills) serves all pillars.
@@ -345,7 +382,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 ### Delegation Model
 All teams use the same pattern:
 1. **Human PM** provides a task or decision
-2. **Orchestrator** (Avery, Dakota, Tatum, Marlowe, Sloan, or Riley-O) decomposes and delegates to specialists
+2. **Orchestrator** (Morgan-E, Avery, Dakota, Tatum, Marlowe, Sloan, or Riley-O) decomposes and delegates to specialists
 3. **Specialists** produce structured outputs per their role
 4. **Orchestrator** reviews, resolves conflicts, assembles consolidated report
 5. **Human PM** approves or requests changes
@@ -372,14 +409,15 @@ All skills are designed for three deployment targets:
 
 | Location | Named Agents | Utility Skills | Total |
 |----------|:------------:|:--------------:|:-----:|
+| Insight 360 — Executive Team | 3 | -- | 3 |
 | Insight 360 — PM Team | 11 | -- | 11 |
 | Insight 360 — Marketing Team | 9 | -- | 9 |
 | Insight 360 — Sales Team | 8 | -- | 8 |
 | Insight 360 — Finance Team | 6 | -- | 6 |
 | Insight 360 — Support Team | 6 | -- | 6 |
 | Insight 360 — Operations Team | 6 | -- | 6 |
-| Insight 360 — Cross-Functional | 5 | -- | 5 |
+| Insight 360 — Cross-Functional | 8 | -- | 8 |
 | Insight 360 — Utilities | -- | 2 | 2 |
 | Content Creation System | -- | 23 | 23 |
 | Claude Skills (Marketplace) | -- | 2 | 2 |
-| **Total** | **51** | **27** | **78** |
+| **Total** | **57** | **27** | **84** |

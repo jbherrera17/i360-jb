@@ -3,6 +3,7 @@
  * Phase 3: Context Asset Management UI
  * Version: 2.2.2 - Fixed API response handling
  */
+/* global initNavigation, UsageNudge */
 
 // ============================================
 // STATE MANAGEMENT
@@ -23,7 +24,11 @@ const state = {
     generateAbortController: null,
     isGenerating: false,
     importAbortController: null,
-    isImporting: false
+    isImporting: false,
+    // Org scoping
+    isPlatformAdmin: false,
+    organizations: [],
+    selectedOrgId: null // null = user's default org, 'all' = all orgs (admin only)
 };
 
 // ============================================
@@ -32,7 +37,13 @@ const state = {
 
 async function apiCall(endpoint, options = {}) {
     try {
-        const orgId = localStorage.getItem('currentOrgId');
+        // Use selected org scope if platform admin has chosen one, otherwise fall back to default
+        let orgId;
+        if (state.isPlatformAdmin && state.selectedOrgId) {
+            orgId = state.selectedOrgId; // 'all' or a specific UUID
+        } else {
+            orgId = localStorage.getItem('currentOrgId');
+        }
         const headers = {
             'Content-Type': 'application/json',
             ...options.headers
@@ -103,6 +114,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize usage nudge (soft-limit warnings)
     if (typeof UsageNudge !== 'undefined') UsageNudge.init();
 
+    // Check platform admin status and set up org selector
+    await initOrgScope();
+
     // Load data
     await loadAssetTypes();
     await loadDepartments();
@@ -125,6 +139,77 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     console.log('Context Admin ready');
 });
+
+// ============================================
+// ORG SCOPE (Platform Admin Org Selector)
+// ============================================
+
+async function initOrgScope() {
+    try {
+        // Check if user is platform admin
+        const verifyResp = await fetch('/api/platform/admin/verify', {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        state.isPlatformAdmin = verifyResp.ok;
+
+        if (!state.isPlatformAdmin) {
+            // Regular users: locked to their org via currentOrgId in localStorage
+            return;
+        }
+
+        // Load all organizations for the selector
+        const orgsResp = await apiCall('/api/organizations');
+        state.organizations = orgsResp.data || [];
+
+        // Check impersonation state
+        const impData = localStorage.getItem('insight360_impersonation');
+        let impersonation = null;
+        try { impersonation = impData ? JSON.parse(impData) : null; } catch (e) { /* ignore */ }
+
+        const orgScopeRow = document.getElementById('orgScopeRow');
+        const orgSelect = document.getElementById('orgScopeFilter');
+        if (!orgScopeRow || !orgSelect) return;
+
+        // Populate org dropdown
+        orgSelect.innerHTML = '<option value="all">All Organizations</option>';
+        state.organizations.forEach(org => {
+            const option = document.createElement('option');
+            option.value = org.id;
+            option.textContent = org.name;
+            orgSelect.appendChild(option);
+        });
+
+        // During impersonation: lock to impersonated org
+        if (impersonation && impersonation.org_id) {
+            state.selectedOrgId = impersonation.org_id;
+            orgSelect.value = impersonation.org_id;
+            orgSelect.disabled = true;
+        } else {
+            // Default to user's current org
+            const currentOrg = localStorage.getItem('currentOrgId');
+            if (currentOrg) {
+                state.selectedOrgId = currentOrg;
+                orgSelect.value = currentOrg;
+            } else {
+                state.selectedOrgId = 'all';
+                orgSelect.value = 'all';
+            }
+        }
+
+        // Show the selector and wire up change handler
+        orgScopeRow.style.display = '';
+        orgSelect.addEventListener('change', async () => {
+            state.selectedOrgId = orgSelect.value === 'all' ? 'all' : orgSelect.value;
+            // Reload departments for the selected org and then assets
+            await loadDepartments();
+            await loadAssets();
+        });
+
+        console.log('Org scope initialized (platform admin)');
+    } catch (error) {
+        console.error('Failed to init org scope:', error);
+    }
+}
 
 // ============================================
 // DATA LOADING

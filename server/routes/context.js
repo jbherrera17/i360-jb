@@ -519,7 +519,9 @@ router.get('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const userId = getUserId(req);
-        let orgId = req.headers['x-org-id'] || req.orgId || null;
+        const rawOrgHeader = req.headers['x-org-id'];
+        const wantsAllOrgs = rawOrgHeader === 'all';
+        let orgId = (!wantsAllOrgs && rawOrgHeader) ? rawOrgHeader : (req.orgId || null);
         const {
             type,
             search,
@@ -533,8 +535,8 @@ router.get('/assets', async (req, res) => {
             order = 'desc'
         } = req.query;
 
-        // Fallback: resolve org from user's default if not in header
-        if (!orgId && userId) {
+        // Fallback: resolve org from user's default if not explicitly requesting all
+        if (!orgId && !wantsAllOrgs && userId) {
             const { data: userRow } = await supabase
                 .from('users')
                 .select('default_org_id')
@@ -549,22 +551,30 @@ router.get('/assets', async (req, res) => {
             .order(sort, { ascending: order === 'asc' })
             .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
-        // === PHASE 45: Apply access control filter ===
-        if (userId) {
+        // === Access control + org scoping ===
+        const isPlatAdmin = req.isPlatformAdmin || false;
+
+        if (isPlatAdmin) {
+            // Platform admins: see all assets, optionally scoped to a selected org
+            if (orgId && orgId !== 'all') {
+                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+            // If orgId is 'all' or not set: no org filter (see everything)
+        } else if (userId) {
+            // Regular users: apply visibility-based access control
             const accessCtx = await getUserAccessContext(supabase, userId);
             if (accessCtx) {
                 query = buildResourceAccessFilter(query, accessCtx);
+            }
+            // Always scope to user's org (prevents public assets from other orgs leaking in)
+            if (orgId) {
+                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
             }
         } else {
             // Anonymous users: public assets only
             query = query.eq('visibility', 'public');
         }
-        // === END PHASE 45 ===
-
-        // NOTE: Organization filtering is handled by buildResourceAccessFilter above.
-        // A previous Phase 46 org filter was removed here because chaining two .or()
-        // filters creates a malformed Supabase query (the second .or() conflicts with
-        // the first from buildResourceAccessFilter, causing zero results).
+        // === END access control ===
 
         // Filter by type
         if (type) {
