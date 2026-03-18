@@ -112,8 +112,20 @@ function initialize(apiKey, searchSvc = null) {
     try {
         client = new Anthropic({ apiKey });
         searchService = searchSvc;
-        // Initialize circuit breaker
-        getCircuitBreaker('anthropic', ANTHROPIC_CIRCUIT_CONFIG);
+        // Initialize circuit breaker with health monitoring bridge
+        const cb = getCircuitBreaker('anthropic', ANTHROPIC_CIRCUIT_CONFIG);
+        cb.onStateChange((oldState, newState) => {
+            try {
+                const { updateProviderStatus } = require('./modelAvailabilityService');
+                if (newState === 'OPEN') {
+                    updateProviderStatus('anthropic', 'unavailable', 'Circuit breaker tripped');
+                } else if (newState === 'CLOSED') {
+                    updateProviderStatus('anthropic', 'available');
+                }
+            } catch (e) {
+                // Non-blocking: availability service may not be loaded yet
+            }
+        });
         logger.info('Anthropic Claude initialized with reliability features');
         return true;
     } catch (error) {

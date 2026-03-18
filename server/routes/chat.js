@@ -24,6 +24,9 @@ const openBrain = require('../services/openBrainService');
 // Import guardrail enforcement for pre-screening and soul context
 const guardrailEnforcement = require('../services/guardrailEnforcementService');
 
+// Import fallback service for automatic provider failover
+const { resolveModelWithFallback } = require('../services/fallbackService');
+
 // Import MCP tool bridge for tool injection into chat
 const mcpToolBridge = require('../services/mcpToolBridge');
 const mcpClientManager = require('../services/mcpClientManager');
@@ -206,7 +209,24 @@ router.post('/', validateBody(chatMessageSchema), async (req, res) => {
 
         // Direct LLM chat (no agent)
         const selectedModel = model || DEFAULT_CHAT_MODEL;
-        const provider = getProvider(selectedModel);
+
+        // Resolve fallback if provider is down
+        const resolved = resolveModelWithFallback(selectedModel);
+        if (resolved.unavailable) {
+            return res.status(503).json({
+                success: false,
+                error: `${resolved.provider} is currently unavailable. Perplexity models have no fallback due to unique search capabilities.`
+            });
+        }
+        if (resolved.allUnavailable) {
+            return res.status(503).json({
+                success: false,
+                error: 'All LLM providers are currently unavailable. Please try again later.'
+            });
+        }
+
+        const effectiveModel = resolved.model;
+        const provider = resolved.provider;
 
         // Build system prompt with optional context
         let fullSystemPrompt = systemPrompt || '';
@@ -219,28 +239,28 @@ router.post('/', validateBody(chatMessageSchema), async (req, res) => {
         if (provider === 'anthropic') {
             response = await anthropic.chat({
                 message,
-                model: selectedModel,
+                model: effectiveModel,
                 systemPrompt: fullSystemPrompt,
                 history: []
             });
         } else if (provider === 'openai') {
             response = await openai.chat({
                 message,
-                model: selectedModel,
+                model: effectiveModel,
                 systemPrompt: fullSystemPrompt,
                 history: []
             });
         } else if (provider === 'perplexity') {
             response = await perplexity.chat({
                 message,
-                model: selectedModel,
+                model: effectiveModel,
                 systemPrompt: fullSystemPrompt,
                 history: []
             });
         } else if (provider === 'google') {
             response = await gemini.chat({
                 message,
-                model: selectedModel,
+                model: effectiveModel,
                 systemPrompt: fullSystemPrompt,
                 history: []
             });
@@ -254,7 +274,8 @@ router.post('/', validateBody(chatMessageSchema), async (req, res) => {
             model: response.model,
             provider,
             citations: response.citations || null,
-            usage: response.usage
+            usage: response.usage,
+            fallback: resolved.fallback || undefined
         });
 
     } catch (error) {
@@ -282,7 +303,23 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
             });
         }
 
-        const provider = getProvider(model);
+        // Resolve fallback if provider is down
+        const resolved = resolveModelWithFallback(model);
+        if (resolved.unavailable) {
+            return res.status(503).json({
+                success: false,
+                error: `${resolved.provider} is currently unavailable. Perplexity models have no fallback due to unique search capabilities.`
+            });
+        }
+        if (resolved.allUnavailable) {
+            return res.status(503).json({
+                success: false,
+                error: 'All LLM providers are currently unavailable. Please try again later.'
+            });
+        }
+
+        const effectiveModel = resolved.model;
+        const provider = resolved.provider;
 
         // Get the last user message and previous messages as history
         const lastMessage = messages[messages.length - 1];
@@ -334,7 +371,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         let finalSystemPrompt = systemPrompt;
         if (!skipHiggins) {
             try {
-                const modelName = higginsService.getModelDisplayName(model);
+                const modelName = higginsService.getModelDisplayName(effectiveModel);
                 const supabase = req.supabase || null;
                 const isAdmin = req.user?.role === 'admin' || false;
 
@@ -347,7 +384,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
                 });
             } catch (higginsError) {
                 console.warn('Higgins prompt injection failed, using fallback:', higginsError.message);
-                const modelName = higginsService.getModelDisplayName(model);
+                const modelName = higginsService.getModelDisplayName(effectiveModel);
                 finalSystemPrompt = higginsService.buildHigginsPrompt({
                     modelName,
                     userSystemPrompt: systemPrompt,
@@ -442,7 +479,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         if (provider === 'anthropic') {
             response = await anthropic.chat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia,
@@ -452,7 +489,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         } else if (provider === 'openai') {
             response = await openai.chat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia,
@@ -462,14 +499,14 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         } else if (provider === 'perplexity') {
             response = await perplexity.chat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory
             });
         } else if (provider === 'google') {
             response = await gemini.chat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia
@@ -484,7 +521,8 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
             model: response.model,
             provider,
             citations: response.citations || null,
-            usage: response.usage
+            usage: response.usage,
+            fallback: resolved.fallback || undefined
         });
 
     } catch (error) {
@@ -512,7 +550,23 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             });
         }
 
-        const provider = getProvider(model);
+        // Resolve fallback if provider is down
+        const resolved = resolveModelWithFallback(model);
+        if (resolved.unavailable) {
+            return res.status(503).json({
+                success: false,
+                error: `${resolved.provider} is currently unavailable. Perplexity models have no fallback due to unique search capabilities.`
+            });
+        }
+        if (resolved.allUnavailable) {
+            return res.status(503).json({
+                success: false,
+                error: 'All LLM providers are currently unavailable. Please try again later.'
+            });
+        }
+
+        const effectiveModel = resolved.model;
+        const provider = resolved.provider;
 
         // Get the last user message and previous messages as history
         const lastMessage = messages[messages.length - 1];
@@ -573,7 +627,7 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
         let finalSystemPrompt = systemPrompt;
         if (!skipHiggins) {
             try {
-                const modelName = higginsService.getModelDisplayName(model);
+                const modelName = higginsService.getModelDisplayName(effectiveModel);
                 // Check if we have supabase access for knowledge injection
                 const supabase = req.supabase || null;
                 // TODO: Get isAdmin from user context when auth is fully implemented
@@ -589,7 +643,7 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             } catch (higginsError) {
                 console.warn('Higgins prompt injection failed, using fallback:', higginsError.message);
                 // Fall back to base persona without database knowledge
-                const modelName = higginsService.getModelDisplayName(model);
+                const modelName = higginsService.getModelDisplayName(effectiveModel);
                 finalSystemPrompt = higginsService.buildHigginsPrompt({
                     modelName,
                     userSystemPrompt: systemPrompt,
@@ -700,12 +754,17 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             }
         }, 120000);
 
+        // Emit fallback notification before content if applicable
+        if (resolved.fallback) {
+            res.write(`data: ${JSON.stringify({ type: 'fallback', fallback: resolved.fallback })}\n\n`);
+        }
+
         let stream;
 
         if (provider === 'anthropic') {
             stream = anthropic.streamChat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia,
@@ -717,7 +776,7 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             if (openai.streamChat) {
                 stream = openai.streamChat({
                     message: text,
-                    model,
+                    model: effectiveModel,
                     systemPrompt: finalSystemPrompt,
                     history: normalizedHistory,
                     images: allMedia,
@@ -727,7 +786,7 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
             } else if (openai.stream) {
                 stream = openai.stream({
                     message: text,
-                    model,
+                    model: effectiveModel,
                     systemPrompt: finalSystemPrompt,
                     history: normalizedHistory,
                     images: allMedia,
@@ -740,14 +799,14 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
         } else if (provider === 'perplexity') {
             stream = perplexity.streamChat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory
             });
         } else if (provider === 'google') {
             stream = gemini.streamChat({
                 message: text,
-                model,
+                model: effectiveModel,
                 systemPrompt: finalSystemPrompt,
                 history: normalizedHistory,
                 images: allMedia

@@ -1,16 +1,17 @@
 /**
  * Model Availability Service - Insight 360
  *
- * Daily checks of LLM provider availability with on-demand admin checks.
- * Stores results in database and exposes via API.
+ * Real-time LLM provider health monitoring with 5-minute interval checks,
+ * in-memory status cache, and EventEmitter for instant status change notifications.
  *
- * Version: 1.0.0
+ * Version: 2.0.0
  */
 
 const cron = require('node-cron');
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
+const { EventEmitter } = require('events');
 const logger = require('./logger');
 
 // Supabase client
@@ -28,6 +29,9 @@ let googleApiKey = null;
 // Cron job reference
 let scheduledJob = null;
 
+// 5-minute interval reference
+let healthCheckInterval = null;
+
 // Configuration defaults
 const DEFAULT_CONFIG = {
     id: '00000000-0000-0000-0000-000000000001',
@@ -38,6 +42,71 @@ const DEFAULT_CONFIG = {
 
 // Perplexity API base URL
 const PERPLEXITY_BASE_URL = 'https://api.perplexity.ai';
+
+// ============================================
+// In-Memory Status Cache & Event Emitter
+// ============================================
+
+/**
+ * In-memory provider status cache
+ * { [provider]: { status, responseTime, error, updatedAt } }
+ */
+const providerStatusCache = {};
+
+/**
+ * EventEmitter for health status changes
+ * Emits 'status-change' with { provider, oldStatus, newStatus, error, updatedAt }
+ */
+const healthEventEmitter = new EventEmitter();
+healthEventEmitter.setMaxListeners(50); // Support many SSE connections
+
+/**
+ * Check if a provider is healthy (reads from cache)
+ * Empty cache = assume healthy (startup grace period)
+ */
+function isProviderHealthy(provider) {
+    const cached = providerStatusCache[provider];
+    if (!cached) return true; // Startup grace: assume healthy until first check
+    return cached.status === 'available';
+}
+
+/**
+ * Update a provider's status from external callers (e.g., circuit breaker bridge)
+ */
+function updateProviderStatus(provider, status, error = null) {
+    const oldStatus = providerStatusCache[provider]?.status || null;
+    const now = new Date().toISOString();
+
+    providerStatusCache[provider] = {
+        status,
+        responseTime: providerStatusCache[provider]?.responseTime || 0,
+        error,
+        updatedAt: now
+    };
+
+    // Emit event only if status actually changed
+    if (oldStatus !== status) {
+        logger.info(`Provider status changed: ${provider} ${oldStatus || 'unknown'} -> ${status}`, { error });
+        healthEventEmitter.emit('status-change', {
+            provider,
+            oldStatus: oldStatus || 'unknown',
+            newStatus: status,
+            error,
+            updatedAt: now
+        });
+    }
+}
+
+/**
+ * Get the full provider status cache
+ */
+function getProviderStatusCache() {
+    return { ...providerStatusCache };
+}
+
+// ============================================
+// Provider Check Functions
+// ============================================
 
 /**
  * Initialize provider clients
@@ -74,7 +143,6 @@ function initializeClients() {
 
 /**
  * Check Anthropic API availability using minimal tokens
- * Uses Claude Haiku 4.5 (cheapest model)
  */
 async function checkAnthropicAvailability() {
     if (!anthropicClient) {
@@ -105,7 +173,6 @@ async function checkAnthropicAvailability() {
         const responseTime = Date.now() - startTime;
         const errorMessage = error.message || 'Unknown error';
 
-        // Determine status based on error
         let status = 'unavailable';
         if (errorMessage.includes('deprecated')) {
             status = 'deprecated';
@@ -126,7 +193,6 @@ async function checkAnthropicAvailability() {
 
 /**
  * Check OpenAI API availability using minimal tokens
- * Uses GPT-4o-mini (cheapest model)
  */
 async function checkOpenAIAvailability() {
     if (!openaiClient) {
@@ -157,7 +223,6 @@ async function checkOpenAIAvailability() {
         const responseTime = Date.now() - startTime;
         const errorMessage = error.message || 'Unknown error';
 
-        // Determine status based on error
         let status = 'unavailable';
         if (errorMessage.includes('deprecated') || errorMessage.includes('not supported')) {
             status = 'deprecated';
@@ -178,7 +243,6 @@ async function checkOpenAIAvailability() {
 
 /**
  * Check Perplexity API availability using minimal tokens
- * Uses sonar (cheapest model)
  */
 async function checkPerplexityAvailability() {
     if (!perplexityApiKey) {
@@ -212,7 +276,6 @@ async function checkPerplexityAvailability() {
             const errorData = await response.json().catch(() => ({}));
             const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
 
-            // Determine status based on error
             let status = 'unavailable';
             if (errorMessage.includes('deprecated')) {
                 status = 'deprecated';
@@ -248,7 +311,6 @@ async function checkPerplexityAvailability() {
 
 /**
  * Check Google Gemini API availability using minimal tokens
- * Uses gemini-2.0-flash-lite (cheapest model)
  */
 async function checkGoogleAvailability() {
     if (!googleApiKey) {
@@ -281,7 +343,6 @@ async function checkGoogleAvailability() {
             const errorData = await response.json().catch(() => ({}));
             const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
 
-            // Determine status based on error
             let status = 'unavailable';
             if (errorMessage.includes('deprecated')) {
                 status = 'deprecated';
@@ -316,7 +377,7 @@ async function checkGoogleAvailability() {
 }
 
 /**
- * Check all providers and store results
+ * Check all providers and store results + update cache
  */
 async function checkAllProviders() {
     initializeClients();
@@ -328,8 +389,20 @@ async function checkAllProviders() {
         checkPerplexityAvailability()
     ]);
 
-    // Store results in database
+    // Update in-memory cache and emit events for status changes
     const now = new Date().toISOString();
+    for (const result of results) {
+        updateProviderStatus(
+            result.provider,
+            result.status,
+            result.error_message
+        );
+        // Also update response time in cache
+        providerStatusCache[result.provider].responseTime = result.response_time_ms;
+        providerStatusCache[result.provider].updatedAt = now;
+    }
+
+    // Store results in database
     const records = results.map(result => ({
         ...result,
         checked_at: now
@@ -341,14 +414,12 @@ async function checkAllProviders() {
             .insert(records);
 
         if (error) {
-            // Table might not exist yet
             if (error.code === 'PGRST205' || error.message.includes('not find')) {
-                logger.warn('Model availability tables not yet created. Results not persisted. Run: db/phase25-model-availability-schema.sql');
+                logger.warn('Model availability tables not yet created. Results not persisted.');
             } else {
                 logger.error('Failed to store model availability check results', { error: error.message });
             }
         } else {
-            // Update last_run_at in config (only if tables exist)
             await supabase
                 .from('model_check_config')
                 .update({ last_run_at: now, updated_at: now })
@@ -392,7 +463,6 @@ async function checkAllProviders() {
  */
 async function getLastCheckResults() {
     try {
-        // Get the latest check for each provider
         const { data: checks, error: checksError } = await supabase
             .from('model_availability_checks')
             .select('*')
@@ -400,9 +470,8 @@ async function getLastCheckResults() {
             .limit(10);
 
         if (checksError) {
-            // Table might not exist yet
             if (checksError.code === 'PGRST205' || checksError.message.includes('not find')) {
-                logger.warn('Model availability tables not yet created. Run: db/phase25-model-availability-schema.sql');
+                logger.warn('Model availability tables not yet created.');
                 return {
                     success: true,
                     lastChecked: null,
@@ -414,7 +483,6 @@ async function getLastCheckResults() {
             throw checksError;
         }
 
-        // Get config for last_run_at
         const { data: config, error: configError } = await supabase
             .from('model_check_config')
             .select('*')
@@ -422,11 +490,9 @@ async function getLastCheckResults() {
             .single();
 
         if (configError && configError.code !== 'PGRST116') {
-            // PGRST116 = no rows returned, which is OK
             throw configError;
         }
 
-        // Group by provider, take most recent
         const providerMap = {};
         for (const check of checks || []) {
             if (!providerMap[check.provider]) {
@@ -439,7 +505,6 @@ async function getLastCheckResults() {
             }
         }
 
-        // Calculate overall status
         const statuses = Object.values(providerMap);
         const hasError = statuses.some(r => r.status === 'unavailable' || r.status === 'auth_error');
         const hasWarning = statuses.some(r => r.status === 'deprecated' || r.status === 'rate_limited');
@@ -478,7 +543,6 @@ async function getConfig() {
             .eq('id', DEFAULT_CONFIG.id)
             .single();
 
-        // Table might not exist yet or no rows
         if (error && error.code !== 'PGRST116') {
             if (error.code === 'PGRST205' || error.message.includes('not find')) {
                 return {
@@ -521,7 +585,6 @@ async function updateConfig(updates) {
 
         if (error) throw error;
 
-        // Reinitialize scheduler if enabled setting changed
         if ('is_enabled' in updates || 'schedule_time' in updates) {
             await initializeScheduler();
         }
@@ -543,40 +606,56 @@ async function updateConfig(updates) {
  * Convert time to cron expression
  */
 function timeToCron(timeStr, timezone) {
-    // Parse HH:MM:SS format
     const [hours, minutes] = timeStr.split(':').map(Number);
-    // Cron format: minute hour * * *
     return `${minutes} ${hours} * * *`;
 }
 
 /**
- * Initialize the daily scheduler
+ * Initialize the scheduler (daily cron + 5-minute health interval)
  */
 async function initializeScheduler() {
-    // Stop existing job if any
+    // Stop existing cron job if any
     if (scheduledJob) {
         scheduledJob.stop();
         scheduledJob = null;
     }
 
+    // Stop existing interval if any
+    if (healthCheckInterval) {
+        clearInterval(healthCheckInterval);
+        healthCheckInterval = null;
+    }
+
     try {
         const { config } = await getConfig();
 
-        if (!config.is_enabled) {
-            logger.info('Model availability scheduler is disabled');
-            return;
+        // Daily cron for database-persisted checks (admin-configurable)
+        if (config.is_enabled) {
+            const cronExpression = timeToCron(config.schedule_time, config.timezone);
+            scheduledJob = cron.schedule(cronExpression, async () => {
+                logger.info('Running scheduled model availability check');
+                await checkAllProviders();
+            }, {
+                timezone: config.timezone || 'America/New_York'
+            });
+            logger.info(`Model availability daily scheduler initialized - runs at ${config.schedule_time} ${config.timezone}`);
         }
 
-        const cronExpression = timeToCron(config.schedule_time, config.timezone);
+        // 5-minute interval for real-time health monitoring
+        healthCheckInterval = setInterval(async () => {
+            try {
+                await checkAllProviders();
+            } catch (err) {
+                logger.error('5-minute health check failed', { error: err.message });
+            }
+        }, 5 * 60 * 1000);
 
-        scheduledJob = cron.schedule(cronExpression, async () => {
-            logger.info('Running scheduled model availability check');
-            await checkAllProviders();
-        }, {
-            timezone: config.timezone || 'America/New_York'
+        // Run initial check on startup (non-blocking)
+        checkAllProviders().catch(err => {
+            logger.error('Initial health check failed', { error: err.message });
         });
 
-        logger.info(`Model availability scheduler initialized - runs at ${config.schedule_time} ${config.timezone}`);
+        logger.info('Model availability 5-minute health monitoring started');
     } catch (error) {
         logger.error('Failed to initialize model availability scheduler', { error: error.message });
     }
@@ -596,5 +675,10 @@ module.exports = {
     getLastCheckResults,
     getConfig,
     updateConfig,
-    runCheck
+    runCheck,
+    // New exports for health monitoring
+    healthEventEmitter,
+    isProviderHealthy,
+    updateProviderStatus,
+    getProviderStatusCache
 };

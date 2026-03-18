@@ -2,17 +2,17 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 3.77
-**Last Updated:** March 16, 2026
-**Current System Version:** v3.77 (Phase 77)
+**Version:** 3.80
+**Last Updated:** March 18, 2026
+**Current System Version:** v3.80 (Phase 80)
 
 ---
 
 ## Executive Summary
 
-Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, and a **workflow-first thought leadership content engine**. Version 3.77 restructures the TL page into a two-mode workflow cockpit with auto-populated content cards, one-click generation with live progress, inline content review, and publish-in-place.
+Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, a **workflow-first thought leadership content engine**, and a **58-agent AI workforce** organized across 7 department teams plus cross-functional support. Version 3.80 adds real-time LLM health monitoring with automatic transparent fallback across all 4 providers.
 
-**Current Production Readiness Score: 10.0/10** *(v3.77)*
+**Current Production Readiness Score: 10.0/10** *(v3.80)*
 
 | Area | Score | Risk Level | Notes |
 |------|-------|------------|-------|
@@ -22,10 +22,10 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 | Database | 10/10 | Low | 119+ tables, Phase 67/68 migrations applied |
 | Testing | 9.8/10 | Low | 666+ automated tests (unified runtime tests added) |
 | Observability | 9/10 | Low | Native console logger, Prometheus metrics |
-| Reliability | 10/10 | Low | Retry with backoff, circuit breakers, **nav org_id fallback** |
+| Reliability | 10/10 | Low | Retry, circuit breakers, **auto-fallback across LLM providers**, SSE health stream |
 | Documentation | 10/10 | Low | 34+ user guides, PM team exec summary, Annie PRD |
-| User Experience | 10/10 | Low | **Nav panel fixed**, cookie auth, org membership fallback |
-| LLM Support | 10/10 | Low | Registry synced — Sonnet 4.5 default, GPT-5.3 Codex, o3/o4, Gemini, Perplexity |
+| User Experience | 10/10 | Low | **Model dropdowns gray unavailable providers**, fallback toast notifications |
+| LLM Support | 10/10 | Low | Registry synced — Sonnet 4.5 default, GPT-5.3 Codex, o3/o4, Gemini, Perplexity, **22-model fallback map** |
 | Content System | 10/10 | Low | Voice DNA, ICPs, Skills, Context Assets + **publishing pipeline** (blog, Notion, social, Substack) |
 | Strategy-Execution | 10/10 | Low | Closed-loop tracking, OKR integration, personal command center |
 | Multi-Tenant | 10/10 | Low | Full agency model with clients + add-on modules |
@@ -42,7 +42,52 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 
 ---
 
-## What's New in v3.77
+## What's New in v3.80
+
+### Phase 80: LLM Health Monitoring & Automatic Fallback
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Health Cache | In-memory provider status with EventEmitter broadcast | Instant health state available to all services |
+| 5-Min Interval | 1-token pings to all 4 providers every 5 minutes | Proactive outage detection without user traffic |
+| Circuit Breaker Bridge | Provider circuit breakers push state changes to health cache | Instant detection from real traffic — no polling delay |
+| Fallback Map | 22-model cross-provider fallback hierarchy | Automatic failover: Claude → GPT → Gemini and back |
+| SSE Health Stream | `GET /api/health/stream` pushes status to frontends | Real-time UI updates without polling |
+| Dropdown Graying | Unavailable provider options disabled + "(unavailable)" suffix | Users see which models are down before selecting |
+| Fallback Toast | Toast notification when fallback activates | Transparent — users know which model is responding |
+| Perplexity Exception | No fallback for Perplexity (unique search) | Clear 503 message instead of degraded experience |
+
+---
+
+## What Was New in v3.79
+
+### Phase 79: Platform Admin Org Scope + Org Chart Updates
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Org Scope Selector | Platform admin dropdown on context page for cross-org asset filtering | Admins manage assets across all organizations from one page |
+| All-Orgs Mode | `x-org-id: all` header support in context assets API | Backend supports cross-org visibility for admins |
+| Impersonation Lock | Org selector auto-locks during impersonation sessions | Prevents scope confusion during admin impersonation |
+| Org Chart Complete | Executive team (3), cross-functional expanded to 8, totals: 58/84 | Documentation reflects completed agent workforce |
+
+---
+
+## What Was New in v3.78
+
+### Phase 78: Context Asset Remediation + Open Brain + Marketing Skills
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Stale Cache Fix | Context asset dropdowns re-fetch on every modal/panel open | 5 pages fixed, no more stale data |
+| Chat Save Fix | Broken Save as Context Asset repaired (endpoint + fields + auth) | Feature restored to working state |
+| Org Ownership | `GET /assets/:id` checks org membership | Defense-in-depth cross-tenant prevention |
+| Digest Pipeline | Fixed wrong column names causing silently empty context | Digest content blocks now populate correctly |
+| Open Brain | Visual dashboard rebuild with factory pattern route | Module access + help system integrated |
+| Marketing Skills | 9 mkt-* Claude Code skills launched | First Parthenon department rollout |
+
+---
+
+## What Was New in v3.77
 
 ### Phase 77: TL Page UX Redesign
 
@@ -189,7 +234,9 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 | 67-68 | — | Digest discovery, unified runtime, tags org-scoping | Done |
 | 70 | v3.70 | Role architecture streamlining | Done |
 | 71 | v3.71 | Customer Support Agent System | Done |
-| **77** | **v3.77** | **TL Page UX Redesign — Two-Mode Workflow Cockpit** | **Done** |
+| **79** | **v3.79** | **Platform Admin Org Scope + Org Chart Updates** | **Done** |
+| 78 | v3.78 | Context Asset Remediation + Open Brain + Marketing Skills | Done |
+| 77 | v3.77 | TL Page UX Redesign — Two-Mode Workflow Cockpit | Done |
 | 76 | v3.76 | TL Content Creation Workflow + Guardrail Fix | Done |
 | 75 | v3.75 | Annie Embeddable Chat Widget | Done |
 | 74 | v3.74 | Thought Leadership Publishing Pipeline | Done |

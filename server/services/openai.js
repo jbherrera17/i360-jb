@@ -217,8 +217,20 @@ function initialize(apiKey, searchSvc = null) {
     try {
         client = new OpenAI({ apiKey });
         searchService = searchSvc;
-        // Initialize circuit breaker
-        getCircuitBreaker('openai', OPENAI_CIRCUIT_CONFIG);
+        // Initialize circuit breaker with health monitoring bridge
+        const cb = getCircuitBreaker('openai', OPENAI_CIRCUIT_CONFIG);
+        cb.onStateChange((oldState, newState) => {
+            try {
+                const { updateProviderStatus } = require('./modelAvailabilityService');
+                if (newState === 'OPEN') {
+                    updateProviderStatus('openai', 'unavailable', 'Circuit breaker tripped');
+                } else if (newState === 'CLOSED') {
+                    updateProviderStatus('openai', 'available');
+                }
+            } catch (e) {
+                // Non-blocking: availability service may not be loaded yet
+            }
+        });
         logger.info('OpenAI GPT initialized with reliability features');
         return true;
     } catch (error) {

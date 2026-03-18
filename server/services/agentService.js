@@ -15,6 +15,7 @@ const mindstudioService = require('./mindstudioService');
 const gemini = require('./gemini');
 const guardrailEnforcement = require('./guardrailEnforcementService');
 const llmRegistry = require('./llmRegistry');
+const { resolveModelWithFallback } = require('./fallbackService');
 const mcpConnectionService = require('./mcpConnectionService');
 const mcpToolBridge = require('./mcpToolBridge');
 const { runAnthropicToolLoop, streamAnthropicToolLoop } = require('./agentToolLoop');
@@ -779,8 +780,26 @@ async function executeAgent(agentId, options = {}) {
             );
         } else {
             // Native LLM execution (custom or llm type)
+
+            // Resolve fallback if provider is down
+            const resolved = resolveModelWithFallback(agent.llm_model);
+            if (resolved.unavailable) {
+                throw new Error(`${resolved.provider} is currently unavailable. Perplexity models have no fallback.`);
+            }
+            if (resolved.allUnavailable) {
+                throw new Error('All LLM providers are currently unavailable. Please try again later.');
+            }
+
+            // Apply resolved model/provider
+            const effectiveAgent = { ...agent };
+            if (resolved.fallback) {
+                effectiveAgent.llm_model = resolved.model;
+                effectiveAgent.llm_provider = resolved.provider;
+                console.log(`[Agent] Fallback activated: ${agent.llm_model} -> ${resolved.model}`);
+            }
+
             // Build system prompt with context + soul context
-            let systemPrompt = buildSystemPrompt(agent, contextResult.context);
+            let systemPrompt = buildSystemPrompt(effectiveAgent, contextResult.context);
             if (soulContext) {
                 systemPrompt = soulContext + '\n\n' + systemPrompt;
             }
@@ -788,21 +807,26 @@ async function executeAgent(agentId, options = {}) {
             // Build messages
             const messages = buildMessages(userMessage, conversationHistory);
 
-            switch (agent.llm_provider) {
+            switch (effectiveAgent.llm_provider) {
                 case 'anthropic':
-                    result = await executeWithAnthropic(agent, systemPrompt, messages);
+                    result = await executeWithAnthropic(effectiveAgent, systemPrompt, messages);
                     break;
                 case 'openai':
-                    result = await executeWithOpenAI(agent, systemPrompt, messages);
+                    result = await executeWithOpenAI(effectiveAgent, systemPrompt, messages);
                     break;
                 case 'perplexity':
-                    result = await executeWithPerplexity(agent, systemPrompt, messages);
+                    result = await executeWithPerplexity(effectiveAgent, systemPrompt, messages);
                     break;
                 case 'google':
-                    result = await executeWithGemini(agent, systemPrompt, messages);
+                    result = await executeWithGemini(effectiveAgent, systemPrompt, messages);
                     break;
                 default:
-                    throw new Error(`Unsupported provider: ${agent.llm_provider}`);
+                    throw new Error(`Unsupported provider: ${effectiveAgent.llm_provider}`);
+            }
+
+            // Attach fallback info to result
+            if (resolved.fallback) {
+                result.fallback = resolved.fallback;
             }
         }
 
@@ -821,7 +845,8 @@ async function executeAgent(agentId, options = {}) {
             provider: result.provider,
             context_used: contextResult.assets,
             usage: result.usage,
-            duration_ms: result.duration_ms
+            duration_ms: result.duration_ms,
+            fallback: result.fallback || undefined
         };
 
     } catch (error) {
@@ -983,6 +1008,25 @@ async function streamAgent(agentId, options = {}) {
             };
         } else {
             // Native LLM execution (custom or llm type)
+
+            // Resolve fallback if provider is down
+            const resolved = resolveModelWithFallback(effectiveModel);
+            if (resolved.unavailable) {
+                throw new Error(`${resolved.provider} is currently unavailable. Perplexity models have no fallback.`);
+            }
+            if (resolved.allUnavailable) {
+                throw new Error('All LLM providers are currently unavailable. Please try again later.');
+            }
+
+            // Apply fallback if needed
+            let resolvedModel = effectiveModel;
+            let resolvedProvider = effectiveProvider;
+            if (resolved.fallback) {
+                resolvedModel = resolved.model;
+                resolvedProvider = resolved.provider;
+                console.log(`[Agent Stream] Fallback activated: ${effectiveModel} -> ${resolvedModel}`);
+            }
+
             // Build system prompt with context + soul context
             let systemPrompt = buildSystemPrompt(agent, contextResult.context);
             if (soulContext) {
@@ -995,11 +1039,11 @@ async function streamAgent(agentId, options = {}) {
             // Create effective agent config with overridden model
             const effectiveAgent = {
                 ...agent,
-                llm_model: effectiveModel,
-                llm_provider: effectiveProvider
+                llm_model: resolvedModel,
+                llm_provider: resolvedProvider
             };
 
-            switch (effectiveProvider) {
+            switch (resolvedProvider) {
                 case 'anthropic':
                     result = await streamWithAnthropic(effectiveAgent, systemPrompt, messages, onToken);
                     break;
@@ -1013,7 +1057,12 @@ async function streamAgent(agentId, options = {}) {
                     result = await streamWithGemini(effectiveAgent, systemPrompt, messages, onToken);
                     break;
                 default:
-                    throw new Error(`Unsupported provider: ${effectiveProvider}`);
+                    throw new Error(`Unsupported provider: ${resolvedProvider}`);
+            }
+
+            // Attach fallback info
+            if (resolved.fallback) {
+                result.fallback = resolved.fallback;
             }
         }
 

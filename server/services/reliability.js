@@ -199,6 +199,30 @@ class CircuitBreaker {
     // Rolling window for percentage-based threshold
     this.requestHistory = [];
     this.windowSize = 10; // Track last 10 requests
+
+    // State change callbacks
+    this._stateChangeCallbacks = [];
+  }
+
+  /**
+   * Register a callback for state transitions
+   * @param {Function} callback - Called with (oldState, newState)
+   */
+  onStateChange(callback) {
+    this._stateChangeCallbacks.push(callback);
+  }
+
+  /**
+   * Notify registered callbacks of state change
+   */
+  _notifyStateChange(oldState, newState) {
+    for (const cb of this._stateChangeCallbacks) {
+      try {
+        cb(oldState, newState);
+      } catch (err) {
+        logger.error(`Circuit breaker ${this.name} state change callback error`, { error: err.message });
+      }
+    }
   }
 
   /**
@@ -212,9 +236,11 @@ class CircuitBreaker {
     if (this.state === CircuitState.OPEN) {
       // Check if timeout has passed
       if (Date.now() >= this.nextAttemptTime) {
+        const oldState = this.state;
         this.state = CircuitState.HALF_OPEN;
         this.successes = 0;
         logger.info(`Circuit breaker ${this.name} entering HALF_OPEN state`);
+        this._notifyStateChange(oldState, CircuitState.HALF_OPEN);
         return true;
       }
       return false;
@@ -304,6 +330,7 @@ class CircuitBreaker {
    * Open the circuit
    */
   open() {
+    const oldState = this.state;
     this.state = CircuitState.OPEN;
     this.nextAttemptTime = Date.now() + this.config.timeout;
     logger.warn(`Circuit breaker ${this.name} OPENED`, {
@@ -311,17 +338,20 @@ class CircuitBreaker {
       failureRate: this.getFailureRate().toFixed(1) + '%',
       nextAttempt: new Date(this.nextAttemptTime).toISOString(),
     });
+    this._notifyStateChange(oldState, CircuitState.OPEN);
   }
 
   /**
    * Close the circuit (return to normal)
    */
   close() {
+    const oldState = this.state;
     this.state = CircuitState.CLOSED;
     this.failures = 0;
     this.successes = 0;
     this.requestHistory = [];
     logger.info(`Circuit breaker ${this.name} CLOSED (recovered)`);
+    this._notifyStateChange(oldState, CircuitState.CLOSED);
   }
 
   /**

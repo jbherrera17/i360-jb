@@ -364,6 +364,70 @@ function isValidModel(modelId) {
     return !!resolveModelId(modelId).valid;
 }
 
+// ============================================
+// Fallback Hierarchy (Phase 76+)
+// ============================================
+
+/**
+ * Fallback map: primary model -> ordered list of fallback candidates
+ * Perplexity models have NO fallback (unique search capability)
+ */
+const FALLBACK_MAP = {
+    // Anthropic → OpenAI → Google
+    'claude-sonnet-4-5-20250929': ['gpt-4o', 'gemini-2.5-pro'],
+    'claude-opus-4-5-20251101': ['gpt-4o', 'claude-sonnet-4-5-20250929'],
+    'claude-haiku-4-5-20251001': ['gpt-4o-mini', 'gemini-2.0-flash'],
+    'claude-opus-4-1-20250805': ['gpt-4o', 'claude-sonnet-4-5-20250929'],
+    'claude-sonnet-4-20250514': ['gpt-4o', 'gemini-2.5-pro'],
+    'claude-opus-4-20250514': ['gpt-4o', 'claude-sonnet-4-5-20250929'],
+
+    // OpenAI → Anthropic → Google
+    'gpt-4o': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+    'gpt-4o-mini': ['claude-haiku-4-5-20251001', 'gemini-2.0-flash'],
+    'gpt-5.2': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+    'gpt-5.2-chat-latest': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+    'gpt-5.2-codex': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+    'gpt-5.3-codex': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+    'o1': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+    'o1-mini': ['claude-haiku-4-5-20251001', 'gemini-2.0-flash'],
+    'gpt-4-turbo': ['claude-sonnet-4-5-20250929', 'gemini-2.5-pro'],
+
+    // Google → Anthropic → OpenAI
+    'gemini-3-pro-preview': ['claude-sonnet-4-5-20250929', 'gpt-4o'],
+    'gemini-3-flash-preview': ['claude-haiku-4-5-20251001', 'gpt-4o-mini'],
+    'gemini-2.5-pro': ['claude-sonnet-4-5-20250929', 'gpt-4o'],
+    'gemini-2.5-flash': ['claude-haiku-4-5-20251001', 'gpt-4o-mini'],
+    'gemini-2.0-flash': ['claude-haiku-4-5-20251001', 'gpt-4o-mini'],
+    'gemini-2.0-flash-lite': ['claude-haiku-4-5-20251001', 'gpt-4o-mini'],
+    'nano-banana-pro-preview': ['claude-haiku-4-5-20251001', 'gpt-4o-mini'],
+
+    // Perplexity — NO FALLBACK (unique search capability)
+};
+
+/**
+ * Get the first healthy fallback model for a given model ID
+ * @param {string} modelId - The primary model that is unavailable
+ * @returns {{ model: string, provider: string } | null} - First healthy fallback or null
+ */
+function getFallbackModel(modelId) {
+    const { isProviderHealthy } = require('./modelAvailabilityService');
+
+    const candidates = FALLBACK_MAP[modelId];
+    if (!candidates) return null;
+
+    for (const candidateId of candidates) {
+        const candidateModel = ALL_MODELS[candidateId];
+        if (!candidateModel) continue;
+
+        const candidateProvider = candidateModel.provider;
+        if (isProviderHealthy(candidateProvider)) {
+            return { model: candidateId, provider: candidateProvider };
+        }
+    }
+
+    return null;
+}
+
 function getModelDisplayInfo(modelId) {
     const resolved = resolveModelId(modelId);
     const lookupId = resolved.valid ? resolved.model : modelId;
@@ -389,6 +453,7 @@ module.exports = {
     ALL_MODELS,
     MODEL_ALIASES,
     DEPRECATED_MODEL_MAP,
+    FALLBACK_MAP,
     getModelsByProvider,
     getModel,
     getProvider,
@@ -397,5 +462,6 @@ module.exports = {
     getAllChatModels,
     resolveModelId,
     isValidModel,
-    getModelDisplayInfo
+    getModelDisplayInfo,
+    getFallbackModel
 };

@@ -1,27 +1,89 @@
-# Insight 360 Blueprint v3.79
+# Insight 360 Blueprint v3.80
 
-**Version:** 3.79
+**Version:** 3.80
 **Date:** March 18, 2026
-**Status:** Current | Phase 79
+**Status:** Current | Phase 80
 **Codename:** Chronicle
-**Previous Version:** v3.78 (Context Asset Remediation + Open Brain Dashboard + Marketing Skills + Chat Fixes)
-**Latest Update:** Phase 79: Platform Admin Org Scope + Org Chart Updates
+**Previous Version:** v3.79 (Platform Admin Org Scope + Org Chart Updates)
+**Latest Update:** Phase 80: LLM Health Monitoring & Automatic Fallback
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.79 delivers **Phase 79** — platform admin org scoping for the context assets page and comprehensive org chart documentation updates reflecting the completed Parthenon department rollout.
+Insight 360 v3.80 delivers **Phase 80** — real-time LLM provider health monitoring with automatic transparent fallback. When a provider (Anthropic, OpenAI, Google) goes down, the platform automatically routes requests to a healthy alternative and notifies the user via toast — no cryptic errors, no manual intervention.
 
-Platform admins can now filter context assets by organization via a dropdown selector on the context page, with support for "All Organizations" view and impersonation-aware state locking. The org chart documentation was updated to reflect the completed Executive team (3 agents), three new cross-functional agents (Marley, Skyler, Jordan-B), and updated totals (58 named skills, 84 total).
+The system combines two detection mechanisms: 5-minute interval health pings and instant circuit breaker state change bridging from real user traffic. An SSE health stream pushes status changes to all connected frontends, enabling model dropdowns to gray out unavailable providers in real time.
 
 Key deliverables:
-1. **Platform Admin Org Scope Selector** — Context page gets org-aware filtering for platform admins; regular users unaffected
-2. **Backend Org Scoping** — `GET /api/context/assets` route supports `x-org-id: all` header for cross-org asset visibility
-3. **Impersonation Awareness** — Org selector locks to impersonated org during admin impersonation sessions
-4. **Org Chart Updates** — Executive team added, cross-functional team expanded to 8, Parthenon rollout status updated
+1. **In-Memory Health Cache** — `modelAvailabilityService` maintains per-provider status with EventEmitter for instant broadcast
+2. **Circuit Breaker Bridge** — Provider circuit breakers push state changes to the health cache instantly
+3. **Fallback Resolution** — 22-model fallback map with `resolveModelWithFallback()` at all 5 chat/agent dispatch points
+4. **SSE Health Stream** — `GET /api/health/stream` pushes status changes to frontends in real time
+5. **Frontend Health Module** — `llm-health.js` provides `window.LLMHealth` API, dropdown graying, and toast notifications
+6. **Perplexity Exception** — Unique search capability means no fallback; returns clear 503 message
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 80: What Was Completed
+
+### 1. In-Memory Health Cache & 5-Minute Interval
+
+`modelAvailabilityService.js` now maintains a `providerStatusCache` (in-memory) alongside the existing database persistence:
+
+| Export | Purpose |
+|--------|---------|
+| `isProviderHealthy(provider)` | Reads cache, returns boolean; empty cache = assume healthy (startup grace) |
+| `updateProviderStatus(provider, status, error)` | Updates cache, emits `status-change` event if status changed |
+| `getProviderStatusCache()` | Returns full cache snapshot for API/SSE consumers |
+| `healthEventEmitter` | Node EventEmitter — emits `status-change` with `{ provider, oldStatus, newStatus, error, updatedAt }` |
+
+5-minute `setInterval` replaces the daily cron as the primary health check mechanism. Daily cron retained as secondary (admin-configurable). Initial check runs on startup (non-blocking).
+
+### 2. Circuit Breaker → Health Bridge
+
+`CircuitBreaker` class in `reliability.js` now supports `onStateChange(callback)`. Provider services register callbacks:
+
+- `CLOSED→OPEN` or `HALF_OPEN→OPEN`: marks provider unavailable
+- `HALF_OPEN→CLOSED`: marks provider available
+
+This gives **instant detection** — a provider outage is caught the moment the circuit breaker trips from real user traffic.
+
+### 3. Fallback Resolution
+
+22-model `FALLBACK_MAP` in `llmRegistry.js` with cross-provider fallback chains:
+
+| Pattern | Example |
+|---------|---------|
+| Anthropic → OpenAI → Google | Sonnet 4.5 → GPT-4o → Gemini 2.5 Pro |
+| OpenAI → Anthropic → Google | GPT-4o → Sonnet 4.5 → Gemini 2.5 Pro |
+| Google → Anthropic → OpenAI | Gemini 2.5 Pro → Sonnet 4.5 → GPT-4o |
+| Perplexity → None | No fallback (unique search capability) |
+
+`fallbackService.js` provides `resolveModelWithFallback()` which returns the effective model+provider, applied at all 5 dispatch points in `chat.js` (3) and `agentService.js` (2).
+
+### 4. SSE Health Stream
+
+`GET /api/health/stream` (authenticated, compression-skipped):
+- `event: init` — full cache on connection
+- `event: status-change` — real-time provider transitions
+- `:heartbeat` — 30-second keep-alive
+- Auto-cleanup on client disconnect
+
+### 5. Frontend Health Module
+
+`public/js/llm-health.js` included on 6 pages (chat, agents, agent-runner, thought-leadership, research-studio, system-health):
+
+| Feature | Implementation |
+|---------|---------------|
+| SSE auto-connect | Exponential backoff reconnect (max 30s) |
+| `window.LLMHealth` API | `isProviderAvailable()`, `getProviderStatus()`, `getAllStatuses()` |
+| `llm-health-change` event | Custom DOM event for UI component updates |
+| Toast notifications | Provider DOWN/UP transitions shown via `showToast()` |
+| Model dropdown graying | Unavailable options disabled with "(unavailable)" suffix, auto-restores |
+| Fallback toast | Streaming: `type: 'fallback'` SSE event; Non-streaming: `data.fallback` in JSON |
 
 ---
 
@@ -39,10 +101,6 @@ Platform admins now see an organization dropdown on the context assets page, ena
 | Impersonation lock | During impersonation, dropdown locks to the impersonated org |
 | Default behavior | Non-admin users see no change; scoping via `currentOrgId` as before |
 
-**Frontend changes:** `context.html` (org selector UI), `context.js` (state management, `initOrgScope()`, `apiCall()` org-aware routing)
-
-**Backend changes:** `context.js` route — `GET /api/context/assets` now handles `x-org-id: all` header, platform admins bypass visibility-based access control and see all assets optionally scoped by selected org.
-
 ### 2. Org Chart Documentation Update
 
 Updated `Insight-Org-Chart.md` to reflect the complete Parthenon agent rollout:
@@ -51,11 +109,8 @@ Updated `Insight-Org-Chart.md` to reflect the complete Parthenon agent rollout:
 |--------|--------|-------|
 | Named agent skills | 52 | 58 |
 | Total skills | 78 | 84 |
-| Executive team | Partial | Complete (Morgan-E, Quinn-E, Sage-E) |
+| Executive team | Partial | Complete (Jarvis, Alfred, Higgins) |
 | Cross-functional team | 5 agents | 8 agents (+Marley, Skyler, Jordan-B) |
-| Parthenon Executive pillar | Not Started | Complete |
-| Parthenon Production pillar | Not Started | Covered by PM + Ops |
-| Parthenon Stakeholder Relations | Not Started | Deferred |
 
 ---
 

@@ -165,6 +165,7 @@ const conversationReviewRoutes = require('./routes/conversationReview');
 const integrationRegistry = require('./services/integrations');
 const createModuleAccessMiddleware = require('./middleware/moduleAccess');
 const schedulerService = require('./services/schedulerService');
+const healthStreamRoutes = require('./routes/health-stream');
 
 // ============================================
 // INITIALIZE EXPRESS APP
@@ -230,7 +231,7 @@ app.use(compression({
         if (req.headers.accept === 'text/event-stream') {
             return false;
         }
-        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream' || req.path.match(/^\/api\/support\/conversations\/[^/]+\/stream$/) || req.path.match(/^\/api\/chat\/public\/[^/]+\/stream$/)) {
+        if (req.path === '/api/chat/stream' || req.path === '/api/easy-start/stream' || req.path === '/api/digest/generate/stream' || req.path === '/api/health/stream' || req.path.match(/^\/api\/support\/conversations\/[^/]+\/stream$/) || req.path.match(/^\/api\/chat\/public\/[^/]+\/stream$/)) {
             return false;
         }
         // Use default compression for everything else
@@ -548,6 +549,9 @@ function initializeServices() {
             console.log('  ⚠️  Auth middleware not loaded:', error.message);
         }
 
+        // Health stream SSE (real-time LLM health monitoring)
+        app.use('/api/health', healthStreamRoutes);
+
         // Register Supabase-dependent routes HERE (after Supabase is initialized)
         app.use('/api/agents', agentsRoutes(supabase));
         app.use('/api/injection', injectionRoutes(supabase));
@@ -678,6 +682,12 @@ function initializeServices() {
         schedulerService.initializeScheduler()
             .then(() => console.log('  ✅ Briefing scheduler initialized'))
             .catch(err => console.error('  ⚠️ Briefing scheduler failed:', err.message));
+
+        // Initialize LLM health monitoring (5-minute checks)
+        const modelAvailabilityService = require('./services/modelAvailabilityService');
+        modelAvailabilityService.initializeScheduler()
+            .then(() => console.log('  ✅ LLM health monitoring initialized (5-min interval)'))
+            .catch(err => console.error('  ⚠️ LLM health monitoring failed:', err.message));
 
         // Initialize publishing scheduler
         schedulerService.initializePublishingScheduler()

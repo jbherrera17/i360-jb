@@ -20,6 +20,20 @@ const circuitBreaker = new CircuitBreaker('gemini', {
     timeout: 30000
 });
 
+// Bridge circuit breaker state changes to health monitoring
+circuitBreaker.onStateChange((oldState, newState) => {
+    try {
+        const { updateProviderStatus } = require('./modelAvailabilityService');
+        if (newState === 'OPEN') {
+            updateProviderStatus('google', 'unavailable', 'Circuit breaker tripped');
+        } else if (newState === 'CLOSED') {
+            updateProviderStatus('google', 'available');
+        }
+    } catch (e) {
+        // Non-blocking: availability service may not be loaded yet
+    }
+});
+
 // API key storage
 let apiKey = null;
 

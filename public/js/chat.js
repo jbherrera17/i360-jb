@@ -1,4 +1,4 @@
-/* global BrandingService, ChartRenderer, RadarChart, XLSX */
+/* global BrandingService, ChartRenderer, RadarChart, XLSX, LLMHealth */
 /**
  * Chat Interface - Insight 360
  * Multi-LLM chat with streaming, voice, and file support
@@ -494,7 +494,52 @@ function setupEventListeners() {
             updateModelIndicator();
         });
     }
-    
+
+    // LLM Health: gray out unavailable model options
+    document.addEventListener('llm-health-change', () => {
+        if (!modelSelect || !window.LLMHealth) return;
+        const providerMap = {
+            anthropic: 'anthropic', openai: 'openai',
+            perplexity: 'perplexity', google: 'google'
+        };
+        for (const option of modelSelect.options) {
+            if (!option.value) continue;
+            const optGroup = option.closest('optgroup');
+            const groupLabel = optGroup?.label?.toLowerCase() || '';
+            let provider = null;
+            if (groupLabel.includes('claude') || groupLabel.includes('anthropic')) provider = 'anthropic';
+            else if (groupLabel.includes('gpt') || groupLabel.includes('openai') || groupLabel.includes('o1') || groupLabel.includes('o3')) provider = 'openai';
+            else if (groupLabel.includes('perplexity') || groupLabel.includes('sonar')) provider = 'perplexity';
+            else if (groupLabel.includes('gemini') || groupLabel.includes('google')) provider = 'google';
+            // Fallback: detect from model ID
+            if (!provider) {
+                const val = option.value.toLowerCase();
+                if (val.startsWith('claude')) provider = 'anthropic';
+                else if (val.startsWith('gpt') || val.startsWith('o1') || val.startsWith('o3') || val.startsWith('o4')) provider = 'openai';
+                else if (val.startsWith('sonar')) provider = 'perplexity';
+                else if (val.startsWith('gemini') || val.startsWith('nano-banana')) provider = 'google';
+            }
+            if (!provider) continue;
+            const available = LLMHealth.isProviderAvailable(provider);
+            if (!available) {
+                option.disabled = true;
+                option.style.opacity = '0.5';
+                if (!option.dataset.originalText) {
+                    option.dataset.originalText = option.textContent;
+                }
+                if (!option.textContent.includes('(unavailable)')) {
+                    option.textContent = option.dataset.originalText + ' (unavailable)';
+                }
+            } else {
+                option.disabled = false;
+                option.style.opacity = '';
+                if (option.dataset.originalText) {
+                    option.textContent = option.dataset.originalText;
+                }
+            }
+        }
+    });
+
     // File input
     if (fileInput) {
         fileInput.addEventListener('change', handleFileSelect);
@@ -720,6 +765,15 @@ Only include sources when you reference specific external information. For gener
 
             fullResponse = data.response;
 
+            // Show fallback notification if applicable
+            if (data.fallback && typeof showToast === 'function') {
+                const fb = data.fallback;
+                showToast(
+                    `${fb.original_model_name || fb.original_model} is unavailable. Using ${fb.fallback_model_name || fb.fallback_model} instead.`,
+                    'warning'
+                );
+            }
+
             // Show search results indicator if available
             if (data.searchResults && data.searchResults.length > 0) {
                 setStatus(`Found ${data.searchResults.length} search results`);
@@ -750,7 +804,16 @@ Only include sources when you reference specific external information. For gener
                         try {
                             const parsed = JSON.parse(data);
 
-                            if (parsed.type === 'guardrail_blocked') {
+                            if (parsed.type === 'fallback' && parsed.fallback) {
+                                // Provider fallback notification
+                                const fb = parsed.fallback;
+                                if (typeof showToast === 'function') {
+                                    showToast(
+                                        `${fb.original_model_name || fb.original_model} is unavailable. Using ${fb.fallback_model_name || fb.fallback_model} instead.`,
+                                        'warning'
+                                    );
+                                }
+                            } else if (parsed.type === 'guardrail_blocked') {
                                 // Guardrail or bright line enforcement blocked the message
                                 stopLoadingMessages();
                                 fullResponse = parsed.message || 'This request was blocked by organizational guardrails.';
