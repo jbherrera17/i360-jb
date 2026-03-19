@@ -1,17 +1,17 @@
-# Insight 360 Blueprint v3.80
+# Insight 360 Blueprint v3.81
 
-**Version:** 3.80
-**Date:** March 18, 2026
-**Status:** Current | Phase 80
+**Version:** 3.81
+**Date:** March 19, 2026
+**Status:** Current | Phase 81
 **Codename:** Chronicle
-**Previous Version:** v3.79 (Platform Admin Org Scope + Org Chart Updates)
-**Latest Update:** Phase 80: LLM Health Monitoring & Automatic Fallback
+**Previous Version:** v3.80.1 (LLM Health Monitoring + Billing Error Fix)
+**Latest Update:** Phase 81: Infrastructure Integrity Remediation
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.80 delivers **Phase 80** — real-time LLM provider health monitoring with automatic transparent fallback. When a provider (Anthropic, OpenAI, Google) goes down, the platform automatically routes requests to a healthy alternative and notifies the user via toast — no cryptic errors, no manual intervention.
+Insight 360 v3.81 delivers **Phase 81** — a comprehensive multi-tenant security hardening pass across all five core feature modules (Agents, Skills, Actions, Workflows, Parthenon). All pre-Phase 44 features now have proper module gating via `requireModule()` middleware, ownership/org checks on single-record endpoints, `authFetch()` on all frontend API calls, and corrected database views and schema gaps. System resources are backfilled with org_id to ensure org-scoped queries include them.
 
 The system combines two detection mechanisms: 5-minute interval health pings and instant circuit breaker state change bridging from real user traffic. An SSE health stream pushes status changes to all connected frontends, enabling model dropdowns to gray out unavailable providers in real time.
 
@@ -24,6 +24,66 @@ Key deliverables:
 6. **Perplexity Exception** — Unique search capability means no fallback; returns clear 503 message
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 81: What Was Completed
+
+### 1. Module Gating (All 5 Route Files)
+
+Added `requireModule()` middleware from `moduleAccess.js` to enforce tier/role restrictions:
+
+| Route File | Module ID | Additional |
+|-----------|-----------|------------|
+| `agents.js` | `agents` | Added `checkResourceLimit` import |
+| `skills.js` | `skills` | — |
+| `actions.js` | `actions` | Replaced custom inline middleware with standard `requireModule` |
+| `parthenon.js` | `parthenon` | Was completely unprotected before Phase 81 |
+| `workflows.js` | `workflows` | Converted to factory pattern; added `checkResourceLimit('workflows')` on POST |
+
+### 2. Ownership & Org Checks (Single-Record Endpoints)
+
+Every GET/PUT/DELETE /:id endpoint now verifies the requesting user has access:
+
+| Check | Passes If |
+|-------|-----------|
+| Owner | `record.user_id === req.userId` |
+| Same org | `record.org_id === orgId` |
+| Public | `record.visibility === 'public'` or `record.is_public === true` |
+| System | `record.user_id IS NULL` |
+
+Added `verifyWorkflowOwnership()` helper for workflow step CRUD guards. Parthenon uses dept→org chain verification for roles, OKRs, and processes.
+
+### 3. Frontend authFetch Migration
+
+Replaced 39 raw `fetch('/api/...')` calls with `authFetch()` across 4 pages:
+
+| Page | Calls Migrated |
+|------|---------------|
+| `agents.html` | 15 |
+| `actions.html` | 10 |
+| `skills.html` | 7 |
+| `workflows.html` | 7 |
+
+### 4. Schema & Route Fixes
+
+| Fix | Details |
+|-----|---------|
+| `skill_summary` view | DROP + CREATE with `org_id` and `module_id` columns added |
+| `workflow_executions` | Added `org_id` column with backfill from parent workflow |
+| Route ordering | Moved `GET /executions` before `GET /:id` to prevent Express collision |
+| Phase 50 wiring | `skill_departments` junction table queried in dept filter; `filterByBusinessRole()` applied |
+
+### 5. System Resource org_id Backfill
+
+All system resources (user_id IS NULL) backfilled with Synergi org_id:
+
+| Table | Effect |
+|-------|--------|
+| `agents` | 79 system agents now org-scoped |
+| `skills` | System skills now org-scoped |
+| `actions` | System actions now org-scoped |
+| `workflows` | System workflows now org-scoped |
 
 ---
 
@@ -109,7 +169,7 @@ Updated `Insight-Org-Chart.md` to reflect the complete Parthenon agent rollout:
 |--------|--------|-------|
 | Named agent skills | 52 | 58 |
 | Total skills | 78 | 84 |
-| Executive team | Partial | Complete (Jarvis, Alfred, Higgins) |
+| Executive team | Partial | Complete (Higgins, Jarvis, Alfred) |
 | Cross-functional team | 5 agents | 8 agents (+Marley, Skyler, Jordan-B) |
 
 ---
