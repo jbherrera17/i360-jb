@@ -2698,17 +2698,21 @@
             initTheme();
             lucide.createIcons();
 
-            // Check authentication
+            // Check authentication — let authFetch handle redirect on true expiry
             const token = localStorage.getItem('insight360_token');
             if (!token) {
-                window.location.href = 'login.html';
+                window.location.href = '/login.html';
                 return;
             }
 
             // Get current user and check admin status
+            // If authFetch encounters a 401, it will redirect to login internally.
+            // Do NOT redirect again here — show access denied instead to avoid
+            // double-redirect when authFetch already handled the session expiry.
             const user = await fetchCurrentUser();
             if (!user) {
-                window.location.href = 'login.html';
+                document.getElementById('accessDenied').style.display = 'flex';
+                lucide.createIcons();
                 return;
             }
 
