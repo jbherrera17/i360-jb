@@ -3,9 +3,10 @@
  *
  * Provides window.authFetch() as a drop-in replacement for fetch() that:
  *  1. Attaches Authorization header from localStorage token
- *  2. On 401, attempts to refresh via /api/auth/refresh
- *  3. Retries the original request once with the new token
- *  4. Redirects to login if refresh also fails
+ *  2. Attaches x-org-id header from localStorage org context
+ *  3. On 401, attempts to refresh via /api/auth/refresh
+ *  4. Retries the original request once with the new token
+ *  5. Redirects to login if refresh also fails
  *
  * Also runs a proactive refresh timer so tokens are renewed before expiry.
  *
@@ -24,6 +25,7 @@ window.AuthFetch = (function () {
 
     const TOKEN_KEY    = 'insight360_token';
     const EXPIRY_KEY   = 'insight360_token_expires_at';
+    const ORG_ID_KEY   = 'insight360_org_id';
 
     let _refreshPromise = null; // Dedup concurrent refresh calls
     let _refreshTimer   = null;
@@ -46,11 +48,20 @@ window.AuthFetch = (function () {
             throw new Error('Not authenticated');
         }
 
-        // Merge Authorization header (preserve caller's headers like Content-Type)
-        options.headers = Object.assign(
-            { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            options.headers || {}
-        );
+        // Build default headers: auth token + org context
+        var defaultHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        };
+
+        // Attach org context for multi-tenant scoping
+        var orgId = localStorage.getItem(ORG_ID_KEY);
+        if (orgId) {
+            defaultHeaders['x-org-id'] = orgId;
+        }
+
+        // Merge with caller's headers (caller can override if needed)
+        options.headers = Object.assign(defaultHeaders, options.headers || {});
 
         var response = await fetch(url, options);
 

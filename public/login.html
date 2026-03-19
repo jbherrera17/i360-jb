@@ -750,6 +750,13 @@
                         localStorage.setItem('insight360_token_expires_at', String(data.session.expires_at));
                     }
 
+                    // Store org_id for multi-tenant context
+                    const inviteOrgId = data.user?.default_org_id || data.user?.organization?.id;
+                    if (inviteOrgId) {
+                        localStorage.setItem('insight360_org_id', inviteOrgId);
+                        localStorage.setItem('currentOrgId', inviteOrgId);
+                    }
+
                     showSuccess('Account activated successfully! Redirecting...');
 
                     setTimeout(() => {

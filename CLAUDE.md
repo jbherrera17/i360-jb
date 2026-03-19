@@ -510,6 +510,61 @@ User guides are automatically available to Higgins (chat.html) via the `/api/doc
 
 **If any item is unchecked, the module is NOT complete.** Do not move on to the next task.
 
+## Multi-Tenant Data Scoping Rules (MANDATORY)
+
+**CRITICAL:** Every API call and every database query MUST be scoped to the requesting user's organization. Cross-org data leakage is a security incident. These rules are non-negotiable.
+
+### Frontend Rules
+
+1. **NEVER use raw `fetch()` for `/api/*` calls.** Always use `authFetch()` which attaches both the auth token and `x-org-id` header.
+2. **Include `auth-fetch-loader.js` in every page** (in `<head>`, before other scripts):
+   ```html
+   <script src="/js/auth-fetch-loader.js"></script>
+   ```
+3. **Do NOT rely on `navigation.js` to load auth-fetch** — it loads asynchronously, creating a race condition where page init fires before authFetch is available.
+
+### Backend Rules
+
+1. **Use `requireOrgContext` middleware** on all routes that return org-scoped data:
+   ```javascript
+   const { requireOrgContext } = require('../middleware/orgContext');
+   router.get('/', requireOrgContext(supabase), handler);
+   ```
+2. **Use `scopeToOrg()` for all database queries** that touch org-scoped tables:
+   ```javascript
+   const { scopeToOrg } = require('../utils/orgScope');
+   const query = scopeToOrg(supabase.from('agents').select('*'), req.verifiedOrgId);
+   ```
+3. **NEVER write "return everything" fallbacks.** If `orgId` is null, the request must fail — not silently return cross-org data. The `scopeToOrg()` helper enforces this by throwing on null orgId.
+4. **Validate ownership on `/:id` endpoints.** Before returning a record by ID, verify its `org_id` matches the requesting user's org.
+5. **The `x-org-id` header must be validated** against the user's `organization_members` records. The `requireOrgContext` middleware does this automatically.
+6. **Platform admin routes** that need cross-org access must explicitly opt in:
+   ```javascript
+   router.get('/', requireOrgContext(supabase, { allowPlatformAdmin: true }), handler);
+   ```
+
+### Anti-Patterns (DO NOT USE)
+
+```javascript
+// BAD: Returns all data when orgId is null
+if (orgId) { query.eq('org_id', orgId); }
+
+// BAD: Returns all orgs' data as fallback
+if (orgId) { query.eq('org_id', orgId); } else { query.not('org_id', 'is', null); }
+
+// BAD: Fragile string interpolation with potentially null orgId
+query.or(`org_id.eq.${orgId},org_id.is.null`)
+
+// BAD: Raw fetch without auth
+fetch('/api/agents')
+
+// GOOD: Scoped query that fails on null
+const query = scopeToOrg(supabase.from('agents').select('*'), req.verifiedOrgId);
+
+// GOOD: Authenticated fetch with org context
+authFetch('/api/agents')
+```
+
 ## Environment Variables
 
 Required in `.env` (see `.env.example`):
