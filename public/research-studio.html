@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/usage-nudge.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/llm-health.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
@@ -259,7 +260,7 @@
          */
         async function loadModels() {
             try {
-                const response = await fetch('/api/chat/models');
+                const response = await authFetch('/api/chat/models');
                 const data = await response.json();
 
                 if (data.success && data.models) {
@@ -347,7 +348,7 @@
                     default_model: model
                 };
 
-                const response = await fetch(`/api/research-studios/${currentStudio.id}`, {
+                const response = await authFetch(`/api/research-studios/${currentStudio.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

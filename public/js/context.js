@@ -3,7 +3,7 @@
  * Phase 3: Context Asset Management UI
  * Version: 2.2.2 - Fixed API response handling
  */
-/* global initNavigation, UsageNudge */
+/* global initNavigation, UsageNudge, authFetch */
 
 // ============================================
 // STATE MANAGEMENT
@@ -50,7 +50,7 @@ async function apiCall(endpoint, options = {}) {
         };
         if (orgId) headers['x-org-id'] = orgId;
 
-        const response = await fetch(endpoint, {
+        const response = await authFetch(endpoint, {
             ...options,
             headers
         });
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initOrgScope() {
     try {
         // Check if user is platform admin
-        const verifyResp = await fetch('/api/platform/admin/verify', {
+        const verifyResp = await authFetch('/api/platform/admin/verify', {
             headers: { 'Content-Type': 'application/json' }
         });
         state.isPlatformAdmin = verifyResp.ok;
@@ -1472,7 +1472,7 @@ async function handleImport(e) {
 
             showToast(`Importing ${data.assets.length} assets...`, 'info');
 
-            const response = await fetch('/api/context/import', {
+            const response = await authFetch('/api/context/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ assets: data.assets }),
@@ -1732,7 +1732,7 @@ async function handleModalGenerate(data) {
     modal.showStatus('Generating content with AI...');
 
     try {
-        const response = await fetch('/api/context/generate', {
+        const response = await authFetch('/api/context/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1826,7 +1826,7 @@ async function handleModalImport(data) {
     modal.showStatus('Analyzing and structuring content...');
 
     try {
-        const response = await fetch('/api/context/parse', {
+        const response = await authFetch('/api/context/parse', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

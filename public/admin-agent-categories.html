@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/icon-picker.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/js/icon-picker.js"></script>
@@ -300,9 +301,7 @@
         // ============================================================================
         async function fetchAgentCategories() {
             try {
-                const response = await fetch('/api/agents/categories/all', {
-                    headers: getAuthHeaders()
-                });
+                const response = await authFetch('/api/agents/categories/all');
                 const data = await response.json();
                 if (data.success) {
                     agentCategories = data.data;
@@ -524,9 +523,9 @@
             try {
                 let response;
                 if (editingCategoryId) {
-                    response = await fetch(`/api/agents/categories/${editingCategoryId}`, {
+                    response = await authFetch(`/api/agents/categories/${editingCategoryId}`, {
                         method: 'PUT',
-                        headers: getAuthHeaders(),
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             key,
                             display_name: displayName,
@@ -538,9 +537,9 @@
                         })
                     });
                 } else {
-                    response = await fetch('/api/agents/categories', {
+                    response = await authFetch('/api/agents/categories', {
                         method: 'POST',
-                        headers: getAuthHeaders(),
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             key,
                             display_name: displayName,
@@ -578,9 +577,8 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/agents/categories/${categoryId}`, {
-                    method: 'DELETE',
-                    headers: getAuthHeaders()
+                const response = await authFetch(`/api/agents/categories/${categoryId}`, {
+                    method: 'DELETE'
                 });
 
                 const data = await response.json();

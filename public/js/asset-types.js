@@ -1,3 +1,4 @@
+/* global authFetch, IconPicker */
 /**
  * Asset Types Admin - Insight 360
  * CRUD operations for managing context asset types
@@ -42,7 +43,7 @@ function initIconPicker() {
  */
 async function loadAssetTypes() {
     try {
-        const response = await fetch('/api/context/types');
+        const response = await authFetch('/api/context/types');
         const result = await response.json();
 
         if (result.success) {
@@ -61,7 +62,7 @@ async function loadAssetTypes() {
  */
 async function loadAssetCounts() {
     try {
-        const response = await fetch('/api/context/stats');
+        const response = await authFetch('/api/context/stats');
         const result = await response.json();
 
         if (result.success && result.data.by_type) {
@@ -247,14 +248,14 @@ async function handleSubmit(event) {
         let response;
         if (editingType) {
             // Update existing
-            response = await fetch(`/api/context/types/${editingType}`, {
+            response = await authFetch(`/api/context/types/${editingType}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
         } else {
             // Create new
-            response = await fetch('/api/context/types', {
+            response = await authFetch('/api/context/types', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -302,7 +303,7 @@ async function openDeleteModal(typeKey) {
  */
 async function performDelete(typeKey) {
     try {
-        const response = await fetch(`/api/context/types/${typeKey}`, {
+        const response = await authFetch(`/api/context/types/${typeKey}`, {
             method: 'DELETE'
         });
 

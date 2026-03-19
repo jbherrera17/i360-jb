@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -440,9 +441,7 @@
             const token = localStorage.getItem('insight360_token');
             if (!token) return false;
             try {
-                const res = await fetch('/api/org-members/my-memberships', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await authFetch('/api/org-members/my-memberships');
                 if (!res.ok) return false;
                 const data = await res.json();
                 const memberships = data.data || [];
@@ -455,9 +454,7 @@
                     return true;
                 }
                 // Also accept platform admins (they can see all)
-                const platformRes = await fetch('/api/platform/config', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const platformRes = await authFetch('/api/platform/config');
                 return platformRes.ok;
             } catch (err) {
                 console.error('Access check failed:', err);
@@ -470,9 +467,7 @@
             const params = new URLSearchParams({ days: 30 });
             if (currentOrgId) params.set('org_id', currentOrgId);
             try {
-                const res = await fetch(`/api/role-audit/summary?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await authFetch(`/api/role-audit/summary?${params}`);
                 if (!res.ok) return;
                 const data = await res.json();
                 const s = data.data || {};
@@ -510,9 +505,7 @@
             }
 
             try {
-                const res = await fetch(`/api/role-audit?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await authFetch(`/api/role-audit?${params}`);
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
                     tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger);">

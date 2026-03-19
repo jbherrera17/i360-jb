@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/icon-picker.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -965,7 +966,7 @@
         // Load configuration
         async function loadConfig() {
             try {
-                const res = await fetch('/api/briefing/config');
+                const res = await authFetch('/api/briefing/config');
                 const data = await res.json();
                 if (data.success) {
                     config = data.data;
@@ -981,7 +982,7 @@
         // Load agents
         async function loadAgents() {
             try {
-                const res = await fetch('/api/briefing/agents');
+                const res = await authFetch('/api/briefing/agents');
                 const data = await res.json();
                 if (data.success) {
                     agents = data.data;
@@ -1004,7 +1005,7 @@
         // Update schedule
         async function updateSchedule() {
             try {
-                const res = await fetch('/api/briefing/config', {
+                const res = await authFetch('/api/briefing/config', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1185,13 +1186,13 @@
             try {
                 let res;
                 if (editingSectionId) {
-                    res = await fetch(`/api/briefing/sections/${editingSectionId}`, {
+                    res = await authFetch(`/api/briefing/sections/${editingSectionId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(sectionData)
                     });
                 } else {
-                    res = await fetch('/api/briefing/sections', {
+                    res = await authFetch('/api/briefing/sections', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(sectionData)
@@ -1222,7 +1223,7 @@
             if (!confirmed) return;
 
             try {
-                const res = await fetch(`/api/briefing/sections/${id}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/briefing/sections/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     ModalService.success('Section deleted');
@@ -1236,7 +1237,7 @@
         // Load today's briefing
         async function loadTodaysBriefing() {
             try {
-                const res = await fetch('/api/briefing/today');
+                const res = await authFetch('/api/briefing/today');
                 const data = await res.json();
                 if (data.success && data.data) {
                     currentBriefing = data.data;
@@ -1378,7 +1379,7 @@
         // History
         async function loadHistory() {
             try {
-                const res = await fetch(`/api/briefing/history?page=${historyPage}&limit=10`);
+                const res = await authFetch(`/api/briefing/history?page=${historyPage}&limit=10`);
                 const data = await res.json();
                 if (data.success) {
                     renderHistory(data.data, data.pagination);
@@ -1442,7 +1443,7 @@
 
         async function viewBriefing(id) {
             try {
-                const res = await fetch(`/api/briefing/${id}`);
+                const res = await authFetch(`/api/briefing/${id}`);
                 const data = await res.json();
                 if (data.success && data.data) {
                     currentBriefing = data.data;

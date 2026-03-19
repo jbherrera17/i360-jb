@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
@@ -547,7 +548,7 @@
 
     async function loadConfig() {
         try {
-            const res = await fetch('/api/social/config', { headers: getHeaders() });
+            const res = await authFetch('/api/social/config', { headers: getHeaders() });
             socialConfig = await res.json();
 
             if (!socialConfig.configured) {
@@ -560,7 +561,7 @@
 
     async function loadAccounts() {
         try {
-            const res = await fetch('/api/social/accounts', { headers: getHeaders() });
+            const res = await authFetch('/api/social/accounts', { headers: getHeaders() });
             if (!res.ok) return;
             const data = await res.json();
             platformAccounts = data.platforms || [];
@@ -576,7 +577,7 @@
     // ============================================
     async function loadUsage() {
         try {
-            const res = await fetch('/api/social/usage', { headers: getHeaders() });
+            const res = await authFetch('/api/social/usage', { headers: getHeaders() });
             if (!res.ok) return;
             const data = await res.json();
 
@@ -685,7 +686,7 @@
 
     async function syncAccounts() {
         try {
-            const res = await fetch('/api/social/accounts/sync', {
+            const res = await authFetch('/api/social/accounts/sync', {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -776,7 +777,7 @@
         const articleUrl = document.getElementById('composeArticleUrl').value || null;
 
         try {
-            const res = await fetch('/api/social/adapt', {
+            const res = await authFetch('/api/social/adapt', {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ content, platforms: selectedPlatforms, hashtags, articleUrl })
@@ -818,7 +819,7 @@
         btn.disabled = true;
 
         try {
-            const res = await fetch('/api/social/posts', {
+            const res = await authFetch('/api/social/posts', {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -873,7 +874,7 @@
 
         try {
             const statusFilter = status === 'published' ? '' : `&status=${status}`;
-            const res = await fetch(`/api/social/posts?limit=50${statusFilter}`, { headers: getHeaders() });
+            const res = await authFetch(`/api/social/posts?limit=50${statusFilter}`, { headers: getHeaders() });
             if (!res.ok) return;
 
             const data = await res.json();
@@ -924,7 +925,7 @@
         });
         if (!confirmed) return;
         try {
-            await fetch(`/api/social/posts/${postId}`, { method: 'DELETE', headers: getHeaders() });
+            await authFetch(`/api/social/posts/${postId}`, { method: 'DELETE', headers: getHeaders() });
             showToast('Post cancelled', 'success');
             loadPosts('scheduled');
         } catch (err) {
@@ -938,7 +939,7 @@
     async function loadAnalytics() {
         const grid = document.getElementById('analyticsGrid');
         try {
-            const res = await fetch('/api/social/analytics?days=30', { headers: getHeaders() });
+            const res = await authFetch('/api/social/analytics?days=30', { headers: getHeaders() });
             if (!res.ok) return;
             const data = await res.json();
 
@@ -1015,7 +1016,7 @@
         if (!result) return;
 
         try {
-            const res = await fetch('/api/social/config', {
+            const res = await authFetch('/api/social/config', {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(result)

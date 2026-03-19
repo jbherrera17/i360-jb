@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -433,7 +434,7 @@
 
         async function loadResponsibility() {
             try {
-                const response = await fetch(`/api/roles/responsibilities/${responsibilityId}`);
+                const response = await authFetch(`/api/roles/responsibilities/${responsibilityId}`);
                 const result = await response.json();
 
                 if (result.success && result.data) {
@@ -452,7 +453,7 @@
 
         async function loadAIMappings() {
             try {
-                const response = await fetch(`/api/connections/responsibilities/${responsibilityId}/ai`);
+                const response = await authFetch(`/api/connections/responsibilities/${responsibilityId}/ai`);
                 const result = await response.json();
 
                 if (result.success && result.data) {
@@ -479,9 +480,9 @@
         async function loadAvailableEntities() {
             try {
                 const [agentsRes, skillsRes, workflowsRes] = await Promise.all([
-                    fetch('/api/agents'),
-                    fetch('/api/skills'),
-                    fetch('/api/workflows')
+                    authFetch('/api/agents'),
+                    authFetch('/api/skills'),
+                    authFetch('/api/workflows')
                 ]);
 
                 const [agents, skills, workflows] = await Promise.all([
@@ -628,7 +629,7 @@
             const idKey = type === 'agents' ? 'agent_id' : type === 'skills' ? 'skill_id' : 'workflow_id';
 
             try {
-                const response = await fetch(`/api/connections/responsibilities/${responsibilityId}/${type}`, {
+                const response = await authFetch(`/api/connections/responsibilities/${responsibilityId}/${type}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -664,7 +665,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(
+                const response = await authFetch(
                     `/api/connections/responsibilities/${responsibilityId}/${type}/${entityId}`,
                     { method: 'DELETE' }
                 );

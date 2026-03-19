@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/llm-health.js"></script>
     <meta charset="UTF-8">
@@ -1335,7 +1336,7 @@
         }
 
         async function loadAgent(agentId) {
-            const response = await fetch(`/api/agents/${agentId}`);
+            const response = await authFetch(`/api/agents/${agentId}`);
             const data = await response.json();
 
             if (!data.success || !data.data) {
@@ -1401,7 +1402,7 @@
             // For MindStudio agents, generate a signed embed URL from the backend
             if (agent.type === 'mindstudio' && agent.mindstudio_workflow_id) {
                 try {
-                    const response = await fetch(`/api/agents/${agent.id}/embed-url`, {
+                    const response = await authFetch(`/api/agents/${agent.id}/embed-url`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({})
@@ -1520,7 +1521,7 @@
                 }
 
                 // Stream response
-                const response = await fetch(`/api/agents/${currentAgent.id}/execute/stream`, {
+                const response = await authFetch(`/api/agents/${currentAgent.id}/execute/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
@@ -1600,7 +1601,7 @@
         async function loadContextPreview(agentId) {
             try {
                 // Load context mappings with full details
-                const response = await fetch(`/api/agents/${agentId}/context/mappings`);
+                const response = await authFetch(`/api/agents/${agentId}/context/mappings`);
                 const data = await response.json();
 
                 if (data.success && data.data) {
@@ -1609,7 +1610,7 @@
                     updateActiveContextIndicator();
                 } else {
                     // Fallback to preview endpoint if mappings endpoint not available
-                    const previewResponse = await fetch(`/api/agents/${agentId}/context/preview`, {
+                    const previewResponse = await authFetch(`/api/agents/${agentId}/context/preview`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ user_message: '' })
@@ -1944,7 +1945,7 @@
             try {
                 // Add mappings for each selected asset
                 for (const assetId of assetIds) {
-                    await fetch(`/api/agents/${currentAgent.id}/context/mappings`, {
+                    await authFetch(`/api/agents/${currentAgent.id}/context/mappings`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -2250,7 +2251,7 @@
         async function loadModelsFromAPI() {
             const container = document.getElementById('dynamicModelOptions');
             try {
-                const response = await fetch('/api/chat/models');
+                const response = await authFetch('/api/chat/models');
                 const data = await response.json();
 
                 if (data.success && data.models) {

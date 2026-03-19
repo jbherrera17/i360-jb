@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Insight 360 - Onboarding Wizard
  * Multi-step modal wizard for first-time user onboarding
@@ -595,9 +596,7 @@ const OnboardingWizard = (function() {
     async function fetchState() {
         try {
             const token = getAuthToken();
-            const response = await fetch('/api/onboarding/state', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await authFetch('/api/onboarding/state');
             const result = await response.json();
             if (result.success) {
                 onboardingState = result.data;
@@ -611,12 +610,9 @@ const OnboardingWizard = (function() {
     async function updateState(updates) {
         try {
             const token = getAuthToken();
-            await fetch('/api/onboarding/state', {
+            await authFetch('/api/onboarding/state', {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates)
             });
         } catch (error) {
@@ -629,7 +625,7 @@ const OnboardingWizard = (function() {
         try {
             const orgId = localStorage.getItem('insight360_org_id') || '';
             const url = orgId ? `/api/departments?org_id=${orgId}` : '/api/departments';
-            const response = await fetch(url);
+            const response = await authFetch(url);
             const result = await response.json();
             if (result.success) {
                 departments = result.data;
@@ -643,9 +639,7 @@ const OnboardingWizard = (function() {
     async function fetchProfile() {
         try {
             const token = getAuthToken();
-            const response = await fetch('/api/auth/profile', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await authFetch('/api/auth/profile');
             const result = await response.json();
             if (result.success) {
                 profileData = result.data;
@@ -927,12 +921,9 @@ const OnboardingWizard = (function() {
                 if (department) updates.department_id = department;
                 if (selectedAvatar) updates.avatar_url = selectedAvatar;
 
-                await fetch('/api/auth/profile', {
+                await authFetch('/api/auth/profile', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updates)
                 });
 
@@ -958,9 +949,7 @@ const OnboardingWizard = (function() {
     async function assignUserTitle(userId, departmentId, titleInput, token) {
         try {
             // Fetch available titles for this department
-            const rolesRes = await fetch(`/api/roles?department_id=${departmentId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const rolesRes = await authFetch(`/api/roles?department_id=${departmentId}`);
             const rolesData = await rolesRes.json();
 
             if (!rolesData.success || !rolesData.data?.length) {
@@ -991,12 +980,9 @@ const OnboardingWizard = (function() {
 
             if (roleToAssign) {
                 // Assign the role to the user
-                await fetch(`/api/user-profile/${userId}/roles`, {
+                await authFetch(`/api/user-profile/${userId}/roles`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         role_id: roleToAssign.id,
                         is_primary: true
@@ -1052,9 +1038,8 @@ const OnboardingWizard = (function() {
     async function skip() {
         try {
             const token = getAuthToken();
-            await fetch('/api/onboarding/skip', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+            await authFetch('/api/onboarding/skip', {
+                method: 'POST'
             });
             hide();
         } catch (error) {
@@ -1067,9 +1052,8 @@ const OnboardingWizard = (function() {
     async function dismiss() {
         try {
             const token = getAuthToken();
-            await fetch('/api/onboarding/dismiss', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+            await authFetch('/api/onboarding/dismiss', {
+                method: 'POST'
             });
             hide();
         } catch (error) {
@@ -1082,9 +1066,8 @@ const OnboardingWizard = (function() {
     async function complete() {
         try {
             const token = getAuthToken();
-            await fetch('/api/onboarding/complete', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+            await authFetch('/api/onboarding/complete', {
+                method: 'POST'
             });
             hide();
         } catch (error) {

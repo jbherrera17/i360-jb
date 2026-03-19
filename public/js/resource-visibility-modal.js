@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Resource Visibility Modal Component
  * Phase 45: Per-User Resource Access Control
@@ -84,7 +85,7 @@ const ResourceVisibilityModal = {
      */
     async loadDepartments() {
         try {
-            const response = await fetch('/api/departments', {
+            const response = await authFetch('/api/departments', {
                 headers: this.getHeaders()
             });
             const data = await response.json();
@@ -105,7 +106,7 @@ const ResourceVisibilityModal = {
     async updateVisibility(resourceType, resourceId, settings) {
         try {
             // Update visibility via bulk update endpoint (works for single resources too)
-            const updateResponse = await fetch('/api/resource-access/bulk-update', {
+            const updateResponse = await authFetch('/api/resource-access/bulk-update', {
                 method: 'POST',
                 headers: this.getHeaders(),
                 body: JSON.stringify({
@@ -121,7 +122,7 @@ const ResourceVisibilityModal = {
 
             // Update role requirement if specified
             if (settings.min_business_role !== undefined) {
-                await fetch('/api/resource-access/role-requirement', {
+                await authFetch('/api/resource-access/role-requirement', {
                     method: 'POST',
                     headers: this.getHeaders(),
                     body: JSON.stringify({

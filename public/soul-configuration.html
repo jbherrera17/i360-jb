@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -857,9 +858,7 @@
                 const token = localStorage.getItem('insight360_token');
                 if (token) {
                     try {
-                        const response = await fetch('/api/auth/me', {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
+                        const response = await authFetch('/api/auth/me');
                         const data = await response.json();
                         if (data.success && data.user) {
                             if (data.user.is_platform_admin) isPlatformAdmin = true;
@@ -881,7 +880,7 @@
             try {
                 // Try org-level config first
                 if (orgId) {
-                    const orgResponse = await fetch(`/api/soul-config?scope_type=organization&org_id=${orgId}&is_active=true`);
+                    const orgResponse = await authFetch(`/api/soul-config?scope_type=organization&org_id=${orgId}&is_active=true`);
                     const orgData = await orgResponse.json();
 
                     if (orgData.success && orgData.data && orgData.data.length > 0) {
@@ -896,7 +895,7 @@
 
                 // Fall back to platform config (for platform admins or if no org config)
                 if (isPlatformAdmin) {
-                    const platResponse = await fetch('/api/soul-config?scope_type=platform&is_active=true');
+                    const platResponse = await authFetch('/api/soul-config?scope_type=platform&is_active=true');
                     const platData = await platResponse.json();
 
                     if (platData.success && platData.data && platData.data.length > 0) {
@@ -972,7 +971,7 @@
         // ── Shared Save Helper ──────────────────────────────────
         async function saveSection(sectionData, changeReason) {
             try {
-                const response = await fetch(`/api/soul-config/${configId}`, {
+                const response = await authFetch(`/api/soul-config/${configId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ...sectionData, change_reason: changeReason })
@@ -1698,7 +1697,7 @@
         // ── Version History ─────────────────────────────────────
         async function loadVersionHistory() {
             try {
-                const response = await fetch(`/api/soul-config/${configId}/versions`);
+                const response = await authFetch(`/api/soul-config/${configId}/versions`);
                 const data = await response.json();
 
                 if (!data.success) throw new Error(data.error);
@@ -1740,7 +1739,7 @@
         // ── Soul.md ─────────────────────────────────────────────
         async function loadSoulMd() {
             try {
-                const response = await fetch(`/api/soul-config/${configId}/export`);
+                const response = await authFetch(`/api/soul-config/${configId}/export`);
                 const data = await response.json();
 
                 if (data.success && data.data && data.data.markdown) {
@@ -1753,7 +1752,7 @@
 
         async function regenerateSoulMd() {
             try {
-                const response = await fetch(`/api/soul-config/${configId}/export`);
+                const response = await authFetch(`/api/soul-config/${configId}/export`);
                 const data = await response.json();
 
                 if (data.success && data.data && data.data.markdown) {
@@ -1804,7 +1803,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/soul-config/${configId}/rollback`, {
+                const response = await authFetch(`/api/soul-config/${configId}/rollback`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ version })

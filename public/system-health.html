@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/llm-health.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -963,7 +964,7 @@
         }
 
         async function fetchHealth() {
-            const response = await fetch('/api/integrity/health', {
+            const response = await authFetch('/api/integrity/health', {
                 headers: getAuthHeaders()
             });
             const data = await response.json();
@@ -975,7 +976,7 @@
         }
 
         async function fetchAlerts() {
-            const response = await fetch('/api/integrity/alerts?status=active&limit=50', {
+            const response = await authFetch('/api/integrity/alerts?status=active&limit=50', {
                 headers: getAuthHeaders()
             });
             const data = await response.json();
@@ -987,7 +988,7 @@
         }
 
         async function fetchIncidents() {
-            const response = await fetch('/api/integrity/incidents/active', {
+            const response = await authFetch('/api/integrity/incidents/active', {
                 headers: getAuthHeaders()
             });
             const data = await response.json();
@@ -1000,7 +1001,7 @@
 
         async function fetchModelAvailability() {
             try {
-                const response = await fetch('/api/models/availability', {
+                const response = await authFetch('/api/models/availability', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1018,7 +1019,7 @@
 
         async function acknowledgeAlert(alertId) {
             const userId = localStorage.getItem('insight360_user_id');
-            const response = await fetch(`/api/integrity/alerts/${alertId}/acknowledge`, {
+            const response = await authFetch(`/api/integrity/alerts/${alertId}/acknowledge`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ user_id: userId })
@@ -1029,7 +1030,7 @@
         }
 
         async function resolveAlert(alertId) {
-            const response = await fetch(`/api/integrity/alerts/${alertId}/resolve`, {
+            const response = await authFetch(`/api/integrity/alerts/${alertId}/resolve`, {
                 method: 'PUT',
                 headers: getAuthHeaders()
             });
@@ -1345,7 +1346,7 @@
             lucide.createIcons();
 
             try {
-                const response = await fetch('/api/models/availability/check', {
+                const response = await authFetch('/api/models/availability/check', {
                     method: 'POST',
                     headers: getAuthHeaders()
                 });

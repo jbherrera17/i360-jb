@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Branding Service - Runtime white-label branding injection
  *
@@ -70,7 +71,7 @@ const BrandingService = (() => {
         if (!token) return null;
 
         try {
-            const response = await fetch(`/api/org-customization/${orgId}/branding`, {
+            const response = await (typeof authFetch === 'function' ? authFetch : fetch)(`/api/org-customization/${orgId}/branding`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'

@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -1021,7 +1022,7 @@
 
             // Get org context
             try {
-                const response = await fetch('/api/user-profile');
+                const response = await authFetch('/api/user-profile');
                 const data = await response.json();
                 if (data.user && data.user.org_id) {
                     orgId = data.user.org_id;
@@ -1500,7 +1501,7 @@
         // Import functions
         async function importFromStrategicFoundations() {
             try {
-                const response = await fetch(`/api/strategy120/foundations?org_id=${orgId}`);
+                const response = await authFetch(`/api/strategy120/foundations?org_id=${orgId}`);
                 const data = await response.json();
 
                 if (data.data) {
@@ -1516,7 +1517,7 @@
 
         async function importFromAlign120() {
             try {
-                const response = await fetch(`/api/align120/fundamentals?org_id=${orgId}`);
+                const response = await authFetch(`/api/align120/fundamentals?org_id=${orgId}`);
                 const data = await response.json();
 
                 if (data.discovered_values) {
@@ -1559,7 +1560,7 @@
                 const method = configId ? 'PUT' : 'POST';
                 const url = configId ? `/api/soul-config/${configId}` : '/api/soul-config';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1599,7 +1600,7 @@
             }
 
             try {
-                const response = await fetch(`/api/soul-config/${configId}/publish`, {
+                const response = await authFetch(`/api/soul-config/${configId}/publish`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -1622,7 +1623,7 @@
 
         async function saveBaselineEntries() {
             try {
-                const response = await fetch('/api/context/assets', {
+                const response = await authFetch('/api/context/assets', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1695,7 +1696,7 @@
 
             try {
                 const domain = soulConfig.domain?.challenges || '';
-                const response = await fetch('/api/soul-config/generate-industry-baseline', {
+                const response = await authFetch('/api/soul-config/generate-industry-baseline', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orgId, industry, domain })

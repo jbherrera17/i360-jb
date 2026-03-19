@@ -6,6 +6,7 @@
     <title>Client Portal | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
@@ -577,7 +578,7 @@
 
             try {
                 showLoading();
-                const response = await fetch('/api/client-portal/auth/request-access', {
+                const response = await authFetch('/api/client-portal/auth/request-access', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
@@ -603,7 +604,7 @@
         async function verifyMagicLink(token) {
             try {
                 showLoading();
-                const response = await fetch('/api/client-portal/auth/verify', {
+                const response = await authFetch('/api/client-portal/auth/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token })
@@ -635,7 +636,7 @@
                 showLoading();
 
                 // Fetch profile
-                const profileRes = await fetch('/api/client-portal/profile', {
+                const profileRes = await authFetch('/api/client-portal/profile', {
                     headers: { 'Authorization': `Bearer ${clientToken}` }
                 });
 
@@ -678,7 +679,7 @@
         // Load reports
         async function loadReports() {
             try {
-                const response = await fetch('/api/client-portal/reports', {
+                const response = await authFetch('/api/client-portal/reports', {
                     headers: { 'Authorization': `Bearer ${clientToken}` }
                 });
 
@@ -793,7 +794,7 @@
         async function downloadReport(reportId) {
             try {
                 showLoading();
-                const response = await fetch(`/api/client-portal/reports/${reportId}/download`, {
+                const response = await authFetch(`/api/client-portal/reports/${reportId}/download`, {
                     headers: { 'Authorization': `Bearer ${clientToken}` }
                 });
 
@@ -819,7 +820,7 @@
         // Logout
         async function logout() {
             try {
-                await fetch('/api/client-portal/auth/logout', {
+                await authFetch('/api/client-portal/auth/logout', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${clientToken}` }
                 });

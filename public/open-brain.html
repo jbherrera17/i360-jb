@@ -1328,7 +1328,7 @@ Keep responses concise — 2-3 sentences max.`;
 
             OBState.chatHistory.push({ role: 'user', content: text });
 
-            const resp = await fetch('/api/chat/stream', {
+            const resp = await authFetch('/api/chat/stream', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

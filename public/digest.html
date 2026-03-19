@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -203,7 +204,7 @@
 
         async function loadLatestDigest() {
             try {
-                const resp = await fetch('/api/digest/latest');
+                const resp = await authFetch('/api/digest/latest');
                 const json = await resp.json();
                 if (json.success && json.data) {
                     renderDigest(json.data);
@@ -213,7 +214,7 @@
 
         async function loadSources() {
             try {
-                const resp = await fetch('/api/digest/sources');
+                const resp = await authFetch('/api/digest/sources');
                 const json = await resp.json();
                 if (json.success) allSources = json.data || [];
             } catch (err) { console.error('Failed to load sources:', err); }
@@ -221,7 +222,7 @@
 
         async function loadAgents() {
             try {
-                const resp = await fetch('/api/digest/agents');
+                const resp = await authFetch('/api/digest/agents');
                 const json = await resp.json();
                 if (json.success) allAgents = json.data || [];
             } catch (err) { console.error('Failed to load agents:', err); }
@@ -229,8 +230,7 @@
 
         async function loadContextAssets() {
             try {
-                const fetchFn = window.authFetch || fetch;
-                const resp = await fetchFn('/api/digest/context-assets');
+                const resp = await authFetch('/api/digest/context-assets');
                 const json = await resp.json();
                 if (json.success) allContextAssets = json.data || [];
             } catch (err) { console.error('Failed to load context assets:', err); }
@@ -238,7 +238,7 @@
 
         async function loadHistory() {
             try {
-                const resp = await fetch('/api/digest/history?limit=20');
+                const resp = await authFetch('/api/digest/history?limit=20');
                 const json = await resp.json();
                 if (json.success) renderHistory(json.data || [], json.pagination);
             } catch (err) { console.error('Failed to load history:', err); }
@@ -246,7 +246,7 @@
 
         async function loadConfig() {
             try {
-                const resp = await fetch('/api/digest/configs');
+                const resp = await authFetch('/api/digest/configs');
                 const json = await resp.json();
                 if (json.success) {
                     currentConfig = json.data && json.data.length > 0 ? json.data[0] : null;
@@ -467,7 +467,7 @@
             resultsDiv.innerHTML = '<p style="color:var(--text-secondary);">Searching...</p>';
 
             try {
-                const resp = await fetch(`/api/digest/search?${params}`);
+                const resp = await authFetch(`/api/digest/search?${params}`);
                 const json = await resp.json();
 
                 if (!json.success || !json.data || json.data.length === 0) {
@@ -529,7 +529,7 @@
 
         async function viewDigest(id) {
             try {
-                const resp = await fetch(`/api/digest/${id}`);
+                const resp = await authFetch(`/api/digest/${id}`);
                 const json = await resp.json();
                 if (json.success && json.data) {
                     document.querySelector('[data-tab="today"]').click();
@@ -623,7 +623,7 @@
             if (!result) return;
 
             try {
-                const resp = await fetch('/api/digest/configs', {
+                const resp = await authFetch('/api/digest/configs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -664,7 +664,7 @@
             if (!result) return;
 
             try {
-                await fetch(`/api/digest/configs/${currentConfig.id}`, {
+                await authFetch(`/api/digest/configs/${currentConfig.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -716,7 +716,7 @@
             if (!result) return;
 
             try {
-                const resp = await fetch(`/api/digest/configs/${currentConfig.id}/sections`, {
+                const resp = await authFetch(`/api/digest/configs/${currentConfig.id}/sections`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -773,7 +773,7 @@
             if (!result) return;
 
             try {
-                await fetch(`/api/digest/sections/${sectionId}`, {
+                await authFetch(`/api/digest/sections/${sectionId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -805,7 +805,7 @@
             if (!confirmed) return;
 
             try {
-                await fetch(`/api/digest/sections/${sectionId}`, { method: 'DELETE' });
+                await authFetch(`/api/digest/sections/${sectionId}`, { method: 'DELETE' });
                 if (typeof showToast === 'function') showToast('Section deleted', 'success');
                 loadConfig();
             } catch (err) {

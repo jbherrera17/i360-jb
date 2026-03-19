@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/integrity-styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -130,11 +131,11 @@
                 const sinceISO = periodStart.toISOString();
 
                 const [metricsRes, soulRes, incidentsRes, baselineRes, alignmentRes] = await Promise.all([
-                    fetch(`/api/soul-config/integrity-metrics/${orgId}?days=${selectedPeriod}`, { headers }).then(r => r.json()).catch(() => ({})),
-                    fetch(`/api/soul-config/resolve/${orgId}`, { headers }).then(r => r.json()).catch(() => ({})),
-                    fetch(`/api/soul-config/bright-line-incidents/${orgId}?created_after=${sinceISO}`, { headers }).then(r => r.json()).catch(() => ({})),
-                    fetch(`/api/context/assets?type=industry_baseline`, { headers }).then(r => r.json()).catch(() => ({})),
-                    fetch(`/api/soul-config/values-alignment/history/${orgId}?limit=1`, { headers }).then(r => r.json()).catch(() => ({}))
+                    authFetch(`/api/soul-config/integrity-metrics/${orgId}?days=${selectedPeriod}`, { headers }).then(r => r.json()).catch(() => ({})),
+                    authFetch(`/api/soul-config/resolve/${orgId}`, { headers }).then(r => r.json()).catch(() => ({})),
+                    authFetch(`/api/soul-config/bright-line-incidents/${orgId}?created_after=${sinceISO}`, { headers }).then(r => r.json()).catch(() => ({})),
+                    authFetch(`/api/context/assets?type=industry_baseline`, { headers }).then(r => r.json()).catch(() => ({})),
+                    authFetch(`/api/soul-config/values-alignment/history/${orgId}?limit=1`, { headers }).then(r => r.json()).catch(() => ({}))
                 ]);
 
                 const metrics = metricsRes.success ? metricsRes.data : null;
@@ -946,7 +947,7 @@
 
             try {
                 const headers = getIntegrityHeaders();
-                const res = await fetch('/api/soul-config/values-alignment/audit', {
+                const res = await authFetch('/api/soul-config/values-alignment/audit', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({ orgId })
@@ -988,7 +989,7 @@
             if (!orgId) return;
             try {
                 const headers = getIntegrityHeaders();
-                const res = await fetch(`/api/soul-config/values-alignment/history/${orgId}?limit=1`, { headers });
+                const res = await authFetch(`/api/soul-config/values-alignment/history/${orgId}?limit=1`, { headers });
                 const result = await res.json();
                 const recs = result.data?.[0]?.recommendations || [];
                 const body = recs.map((r, i) => {
@@ -1270,7 +1271,7 @@
 
             try {
                 const headers = getIntegrityHeaders();
-                const res = await fetch('/api/soul-config/bright-line-incident', {
+                const res = await authFetch('/api/soul-config/bright-line-incident', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
@@ -1309,7 +1310,7 @@
 
             try {
                 const headers = getIntegrityHeaders();
-                const res = await fetch(`/api/soul-config/bright-line-incident/${id}/resolve`, {
+                const res = await authFetch(`/api/soul-config/bright-line-incident/${id}/resolve`, {
                     method: 'PUT',
                     headers,
                     body: JSON.stringify({ resolutionNotes: result.resolutionNotes })
@@ -1392,7 +1393,7 @@
                 const headers = getIntegrityHeaders();
 
                 // Re-fetch current baseline to avoid stale data
-                const currentRes = await fetch('/api/context/assets?type=industry_baseline', { headers }).then(r => r.json()).catch(() => ({}));
+                const currentRes = await authFetch('/api/context/assets?type=industry_baseline', { headers }).then(r => r.json()).catch(() => ({}));
                 const currentAsset = currentRes.success ? (currentRes.data || [])[0] : null;
                 const currentEntries = currentAsset?.content_json?.entries || [];
 
@@ -1408,7 +1409,7 @@
                 let res;
                 if (currentAsset) {
                     // Update existing asset
-                    res = await fetch(`/api/context/assets/${currentAsset.id}`, {
+                    res = await authFetch(`/api/context/assets/${currentAsset.id}`, {
                         method: 'PUT',
                         headers,
                         body: JSON.stringify({
@@ -1418,7 +1419,7 @@
                     });
                 } else {
                     // Create new asset
-                    res = await fetch('/api/context/assets', {
+                    res = await authFetch('/api/context/assets', {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({
@@ -1459,14 +1460,14 @@
                 const headers = getIntegrityHeaders();
 
                 // Re-fetch current baseline
-                const currentRes = await fetch('/api/context/assets?type=industry_baseline', { headers }).then(r => r.json()).catch(() => ({}));
+                const currentRes = await authFetch('/api/context/assets?type=industry_baseline', { headers }).then(r => r.json()).catch(() => ({}));
                 const currentAsset = currentRes.success ? (currentRes.data || [])[0] : null;
                 if (!currentAsset) return;
 
                 const currentEntries = [...(currentAsset.content_json?.entries || [])];
                 currentEntries.splice(index, 1);
 
-                const res = await fetch(`/api/context/assets/${currentAsset.id}`, {
+                const res = await authFetch(`/api/context/assets/${currentAsset.id}`, {
                     method: 'PUT',
                     headers,
                     body: JSON.stringify({

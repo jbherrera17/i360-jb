@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -646,7 +647,7 @@
 
         async function loadCatalog() {
             try {
-                const resp = await fetch('/api/platform/mcp/catalog', {
+                const resp = await authFetch('/api/platform/mcp/catalog', {
                     headers: { 'x-org-id': localStorage.getItem('insight360-org-id') }
                 });
                 const result = await resp.json();
@@ -783,7 +784,7 @@
                     : '/api/platform/mcp/catalog';
                 const method = editId ? 'PUT' : 'POST';
 
-                const resp = await fetch(url, {
+                const resp = await authFetch(url, {
                     method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -808,7 +809,7 @@
         async function approveEntry(id) {
             if (!confirm('Approve this MCP server?')) return;
             try {
-                const resp = await fetch(`/api/platform/mcp/catalog/${id}/approve`, {
+                const resp = await authFetch(`/api/platform/mcp/catalog/${id}/approve`, {
                     method: 'POST',
                     headers: { 'x-org-id': localStorage.getItem('insight360-org-id') }
                 });
@@ -827,7 +828,7 @@
         async function rejectEntry(id) {
             const reason = prompt('Rejection reason (optional):');
             try {
-                const resp = await fetch(`/api/platform/mcp/catalog/${id}/reject`, {
+                const resp = await authFetch(`/api/platform/mcp/catalog/${id}/reject`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -865,7 +866,7 @@
             document.getElementById('testModal').classList.add('active');
 
             try {
-                const resp = await fetch(`/api/platform/mcp/catalog/${id}/test`, {
+                const resp = await authFetch(`/api/platform/mcp/catalog/${id}/test`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -920,7 +921,7 @@
         async function deleteEntry(id, name) {
             if (!confirm(`Delete "${name}"? This will also remove all org connections to this server.`)) return;
             try {
-                const resp = await fetch(`/api/platform/mcp/catalog/${id}`, {
+                const resp = await authFetch(`/api/platform/mcp/catalog/${id}`, {
                     method: 'DELETE',
                     headers: { 'x-org-id': localStorage.getItem('insight360-org-id') }
                 });
@@ -979,7 +980,7 @@
             updateBulkBar();
 
             try {
-                const resp = await fetch('/api/platform/mcp/registry', {
+                const resp = await authFetch('/api/platform/mcp/registry', {
                     headers: { 'x-org-id': localStorage.getItem('insight360-org-id') }
                 });
                 const result = await resp.json();
@@ -1155,7 +1156,7 @@
             const entry = buildCatalogEntry(server);
 
             try {
-                const resp = await fetch('/api/platform/mcp/catalog', {
+                const resp = await authFetch('/api/platform/mcp/catalog', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1191,7 +1192,7 @@
             }
 
             try {
-                const resp = await fetch('/api/platform/mcp/catalog/bulk', {
+                const resp = await authFetch('/api/platform/mcp/catalog/bulk', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

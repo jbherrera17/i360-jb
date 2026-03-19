@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Agent Dialog Service
  *
@@ -873,7 +874,7 @@ When your response references external information, facts, statistics, or claims
         if (options.agentId) {
             try {
                 // Fetch agent details
-                const response = await fetch(`/api/agents/${options.agentId}`);
+                const response = await authFetch(`/api/agents/${options.agentId}`);
                 if (!response.ok) {
                     throw new Error(`Failed to load agent: ${response.status}`);
                 }
@@ -1760,7 +1761,7 @@ When your response references external information, facts, statistics, or claims
         if (!agentId) return;
 
         try {
-            const response = await fetch(`/api/agents/${agentId}/context/mappings`);
+            const response = await authFetch(`/api/agents/${agentId}/context/mappings`);
             const data = await response.json();
 
             if (data.success && data.data) {
@@ -1944,7 +1945,7 @@ When your response references external information, facts, statistics, or claims
         if (!container) return;
 
         try {
-            const response = await fetch('/api/chat/models');
+            const response = await authFetch('/api/chat/models');
             const data = await response.json();
 
             if (data.success && data.models) {

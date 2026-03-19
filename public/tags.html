@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -630,7 +631,7 @@
         // Load all tags
         async function loadTags() {
             try {
-                const response = await fetch('/api/tags');
+                const response = await authFetch('/api/tags');
                 const data = await response.json();
 
                 if (data.success) {
@@ -649,7 +650,7 @@
         // Load stats
         async function loadStats() {
             try {
-                const response = await fetch('/api/tags/stats');
+                const response = await authFetch('/api/tags/stats');
                 const data = await response.json();
 
                 if (data.success) {
@@ -765,7 +766,7 @@
             const container = document.getElementById('tag-hierarchy');
 
             try {
-                const response = await fetch('/api/tags/hierarchy');
+                const response = await authFetch('/api/tags/hierarchy');
                 const data = await response.json();
 
                 if (data.success) {
@@ -972,7 +973,7 @@
                 const url = editingTagId ? `/api/tags/${editingTagId}` : '/api/tags';
                 const method = editingTagId ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(tagData)
@@ -1006,7 +1007,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/tags/${id}`, {
+                const response = await authFetch(`/api/tags/${id}`, {
                     method: 'DELETE'
                 });
 

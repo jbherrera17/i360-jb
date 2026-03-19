@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Insight 360 - Direction Modal Service
  * Shows navigation direction modal after successful login
@@ -346,7 +347,7 @@ class DirectionModalService {
         const token = localStorage.getItem('insight360_token');
 
         try {
-            await fetch('/api/auth/logout', {
+            await (typeof authFetch === 'function' ? authFetch : fetch)('/api/auth/logout', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

@@ -6,6 +6,7 @@
     <title>Report Viewer | Client Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
@@ -497,7 +498,7 @@
 
         async function loadReport() {
             try {
-                const response = await fetch(`/api/client-portal/reports/${reportId}`, {
+                const response = await authFetch(`/api/client-portal/reports/${reportId}`, {
                     headers: { 'Authorization': `Bearer ${clientToken}` }
                 });
 
@@ -706,7 +707,7 @@
         async function downloadReport() {
             try {
                 showLoading();
-                const response = await fetch(`/api/client-portal/reports/${reportId}/download`, {
+                const response = await authFetch(`/api/client-portal/reports/${reportId}/download`, {
                     headers: { 'Authorization': `Bearer ${clientToken}` }
                 });
 

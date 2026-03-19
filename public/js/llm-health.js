@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * LLM Health Monitoring - Frontend Module
  *
@@ -61,7 +62,7 @@
         async _fetchInitialStatus() {
             try {
                 const token = document.cookie.match(/auth_token=([^;]+)/)?.[1];
-                const resp = await fetch('/api/models/availability', {
+                const resp = await (typeof authFetch === 'function' ? authFetch : fetch)('/api/models/availability', {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (resp.ok) {

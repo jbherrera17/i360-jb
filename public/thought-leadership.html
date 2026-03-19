@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/agent-dialog.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/llm-health.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
@@ -1401,7 +1402,7 @@
             try {
                 const userId = getUserId();
                 const year = new Date().getFullYear();
-                const resp = await fetch(`/api/thought-leadership/calendar/db?year=${year}`, {
+                const resp = await authFetch(`/api/thought-leadership/calendar/db?year=${year}`, {
                     headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }
                 });
                 if (!resp.ok) throw new Error('Failed to load calendar');
@@ -1550,7 +1551,7 @@
 
             try {
                 const userId = getUserId();
-                const resp = await fetch('/api/thought-leadership/generate/package', {
+                const resp = await authFetch('/api/thought-leadership/generate/package', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' },
                     body: JSON.stringify({
@@ -1974,7 +1975,7 @@
         async function fetchAPI(endpoint, options = {}) {
             const userId = getUserId();
             if (!userId) console.warn('No user ID found');
-            const response = await fetch(`/api/thought-leadership${endpoint}`, {
+            const response = await authFetch(`/api/thought-leadership${endpoint}`, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
@@ -2231,8 +2232,8 @@
         // ============================================
         let linkedinConnected = false;
         let optimalTimeData = null;
-        async function checkLinkedInStatus() { try { const r = await fetch('/api/oauth/linkedin/status', { headers: { 'X-User-Id': getUserId() } }); const d = await r.json(); linkedinConnected = d.connected; return d; } catch (e) { return { connected: false }; } }
-        async function getOptimalTime(platform = 'linkedin', contentType = 'linkedin_post') { try { const r = await fetch(`/api/thought-leadership/publish/optimal-time?platform=${platform}&content_type=${contentType}`, { headers: { 'X-User-Id': getUserId() } }); optimalTimeData = await r.json(); return optimalTimeData; } catch (e) { return null; } }
+        async function checkLinkedInStatus() { try { const r = await authFetch('/api/oauth/linkedin/status', { headers: { 'X-User-Id': getUserId() } }); const d = await r.json(); linkedinConnected = d.connected; return d; } catch (e) { return { connected: false }; } }
+        async function getOptimalTime(platform = 'linkedin', contentType = 'linkedin_post') { try { const r = await authFetch(`/api/thought-leadership/publish/optimal-time?platform=${platform}&content_type=${contentType}`, { headers: { 'X-User-Id': getUserId() } }); optimalTimeData = await r.json(); return optimalTimeData; } catch (e) { return null; } }
         async function openSchedulingModal() {
             const status = await checkLinkedInStatus();
             const optimal = await getOptimalTime();
@@ -2243,8 +2244,8 @@
                 buttons: status.connected ? [{ label: 'Schedule', variant: 'primary', onClick: () => scheduleSelectedContent() }, { label: 'Close', variant: 'secondary', onClick: () => modal.close() }] : [{ label: 'Close', variant: 'secondary', onClick: () => modal.close() }] });
             modal.open(); setTimeout(() => lucide.createIcons(), 100);
         }
-        async function connectLinkedIn() { try { const r = await fetch('/api/oauth/linkedin/authorize', { headers: { 'X-User-Id': getUserId() } }); const d = await r.json(); if (d.authUrl) window.location.href = d.authUrl; else alert('Failed to get auth URL'); } catch (e) { alert('Error: ' + e.message); } }
-        async function disconnectLinkedIn() { if (!confirm('Disconnect your LinkedIn account?')) return; try { await fetch('/api/oauth/linkedin/disconnect', { method: 'DELETE', headers: { 'X-User-Id': getUserId() } }); openSchedulingModal(); } catch (e) { console.error(e); } }
+        async function connectLinkedIn() { try { const r = await authFetch('/api/oauth/linkedin/authorize', { headers: { 'X-User-Id': getUserId() } }); const d = await r.json(); if (d.authUrl) window.location.href = d.authUrl; else alert('Failed to get auth URL'); } catch (e) { alert('Error: ' + e.message); } }
+        async function disconnectLinkedIn() { if (!confirm('Disconnect your LinkedIn account?')) return; try { await authFetch('/api/oauth/linkedin/disconnect', { method: 'DELETE', headers: { 'X-User-Id': getUserId() } }); openSchedulingModal(); } catch (e) { console.error(e); } }
         function useOptimalTime() { if (optimalTimeData?.recommendedTime) { const input = document.getElementById('custom-schedule-time'); if (input) input.value = new Date(optimalTimeData.recommendedTime).toISOString().slice(0, 16); } }
         async function scheduleSelectedContent() { const t = document.getElementById('custom-schedule-time'); if (!t || !t.value) { alert('Please select a time'); return; } alert('Scheduling requires content selection.'); }
 
@@ -2353,7 +2354,7 @@
                 const modelVal = document.getElementById('pkg-llm-model')?.value || '';
                 const [provider, model] = modelVal.includes('|') ? modelVal.split('|') : [null, null];
                 const body = { llm_provider: provider || null, llm_model: model || null, voice_dna_id: document.getElementById('pkg-voice-dna')?.value || null, icp_id: document.getElementById('pkg-icp')?.value || null, business_profile_id: document.getElementById('pkg-biz-profile')?.value || null };
-                const resp = await fetch('/api/thought-leadership/generation-preferences', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }, body: JSON.stringify(body) });
+                const resp = await authFetch('/api/thought-leadership/generation-preferences', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-user-id': userId || '' }, body: JSON.stringify(body) });
                 if (resp.ok) showToast('Generation preferences saved', 'success');
                 else showToast('Failed to save preferences', 'error');
             } catch (e) { showToast('Error saving preferences: ' + e.message, 'error'); }

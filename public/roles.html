@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -1018,7 +1019,7 @@
         // Load all roles
         async function loadRoles() {
             try {
-                const response = await fetch('/api/roles');
+                const response = await authFetch('/api/roles');
                 const data = await response.json();
 
                 if (data.success) {
@@ -1034,7 +1035,7 @@
         // Load tags
         async function loadTags() {
             try {
-                const response = await fetch('/api/tags');
+                const response = await authFetch('/api/tags');
                 const data = await response.json();
 
                 if (data.success) {
@@ -1049,7 +1050,7 @@
         // Load responsibilities
         async function loadResponsibilities() {
             try {
-                const response = await fetch('/api/roles/responsibilities');
+                const response = await authFetch('/api/roles/responsibilities');
                 const data = await response.json();
 
                 if (data.success) {
@@ -1065,7 +1066,7 @@
         // Load departments
         async function loadDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await authFetch('/api/departments');
                 const data = await response.json();
 
                 if (data.success) {
@@ -1353,7 +1354,7 @@
                     : '/api/roles/responsibilities';
                 const method = editingResponsibilityId ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(respData)
@@ -1388,7 +1389,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/roles/responsibilities/${id}`, {
+                const response = await authFetch(`/api/roles/responsibilities/${id}`, {
                     method: 'DELETE'
                 });
 
@@ -1420,7 +1421,7 @@
             }
 
             try {
-                const response = await fetch('/api/roles/responsibilities', {
+                const response = await authFetch('/api/roles/responsibilities', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, description: null })
@@ -1634,7 +1635,7 @@
                 draggable: true,
                 onOpen: async () => {
                     try {
-                        const response = await fetch('/api/roles/templates');
+                        const response = await authFetch('/api/roles/templates');
                         const data = await response.json();
 
                         const container = document.getElementById('templates-list');
@@ -1680,7 +1681,7 @@
 
         async function useTemplate(templateId) {
             try {
-                const response = await fetch(`/api/roles/templates/${templateId}`);
+                const response = await authFetch(`/api/roles/templates/${templateId}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -1724,7 +1725,7 @@
                 const url = editingRoleId ? `/api/roles/${editingRoleId}` : '/api/roles';
                 const method = editingRoleId ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(roleData)
@@ -1758,7 +1759,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/roles/${id}`, {
+                const response = await authFetch(`/api/roles/${id}`, {
                     method: 'DELETE'
                 });
 

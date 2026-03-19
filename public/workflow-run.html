@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -697,7 +698,7 @@
         // Load workflow
         async function loadWorkflow(workflowId) {
             try {
-                const response = await fetch(`/api/execute120/workflows/${workflowId}`, {
+                const response = await authFetch(`/api/execute120/workflows/${workflowId}`, {
                     headers: getHeaders()
                 });
                 const result = await response.json();
@@ -723,7 +724,7 @@
         async function loadExecution(executionId) {
             try {
                 const token = getAuthToken();
-                const response = await fetch(`/api/execute120/executions/${executionId}`, {
+                const response = await authFetch(`/api/execute120/executions/${executionId}`, {
                     headers: getHeaders()
                 });
                 const result = await response.json();
@@ -1168,7 +1169,7 @@
                     content: prompt
                 });
 
-                const response = await fetch('/api/chat', {
+                const response = await authFetch('/api/chat', {
                     method: 'POST',
                     headers: getHeaders(),
                     body: JSON.stringify({
@@ -1366,7 +1367,7 @@
                 // Build messages with context from previous steps
                 const contextMessages = buildContextMessages(step, message);
 
-                const response = await fetch('/api/chat', {
+                const response = await authFetch('/api/chat', {
                     method: 'POST',
                     headers: getHeaders(),
                     body: JSON.stringify({
@@ -1528,13 +1529,13 @@
                 };
 
                 if (execution) {
-                    await fetch(`/api/execute120/executions/${execution.id}`, {
+                    await authFetch(`/api/execute120/executions/${execution.id}`, {
                         method: 'PUT',
                         headers: getHeaders(),
                         body: JSON.stringify(body)
                     });
                 } else {
-                    const response = await fetch('/api/execute120/executions', {
+                    const response = await authFetch('/api/execute120/executions', {
                         method: 'POST',
                         headers: getHeaders(),
                         body: JSON.stringify(body)
@@ -1557,7 +1558,7 @@
         async function completeWorkflow() {
             try {
                 if (execution) {
-                    await fetch(`/api/execute120/executions/${execution.id}`, {
+                    await authFetch(`/api/execute120/executions/${execution.id}`, {
                         method: 'PUT',
                         headers: getHeaders(),
                         body: JSON.stringify({
@@ -1568,7 +1569,7 @@
                 }
 
                 // Mark first workflow completed for onboarding
-                await fetch('/api/onboarding/state', {
+                await authFetch('/api/onboarding/state', {
                     method: 'PUT',
                     headers: getHeaders(),
                     body: JSON.stringify({ first_workflow_completed: true })
@@ -1624,7 +1625,7 @@
             if (!name || !execution) return;
 
             try {
-                await fetch(`/api/execute120/executions/${execution.id}`, {
+                await authFetch(`/api/execute120/executions/${execution.id}`, {
                     method: 'PUT',
                     headers: getHeaders(),
                     body: JSON.stringify({ name })

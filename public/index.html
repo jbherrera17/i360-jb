@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard-styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -418,7 +419,7 @@
         // Recent Agents functionality for dashboard widget
         async function loadRecentAgents() {
             try {
-                const response = await fetch('/api/agents?sort=last_used_at&order=desc&limit=5');
+                const response = await authFetch('/api/agents?sort=last_used_at&order=desc&limit=5');
                 const data = await response.json();
 
                 if (data.success && data.data) {
@@ -495,7 +496,7 @@
                 const token = getAuthToken();
                 if (!token) return;
 
-                const response = await fetch('/api/onboarding/state', {
+                const response = await authFetch('/api/onboarding/state', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();

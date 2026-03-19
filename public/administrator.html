@@ -1378,7 +1378,7 @@
             panel.innerHTML = '<p style="padding: 1rem; color: var(--text-muted);">Loading conversations...</p>';
 
             try {
-                const response = await fetch('/api/conversations/admin/all?limit=50');
+                const response = await authFetch('/api/conversations/admin/all?limit=50');
                 const data = await response.json();
                 if (data.success) {
                     conversationsData = data.data;

@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Usage Nudge — Soft-limit warning banners & blocking modals
  *
@@ -54,7 +55,7 @@ const UsageNudge = (() => {
             const orgId = localStorage.getItem('insight360_org_id');
             if (!token || !orgId) return null;
 
-            const resp = await fetch('/api/modules/usage', {
+            const resp = await (typeof authFetch === 'function' ? authFetch : fetch)('/api/modules/usage', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'x-org-id': orgId

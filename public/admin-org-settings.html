@@ -1597,14 +1597,14 @@
             try {
                 // Load data in parallel
                 const [membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes, baselineRes] = await Promise.allSettled([
-                    fetch(`/api/org-members/${orgId}`, { headers }),
-                    fetch('/api/departments', { headers }),
-                    fetch('/api/roles', { headers }),
-                    fetch('/api/agents?limit=100', { headers }),
-                    fetch('/api/context/assets?limit=1', { headers }),
-                    fetch(`/api/soul-config?org_id=${orgId}&scope=organization`, { headers }),
-                    fetch('/api/conversations?limit=1', { headers }),
-                    fetch('/api/context/assets?type=industry_baseline&limit=1', { headers })
+                    authFetch(`/api/org-members/${orgId}`, { headers }),
+                    authFetch('/api/departments', { headers }),
+                    authFetch('/api/roles', { headers }),
+                    authFetch('/api/agents?limit=100', { headers }),
+                    authFetch('/api/context/assets?limit=1', { headers }),
+                    authFetch(`/api/soul-config?org_id=${orgId}&scope=organization`, { headers }),
+                    authFetch('/api/conversations?limit=1', { headers }),
+                    authFetch('/api/context/assets?type=industry_baseline&limit=1', { headers })
                 ]);
 
                 if (membersRes.status === 'fulfilled' && membersRes.value?.ok) {
@@ -1742,7 +1742,7 @@
             const token = getAuthToken();
 
             try {
-                const response = await fetch(`/api/org-members/${orgId}`, {
+                const response = await authFetch(`/api/org-members/${orgId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
@@ -1815,7 +1815,7 @@
             const token = getAuthToken();
 
             try {
-                const response = await fetch(`/api/clients?org_id=${orgId}`, {
+                const response = await authFetch(`/api/clients?org_id=${orgId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',

@@ -1,3 +1,4 @@
+/* global authFetch, initNavigation, ModalServiceLoader */
 /**
  * INSIGHT 360 - Easy Start Frontend
  * Version: 1.0.0
@@ -81,7 +82,7 @@ function setupTextareaResize() {
 
 async function createConversation() {
     try {
-        const response = await fetch('/api/conversations', {
+        const response = await authFetch('/api/conversations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -105,7 +106,7 @@ async function createConversation() {
 async function saveMessage(role, content) {
     if (!currentConversationId) return;
     try {
-        await fetch(`/api/conversations/${currentConversationId}/messages`, {
+        await authFetch(`/api/conversations/${currentConversationId}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -121,7 +122,7 @@ async function saveMessage(role, content) {
 
 async function loadConversation(conversationId) {
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`);
+        const response = await authFetch(`/api/conversations/${conversationId}`);
         const data = await response.json();
         if (!data.success) return;
 
@@ -203,7 +204,7 @@ async function streamResponse() {
     try {
         const orgId = localStorage.getItem('insight360-org-id') || '';
 
-        const response = await fetch('/api/easy-start/stream', {
+        const response = await authFetch('/api/easy-start/stream', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

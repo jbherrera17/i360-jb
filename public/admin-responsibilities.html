@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -261,7 +262,7 @@
 
         async function loadResponsibilities() {
             try {
-                const response = await fetch('/api/roles/responsibilities/all');
+                const response = await authFetch('/api/roles/responsibilities/all');
                 const result = await response.json();
 
                 if (result.success) {
@@ -283,7 +284,7 @@
             // This would ideally be a single batch endpoint, but for now we'll use the view
             try {
                 for (const resp of responsibilities) {
-                    const response = await fetch(`/api/connections/responsibilities/${resp.id}/ai`);
+                    const response = await authFetch(`/api/connections/responsibilities/${resp.id}/ai`);
                     const result = await response.json();
                     if (result.success) {
                         aiMappingCounts[resp.id] = result.data?.length || 0;

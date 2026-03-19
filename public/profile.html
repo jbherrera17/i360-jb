@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -779,7 +780,7 @@
         async function loadProfile() {
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/auth/profile', {
+                const response = await authFetch('/api/auth/profile', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -815,7 +816,7 @@
         // Load departments
         async function loadDepartments() {
             try {
-                const response = await fetch('/api/execute120/departments');
+                const response = await authFetch('/api/execute120/departments');
                 const result = await response.json();
 
                 if (result.success) {
@@ -831,7 +832,7 @@
         async function loadOnboardingState() {
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/onboarding/state', {
+                const response = await authFetch('/api/onboarding/state', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -996,7 +997,7 @@
                     avatar_url: getSelectedAvatar()
                 };
 
-                const response = await fetch('/api/auth/profile', {
+                const response = await authFetch('/api/auth/profile', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1087,7 +1088,7 @@
         async function resetOnboarding() {
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/onboarding/reset', {
+                const response = await authFetch('/api/onboarding/reset', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -1166,7 +1167,7 @@
                 const token = getAuthToken();
                 const userId = getValidUserId();
 
-                const response = await fetch('/api/oauth/connections', {
+                const response = await authFetch('/api/oauth/connections', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'X-User-Id': userId
@@ -1219,7 +1220,7 @@
                 const token = getAuthToken();
                 const userId = getValidUserId();
 
-                const response = await fetch(`/api/oauth/${platform}/authorize`, {
+                const response = await authFetch(`/api/oauth/${platform}/authorize`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'X-User-Id': userId
@@ -1245,7 +1246,7 @@
                 const token = getAuthToken();
                 const userId = getValidUserId();
 
-                await fetch(`/api/oauth/${platform}/disconnect`, {
+                await authFetch(`/api/oauth/${platform}/disconnect`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1274,7 +1275,7 @@
             // Load orgs for dropdown
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/auth/impersonate/orgs', {
+                const response = await authFetch('/api/auth/impersonate/orgs', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
@@ -1298,7 +1299,7 @@
         async function refreshImpersonationState() {
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/auth/impersonate', {
+                const response = await authFetch('/api/auth/impersonate', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
@@ -1338,7 +1339,7 @@
 
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/auth/impersonate', {
+                const response = await authFetch('/api/auth/impersonate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1363,7 +1364,7 @@
         async function endImpersonation() {
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/auth/impersonate', {
+                const response = await authFetch('/api/auth/impersonate', {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });

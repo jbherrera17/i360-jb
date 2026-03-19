@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -483,7 +484,7 @@
 
         async function loadOKR() {
             try {
-                const response = await fetch(`/api/strategy120/okrs/${okrId}`);
+                const response = await authFetch(`/api/strategy120/okrs/${okrId}`);
                 const result = await response.json();
 
                 if (result.success && result.data) {
@@ -501,7 +502,7 @@
 
         async function loadCapabilities() {
             try {
-                const response = await fetch(`/api/connections/okrs/${okrId}/capabilities`);
+                const response = await authFetch(`/api/connections/okrs/${okrId}/capabilities`);
                 const result = await response.json();
 
                 capabilities = result.success ? result.data : [];
@@ -515,7 +516,7 @@
 
         async function loadAvailableSkills() {
             try {
-                const response = await fetch('/api/skills');
+                const response = await authFetch('/api/skills');
                 const result = await response.json();
                 availableSkills = result.success ? result.data : [];
             } catch (error) {
@@ -673,7 +674,7 @@
             }
 
             try {
-                const response = await fetch(`/api/connections/skills/${skillId}/okrs`, {
+                const response = await authFetch(`/api/connections/skills/${skillId}/okrs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

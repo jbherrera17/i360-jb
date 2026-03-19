@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -163,7 +164,7 @@
 
         async function loadSources() {
             try {
-                const resp = await fetch('/api/digest/sources');
+                const resp = await authFetch('/api/digest/sources');
                 const json = await resp.json();
                 if (json.success) {
                     sources = json.data || [];
@@ -175,8 +176,7 @@
 
         async function loadContextAssets() {
             try {
-                const fetchFn = window.authFetch || fetch;
-                const resp = await fetchFn('/api/digest/context-assets');
+                const resp = await authFetch('/api/digest/context-assets');
                 const json = await resp.json();
                 if (json.success) contextAssets = json.data || [];
             } catch (err) { console.error(err); }
@@ -184,7 +184,7 @@
 
         async function loadAgents() {
             try {
-                const resp = await fetch('/api/digest/agents');
+                const resp = await authFetch('/api/digest/agents');
                 const json = await resp.json();
                 if (json.success) agents = json.data || [];
             } catch (err) { console.error(err); }
@@ -198,7 +198,7 @@
             if (status) params.append('status', status);
 
             try {
-                const resp = await fetch(`/api/digest/items?${params}`);
+                const resp = await authFetch(`/api/digest/items?${params}`);
                 const json = await resp.json();
                 renderItems(json.data || []);
             } catch (err) {
@@ -208,7 +208,7 @@
 
         async function loadHealth() {
             try {
-                const resp = await fetch('/api/digest/health');
+                const resp = await authFetch('/api/digest/health');
                 const json = await resp.json();
                 if (json.success) renderHealth(json.data);
             } catch (err) { console.error(err); }
@@ -369,7 +369,7 @@
             }
 
             try {
-                const resp = await fetch('/api/digest/sources', {
+                const resp = await authFetch('/api/digest/sources', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -423,7 +423,7 @@
             if (result.url) config.url = result.url;
 
             try {
-                await fetch(`/api/digest/sources/${sourceId}`, {
+                await authFetch(`/api/digest/sources/${sourceId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -453,7 +453,7 @@
             if (!confirmed) return;
 
             try {
-                await fetch(`/api/digest/sources/${sourceId}`, { method: 'DELETE' });
+                await authFetch(`/api/digest/sources/${sourceId}`, { method: 'DELETE' });
                 if (typeof showToast === 'function') showToast('Source deleted', 'success');
                 loadSources();
             } catch (err) {
@@ -466,7 +466,7 @@
             if (typeof showToast === 'function') showToast(`Fetching ${source?.name || 'source'}...`, 'info');
 
             try {
-                const resp = await fetch(`/api/digest/sources/${sourceId}/fetch`, { method: 'POST' });
+                const resp = await authFetch(`/api/digest/sources/${sourceId}/fetch`, { method: 'POST' });
                 const json = await resp.json();
                 if (json.success) {
                     if (typeof showToast === 'function') showToast(`Fetched ${json.data.new_items} new items (${json.data.duplicates} duplicates)`, 'success');
@@ -494,7 +494,7 @@
                 if (typeof showToast === 'function') showToast('Uploading...', 'info');
 
                 try {
-                    const resp = await fetch('/api/digest/sources/upload', { method: 'POST', body: formData });
+                    const resp = await authFetch('/api/digest/sources/upload', { method: 'POST', body: formData });
                     const json = await resp.json();
                     if (json.success) {
                         if (typeof showToast === 'function') showToast('Document uploaded', 'success');
@@ -524,7 +524,7 @@
             if (!result) return;
 
             try {
-                const resp = await fetch(`/api/digest/sources/${sourceId}/newsletter`, {
+                const resp = await authFetch(`/api/digest/sources/${sourceId}/newsletter`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -547,7 +547,7 @@
         async function summarizeItem(itemId) {
             if (typeof showToast === 'function') showToast('Summarizing...', 'info');
             try {
-                const resp = await fetch(`/api/digest/items/${itemId}/summarize`, {
+                const resp = await authFetch(`/api/digest/items/${itemId}/summarize`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ depth: 'brief' })

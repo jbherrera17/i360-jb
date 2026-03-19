@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Insight 360 - Organization Switcher Component
  * Provides a dropdown for switching between organizations
@@ -47,7 +48,7 @@
      */
     async function loadOrganizations() {
         try {
-            const response = await fetch('/api/organizations');
+            const response = await (typeof authFetch === 'function' ? authFetch : fetch)('/api/organizations');
             const result = await response.json();
 
             if (result.success) {

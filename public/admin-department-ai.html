@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -574,7 +575,7 @@
 
         async function loadDepartment() {
             try {
-                const response = await fetch(`/api/departments/${departmentId}`);
+                const response = await authFetch(`/api/departments/${departmentId}`);
                 const result = await response.json();
 
                 if (result.success && result.data) {
@@ -592,7 +593,7 @@
 
         async function loadFeaturedAgents() {
             try {
-                const response = await fetch(`/api/departments/${departmentId}/agents`);
+                const response = await authFetch(`/api/departments/${departmentId}/agents`);
                 const result = await response.json();
                 featuredAgents = result.success ? result.data : [];
                 renderAgentsList();
@@ -605,7 +606,7 @@
 
         async function loadDepartmentWorkflows() {
             try {
-                const response = await fetch(`/api/workflows?department_id=${departmentId}`);
+                const response = await authFetch(`/api/workflows?department_id=${departmentId}`);
                 const result = await response.json();
                 departmentWorkflows = result.success ? result.data : [];
                 renderWorkflowsList();
@@ -618,7 +619,7 @@
 
         async function loadDepartmentSkills() {
             try {
-                const response = await fetch(`/api/skills?department_id=${departmentId}`);
+                const response = await authFetch(`/api/skills?department_id=${departmentId}`);
                 const result = await response.json();
                 departmentSkills = result.success ? result.data : [];
                 renderSkillsList();
@@ -631,7 +632,7 @@
 
         async function loadQuickPrompts() {
             try {
-                const response = await fetch(`/api/departments/${departmentId}/quick-prompts`);
+                const response = await authFetch(`/api/departments/${departmentId}/quick-prompts`);
                 const result = await response.json();
                 quickPrompts = result.success ? result.data : [];
                 renderPromptsList();
@@ -645,9 +646,9 @@
         async function loadAvailableEntities() {
             try {
                 const [agentsRes, workflowsRes, skillsRes] = await Promise.all([
-                    fetch('/api/agents'),
-                    fetch('/api/workflows'),
-                    fetch('/api/skills')
+                    authFetch('/api/agents'),
+                    authFetch('/api/workflows'),
+                    authFetch('/api/skills')
                 ]);
 
                 const [agents, workflows, skills] = await Promise.all([
@@ -869,7 +870,7 @@
 
             try {
                 if (type === 'agent') {
-                    const response = await fetch(`/api/departments/${departmentId}/agents`, {
+                    const response = await authFetch(`/api/departments/${departmentId}/agents`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -886,7 +887,7 @@
                         ModalService.error(result.error || 'Failed to add agent');
                     }
                 } else if (type === 'workflow') {
-                    const response = await fetch(`/api/workflows/${entityId}`, {
+                    const response = await authFetch(`/api/workflows/${entityId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ department_id: departmentId })
@@ -900,7 +901,7 @@
                         ModalService.error(result.error || 'Failed to assign workflow');
                     }
                 } else if (type === 'skill') {
-                    const response = await fetch(`/api/skills/${entityId}`, {
+                    const response = await authFetch(`/api/skills/${entityId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ department_id: departmentId })
@@ -930,7 +931,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/departments/${departmentId}/agents/${agentId}`, {
+                const response = await authFetch(`/api/departments/${departmentId}/agents/${agentId}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
@@ -988,7 +989,7 @@
             }
 
             try {
-                const response = await fetch(`/api/departments/${departmentId}/quick-prompts`, {
+                const response = await authFetch(`/api/departments/${departmentId}/quick-prompts`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1020,7 +1021,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/departments/${departmentId}/quick-prompts/${promptId}`, {
+                const response = await authFetch(`/api/departments/${departmentId}/quick-prompts/${promptId}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();

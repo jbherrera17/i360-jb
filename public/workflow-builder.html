@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/usage-nudge.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -932,7 +933,7 @@
         // Load departments from database
         async function loadDepartments() {
             try {
-                const response = await fetch('/api/departments', { headers: getHeaders() });
+                const response = await authFetch('/api/departments', { headers: getHeaders() });
                 const result = await response.json();
 
                 if (result.success && result.data) {
@@ -977,7 +978,7 @@
         // Load workflow from API
         async function loadWorkflow(workflowId) {
             try {
-                const response = await fetch(`/api/workflows/${workflowId}`, { headers: getHeaders() });
+                const response = await authFetch(`/api/workflows/${workflowId}`, { headers: getHeaders() });
                 const result = await response.json();
 
                 if (result.success) {
@@ -1006,8 +1007,8 @@
         async function loadAgentsAndSkills() {
             try {
                 const [agentsRes, skillsRes] = await Promise.all([
-                    fetch('/api/agents', { headers: getHeaders() }),
-                    fetch('/api/skills', { headers: getHeaders() })
+                    authFetch('/api/agents', { headers: getHeaders() }),
+                    authFetch('/api/skills', { headers: getHeaders() })
                 ]);
 
                 const agentsResult = await agentsRes.json();
@@ -1456,7 +1457,7 @@
                 const method = workflow.id ? 'PUT' : 'POST';
                 const url = workflow.id ? `/api/workflows/${workflow.id}` : '/api/workflows';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: getHeaders(),
                     body: JSON.stringify({
@@ -1497,13 +1498,13 @@
                         };
 
                         if (step.id) {
-                            await fetch(`/api/workflows/${workflow.id}/steps/${step.id}`, {
+                            await authFetch(`/api/workflows/${workflow.id}/steps/${step.id}`, {
                                 method: 'PUT',
                                 headers: getHeaders(),
                                 body: JSON.stringify(stepData)
                             });
                         } else {
-                            const stepResponse = await fetch(`/api/workflows/${workflow.id}/steps`, {
+                            const stepResponse = await authFetch(`/api/workflows/${workflow.id}/steps`, {
                                 method: 'POST',
                                 headers: getHeaders(),
                                 body: JSON.stringify(stepData)

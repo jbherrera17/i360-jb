@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -1061,7 +1062,7 @@ You are an expert at...
         // Fetch departments
         async function fetchDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await authFetch('/api/departments');
                 const data = await response.json();
                 if (data.success) {
                     departments = data.data;
@@ -1082,7 +1083,7 @@ You are an expert at...
         // Load skill for editing
         async function loadSkillForEdit(id) {
             try {
-                const res = await fetch(`/api/skills/${id}`);
+                const res = await authFetch(`/api/skills/${id}`);
                 const data = await res.json();
                 if (data.success) {
                     Object.assign(skill, data.data);
@@ -1592,13 +1593,13 @@ ${ex.output}`).join('\n\n')}` : ''}`;
             try {
                 let res;
                 if (editMode) {
-                    res = await fetch(`/api/skills/${editId}`, {
+                    res = await authFetch(`/api/skills/${editId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
                 } else {
-                    res = await fetch('/api/skills', {
+                    res = await authFetch('/api/skills', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -1630,13 +1631,13 @@ ${ex.output}`).join('\n\n')}` : ''}`;
             try {
                 let res;
                 if (editMode) {
-                    res = await fetch(`/api/skills/${editId}`, {
+                    res = await authFetch(`/api/skills/${editId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
                 } else {
-                    res = await fetch('/api/skills', {
+                    res = await authFetch('/api/skills', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)

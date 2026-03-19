@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -692,7 +693,7 @@
         // Load dashboard data
         async function loadDashboard() {
             try {
-                const response = await fetch('/api/synerginexus/dashboard');
+                const response = await authFetch('/api/synerginexus/dashboard');
                 const data = await response.json();
 
                 if (data.success) {
@@ -720,7 +721,7 @@
             const container = document.getElementById('digm-layers');
 
             try {
-                const response = await fetch('/api/synerginexus/digm');
+                const response = await authFetch('/api/synerginexus/digm');
                 const data = await response.json();
 
                 if (data.success) {
@@ -795,7 +796,7 @@
             const container = document.getElementById('values-grid');
 
             try {
-                const response = await fetch('/api/synerginexus/values');
+                const response = await authFetch('/api/synerginexus/values');
                 const data = await response.json();
 
                 if (data.success) {
@@ -858,7 +859,7 @@
             const container = document.getElementById('conflicts-list');
 
             try {
-                const response = await fetch('/api/synerginexus/conflicts');
+                const response = await authFetch('/api/synerginexus/conflicts');
                 const data = await response.json();
 
                 if (data.success) {
@@ -913,7 +914,7 @@
             const container = document.getElementById('escalation-rules');
 
             try {
-                const response = await fetch('/api/synerginexus/escalation');
+                const response = await authFetch('/api/synerginexus/escalation');
                 const data = await response.json();
 
                 if (data.success) {
@@ -1003,7 +1004,7 @@
             const container = document.getElementById('ethics-lenses');
 
             try {
-                const response = await fetch('/api/soul-config/ethical-lenses');
+                const response = await authFetch('/api/soul-config/ethical-lenses');
                 const data = await response.json();
 
                 if (!data.success || !data.data || data.data.length === 0) {
@@ -1195,7 +1196,7 @@
             }
 
             try {
-                const response = await fetch('/api/synerginexus/values', {
+                const response = await authFetch('/api/synerginexus/values', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(valueData)
@@ -1230,7 +1231,7 @@
             }
 
             try {
-                const response = await fetch('/api/synerginexus/conflicts', {
+                const response = await authFetch('/api/synerginexus/conflicts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(conflictData)
@@ -1264,7 +1265,7 @@
             const resolution = result.resolution;
 
             try {
-                const response = await fetch(`/api/synerginexus/conflicts/${id}/resolve`, {
+                const response = await authFetch(`/api/synerginexus/conflicts/${id}/resolve`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ resolution })

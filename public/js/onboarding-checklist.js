@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Onboarding Checklist Component
  * Phase 46: Administrator Page Reorganization
@@ -195,12 +196,7 @@ const OnboardingChecklist = {
         }
 
         try {
-            const response = await fetch('/api/platform/config', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await authFetch('/api/platform/config');
             this.isPlatformAdmin = response.ok;
         } catch (error) {
             this.isPlatformAdmin = false;
@@ -241,12 +237,7 @@ const OnboardingChecklist = {
                 ? '/api/platform/organizations'
                 : '/api/organizations';
 
-            const response = await fetch(endpoint, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await authFetch(endpoint);
 
             if (response.ok) {
                 const result = await response.json();
@@ -276,14 +267,14 @@ const OnboardingChecklist = {
         try {
             // Load data in parallel
             const [orgRes, membersRes, deptsRes, rolesRes, agentsRes, contextRes, soulRes, convoRes] = await Promise.allSettled([
-                fetch(orgEndpoint, { headers }),
-                fetch(`/api/org-members/${this.orgId}`, { headers }),
-                fetch('/api/departments', { headers }),
-                fetch('/api/roles', { headers }),
-                fetch('/api/agents?limit=100', { headers }),
-                fetch('/api/context/assets?limit=1', { headers }),
-                fetch(`/api/soul-config?org_id=${this.orgId}&scope=organization`, { headers }),
-                fetch('/api/conversations?limit=1', { headers })
+                authFetch(orgEndpoint, { headers }),
+                authFetch(`/api/org-members/${this.orgId}`, { headers }),
+                authFetch('/api/departments', { headers }),
+                authFetch('/api/roles', { headers }),
+                authFetch('/api/agents?limit=100', { headers }),
+                authFetch('/api/context/assets?limit=1', { headers }),
+                authFetch(`/api/soul-config?org_id=${this.orgId}&scope=organization`, { headers }),
+                authFetch('/api/conversations?limit=1', { headers })
             ]);
 
             this.orgData = {
@@ -668,12 +659,9 @@ const OnboardingChecklist = {
 
         try {
             const token = localStorage.getItem('insight360_token');
-            const response = await fetch(`/api/org-members/${this.orgId}/invite`, {
+            const response = await authFetch(`/api/org-members/${this.orgId}/invite`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: result.email, role: result.role })
             });
 

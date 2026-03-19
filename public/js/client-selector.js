@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Insight 360 - Client Selector Component
  * Provides a dropdown for filtering dashboard data by client
@@ -67,7 +68,7 @@
                 return [];
             }
 
-            const response = await fetch(`/api/clients?org_id=${currentOrgId}`);
+            const response = await (typeof authFetch === 'function' ? authFetch : fetch)(`/api/clients?org_id=${currentOrgId}`);
             const result = await response.json();
 
             if (result.success) {

@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -874,10 +875,10 @@
                 const headers = getHeaders();
                 const opts = { headers };
                 const [deptRes, rolesRes, okrsRes, procRes] = await Promise.all([
-                    fetch('/api/parthenon/departments', opts),
-                    fetch('/api/parthenon/roles', opts),
-                    fetch('/api/parthenon/okrs', opts),
-                    fetch('/api/parthenon/processes', opts)
+                    authFetch('/api/parthenon/departments', opts),
+                    authFetch('/api/parthenon/roles', opts),
+                    authFetch('/api/parthenon/okrs', opts),
+                    authFetch('/api/parthenon/processes', opts)
                 ]);
 
                 const [deptData, rolesData, okrsData, procData] = await Promise.all([

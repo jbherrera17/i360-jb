@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Dashboard JavaScript - Insight 360
  * Handles system status and available models display
@@ -24,7 +25,7 @@ async function loadSystemStatus() {
     if (!serviceStatusEl || !overallStatusEl) return;
     
     try {
-        const response = await fetch('/api/health');
+        const response = await authFetch('/api/health');
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -111,7 +112,7 @@ async function loadAvailableModels() {
     if (!modelListEl) return;
     
     try {
-        const response = await fetch('/api/chat/models');
+        const response = await authFetch('/api/chat/models');
         const data = await response.json();
         
         if (data.success && data.models) {
@@ -222,7 +223,7 @@ async function loadLLMProviderStatus() {
             checkBtnEl.style.display = 'inline-flex';
         }
 
-        const response = await fetch('/api/models/availability');
+        const response = await authFetch('/api/models/availability');
         const data = await response.json();
 
         if (data.success && data.providers) {
@@ -341,9 +342,7 @@ function formatRelativeTime(date) {
  */
 async function getCurrentUserRole() {
     try {
-        const token = localStorage.getItem('insight360_token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const response = await fetch('/api/auth/me', { headers });
+        const response = await authFetch('/api/auth/me');
         const data = await response.json();
         return data.user?.business_role || data.user?.role || 'user';
     } catch (error) {
@@ -372,15 +371,8 @@ async function runLLMCheck() {
     }
 
     try {
-        const token = localStorage.getItem('insight360_token');
-        const headers = {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
-        };
-
-        const response = await fetch('/api/models/availability/check', {
-            method: 'POST',
-            headers
+        const response = await authFetch('/api/models/availability/check', {
+            method: 'POST'
         });
 
         const data = await response.json();

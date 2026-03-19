@@ -1,3 +1,4 @@
+/* global authFetch */
 /**
  * Setup Wizard Component
  * Phase 46 → Phase 55: Enhanced Organization Setup
@@ -266,9 +267,7 @@ const SetupWizard = {
     async loadTiers() {
         try {
             const token = localStorage.getItem('insight360_token');
-            const response = await fetch('/api/platform/tiers', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await authFetch('/api/platform/tiers');
             if (response.ok) {
                 const data = await response.json();
                 this.tiers = data.data || [];
@@ -875,9 +874,9 @@ const SetupWizard = {
             };
 
             // 1. Create organization
-            const orgResponse = await fetch('/api/organizations', {
+            const orgResponse = await authFetch('/api/organizations', {
                 method: 'POST',
-                headers,
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: this.formData.name,
                     slug: this.formData.slug,
@@ -903,9 +902,9 @@ const SetupWizard = {
             if (this.formData.departments.length > 0) {
                 for (const deptName of this.formData.departments) {
                     try {
-                        const deptResp = await fetch('/api/departments', {
+                        const deptResp = await authFetch('/api/departments', {
                             method: 'POST',
-                            headers: orgHeaders,
+                            headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
                             body: JSON.stringify({ name: deptName })
                         });
                         if (deptResp.ok && deptName === 'Executive') {
@@ -922,9 +921,9 @@ const SetupWizard = {
             if (this.formData.soulTemplate) {
                 const template = this.soulTemplates.find(t => t.id === this.formData.soulTemplate);
                 if (template) {
-                    await fetch('/api/soul-config', {
+                    await authFetch('/api/soul-config', {
                         method: 'POST',
-                        headers: orgHeaders,
+                        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
                         body: JSON.stringify({
                             scope: 'organization',
                             org_id: orgId,
@@ -939,27 +938,27 @@ const SetupWizard = {
 
             // 4. Configure module access if non-default
             if (this.formData.modules.length > 0) {
-                await fetch(`/api/platform/organizations/${orgId}/modules`, {
+                await authFetch(`/api/platform/organizations/${orgId}/modules`, {
                     method: 'PUT',
-                    headers,
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ modules: this.formData.modules })
                 }).catch(e => console.warn('Could not configure modules:', e));
             }
 
             // 5. Seed starter agents if requested
             if (this.formData.seedAgents) {
-                await fetch(`/api/agents/seed`, {
+                await authFetch(`/api/agents/seed`, {
                     method: 'POST',
-                    headers: orgHeaders,
+                    headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
                     body: JSON.stringify({ org_id: orgId })
                 }).catch(e => console.warn('Could not seed agents:', e));
             }
 
             // 6. Seed context templates if requested
             if (this.formData.seedContext) {
-                await fetch(`/api/context/seed`, {
+                await authFetch(`/api/context/seed`, {
                     method: 'POST',
-                    headers: orgHeaders,
+                    headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
                     body: JSON.stringify({ org_id: orgId })
                 }).catch(e => console.warn('Could not seed context:', e));
             }
@@ -975,9 +974,9 @@ const SetupWizard = {
                 };
                 if (executiveDeptId) invitePayload.department_id = executiveDeptId;
 
-                const inviteResponse = await fetch('/api/platform/users', {
+                const inviteResponse = await authFetch('/api/platform/users', {
                     method: 'POST',
-                    headers,
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(invitePayload)
                 });
 

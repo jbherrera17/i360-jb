@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -535,7 +536,7 @@
         // Load summary counts
         async function loadSummary() {
             try {
-                const response = await fetch('/api/resource-access/summary', { headers: getHeaders() });
+                const response = await authFetch('/api/resource-access/summary', { headers: getHeaders() });
                 const result = await response.json();
                 if (result.success) {
                     updateSummaryCounts(result.data);
@@ -574,7 +575,7 @@
         // Load departments for filter
         async function loadDepartments() {
             try {
-                const response = await fetch('/api/departments', { headers: getHeaders() });
+                const response = await authFetch('/api/departments', { headers: getHeaders() });
                 const result = await response.json();
                 if (result.success) {
                     departments = result.data || [];
@@ -590,7 +591,7 @@
         // Load role requirements
         async function loadRoleRequirements() {
             try {
-                const response = await fetch('/api/resource-access/role-requirements', { headers: getHeaders() });
+                const response = await authFetch('/api/resource-access/role-requirements', { headers: getHeaders() });
                 const result = await response.json();
                 if (result.success) {
                     roleRequirements = {};
@@ -606,7 +607,7 @@
         // Load templates
         async function loadTemplates() {
             try {
-                const response = await fetch('/api/resource-access/templates', { headers: getHeaders() });
+                const response = await authFetch('/api/resource-access/templates', { headers: getHeaders() });
                 const result = await response.json();
                 if (result.success) {
                     renderTemplates(result.data);
@@ -645,7 +646,7 @@
                 const search = document.getElementById('searchInput').value;
                 if (search) params.append('search', search);
 
-                const response = await fetch(`/api/resource-access/resources?${params}`, { headers: getHeaders() });
+                const response = await authFetch(`/api/resource-access/resources?${params}`, { headers: getHeaders() });
                 const result = await response.json();
 
                 if (result.success) {
@@ -833,7 +834,7 @@
                 .map(r => ({ type: r.resource_type, id: r.id }));
 
             try {
-                const response = await fetch('/api/resource-access/bulk-update', {
+                const response = await authFetch('/api/resource-access/bulk-update', {
                     method: 'POST',
                     headers: getHeaders(),
                     body: JSON.stringify({ resources: selectedResources, visibility })
@@ -918,7 +919,7 @@
                         updateData.department_id = result.department_id || null;
                     }
 
-                    await fetch('/api/resource-access/bulk-update', {
+                    await authFetch('/api/resource-access/bulk-update', {
                         method: 'POST',
                         headers: getHeaders(),
                         body: JSON.stringify(updateData)
@@ -926,7 +927,7 @@
 
                     // Update role requirement if changed
                     if (result.min_business_role !== currentRole) {
-                        await fetch('/api/resource-access/role-requirement', {
+                        await authFetch('/api/resource-access/role-requirement', {
                             method: 'POST',
                             headers: getHeaders(),
                             body: JSON.stringify({
@@ -958,7 +959,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch('/api/resource-access/apply-template', {
+                const response = await authFetch('/api/resource-access/apply-template', {
                     method: 'POST',
                     headers: getHeaders(),
                     body: JSON.stringify({ template_id: templateId })
@@ -980,7 +981,7 @@
         // Tier settings
         async function loadTierSettings() {
             try {
-                const response = await fetch('/api/resource-access/tier-settings', { headers: getHeaders() });
+                const response = await authFetch('/api/resource-access/tier-settings', { headers: getHeaders() });
                 const result = await response.json();
 
                 if (result.success && result.data) {
