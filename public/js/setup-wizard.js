@@ -668,79 +668,85 @@ const SetupWizard = {
         const tier = this.tiers.find(t => t.id === this.formData.tier);
         const soulTemplate = this.soulTemplates.find(t => t.id === this.formData.soulTemplate);
 
+        const sectionStyle = 'padding: var(--spacing-md) var(--spacing-lg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: var(--spacing-sm);';
+        const headerStyle = 'margin: 0 0 var(--spacing-sm) 0; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;';
+        const rowStyle = 'display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs) 0;';
+        const labelStyle = 'color: var(--text-muted); font-size: 0.9rem;';
+        const valueStyle = 'font-weight: 500; font-size: 0.9rem;';
+
         return `
-            <div class="review-section">
-                <h4>Organization</h4>
-                <div class="review-item">
-                    <span class="review-label">Name:</span>
-                    <span class="review-value">${this.escapeHtml(this.formData.name)}</span>
+            <div style="${sectionStyle}">
+                <h4 style="${headerStyle}">Organization</h4>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Name</span>
+                    <span style="${valueStyle}">${this.escapeHtml(this.formData.name)}</span>
                 </div>
-                <div class="review-item">
-                    <span class="review-label">Slug:</span>
-                    <span class="review-value">${this.escapeHtml(this.formData.slug)}</span>
-                </div>
-            </div>
-
-            <div class="review-section">
-                <h4>Subscription</h4>
-                <div class="review-item">
-                    <span class="review-label">Tier:</span>
-                    <span class="review-value">
-                        <span class="tier-badge tier-${this.formData.tier}">${tier?.name || this.formData.tier}</span>
-                    </span>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Slug</span>
+                    <span style="${valueStyle}">${this.escapeHtml(this.formData.slug)}</span>
                 </div>
             </div>
 
-            <div class="review-section">
-                <h4>Administrator</h4>
-                <div class="review-item">
-                    <span class="review-label">Name:</span>
-                    <span class="review-value">${this.escapeHtml(this.formData.adminName)}</span>
-                </div>
-                <div class="review-item">
-                    <span class="review-label">Email:</span>
-                    <span class="review-value">${this.escapeHtml(this.formData.adminEmail)}</span>
+            <div style="${sectionStyle}">
+                <h4 style="${headerStyle}">Subscription</h4>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Tier</span>
+                    <span class="tier-badge tier-${this.formData.tier}">${tier?.name || this.formData.tier}</span>
                 </div>
             </div>
 
-            <div class="review-section">
-                <h4>Values & Ethics</h4>
-                <div class="review-item">
-                    <span class="review-label">Template:</span>
-                    <span class="review-value">${soulTemplate ? soulTemplate.name : '<em>None selected (configure later)</em>'}</span>
+            <div style="${sectionStyle}">
+                <h4 style="${headerStyle}">Administrator</h4>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Name</span>
+                    <span style="${valueStyle}">${this.escapeHtml(this.formData.adminName)}</span>
+                </div>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Email</span>
+                    <span style="${valueStyle}">${this.escapeHtml(this.formData.adminEmail)}</span>
                 </div>
             </div>
 
-            <div class="review-section">
-                <h4>Features</h4>
-                <div class="review-item">
-                    <span class="review-label">Modules:</span>
-                    <span class="review-value">${this.formData.modules.length} enabled</span>
+            <div style="${sectionStyle}">
+                <h4 style="${headerStyle}">Values & Ethics</h4>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Template</span>
+                    <span style="${valueStyle}">${soulTemplate ? soulTemplate.name : '<em style="color: var(--text-muted); font-weight: 400;">None selected (configure later)</em>'}</span>
+                </div>
+            </div>
+
+            <div style="${sectionStyle}">
+                <h4 style="${headerStyle}">Features</h4>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Modules</span>
+                    <span style="${valueStyle}">${this.formData.modules.length} enabled</span>
                 </div>
             </div>
 
             ${this.formData.departments.length > 0 ? `
-                <div class="review-section">
-                    <h4>Departments (${this.formData.departments.length})</h4>
-                    <div class="review-departments">
-                        ${this.formData.departments.map(d => `<span class="dept-tag">${d}</span>`).join('')}
+                <div style="${sectionStyle}">
+                    <h4 style="${headerStyle}">Departments (${this.formData.departments.length})</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs);">
+                        ${this.formData.departments.map(d => `
+                            <span style="display: inline-flex; align-items: center; padding: var(--spacing-xs) var(--spacing-sm); background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">${d}</span>
+                        `).join('')}
                     </div>
                 </div>
             ` : ''}
 
-            <div class="review-section">
-                <h4>Starter Resources</h4>
-                <div class="review-item">
-                    <span class="review-label">Seed Agents:</span>
-                    <span class="review-value">${this.formData.seedAgents ? 'Yes (5 starter agents)' : 'No'}</span>
+            <div style="${sectionStyle}">
+                <h4 style="${headerStyle}">Starter Resources</h4>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Seed Agents</span>
+                    <span style="${valueStyle}">${this.formData.seedAgents ? 'Yes (5 starter agents)' : 'No'}</span>
                 </div>
-                <div class="review-item">
-                    <span class="review-label">Seed Context:</span>
-                    <span class="review-value">${this.formData.seedContext ? 'Yes (4 templates)' : 'No'}</span>
+                <div style="${rowStyle}">
+                    <span style="${labelStyle}">Seed Context</span>
+                    <span style="${valueStyle}">${this.formData.seedContext ? 'Yes (4 templates)' : 'No'}</span>
                 </div>
             </div>
 
-            <div class="review-notice">
+            <div class="form-info" style="margin-top: var(--spacing-md);">
                 <i data-lucide="info"></i>
                 <span>Click "Complete Setup" to create the organization and send an invitation to the admin.</span>
             </div>
