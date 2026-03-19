@@ -2382,7 +2382,7 @@
             userModal.open();
         }
 
-        function openEditModal(userId) {
+        async function openEditModal(userId) {
             // Prefer unifiedUsers (has assignments data), fallback to users
             const user = unifiedUsers.find(u => u.id === userId) || users.find(u => u.id === userId);
             if (!user) return;
@@ -2390,6 +2390,20 @@
             // Close existing modal if open
             if (userModal) {
                 userModal.close();
+            }
+
+            // Load departments scoped to the user's org (first membership)
+            const userOrg = (user.organization_memberships || [])[0];
+            if (userOrg?.org_id) {
+                try {
+                    const resp = await fetch(`/api/departments?org_id=${userOrg.org_id}`, {
+                        headers: getAuthHeaders()
+                    });
+                    const data = await resp.json();
+                    if (data.success) departments = data.data || [];
+                } catch (e) {
+                    console.warn('Could not load org departments:', e);
+                }
             }
 
             editingUserId = userId;
