@@ -2594,7 +2594,7 @@
         // Theme Toggle
         // ============================================================================
         function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
             updateThemeIcon(savedTheme);
         }
@@ -2603,7 +2603,7 @@
             const current = document.documentElement.getAttribute('data-theme');
             const newTheme = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            localStorage.setItem('insight360-theme', newTheme);
             updateThemeIcon(newTheme);
         }
 
@@ -2697,6 +2697,12 @@
         async function init() {
             initTheme();
             lucide.createIcons();
+
+            // Ensure authFetch is loaded before making any API calls.
+            // auth-fetch-loader.js dynamically injects auth-fetch.js, but it may not
+            // finish loading before DOMContentLoaded fires. initNavigation() guarantees
+            // authFetch is available — this is the same pattern admin-platform.html uses.
+            if (typeof initNavigation === 'function') await initNavigation();
 
             // Check authentication — let authFetch handle redirect on true expiry
             const token = localStorage.getItem('insight360_token');
