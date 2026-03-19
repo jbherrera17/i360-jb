@@ -899,13 +899,22 @@ const SetupWizard = {
             const orgHeaders = { ...headers, 'x-org-id': orgId };
 
             // 2. Create departments if any
+            let executiveDeptId = null;
             if (this.formData.departments.length > 0) {
                 for (const deptName of this.formData.departments) {
-                    await fetch('/api/departments', {
-                        method: 'POST',
-                        headers: orgHeaders,
-                        body: JSON.stringify({ name: deptName })
-                    }).catch(e => console.warn('Could not create department:', deptName, e));
+                    try {
+                        const deptResp = await fetch('/api/departments', {
+                            method: 'POST',
+                            headers: orgHeaders,
+                            body: JSON.stringify({ name: deptName })
+                        });
+                        if (deptResp.ok && deptName === 'Executive') {
+                            const deptData = await deptResp.json();
+                            executiveDeptId = deptData.data?.id || null;
+                        }
+                    } catch (e) {
+                        console.warn('Could not create department:', deptName, e);
+                    }
                 }
             }
 
@@ -955,17 +964,21 @@ const SetupWizard = {
                 }).catch(e => console.warn('Could not seed context:', e));
             }
 
-            // 7. Invite the designated org admin
+            // 7. Invite the designated org admin (executive role + Executive dept)
             if (this.formData.adminEmail?.trim()) {
+                const invitePayload = {
+                    email: this.formData.adminEmail.trim(),
+                    display_name: this.formData.adminName?.trim() || null,
+                    org_id: orgId,
+                    role: 'admin',
+                    business_role: 'executive'
+                };
+                if (executiveDeptId) invitePayload.department_id = executiveDeptId;
+
                 const inviteResponse = await fetch('/api/platform/users', {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({
-                        email: this.formData.adminEmail.trim(),
-                        display_name: this.formData.adminName?.trim() || null,
-                        org_id: orgId,
-                        role: 'admin'
-                    })
+                    body: JSON.stringify(invitePayload)
                 });
 
                 if (!inviteResponse.ok) {
