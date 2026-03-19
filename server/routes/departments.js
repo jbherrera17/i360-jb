@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
+const { getVerifiedOrgId } = require('../utils/orgScope');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -20,21 +21,33 @@ const supabase = createClient(
  */
 router.get('/', async (req, res) => {
     try {
-        const orgId = req.query.org_id || req.headers['x-org-id'] || req.orgId;
+        const orgId = getVerifiedOrgId(req) || req.query.org_id;
 
-        let query = supabase
-            .from('departments')
-            .select('*')
-            .order('name', { ascending: true });
+        // Platform admins without an org filter get all departments
+        if (!orgId && req.isPlatformAdmin) {
+            const { data, error } = await supabase
+                .from('departments')
+                .select('*')
+                .not('org_id', 'is', null)
+                .order('name', { ascending: true });
 
-        if (orgId) {
-            query = query.eq('org_id', orgId);
-        } else {
-            // No org context — filter out orphans, return only org-scoped departments
-            query = query.not('org_id', 'is', null);
+            if (error) throw error;
+            return res.json({ success: true, data });
         }
 
-        const { data, error } = await query;
+        if (!orgId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Organization context required. Include x-org-id header.',
+                code: 'ORG_CONTEXT_REQUIRED'
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('org_id', orgId)
+            .order('name', { ascending: true });
 
         if (error) throw error;
 
@@ -66,6 +79,18 @@ router.get('/:id', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Verify org ownership (unless platform admin)
+        if (!req.isPlatformAdmin) {
+            const orgId = getVerifiedOrgId(req);
+            if (orgId && data.org_id && data.org_id !== orgId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied: department belongs to a different organization',
+                    code: 'ORG_ACCESS_DENIED'
+                });
+            }
+        }
 
         res.json({
             success: true,

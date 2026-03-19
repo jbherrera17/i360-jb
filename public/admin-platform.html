@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/icon-picker.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -1158,7 +1159,7 @@
                 const token = localStorage.getItem('insight360_token');
                 if (!token) return false;
 
-                const response = await fetch('/api/platform/config', {
+                const response = await authFetch('/api/platform/config', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -1200,13 +1201,13 @@
             try {
                 // Load in parallel
                 const [statsRes, orgsRes, usersRes, tiersRes, modulesRes, adminsRes, configRes] = await Promise.all([
-                    fetch('/api/platform/stats', { headers }),
-                    fetch('/api/platform/organizations', { headers }),
-                    fetch('/api/platform/users', { headers }),
-                    fetch('/api/platform/tiers', { headers }),
-                    fetch('/api/platform/modules', { headers }),
-                    fetch('/api/platform/admins', { headers }),
-                    fetch('/api/platform/config', { headers })
+                    authFetch('/api/platform/stats', { headers }),
+                    authFetch('/api/platform/organizations', { headers }),
+                    authFetch('/api/platform/users', { headers }),
+                    authFetch('/api/platform/tiers', { headers }),
+                    authFetch('/api/platform/modules', { headers }),
+                    authFetch('/api/platform/admins', { headers }),
+                    authFetch('/api/platform/config', { headers })
                 ]);
 
                 if (statsRes.ok) {
@@ -1359,7 +1360,7 @@
             const token = localStorage.getItem('insight360_token');
             try {
                 // Load voice service status and available voices
-                const voicesRes = await fetch('/api/chat/voice/voices', {
+                const voicesRes = await authFetch('/api/chat/voice/voices', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const voicesData = await voicesRes.json();
@@ -1437,7 +1438,7 @@
             featureFlags.voice = newVoiceConfig;
 
             try {
-                const response = await fetch('/api/platform/config', {
+                const response = await authFetch('/api/platform/config', {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1484,7 +1485,7 @@
             document.getElementById('voiceStopBtn').style.display = 'inline-flex';
 
             try {
-                const response = await fetch('/api/chat/voice/tts', {
+                const response = await authFetch('/api/chat/voice/tts', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1651,7 +1652,7 @@
             };
 
             try {
-                const response = await fetch('/api/platform/config', {
+                const response = await authFetch('/api/platform/config', {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1718,7 +1719,7 @@
             const token = localStorage.getItem('insight360_token');
 
             try {
-                const response = await fetch(`/api/platform/organizations/${orgId}/tier`, {
+                const response = await authFetch(`/api/platform/organizations/${orgId}/tier`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1783,7 +1784,7 @@
             const token = localStorage.getItem('insight360_token');
 
             try {
-                const response = await fetch('/api/organizations', {
+                const response = await authFetch('/api/organizations', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1837,7 +1838,7 @@
 
             try {
                 const url = `/api/platform/organizations/${orgId}${deleteMembers ? '?delete_members=true' : ''}`;
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1973,7 +1974,7 @@
                     if (result.route_path === '') result.route_path = null;
                     if (result.nav_group === '') result.nav_group = null;
 
-                    const response = await fetch('/api/platform/modules', {
+                    const response = await authFetch('/api/platform/modules', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -2068,7 +2069,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/modules/${moduleId}`, {
+                const response = await authFetch(`/api/platform/modules/${moduleId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -2125,7 +2126,7 @@
                     // Convert empty string to null for min_tier
                     if (result.min_tier === '') result.min_tier = null;
 
-                    const response = await fetch(`/api/platform/modules/${moduleId}`, {
+                    const response = await authFetch(`/api/platform/modules/${moduleId}`, {
                         method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -2185,7 +2186,7 @@
             if (result && result.user_id) {
                 try {
                     const token = localStorage.getItem('insight360_token');
-                    const response = await fetch('/api/platform/admins', {
+                    const response = await authFetch('/api/platform/admins', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -2225,7 +2226,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/admins/${adminId}`, {
+                const response = await authFetch(`/api/platform/admins/${adminId}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -2430,7 +2431,7 @@
             const token = localStorage.getItem('insight360_token');
 
             try {
-                const response = await fetch(`/api/platform/users/${userId}`, {
+                const response = await authFetch(`/api/platform/users/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -2483,7 +2484,7 @@
             if (!orgId) return [];
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/organizations/${orgId}/departments`, {
+                const response = await authFetch(`/api/platform/organizations/${orgId}/departments`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!response.ok) return [];
@@ -2630,7 +2631,7 @@
 
                 try {
                     const token = localStorage.getItem('insight360_token');
-                    const response = await fetch('/api/platform/users', {
+                    const response = await authFetch('/api/platform/users', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -2679,7 +2680,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/users/${userId}/resend-invite`, {
+                const response = await authFetch(`/api/platform/users/${userId}/resend-invite`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -2724,7 +2725,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/users/${userId}/status`, {
+                const response = await authFetch(`/api/platform/users/${userId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -2765,7 +2766,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/users/${userId}/status`, {
+                const response = await authFetch(`/api/platform/users/${userId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -2822,7 +2823,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/auth/users/${userId}`, {
+                const response = await authFetch(`/api/auth/users/${userId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -2884,7 +2885,7 @@
 
             try {
                 const token = localStorage.getItem('insight360_token');
-                const response = await fetch(`/api/platform/users/${userId}/add-to-org`, {
+                const response = await authFetch(`/api/platform/users/${userId}/add-to-org`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -2991,7 +2992,7 @@
         async function loadAuditSummary() {
             const token = localStorage.getItem('insight360_token');
             try {
-                const res = await fetch('/api/role-audit/summary?days=30', {
+                const res = await authFetch('/api/role-audit/summary?days=30', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) return;
@@ -3041,7 +3042,7 @@
             }
 
             try {
-                const res = await fetch(`/api/role-audit?${params}`, {
+                const res = await authFetch(`/api/role-audit?${params}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) {
@@ -3230,7 +3231,7 @@
             showToast('Resetting test data... This may take a moment.', 'info');
 
             try {
-                const response = await fetch('/api/platform/reset-test-data', {
+                const response = await authFetch('/api/platform/reset-test-data', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,

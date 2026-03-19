@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const conversationService = require('../services/conversationService');
 const { getUserId } = require('../utils/auth');
+const { getVerifiedOrgId } = require('../utils/orgScope');
 
 // ============================================
 // ADMIN ENDPOINTS (must be before /:id routes)
@@ -25,9 +26,18 @@ router.get('/admin/all', async (req, res) => {
             department_id,
             business_role,
             user_id,
-            org_id,
             search
         } = req.query;
+
+        // Enforce org scoping — use verified org from middleware/headers, not raw query param
+        const orgId = getVerifiedOrgId(req);
+        if (!orgId && !req.isPlatformAdmin) {
+            return res.status(400).json({
+                success: false,
+                error: 'Organization context required. Include x-org-id header.',
+                code: 'ORG_CONTEXT_REQUIRED'
+            });
+        }
 
         const conversations = await conversationService.getAdminConversations({
             limit: parseInt(limit),
@@ -35,7 +45,7 @@ router.get('/admin/all', async (req, res) => {
             departmentId: department_id,
             businessRole: business_role,
             userId: user_id,
-            orgId: org_id,
+            orgId: orgId,
             search
         });
 
@@ -59,7 +69,17 @@ router.get('/admin/all', async (req, res) => {
  */
 router.get('/admin/stats', async (req, res) => {
     try {
-        const stats = await conversationService.getConversationStats();
+        // Enforce org scoping for stats
+        const orgId = getVerifiedOrgId(req);
+        if (!orgId && !req.isPlatformAdmin) {
+            return res.status(400).json({
+                success: false,
+                error: 'Organization context required. Include x-org-id header.',
+                code: 'ORG_CONTEXT_REQUIRED'
+            });
+        }
+
+        const stats = await conversationService.getConversationStats({ orgId });
 
         res.json({
             success: true,
@@ -89,6 +109,29 @@ router.get('/admin/:id', async (req, res) => {
                 success: false,
                 error: 'Conversation not found'
             });
+        }
+
+        // Verify org ownership (unless platform admin)
+        if (!req.isPlatformAdmin) {
+            const orgId = getVerifiedOrgId(req);
+            if (orgId && conversation.org_id && conversation.org_id !== orgId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied: conversation belongs to a different organization',
+                    code: 'ORG_ACCESS_DENIED'
+                });
+            }
+            // Also check via user's org membership if conversation has user_id but no org_id
+            if (orgId && conversation.user_id && !conversation.org_id) {
+                const userOrgId = await conversationService.getUserOrgId(conversation.user_id);
+                if (userOrgId && userOrgId !== orgId) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Access denied: conversation belongs to a different organization',
+                        code: 'ORG_ACCESS_DENIED'
+                    });
+                }
+            }
         }
 
         res.json({

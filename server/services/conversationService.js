@@ -578,12 +578,54 @@ async function getAdminConversations(options = {}) {
  * Get conversation counts grouped by department
  * @returns {array} Counts by department
  */
-async function getConversationStats() {
+async function getConversationStats(options = {}) {
+    const { orgId = null } = options;
+
     try {
-        // Get all conversations
-        const { data: conversations, error } = await supabase
+        // If org-scoped, get org member user IDs first
+        let orgUserIds = null;
+        if (orgId) {
+            const { data: orgMembers, error: omError } = await supabase
+                .from('organization_members')
+                .select('user_id')
+                .eq('org_id', orgId)
+                .eq('status', 'active');
+
+            if (omError) {
+                throw new Error(`Failed to filter org members for stats: ${omError.message}`);
+            }
+
+            orgUserIds = (orgMembers || []).map(m => m.user_id);
+
+            // Also include platform admins for the platform org
+            const { data: platformAdmins } = await supabase
+                .from('platform_admins')
+                .select('user_id')
+                .eq('is_active', true);
+
+            if (platformAdmins) {
+                for (const pa of platformAdmins) {
+                    if (!orgUserIds.includes(pa.user_id)) {
+                        orgUserIds.push(pa.user_id);
+                    }
+                }
+            }
+
+            if (orgUserIds.length === 0) {
+                return { total: 0, byDepartment: [], byRole: [] };
+            }
+        }
+
+        // Get conversations, scoped to org members if applicable
+        let convQuery = supabase
             .from('conversations')
             .select('id, user_id');
+
+        if (orgUserIds) {
+            convQuery = convQuery.in('user_id', orgUserIds);
+        }
+
+        const { data: conversations, error } = await convQuery;
 
         if (error) {
             throw new Error(`Failed to fetch conversation stats: ${error.message}`);
