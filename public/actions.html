@@ -842,7 +842,7 @@
         // Fetch current user
         async function fetchCurrentUser() {
             try {
-                const response = await fetch('/api/auth/me');
+                const response = await authFetch('/api/auth/me');
                 const data = await response.json();
                 if (data.success && data.user) {
                     currentUserId = data.user.id;
@@ -855,7 +855,7 @@
         // Fetch departments
         async function fetchDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await authFetch('/api/departments');
                 const data = await response.json();
                 if (data.success) {
                     departments = data.data;
@@ -928,7 +928,7 @@
         // Load stats
         async function loadStats() {
             try {
-                const res = await fetch('/api/actions/stats/overview');
+                const res = await authFetch('/api/actions/stats/overview');
                 const data = await res.json();
                 if (data.success) {
                     document.getElementById('totalActions').textContent = data.data.total_actions;
@@ -948,7 +948,7 @@
                     params.append('department_id', currentDepartment);
                 }
                 const url = '/api/actions/templates/list' + (params.toString() ? '?' + params.toString() : '');
-                const res = await fetch(url);
+                const res = await authFetch(url);
                 const data = await res.json();
                 if (data.success) {
                     templates = data.data;
@@ -1003,7 +1003,7 @@
                     params.append('department_id', currentDepartment);
                 }
                 const url = '/api/actions' + (params.toString() ? '?' + params.toString() : '');
-                const res = await fetch(url);
+                const res = await authFetch(url);
                 const data = await res.json();
                 if (data.success) {
                     actions = data.data;
@@ -1163,7 +1163,7 @@
             try {
                 const department_id = document.getElementById('createActionDepartment')?.value || null;
 
-                const res = await fetch(`/api/actions/from-template/${selectedTemplate}`, {
+                const res = await authFetch(`/api/actions/from-template/${selectedTemplate}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ department_id })
@@ -1186,7 +1186,7 @@
 
         async function createFromTemplateSlug(slug) {
             try {
-                const res = await fetch(`/api/actions/from-template/${slug}`, {
+                const res = await authFetch(`/api/actions/from-template/${slug}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
@@ -1295,7 +1295,7 @@
             };
 
             try {
-                const res = await fetch(`/api/actions/${currentEditActionId}`, {
+                const res = await authFetch(`/api/actions/${currentEditActionId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updates)
@@ -1328,7 +1328,7 @@
             if (!confirmed) return;
 
             try {
-                const res = await fetch(`/api/actions/${actionId}`, {
+                const res = await authFetch(`/api/actions/${actionId}`, {
                     method: 'DELETE'
                 });
 
@@ -1477,7 +1477,7 @@
             }
 
             try {
-                const res = await fetch(`/api/actions/${currentAction.id}/execute`, {
+                const res = await authFetch(`/api/actions/${currentAction.id}/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

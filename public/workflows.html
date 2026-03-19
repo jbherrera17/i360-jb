@@ -758,7 +758,7 @@
         // Fetch user profile to get their department
         async function fetchUserProfile() {
             try {
-                const response = await fetch('/api/auth/profile', { credentials: 'include' });
+                const response = await authFetch('/api/auth/profile', { credentials: 'include' });
                 const data = await response.json();
                 if (data.success && data.user?.department_id) {
                     userDepartmentId = data.user.department_id;
@@ -772,7 +772,7 @@
         // Fetch departments
         async function fetchDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await authFetch('/api/departments');
                 const data = await response.json();
                 if (data.success) {
                     departments = data.data;
@@ -805,7 +805,7 @@
         // Load templates
         async function loadTemplates() {
             try {
-                const res = await fetch('/api/workflows/templates');
+                const res = await authFetch('/api/workflows/templates');
                 const data = await res.json();
                 if (data.success) {
                     templates = data.templates || [];
@@ -824,7 +824,7 @@
                     params.append('department_id', currentDepartment);
                 }
                 const url = '/api/workflows' + (params.toString() ? '?' + params.toString() : '');
-                const res = await fetch(url);
+                const res = await authFetch(url);
                 const data = await res.json();
                 if (data.success) {
                     workflows = data.workflows || [];
@@ -1014,7 +1014,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/workflows/${id}`, {
+                const response = await authFetch(`/api/workflows/${id}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
@@ -1044,7 +1044,7 @@
 
             // Fetch full workflow with steps
             try {
-                const res = await fetch(`/api/workflows/${id}`);
+                const res = await authFetch(`/api/workflows/${id}`);
                 const data = await res.json();
                 if (data.success) {
                     selectedWorkflow = data.workflow;
@@ -1213,7 +1213,7 @@
             if (!name) return;
 
             try {
-                const res = await fetch(`/api/workflows/from-template/${templateId}`, {
+                const res = await authFetch(`/api/workflows/from-template/${templateId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })

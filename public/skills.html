@@ -807,7 +807,7 @@
         // Fetch departments
         async function fetchDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await authFetch('/api/departments');
                 const data = await response.json();
                 if (data.success) {
                     departments = data.data;
@@ -836,7 +836,7 @@
         // Load categories
         async function loadCategories() {
             try {
-                const res = await fetch('/api/skills/categories');
+                const res = await authFetch('/api/skills/categories');
                 const data = await res.json();
                 if (data.success) {
                     categories = data.data;
@@ -901,7 +901,7 @@
                 // Pass status - 'all' shows everything, otherwise filter
                 params.append('status', currentStatus || 'all');
                 const url = '/api/skills' + (params.toString() ? '?' + params.toString() : '');
-                const res = await fetch(url);
+                const res = await authFetch(url);
                 const data = await res.json();
                 if (data.success) {
                     skills = data.data;
@@ -1035,7 +1035,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/skills/${id}`, {
+                const response = await authFetch(`/api/skills/${id}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
@@ -1157,7 +1157,7 @@
             if (!selectedSkill) return;
 
             try {
-                const res = await fetch(`/api/skills/${selectedSkill.id}/export`);
+                const res = await authFetch(`/api/skills/${selectedSkill.id}/export`);
                 const data = await res.json();
 
                 if (data.success) {
@@ -1201,7 +1201,7 @@
             const loading = ModalService.loading({ message: 'Testing skill...' });
 
             try {
-                const res = await fetch(`/api/skills/${selectedSkill.id}/test`, {
+                const res = await authFetch(`/api/skills/${selectedSkill.id}/test`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message })
@@ -1292,7 +1292,7 @@ Your skill instructions here..."></textarea>
             if (!(await UsageNudge.checkBeforeCreate('skills'))) return;
 
             try {
-                const res = await fetch('/api/skills/import', {
+                const res = await authFetch('/api/skills/import', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content })

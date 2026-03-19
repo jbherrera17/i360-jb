@@ -2538,7 +2538,7 @@
                 if (platform) params.append('platform_type', platform);
                 if (search) params.append('search', search);
 
-                const response = await fetch(`/api/agents?${params}`);
+                const response = await authFetch(`/api/agents?${params}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -2561,7 +2561,7 @@
 
         async function fetchCategories() {
             try {
-                const response = await fetch('/api/agents/categories');
+                const response = await authFetch('/api/agents/categories');
                 const data = await response.json();
                 if (data.success) {
                     categories = data.data;
@@ -2574,7 +2574,7 @@
 
         async function fetchDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                const response = await authFetch('/api/departments');
                 const data = await response.json();
                 if (data.success) {
                     // Populate filter dropdown
@@ -2606,7 +2606,7 @@
 
         async function fetchStats() {
             try {
-                const response = await fetch('/api/agents/stats');
+                const response = await authFetch('/api/agents/stats');
                 const data = await response.json();
                 if (data.success) {
                     document.getElementById('statTotal').textContent = data.data.total_agents;
@@ -2621,8 +2621,7 @@
 
         async function fetchContextAssets() {
             try {
-                const fetchFn = window.authFetch || fetch;
-                const response = await fetchFn('/api/context/assets');
+                const response = await authFetch('/api/context/assets');
                 const data = await response.json();
                 if (data.success) {
                     contextAssets = data.data;
@@ -2639,7 +2638,7 @@
 
         async function fetchModels() {
             try {
-                const response = await fetch('/api/chat/models/all');
+                const response = await authFetch('/api/chat/models/all');
                 const data = await response.json();
                 if (data.success) {
                     availableModels = data.models;
@@ -2720,7 +2719,7 @@
                 const method = isEdit ? 'PUT' : 'POST';
                 const url = isEdit ? `/api/agents/${editingAgent.id}` : '/api/agents';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(agentData)
@@ -2748,7 +2747,7 @@
 
             showLoading('Archiving Agent', 'Removing agent from active list...');
             try {
-                const response = await fetch(`/api/agents/${id}`, { method: 'DELETE' });
+                const response = await authFetch(`/api/agents/${id}`, { method: 'DELETE' });
                 const data = await response.json();
 
                 if (data.success) {
@@ -2767,7 +2766,7 @@
 
         async function addContextMapping(agentId, assetId, mode, priority) {
             try {
-                const response = await fetch(`/api/agents/${agentId}/context`, {
+                const response = await authFetch(`/api/agents/${agentId}/context`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2794,7 +2793,7 @@
 
         async function removeContextMapping(agentId, mappingId) {
             try {
-                const response = await fetch(`/api/agents/${agentId}/context/${mappingId}`, {
+                const response = await authFetch(`/api/agents/${agentId}/context/${mappingId}`, {
                     method: 'DELETE'
                 });
 
@@ -2921,7 +2920,7 @@
 
         async function loadAgentDetail(id) {
             try {
-                const response = await fetch(`/api/agents/${id}`);
+                const response = await authFetch(`/api/agents/${id}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -3744,7 +3743,7 @@
 
         async function loadContextPreview(agentId) {
             try {
-                const response = await fetch(`/api/agents/${agentId}/context/preview`, {
+                const response = await authFetch(`/api/agents/${agentId}/context/preview`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_message: '' })
@@ -3828,7 +3827,7 @@
                 const contentDiv = assistantDiv.querySelector('.launcher-message-content');
 
                 // Stream response
-                const response = await fetch(`/api/agents/${launcherAgent.id}/execute/stream`, {
+                const response = await authFetch(`/api/agents/${launcherAgent.id}/execute/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -4028,7 +4027,7 @@
 
         async function loadExecutionHistory(agentId) {
             try {
-                const response = await fetch(`/api/agents/${agentId}/executions?limit=10`);
+                const response = await authFetch(`/api/agents/${agentId}/executions?limit=10`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -4267,7 +4266,7 @@
 
             showLoading('Duplicating Agent', 'Creating your custom copy...');
             try {
-                const response = await fetch(`/api/agents/${selectedAgent.id}/duplicate`, {
+                const response = await authFetch(`/api/agents/${selectedAgent.id}/duplicate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: newName })
