@@ -581,34 +581,39 @@ const SetupWizard = {
             { name: 'Support', icon: 'headphones' }
         ];
 
+        const selected = this.formData.departments;
+
         return `
             <p class="step-info">Select common departments to add, or skip this step to add departments later.</p>
 
-            <div class="department-options">
-                ${defaultDepts.map(dept => `
-                    <label class="department-option">
-                        <input type="checkbox" ${this.formData.departments.includes(dept.name) ? 'checked' : ''}
-                               onchange="SetupWizard.toggleDepartment('${dept.name}')">
-                        <span class="department-option-content">
-                            <i data-lucide="${dept.icon}"></i>
-                            ${dept.name}
-                        </span>
-                    </label>
-                `).join('')}
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm);">
+                ${defaultDepts.map(dept => {
+                    const isSelected = selected.includes(dept.name);
+                    return `
+                    <label style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-md); border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}; border-radius: var(--radius-sm); cursor: pointer; background: ${isSelected ? 'rgba(99, 102, 241, 0.08)' : 'transparent'}; transition: all 0.15s ease;">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''}
+                               onchange="SetupWizard.toggleDepartment('${dept.name}')"
+                               style="width: 16px; height: 16px; flex-shrink: 0;">
+                        <i data-lucide="${dept.icon}" style="width: 18px; height: 18px; flex-shrink: 0; color: ${isSelected ? 'var(--primary)' : 'var(--text-muted)'};"></i>
+                        <strong style="font-size: 0.9rem;">${dept.name}</strong>
+                    </label>`;
+                }).join('')}
             </div>
 
-            <div class="form-group" style="margin-top: 1.5rem;">
-                <label>Custom Department</label>
-                <div class="input-group">
-                    <input type="text" id="customDept" class="form-input" placeholder="Enter department name">
+            <div style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-color);">
+                <label style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: var(--spacing-xs); display: block;">Custom Department</label>
+                <div style="display: flex; gap: var(--spacing-sm);">
+                    <input type="text" id="customDept" class="form-input" placeholder="Enter department name" style="flex: 1;">
                     <button class="btn btn-secondary" onclick="SetupWizard.addCustomDepartment()">Add</button>
                 </div>
             </div>
 
-            ${this.formData.departments.length > 0 ? `
-                <div class="selected-departments">
-                    <strong>Selected (${this.formData.departments.length}):</strong>
-                    ${this.formData.departments.map(d => `<span class="dept-tag">${d}</span>`).join('')}
+            ${selected.length > 0 ? `
+                <div style="margin-top: var(--spacing-md);">
+                    <div class="form-info">
+                        <i data-lucide="check-circle"></i>
+                        <span>${selected.length} department${selected.length !== 1 ? 's' : ''} selected</span>
+                    </div>
                 </div>
             ` : ''}
         `;
