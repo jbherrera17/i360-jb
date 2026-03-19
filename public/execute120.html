@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -924,11 +925,11 @@
 
             // Parallel load all data
             const [profileResult, cardsResult, favoritesResult, recentsResult, hiddenResult] = await Promise.allSettled([
-                fetch('/api/execute120/my-profile').then(r => r.json()),
-                fetch('/api/execute120/my-cards?limit=6').then(r => r.json()),
-                fetch('/api/execute120/my-favorites').then(r => r.json()),
-                fetch('/api/execute120/my-recents').then(r => r.json()),
-                fetch('/api/execute120/my-hidden').then(r => r.json())
+                authFetch('/api/execute120/my-profile').then(r => r.json()),
+                authFetch('/api/execute120/my-cards?limit=6').then(r => r.json()),
+                authFetch('/api/execute120/my-favorites').then(r => r.json()),
+                authFetch('/api/execute120/my-recents').then(r => r.json()),
+                authFetch('/api/execute120/my-hidden').then(r => r.json())
             ]);
 
             // Parse results
@@ -1280,11 +1281,11 @@
 
             try {
                 if (isFav) {
-                    await fetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
+                    await authFetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
                     btn.classList.remove('is-fav');
                     favorites = favorites.filter(f => !(f.entity_type === entityType && f.entity_id === entityId));
                 } else {
-                    const res = await fetch('/api/execute120/my-favorites', {
+                    const res = await authFetch('/api/execute120/my-favorites', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ entity_type: entityType, entity_id: entityId })
@@ -1293,7 +1294,7 @@
                     btn.classList.add('is-fav');
                     if (result.success) {
                         // Reload favorites to get enriched data
-                        const favRes = await fetch('/api/execute120/my-favorites');
+                        const favRes = await authFetch('/api/execute120/my-favorites');
                         const favResult = await favRes.json();
                         if (favResult.success) favorites = favResult.data;
                     }
@@ -1306,7 +1307,7 @@
 
         async function removeFavorite(entityType, entityId) {
             try {
-                await fetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
+                await authFetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
                 favorites = favorites.filter(f => !(f.entity_type === entityType && f.entity_id === entityId));
                 renderPins();
                 // Update star buttons in grid
@@ -1322,7 +1323,7 @@
         // ================================================
         async function loadDepartmentTabs() {
             try {
-                const response = await fetch('/api/execute120/departments');
+                const response = await authFetch('/api/execute120/departments');
                 const result = await response.json();
                 departments = (result.success && result.data?.length > 0) ? result.data : [];
 
@@ -1382,7 +1383,7 @@
             let fullDept = dept;
             try {
                 if (dept.id && dept.id.length > 10) {
-                    const response = await fetch(`/api/execute120/departments/${dept.id}`);
+                    const response = await authFetch(`/api/execute120/departments/${dept.id}`);
                     const result = await response.json();
                     if (result.success) fullDept = result.data;
                 }
@@ -1510,7 +1511,7 @@
 
         async function openAgentModal(agentId) {
             try {
-                const res = await fetch(`/api/agents/${agentId}`);
+                const res = await authFetch(`/api/agents/${agentId}`);
                 const result = await res.json();
                 const agent = result.success ? (result.data || result.agent) : null;
                 if (!agent) { showToast('Could not load agent', 'error'); return; }
@@ -1540,7 +1541,7 @@
             try {
                 let skill = (personalizedCards.skills || []).find(s => s.id === skillId);
                 if (!skill) {
-                    const res = await fetch(`/api/skills/${skillId}`);
+                    const res = await authFetch(`/api/skills/${skillId}`);
                     const result = await res.json();
                     skill = result.success ? result.data : null;
                 }
@@ -1561,7 +1562,7 @@
 
         async function openActionModal(actionId) {
             try {
-                const res = await fetch(`/api/actions/${actionId}`);
+                const res = await authFetch(`/api/actions/${actionId}`);
                 const result = await res.json();
                 const action = result.success ? result.data : null;
                 if (!action) { showToast('Could not load action', 'error'); return; }
@@ -1607,7 +1608,7 @@
         async function executeActionRun(action, inputData) {
             try {
                 showToast('Executing action...', 'info');
-                const res = await fetch(`/api/actions/${action.id}/execute`, {
+                const res = await authFetch(`/api/actions/${action.id}/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ input_data: inputData })
@@ -1635,7 +1636,7 @@
 
         async function openAssetPreview(assetId) {
             try {
-                const res = await fetch(`/api/context/${assetId}`);
+                const res = await authFetch(`/api/context/${assetId}`);
                 const result = await res.json();
                 const asset = result.success ? result.data : null;
                 if (!asset) { showToast('Could not load asset', 'error'); return; }
@@ -1655,7 +1656,7 @@
         // ================================================
         async function hideItem(entityType, entityId) {
             try {
-                await fetch('/api/execute120/my-hidden', {
+                await authFetch('/api/execute120/my-hidden', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ entity_type: entityType, entity_id: entityId })
@@ -1664,7 +1665,7 @@
 
                 const wasFav = favorites.some(f => f.entity_type === entityType && f.entity_id === entityId);
                 if (wasFav) {
-                    await fetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
+                    await authFetch(`/api/execute120/my-favorites/${entityType}/${entityId}`, { method: 'DELETE' });
                     favorites = favorites.filter(f => !(f.entity_type === entityType && f.entity_id === entityId));
                 }
 
@@ -1723,9 +1724,9 @@
                 if (!confirmed) return;
             }
             try {
-                await fetch('/api/execute120/my-hidden', { method: 'DELETE' });
+                await authFetch('/api/execute120/my-hidden', { method: 'DELETE' });
                 hiddenItems = [];
-                const cardsRes = await fetch('/api/execute120/my-cards?limit=6');
+                const cardsRes = await authFetch('/api/execute120/my-cards?limit=6');
                 const cardsResult = await cardsRes.json();
                 if (cardsResult.success) personalizedCards = cardsResult.data;
                 reRenderPanels();

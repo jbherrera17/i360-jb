@@ -8,6 +8,8 @@
 const express = require('express');
 const { getUserId } = require('../utils/auth');
 const WorkflowEngine = require('../services/workflowEngine');
+const { requireOrgContext } = require('../middleware/orgContext');
+const { scopeToOrg, getOrgDepartmentIds, getVerifiedOrgId } = require('../utils/orgScope');
 
 /**
  * Execute 120 Routes Factory
@@ -59,6 +61,9 @@ module.exports = function(supabase) {
         }
     });
 
+    // Phase 82: Require verified org context for all Execute 120 routes
+    router.use(requireOrgContext(supabase));
+
     // ============================================
     // DEPARTMENTS (Execute 120 Extension)
     // ============================================
@@ -69,7 +74,7 @@ module.exports = function(supabase) {
      */
     router.get('/departments', async (req, res) => {
         try {
-            const orgId = req.query.org_id || req.headers['x-org-id'] || req.orgId;
+            const orgId = getVerifiedOrgId(req);
 
             let query = supabase
                 .from('departments')
@@ -90,11 +95,7 @@ module.exports = function(supabase) {
                 .eq('is_active', true)
                 .order('sort_order', { ascending: true });
 
-            if (orgId) {
-                query = query.eq('org_id', orgId);
-            } else {
-                query = query.not('org_id', 'is', null);
-            }
+            query = scopeToOrg(query, orgId);
 
             const { data: departments, error } = await query;
 
@@ -120,6 +121,7 @@ module.exports = function(supabase) {
     router.get('/departments/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const orgId = getVerifiedOrgId(req);
 
             // Get department
             const { data: department, error: deptError } = await supabase
@@ -129,6 +131,14 @@ module.exports = function(supabase) {
                 .single();
 
             if (deptError) throw deptError;
+
+            // Verify department belongs to user's org
+            if (department.org_id !== orgId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Department does not belong to your organization'
+                });
+            }
 
             // Get associated agents
             const { data: agentMappings, error: agentError } = await supabase
@@ -233,18 +243,15 @@ module.exports = function(supabase) {
             }
 
             // Get business_role from organization_members (per-org, Phase 70b)
-            const orgId = req.headers['x-org-id'] || null;
+            const orgId = getVerifiedOrgId(req);
             let userBusinessRole = 'ic';
             if (user) {
                 const memberQuery = supabase
                     .from('organization_members')
                     .select('business_role')
                     .eq('user_id', userId)
-                    .eq('status', 'active');
-
-                if (orgId) {
-                    memberQuery.eq('org_id', orgId);
-                }
+                    .eq('status', 'active')
+                    .eq('org_id', orgId);
 
                 const { data: membership } = await memberQuery.limit(1).maybeSingle();
                 userBusinessRole = membership?.business_role || 'ic';
@@ -318,7 +325,7 @@ module.exports = function(supabase) {
             const userId = getUserId(req);
             const { limit = 5, department_id } = req.query;
             const limitNum = parseInt(limit);
-            const orgId = req.headers['x-org-id'] || null;
+            const orgId = getVerifiedOrgId(req);
 
             // Get user profile
             let user = null;
@@ -338,11 +345,8 @@ module.exports = function(supabase) {
                     .from('organization_members')
                     .select('business_role')
                     .eq('user_id', userId)
-                    .eq('status', 'active');
-
-                if (orgId) {
-                    memberQuery.eq('org_id', orgId);
-                }
+                    .eq('status', 'active')
+                    .eq('org_id', orgId);
 
                 const { data: membership } = await memberQuery.limit(1).maybeSingle();
                 userBusinessRole = membership?.business_role || 'ic';
@@ -366,10 +370,10 @@ module.exports = function(supabase) {
             // Parallel fetch all cards + module access checks + hidden items
             const [contextAssets, agents, actions, skills, workflows, briefing, briefingAccess, strategyAccess, hiddenResult] = await Promise.all([
                 getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum, orgId),
-                getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum),
-                getFilteredActions(supabase, deptId, userRoleLevelNum, limitNum),
-                getFilteredSkills(supabase, deptId, userRoleLevelNum, limitNum),
-                getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limitNum),
+                getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum, orgId),
+                getFilteredActions(supabase, deptId, userRoleLevelNum, limitNum, orgId),
+                getFilteredSkills(supabase, deptId, userRoleLevelNum, limitNum, orgId),
+                getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limitNum, orgId),
                 getLatestBriefing(supabase, userId),
                 userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'briefing', p_org_id: orgId }) : { data: true },
                 userId ? supabase.rpc('can_access_module', { p_user_id: userId, p_module_id: 'strategy120', p_org_id: orgId }) : { data: false },
@@ -392,7 +396,7 @@ module.exports = function(supabase) {
             // Strategy overview for executives only (and only if they have strategy access)
             let strategyOverview = null;
             if (['executive', 'director'].includes(roleLevel) && strategyAccess.data !== false) {
-                strategyOverview = await getStrategyOverview(supabase, deptId);
+                strategyOverview = await getStrategyOverview(supabase, deptId, orgId);
             }
 
             res.json({
@@ -819,9 +823,7 @@ module.exports = function(supabase) {
                 .limit(limit);
 
             // Org scoping: only show assets belonging to user's org
-            if (orgId) {
-                query = query.eq('org_id', orgId);
-            }
+            query = scopeToOrg(query, orgId);
 
             // Department filter: user's dept OR global (null)
             if (deptId) {
@@ -867,7 +869,7 @@ module.exports = function(supabase) {
     /**
      * Get agents filtered by department and role
      */
-    async function getFilteredAgents(supabase, deptId, userRoleLevelNum, limit) {
+    async function getFilteredAgents(supabase, deptId, userRoleLevelNum, limit, orgId) {
         try {
             // If user has a department, get agents mapped to that department
             if (deptId) {
@@ -922,12 +924,15 @@ module.exports = function(supabase) {
                 return filtered.slice(0, limit);
             }
 
-            // No department - get general agents
-            const { data: agents, error } = await supabase
-                .from('agents')
-                .select('id, name, description, icon, category, suite')
-                .eq('is_active', true)
-                .limit(limit);
+            // No department - get general agents scoped to org
+            const { data: agents, error } = await scopeToOrg(
+                supabase
+                    .from('agents')
+                    .select('id, name, description, icon, category, suite')
+                    .eq('is_active', true)
+                    .limit(limit),
+                orgId
+            );
 
             return agents || [];
         } catch (error) {
@@ -939,7 +944,7 @@ module.exports = function(supabase) {
     /**
      * Get actions filtered by department and role
      */
-    async function getFilteredActions(supabase, deptId, userRoleLevelNum, limit) {
+    async function getFilteredActions(supabase, deptId, userRoleLevelNum, limit, orgId) {
         try {
             let actions = [];
 
@@ -963,13 +968,16 @@ module.exports = function(supabase) {
                     .filter(da => da.action && da.action.status === 'active')
                     .map(da => da.action);
             } else {
-                // No department - get general execute actions
-                const { data: allActions, error } = await supabase
-                    .from('actions')
-                    .select('id, name, slug, description, suite, status')
-                    .eq('status', 'active')
-                    .eq('suite', 'execute')
-                    .limit(limit * 2);
+                // No department - get general execute actions scoped to org
+                const { data: allActions, error } = await scopeToOrg(
+                    supabase
+                        .from('actions')
+                        .select('id, name, slug, description, suite, status')
+                        .eq('status', 'active')
+                        .eq('suite', 'execute')
+                        .limit(limit * 2),
+                    orgId
+                );
 
                 if (error) throw error;
                 actions = allActions || [];
@@ -1010,14 +1018,17 @@ module.exports = function(supabase) {
     /**
      * Get skills filtered by department and role
      */
-    async function getFilteredSkills(supabase, deptId, userRoleLevelNum, limit) {
+    async function getFilteredSkills(supabase, deptId, userRoleLevelNum, limit, orgId) {
         try {
-            const { data: skills, error } = await supabase
-                .from('skills')
-                .select('id, name, display_name, description, icon, color, category, suite')
-                .eq('status', 'active')
-                .order('usage_count', { ascending: false })
-                .limit(limit * 2);
+            const { data: skills, error } = await scopeToOrg(
+                supabase
+                    .from('skills')
+                    .select('id, name, display_name, description, icon, color, category, suite')
+                    .eq('status', 'active')
+                    .order('usage_count', { ascending: false })
+                    .limit(limit * 2),
+                orgId
+            );
 
             if (error) throw error;
 
@@ -1074,14 +1085,17 @@ module.exports = function(supabase) {
     /**
      * Get workflows filtered by department and role
      */
-    async function getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limit) {
+    async function getFilteredWorkflows(supabase, deptId, userRoleLevelNum, limit, orgId) {
         try {
-            let query = supabase
-                .from('workflows')
-                .select('id, name, description, icon, color, category, estimated_minutes, department_id')
-                .eq('is_active', true)
-                .order('usage_count', { ascending: false })
-                .limit(limit * 2); // Get more to filter
+            let query = scopeToOrg(
+                supabase
+                    .from('workflows')
+                    .select('id, name, description, icon, color, category, estimated_minutes, department_id')
+                    .eq('is_active', true)
+                    .order('usage_count', { ascending: false })
+                    .limit(limit * 2),
+                orgId
+            );
 
             // Department filter: user's dept OR global OR system public
             if (deptId) {
@@ -1147,14 +1161,25 @@ module.exports = function(supabase) {
     /**
      * Get strategy overview for executives
      */
-    async function getStrategyOverview(supabase, deptId) {
+    async function getStrategyOverview(supabase, deptId, orgId) {
         try {
-            // Get initiative counts
-            let query = supabase
-                .from('strategy_initiatives')
-                .select('id, status, current_progress');
+            // Get initiative counts scoped to org's departments
+            const orgDeptIds = await getOrgDepartmentIds(supabase, orgId);
 
-            const { data: initiatives } = await query;
+            const { data: assignedInitiativeIds } = await supabase
+                .from('department_initiative_assignments')
+                .select('initiative_id')
+                .in('department_id', orgDeptIds)
+                .eq('is_active', true);
+
+            const initiativeIds = [...new Set((assignedInitiativeIds || []).map(a => a.initiative_id))];
+
+            if (!initiativeIds.length) return { activeInitiatives: 0, completedThisQuarter: 0, avgProgress: 0, totalInitiatives: 0 };
+
+            const { data: initiatives } = await supabase
+                .from('strategy_initiatives')
+                .select('id, status, current_progress')
+                .in('id', initiativeIds);
 
             if (!initiatives) return null;
 
@@ -1187,7 +1212,24 @@ module.exports = function(supabase) {
     router.put('/departments/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const orgId = getVerifiedOrgId(req);
             const { tagline, metrics, quick_prompts, use_guide_url } = req.body;
+
+            // Verify department belongs to user's org before mutation
+            const { data: dept, error: deptError } = await supabase
+                .from('departments')
+                .select('org_id')
+                .eq('id', id)
+                .single();
+
+            if (deptError) throw deptError;
+
+            if (dept.org_id !== orgId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Department does not belong to your organization'
+                });
+            }
 
             const { data, error } = await supabase
                 .from('departments')
@@ -1779,6 +1821,7 @@ module.exports = function(supabase) {
     router.get('/executions/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const userId = getUserId(req);
 
             const { data: execution, error } = await supabase
                 .from('workflow_executions')
@@ -1799,6 +1842,14 @@ module.exports = function(supabase) {
                 .single();
 
             if (error) throw error;
+
+            // Verify execution belongs to the requesting user
+            if (execution.user_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Execution does not belong to you'
+                });
+            }
 
             // Sort steps by step_number
             if (execution.workflow?.steps) {
@@ -1825,6 +1876,7 @@ module.exports = function(supabase) {
     router.put('/executions/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const userId = getUserId(req);
             const { current_step, variables, step_outputs, status, name } = req.body;
 
             const updates = {
@@ -1842,10 +1894,12 @@ module.exports = function(supabase) {
             }
             if (name !== undefined) updates.name = name;
 
+            // Only update executions owned by the requesting user
             const { data, error } = await supabase
                 .from('workflow_executions')
                 .update(updates)
                 .eq('id', id)
+                .eq('user_id', userId)
                 .select()
                 .single();
 
@@ -2309,12 +2363,17 @@ module.exports = function(supabase) {
      */
     router.get('/strategic-overview', async (req, res) => {
         try {
-            // Get all departments with their initiative counts
-            const { data: departments, error: deptError } = await supabase
-                .from('departments')
-                .select('id, name, slug, icon, color')
-                .eq('is_active', true)
-                .order('sort_order');
+            const orgId = getVerifiedOrgId(req);
+
+            // Get all departments with their initiative counts (scoped to org)
+            const { data: departments, error: deptError } = await scopeToOrg(
+                supabase
+                    .from('departments')
+                    .select('id, name, slug, icon, color')
+                    .eq('is_active', true)
+                    .order('sort_order'),
+                orgId
+            );
 
             if (deptError) throw deptError;
 
