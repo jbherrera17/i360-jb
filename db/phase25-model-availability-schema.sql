@@ -8,7 +8,7 @@
 CREATE TABLE IF NOT EXISTS model_availability_checks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     provider TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('available', 'deprecated', 'unavailable', 'auth_error', 'rate_limited')),
+    status TEXT NOT NULL CHECK (status IN ('available', 'deprecated', 'unavailable', 'auth_error', 'rate_limited', 'billing_error')),
     error_message TEXT,
     response_time_ms INTEGER,
     checked_at TIMESTAMPTZ DEFAULT NOW()
@@ -69,3 +69,9 @@ GRANT SELECT ON model_check_config TO authenticated;
 
 COMMENT ON TABLE model_availability_checks IS 'Stores LLM provider availability check results from daily/on-demand checks';
 COMMENT ON TABLE model_check_config IS 'Configuration for the model availability check scheduler';
+
+-- Phase 80 migration: Add billing_error status to CHECK constraint
+-- Drop old constraint and add updated one with billing_error
+ALTER TABLE model_availability_checks DROP CONSTRAINT IF EXISTS model_availability_checks_status_check;
+ALTER TABLE model_availability_checks ADD CONSTRAINT model_availability_checks_status_check
+    CHECK (status IN ('available', 'deprecated', 'unavailable', 'auth_error', 'rate_limited', 'billing_error'));

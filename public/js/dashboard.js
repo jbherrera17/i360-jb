@@ -311,7 +311,8 @@ function getProviderStatusDisplay(status) {
         'deprecated': { class: 'warning', text: '⚠ Deprecated' },
         'unavailable': { class: 'inactive', text: '✗ Unavailable' },
         'auth_error': { class: 'inactive', text: '🔒 Auth Error' },
-        'rate_limited': { class: 'warning', text: '⏳ Rate Limited' }
+        'rate_limited': { class: 'warning', text: '⏳ Rate Limited' },
+        'billing_error': { class: 'warning', text: '💳 Billing Issue' }
     };
     return displays[status] || { class: 'inactive', text: '○ Unknown' };
 }

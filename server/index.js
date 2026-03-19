@@ -574,7 +574,7 @@ function initializeServices() {
         app.use('/api/department-strategy', departmentStrategyRoutes);
         app.use('/api/governance', governanceRoutes);
         app.use('/api/integrity', integrityRoutes);
-        app.use('/api/workflows', workflowsRoutes);
+        app.use('/api/workflows', workflowsRoutes(supabase));
         app.use('/api/tags', tagsRoutes(supabase));
         app.use('/api/roles', departmentRolesRoutes(supabase));
         app.use('/api/user-profile', userProfileRoutes(supabase));

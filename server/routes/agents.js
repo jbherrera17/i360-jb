@@ -24,6 +24,11 @@ const { buildAgentAccessFilter, getUserAccessContext, filterByModuleAccess } = r
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+    const { requireModule, checkResourceLimit } = createModuleAccessMiddleware(supabase);
+
+    // Phase 81: Module gating — enforce tier/role access for agents module
+    router.use(requireModule('agents'));
 
     // ============================================================================
     // AGENT CRUD ENDPOINTS
@@ -162,9 +167,18 @@ module.exports = function(supabase) {
      */
     router.get('/suites', async (req, res) => {
         try {
-            const { data, error } = await supabase
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+
+            // Phase 81: Scope suites to org
+            let suitesQuery = supabase
                 .from('agents')
                 .select('suite');
+
+            if (orgId) {
+                suitesQuery = suitesQuery.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+
+            const { data, error } = await suitesQuery;
 
             if (error) throw error;
 
@@ -476,10 +490,18 @@ module.exports = function(supabase) {
      */
     router.get('/stats', async (req, res) => {
         try {
-            // Get total counts
-            const { data: agents, error: agentsError } = await supabase
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+
+            // Phase 81: Scope stats to org
+            let query = supabase
                 .from('agents')
                 .select('id, is_active, type');
+
+            if (orgId) {
+                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+
+            const { data: agents, error: agentsError } = await query;
 
             if (agentsError) throw agentsError;
 
@@ -526,10 +548,19 @@ module.exports = function(supabase) {
 
             if (agentError) throw agentError;
             if (!agent) {
-                return res.status(404).json({ 
-                    success: false, 
-                    error: 'Agent not found' 
+                return res.status(404).json({
+                    success: false,
+                    error: 'Agent not found'
                 });
+            }
+
+            // Phase 81: Ownership/org check
+            const userId = req.userId || null;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            if (agent.user_id && agent.user_id !== userId &&
+                agent.org_id !== orgId &&
+                agent.visibility !== 'public') {
+                return res.status(403).json({ success: false, error: 'Access denied' });
             }
 
             // Get context mappings
@@ -930,7 +961,15 @@ module.exports = function(supabase) {
 
             // Create duplicate with lineage tracking
             const userId = req.userId || null;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const now = new Date().toISOString();
+
+            // Phase 81: Verify user can access source agent
+            if (original.user_id && original.user_id !== userId &&
+                original.org_id !== orgId &&
+                original.visibility !== 'public') {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
 
             // Build the duplicate data, excluding system-specific fields
             const duplicateData = {
@@ -952,8 +991,9 @@ module.exports = function(supabase) {
                 config: original.config,
                 mindstudio_workflow_id: original.mindstudio_workflow_id,
                 tools: original.tools,
-                // User ownership
+                // User ownership — Phase 81: org_id from requesting user, not source
                 user_id: userId,
+                org_id: orgId || null,
                 created_by: userId,
                 // Duplicate is never a system agent
                 is_system: false,
@@ -1653,6 +1693,21 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
             const { limit = 20, offset = 0 } = req.query;
+
+            // Phase 81: Verify user can access this agent before showing executions
+            const userId = req.userId || null;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const { data: agent } = await supabase
+                .from('agents')
+                .select('user_id, org_id, visibility')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (agent && agent.user_id && agent.user_id !== userId &&
+                agent.org_id !== orgId &&
+                agent.visibility !== 'public') {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
 
             const { data, error, count } = await supabase
                 .from('agent_executions')

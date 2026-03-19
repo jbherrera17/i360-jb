@@ -4,9 +4,21 @@
  */
 
 const express = require('express');
-const router = express.Router();
 const { getUserId } = require('../utils/auth');
 const WorkflowEngine = require('../services/workflowEngine');
+const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+
+/**
+ * Workflow Routes Factory
+ * @param {object} supabase - Supabase client instance
+ * @returns {Router} Express router
+ */
+module.exports = function(supabase) {
+    const router = express.Router();
+    const { requireModule, checkResourceLimit } = createModuleAccessMiddleware(supabase);
+
+    // Phase 81: Module gating — enforce tier/role access for workflows module
+    router.use(requireModule('workflows'));
 
 /**
  * GET /api/workflows
@@ -14,7 +26,6 @@ const WorkflowEngine = require('../services/workflowEngine');
  */
 router.get('/', async (req, res) => {
     try {
-        const supabase = req.supabase;
         const userId = getUserId(req);
         const { category, suite, is_system, department_id } = req.query;
 
@@ -84,7 +95,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/templates', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const { category, suite } = req.query;
 
         let query = supabase
@@ -111,13 +122,104 @@ router.get('/templates', async (req, res) => {
     }
 });
 
+// Phase 81: Move /executions routes BEFORE /:id to prevent Express from matching
+// "executions" as an :id parameter
+
+/**
+ * GET /api/workflows/executions
+ * List user's workflow executions
+ */
+router.get('/executions', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const { status, limit = 20 } = req.query;
+
+        let query = supabase
+            .from('workflow_executions')
+            .select(`
+                *,
+                workflow:workflows(id, name, icon, color)
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(parseInt(limit));
+
+        if (status) query = query.eq('status', status);
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        res.json({
+            success: true,
+            executions: data || []
+        });
+    } catch (error) {
+        console.error('Error fetching executions:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /api/workflows/executions/:executionId
+ * Get execution details with step progress
+ */
+router.get('/executions/:executionId', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const { executionId } = req.params;
+
+        // Get execution with workflow — verify ownership
+        const { data: execution, error: execError } = await supabase
+            .from('workflow_executions')
+            .select(`
+                *,
+                workflow:workflows(
+                    id, name, description, icon, color,
+                    steps:workflow_steps(*)
+                )
+            `)
+            .eq('id', executionId)
+            .eq('user_id', userId)
+            .single();
+
+        if (execError) {
+            if (execError.code === 'PGRST116') {
+                return res.status(404).json({ success: false, error: 'Execution not found' });
+            }
+            throw execError;
+        }
+
+        // Get step executions
+        const { data: stepExecutions, error: stepError } = await supabase
+            .from('workflow_step_executions')
+            .select('*')
+            .eq('execution_id', executionId)
+            .order('step_number');
+
+        if (stepError) throw stepError;
+
+        res.json({
+            success: true,
+            execution: {
+                ...execution,
+                step_executions: stepExecutions || []
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching execution:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 /**
  * GET /api/workflows/:id
  * Get workflow with all steps
  */
 router.get('/:id', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const { id } = req.params;
 
         // Get workflow
@@ -131,7 +233,21 @@ router.get('/:id', async (req, res) => {
             .eq('id', id)
             .single();
 
-        if (wfError) throw wfError;
+        if (wfError) {
+            if (wfError.code === 'PGRST116') {
+                return res.status(404).json({ success: false, error: 'Workflow not found' });
+            }
+            throw wfError;
+        }
+
+        // Phase 81: Ownership/org check
+        const userId = getUserId(req);
+        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        if (workflow.user_id && workflow.user_id !== userId &&
+            workflow.org_id !== orgId &&
+            !workflow.is_public) {
+            return res.status(403).json({ success: false, error: 'Access denied' });
+        }
 
         // Get steps with agent and skill info
         const { data: steps, error: stepsError } = await supabase
@@ -172,34 +288,12 @@ router.get('/:id', async (req, res) => {
  * POST /api/workflows
  * Create a new workflow
  */
-router.post('/', async (req, res) => {
+router.post('/', checkResourceLimit('workflows'), async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const workflowData = req.body;
-
-        // Check organization resource limits (Phase 44)
         const orgId = req.headers['x-org-id'] || workflowData.org_id || req.orgId || null;
-        if (orgId) {
-            const { data: limits, error: limitError } = await supabase
-                .rpc('check_org_limits', {
-                    p_org_id: orgId,
-                    p_resource_type: 'workflows'
-                });
-
-            if (!limitError && limits && limits[0] && !limits[0].within_limits) {
-                return res.status(403).json({
-                    success: false,
-                    error: `Workflow limit reached (${limits[0].current_count}/${limits[0].max_allowed})`,
-                    details: {
-                        current: limits[0].current_count,
-                        max: limits[0].max_allowed,
-                        usage_percent: limits[0].usage_percent
-                    },
-                    upgrade_required: true
-                });
-            }
-        }
 
         const { data, error } = await supabase
             .from('workflows')
@@ -230,7 +324,7 @@ router.post('/', async (req, res) => {
  */
 router.post('/from-template/:templateId', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const { templateId } = req.params;
         const { name, description } = req.body;
@@ -244,11 +338,15 @@ router.post('/from-template/:templateId', async (req, res) => {
 
         if (tplError) throw tplError;
 
+        // Phase 81: Use requesting user's org_id
+        const orgId = req.headers['x-org-id'] || req.orgId || null;
+
         // Create workflow from template
         const { data: workflow, error: wfError } = await supabase
             .from('workflows')
             .insert({
                 user_id: userId,
+                org_id: orgId,
                 template_id: templateId,
                 name: name || template.display_name,
                 description: description || template.description,
@@ -290,7 +388,7 @@ router.post('/from-template/:templateId', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const { id } = req.params;
         const updates = req.body;
@@ -327,7 +425,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const { id } = req.params;
 
@@ -351,14 +449,39 @@ router.delete('/:id', async (req, res) => {
 // WORKFLOW STEPS
 // ============================================
 
+    /**
+     * Phase 81: Verify the requesting user owns the parent workflow
+     * before allowing step modifications.
+     */
+    async function verifyWorkflowOwnership(req, workflowId) {
+        const userId = getUserId(req);
+        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const { data: wf } = await supabase
+            .from('workflows')
+            .select('user_id, org_id, is_public')
+            .eq('id', workflowId)
+            .single();
+        if (!wf) return false;
+        if (wf.user_id === userId) return true;
+        if (orgId && wf.org_id === orgId) return true;
+        if (!wf.user_id) return true; // system workflow
+        return false;
+    }
+
 /**
  * POST /api/workflows/:id/steps
  * Add a step to workflow
  */
 router.post('/:id/steps', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const { id } = req.params;
+
+        // Phase 81: Verify workflow ownership before adding steps
+        if (!(await verifyWorkflowOwnership(req, id))) {
+            return res.status(403).json({ success: false, error: 'Access denied' });
+        }
+
         const stepData = req.body;
 
         const { data, error } = await supabase
@@ -388,8 +511,13 @@ router.post('/:id/steps', async (req, res) => {
  */
 router.put('/:id/steps/:stepId', async (req, res) => {
     try {
-        const supabase = req.supabase;
-        const { stepId } = req.params;
+        const { id, stepId } = req.params;
+
+        // Phase 81: Verify workflow ownership
+        if (!(await verifyWorkflowOwnership(req, id))) {
+            return res.status(403).json({ success: false, error: 'Access denied' });
+        }
+
         const updates = req.body;
 
         delete updates.id;
@@ -420,8 +548,12 @@ router.put('/:id/steps/:stepId', async (req, res) => {
  */
 router.delete('/:id/steps/:stepId', async (req, res) => {
     try {
-        const supabase = req.supabase;
-        const { stepId } = req.params;
+        const { id, stepId } = req.params;
+
+        // Phase 81: Verify workflow ownership
+        if (!(await verifyWorkflowOwnership(req, id))) {
+            return res.status(403).json({ success: false, error: 'Access denied' });
+        }
 
         const { error } = await supabase
             .from('workflow_steps')
@@ -443,8 +575,14 @@ router.delete('/:id/steps/:stepId', async (req, res) => {
  */
 router.put('/:id/steps/reorder', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const { id } = req.params;
+
+        // Phase 81: Verify workflow ownership
+        if (!(await verifyWorkflowOwnership(req, id))) {
+            return res.status(403).json({ success: false, error: 'Access denied' });
+        }
+
         const { stepOrder } = req.body; // Array of { stepId, step_number }
 
         // Update each step's order
@@ -475,10 +613,13 @@ router.put('/:id/steps/reorder', async (req, res) => {
  */
 router.post('/:id/execute', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const { id } = req.params;
         const { initial_variables } = req.body;
+
+        // Phase 81: Include org_id in execution record
+        const orgId = req.headers['x-org-id'] || req.orgId || null;
 
         // Create execution record
         const { data: execution, error } = await supabase
@@ -486,6 +627,7 @@ router.post('/:id/execute', async (req, res) => {
             .insert({
                 workflow_id: id,
                 user_id: userId,
+                org_id: orgId,
                 status: 'in_progress',
                 current_step: 1,
                 variables: initial_variables || {},
@@ -510,94 +652,12 @@ router.post('/:id/execute', async (req, res) => {
 });
 
 /**
- * GET /api/workflows/executions
- * List user's workflow executions
- */
-router.get('/executions', async (req, res) => {
-    try {
-        const supabase = req.supabase;
-        const userId = getUserId(req);
-        const { status, limit = 20 } = req.query;
-
-        let query = supabase
-            .from('workflow_executions')
-            .select(`
-                *,
-                workflow:workflows(id, name, icon, color)
-            `)
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(parseInt(limit));
-
-        if (status) query = query.eq('status', status);
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        res.json({
-            success: true,
-            executions: data || []
-        });
-    } catch (error) {
-        console.error('Error fetching executions:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * GET /api/workflows/executions/:executionId
- * Get execution details with step progress
- */
-router.get('/executions/:executionId', async (req, res) => {
-    try {
-        const supabase = req.supabase;
-        const { executionId } = req.params;
-
-        // Get execution with workflow
-        const { data: execution, error: execError } = await supabase
-            .from('workflow_executions')
-            .select(`
-                *,
-                workflow:workflows(
-                    id, name, description, icon, color,
-                    steps:workflow_steps(*)
-                )
-            `)
-            .eq('id', executionId)
-            .single();
-
-        if (execError) throw execError;
-
-        // Get step executions
-        const { data: stepExecutions, error: stepError } = await supabase
-            .from('workflow_step_executions')
-            .select('*')
-            .eq('execution_id', executionId)
-            .order('step_number');
-
-        if (stepError) throw stepError;
-
-        res.json({
-            success: true,
-            execution: {
-                ...execution,
-                step_executions: stepExecutions || []
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching execution:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
  * PUT /api/workflows/executions/:executionId
  * Update execution (advance step, update variables, etc.)
  */
 router.put('/executions/:executionId', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const { executionId } = req.params;
         const updates = req.body;
@@ -632,7 +692,7 @@ router.put('/executions/:executionId', async (req, res) => {
  */
 router.post('/executions/:executionId/steps/:stepNumber', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const workflowEngine = new WorkflowEngine(supabase);
         const { executionId, stepNumber } = req.params;
         const { action, input_data, output_data, gate_response } = req.body;
@@ -707,7 +767,7 @@ router.post('/executions/:executionId/steps/:stepNumber', async (req, res) => {
  */
 router.post('/executions/:executionId/cancel', async (req, res) => {
     try {
-        const supabase = req.supabase;
+
         const userId = getUserId(req);
         const { executionId } = req.params;
 
@@ -732,4 +792,6 @@ router.post('/executions/:executionId/cancel', async (req, res) => {
     }
 });
 
-module.exports = router;
+    return router;
+};
+

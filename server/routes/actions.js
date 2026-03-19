@@ -85,47 +85,10 @@ module.exports = function(supabase) {
         return message;
     }
 
-    // Phase 44: Module access middleware for Actions/Parthenon
-    // Checks if user's tier and role allow access to this module
-    router.use(async (req, res, next) => {
-        try {
-            const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
-
-            // Skip check if no user context (will fail auth later anyway)
-            if (!userId) {
-                return next();
-            }
-
-            // Check module access using database function
-            const { data: canAccess, error } = await supabase
-                .rpc('can_access_module', {
-                    p_user_id: userId,
-                    p_module_id: 'actions',
-                    p_org_id: orgId || null
-                });
-
-            if (error) {
-                console.error('Module access check error:', error);
-                // Don't block on database errors
-                return next();
-            }
-
-            if (canAccess === false) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'Actions module requires appropriate subscription and role',
-                    module: 'actions',
-                    upgrade_required: true
-                });
-            }
-
-            next();
-        } catch (err) {
-            console.error('Module access middleware error:', err);
-            next(); // Don't block on errors
-        }
-    });
+    // Phase 81: Module gating — use standard requireModule middleware
+    const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+    const { requireModule } = createModuleAccessMiddleware(supabase);
+    router.use(requireModule('actions'));
 
     // ============================================================================
     // ACTIONS CRUD ENDPOINTS
@@ -256,11 +219,19 @@ module.exports = function(supabase) {
             // Validate limit bounds (max 20 for featured)
             const limit = Math.min(Math.max(1, parseInt(rawLimit) || 6), 20);
 
-            const { data, error } = await supabase
+            // Phase 81: Scope featured to org
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            let featuredQuery = supabase
                 .from('actions')
                 .select('id, name, slug, description, icon, color, suite')
                 .eq('is_featured', true)
-                .eq('status', 'active')
+                .eq('status', 'active');
+
+            if (orgId) {
+                featuredQuery = featuredQuery.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+
+            const { data, error } = await featuredQuery
                 .order('usage_count', { ascending: false })
                 .limit(limit);
 
@@ -300,6 +271,15 @@ module.exports = function(supabase) {
                     success: false,
                     error: 'Action not found'
                 });
+            }
+
+            // Phase 81: Ownership/org check
+            const userId = getUserId(req);
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            if (action.user_id && action.user_id !== userId &&
+                action.org_id !== orgId &&
+                !action.is_public) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
             }
 
             // Get recent executions
@@ -508,12 +488,15 @@ module.exports = function(supabase) {
             }
 
             const userId = getUserId(req);
+            // Phase 81: org_id from requesting user, not template
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
             const actionName = name || template.name;
             const actionSlug = actionName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
 
             const actionData = {
                 id: uuidv4(),
                 user_id: userId,
+                org_id: orgId || null,
                 name: actionName,
                 slug: actionSlug,
                 description: template.description,
@@ -1156,6 +1139,21 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
             const updates = req.body;
+            const userId = getUserId(req);
+
+            // Phase 81: Verify ownership before update
+            const { data: config } = await supabase
+                .from('external_ai_configs')
+                .select('user_id')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (!config) {
+                return res.status(404).json({ success: false, error: 'External AI config not found' });
+            }
+            if (config.user_id !== userId) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
 
             delete updates.id;
             delete updates.user_id;
@@ -1191,6 +1189,21 @@ module.exports = function(supabase) {
     router.delete('/external-ai/:id', async (req, res) => {
         try {
             const { id } = req.params;
+            const userId = getUserId(req);
+
+            // Phase 81: Verify ownership before delete
+            const { data: config } = await supabase
+                .from('external_ai_configs')
+                .select('user_id')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (!config) {
+                return res.status(404).json({ success: false, error: 'External AI config not found' });
+            }
+            if (config.user_id !== userId) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
 
             const { error } = await supabase
                 .from('external_ai_configs')

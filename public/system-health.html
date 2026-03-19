@@ -1274,11 +1274,12 @@
                 }
 
                 const statusClass = data.status === 'available' ? 'available' :
-                                   data.status === 'rate_limited' ? 'warning' : 'unavailable';
+                                   (data.status === 'rate_limited' || data.status === 'billing_error') ? 'warning' : 'unavailable';
                 const statusIcon = data.status === 'available' ? 'check-circle' :
-                                  data.status === 'rate_limited' ? 'alert-circle' : 'x-circle';
+                                  (data.status === 'rate_limited' || data.status === 'billing_error') ? 'alert-circle' : 'x-circle';
                 const statusLabel = data.status === 'available' ? 'Online' :
                                    data.status === 'rate_limited' ? 'Rate Limited' :
+                                   data.status === 'billing_error' ? 'Billing Issue' :
                                    data.status === 'auth_error' ? 'Auth Error' :
                                    data.status === 'deprecated' ? 'Deprecated' : 'Offline';
                 const responseTime = data.responseTime ? ` (${data.responseTime}ms)` : '';

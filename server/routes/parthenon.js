@@ -20,6 +20,11 @@ const { getUserId } = require('../utils/auth');
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+    const { requireModule } = createModuleAccessMiddleware(supabase);
+
+    // Phase 81: Module gating — enforce tier/role access for parthenon module
+    router.use(requireModule('parthenon'));
 
     /**
      * Resolve org_id from request: header → user's default_org_id
@@ -233,13 +238,19 @@ module.exports = function(supabase) {
             delete updates.user_id;
             delete updates.created_at;
 
-            // Backfill org_id if missing
+            // Phase 81: Verify org ownership before allowing update
             const orgId = await resolveOrgId(req);
-            if (orgId) {
-                const { data: existing } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
-                if (existing && !existing.org_id) {
-                    updates.org_id = orgId;
-                }
+            const { data: existing } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
+            if (!existing) {
+                return res.status(404).json({ success: false, error: 'Department not found' });
+            }
+            if (existing.org_id && orgId && existing.org_id !== orgId) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
+
+            // Backfill org_id if missing
+            if (orgId && !existing.org_id) {
+                updates.org_id = orgId;
             }
 
             const { data, error } = await supabase
@@ -276,6 +287,16 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
             const { hard = 'false' } = req.query;
+
+            // Phase 81: Verify org ownership before delete
+            const orgId = await resolveOrgId(req);
+            const { data: dept } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
+            if (!dept) {
+                return res.status(404).json({ success: false, error: 'Department not found' });
+            }
+            if (dept.org_id && orgId && dept.org_id !== orgId) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
 
             if (hard === 'true') {
                 const { error } = await supabase
@@ -515,6 +536,18 @@ module.exports = function(supabase) {
             delete updates.id;
             delete updates.user_id;
             delete updates.created_at;
+
+            // Phase 81: Verify org ownership via dept->org chain
+            const orgId = await resolveOrgId(req);
+            if (orgId) {
+                const { data: role } = await supabase.from('roles').select('department_id').eq('id', id).maybeSingle();
+                if (role?.department_id) {
+                    const { data: dept } = await supabase.from('departments').select('org_id').eq('id', role.department_id).maybeSingle();
+                    if (dept?.org_id && dept.org_id !== orgId) {
+                        return res.status(403).json({ success: false, error: 'Access denied' });
+                    }
+                }
+            }
 
             const { data, error } = await supabase
                 .from('roles')
@@ -852,6 +885,18 @@ module.exports = function(supabase) {
             delete updates.user_id;
             delete updates.created_at;
 
+            // Phase 81: Verify org ownership via dept->org chain
+            const orgId = await resolveOrgId(req);
+            if (orgId) {
+                const { data: okr } = await supabase.from('okrs').select('department_id').eq('id', id).maybeSingle();
+                if (okr?.department_id) {
+                    const { data: dept } = await supabase.from('departments').select('org_id').eq('id', okr.department_id).maybeSingle();
+                    if (dept?.org_id && dept.org_id !== orgId) {
+                        return res.status(403).json({ success: false, error: 'Access denied' });
+                    }
+                }
+            }
+
             // Calculate progress if key_results updated
             if (updates.key_results && Array.isArray(updates.key_results)) {
                 const completed = updates.key_results.filter(kr =>
@@ -1099,6 +1144,18 @@ module.exports = function(supabase) {
             delete updates.user_id;
             delete updates.created_at;
 
+            // Phase 81: Verify org ownership via dept->org chain
+            const orgId = await resolveOrgId(req);
+            if (orgId) {
+                const { data: proc } = await supabase.from('processes').select('department_id').eq('id', id).maybeSingle();
+                if (proc?.department_id) {
+                    const { data: dept } = await supabase.from('departments').select('org_id').eq('id', proc.department_id).maybeSingle();
+                    if (dept?.org_id && dept.org_id !== orgId) {
+                        return res.status(403).json({ success: false, error: 'Access denied' });
+                    }
+                }
+            }
+
             const { data, error } = await supabase
                 .from('processes')
                 .update(updates)
@@ -1170,18 +1227,39 @@ module.exports = function(supabase) {
      */
     router.get('/overview', async (req, res) => {
         try {
-            // Get counts in parallel
+            // Phase 81: Scope overview counts to org
+            const orgId = await resolveOrgId(req);
+            let deptQuery = supabase.from('departments').select('*', { count: 'exact', head: true }).eq('is_active', true);
+            if (orgId) deptQuery = deptQuery.eq('org_id', orgId);
+
+            // For roles, okrs, processes: scope via department_ids
+            let deptIds = [];
+            if (orgId) {
+                deptIds = await getOrgDepartmentIds(orgId);
+            }
+
+            let roleQuery = supabase.from('roles').select('*', { count: 'exact', head: true }).eq('is_active', true);
+            let okrQuery = supabase.from('okrs').select('*', { count: 'exact', head: true }).eq('status', 'active');
+            let processQuery = supabase.from('processes').select('*', { count: 'exact', head: true }).eq('status', 'active');
+
+            if (orgId && deptIds.length > 0) {
+                roleQuery = roleQuery.in('department_id', deptIds);
+                okrQuery = okrQuery.in('department_id', deptIds);
+                processQuery = processQuery.in('department_id', deptIds);
+            } else if (orgId && deptIds.length === 0) {
+                // Org has no departments — return zeros
+                return res.json({
+                    success: true,
+                    data: { departments: 0, roles: 0, active_okrs: 0, active_processes: 0 }
+                });
+            }
+
             const [
                 { count: deptCount },
                 { count: roleCount },
                 { count: okrCount },
                 { count: processCount }
-            ] = await Promise.all([
-                supabase.from('departments').select('*', { count: 'exact', head: true }).eq('is_active', true),
-                supabase.from('roles').select('*', { count: 'exact', head: true }).eq('is_active', true),
-                supabase.from('okrs').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-                supabase.from('processes').select('*', { count: 'exact', head: true }).eq('status', 'active')
-            ]);
+            ] = await Promise.all([deptQuery, roleQuery, okrQuery, processQuery]);
 
             res.json({
                 success: true,
@@ -1238,11 +1316,15 @@ module.exports = function(supabase) {
                 });
             }
 
+            // Phase 81: Attach org_id so seeded departments belong to the requesting org
+            const orgId = await resolveOrgId(req);
+
             // Create departments with is_seed=true and user_id=null (shared/system departments)
             const departmentsWithIds = newDepartments.map(dept => ({
                 ...dept,
                 id: uuidv4(),
                 user_id: null,  // Null for shared/seeded departments
+                org_id: orgId || null,  // Phase 81: Associate with requesting org
                 is_seed: true,  // Mark as system-seeded
                 is_active: true
             }));

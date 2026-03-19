@@ -63,11 +63,12 @@ healthEventEmitter.setMaxListeners(50); // Support many SSE connections
 /**
  * Check if a provider is healthy (reads from cache)
  * Empty cache = assume healthy (startup grace period)
+ * billing_error = treat as healthy (account-level issue, fallback won't help)
  */
 function isProviderHealthy(provider) {
     const cached = providerStatusCache[provider];
     if (!cached) return true; // Startup grace: assume healthy until first check
-    return cached.status === 'available';
+    return cached.status === 'available' || cached.status === 'billing_error';
 }
 
 /**
@@ -172,9 +173,12 @@ async function checkAnthropicAvailability() {
     } catch (error) {
         const responseTime = Date.now() - startTime;
         const errorMessage = error.message || 'Unknown error';
+        const lowerMessage = errorMessage.toLowerCase();
 
         let status = 'unavailable';
-        if (errorMessage.includes('deprecated')) {
+        if (lowerMessage.includes('credit balance') || lowerMessage.includes('billing') || lowerMessage.includes('purchase credits') || (lowerMessage.includes('exceeded') && lowerMessage.includes('quota'))) {
+            status = 'billing_error';
+        } else if (lowerMessage.includes('deprecated')) {
             status = 'deprecated';
         } else if (error.status === 401 || error.status === 403) {
             status = 'auth_error';
@@ -222,9 +226,12 @@ async function checkOpenAIAvailability() {
     } catch (error) {
         const responseTime = Date.now() - startTime;
         const errorMessage = error.message || 'Unknown error';
+        const lowerMessage = errorMessage.toLowerCase();
 
         let status = 'unavailable';
-        if (errorMessage.includes('deprecated') || errorMessage.includes('not supported')) {
+        if (lowerMessage.includes('billing') || (lowerMessage.includes('exceeded') && lowerMessage.includes('quota')) || lowerMessage.includes('insufficient_quota') || lowerMessage.includes('payment')) {
+            status = 'billing_error';
+        } else if (lowerMessage.includes('deprecated') || lowerMessage.includes('not supported')) {
             status = 'deprecated';
         } else if (error.status === 401 || error.status === 403) {
             status = 'auth_error';
@@ -275,9 +282,12 @@ async function checkPerplexityAvailability() {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
+            const lowerMessage = errorMessage.toLowerCase();
 
             let status = 'unavailable';
-            if (errorMessage.includes('deprecated')) {
+            if ((lowerMessage.includes('exceeded') && lowerMessage.includes('quota')) || lowerMessage.includes('billing') || lowerMessage.includes('payment') || lowerMessage.includes('plan and billing')) {
+                status = 'billing_error';
+            } else if (lowerMessage.includes('deprecated')) {
                 status = 'deprecated';
             } else if (response.status === 401 || response.status === 403) {
                 status = 'auth_error';
@@ -342,9 +352,12 @@ async function checkGoogleAvailability() {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             const errorMessage = errorData.error?.message || `HTTP ${response.status}`;
+            const lowerMessage = errorMessage.toLowerCase();
 
             let status = 'unavailable';
-            if (errorMessage.includes('deprecated')) {
+            if (lowerMessage.includes('billing') || (lowerMessage.includes('exceeded') && lowerMessage.includes('quota')) || lowerMessage.includes('payment')) {
+                status = 'billing_error';
+            } else if (lowerMessage.includes('deprecated')) {
                 status = 'deprecated';
             } else if (response.status === 401 || response.status === 403) {
                 status = 'auth_error';
@@ -431,7 +444,7 @@ async function checkAllProviders() {
 
     // Calculate overall status
     const hasError = results.some(r => r.status === 'unavailable' || r.status === 'auth_error');
-    const hasWarning = results.some(r => r.status === 'deprecated' || r.status === 'rate_limited');
+    const hasWarning = results.some(r => r.status === 'deprecated' || r.status === 'rate_limited' || r.status === 'billing_error');
     let overallStatus = 'healthy';
     if (hasError) {
         overallStatus = 'error';
@@ -505,9 +518,25 @@ async function getLastCheckResults() {
             }
         }
 
+        // Overlay in-memory cache (more current than DB for billing_error status)
+        for (const [provider, cached] of Object.entries(providerStatusCache)) {
+            if (cached && providerMap[provider]) {
+                providerMap[provider].status = cached.status;
+                providerMap[provider].error = cached.error;
+                providerMap[provider].responseTime = cached.responseTime || providerMap[provider].responseTime;
+            } else if (cached) {
+                providerMap[provider] = {
+                    status: cached.status,
+                    responseTime: cached.responseTime || 0,
+                    error: cached.error,
+                    checkedAt: cached.updatedAt
+                };
+            }
+        }
+
         const statuses = Object.values(providerMap);
         const hasError = statuses.some(r => r.status === 'unavailable' || r.status === 'auth_error');
-        const hasWarning = statuses.some(r => r.status === 'deprecated' || r.status === 'rate_limited');
+        const hasWarning = statuses.some(r => r.status === 'deprecated' || r.status === 'rate_limited' || r.status === 'billing_error');
         let overallStatus = 'healthy';
         if (hasError) {
             overallStatus = 'error';

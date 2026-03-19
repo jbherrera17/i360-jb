@@ -37,7 +37,8 @@
         isProviderAvailable(provider) {
             const info = this._status[provider];
             if (!info) return true; // Assume healthy until we know otherwise
-            return info.status === 'available';
+            // billing_error is an account issue, not a provider outage — models still work
+            return info.status === 'available' || info.status === 'billing_error';
         },
 
         /**
@@ -159,9 +160,11 @@
 
             const name = providerNames[event.provider] || event.provider;
 
-            if (event.newStatus === 'unavailable') {
+            if (event.newStatus === 'billing_error') {
+                showToast(`${name} has a billing issue. Check your API plan and credits.`, 'warning');
+            } else if (event.newStatus === 'unavailable') {
                 showToast(`${name} is currently unavailable. Requests will automatically use fallback models.`, 'warning');
-            } else if (event.newStatus === 'available' && event.oldStatus === 'unavailable') {
+            } else if (event.newStatus === 'available' && (event.oldStatus === 'unavailable' || event.oldStatus === 'billing_error')) {
                 showToast(`${name} is back online.`, 'success');
             }
         },

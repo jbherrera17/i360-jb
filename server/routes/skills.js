@@ -12,7 +12,7 @@
 
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
-const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
+const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess, filterByBusinessRole } = require('../utils/resourceAccess');
 const anthropicService = require('../services/anthropic');
 const unifiedRuntime = require('../services/unifiedRuntime');
 
@@ -23,6 +23,11 @@ const unifiedRuntime = require('../services/unifiedRuntime');
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+    const { requireModule } = createModuleAccessMiddleware(supabase);
+
+    // Phase 81: Module gating — enforce tier/role access for skills module
+    router.use(requireModule('skills'));
 
     // ============================================================================
     // SKILL CRUD ENDPOINTS
@@ -92,9 +97,24 @@ module.exports = function(supabase) {
             if (required_context) {
                 query = query.contains('required_context_types', [required_context]);
             }
-            // Filter by department (show skills for this dept OR skills with no dept)
+            // Filter by department: check both direct department_id AND
+            // skill_departments junction table (Phase 50 many-to-many)
             if (department_id) {
-                query = query.or(`department_id.eq.${department_id},department_id.is.null`);
+                // Get skill IDs from junction table
+                const { data: junctionSkills } = await supabase
+                    .from('skill_departments')
+                    .select('skill_id')
+                    .eq('department_id', department_id);
+                const junctionIds = (junctionSkills || []).map(j => j.skill_id);
+
+                if (junctionIds.length > 0) {
+                    // Show skills with direct dept match, junction match, or no dept
+                    query = query.or(
+                        `department_id.eq.${department_id},id.in.(${junctionIds.join(',')}),department_id.is.null`
+                    );
+                } else {
+                    query = query.or(`department_id.eq.${department_id},department_id.is.null`);
+                }
             }
 
             // Sorting
@@ -109,9 +129,15 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Phase 81: Apply business role filtering (Phase 50 skill_roles table)
+            let filteredData = data || [];
+            if (userId && filteredData.length > 0) {
+                filteredData = await filterByBusinessRole(supabase, filteredData, userId, 'skill');
+            }
+
             res.json({
                 success: true,
-                data: data || [],
+                data: filteredData,
                 pagination: {
                     total: count,
                     limit: parseInt(limit),
@@ -140,10 +166,17 @@ module.exports = function(supabase) {
 
             if (catError) throw catError;
 
-            // Get counts per category (count all skills, not just active)
-            const { data: skills, error: skillError } = await supabase
+            // Phase 81: Scope skill counts to org
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            let skillCountQuery = supabase
                 .from('skills')
                 .select('category, status');
+
+            if (orgId) {
+                skillCountQuery = skillCountQuery.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+
+            const { data: skills, error: skillError } = await skillCountQuery;
 
             if (skillError) throw skillError;
 
@@ -197,9 +230,17 @@ module.exports = function(supabase) {
      */
     router.get('/stats', async (req, res) => {
         try {
-            const { data: skills, error } = await supabase
+            // Phase 81: Scope stats to org
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            let statsQuery = supabase
                 .from('skills')
                 .select('id, status, category, suite');
+
+            if (orgId) {
+                statsQuery = statsQuery.or(`org_id.eq.${orgId},org_id.is.null`);
+            }
+
+            const { data: skills, error } = await statsQuery;
 
             if (error) throw error;
 
@@ -246,6 +287,15 @@ module.exports = function(supabase) {
                     return res.status(404).json({ success: false, error: 'Skill not found' });
                 }
                 throw skillError;
+            }
+
+            // Phase 81: Ownership/org check
+            const userId = req.userId || req.user?.id || null;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            if (skill.user_id && skill.user_id !== userId &&
+                skill.org_id !== orgId &&
+                skill.visibility !== 'public') {
+                return res.status(403).json({ success: false, error: 'Access denied' });
             }
 
             // Get files
@@ -447,6 +497,13 @@ module.exports = function(supabase) {
                 throw getError;
             }
 
+            // Phase 81: Ownership/org check for update
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            if (current.user_id && current.user_id !== userId &&
+                current.org_id !== orgId) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
+
             // Check if instructions changed (requires new version)
             const instructionsChanged = updates.instructions &&
                 updates.instructions !== current.instructions;
@@ -535,6 +592,23 @@ module.exports = function(supabase) {
             const { id } = req.params;
             const { hard = false } = req.query;
 
+            // Phase 81: Fetch skill and verify ownership before delete
+            const userId = req.userId || req.user?.id || null;
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const { data: skillToDelete } = await supabase
+                .from('skills')
+                .select('user_id, org_id')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (!skillToDelete) {
+                return res.status(404).json({ success: false, error: 'Skill not found' });
+            }
+            if (skillToDelete.user_id && skillToDelete.user_id !== userId &&
+                skillToDelete.org_id !== orgId) {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
+
             // Check if skill is in use
             const { data: agents } = await supabase
                 .from('agents')
@@ -601,6 +675,14 @@ module.exports = function(supabase) {
                 return res.status(404).json({ success: false, error: 'Skill not found' });
             }
 
+            // Phase 81: Verify access to source skill and set org_id from requesting user
+            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            if (original.user_id && original.user_id !== userId &&
+                original.org_id !== orgId &&
+                original.visibility !== 'public') {
+                return res.status(403).json({ success: false, error: 'Access denied' });
+            }
+
             const duplicateName = newName || `${original.name}-copy`;
             const duplicateData = {
                 ...original,
@@ -610,6 +692,7 @@ module.exports = function(supabase) {
                     ? newName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
                     : `${original.display_name} (Copy)`,
                 user_id: userId,
+                org_id: orgId || null,  // Phase 81: org_id from requesting user
                 created_by: userId,
                 version: '1.0.0',
                 usage_count: 0,
