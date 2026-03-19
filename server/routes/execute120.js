@@ -365,7 +365,7 @@ module.exports = function(supabase) {
 
             // Parallel fetch all cards + module access checks + hidden items
             const [contextAssets, agents, actions, skills, workflows, briefing, briefingAccess, strategyAccess, hiddenResult] = await Promise.all([
-                getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum),
+                getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limitNum, orgId),
                 getFilteredAgents(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredActions(supabase, deptId, userRoleLevelNum, limitNum),
                 getFilteredSkills(supabase, deptId, userRoleLevelNum, limitNum),
@@ -809,7 +809,7 @@ module.exports = function(supabase) {
     /**
      * Get context assets filtered by department and role
      */
-    async function getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limit) {
+    async function getFilteredContextAssets(supabase, deptId, userRoleLevelNum, limit, orgId) {
         try {
             let query = supabase
                 .from('context_assets')
@@ -817,6 +817,11 @@ module.exports = function(supabase) {
                 .eq('is_current', true)
                 .order('updated_at', { ascending: false })
                 .limit(limit);
+
+            // Org scoping: only show assets belonging to user's org
+            if (orgId) {
+                query = query.eq('org_id', orgId);
+            }
 
             // Department filter: user's dept OR global (null)
             if (deptId) {
