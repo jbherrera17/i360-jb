@@ -17,7 +17,7 @@ Insight 360 operates with **58 named AI agent skills** organized into seven depa
                           ┌──────┴──────┐
                           │  Executive  │
                           │  exec-*(3)  │
-                          │  Morgan-E   │
+                          │  Higgins   │
                           └──────┬──────┘
                                  │
        ┌──────┬──────┬──────┬────┴─┬──────┬──────┬────────────┐
@@ -237,13 +237,13 @@ Led by **Riley-O** (Operations Orchestrator). Responsible for platform reliabili
 
 ## Executive Team
 
-Led by **Morgan-E** (Executive Orchestrator). Sits ABOVE department orchestrators — coordinates cross-department strategic decisions, prepares JB for CEO-level decisions, and ensures departments work as one company.
+Led by **Higgins** (Executive Orchestrator). Sits ABOVE department orchestrators — coordinates cross-department strategic decisions, prepares JB for CEO-level decisions, and ensures departments work as one company.
 
 | Agent | Persona | Skill ID | Role |
 |-------|---------|----------|------|
-| **Morgan-E** | Executive Orchestrator | `exec-orchestrator` | Cross-dept coordination, strategic decisions, board prep, initiative prioritization |
-| **Quinn-E** | Chief of Staff | `exec-chief-of-staff` | Decision tracking, meeting prep, status consolidation, action item follow-through |
-| **Sage-E** | Strategic Advisor | `exec-strategic-advisor` | Market vision, scenario planning, competitive moats, innovation radar, strategic narrative |
+| **Higgins** | Executive Orchestrator | `exec-orchestrator` | Cross-dept coordination, strategic decisions, board prep, initiative prioritization |
+| **Jarvis** | Chief of Staff | `exec-chief-of-staff` | Decision tracking, meeting prep, status consolidation, action item follow-through |
+| **Alfred** | Strategic Advisor | `exec-strategic-advisor` | Market vision, scenario planning, competitive moats, innovation radar, strategic narrative |
 
 ### Executive Workflows
 
@@ -256,15 +256,15 @@ Led by **Morgan-E** (Executive Orchestrator). Sits ABOVE department orchestrator
 | WF-EXEC05 | Initiative Prioritization | New initiative proposals |
 | WF-EXEC06 | Partnership Evaluation | Partnership opportunity |
 
-### Distinction: Sage-E vs. Ellis
+### Distinction: Alfred vs. Ellis
 - **Ellis** (`biz-strategy`): Tactical strategy — OKR cascading, initiative prioritization, BSC, resource allocation. Thinks in quarters.
-- **Sage-E** (`exec-strategic-advisor`): Visionary strategy — market positioning, competitive moats, scenario planning, disruption radar. Thinks in years.
+- **Alfred** (`exec-strategic-advisor`): Visionary strategy — market positioning, competitive moats, scenario planning, disruption radar. Thinks in years.
 
 ---
 
 ## Cross-Functional Team (`biz-*`)
 
-No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Tatum, Marlowe, Sloan, Riley-O, Morgan-E). Shared resources for capabilities that span multiple departments.
+No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Tatum, Marlowe, Sloan, Riley-O, Higgins). Shared resources for capabilities that span multiple departments.
 
 | Agent | Persona | Skill ID | Role | Accessed By |
 |-------|---------|----------|------|-------------|
@@ -369,7 +369,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 | 5 | **Marketing** | **Complete** | `mkt-*` | Dakota |
 | 6 | Production | Covered by PM + Ops | — | Avery + Riley-O |
 | 7 | **Support (Service)** | **Complete** | `sup-*` | Sloan |
-| 8 | **Executive** | **Complete** | `exec-*` | Morgan-E |
+| 8 | **Executive** | **Complete** | `exec-*` | Higgins |
 
 **Product Management** (`pm-*`, Avery) predates the Parthenon rollout but is fully operational.
 **Cross-Functional** (`biz-*`, 5 skills) serves all pillars.
@@ -382,7 +382,7 @@ No orchestrator — accessible by ANY department orchestrator (Avery, Dakota, Ta
 ### Delegation Model
 All teams use the same pattern:
 1. **Human PM** provides a task or decision
-2. **Orchestrator** (Morgan-E, Avery, Dakota, Tatum, Marlowe, Sloan, or Riley-O) decomposes and delegates to specialists
+2. **Orchestrator** (Higgins, Avery, Dakota, Tatum, Marlowe, Sloan, or Riley-O) decomposes and delegates to specialists
 3. **Specialists** produce structured outputs per their role
 4. **Orchestrator** reviews, resolves conflicts, assembles consolidated report
 5. **Human PM** approves or requests changes

@@ -2,15 +2,15 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 3.80
-**Last Updated:** March 18, 2026
-**Current System Version:** v3.80 (Phase 80)
+**Version:** 3.82
+**Last Updated:** March 19, 2026
+**Current System Version:** v3.82 (Phase 82)
 
 ---
 
 ## Executive Summary
 
-Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, a **workflow-first thought leadership content engine**, and a **58-agent AI workforce** organized across 7 department teams plus cross-functional support. Version 3.80 adds real-time LLM health monitoring with automatic transparent fallback across all 4 providers.
+Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, a **workflow-first thought leadership content engine**, and a **58-agent AI workforce** organized across 7 department teams plus cross-functional support. Version 3.82 completes platform-wide multi-tenant data isolation with 500+ authFetch migrations, requireOrgContext middleware, scopeToOrg query hardening, and an ESLint prevention rule that structurally blocks cross-org data leakage from recurring.
 
 **Current Production Readiness Score: 10.0/10** *(v3.80)*
 
@@ -42,7 +42,35 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 
 ---
 
-## What's New in v3.80
+## What's New in v3.82
+
+### Phase 82: Platform-Wide Multi-Tenant Data Isolation
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| `requireOrgContext` Middleware | Validates `x-org-id` header against user's org membership | Spoofed org headers now rejected with 403 |
+| `scopeToOrg()` Helper | Standardized query scoping that throws on null orgId | Eliminates "return everything" fallback anti-pattern |
+| `authFetch` x-org-id | `authFetch()` now auto-attaches org context from localStorage | Every API call carries org identity |
+| `auth-fetch-loader.js` | Synchronous loader ensures authFetch available before page init | Fixes race condition where pages fired raw fetch first |
+| Frontend Migration | 500+ raw `fetch('/api/')` → `authFetch()` across 60+ files | Zero unauthenticated API calls remain |
+| Backend Route Hardening | execute120, agents, conversations, departments routes scoped | Cross-org data leakage eliminated on all critical routes |
+| ESLint Prevention | Custom `no-raw-fetch` plugin blocks `fetch('/api/')` at commit time | Structural prevention — cannot recur |
+| CLAUDE.md Rules | Mandatory multi-tenant scoping rules for all new code | Developer guidance codified |
+| Login Org Storage | Invite acceptance path now stores org_id in localStorage | New users get org context from first login |
+| Setup Wizard Fixes | Admin auto-assigned executive role + Executive department | Org admins have full visibility from day one |
+
+### Phase 81: Infrastructure Integrity Remediation
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Module Gating | `requireModule()` on all 5 route files (agents, skills, actions, parthenon, workflows) | Tier/role restrictions enforced on all features |
+| Ownership Checks | Org/user verification on every single-record endpoint | Cross-org data exposure eliminated |
+| Frontend authFetch | 39 raw `fetch()` calls replaced with `authFetch()` across 4 pages | `x-org-id` header sent on all API calls |
+| Workflow Factory | Converted workflows to factory pattern with supabase injection | Consistent with all other route files |
+| Route Fix | `GET /executions` moved before `GET /:id` | `/api/workflows/executions` endpoint no longer dead |
+| Schema Updates | `skill_summary` view updated; `workflow_executions.org_id` added | Org-scoped queries work correctly |
+| Phase 50 Wiring | `skill_departments` junction table + `filterByBusinessRole()` | Department/role filtering for skills now functional |
+| org_id Backfill | System agents, skills, actions, workflows assigned to Synergi org | System resources visible in org-scoped queries |
 
 ### Phase 80: LLM Health Monitoring & Automatic Fallback
 
