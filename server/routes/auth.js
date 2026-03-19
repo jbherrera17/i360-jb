@@ -1379,32 +1379,62 @@ module.exports = function(supabase) {
                 }
             }
 
-            // Clean up foreign key references that don't cascade
-            // These are audit/tracking columns (created_by, updated_by, etc.)
-            // that reference users(id) without ON DELETE SET NULL
+            // Clean up foreign key references that don't cascade.
+            // Many audit/tracking columns reference users(id) without
+            // ON DELETE SET NULL, so we must nullify them before deleting.
             const nullifyTables = [
+                // Soul config & ethics (Phase 54)
                 { table: 'soul_configurations', columns: ['created_by', 'updated_by', 'published_by'] },
                 { table: 'soul_config_versions', columns: ['changed_by', 'approved_by'] },
-                { table: 'ethical_evaluations', columns: ['user_id'] },
+                { table: 'ethical_evaluations', columns: ['user_id', 'audited_by'] },
                 { table: 'values_alignment_audits', columns: ['audited_by'] },
-                { table: 'bright_line_incidents', columns: ['reported_by', 'resolved_by'] },
+                { table: 'bright_line_incidents', columns: ['reported_by', 'resolved_by', 'approved_by', 'reviewed_by', 'audited_by'] },
                 { table: 'bright_line_reviews', columns: ['reviewed_by'] },
-                { table: 'integrity_alerts', columns: ['assigned_to', 'created_by'] },
+                // Integrity (Phase 13)
+                { table: 'integrity_alerts', columns: ['assigned_to', 'created_by', 'acknowledged_by'] },
                 { table: 'integrity_reviews', columns: ['created_by'] },
                 { table: 'integrity_acknowledgments', columns: ['acknowledged_by'] },
+                { table: 'integrity_incidents', columns: ['assigned_to', 'created_by'] },
+                { table: 'integrity_incident_updates', columns: ['created_by'] },
+                // Governance (Phase 13)
                 { table: 'governance_policies', columns: ['created_by', 'updated_by'] },
                 { table: 'governance_compliance_checks', columns: ['verified_by', 'owner_id'] },
+                { table: 'governance_values', columns: ['created_by'] },
+                { table: 'governance_conflicts', columns: ['resolved_by'] },
+                { table: 'access_policies', columns: ['created_by', 'updated_by'] },
+                { table: 'compliance_requirements', columns: ['verified_by', 'owner_id'] },
+                // Department strategy (Phase 13)
                 { table: 'department_okrs', columns: ['owner_id', 'created_by'] },
                 { table: 'department_processes', columns: ['owner_id', 'created_by'] },
                 { table: 'department_permissions', columns: ['granted_by'] },
+                { table: 'department_objectives', columns: ['created_by'] },
+                { table: 'department_strategy_notes', columns: ['created_by'] },
+                { table: 'department_strategy_access', columns: ['granted_by'] },
+                // Business roles & permissions (Phase 13)
                 { table: 'user_business_roles', columns: ['created_by'] },
+                { table: 'user_permission_overrides', columns: ['created_by'] },
+                // Resource access (Phase 45)
                 { table: 'resource_access_grants', columns: ['created_by'] },
+                { table: 'role_resource_visibility', columns: ['created_by'] },
+                // Skills (Phase 5)
                 { table: 'skill_templates', columns: ['created_by'] },
                 { table: 'skill_executions', columns: ['created_by'] },
+                { table: 'skills', columns: ['created_by'] },
+                { table: 'skill_versions', columns: ['created_by'] },
+                // Module purchases (Phase 57)
                 { table: 'module_addon_purchases', columns: ['purchased_by'] },
+                // Nexus (Phase 3.0)
                 { table: 'nexus_search_queries', columns: ['created_by'] },
                 { table: 'nexus_knowledge_items', columns: ['created_by'] },
                 { table: 'nexus_data_conflicts', columns: ['resolved_by'] },
+                { table: 'digm_config', columns: ['created_by'] },
+                // MCP integration (Phase 63)
+                { table: 'mcp_servers', columns: ['approved_by', 'created_by'] },
+                { table: 'mcp_tool_registry', columns: ['created_by'] },
+                // Integrations (Phase 48)
+                { table: 'crm_activities', columns: ['assigned_to'] },
+                // Publishing (Phase 72)
+                { table: 'substack_credentials', columns: ['configured_by'] },
             ];
 
             for (const { table, columns } of nullifyTables) {
@@ -1420,14 +1450,24 @@ module.exports = function(supabase) {
                 }
             }
 
-            // Remove from organization_members (soft-delete records too)
-            try {
-                await supabase
-                    .from('organization_members')
-                    .delete()
-                    .eq('user_id', id);
-            } catch (e) {
-                // May not exist
+            // Delete user-owned rows that should be removed entirely
+            const deleteTables = [
+                { table: 'organization_members', column: 'user_id' },
+                { table: 'user_business_roles', column: 'user_id' },
+                { table: 'user_permission_overrides', column: 'user_id' },
+                { table: 'mcp_tool_invocation_log', column: 'user_id' },
+                { table: 'editorial_calendars', column: 'user_id' },
+            ];
+
+            for (const { table, column } of deleteTables) {
+                try {
+                    await supabase
+                        .from(table)
+                        .delete()
+                        .eq(column, id);
+                } catch (e) {
+                    // Table may not exist yet - skip silently
+                }
             }
 
             // Delete from users table
