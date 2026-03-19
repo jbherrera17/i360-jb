@@ -1283,14 +1283,21 @@ module.exports = function(supabase) {
 
     /**
      * DELETE /api/platform/organizations/:id
-     * Delete an organization and its members (platform admin only)
-     * Query params:
-     *   ?delete_members=true  - Also delete member users (public + auth)
+     * Delete an organization and all its data + single-org member users
+     *
+     * With Phase 82 CASCADE FKs, org deletion automatically removes:
+     *   agents, skills, workflows, actions, conversations, context_assets,
+     *   departments, okrs, soul configs, support data, integrations, etc.
+     *
+     * This route additionally handles user cleanup:
+     *   - Identifies users who ONLY belong to this org (safe to delete)
+     *   - Deletes user-scoped data (research studios, TL profiles, etc.)
+     *   - Removes from public.users and auth.users
+     *   - Multi-org users are preserved (only their membership is removed via CASCADE)
      */
     router.delete('/organizations/:id', requireAdminWrite, async (req, res) => {
         try {
             const { id } = req.params;
-            const deleteMembers = req.query.delete_members === 'true';
 
             // Check if org exists
             const { data: org, error: orgError } = await supabase
@@ -1314,34 +1321,39 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Get member user IDs before deleting (needed for cleanup)
-            let memberUserIds = [];
-            if (deleteMembers) {
-                const { data: members } = await supabase
+            // Step 1: Collect member user IDs BEFORE deleting org
+            const { data: members } = await supabase
+                .from('organization_members')
+                .select('user_id')
+                .eq('org_id', id);
+
+            const allMemberIds = (members || []).map(m => m.user_id);
+
+            // Identify single-org users (safe to delete) vs multi-org users (preserve)
+            const singleOrgUserIds = [];
+            const multiOrgUserIds = [];
+            for (const userId of allMemberIds) {
+                const { data: otherMemberships } = await supabase
                     .from('organization_members')
-                    .select('user_id')
-                    .eq('org_id', id);
+                    .select('org_id')
+                    .eq('user_id', userId)
+                    .neq('org_id', id);
 
-                memberUserIds = (members || []).map(m => m.user_id);
-
-                // Exclude users who are also members of OTHER organizations
-                // (don't delete shared users)
-                const safeToDelete = [];
-                for (const userId of memberUserIds) {
-                    const { data: otherMemberships } = await supabase
-                        .from('organization_members')
-                        .select('org_id')
-                        .eq('user_id', userId)
-                        .neq('org_id', id);
-
-                    if (!otherMemberships || otherMemberships.length === 0) {
-                        safeToDelete.push(userId);
-                    }
+                if (!otherMemberships || otherMemberships.length === 0) {
+                    singleOrgUserIds.push(userId);
+                } else {
+                    multiOrgUserIds.push(userId);
                 }
-                memberUserIds = safeToDelete;
             }
 
-            // Delete the organization (cascades to members, clients, etc.)
+            // Step 2: Delete the organization
+            // CASCADE FKs (Phase 82) automatically remove:
+            //   agents, skills, workflows, actions, conversations, context_assets,
+            //   departments (-> processes, roles, responsibilities), okrs,
+            //   align120_sessions, company_profiles, briefings, soul_configurations,
+            //   support_conversations (-> support_messages), widget_configs,
+            //   org_module_access, org_branding, integration configs, digest data,
+            //   social posts, editorial calendars, and ~35 more tables
             const { error: deleteError } = await supabase
                 .from('organizations')
                 .delete()
@@ -1349,41 +1361,39 @@ module.exports = function(supabase) {
 
             if (deleteError) throw deleteError;
 
-            // Clean up orphaned data (SET NULL survivors) owned by these users
+            // Step 3: Clean up single-org users
             let usersDeleted = 0;
             let authUsersDeleted = 0;
             const authDeleteErrors = [];
 
-            if (deleteMembers && memberUserIds.length > 0) {
-                // Delete orphaned rows where org_id was set to NULL
-                for (const table of ['agents', 'conversations', 'context_assets', 'departments', 'okrs', 'skills', 'workflows', 'actions']) {
+            if (singleOrgUserIds.length > 0) {
+                // Delete user-scoped tables (no org_id column, only user_id)
+                const userScopedTables = [
+                    'research_studios', 'thought_leadership_profiles',
+                    'ai_visibility_research', 'content_pillars',
+                    'content_calendar_entries', 'thought_leadership_outputs'
+                ];
+                for (const table of userScopedTables) {
                     await supabase
                         .from(table)
                         .delete()
-                        .is('org_id', null)
-                        .in('user_id', memberUserIds);
+                        .in('user_id', singleOrgUserIds);
                 }
 
-                // Delete user-only tables (no org_id column)
-                for (const table of ['research_studios', 'thought_leadership_profiles', 'ai_visibility_research', 'content_pillars', 'content_calendar_entries', 'thought_leadership_outputs']) {
-                    await supabase
-                        .from(table)
-                        .delete()
-                        .in('user_id', memberUserIds);
-                }
-
-                // Delete from public.users (cascades remaining dependent rows)
+                // Delete from public.users (cascades to any remaining user-FK'd rows)
                 const { error: userDeleteError } = await supabase
                     .from('users')
                     .delete()
-                    .in('id', memberUserIds);
+                    .in('id', singleOrgUserIds);
 
                 if (!userDeleteError) {
-                    usersDeleted = memberUserIds.length;
+                    usersDeleted = singleOrgUserIds.length;
+                } else {
+                    console.error('[DELETE ORG] Failed to delete public.users:', userDeleteError);
                 }
 
-                // Delete from auth.users
-                for (const userId of memberUserIds) {
+                // Delete from auth.users (Supabase auth system)
+                for (const userId of singleOrgUserIds) {
                     try {
                         const { error } = await supabase.auth.admin.deleteUser(userId);
                         if (error) {
@@ -1397,15 +1407,19 @@ module.exports = function(supabase) {
                 }
             }
 
-            console.log(`[DELETE ORG] "${org.name}" deleted by ${req.userId}. Members deleted: ${usersDeleted}, Auth deleted: ${authUsersDeleted}`);
+            console.log(`[DELETE ORG] "${org.name}" deleted by ${req.userId}. ` +
+                `Single-org users deleted: ${usersDeleted}/${singleOrgUserIds.length}, ` +
+                `Auth deleted: ${authUsersDeleted}, ` +
+                `Multi-org users preserved: ${multiOrgUserIds.length}`);
 
             res.json({
                 success: true,
-                message: `Organization "${org.name}" deleted successfully`,
+                message: `Organization "${org.name}" and all associated data deleted`,
                 summary: {
                     organization: org.name,
-                    members_deleted: usersDeleted,
+                    users_deleted: usersDeleted,
                     auth_users_deleted: authUsersDeleted,
+                    multi_org_users_preserved: multiOrgUserIds.length,
                     auth_delete_errors: authDeleteErrors.length > 0 ? authDeleteErrors : undefined
                 }
             });

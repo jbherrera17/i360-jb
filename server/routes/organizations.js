@@ -333,7 +333,10 @@ module.exports = function(supabase) {
 
     /**
      * DELETE /api/organizations/:id
-     * Delete an organization (owner only)
+     * Delete an organization, all its data, and single-org member users (owner only)
+     *
+     * With Phase 82 CASCADE FKs, org deletion automatically removes all org-owned data.
+     * Single-org users are fully deleted (public + auth). Multi-org users are preserved.
      */
     router.delete('/:id', async (req, res) => {
         try {
@@ -376,7 +379,7 @@ module.exports = function(supabase) {
             // Check if it's a personal workspace (cannot delete)
             const { data: org } = await supabase
                 .from('organizations')
-                .select('settings')
+                .select('id, name, settings')
                 .eq('id', id)
                 .single();
 
@@ -387,42 +390,32 @@ module.exports = function(supabase) {
                 });
             }
 
-            // Get org name for the suspension reason
-            const { data: orgDetails } = await supabase
-                .from('organizations')
-                .select('name')
-                .eq('id', id)
-                .single();
+            const orgName = org?.name || 'Unknown';
 
-            const orgName = orgDetails?.name || 'Unknown';
-
-            // Suspend orphaned users before deleting the org
-            // This finds users who only belong to this org and suspends them
-            const { data: suspendedUsers, error: suspendError } = await supabase
-                .rpc('suspend_orphaned_users', {
-                    p_org_id: id,
-                    p_reason: `Organization "${orgName}" was deleted`
-                });
-
-            if (suspendError) {
-                console.warn('Warning: Could not suspend orphaned users:', suspendError);
-                // Continue with deletion even if suspension fails
-            } else if (suspendedUsers && suspendedUsers.length > 0) {
-                console.log(`Suspended ${suspendedUsers.length} orphaned users from org ${orgName}:`,
-                    suspendedUsers.map(u => u.email));
-            }
-
-            // Delete departments first — the FK is ON DELETE SET NULL
-            // but org_id has a NOT NULL constraint (phase59c), causing conflicts
-            const { error: deptError } = await supabase
-                .from('departments')
-                .delete()
+            // Step 1: Collect member user IDs BEFORE deleting org
+            const { data: members } = await supabase
+                .from('organization_members')
+                .select('user_id')
                 .eq('org_id', id);
 
-            if (deptError) {
-                console.warn('Warning: Could not delete departments:', deptError);
+            const allMemberIds = (members || []).map(m => m.user_id);
+
+            // Identify single-org users (safe to delete) vs multi-org users (preserve)
+            const singleOrgUserIds = [];
+            for (const memberId of allMemberIds) {
+                const { data: otherMemberships } = await supabase
+                    .from('organization_members')
+                    .select('org_id')
+                    .eq('user_id', memberId)
+                    .neq('org_id', id);
+
+                if (!otherMemberships || otherMemberships.length === 0) {
+                    singleOrgUserIds.push(memberId);
+                }
             }
 
+            // Step 2: Delete the organization
+            // CASCADE FKs (Phase 82) remove all org-owned data automatically
             const { error } = await supabase
                 .from('organizations')
                 .delete()
@@ -430,10 +423,58 @@ module.exports = function(supabase) {
 
             if (error) throw error;
 
+            // Step 3: Clean up single-org users
+            let usersDeleted = 0;
+            let authUsersDeleted = 0;
+
+            if (singleOrgUserIds.length > 0) {
+                // Delete user-scoped tables (no org_id, only user_id)
+                const userScopedTables = [
+                    'research_studios', 'thought_leadership_profiles',
+                    'ai_visibility_research', 'content_pillars',
+                    'content_calendar_entries', 'thought_leadership_outputs'
+                ];
+                for (const table of userScopedTables) {
+                    await supabase
+                        .from(table)
+                        .delete()
+                        .in('user_id', singleOrgUserIds);
+                }
+
+                // Delete from public.users
+                const { error: userDeleteError } = await supabase
+                    .from('users')
+                    .delete()
+                    .in('id', singleOrgUserIds);
+
+                if (!userDeleteError) {
+                    usersDeleted = singleOrgUserIds.length;
+                }
+
+                // Delete from auth.users
+                for (const uid of singleOrgUserIds) {
+                    try {
+                        const { error: authErr } = await supabase.auth.admin.deleteUser(uid);
+                        if (!authErr) authUsersDeleted++;
+                    } catch (err) {
+                        console.warn(`[DELETE ORG] Failed to delete auth user ${uid}:`, err.message);
+                    }
+                }
+            }
+
+            console.log(`[DELETE ORG] "${orgName}" deleted by ${userId}. ` +
+                `Users deleted: ${usersDeleted}, Auth deleted: ${authUsersDeleted}, ` +
+                `Multi-org preserved: ${allMemberIds.length - singleOrgUserIds.length}`);
+
             res.json({
                 success: true,
-                message: 'Organization deleted',
-                suspended_users: suspendedUsers?.length || 0
+                message: `Organization "${orgName}" and all associated data deleted`,
+                summary: {
+                    organization: orgName,
+                    users_deleted: usersDeleted,
+                    auth_users_deleted: authUsersDeleted,
+                    multi_org_users_preserved: allMemberIds.length - singleOrgUserIds.length
+                }
             });
         } catch (error) {
             console.error('Error deleting organization:', error);
