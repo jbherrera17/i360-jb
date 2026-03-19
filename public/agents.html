@@ -4457,6 +4457,13 @@
             initTheme();
             initPanelResize();
             UsageNudge.init();
+
+            // Ensure authFetch is loaded before making any API calls.
+            // navigation.js dynamically injects auth-fetch.js, but it may not
+            // finish loading before init() fires. initNavigation() guarantees
+            // authFetch is available.
+            if (typeof initNavigation === 'function') await initNavigation();
+
             showLoading('Loading Agent Library', 'Fetching agents and configurations...');
             try {
                 await Promise.all([
