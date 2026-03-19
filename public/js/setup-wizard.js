@@ -570,11 +570,15 @@ const SetupWizard = {
     // ========================================================================
     renderDepartmentsStep() {
         const defaultDepts = [
-            { name: 'Marketing', icon: 'megaphone' },
+            { name: 'Executive', icon: 'crown' },
             { name: 'Sales', icon: 'trending-up' },
-            { name: 'Engineering', icon: 'code' },
+            { name: 'Marketing', icon: 'megaphone' },
             { name: 'Operations', icon: 'settings' },
-            { name: 'Human Resources', icon: 'users' }
+            { name: 'Finance', icon: 'wallet' },
+            { name: 'Human Resources', icon: 'users' },
+            { name: 'Development', icon: 'code' },
+            { name: 'Product & Curriculum Dev', icon: 'layout' },
+            { name: 'Support', icon: 'headphones' }
         ];
 
         return `
