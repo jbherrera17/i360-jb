@@ -1,0 +1,7 @@
+{
+  "name": "eslint-plugin-no-raw-fetch",
+  "version": "1.0.0",
+  "description": "ESLint plugin to prevent raw fetch() calls to /api/ endpoints",
+  "main": "index.js",
+  "private": true
+}

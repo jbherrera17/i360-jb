@@ -39,9 +39,15 @@
     "escapeHtml": "readonly",
     "SessionTimeout": "readonly",
     "AuthFetch": "readonly",
-    "BrandingService": "readonly"
+    "authFetch": "readonly",
+    "BrandingService": "readonly",
+    "UsageNudge": "readonly",
+    "IconPicker": "readonly",
+    "initNavigation": "readonly",
+    "ModalServiceLoader": "readonly"
   },
   "ignorePatterns": ["node_modules/", "coverage/", "playwright-report/"],
+  "plugins": ["no-raw-fetch"],
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "no-console": "off",
@@ -49,6 +55,21 @@
     "no-prototype-builtins": "warn",
     "no-useless-escape": "warn",
     "no-constant-condition": "warn",
-    "no-redeclare": "warn"
-  }
+    "no-redeclare": "warn",
+    "no-raw-fetch/no-raw-fetch": "error"
+  },
+  "overrides": [
+    {
+      "files": ["public/js/auth-fetch.js", "public/js/auth-fetch-loader.js", "public/login.html", "public/js/navigation.js", "public/js/session-timeout.js"],
+      "rules": {
+        "no-raw-fetch/no-raw-fetch": "off"
+      }
+    },
+    {
+      "files": ["server/**/*.js", "__tests__/**/*.js"],
+      "rules": {
+        "no-raw-fetch/no-raw-fetch": "off"
+      }
+    }
+  ]
 }
