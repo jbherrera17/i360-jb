@@ -1,3 +1,4 @@
+/* global authFetch, UsageNudge */
 /**
  * INSIGHT 360 - Research Studio Frontend
  * Version: 1.0.0
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function loadStudios() {
     try {
-        const response = await fetch(API_BASE);
+        const response = await authFetch(API_BASE);
         const result = await response.json();
 
         if (result.success) {
@@ -105,7 +106,7 @@ function renderStudioList(studios) {
  */
 async function loadStudio(studioId) {
     try {
-        const response = await fetch(`${API_BASE}/${studioId}`);
+        const response = await authFetch(`${API_BASE}/${studioId}`);
         const result = await response.json();
 
         if (result.success) {
@@ -169,7 +170,7 @@ async function showCreateStudioModal() {
     if (typeof UsageNudge !== 'undefined' && !(await UsageNudge.checkBeforeCreate('research_studios'))) return;
 
     try {
-        const response = await fetch(API_BASE, {
+        const response = await authFetch(API_BASE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: values.title, description: values.description })
@@ -198,7 +199,7 @@ async function updateStudioTitle() {
     if (!newTitle || newTitle === currentStudio.title) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle })
@@ -253,7 +254,7 @@ async function deleteStudio(studioId, studioTitle) {
     if (!confirmed) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${studioId}`, {
+        const response = await authFetch(`${API_BASE}/${studioId}`, {
             method: 'DELETE'
         });
 
@@ -509,7 +510,7 @@ async function uploadFile(file) {
         ` + sourcesList.innerHTML;
         lucide.createIcons();
 
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources`, {
             method: 'POST',
             body: formData
         });
@@ -549,7 +550,7 @@ async function addUrlSource() {
     try {
         closeAddSourceModal();
 
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url })
@@ -590,7 +591,7 @@ async function addTextSource() {
     try {
         closeAddSourceModal();
 
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, title })
@@ -616,7 +617,7 @@ async function addTextSource() {
  */
 async function toggleSource(sourceId, isSelected) {
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_selected: isSelected })
@@ -739,7 +740,7 @@ async function editSource(sourceId) {
             updateData.content = values.content;
         }
 
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updateData)
@@ -783,7 +784,7 @@ async function deleteSource(sourceId) {
     if (!confirmed) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources/${sourceId}`, {
             method: 'DELETE'
         });
 
@@ -839,7 +840,7 @@ async function loadSuggestedQuestions() {
     if (selectedSources.length === 0) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/suggested-questions?count=4`);
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/suggested-questions?count=4`);
         const result = await response.json();
 
         if (result.success && result.data.questions) {
@@ -890,7 +891,7 @@ async function loadChatHistory() {
     if (!currentConversationId) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${currentConversationId}/messages`);
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/conversations/${currentConversationId}/messages`);
         const result = await response.json();
 
         if (result.success && result.data.length > 0) {
@@ -987,7 +988,7 @@ async function sendMessage() {
         // Get selected model (function defined in research-studio.html)
         const model = typeof getSelectedModel === 'function' ? getSelectedModel() : 'claude-sonnet-4-20250514';
 
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/chat`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1214,7 +1215,7 @@ async function saveMessageAsSource(messageId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/sources`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/sources`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1392,7 +1393,7 @@ async function loadChatHistoryList() {
     lucide.createIcons();
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations`);
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/conversations`);
         const result = await response.json();
 
         if (result.success) {
@@ -1459,7 +1460,7 @@ async function startNewChat() {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/conversations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
@@ -1510,7 +1511,7 @@ async function switchToConversation(conversationId) {
 
     try {
         // Activate the conversation on the server
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_active: true })
@@ -1563,7 +1564,7 @@ async function renameConversation(conversationId) {
     if (!values || !values.title || values.title === convo.title) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: values.title })
@@ -1606,7 +1607,7 @@ async function deleteConversation(conversationId) {
     if (!confirmed) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/conversations/${conversationId}`, {
             method: 'DELETE'
         });
 
@@ -1666,7 +1667,7 @@ async function generateOutput(type) {
         // Get selected model (function defined in research-studio.html)
         const model = typeof getSelectedModel === 'function' ? getSelectedModel() : 'claude-sonnet-4-20250514';
 
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/outputs/${type}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/outputs/${type}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ model })
@@ -1752,7 +1753,7 @@ async function deleteOutput(outputId) {
     if (!confirmed) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/outputs/${outputId}`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/outputs/${outputId}`, {
             method: 'DELETE'
         });
 
@@ -2174,7 +2175,7 @@ async function submitQuiz(event, outputId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/${currentStudio.id}/outputs/${outputId}/score`, {
+        const response = await authFetch(`${API_BASE}/${currentStudio.id}/outputs/${outputId}/score`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ answers })

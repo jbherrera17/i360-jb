@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -1069,7 +1070,7 @@
         async function loadAllData() {
             try {
                 // Load foundation
-                const foundationRes = await fetch('/api/s2e/foundations/current');
+                const foundationRes = await authFetch('/api/s2e/foundations/current');
                 const foundationData = await foundationRes.json();
                 if (foundationData.success && foundationData.data) {
                     foundation = foundationData.data;
@@ -1092,9 +1093,9 @@
 
                 // Load OKRs and departments
                 const [okrsRes, deptsRes, linksRes] = await Promise.all([
-                    fetch('/api/parthenon/okrs'),
-                    fetch('/api/parthenon/departments'),
-                    fetch('/api/s2e/okr-links')
+                    authFetch('/api/parthenon/okrs'),
+                    authFetch('/api/parthenon/departments'),
+                    authFetch('/api/s2e/okr-links')
                 ]);
 
                 const okrsData = await okrsRes.json();
@@ -1191,7 +1192,7 @@
 
         async function loadSoulConfigValues() {
             try {
-                const soulRes = await fetch('/api/soul-config?scope_type=platform&is_active=true');
+                const soulRes = await authFetch('/api/soul-config?scope_type=platform&is_active=true');
                 const soulData = await soulRes.json();
                 if (soulData.success && soulData.data && soulData.data.length > 0) {
                     const soulConfig = soulData.data[0];
@@ -1246,7 +1247,7 @@
                 const url = foundation ? `/api/s2e/foundations/${foundation.id}` : '/api/s2e/foundations';
                 const method = foundation ? 'PUT' : 'POST';
 
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1258,7 +1259,7 @@
 
                     // Initialize BSC perspectives if new foundation
                     if (method === 'POST') {
-                        await fetch('/api/s2e/perspectives/initialize', {
+                        await authFetch('/api/s2e/perspectives/initialize', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ foundation_id: foundation.id })
@@ -1401,7 +1402,7 @@
                 const url = editingThemeId ? `/api/s2e/themes/${editingThemeId}` : '/api/s2e/themes';
                 const method = editingThemeId ? 'PUT' : 'POST';
 
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1438,7 +1439,7 @@
             if (!confirmed) return;
 
             try {
-                const res = await fetch(`/api/s2e/themes/${id}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/s2e/themes/${id}`, { method: 'DELETE' });
                 const result = await res.json();
                 if (result.success) {
                     themes = themes.filter(t => t.id !== id);
@@ -1453,7 +1454,7 @@
         async function saveThemesAndNext() {
             // Reload perspectives before moving to step 3
             try {
-                const res = await fetch(`/api/s2e/perspectives?foundation_id=${foundation.id}`);
+                const res = await authFetch(`/api/s2e/perspectives?foundation_id=${foundation.id}`);
                 const data = await res.json();
                 if (data.success) {
                     perspectives = data.data || [];
@@ -1482,7 +1483,7 @@
 
             // Load objectives for each perspective
             for (const p of perspectives) {
-                const res = await fetch(`/api/s2e/objectives?perspective_id=${p.id}`);
+                const res = await authFetch(`/api/s2e/objectives?perspective_id=${p.id}`);
                 const data = await res.json();
                 p.objectives = data.success ? data.data : [];
             }
@@ -1597,7 +1598,7 @@
             }
 
             try {
-                const res = await fetch('/api/s2e/objectives', {
+                const res = await authFetch('/api/s2e/objectives', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1628,7 +1629,7 @@
             if (!confirmed) return;
 
             try {
-                const res = await fetch(`/api/s2e/objectives/${id}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/s2e/objectives/${id}`, { method: 'DELETE' });
                 const result = await res.json();
                 if (result.success) {
                     renderPerspectives();
@@ -1645,8 +1646,8 @@
 
             // Reload objectives and links
             const [objRes, linksRes] = await Promise.all([
-                fetch('/api/s2e/objectives'),
-                fetch('/api/s2e/okr-links')
+                authFetch('/api/s2e/objectives'),
+                authFetch('/api/s2e/okr-links')
             ]);
 
             const objData = await objRes.json();
@@ -1792,7 +1793,7 @@
             // Remove existing link first
             const existingLink = okrLinks.find(l => l.okr_id === linkingOkrId);
             if (existingLink) {
-                await fetch(`/api/s2e/okr-links/${existingLink.id}`, { method: 'DELETE' });
+                await authFetch(`/api/s2e/okr-links/${existingLink.id}`, { method: 'DELETE' });
             }
 
             const data = {
@@ -1804,7 +1805,7 @@
             };
 
             try {
-                const res = await fetch('/api/s2e/okr-links', {
+                const res = await authFetch('/api/s2e/okr-links', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1835,7 +1836,7 @@
             if (!confirmed) return;
 
             try {
-                const res = await fetch(`/api/s2e/okr-links/${linkId}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/s2e/okr-links/${linkId}`, { method: 'DELETE' });
                 const result = await res.json();
                 if (result.success) {
                     renderOkrLinkage();
@@ -1852,7 +1853,7 @@
             const container = document.getElementById('strategyMapPreview');
 
             // Reload data
-            const mapRes = await fetch('/api/s2e/strategy-map');
+            const mapRes = await authFetch('/api/s2e/strategy-map');
             const mapData = await mapRes.json();
 
             if (!mapData.success || !mapData.data) {
@@ -1901,7 +1902,7 @@
             }).join('');
 
             // Calculate metrics
-            const reportRes = await fetch('/api/s2e/alignment-report');
+            const reportRes = await authFetch('/api/s2e/alignment-report');
             const reportData = await reportRes.json();
 
             if (reportData.success) {
@@ -1923,7 +1924,7 @@
             }
 
             try {
-                const res = await fetch(`/api/s2e/foundations/${foundation.id}`, {
+                const res = await authFetch(`/api/s2e/foundations/${foundation.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'active', is_current: true })
@@ -1976,7 +1977,7 @@
         // Load Strategy 120 agents from API
         async function loadStrategy120Agents() {
             try {
-                const res = await fetch('/api/agents?suite=strategy');
+                const res = await authFetch('/api/agents?suite=strategy');
                 const data = await res.json();
 
                 if (data.success && data.data) {
@@ -2182,7 +2183,7 @@
                 const context = buildStrategyContext();
 
                 // Call chat API with agent
-                const res = await fetch('/api/chat', {
+                const res = await authFetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

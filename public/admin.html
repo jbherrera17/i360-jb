@@ -6,6 +6,7 @@
     <title>User Management | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -1429,7 +1430,7 @@
 
         async function fetchCurrentUser() {
             try {
-                const response = await fetch('/api/auth/me', {
+                const response = await authFetch('/api/auth/me', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1446,7 +1447,7 @@
 
         async function fetchUsers() {
             try {
-                const response = await fetch('/api/auth/users', {
+                const response = await authFetch('/api/auth/users', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1464,7 +1465,7 @@
         async function fetchUnifiedUsers(filter = '') {
             try {
                 const url = filter ? `/api/users/unified?filter=${filter}` : '/api/users/unified';
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1481,7 +1482,7 @@
 
         async function fetchOrganizations() {
             try {
-                const response = await fetch('/api/organizations', {
+                const response = await authFetch('/api/organizations', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1498,7 +1499,7 @@
 
         async function fetchClients(orgId) {
             try {
-                const response = await fetch(`/api/clients?org_id=${orgId}`, {
+                const response = await authFetch(`/api/clients?org_id=${orgId}`, {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1513,7 +1514,7 @@
         }
 
         async function updateUserAssignments(userId, assignments) {
-            const response = await fetch(`/api/users/${userId}/assignments`, {
+            const response = await authFetch(`/api/users/${userId}/assignments`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(assignments)
@@ -1527,7 +1528,7 @@
 
         async function fetchRolesSummary() {
             try {
-                const response = await fetch('/api/auth/roles-summary', {
+                const response = await authFetch('/api/auth/roles-summary', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1542,7 +1543,7 @@
         }
 
         async function createUser(userData) {
-            const response = await fetch('/api/auth/users', {
+            const response = await authFetch('/api/auth/users', {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(userData)
@@ -1555,7 +1556,7 @@
         }
 
         async function updateUser(userId, userData) {
-            const response = await fetch(`/api/auth/users/${userId}`, {
+            const response = await authFetch(`/api/auth/users/${userId}`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(userData)
@@ -1568,7 +1569,7 @@
         }
 
         async function deleteUser(userId) {
-            const response = await fetch(`/api/auth/users/${userId}`, {
+            const response = await authFetch(`/api/auth/users/${userId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
@@ -1587,7 +1588,7 @@
 
         async function fetchBusinessRoles() {
             try {
-                const response = await fetch('/api/business-roles/levels', {
+                const response = await authFetch('/api/business-roles/levels', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1604,7 +1605,7 @@
 
         async function fetchBusinessRoleDefaults() {
             try {
-                const response = await fetch('/api/business-roles/defaults', {
+                const response = await authFetch('/api/business-roles/defaults', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1621,7 +1622,7 @@
 
         async function fetchDepartments() {
             try {
-                const response = await fetch('/api/departments', {
+                const response = await authFetch('/api/departments', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -1637,7 +1638,7 @@
         }
 
         async function updateUserBusinessRole(userId, businessRole, departmentId) {
-            const response = await fetch(`/api/business-roles/users/${userId}/role`, {
+            const response = await authFetch(`/api/business-roles/users/${userId}/role`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ business_role: businessRole })
@@ -2396,7 +2397,7 @@
             const userOrg = (user.organization_memberships || [])[0];
             if (userOrg?.org_id) {
                 try {
-                    const resp = await fetch(`/api/departments?org_id=${userOrg.org_id}`, {
+                    const resp = await authFetch(`/api/departments?org_id=${userOrg.org_id}`, {
                         headers: getAuthHeaders()
                     });
                     const data = await resp.json();
@@ -2473,7 +2474,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`/api/auth/users/${editingUserId}/reset-password`, {
+                const response = await authFetch(`/api/auth/users/${editingUserId}/reset-password`, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ new_password: newPassword })
@@ -2657,7 +2658,7 @@
                 btn.innerHTML = '<i data-lucide="loader-2" style="width:18px;height:18px;animation:spin 1s linear infinite;"></i> Syncing...';
                 lucide.createIcons();
 
-                const response = await fetch('/api/auth/sync-users', {
+                const response = await authFetch('/api/auth/sync-users', {
                     method: 'POST',
                     headers: getAuthHeaders()
                 });

@@ -16,6 +16,7 @@ const unifiedRuntime = require('../services/unifiedRuntime');
 const { generateSignedEmbedUrl } = require('../services/mindstudioService');
 const { canEditAgent, canDeleteAgent } = require('../middleware/auth');
 const { buildAgentAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
+const { getVerifiedOrgId } = require('../utils/orgScope');
 
 /**
  * Agent Routes Factory
@@ -29,6 +30,35 @@ module.exports = function(supabase) {
 
     // Phase 81: Module gating — enforce tier/role access for agents module
     router.use(requireModule('agents'));
+
+    // Phase 82: Helper to verify agent belongs to the requesting user's org
+    async function verifyAgentOrgOwnership(req, res, agentId) {
+        const orgId = getVerifiedOrgId(req);
+        if (!orgId) {
+            res.status(403).json({ success: false, error: 'Organization context required' });
+            return false;
+        }
+        const { data: agent, error } = await supabase
+            .from('agents')
+            .select('id, org_id')
+            .eq('id', agentId)
+            .maybeSingle();
+
+        if (error) {
+            res.status(500).json({ success: false, error: error.message });
+            return false;
+        }
+        if (!agent) {
+            res.status(404).json({ success: false, error: 'Agent not found' });
+            return false;
+        }
+        // Allow access if agent has no org (system/public) or matches user's org
+        if (agent.org_id && agent.org_id !== orgId) {
+            res.status(403).json({ success: false, error: 'Access denied — agent belongs to another organization' });
+            return false;
+        }
+        return true;
+    }
 
     // ============================================================================
     // AGENT CRUD ENDPOINTS
@@ -225,6 +255,12 @@ module.exports = function(supabase) {
      */
     router.post('/seed-suites', async (req, res) => {
         try {
+            // Phase 82: Require org context for seed operations
+            const orgId = getVerifiedOrgId(req);
+            if (!orgId) {
+                return res.status(403).json({ success: false, error: 'Organization context required' });
+            }
+
             const suiteAssignments = [
                 // Align 120 Suite (Foundation/Alignment)
                 { id: 'a0000000-0000-0000-0000-000000000101', suite: 'align' },  // Integrity Auditor
@@ -244,10 +280,12 @@ module.exports = function(supabase) {
 
             const results = [];
             for (const assignment of suiteAssignments) {
+                // Phase 82: Only update agents belonging to the user's org (or system agents with no org)
                 const { data, error } = await supabase
                     .from('agents')
                     .update({ suite: assignment.suite })
                     .eq('id', assignment.id)
+                    .or(`org_id.eq.${orgId},org_id.is.null`)
                     .select('id, name, suite');
 
                 if (error) {
@@ -1081,6 +1119,10 @@ module.exports = function(supabase) {
             const { id } = req.params;
             const { days = 30 } = req.query;
 
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
+
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
 
@@ -1130,6 +1172,10 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
 
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
+
             const { data, error } = await supabase
                 .from('agent_context_mappings')
                 .select(`
@@ -1173,6 +1219,11 @@ module.exports = function(supabase) {
     router.post('/:id/context', async (req, res) => {
         try {
             const { id } = req.params;
+
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
+
             const {
                 asset_id,
                 injection_mode = 'always',
@@ -1238,7 +1289,12 @@ module.exports = function(supabase) {
      */
     router.put('/:id/context/:mappingId', async (req, res) => {
         try {
-            const { mappingId } = req.params;
+            const { id, mappingId } = req.params;
+
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
+
             const updates = req.body;
 
             // Only allow specific fields to be updated
@@ -1288,7 +1344,11 @@ module.exports = function(supabase) {
      */
     router.delete('/:id/context/:mappingId', async (req, res) => {
         try {
-            const { mappingId } = req.params;
+            const { id, mappingId } = req.params;
+
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
 
             const { error } = await supabase
                 .from('agent_context_mappings')
@@ -1347,6 +1407,10 @@ module.exports = function(supabase) {
         try {
             const { id } = req.params;
 
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
+
             const { data: mappings, error } = await supabase
                 .from('agent_context_mappings')
                 .select(`
@@ -1389,6 +1453,11 @@ module.exports = function(supabase) {
     router.post('/:id/context/mappings', async (req, res) => {
         try {
             const { id } = req.params;
+
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
+
             const { asset_id, injection_mode = 'on_demand', priority = 50 } = req.body;
 
             if (!asset_id) {
@@ -1743,12 +1812,17 @@ module.exports = function(supabase) {
      */
     router.get('/:id/executions/:execId', async (req, res) => {
         try {
-            const { execId } = req.params;
+            const { id, execId } = req.params;
+
+            // Phase 82: Verify agent belongs to user's org
+            const ownershipOk = await verifyAgentOrgOwnership(req, res, id);
+            if (!ownershipOk) return;
 
             const { data, error } = await supabase
                 .from('agent_executions')
                 .select('*')
                 .eq('id', execId)
+                .eq('agent_id', id)
                 .single();
 
             if (error) throw error;

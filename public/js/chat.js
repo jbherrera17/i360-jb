@@ -1,4 +1,4 @@
-/* global BrandingService, ChartRenderer, RadarChart, XLSX, LLMHealth */
+/* global BrandingService, ChartRenderer, RadarChart, XLSX, LLMHealth, authFetch */
 /**
  * Chat Interface - Insight 360
  * Multi-LLM chat with streaming, voice, and file support
@@ -54,7 +54,7 @@ function extractImagePrompt(message) {
  * Generate an image via API
  */
 async function generateImage(prompt, options = {}) {
-    const response = await fetch('/api/chat/image/generate', {
+    const response = await authFetch('/api/chat/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', async function() {
  */
 async function checkPlatformAdmin() {
     try {
-        const response = await fetch('/api/platform/admin/verify', {
+        const response = await authFetch('/api/platform/admin/verify', {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -288,7 +288,7 @@ async function checkPlatformAdmin() {
  */
 async function loadOrganizations() {
     try {
-        const response = await fetch('/api/platform/organizations');
+        const response = await authFetch('/api/platform/organizations');
         const data = await response.json();
 
         if (data.success && data.data) {
@@ -371,7 +371,7 @@ function updatePanelToggleIcon() {
  */
 async function detectUserOrg() {
     try {
-        const response = await fetch('/api/conversations/user-org');
+        const response = await authFetch('/api/conversations/user-org');
         const data = await response.json();
         if (data.success && data.org_id) {
             userOrgId = data.org_id;
@@ -406,7 +406,7 @@ async function detectUserOrg() {
  */
 async function loadModels() {
     try {
-        const response = await fetch('/api/chat/models');
+        const response = await authFetch('/api/chat/models');
         const data = await response.json();
 
         if (data.success && data.models) {
@@ -740,7 +740,7 @@ Only include sources when you reference specific external information. For gener
         }
 
         // Stream response (or use non-streaming for search)
-        const response = await fetch(endpoint, {
+        const response = await authFetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -1396,7 +1396,7 @@ async function loadConversations(filterOverrides = {}) {
             url = `/api/conversations?${params.toString()}`;
         }
 
-        const response = await fetch(url);
+        const response = await authFetch(url);
         const data = await response.json();
 
         if (data.success) {
@@ -1530,7 +1530,7 @@ async function loadConversation(conversationId) {
         const endpoint = (isPlatformAdmin && showAllConversations)
             ? `/api/conversations/admin/${conversationId}`
             : `/api/conversations/${conversationId}`;
-        const response = await fetch(endpoint);
+        const response = await authFetch(endpoint);
         const data = await response.json();
 
         // Admin endpoint returns data, user endpoint returns conversation
@@ -1586,7 +1586,7 @@ function renderMessages(messages) {
  */
 async function createConversation() {
     try {
-        const response = await fetch('/api/conversations', {
+        const response = await authFetch('/api/conversations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1616,7 +1616,7 @@ async function saveMessage(role, content, model = null) {
     if (!currentConversationId) return;
 
     try {
-        await fetch(`/api/conversations/${currentConversationId}/messages`, {
+        await authFetch(`/api/conversations/${currentConversationId}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1651,7 +1651,7 @@ async function deleteConversation(conversationId) {
     if (!confirmed) return;
 
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`, {
+        const response = await authFetch(`/api/conversations/${conversationId}`, {
             method: 'DELETE'
         });
 
@@ -1749,7 +1749,7 @@ async function renameConversation(conversationId, event) {
     if (!newTitle || newTitle.trim() === '' || newTitle === conversation.title) return;
 
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`, {
+        const response = await authFetch(`/api/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle.trim() })
@@ -1871,7 +1871,7 @@ async function toggleStarConversation(conversationId) {
 
     const newValue = !conv.is_starred;
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`, {
+        const response = await authFetch(`/api/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_starred: newValue })
@@ -1892,7 +1892,7 @@ async function toggleStarConversation(conversationId) {
  */
 async function archiveConversation(conversationId) {
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`, {
+        const response = await authFetch(`/api/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_archived: true })
@@ -1923,7 +1923,7 @@ async function archiveConversation(conversationId) {
  */
 async function unarchiveConversation(conversationId) {
     try {
-        const response = await fetch(`/api/conversations/${conversationId}`, {
+        const response = await authFetch(`/api/conversations/${conversationId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_archived: false })
@@ -1944,7 +1944,7 @@ async function unarchiveConversation(conversationId) {
  */
 async function exportConversation(conversationId, format = 'markdown') {
     try {
-        const response = await fetch(`/api/conversations/export/${conversationId}?format=${format}`);
+        const response = await authFetch(`/api/conversations/export/${conversationId}?format=${format}`);
         if (!response.ok) throw new Error('Export failed');
 
         const blob = await response.blob();
@@ -2029,7 +2029,7 @@ function updateBulkBar() {
 async function bulkStarConversations() {
     if (bulkSelectedIds.size === 0) return;
     try {
-        await fetch('/api/conversations/bulk', {
+        await authFetch('/api/conversations/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'star', conversationIds: [...bulkSelectedIds] })
@@ -2048,7 +2048,7 @@ async function bulkStarConversations() {
 async function bulkArchiveConversations() {
     if (bulkSelectedIds.size === 0) return;
     try {
-        await fetch('/api/conversations/bulk', {
+        await authFetch('/api/conversations/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'archive', conversationIds: [...bulkSelectedIds] })
@@ -2091,7 +2091,7 @@ async function bulkDeleteConversations() {
     }
 
     try {
-        await fetch('/api/conversations/bulk', {
+        await authFetch('/api/conversations/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'delete', conversationIds: [...bulkSelectedIds] })
@@ -3643,7 +3643,7 @@ async function saveAsSnippet() {
     // Load admin voice configuration
     async function loadVoiceConfig() {
         try {
-            const res = await fetch('/api/chat/voice/config');
+            const res = await authFetch('/api/chat/voice/config');
             const data = await res.json();
             console.log('[Voice] Config loaded:', { available: data.available, stt: data.config?.stt_enabled, tts: data.config?.tts_enabled });
             if (data.success) {
@@ -3789,7 +3789,7 @@ async function saveAsSnippet() {
             formData.append('audio', audioBlob, `recording.${ext}`);
             console.log('[Voice] Sending transcription request...');
 
-            const response = await fetch('/api/chat/voice/transcribe', {
+            const response = await authFetch('/api/chat/voice/transcribe', {
                 method: 'POST',
                 body: formData
             });
@@ -3905,7 +3905,7 @@ async function saveAsSnippet() {
                 ttsBody.instructions = adminConfig.tts_instructions;
             }
 
-            const response = await fetch('/api/chat/voice/tts', {
+            const response = await authFetch('/api/chat/voice/tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ttsBody)

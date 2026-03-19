@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1216,7 +1217,7 @@
         async function loadAllData() {
             try {
                 // Load departments first
-                const deptRes = await fetch('/api/departments');
+                const deptRes = await authFetch('/api/departments');
                 const deptData = await deptRes.json();
                 if (deptData.success) {
                     departments = deptData.data || [];
@@ -1224,7 +1225,7 @@
                 }
 
                 // Load agents (active only)
-                const agentsRes = await fetch('/api/agents?suite=strategy&active=true');
+                const agentsRes = await authFetch('/api/agents?suite=strategy&active=true');
                 const agentsData = await agentsRes.json();
                 if (agentsData.success) {
                     agents = agentsData.data || [];
@@ -1234,7 +1235,7 @@
                 }
 
                 // Load strategy foundation
-                const foundationRes = await fetch('/api/s2e/foundations/current');
+                const foundationRes = await authFetch('/api/s2e/foundations/current');
                 const foundationData = await foundationRes.json();
                 if (foundationData.success && foundationData.data) {
                     foundation = foundationData.data;
@@ -1243,14 +1244,14 @@
                 }
 
                 // Load OKRs
-                const okrsRes = await fetch('/api/parthenon/okrs');
+                const okrsRes = await authFetch('/api/parthenon/okrs');
                 const okrsData = await okrsRes.json();
                 if (okrsData.success) {
                     okrs = okrsData.data || [];
                 }
 
                 // Load initiatives
-                const initRes = await fetch('/api/strategy120/initiatives');
+                const initRes = await authFetch('/api/strategy120/initiatives');
                 const initData = await initRes.json();
                 if (initData.success) {
                     initiatives = initData.data || [];
@@ -1258,7 +1259,7 @@
                 }
 
                 // Load decisions
-                const decRes = await fetch('/api/strategy120/decisions');
+                const decRes = await authFetch('/api/strategy120/decisions');
                 const decData = await decRes.json();
                 if (decData.success) {
                     decisions = decData.data || [];
@@ -1266,7 +1267,7 @@
                 }
 
                 // Load intelligence
-                const intelRes = await fetch('/api/strategy120/intelligence');
+                const intelRes = await authFetch('/api/strategy120/intelligence');
                 const intelData = await intelRes.json();
                 if (intelData.success) {
                     intelligence = intelData.data || [];
@@ -1275,7 +1276,7 @@
 
                 // Load Align 120 sessions
                 try {
-                    const sessRes = await fetch('/api/align120/sessions');
+                    const sessRes = await authFetch('/api/align120/sessions');
                     const sessData = await sessRes.json();
                     if (sessData.success) {
                         align120Sessions = (sessData.data || []).filter(s => s.status === 'completed');
@@ -1287,7 +1288,7 @@
 
                 // Load BSC perspective scores
                 try {
-                    const scoresRes = await fetch('/api/strategy120/perspective-scores/latest');
+                    const scoresRes = await authFetch('/api/strategy120/perspective-scores/latest');
                     const scoresData = await scoresRes.json();
                     if (scoresData.success) {
                         perspectiveScores = scoresData.data || [];
@@ -1642,7 +1643,7 @@
 
             // Fetch full agent data including system_prompt
             try {
-                const response = await fetch(`/api/agents/${agentId}`);
+                const response = await authFetch(`/api/agents/${agentId}`);
                 const result = await response.json();
 
                 if (!result.success) throw new Error(result.error);
@@ -1740,7 +1741,7 @@
             if (!newName) return;
 
             try {
-                const response = await fetch(`/api/agents/${agentId}/duplicate`, {
+                const response = await authFetch(`/api/agents/${agentId}/duplicate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: newName })
@@ -1844,7 +1845,7 @@
                 const url = id ? `/api/strategy120/initiatives/${id}` : '/api/strategy120/initiatives';
                 const method = id ? 'PUT' : 'POST';
 
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1871,7 +1872,7 @@
             if (!confirm('Delete this initiative? This cannot be undone.')) return;
 
             try {
-                const res = await fetch(`/api/strategy120/initiatives/${id}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/strategy120/initiatives/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error);
 
@@ -1941,7 +1942,7 @@
                 const url = id ? `/api/strategy120/decisions/${id}` : '/api/strategy120/decisions';
                 const method = id ? 'PUT' : 'POST';
 
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1968,7 +1969,7 @@
             if (!confirm('Delete this decision? This cannot be undone.')) return;
 
             try {
-                const res = await fetch(`/api/strategy120/decisions/${id}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/strategy120/decisions/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error);
 
@@ -2032,7 +2033,7 @@
                 const url = id ? `/api/strategy120/intelligence/${id}` : '/api/strategy120/intelligence';
                 const method = id ? 'PUT' : 'POST';
 
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2059,7 +2060,7 @@
             if (!confirm('Delete this intelligence brief? This cannot be undone.')) return;
 
             try {
-                const res = await fetch(`/api/strategy120/intelligence/${id}`, { method: 'DELETE' });
+                const res = await authFetch(`/api/strategy120/intelligence/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error);
 
@@ -2237,7 +2238,7 @@
                 showToast('Importing Align 120 insights...', 'success');
 
                 // Fetch full session data with module results
-                const res = await fetch(`/api/align120/sessions/${sessionId}`);
+                const res = await authFetch(`/api/align120/sessions/${sessionId}`);
                 const data = await res.json();
 
                 if (!data.success) throw new Error(data.error);
@@ -2292,7 +2293,7 @@
                 let created = 0;
                 for (const brief of briefs) {
                     try {
-                        const createRes = await fetch('/api/strategy120/intelligence', {
+                        const createRes = await authFetch('/api/strategy120/intelligence', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ...brief, foundation_id: foundation?.id })
@@ -2317,7 +2318,7 @@
                     };
 
                     try {
-                        await fetch('/api/strategy120/initiatives', {
+                        await authFetch('/api/strategy120/initiatives', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(initPayload)
