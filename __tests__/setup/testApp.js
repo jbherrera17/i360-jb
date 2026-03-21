@@ -192,6 +192,11 @@ function createTestApp(options = {}) {
     app.use('/api/modules', modulesRoutes(mockSupabase));
   }
 
+  if (routes.includes('artifacts')) {
+    const artifactsRoutes = require('../../server/routes/artifacts');
+    app.use('/api/artifacts', artifactsRoutes(mockSupabase));
+  }
+
   if (routes.includes('support')) {
     const supportRoutes = require('../../server/routes/support');
     const supportActionsRoutes = require('../../server/routes/supportActions');

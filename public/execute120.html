@@ -436,104 +436,7 @@
             line-height: 1.5;
         }
 
-        /* Strategy Card */
-        .strategy-card {
-            border: 1px solid var(--primary);
-        }
-
-        /* Initiative Grid */
-        .initiative-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 1rem;
-        }
-
-        .initiative-item {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .initiative-item:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .initiative-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-        }
-
-        .initiative-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .initiative-priority {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
-            border-radius: var(--radius-sm);
-        }
-
-        .initiative-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 0.75rem;
-            line-height: 1.3;
-        }
-
-        .initiative-progress {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .initiative-progress .progress-bar {
-            flex: 1;
-            height: 6px;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-        }
-
-        .initiative-progress .progress-fill {
-            height: 100%;
-            border-radius: var(--radius-sm);
-            transition: width 0.3s;
-        }
-
-        .initiative-progress span {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            min-width: 35px;
-        }
-
-        .initiative-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-        }
-
-        .perspective-badge,
-        .assignment-badge {
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: var(--radius-sm);
-            background: var(--bg-secondary);
-            color: var(--text-muted);
-        }
+        /* (Strategy card CSS removed — Phase 85 deprecation) */
 
         /* Department Browser (Secondary/Collapsible) */
         .dept-browser-toggle {
@@ -705,28 +608,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Strategy Card Stats */
-        .strategy-stats {
-            display: flex;
-            gap: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .strategy-stat {
-            text-align: center;
-        }
-
-        .strategy-stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .strategy-stat-label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
+        /* (Strategy stats CSS removed — Phase 85 deprecation) */
 
         /* Full-width cards */
         .full-width {
@@ -849,6 +731,17 @@
                         </div>
                     </div>
 
+                    <!-- My Artifacts -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3><i data-lucide="archive"></i> My Artifacts</h3>
+                            <a href="/artifacts.html" style="font-size:0.8rem;color:var(--primary);">View All</a>
+                        </div>
+                        <div class="section-content" id="artifactsContent">
+                            <div style="text-align:center;padding:1rem;"><div class="loading-spinner"></div></div>
+                        </div>
+                    </div>
+
                     <!-- Quick Start with Higgins -->
                     <div class="section-card">
                         <div class="section-header">
@@ -957,6 +850,7 @@
             renderAssets(personalizedCards.contextAssets || []);
             renderSkills(personalizedCards.skills || []);
             renderActions(personalizedCards.actions || []);
+            loadArtifacts();
             renderQuickPrompts(userProfile.user?.department);
             renderConditionalCards();
             renderRestoreHiddenBar();
@@ -1135,6 +1029,33 @@
         }
 
         // ================================================
+        // My Artifacts (Phase 85)
+        // ================================================
+        async function loadArtifacts() {
+            const container = document.getElementById('artifactsContent');
+            try {
+                const res = await authFetch('/api/artifacts/my-recent?limit=5');
+                const result = await res.json();
+                if (!result.success || !result.data.length) {
+                    container.innerHTML = emptyState('archive', 'No artifacts yet', '/artifacts.html', 'Browse artifacts');
+                    return;
+                }
+                const sourceIcons = { agent_execution: 'bot', workflow_run: 'git-branch', skill_output: 'wand-2', chat: 'message-circle', manual_upload: 'upload', api: 'code' };
+                container.innerHTML = `<div class="item-list">${result.data.map(a => itemRow(
+                    'artifact_bundle', a.id,
+                    sourceIcons[a.source_type] || 'file',
+                    a.name,
+                    (a.skill_used || a.source_type || '').replace(/_/g, ' '),
+                    'var(--primary)',
+                    `<a href="/artifacts.html?id=${a.id}" class="item-action-btn" onclick="event.stopPropagation();" style="text-decoration:none;">View</a>`
+                )).join('')}</div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (e) {
+                container.innerHTML = emptyState('archive', 'No artifacts yet', '/artifacts.html', 'Browse artifacts');
+            }
+        }
+
+        // ================================================
         // Quick Start Prompts (Higgins)
         // ================================================
         function renderQuickPrompts(department) {
@@ -1201,11 +1122,6 @@
                 cards.push(renderBriefingCard(personalizedCards.briefing));
             }
 
-            // Strategic Initiatives (if strategy access + executive/director)
-            if (moduleAccess.strategy120 && userProfile?.showStrategyCards) {
-                cards.push(renderStrategyOverviewCard(personalizedCards.strategyOverview));
-            }
-
             container.innerHTML = cards.join('');
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
@@ -1235,43 +1151,7 @@
             `;
         }
 
-        function renderStrategyOverviewCard(overview) {
-            return `
-                <div class="section-card strategy-card full-width" style="background:linear-gradient(135deg, var(--bg-secondary), rgba(99,102,241,0.05));">
-                    <div class="section-header">
-                        <h3><i data-lucide="compass"></i> Strategic Overview</h3>
-                        <a href="/strategy120.html" style="font-size:0.8rem;color:var(--primary);">Strategy Hub</a>
-                    </div>
-                    <div class="section-content">
-                        ${overview ? `
-                            <div class="strategy-stats">
-                                <div class="strategy-stat">
-                                    <div class="strategy-stat-value" style="color:var(--primary);">${overview.activeInitiatives || 0}</div>
-                                    <div class="strategy-stat-label">Active Initiatives</div>
-                                </div>
-                                <div class="strategy-stat">
-                                    <div class="strategy-stat-value" style="color:var(--success);">${overview.completedThisQuarter || 0}</div>
-                                    <div class="strategy-stat-label">Completed This Quarter</div>
-                                </div>
-                                <div class="strategy-stat">
-                                    <div class="strategy-stat-value" style="color:var(--warning);">${overview.avgProgress || 0}%</div>
-                                    <div class="strategy-stat-label">Avg Progress</div>
-                                </div>
-                                <div class="strategy-stat">
-                                    <div class="strategy-stat-value" style="color:var(--text-secondary);">${overview.totalInitiatives || 0}</div>
-                                    <div class="strategy-stat-label">Total Initiatives</div>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="empty-state">
-                                <p>No strategic data available</p>
-                                <a href="/strategy120.html" style="color:var(--primary);">Go to Strategy Hub</a>
-                            </div>
-                        `}
-                    </div>
-                </div>
-            `;
-        }
+        // (renderStrategyOverviewCard removed — Phase 85 deprecation)
 
         // ================================================
         // Favorites API

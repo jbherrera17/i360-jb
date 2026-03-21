@@ -35,7 +35,6 @@ const navConfig = {
             icon: 'cpu',
             items: [
                 { href: '/agents.html', icon: 'bot', label: 'Agent Library' },
-                { href: '/strategy120.html', icon: 'brain', label: 'Strategy Agents' },
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },

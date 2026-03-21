@@ -108,7 +108,10 @@ const ALLOWED_DOCS = [
     'embeddable-chat-user-guide.md',
     'embeddable-chat-technical-guide.md',
     // Open Brain (Phase 78)
-    'open-brain-user-guide.md'
+    'open-brain-user-guide.md',
+    // Artifacts (Phase 85)
+    'artifacts-user-guide.md',
+    'artifacts-technical-guide.md'
 ];
 
 /**

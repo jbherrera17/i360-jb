@@ -67,10 +67,6 @@ const HelpRegistry = {
             file: '/api/docs/align120-user-guide.md',
             title: 'Align 120 Help'
         },
-        '/strategy120': {
-            file: '/api/docs/strategy120-user-guide.md',
-            title: 'Strategy 120 Help'
-        },
         '/execute120': {
             file: '/api/docs/execute120-user-guide.md',
             title: 'Execute 120 Help'
@@ -267,6 +263,11 @@ const HelpRegistry = {
         '/support-settings': {
             file: '/api/docs/embeddable-chat-user-guide.md',
             title: 'Embeddable Chat Widget Help'
+        },
+        // Artifacts (Phase 85)
+        '/artifacts': {
+            file: '/api/docs/artifacts-user-guide.md',
+            title: 'Artifacts Help'
         },
         // Open Brain (Phase 78)
         '/open-brain': {

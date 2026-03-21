@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artifacts - Insight 360</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .artifacts-toolbar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .artifacts-search {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .artifacts-search:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .artifacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .artifact-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .artifact-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .artifact-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .artifact-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .artifact-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .artifact-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artifact-source {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .artifact-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .artifact-tags {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .artifact-tag {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .artifact-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .artifact-parts-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: var(--radius-sm);
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Detail modal overrides */
+        .artifact-detail-parts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .part-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+
+        .part-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .part-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .part-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .part-type {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .part-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .markdown-preview {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            border-color: var(--primary);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="archive" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Artifacts
+                    </h1>
+                    <p class="header-subtitle">Browse deliverables from agents, skills, and workflows</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-primary" onclick="showUploadModal()">
+                        <i data-lucide="upload" style="width:16px;height:16px;"></i>
+                        Upload
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+                <!-- Toolbar -->
+                <div class="artifacts-toolbar">
+                    <input type="text" class="artifacts-search" id="searchInput" placeholder="Search artifacts..." oninput="debouncedSearch()">
+                    <div class="filter-chips" id="filterChips">
+                        <button class="filter-chip active" data-filter="" onclick="setFilter('')">All</button>
+                        <button class="filter-chip" data-filter="agent_execution" onclick="setFilter('agent_execution')">Agents</button>
+                        <button class="filter-chip" data-filter="skill_output" onclick="setFilter('skill_output')">Skills</button>
+                        <button class="filter-chip" data-filter="workflow_run" onclick="setFilter('workflow_run')">Workflows</button>
+                        <button class="filter-chip" data-filter="chat" onclick="setFilter('chat')">Chat</button>
+                        <button class="filter-chip" data-filter="manual_upload" onclick="setFilter('manual_upload')">Uploads</button>
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="artifacts-grid" id="artifactsGrid">
+                    <div style="text-align:center;padding:2rem;grid-column:1/-1;"><div class="loading-spinner" style="display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;"></div></div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination" style="display:none;">
+                    <button onclick="changePage(-1)" id="prevBtn" disabled>Previous</button>
+                    <span class="pagination-info" id="pageInfo"></span>
+                    <button onclick="changePage(1)" id="nextBtn">Next</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // State
+        let currentPage = 1;
+        let totalItems = 0;
+        const PAGE_SIZE = 20;
+        let currentFilter = '';
+        let searchQuery = '';
+        let searchTimer = null;
+
+        const SOURCE_ICONS = {
+            agent_execution: 'bot',
+            workflow_run: 'git-branch',
+            skill_output: 'wand-2',
+            chat: 'message-circle',
+            manual_upload: 'upload',
+            api: 'code'
+        };
+
+        const PART_ICONS = {
+            markdown: 'file-text',
+            html: 'globe',
+            json: 'braces',
+            code: 'code',
+            image: 'image',
+            pdf: 'file',
+            spreadsheet: 'table',
+            audio: 'volume-2',
+            video: 'play-circle',
+            csv: 'table',
+            text: 'file-text'
+        };
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof ModalServiceLoader !== 'undefined') await ModalServiceLoader.load();
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Check for ?id= param to open detail
+            const params = new URLSearchParams(window.location.search);
+            const detailId = params.get('id');
+
+            await loadArtifacts();
+
+            if (detailId) {
+                openArtifactDetail(detailId);
+            }
+        });
+
+        // Data loading
+        async function loadArtifacts() {
+            const grid = document.getElementById('artifactsGrid');
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: PAGE_SIZE
+                });
+                if (currentFilter) params.set('source_type', currentFilter);
+                if (searchQuery) params.set('search', searchQuery);
+
+                const res = await authFetch(`/api/artifacts?${params}`);
+                const result = await res.json();
+
+                if (!result.success) throw new Error(result.error);
+
+                totalItems = result.total || 0;
+                renderGrid(result.data || []);
+                renderPagination();
+            } catch (e) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+                    <div class="empty-state-icon"><i data-lucide="archive" style="width:48px;height:48px;"></i></div>
+                    <h3>No artifacts found</h3>
+                    <p>Artifacts are created when agents, skills, or workflows produce deliverables.</p>
+                </div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        function renderGrid(artifacts) {
+            const grid = document.getElementById('artifactsGrid');
+
+            if (!artifacts.length) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+                    <div class="empty-state-icon"><i data-lucide="archive" style="width:48px;height:48px;"></i></div>
+                    <h3>${searchQuery || currentFilter ? 'No matching artifacts' : 'No artifacts yet'}</h3>
+                    <p>${searchQuery || currentFilter ? 'Try adjusting your search or filters.' : 'Artifacts are created when agents, skills, or workflows produce deliverables.'}</p>
+                </div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = artifacts.map(a => `
+                <div class="artifact-card" onclick="openArtifactDetail('${a.id}')">
+                    <div class="artifact-card-header">
+                        <div class="artifact-icon">
+                            <i data-lucide="${SOURCE_ICONS[a.source_type] || 'file'}" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div class="artifact-meta">
+                            <div class="artifact-name">${escapeHTML(a.name)}</div>
+                            <div class="artifact-source">${formatSourceType(a.source_type)}${a.skill_used ? ' &middot; ' + escapeHTML(a.skill_used) : ''}</div>
+                        </div>
+                    </div>
+                    ${a.description ? `<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.4;">${escapeHTML(truncate(a.description, 120))}</div>` : ''}
+                    <div class="artifact-card-footer">
+                        <div class="artifact-tags">
+                            ${(a.tags || []).slice(0, 3).map(t => `<span class="artifact-tag">${escapeHTML(t)}</span>`).join('')}
+                        </div>
+                        <span class="artifact-date">${formatDate(a.created_at)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Detail view
+        async function openArtifactDetail(id) {
+            try {
+                const res = await authFetch(`/api/artifacts/${id}`);
+                const result = await res.json();
+                if (!result.success || !result.data) {
+                    showToast('Artifact not found', 'error');
+                    return;
+                }
+
+                const bundle = result.data;
+                const parts = bundle.parts || [];
+
+                const partsHTML = parts.length ? parts.map(p => `
+                    <div class="part-item">
+                        <div class="part-icon">
+                            <i data-lucide="${PART_ICONS[p.part_type] || 'file'}" style="width:18px;height:18px;"></i>
+                        </div>
+                        <div class="part-info">
+                            <div class="part-name">${escapeHTML(p.name)}</div>
+                            <div class="part-type">${p.part_type}${p.file_size ? ' &middot; ' + formatFileSize(p.file_size) : ''}</div>
+                        </div>
+                        <div class="part-actions">
+                            ${p.content_text ? `<button class="btn btn-sm" onclick="previewPart(${JSON.stringify(p.content_text).replace(/"/g, '&quot;')}, '${escapeHTML(p.name)}')">Preview</button>` : ''}
+                            ${p.file_path ? `<button class="btn btn-sm btn-primary" onclick="downloadPart('${bundle.id}', '${p.id}')">Download</button>` : ''}
+                        </div>
+                    </div>
+                `).join('') : '<p style="color:var(--text-muted);text-align:center;padding:1rem;">No parts in this artifact</p>';
+
+                const content = `
+                    <div style="margin-bottom:1rem;">
+                        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+                            <div class="artifact-icon">
+                                <i data-lucide="${SOURCE_ICONS[bundle.source_type] || 'file'}" style="width:20px;height:20px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.85rem;color:var(--text-muted);">${formatSourceType(bundle.source_type)}${bundle.skill_used ? ' &middot; ' + escapeHTML(bundle.skill_used) : ''}</div>
+                                <div style="font-size:0.8rem;color:var(--text-muted);">${formatDate(bundle.created_at)} &middot; v${bundle.version} &middot; ${bundle.visibility}</div>
+                            </div>
+                        </div>
+                        ${bundle.description ? `<p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.5;margin:0.5rem 0;">${escapeHTML(bundle.description)}</p>` : ''}
+                        ${(bundle.tags || []).length ? `<div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.5rem;">${bundle.tags.map(t => `<span class="artifact-tag">${escapeHTML(t)}</span>`).join('')}</div>` : ''}
+                    </div>
+                    <h4 style="margin:1rem 0 0.5rem;">Parts (${parts.length})</h4>
+                    <div class="artifact-detail-parts">${partsHTML}</div>
+                `;
+
+                // Show first text part as preview if available
+                const firstTextPart = parts.find(p => p.content_text);
+                const previewHTML = firstTextPart ? `
+                    <h4 style="margin:1.5rem 0 0.5rem;">Preview: ${escapeHTML(firstTextPart.name)}</h4>
+                    <div class="markdown-preview">${escapeHTML(firstTextPart.content_text)}</div>
+                ` : '';
+
+                await ModalService.alert({
+                    title: bundle.name,
+                    message: content + previewHTML,
+                    html: true,
+                    size: 'large'
+                });
+
+                // Re-render icons inside modal
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (e) {
+                console.error('Error loading artifact detail:', e);
+                showToast('Failed to load artifact', 'error');
+            }
+        }
+
+        function previewPart(text, name) {
+            ModalService.alert({
+                title: name,
+                message: `<div class="markdown-preview">${escapeHTML(text)}</div>`,
+                html: true,
+                size: 'large'
+            });
+        }
+
+        async function downloadPart(bundleId, partId) {
+            try {
+                const res = await authFetch(`/api/artifacts/${bundleId}/parts/${partId}/download`);
+                const result = await res.json();
+                if (result.success && result.data.url) {
+                    window.open(result.data.url, '_blank');
+                } else {
+                    showToast('Download failed', 'error');
+                }
+            } catch (e) {
+                showToast('Download failed', 'error');
+            }
+        }
+
+        // Upload modal
+        async function showUploadModal() {
+            const result = await ModalService.form({
+                title: 'Upload Artifact',
+                fields: [
+                    { name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'e.g., Q1 Campaign Brief' },
+                    { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Optional description...' },
+                    { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'e.g., marketing, q1, campaign' },
+                    { name: 'visibility', label: 'Visibility', type: 'select', options: [
+                        { value: 'private', label: 'Private (only me)' },
+                        { value: 'team', label: 'Team (my department)' },
+                        { value: 'org', label: 'Organization (everyone)' }
+                    ]}
+                ],
+                submitText: 'Create Artifact'
+            });
+
+            if (!result) return;
+
+            try {
+                const body = {
+                    name: result.name,
+                    description: result.description || null,
+                    source_type: 'manual_upload',
+                    tags: result.tags ? result.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+                    visibility: result.visibility || 'private'
+                };
+
+                const res = await authFetch('/api/artifacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Artifact created', 'success');
+                    currentPage = 1;
+                    await loadArtifacts();
+                } else {
+                    showToast(data.error || 'Failed to create', 'error');
+                }
+            } catch (e) {
+                showToast('Failed to create artifact', 'error');
+            }
+        }
+
+        // Filters
+        function setFilter(filter) {
+            currentFilter = filter;
+            currentPage = 1;
+
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === filter);
+            });
+
+            loadArtifacts();
+        }
+
+        function debouncedSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                searchQuery = document.getElementById('searchInput').value.trim();
+                currentPage = 1;
+                loadArtifacts();
+            }, 300);
+        }
+
+        // Pagination
+        function renderPagination() {
+            const pag = document.getElementById('pagination');
+            const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+
+            if (totalPages <= 1) {
+                pag.style.display = 'none';
+                return;
+            }
+
+            pag.style.display = 'flex';
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${totalItems} artifacts)`;
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            loadArtifacts();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Utilities
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function truncate(str, len) {
+            if (!str || str.length <= len) return str;
+            return str.substring(0, len) + '...';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - d;
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours}h ago`;
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function formatSourceType(type) {
+            const labels = {
+                agent_execution: 'Agent',
+                workflow_run: 'Workflow',
+                skill_output: 'Skill',
+                chat: 'Chat',
+                manual_upload: 'Upload',
+                api: 'API'
+            };
+            return labels[type] || type;
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function showToast(message, type) {
+            // Use global showToast if available
+            if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+                window.showToast(message, type);
+                return;
+            }
+            console.log(`[${type}] ${message}`);
+        }
+    </script>
+</body>
+</html>

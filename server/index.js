@@ -114,8 +114,8 @@ const skillsRoutes = require('./routes/skills');
 const briefingRoutes = require('./routes/briefing');
 const promptsRoutes = require('./routes/prompts');
 const align120Routes = require('./routes/align120');
-const strategy120Routes = require('./routes/strategy120');
 const execute120Routes = require('./routes/execute120');
+const artifactsRoutes = require('./routes/artifacts');
 const authRoutes = require('./routes/auth');
 const onboardingRoutes = require('./routes/onboarding');
 const businessRolesRoutes = require('./routes/business-roles');
@@ -302,7 +302,8 @@ const protectedPages = ['/', '/index.html', '/chat', '/chat.html', '/agents', '/
     '/client-comparison', '/client-comparison.html',
     '/integrations', '/integrations.html',
     '/easy-start', '/easy-start.html',
-    '/digest', '/digest.html', '/digest-sources', '/digest-sources.html'];
+    '/digest', '/digest.html', '/digest-sources', '/digest-sources.html',
+    '/artifacts', '/artifacts.html'];
 
 // Page auth middleware - runs before static file serving
 app.use((req, res, next) => {
@@ -563,8 +564,8 @@ function initializeServices() {
         app.use('/api/briefing', briefingRoutes(supabase));
         app.use('/api/prompts', promptsRoutes(supabase));
         app.use('/api/align120', align120Routes(supabase));
-        app.use('/api/strategy120', strategy120Routes(supabase));
         app.use('/api/execute120', execute120Routes(supabase));
+        app.use('/api/artifacts', artifactsRoutes(supabase));
         const authRouter = authRoutes(supabase);
         app.locals.impersonationStore = authRouter.impersonationStore;
         app.use('/api/auth', authRouter);
@@ -669,8 +670,8 @@ function initializeServices() {
         console.log('  ✅ Briefing routes registered');
         console.log('  ✅ Prompts (Transformer) routes registered');
         console.log('  ✅ Align 120 routes registered');
-        console.log('  ✅ Strategy 120 routes registered');
         console.log('  ✅ Execute 120 routes registered');
+        console.log('  ✅ Artifacts routes registered (Phase 85)');
         console.log('  ✅ Workflows routes registered');
         console.log('  ✅ Tags routes registered (Phase 3.0)');
         console.log('  ✅ Department Roles routes registered (Phase 3.0)');
@@ -802,9 +803,9 @@ app.get('/align120', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/align120.html'));
 });
 
-// Strategy 120 page (Phase 8)
+// Strategy 120 — deprecated, redirect to Execute 120
 app.get('/strategy120', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/strategy120.html'));
+    res.redirect(301, '/execute120.html');
 });
 
 // Guides page (documentation hub)
@@ -909,25 +910,28 @@ function startServer() {
     // Register error handlers AFTER all routes are set up
     registerErrorHandlers();
 
-    // Start listening
-    app.listen(PORT, () => {
-        // Mark service as ready for health checks
-        healthRoutes.markReady();
+    // Start listening IMMEDIATELY — don't wait for async background tasks
+    // (scheduler init, health checks, etc. complete in the background)
+    setImmediate(() => {
+        app.listen(PORT, () => {
+            // Mark service as ready for health checks
+            healthRoutes.markReady();
 
-        logger.info(`Server running at http://localhost:${PORT}`, {
-            port: PORT,
-            environment: process.env.NODE_ENV || 'development',
-            nodeVersion: process.version,
+            logger.info(`Server running at http://localhost:${PORT}`, {
+                port: PORT,
+                environment: process.env.NODE_ENV || 'development',
+                nodeVersion: process.version,
+            });
+            logger.info('Available endpoints:', {
+                dashboard: `http://localhost:${PORT}/`,
+                chat: `http://localhost:${PORT}/chat.html`,
+                metrics: `http://localhost:${PORT}/metrics`,
+                health: `http://localhost:${PORT}/api/health`,
+                healthReady: `http://localhost:${PORT}/api/health/ready`,
+                healthLive: `http://localhost:${PORT}/api/health/live`,
+            });
+            logger.info('========================================');
         });
-        logger.info('Available endpoints:', {
-            dashboard: `http://localhost:${PORT}/`,
-            chat: `http://localhost:${PORT}/chat.html`,
-            metrics: `http://localhost:${PORT}/metrics`,
-            health: `http://localhost:${PORT}/api/health`,
-            healthReady: `http://localhost:${PORT}/api/health/ready`,
-            healthLive: `http://localhost:${PORT}/api/health/live`,
-        });
-        logger.info('========================================');
     });
 }
 
