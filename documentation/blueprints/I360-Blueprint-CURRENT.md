@@ -1,29 +1,65 @@
-# Insight 360 Blueprint v3.81
+# Insight 360 Blueprint v3.85
 
-**Version:** 3.81
-**Date:** March 19, 2026
-**Status:** Current | Phase 81
+**Version:** 3.85
+**Date:** March 21, 2026
+**Status:** Current | Phase 85
 **Codename:** Chronicle
-**Previous Version:** v3.80.1 (LLM Health Monitoring + Billing Error Fix)
-**Latest Update:** Phase 81: Infrastructure Integrity Remediation
+**Previous Version:** v3.82 (Multi-Tenant Data Isolation)
+**Latest Update:** Phase 85: Artifact System + Strategy 120 Deprecation
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.81 delivers **Phase 81** — a comprehensive multi-tenant security hardening pass across all five core feature modules (Agents, Skills, Actions, Workflows, Parthenon). All pre-Phase 44 features now have proper module gating via `requireModule()` middleware, ownership/org checks on single-record endpoints, `authFetch()` on all frontend API calls, and corrected database views and schema gaps. System resources are backfilled with org_id to ensure org-scoped queries include them.
-
-The system combines two detection mechanisms: 5-minute interval health pings and instant circuit breaker state change bridging from real user traffic. An SSE health stream pushes status changes to all connected frontends, enabling model dropdowns to gray out unavailable providers in real time.
+Insight 360 v3.85 delivers **Phase 85** — the Artifact System for persistent storage of agent, skill, and workflow deliverables, plus the deprecation of Strategy 120 (superseded by Execute 120 and Claude Code skills).
 
 Key deliverables:
-1. **In-Memory Health Cache** — `modelAvailabilityService` maintains per-provider status with EventEmitter for instant broadcast
-2. **Circuit Breaker Bridge** — Provider circuit breakers push state changes to the health cache instantly
-3. **Fallback Resolution** — 22-model fallback map with `resolveModelWithFallback()` at all 5 chat/agent dispatch points
-4. **SSE Health Stream** — `GET /api/health/stream` pushes status changes to frontends in real time
-5. **Frontend Health Module** — `llm-health.js` provides `window.LLMHealth` API, dropdown graying, and toast notifications
-6. **Perplexity Exception** — Unique search capability means no fallback; returns clear 503 message
+1. **Artifact Bundles** — Parent containers with source tracking, versioning, generation metadata, visibility controls
+2. **Compound Parts** — Multiple content pieces per bundle: markdown, images, PDFs, spreadsheets, code, audio/video
+3. **Supabase Storage** — Binary files stored with signed download URLs (1-hour expiry)
+4. **Full Browse UI** — `artifacts.html` with search, filter chips, card grid, detail modal, pagination
+5. **Execute 120 Integration** — "My Artifacts" card showing 5 most recent deliverables
+6. **Strategy 120 Deprecated** — Nav removed, page redirects to Execute 120, module deactivated
+7. **18 New Tests** — 10 unit (artifactService) + 8 integration (routes)
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 85: What Was Completed
+
+### 1. Artifact System (New Module)
+
+Two new tables with full multi-tenant isolation:
+
+| Table | Key Columns | Purpose |
+|-------|------------|---------|
+| `artifact_bundles` | org_id, user_id, source_type, tags[], visibility, version, is_current | Parent container for deliverables |
+| `artifact_parts` | bundle_id, part_type, content_text, content_json, file_path, file_size | Child content with dual storage (inline + Storage) |
+
+10 REST API endpoints at `/api/artifacts/*` with `requireOrgContext` + `requireModule('artifacts')`:
+- CRUD: list (paginated), get, create, update, delete
+- Parts: add text part, upload binary (multer, 50MB), signed download URL
+- Versioning: create new version (clone + increment)
+
+### 2. Strategy 120 Deprecation
+
+| Change | Detail |
+|--------|--------|
+| Navigation | Removed from sidebar (static + dynamic) |
+| Page | Replaced with meta-refresh redirect to `/execute120.html` |
+| Module | `platform_modules.is_active = false` for `strategy_agents` |
+| Execute 120 | Strategy overview card and CSS removed |
+| Route file | `server/routes/strategy120.js` preserved (no user data) |
+| Server route | `GET /strategy120` returns 301 redirect |
+
+### 3. Execute 120 Integration
+
+"My Artifacts" card added after Quick Actions, showing 5 most recent artifacts with source type icons and "View All" link to `/artifacts.html`.
+
+### 4. Documentation Chain
+
+User guide, technical guide, help registry entry, docs whitelist — all complete.
 
 ---
 
@@ -590,7 +626,27 @@ Comprehensive product requirements document for embedding Annie (Dr. Jon Mendels
 
 ---
 
-## Files Modified/Created
+## Files Modified/Created (Phase 85)
+
+| File | Changes |
+|------|---------|
+| `db/phase85-artifact-system.sql` | Tables, indexes, RLS, triggers, module registration, strategy120 deactivation |
+| `server/services/artifactService.js` | CRUD + storage service (factory pattern) |
+| `server/routes/artifacts.js` | 10 REST endpoints with multer upload |
+| `server/index.js` | Route wiring, strategy120 removal, artifacts registration |
+| `public/artifacts.html` | Full browse/search/preview/upload page |
+| `public/execute120.html` | My Artifacts card, strategy card removal |
+| `public/strategy120.html` | Redirect to Execute 120 |
+| `public/js/navigation.js` | Strategy120 nav entry removed |
+| `public/js/help-registry.js` | Strategy120 removed, artifacts added |
+| `server/routes/docs.js` | Artifacts guides added to whitelist |
+| `__tests__/setup/testApp.js` | Artifacts route registration |
+| `__tests__/unit/services/artifactService.test.js` | 10 unit tests |
+| `__tests__/integration/routes/artifacts.test.js` | 8 integration tests |
+| `documentation/guides/artifacts-user-guide.md` | User documentation |
+| `documentation/guides/artifacts-technical-guide.md` | Technical documentation |
+
+## Files Modified/Created (Phase 72-82)
 
 | File | Changes |
 |------|---------|
@@ -622,8 +678,8 @@ Comprehensive product requirements document for embedding Annie (Dr. Jon Mendels
 | Architecture | 10/10 | Complete multi-tenant + values hierarchy + add-on purchasing |
 | Security | 10/10 | SSRF + invite token + prompt injection + PKCE + cookie auth |
 | Database | 10/10 | 119+ tables, Phase 67/68 migrations applied |
-| Testing | 9.8/10 | 666+ automated tests, new unified runtime tests |
-| Documentation | 10/10 | 34+ user guides, PM team exec summary, Annie PRD |
+| Testing | 9.8/10 | 684+ automated tests, artifact system tests added |
+| Documentation | 10/10 | 36+ user guides, PM team exec summary, Annie PRD |
 | Navigation | 10/10 | **Fixed** — org_id fallback + empty modules guard |
 | Auth | 10/10 | **Fixed** — cookie auth, org membership fallback, structured roles |
 | Agent/Skills Access | 10/10 | **Fixed** — duplicate `.or()` filter removed |
