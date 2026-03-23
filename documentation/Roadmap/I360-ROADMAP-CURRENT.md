@@ -2,15 +2,15 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 3.82
-**Last Updated:** March 19, 2026
-**Current System Version:** v3.82 (Phase 82)
+**Version:** 3.86
+**Last Updated:** March 22, 2026
+**Current System Version:** v3.86 (Phase 86)
 
 ---
 
 ## Executive Summary
 
-Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, a **workflow-first thought leadership content engine**, and a **58-agent AI workforce** organized across 7 department teams plus cross-functional support. Version 3.82 completes platform-wide multi-tenant data isolation with 500+ authFetch migrations, requireOrgContext middleware, scopeToOrg query hardening, and an ESLint prevention rule that structurally blocks cross-org data leakage from recurring.
+Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant organizations with subscription tiers, module-based feature access, per-user resource visibility, complete user lifecycle management, agency capabilities, external integrations, a comprehensive **Human Values Definition System**, **AI-powered customer support**, a **PM agent team** for structured product governance, a **workflow-first thought leadership content engine**, a **persistent Artifact System** for agent/skill/workflow deliverables, and a **58-agent AI workforce** organized across 7 department teams plus cross-functional support. Version 3.85 adds the Artifact System for compound deliverable persistence and deprecates Strategy 120 in favor of Execute 120 and Claude Code skills.
 
 **Current Production Readiness Score: 10.0/10** *(v3.80)*
 
@@ -42,7 +42,40 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 
 ---
 
-## What's New in v3.82
+## What's New in v3.86
+
+### Phase 86: Agent Library UX Overhaul + Context Route Isolation
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| `agents.html` rewrite | 2-panel master-detail, tabbed modal (Settings/Context/History), keyboard nav | 46% code reduction, unified edit experience |
+| `agents.css` (new) | Extracted page styles from inline | Maintainability, theme consistency |
+| Context route isolation | Factory pattern + `scopeToOrg()` on `/api/context/assets` | Platform admins scoped to org, no cross-org leakage |
+| XSS hardening | `escapeHtml()` on asset names in 5 rendering paths | Closes pre-existing injection vector |
+| `chat.js` production fix | `await initNavigation()` before `loadModels()` | Models load correctly on production |
+| Playwright tests (17) | E2E coverage: layout, CRUD, tabs, keyboard, org-scoping, dialogs | Regression protection |
+
+---
+
+## What Was New in v3.85
+
+### Phase 85: Artifact System + Strategy 120 Deprecation
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| `artifact_bundles` table | Parent container with source tracking, versioning, generation metadata | Persistent storage for all AI deliverables |
+| `artifact_parts` table | Child content pieces with dual storage (inline text + Supabase Storage) | Compound artifacts: text + images + files in one bundle |
+| `artifactService.js` | Service layer: createBundle, uploadPart, versioning, signed downloads | Programmatic API for agents/workflows/skills |
+| `artifacts.js` routes | 10 REST endpoints with requireOrgContext + requireModule | Full CRUD + file upload (50MB) + signed download URLs |
+| `artifacts.html` | Browse page with search, filter chips, card grid, detail modal, pagination | Full artifact management UI |
+| Execute 120 integration | "My Artifacts" card showing 5 most recent deliverables | Quick access from command center |
+| Strategy 120 deprecated | Nav removed, page redirects to Execute 120, module deactivated | Superseded by Execute 120 + Claude Code skills |
+| Documentation chain | User guide, technical guide, help registry, docs whitelist | Complete help system integration |
+| Tests | 10 unit + 8 integration (18 total) | Service + route coverage |
+
+---
+
+## What Was New in v3.82
 
 ### Phase 82: Platform-Wide Multi-Tenant Data Isolation
 
@@ -262,6 +295,7 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 | 67-68 | — | Digest discovery, unified runtime, tags org-scoping | Done |
 | 70 | v3.70 | Role architecture streamlining | Done |
 | 71 | v3.71 | Customer Support Agent System | Done |
+| **85** | **v3.85** | **Artifact System + Strategy 120 Deprecation** | **Done** |
 | **79** | **v3.79** | **Platform Admin Org Scope + Org Chart Updates** | **Done** |
 | 78 | v3.78 | Context Asset Remediation + Open Brain + Marketing Skills | Done |
 | 77 | v3.77 | TL Page UX Redesign — Two-Mode Workflow Cockpit | Done |
@@ -275,7 +309,7 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 
 ---
 
-## Test Coverage Summary: 666+ Tests (100% Passing)
+## Test Coverage Summary: 684+ Tests (100% Passing)
 
 **Unit:** soulConfig (30), ethicalContext (37), moduleAccess (24), gemini (29), llmRegistry (72), validate (59), observability (28), MCP services, supportPolicy (16), supportAgent (15), runtimeProfileRouter (new), unifiedRuntime (new)
 

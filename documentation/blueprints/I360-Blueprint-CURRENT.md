@@ -1,28 +1,67 @@
-# Insight 360 Blueprint v3.85
+# Insight 360 Blueprint v3.86
 
-**Version:** 3.85
-**Date:** March 21, 2026
-**Status:** Current | Phase 85
+**Version:** 3.86
+**Date:** March 22, 2026
+**Status:** Current | Phase 86
 **Codename:** Chronicle
-**Previous Version:** v3.82 (Multi-Tenant Data Isolation)
-**Latest Update:** Phase 85: Artifact System + Strategy 120 Deprecation
+**Previous Version:** v3.85 (Artifact System)
+**Latest Update:** Phase 86: Agent Library UX Overhaul + Context Route Isolation
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.85 delivers **Phase 85** — the Artifact System for persistent storage of agent, skill, and workflow deliverables, plus the deprecation of Strategy 120 (superseded by Execute 120 and Claude Code skills).
+Insight 360 v3.86 delivers **Phase 86** — a complete Agent Library UI/UX overhaul with tenant isolation hardening on the context assets API and a critical production fix for chat.js model loading.
 
 Key deliverables:
-1. **Artifact Bundles** — Parent containers with source tracking, versioning, generation metadata, visibility controls
-2. **Compound Parts** — Multiple content pieces per bundle: markdown, images, PDFs, spreadsheets, code, audio/video
-3. **Supabase Storage** — Binary files stored with signed download URLs (1-hour expiry)
-4. **Full Browse UI** — `artifacts.html` with search, filter chips, card grid, detail modal, pagination
-5. **Execute 120 Integration** — "My Artifacts" card showing 5 most recent deliverables
-6. **Strategy 120 Deprecated** — Nav removed, page redirects to Execute 120, module deactivated
-7. **18 New Tests** — 10 unit (artifactService) + 8 integration (routes)
+1. **Agent Library Redesign** — 2-panel master-detail layout replacing 3-panel, tabbed edit modal (Settings | Context | History)
+2. **Context Route Isolation** — Factory pattern + scopeToOrg() replaces unsafe .or() cross-org patterns
+3. **XSS Hardening** — escapeHtml() on all unescaped asset names in rendering paths
+4. **Chat.js Production Fix** — authFetch race condition resolved (models not loading)
+5. **17 Playwright Tests** — Full E2E coverage for Agent Library including org-scoped context verification
+6. **CSS Extraction** — 2150 lines of inline styles moved to `/css/agents.css`
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 86: What Was Completed
+
+### 1. Agent Library UI/UX Overhaul
+
+Complete redesign of `agents.html` from 4511 to 2432 lines (46% reduction):
+
+| Change | Before | After |
+|--------|--------|-------|
+| Layout | 3-panel (list + empty center + narrow sidebar) | 2-panel master-detail |
+| CSS | 2150 lines inline | Extracted to `/css/agents.css` |
+| Edit modal | Single form, context mappings in separate modal | Tabbed: Settings, Context, History |
+| Card actions | Always visible, 4 full-width buttons | Hover-to-reveal icon buttons |
+| Agent descriptions | Not shown in list | 1-line truncated snippet |
+| Filters | 5 dropdowns + platform chips | Search hero + 2 primary + collapsible advanced |
+| Keyboard | None | Arrows, Enter, Esc, /, N, E |
+| Dialogs | Browser confirm/prompt | ModalService.confirm/form |
+| Icons | Emoji in empty states | Lucide icons |
+
+### 2. Context Route Tenant Isolation
+
+`server/routes/context.js` converted to factory pattern with org scoping:
+- `scopeToOrg()` replaces `.or(org_id.eq.${orgId},org_id.is.null)` anti-pattern
+- Platform admins scoped to their org on normal endpoints
+- Lightweight middleware sets `req.verifiedOrgId` from `x-org-id` header
+- `GET /assets/:id` validates org ownership
+
+### 3. XSS Hardening
+
+`escapeHtml()` applied to `asset.name`, `asset.icon`, `asset.asset_type`, `mapping.injection_mode`, and `categoryLabel` across 5 rendering paths.
+
+### 4. Critical Production Fix
+
+`chat.js` now awaits `initNavigation()` before calling `loadModels()`, fixing the authFetch race condition that prevented models from loading on production.
+
+### 5. Testing
+
+17 Playwright E2E tests covering layout, CRUD, tabbed modal, keyboard nav, org-scoped context, filter/search, and ModalService dialogs.
 
 ---
 
