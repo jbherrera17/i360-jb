@@ -733,9 +733,9 @@ app.use('/api/docs', docsRoutes);
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
 
-// Context Assets routes (Phase 3)
+// Context Assets routes (Phase 3 + Phase 82 org isolation)
 try {
-    const contextRoutes = require('./routes/context');
+    const contextRoutes = require('./routes/context')(supabase);
     app.use('/api/context', contextRoutes);
     console.log('📦 Context Assets routes loaded');
 } catch (error) {

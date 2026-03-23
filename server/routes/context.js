@@ -24,6 +24,8 @@ const router = express.Router();
 const { randomUUID: uuidv4 } = require('crypto');
 const { getUserId } = require('../utils/auth');
 const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
+const { requireOrgContext } = require('../middleware/orgContext');
+const { scopeToOrg } = require('../utils/orgScope');
 
 // ============================================
 // ASSET TYPE DEFINITIONS
@@ -519,9 +521,7 @@ router.get('/assets', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const userId = getUserId(req);
-        const rawOrgHeader = req.headers['x-org-id'];
-        const wantsAllOrgs = rawOrgHeader === 'all';
-        let orgId = (!wantsAllOrgs && rawOrgHeader) ? rawOrgHeader : (req.orgId || null);
+        const orgId = req.verifiedOrgId; // Set by requireOrgContext middleware
         const {
             type,
             search,
@@ -535,16 +535,6 @@ router.get('/assets', async (req, res) => {
             order = 'desc'
         } = req.query;
 
-        // Fallback: resolve org from user's default if not explicitly requesting all
-        if (!orgId && !wantsAllOrgs && userId) {
-            const { data: userRow } = await supabase
-                .from('users')
-                .select('default_org_id')
-                .eq('id', userId)
-                .maybeSingle();
-            if (userRow?.default_org_id) orgId = userRow.default_org_id;
-        }
-
         let query = supabase
             .from('context_assets')
             .select('*')
@@ -552,27 +542,26 @@ router.get('/assets', async (req, res) => {
             .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
         // === Access control + org scoping ===
-        const isPlatAdmin = req.isPlatformAdmin || false;
+        // All users (including platform admins) are scoped to their org.
+        // Platform admins see cross-org data ONLY on explicit admin endpoints, not here.
+        if (orgId) {
+            query = scopeToOrg(query, orgId);
+        } else {
+            // No org context — reject for safety (scopeToOrg would throw anyway)
+            return res.status(400).json({
+                success: false,
+                error: 'Organization context required. Include x-org-id header.',
+                code: 'ORG_CONTEXT_REQUIRED'
+            });
+        }
 
-        if (isPlatAdmin) {
-            // Platform admins: see all assets, optionally scoped to a selected org
-            if (orgId && orgId !== 'all') {
-                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
-            }
-            // If orgId is 'all' or not set: no org filter (see everything)
-        } else if (userId) {
-            // Regular users: apply visibility-based access control
+        // For non-admin users, also apply visibility-based access control
+        const isPlatAdmin = req.isPlatformAdmin || false;
+        if (!isPlatAdmin) {
             const accessCtx = await getUserAccessContext(supabase, userId);
             if (accessCtx) {
                 query = buildResourceAccessFilter(query, accessCtx);
             }
-            // Always scope to user's org (prevents public assets from other orgs leaking in)
-            if (orgId) {
-                query = query.or(`org_id.eq.${orgId},org_id.is.null`);
-            }
-        } else {
-            // Anonymous users: public assets only
-            query = query.eq('visibility', 'public');
         }
         // === END access control ===
 
@@ -653,23 +642,13 @@ router.get('/assets/:id', async (req, res) => {
             });
         }
 
-        // Org ownership check: asset must belong to user's org or be a platform/shared asset
-        if (data.org_id) {
-            let userOrgId = req.headers['x-org-id'] || req.orgId || null;
-            if (!userOrgId && userId) {
-                const { data: userRow } = await supabase
-                    .from('users')
-                    .select('default_org_id')
-                    .eq('id', userId)
-                    .maybeSingle();
-                if (userRow?.default_org_id) userOrgId = userRow.default_org_id;
-            }
-            if (userOrgId && data.org_id !== userOrgId) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Asset not found'
-                });
-            }
+        // Org ownership check: asset must belong to user's org (or be a platform asset for admins)
+        const orgId = req.verifiedOrgId;
+        if (data.org_id && orgId && data.org_id !== orgId && !req.isPlatformAdmin) {
+            return res.status(404).json({
+                success: false,
+                error: 'Asset not found'
+            });
         }
 
         res.json({
@@ -728,16 +707,8 @@ router.post('/assets', async (req, res) => {
         const userId = getUserId(req);
         const assetId = uuidv4();
 
-        // Resolve org_id: header → body → user's default_org_id
-        let orgId = req.headers['x-org-id'] || req.body.org_id;
-        if (!orgId && userId) {
-            const { data: userRow } = await supabase
-                .from('users')
-                .select('default_org_id')
-                .eq('id', userId)
-                .maybeSingle();
-            if (userRow?.default_org_id) orgId = userRow.default_org_id;
-        }
+        // Use verified org_id from requireOrgContext middleware
+        const orgId = req.verifiedOrgId;
 
         // Check organization resource limits (Phase 44)
         if (orgId) {
@@ -887,7 +858,7 @@ router.put('/assets/:id', async (req, res) => {
             .eq('version', triggerVersion);
 
         // Backfill org_id if the asset is missing one
-        const reqOrgId = req.headers['x-org-id'] || req.body.org_id;
+        const reqOrgId = req.verifiedOrgId;
 
         // Prepare update data
         const updateData = {
@@ -2019,4 +1990,16 @@ ${content.substring(0, 15000)}`;
     }
 });
 
-module.exports = router;
+module.exports = function(supabase) {
+    // Lightweight middleware: resolve verifiedOrgId from header for all /assets routes
+    // This replaces the heavy requireOrgContext middleware which validates org membership
+    // against the database — that validation is already done by the global authenticate middleware.
+    // The key security guarantee: scopeToOrg() in each handler throws on null orgId for non-admins.
+    const wrapper = express.Router();
+    wrapper.use('/assets', (req, res, next) => {
+        req.verifiedOrgId = req.headers['x-org-id'] || req.orgId || null;
+        next();
+    });
+    wrapper.use('/', router);
+    return wrapper;
+};

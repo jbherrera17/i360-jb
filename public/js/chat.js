@@ -5,7 +5,7 @@
  */
 
 // State
-let currentModel = 'claude-sonnet-4-5-20250929';
+let currentModel = 'claude-sonnet-4-6';
 let conversationHistory = [];
 let isStreaming = false;
 let attachedFiles = [];
@@ -216,6 +216,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+
+    // Ensure authFetch is available before making API calls
+    if (typeof initNavigation === 'function') await initNavigation();
 
     // Load available models
     await loadModels();

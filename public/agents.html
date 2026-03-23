@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Registry | Insight 360</title>
+    <title>Agent Library | Insight 360</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -11,2151 +11,23 @@
     <link rel="stylesheet" href="/css/help-modal.css">
     <link rel="stylesheet" href="/css/agent-dialog.css">
     <link rel="stylesheet" href="/css/usage-nudge.css">
+    <link rel="stylesheet" href="/css/agents.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/llm-health.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root {
-            /* Light Mode (default) */
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f7;
-            --bg-tertiary: #e8e8ed;
-            --bg-hover: #f0f0f5;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-muted: #aeaeb2;
-            --border: #d2d2d7;
-            --border-light: #e5e5ea;
-            
-            /* Brand Colors */
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            
-            /* Platform Colors */
-            --mindstudio: #6366f1;
-            --pickaxe: #f59e0b;
-            --native: #10b981;
-            --api: #8b5cf6;
-            
-            /* Gradients */
-            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            
-            /* Shadows */
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-            
-            /* Layout */
-            --nav-height: 60px;
-            --sidebar-width: 260px;
-
-            /* Spacing */
-            --spacing-xs: 0.25rem;
-            --spacing-sm: 0.5rem;
-            --spacing-md: 1rem;
-            --spacing-lg: 1.5rem;
-            --spacing-xl: 2rem;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #0f0f1a;
-            --bg-secondary: #1a1a2e;
-            --bg-tertiary: #252540;
-            --bg-hover: #2a2a45;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0b0;
-            --text-muted: #6b6b80;
-            --border: #2a2a40;
-            --border-light: #353550;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        /* Agent Layout - Two panel design with toolbar */
-        .agent-layout {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* Horizontal Filter Toolbar - Two rows */
-        .filter-toolbar {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-            padding: var(--spacing-lg) var(--spacing-xl);
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-
-        .toolbar-row {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-
-        .toolbar-stats {
-            display: flex;
-            gap: var(--spacing-sm);
-        }
-
-        .toolbar-stat {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            padding: 0.4rem 0.75rem;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            font-size: 0.85rem;
-        }
-
-        .toolbar-stat-value {
-            font-family: var(--font-heading);
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .toolbar-stat-label {
-            color: var(--text-secondary);
-        }
-
-        .toolbar-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            padding: 0.4rem 0.75rem;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            user-select: none;
-        }
-
-        .toolbar-toggle input {
-            display: none;
-        }
-
-        .toggle-slider {
-            position: relative;
-            width: 32px;
-            height: 18px;
-            background: var(--text-muted);
-            border-radius: 9px;
-            transition: background 0.2s;
-        }
-
-        .toggle-slider::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 14px;
-            height: 14px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.2s;
-        }
-
-        .toolbar-toggle input:checked + .toggle-slider {
-            background: var(--primary);
-        }
-
-        .toolbar-toggle input:checked + .toggle-slider::after {
-            transform: translateX(14px);
-        }
-
-        .toggle-text {
-            color: var(--text-secondary);
-            white-space: nowrap;
-        }
-
-        .toolbar-chips {
-            display: flex;
-            gap: var(--spacing-sm);
-        }
-
-        .toolbar-chip {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            padding: 0.4rem 0.75rem;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .toolbar-chip:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .toolbar-chip i {
-            width: 14px;
-            height: 14px;
-        }
-
-        .toolbar-filters {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex: 1;
-        }
-
-        .toolbar-filter {
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.875rem;
-            cursor: pointer;
-            min-width: 130px;
-        }
-
-        .toolbar-filter:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .toolbar-actions {
-            margin-left: auto;
-        }
-
-        .toolbar-search {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
-        .toolbar-search i {
-            color: var(--text-muted);
-            width: 20px;
-            height: 20px;
-        }
-
-        .toolbar-search input {
-            width: 200px;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
-
-        .toolbar-search input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        /* Two Panel Content Area */
-        .panels-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            padding: var(--spacing-lg);
-            gap: var(--spacing-lg);
-            background: var(--bg-primary);
-        }
-
-        /* Navigation Sidebar (injected by navigation.js) */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-        }
-
-        .logo-image {
-            height: 32px;
-            width: auto;
-        }
-
-        .logo-text {
-            font-family: var(--font-heading);
-            font-size: 1.1rem;
-            font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .sidebar-nav {
-            padding: 1rem;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            margin-bottom: 0.25rem;
-            transition: all 0.15s;
-        }
-
-        .nav-item:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .nav-item i {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
-
-        /* Navigation Sections */
-        .nav-section {
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-primary {
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 0.5rem;
-        }
-
-        /* Navigation Groups (Collapsible) */
-        .nav-group {
-            margin-bottom: 0.25rem;
-        }
-
-        .nav-group-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.25rem 0.75rem;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .nav-group-header:hover {
-            background: var(--bg-hover);
-            color: var(--text-secondary);
-        }
-
-        .nav-group-header .group-icon {
-            width: 16px;
-            height: 16px;
-            opacity: 0.7;
-        }
-
-        .nav-group-header .group-label {
-            flex: 1;
-            text-align: left;
-        }
-
-        .nav-group-header .group-chevron {
-            width: 14px;
-            height: 14px;
-            transition: transform 0.15s;
-        }
-
-        .nav-group.collapsed .group-chevron {
-            transform: rotate(-90deg);
-        }
-
-        .nav-group-items {
-            overflow: hidden;
-            max-height: 500px;
-            transition: max-height 0.2s ease-out, opacity 0.2s ease-out;
-            padding-left: 0.5rem;
-        }
-
-        .nav-group.collapsed .nav-group-items {
-            max-height: 0;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .nav-group-items .nav-item {
-            font-size: 0.9rem;
-            padding: 0.25rem 0.75rem;
-        }
-
-        /* Sidebar Footer */
-        .sidebar-footer {
-            padding: 1rem;
-            border-top: 1px solid var(--border);
-            margin-top: auto;
-        }
-
-        .sidebar-footer .nav-item {
-            margin-bottom: 0;
-        }
-
-        .sidebar-footer .theme-toggle {
-            width: 100%;
-            justify-content: flex-start;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: inherit;
-        }
-
-        /* Filter Panel - REMOVED, now using toolbar */
-        .filter-panel {
-            display: none;
-        }
-
-        .sidebar-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar-title {
-            font-family: var(--font-heading);
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filter-group {
-            margin-bottom: 1rem;
-        }
-
-        .filter-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .filter-select {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.625rem 0.875rem;
-            padding-left: 2.5rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .search-wrapper {
-            position: relative;
-        }
-
-        .search-wrapper i {
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            width: 18px;
-            height: 18px;
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-card {
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            padding: 0.875rem;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-family: var(--font-heading);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-        }
-
-        /* Content Area */
-        .content {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* Agent List - Card-based layout */
-        .agent-list {
-            flex: 3;
-            min-width: 600px;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .agent-items {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-md);
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        /* list-header removed - now using toolbar */
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-hover);
-        }
-
-        .btn-icon {
-            padding: 0.5rem;
-        }
-
-        .agent-item {
-            padding: var(--spacing-lg);
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
-        }
-
-        .agent-item:hover {
-            border-color: var(--primary);
-            box-shadow: var(--shadow-md);
-        }
-
-        .agent-item.selected {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-
-        .agent-card-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: var(--spacing-md);
-        }
-
-        .agent-card-title {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
-        .agent-icon {
-            font-size: 1.5rem;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            flex-shrink: 0;
-        }
-
-        .agent-name {
-            font-weight: 600;
-            font-size: 1rem;
-            color: var(--text-primary);
-        }
-
-        .agent-card-actions {
-            display: flex;
-            gap: var(--spacing-xs);
-            flex-shrink: 0;
-        }
-
-        .agent-card-actions .btn {
-            padding: 0.4rem 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .agent-card-actions .btn-icon {
-            padding: 0.4rem;
-        }
-
-        .agent-card-actions .btn i {
-            width: 14px;
-            height: 14px;
-        }
-
-        .agent-meta {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .agent-meta-row {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xs);
-        }
-
-        .agent-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-        }
-
-        .agent-meta-item i {
-            width: 14px;
-            height: 14px;
-            opacity: 0.7;
-        }
-
-        .platform-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .platform-badge.mindstudio {
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--mindstudio);
-        }
-
-        .platform-badge.pickaxe {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--pickaxe);
-        }
-
-        .platform-badge.native {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--native);
-        }
-
-        .platform-badge.api {
-            background: rgba(139, 92, 246, 0.15);
-            color: var(--api);
-        }
-
-        .platform-badge.anthropic {
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--primary);
-        }
-
-        .platform-badge.openai {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-        }
-
-        .status-badge.inactive {
-            background: rgba(110, 110, 115, 0.15);
-            color: var(--text-muted);
-        }
-
-        .status-badge {
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .status-badge.active {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-        }
-
-        .status-badge.draft {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
-        }
-
-        .status-badge.archived {
-            background: rgba(110, 110, 115, 0.15);
-            color: var(--text-muted);
-        }
-
-        .suite-badge {
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--primary);
-        }
-
-        .suite-badge.align {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-        }
-
-        .suite-badge.strategy {
-            background: rgba(139, 92, 246, 0.15);
-            color: #8b5cf6;
-        }
-
-        .suite-badge.execute {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
-        }
-
-        .category-badge {
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: rgba(110, 110, 115, 0.15);
-            color: var(--text-secondary);
-        }
-
-        .agent-usage {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        /* Resize Handle */
-        .resize-handle {
-            position: absolute;
-            right: -3px;
-            top: 0;
-            bottom: 0;
-            width: 6px;
-            cursor: col-resize;
-            background: transparent;
-            z-index: 10;
-            transition: background 0.2s;
-        }
-
-        .resize-handle:hover,
-        .resize-handle.active {
-            background: var(--primary);
-        }
-
-        /* Center Panel - Detail/Editor Area */
-        .detail-panel {
-            flex: 1;
-            min-width: 400px;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-primary);
-            overflow: hidden;
-        }
-
-        /* Detail Content Wrapper - contains header and main content */
-        .detail-content-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            min-width: 0;
-        }
-
-        /* Detail Body - scrollable content area below header */
-        .detail-body {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        /* Agent Detail container - flex column layout now (no sidebar) */
-        #agentDetail {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Right Panel - Details */
-        .details-panel {
-            flex: 1;
-            min-width: 300px;
-            max-width: 380px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .details-panel .panel-header {
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-bottom: 1px solid var(--border);
-            background: var(--bg-tertiary);
-            border-radius: 12px 12px 0 0;
-        }
-
-        .details-panel .panel-header h2 {
-            font-family: var(--font-heading);
-            font-size: 1rem;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
-        .details-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-lg);
-        }
-
-        .details-placeholder {
-            color: var(--text-muted);
-            font-style: italic;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        /* Details Panel Resize Handle - on left side */
-        .details-resize-handle {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 6px;
-            cursor: col-resize;
-            background: transparent;
-            z-index: 10;
-            transition: background 0.2s;
-        }
-
-        .details-resize-handle:hover,
-        .details-resize-handle.active {
-            background: var(--primary);
-        }
-
-        /* Sidebar sections (used in details panel) */
-        .sidebar-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar-title {
-            font-family: var(--font-heading);
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .details-panel .info-grid {
-            gap: var(--spacing-sm);
-        }
-
-        .details-panel .info-item {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: var(--spacing-md);
-            text-align: center;
-        }
-
-        .detail-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg-secondary);
-        }
-
-        .detail-header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .detail-title {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .detail-title-icon {
-            font-size: 2.5rem;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-tertiary);
-            border-radius: 14px;
-        }
-
-        .detail-title-info h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .detail-title-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .detail-title p {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .detail-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }
-
-        .btn-run {
-            background: var(--gradient-primary);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-        }
-
-        .btn-run:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .detail-description {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        .detail-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .detail-card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .detail-card-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-tertiary);
-        }
-
-        .detail-card-title {
-            font-family: var(--font-heading);
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .detail-card-content {
-            padding: 1rem 1.25rem;
-        }
-
-        .detail-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .detail-section-title {
-            font-family: var(--font-heading);
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.75rem;
-        }
-
-        .info-item {
-            background: var(--bg-secondary);
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .info-label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .info-value {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-        }
-
-        /* Context Mappings */
-        .context-mappings {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .mapping-header {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-tertiary);
-        }
-
-        .mapping-header h4 {
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .mapping-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .mapping-item {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .mapping-item:last-child {
-            border-bottom: none;
-        }
-
-        .mapping-priority {
-            font-family: var(--font-heading);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            width: 24px;
-            text-align: center;
-        }
-
-        .mapping-icon {
-            font-size: 1.25rem;
-        }
-
-        .mapping-info {
-            flex: 1;
-        }
-
-        .mapping-name {
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .mapping-type {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .mapping-mode {
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .mapping-mode.always {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-        }
-
-        .mapping-mode.on_demand {
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--info);
-        }
-
-        .mapping-mode.conditional {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
-        }
-
-        .mapping-actions {
-            display: flex;
-            gap: 0.25rem;
-        }
-
-        .mapping-actions button {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 4px;
-        }
-
-        .mapping-actions button:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        /* Detail Panel Empty State - matches context.html style */
-        .detail-empty-state {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-primary);
-        }
-
-        .detail-empty-state .empty-state-content {
-            text-align: center;
-            padding: 3rem;
-        }
-
-        .detail-empty-state .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            opacity: 0.8;
-        }
-
-        .detail-empty-state h3 {
-            font-family: var(--font-heading);
-            font-size: 1.25rem;
-            color: var(--text-primary);
-            margin-bottom: 0.75rem;
-        }
-
-        .detail-empty-state p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            max-width: 320px;
-            margin: 0 auto 1.5rem auto;
-            line-height: 1.6;
-        }
-
-        /* Small Empty States (for sidebar sections) */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            text-align: center;
-            color: var(--text-muted);
-        }
-
-        .empty-state i {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-            color: var(--primary);
-        }
-
-        .empty-state h3 {
-            font-size: 1rem;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .empty-state p {
-            font-size: 0.85rem;
-            margin-bottom: 0;
-            max-width: 280px;
-            line-height: 1.5;
-        }
-
-        .empty-state-small {
-            padding: 1.5rem;
-        }
-
-        .empty-state-small p {
-            margin-bottom: 0;
-            font-size: 0.85rem;
-        }
-
-        /* Modal styles handled by ModalService */
-        /* Agent-specific form styles for ModalService modals */
-        .i360-modal .form-group,
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .i360-modal .form-label,
-        .form-label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-        }
-
-        .i360-modal .form-input,
-        .form-input {
-            width: 100%;
-            padding: 0.625rem 0.875rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            font-family: inherit;
-        }
-
-        .i360-modal .form-input:focus,
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .i360-modal .form-textarea,
-        .form-textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        /* System prompt textarea - larger and more visible */
-        .i360-modal .form-textarea.system-prompt-textarea,
-        .form-textarea.system-prompt-textarea {
-            min-height: 200px;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-
-        /* Modal resize handled by ModalService */
-
-        .i360-modal .form-select,
-        .form-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            padding-right: 2.5rem;
-        }
-
-        .i360-modal .form-row,
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-
-        .i360-modal .form-hint,
-        .form-hint {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-        }
-
-        .i360-modal .form-hint-box,
-        .form-hint-box {
-            margin-top: 0.5rem;
-            padding: 0.75rem;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .i360-modal .form-hint-box strong,
-        .form-hint-box strong {
-            color: var(--text-primary);
-        }
-
-        .priority-examples {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--border);
-            font-size: 0.75rem;
-        }
-
-        .priority-examples span {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        /* Platform-specific fields */
-        .platform-fields {
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .platform-fields-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Tags Input */
-        .tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-secondary);
-            min-height: 44px;
-        }
-
-        .tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.25rem 0.5rem;
-            background: var(--primary);
-            color: white;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .tag-remove {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            opacity: 0.7;
-        }
-
-        .tag-remove:hover {
-            opacity: 1;
-        }
-
-        .tag-input {
-            border: none;
-            background: none;
-            outline: none;
-            flex: 1;
-            min-width: 100px;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-        }
-
-        /* Loading State */
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-
-        .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s;
-        }
-
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .loading-card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            max-width: 400px;
-        }
-
-        .loading-card h3 {
-            margin: 1rem 0 0.5rem 0;
-        }
-
-        .loading-card p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Toast Notifications handled by ModalService */
-
-        /* Responsive - hide details panel on smaller screens */
-        @media (max-width: 1400px) {
-            .toolbar-filters {
-                flex-wrap: wrap;
-            }
-            .toolbar-filter {
-                min-width: 110px;
-            }
-            .agent-card-actions .btn:not(.btn-icon) span {
-                display: none;
-            }
-        }
-
-        @media (max-width: 1200px) {
-            .details-panel {
-                display: none;
-            }
-            .toolbar-row {
-                flex-wrap: wrap;
-            }
-            .toolbar-chips {
-                order: 2;
-            }
-        }
-
-        @media (max-width: 1024px) {
-            .sidebar {
-                display: none;
-            }
-
-            .resize-handle,
-            .details-resize-handle {
-                display: none;
-            }
-
-            .agent-card-actions {
-                flex-wrap: wrap;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .filter-toolbar {
-                padding: var(--spacing-sm) var(--spacing-md);
-            }
-            .toolbar-stats {
-                display: none;
-            }
-            .toolbar-chips {
-                display: none;
-            }
-            .toolbar-search input {
-                width: 150px;
-            }
-            .toolbar-filters {
-                gap: var(--spacing-xs);
-            }
-            .toolbar-filter {
-                min-width: 100px;
-                font-size: 0.8rem;
-                padding: 0.4rem 0.5rem;
-            }
-
-            .agent-list {
-                width: 100%;
-                min-width: unset;
-            }
-
-            .agent-description {
-                -webkit-line-clamp: 1;
-            }
-
-            .detail-panel {
-                display: none;
-                min-width: unset;
-            }
-
-            .detail-panel.mobile-active {
-                display: flex;
-                flex-direction: column;
-                position: fixed;
-                inset: 0;
-                margin-top: var(--nav-height);
-                z-index: 500;
-            }
-
-            .detail-panel.mobile-active #agentDetail {
-                flex-direction: column;
-            }
-
-            .detail-content-wrapper {
-                flex: none;
-            }
-
-            .detail-sidebar {
-                width: 100%;
-                max-width: none;
-                border-left: none;
-                border-top: 1px solid var(--border);
-            }
-        }
-
-        /* =========================================================================
-           LAUNCHER PANEL STYLES
-           ========================================================================= */
-
-        /* Launcher Overlay */
-        .launcher-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-
-        .launcher-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Launcher Panel (Slide-in from right) */
-        .launcher-panel {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 55%;
-            max-width: 700px;
-            min-width: 400px;
-            height: 100vh;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: column;
-            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        }
-
-        .launcher-overlay.active .launcher-panel {
-            transform: translateX(0);
-        }
-
-        /* Launcher Header */
-        .launcher-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-secondary);
-            flex-shrink: 0;
-        }
-
-        .launcher-title {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .launcher-icon {
-            font-size: 2rem;
-        }
-
-        .launcher-title h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .launcher-model {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-        }
-
-        .launcher-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-        }
-
-        .launcher-close:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        /* Context Preview */
-        .context-preview {
-            border-bottom: 1px solid var(--border);
-            background: var(--bg-secondary);
-            flex-shrink: 0;
-        }
-
-        .context-preview-toggle {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-family: inherit;
-        }
-
-        .context-preview-toggle:hover {
-            background: var(--bg-hover);
-        }
-
-        .context-token-count {
-            margin-left: auto;
-            padding: 0.15rem 0.5rem;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-        }
-
-        .toggle-icon {
-            transition: transform 0.2s;
-        }
-
-        .context-preview.expanded .toggle-icon {
-            transform: rotate(180deg);
-        }
-
-        .context-preview-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .context-preview.expanded .context-preview-content {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .context-asset-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            border-top: 1px solid var(--border-light);
-        }
-
-        .context-asset-item .asset-icon {
-            font-size: 1.25rem;
-        }
-
-        .context-asset-item .asset-info {
-            flex: 1;
-        }
-
-        .context-asset-item .asset-name {
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
-
-        .context-asset-item .asset-type {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        .context-asset-item .asset-tokens {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-        }
-
-        /* Messages Area */
-        .launcher-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-        }
-
-        /* Welcome Screen */
-        .launcher-welcome {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .welcome-agent-icon {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .launcher-welcome p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .conversation-starters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-        }
-
-        .starter-btn {
-            padding: 0.5rem 1rem;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-
-        .starter-btn:hover {
-            background: var(--bg-hover);
-            border-color: var(--primary);
-            color: var(--text-primary);
-        }
-
-        /* Launcher Message Styles */
-        .launcher-message {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            border-radius: 12px;
-        }
-
-        .launcher-message.user {
-            background: var(--bg-tertiary);
-        }
-
-        .launcher-message.assistant {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-        }
-
-        .launcher-message-avatar {
-            font-size: 1.5rem;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .launcher-message-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .launcher-message-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .launcher-message-author {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .launcher-message-time {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .launcher-message-copy {
-            margin-left: auto;
-            opacity: 0;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 4px;
-            transition: opacity 0.2s;
-        }
-
-        .launcher-message:hover .launcher-message-copy {
-            opacity: 1;
-        }
-
-        .launcher-message-copy:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .launcher-message-content {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: var(--text-secondary);
-        }
-
-        .launcher-message-content code {
-            background: var(--bg-tertiary);
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-        }
-
-        .launcher-message-content pre {
-            background: var(--bg-tertiary);
-            padding: 1rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 0.5rem 0;
-        }
-
-        .launcher-message-content pre code {
-            background: none;
-            padding: 0;
-        }
-
-        .launcher-message-content a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .launcher-message-content a:hover {
-            text-decoration: underline;
-        }
-
-        /* Loading State */
-        .launcher-message-loading {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .launcher-message-loading .loading-spinner {
-            width: 36px;
-            height: 36px;
-        }
-
-        .launcher-message-loading .loading-text {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Input Area */
-        .launcher-input {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
-            background: var(--bg-secondary);
-            flex-shrink: 0;
-        }
-
-        .launcher-input-wrapper {
-            display: flex;
-            gap: 0.5rem;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.5rem;
-            align-items: flex-end;
-        }
-
-        .launcher-input-wrapper:focus-within {
-            border-color: var(--primary);
-        }
-
-        .launcher-input-wrapper textarea {
-            flex: 1;
-            border: none;
-            background: transparent;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            font-family: inherit;
-            resize: none;
-            padding: 0.5rem;
-            max-height: 120px;
-            line-height: 1.5;
-        }
-
-        .launcher-input-wrapper textarea:focus {
-            outline: none;
-        }
-
-        .launcher-input-wrapper textarea::placeholder {
-            color: var(--text-muted);
-        }
-
-        .launcher-input-wrapper .btn {
-            flex-shrink: 0;
-            padding: 0.5rem 0.75rem;
-        }
-
-        .launcher-input-footer {
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        /* Responsive Launcher */
-        @media (max-width: 768px) {
-            .launcher-panel {
-                width: 100%;
-                max-width: none;
-                min-width: 0;
-            }
-        }
-
-        /* =========================================================================
-           EXECUTION HISTORY STYLES
-           ========================================================================= */
-
-        .execution-history {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            overflow: hidden;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .execution-item {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid var(--border-light);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .execution-item:last-child {
-            border-bottom: none;
-        }
-
-        .execution-item:hover {
-            background: var(--bg-hover);
-        }
-
-        .execution-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.25rem;
-        }
-
-        .execution-date {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .execution-status {
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .execution-status.success {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-        }
-
-        .execution-status.error {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger);
-        }
-
-        .execution-preview {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .execution-meta {
-            display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-    </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Navigation Sidebar (injected by navigation.js) -->
         <aside class="sidebar"></aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <header class="page-header">
                 <div class="header-content">
-                    <h1>Agent Library</h1>
+                    <h1>
+                        <i data-lucide="bot" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Agent Library
+                    </h1>
                     <p class="header-subtitle">Manage your AI agents and their configurations</p>
                 </div>
                 <div class="header-actions">
@@ -2165,238 +37,257 @@
                 </div>
             </header>
 
-            <!-- Agent Layout Container -->
             <div class="agent-layout">
-                <!-- Horizontal Filter Toolbar -->
+                <!-- Filter Toolbar — single row with search as hero -->
                 <div class="filter-toolbar">
-                    <!-- Row 1: Stats, Filters, New Agent Button -->
-                    <div class="toolbar-row">
-                        <div class="toolbar-stats">
-                            <div class="toolbar-stat">
-                                <span class="toolbar-stat-value" id="statTotal">0</span>
-                                <span class="toolbar-stat-label">Total</span>
-                            </div>
-                            <div class="toolbar-stat">
-                                <span class="toolbar-stat-value" id="statActive">0</span>
-                                <span class="toolbar-stat-label">Active</span>
-                            </div>
+                    <div class="toolbar-stats">
+                        <div class="toolbar-stat">
+                            <span class="toolbar-stat-value" id="statTotal">0</span>
+                            <span class="toolbar-stat-label">Total</span>
                         </div>
-
-                        <label class="toolbar-toggle" id="systemTemplateToggle" title="Show/hide system template agents" style="display:none;">
-                            <input type="checkbox" id="toggleSystemTemplates" checked>
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-text">System Templates</span>
-                        </label>
-
-                        <div class="toolbar-filters">
-                            <select class="toolbar-filter" id="filterDepartment">
-                                <option value="">All Departments</option>
-                            </select>
-                            <select class="toolbar-filter" id="filterSuite">
-                                <option value="">All Systems</option>
-                                <option value="align">Align 120</option>
-                                <option value="strategy">Strategy 120</option>
-                                <option value="execute">Execute 120</option>
-                            </select>
-                            <select class="toolbar-filter" id="filterCategory">
-                                <option value="">All Categories</option>
-                            </select>
-                            <select class="toolbar-filter" id="filterStatus">
-                                <option value="active" selected>Active</option>
-                                <option value="inactive">Archived</option>
-                                <option value="">All Status</option>
-                            </select>
-                            <select class="toolbar-filter" id="filterPlatform">
-                                <option value="">All Platforms</option>
-                                <option value="custom">Native</option>
-                                <option value="mindstudio">MindStudio</option>
-                                <option value="llm">LLM Direct</option>
-                            </select>
-                        </div>
-
-                        <div class="toolbar-actions">
-                            <button class="btn btn-primary" id="btnNewAgent">
-                                <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                                New Agent
-                            </button>
+                        <div class="toolbar-stat">
+                            <span class="toolbar-stat-value" id="statActive">0</span>
+                            <span class="toolbar-stat-label">Active</span>
                         </div>
                     </div>
 
-                    <!-- Row 2: Platform Chips, Search -->
-                    <div class="toolbar-row">
-                        <div class="toolbar-chips">
-                            <div class="toolbar-chip" id="chipMindStudio">
-                                <i data-lucide="box"></i>
-                                <span>MindStudio</span>
-                                <span class="toolbar-stat-value" id="statMindStudio">0</span>
-                            </div>
-                            <div class="toolbar-chip" id="chipPickAxe">
-                                <i data-lucide="pickaxe"></i>
-                                <span>PickAxe</span>
-                                <span class="toolbar-stat-value" id="statPickAxe">0</span>
-                            </div>
-                        </div>
+                    <label class="toolbar-toggle" id="systemTemplateToggle" title="Show/hide system template agents" style="display:none;">
+                        <input type="checkbox" id="toggleSystemTemplates" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">System Templates</span>
+                    </label>
 
-                        <div class="toolbar-search">
-                            <i data-lucide="search"></i>
-                            <input type="text" id="searchInput" placeholder="Search">
-                        </div>
+                    <div class="toolbar-search">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="Search agents...">
                     </div>
-                </div>
 
-                <!-- Two Panel Content Area -->
-                <div class="panels-container">
-            <!-- Agent List Panel -->
-            <div class="agent-list" id="agentListPanel">
-                <div class="agent-items" id="agentList">
-                    <!-- Agent items will be rendered here -->
-                    <div class="loading">
-                        <div class="spinner"></div>
+                    <!-- Primary filters -->
+                    <div class="toolbar-filters">
+                        <select class="toolbar-filter" id="filterDepartment">
+                            <option value="">All Departments</option>
+                        </select>
+                        <select class="toolbar-filter" id="filterStatus">
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Archived</option>
+                            <option value="">All Status</option>
+                        </select>
                     </div>
-                </div>
-                <!-- Hidden count for JS -->
-                <span id="listCount" style="display:none;">(0)</span>
-                <!-- Resize Handle -->
-                <div class="resize-handle" id="resizeHandle"></div>
-            </div>
 
-            <!-- Center Panel - Agent Details -->
-            <div class="detail-panel" id="detailPanel">
-                <!-- Empty State - shown when no agent selected -->
-                <div class="detail-empty-state" id="emptyState">
-                    <div class="empty-state-content">
-                        <div class="empty-state-icon">🤖</div>
-                        <h3>Select an Agent</h3>
-                        <p>Choose an agent from the list to view details, manage context mappings, and run conversations.</p>
-                        <button class="btn btn-primary" id="btnNewAgentEmpty">
-                            <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                            Create New Agent
+                    <!-- Advanced filters toggle -->
+                    <button class="toolbar-advanced-toggle" id="btnAdvancedFilters" title="More filters">
+                        <i data-lucide="sliders-horizontal"></i>
+                        <span>Filters</span>
+                    </button>
+
+                    <!-- View toggle -->
+                    <div class="view-toggle">
+                        <button class="view-toggle-btn active" id="viewDetailed" title="Detailed view">
+                            <i data-lucide="layout-list"></i>
+                        </button>
+                        <button class="view-toggle-btn" id="viewCompact" title="Compact view">
+                            <i data-lucide="list"></i>
                         </button>
                     </div>
+
+                    <div class="toolbar-actions">
+                        <button class="btn btn-primary" id="btnNewAgent">
+                            <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                            New Agent
+                        </button>
+                    </div>
+
+                    <!-- Advanced filters row (hidden by default) -->
+                    <div class="toolbar-advanced-filters" id="advancedFilters">
+                        <select class="toolbar-filter" id="filterSuite">
+                            <option value="">All Systems</option>
+                            <option value="align">Align 120</option>
+                            <option value="strategy">Strategy 120</option>
+                            <option value="execute">Execute 120</option>
+                        </select>
+                        <select class="toolbar-filter" id="filterCategory">
+                            <option value="">All Categories</option>
+                        </select>
+                        <select class="toolbar-filter" id="filterPlatform">
+                            <option value="">All Platforms</option>
+                            <option value="custom">Native</option>
+                            <option value="mindstudio">MindStudio</option>
+                            <option value="llm">LLM Direct</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div id="agentDetail" style="display: none;">
-                    <!-- Left side: Header + Content -->
-                    <div class="detail-content-wrapper">
-                        <div class="detail-header">
-                            <div class="detail-header-top">
-                                <div class="detail-title">
-                                    <div class="detail-title-icon" id="detailIcon">🤖</div>
-                                    <div class="detail-title-info">
-                                        <h2 id="detailName">Agent Name</h2>
-                                        <div class="detail-title-meta">
-                                            <span id="detailPlatform"></span>
-                                            <span id="detailStatus"></span>
+                <!-- Two Panel Content Area (List + Detail) -->
+                <div class="panels-container">
+                    <!-- Agent List Panel -->
+                    <div class="agent-list" id="agentListPanel">
+                        <div class="agent-items" id="agentList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                        <div class="keyboard-hints" id="keyboardHints">
+                            <span class="keyboard-hint"><kbd>/</kbd> Search</span>
+                            <span class="keyboard-hint"><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+                            <span class="keyboard-hint"><kbd>Enter</kbd> Select</span>
+                            <span class="keyboard-hint"><kbd>N</kbd> New</span>
+                            <span class="keyboard-hint"><kbd>E</kbd> Edit</span>
+                            <span class="keyboard-hint"><kbd>Esc</kbd> Deselect</span>
+                        </div>
+                        <span id="listCount" style="display:none;">(0)</span>
+                        <div class="resize-handle" id="resizeHandle"></div>
+                    </div>
+
+                    <!-- Detail Panel (single panel — replaces old 3-panel layout) -->
+                    <div class="details-panel" id="detailsPanel">
+                        <div class="details-resize-handle" id="detailsResizeHandle"></div>
+
+                        <!-- Placeholder when no agent selected -->
+                        <div id="detailsPlaceholder" class="detail-empty-state">
+                            <div class="empty-state-content">
+                                <div class="empty-state-icon">
+                                    <i data-lucide="bot" style="width:64px;height:64px;"></i>
+                                </div>
+                                <h3>Select an Agent</h3>
+                                <p>Choose an agent from the list to view details, manage context mappings, and run conversations.</p>
+                                <button class="btn btn-primary" id="btnNewAgentEmpty">
+                                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                                    Create New Agent
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Agent Detail (shown when agent selected) -->
+                        <div id="detailsSidebarContent" style="display: none;">
+                            <!-- Header: icon, name, badges, actions -->
+                            <div class="detail-header">
+                                <div class="detail-header-top">
+                                    <div class="detail-title">
+                                        <div class="detail-title-icon" id="detailIcon">
+                                            <i data-lucide="bot" style="width:28px;height:28px;"></i>
+                                        </div>
+                                        <div class="detail-title-info">
+                                            <h2 id="detailName">Agent Name</h2>
+                                            <div class="detail-title-meta">
+                                                <span id="detailPlatform"></span>
+                                                <span id="detailStatus"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="detail-actions">
+                                        <button class="btn btn-primary btn-run" id="btnLaunch" title="Run Agent">
+                                            <i data-lucide="play" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-icon" id="btnEdit" title="Edit">
+                                            <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-icon" id="btnDuplicate" title="Duplicate">
+                                            <i data-lucide="copy" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-icon" id="btnDelete" title="Archive">
+                                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="detail-description" id="detailDescription">&mdash;</div>
+                                <div id="detailLineage" style="display:none;"></div>
+                            </div>
+
+                            <!-- Scrollable content -->
+                            <div class="details-content">
+                                <!-- Overview Stats -->
+                                <div class="sidebar-section">
+                                    <div class="sidebar-title">Overview</div>
+                                    <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                                        <div class="info-item">
+                                            <div class="info-label">Total Runs</div>
+                                            <div class="info-value" id="detailUsage">0</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Status</div>
+                                            <div class="info-value" id="detailStatusText">Active</div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="detail-actions">
-                                    <button class="btn btn-primary btn-run" id="btnLaunch">
-                                        <i data-lucide="play" style="width:18px;height:18px;"></i>
-                                        Run Agent
-                                    </button>
-                                    <button class="btn btn-secondary" id="btnEdit">
-                                        <i data-lucide="edit-2" style="width:16px;height:16px;"></i>
-                                        Edit
-                                    </button>
-                                    <button class="btn btn-secondary" id="btnDuplicate" title="Create a copy you can customize">
-                                        <i data-lucide="copy" style="width:16px;height:16px;"></i>
-                                        Duplicate
-                                    </button>
-                                    <button class="btn btn-secondary btn-icon" id="btnDelete" title="Delete">
-                                        <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="detail-description" id="detailDescription">—</div>
-                            <div id="detailLineage" style="display:none;"></div>
-                        </div>
 
-                        <!-- Scrollable content area below header -->
-                        <div class="detail-body">
-                            <!-- Main content area can be used for future content -->
-                        </div>
-                    </div>
-                </div> <!-- Close agentDetail -->
-            </div> <!-- Close detail-panel -->
+                                <!-- Configuration -->
+                                <div class="sidebar-section">
+                                    <div class="sidebar-title">Configuration</div>
+                                    <div class="details-meta-list">
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="cpu"></i> Platform</span>
+                                            <span class="details-meta-value" id="detailPlatformText">&mdash;</span>
+                                        </div>
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="brain"></i> Model</span>
+                                            <span class="details-meta-value" id="detailModelText">&mdash;</span>
+                                        </div>
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="layers"></i> System</span>
+                                            <span class="details-meta-value" id="detailSuite">&mdash;</span>
+                                        </div>
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="tag"></i> Category</span>
+                                            <span class="details-meta-value" id="detailCategory">&mdash;</span>
+                                        </div>
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="building-2"></i> Department</span>
+                                            <span class="details-meta-value" id="detailDepartment">&mdash;</span>
+                                        </div>
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="calendar"></i> Created</span>
+                                            <span class="details-meta-value" id="detailCreated">&mdash;</span>
+                                        </div>
+                                        <div class="details-meta-row">
+                                            <span class="details-meta-label"><i data-lucide="clock"></i> Modified</span>
+                                            <span class="details-meta-value" id="detailModified">&mdash;</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-            <!-- Right Panel - Details (always visible like context.html Preview) -->
-            <div class="details-panel" id="detailsPanel">
-                <!-- Resize Handle for Details Panel -->
-                <div class="details-resize-handle" id="detailsResizeHandle"></div>
-                <div class="panel-header">
-                    <h2><i data-lucide="info"></i> Details</h2>
-                </div>
-                <div id="detailsContent" class="details-content">
-                    <!-- Placeholder shown when no agent selected -->
-                    <p class="details-placeholder" id="detailsPlaceholder">Select or create an agent to see details</p>
+                                <!-- Context Mappings -->
+                                <div class="sidebar-section">
+                                    <div class="sidebar-title">
+                                        <i data-lucide="link" style="width:14px;height:14px;"></i>
+                                        Context Mappings
+                                    </div>
+                                    <div class="context-mappings">
+                                        <div class="mapping-header">
+                                            <h4>Assigned Context Assets</h4>
+                                            <button class="btn btn-secondary" id="btnAddContext">
+                                                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                                                Add
+                                            </button>
+                                        </div>
+                                        <div class="mapping-list" id="mappingList">
+                                            <div class="empty-state" style="padding: var(--spacing-lg);">
+                                                <i data-lucide="link"></i>
+                                                <p>No context assets mapped.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                    <!-- Actual details content (hidden until agent selected) -->
-                    <div id="detailsSidebarContent" style="display: none;">
-                        <!-- Overview Section -->
-                        <div class="sidebar-section">
-                            <div class="sidebar-title">Overview</div>
-                            <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
-                                <div class="info-item">
-                                    <div class="info-label">i360 System</div>
-                                    <div class="info-value" id="detailSuite">—</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Category</div>
-                                    <div class="info-value" id="detailCategory">—</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Total Runs</div>
-                                    <div class="info-value" id="detailUsage">0</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Status</div>
-                                    <div class="info-value" id="detailStatusText">Active</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Context Mappings Section -->
-                        <div class="sidebar-section">
-                            <div class="sidebar-title">
-                                <i data-lucide="link" style="width:14px;height:14px;"></i>
-                                Context Mappings
-                            </div>
-                            <div class="context-mappings">
-                                <div class="mapping-header">
-                                    <h4>Assigned Context Assets</h4>
-                                    <button class="btn btn-secondary" id="btnAddContext">
-                                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
-                                        Add
-                                    </button>
-                                </div>
-                                <div class="mapping-list" id="mappingList">
-                                    <div class="empty-state" style="padding: 2rem;">
-                                        <p>No context assets mapped to this agent.</p>
+                                <!-- Execution History -->
+                                <div class="sidebar-section">
+                                    <div class="sidebar-title">
+                                        <i data-lucide="history" style="width:14px;height:14px;"></i>
+                                        Recent Executions
+                                    </div>
+                                    <div class="execution-history" id="executionHistory">
+                                        <div class="empty-state" style="padding: var(--spacing-lg);">
+                                            <i data-lucide="play-circle"></i>
+                                            <p>No executions yet.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Execution History Section -->
-                        <div class="sidebar-section">
-                            <div class="sidebar-title">
-                                <i data-lucide="history" style="width:14px;height:14px;"></i>
-                                Recent Executions
-                            </div>
-                            <div class="execution-history" id="executionHistory">
-                                <div class="empty-state" style="padding: 1.5rem;">
-                                    <p>No executions yet. Launch the agent to start a conversation.</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
-            </div> <!-- Close details-panel -->
-                </div> <!-- Close panels-container -->
-            </div> <!-- Close agent-layout -->
-        </main> <!-- Close main-content -->
-    </div> <!-- Close app-container -->
+            </div>
+        </main>
+    </div>
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
@@ -2410,7 +301,6 @@
     <!-- Agent Launcher Panel (Slide-in Drawer) -->
     <div class="launcher-overlay" id="launcherOverlay">
         <div class="launcher-panel" id="launcherPanel">
-            <!-- Header -->
             <div class="launcher-header">
                 <div class="launcher-title">
                     <span class="launcher-icon" id="launcherIcon"></span>
@@ -2424,7 +314,6 @@
                 </button>
             </div>
 
-            <!-- Context Preview (Collapsible) -->
             <div class="context-preview expanded" id="contextPreview">
                 <button class="context-preview-toggle" id="contextPreviewToggle">
                     <i data-lucide="database" style="width:16px;height:16px;"></i>
@@ -2437,19 +326,14 @@
                 </div>
             </div>
 
-            <!-- Messages Area -->
             <div class="launcher-messages" id="launcherMessages">
-                <!-- Welcome / Conversation Starters -->
                 <div class="launcher-welcome" id="launcherWelcome">
                     <div class="welcome-agent-icon" id="welcomeAgentIcon"></div>
                     <p id="welcomeDescription">Agent description</p>
-                    <div class="conversation-starters" id="conversationStarters">
-                        <!-- Dynamic buttons -->
-                    </div>
+                    <div class="conversation-starters" id="conversationStarters"></div>
                 </div>
             </div>
 
-            <!-- Input Area -->
             <div class="launcher-input">
                 <div class="launcher-input-wrapper">
                     <textarea id="launcherInputField" placeholder="Type your message..." rows="1"></textarea>
@@ -2464,22 +348,22 @@
         </div>
     </div>
 
-    <!-- ModalService must load before inline scripts that use it -->
     <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/agent-dialog-service.js"></script>
     <script src="/js/usage-nudge.js"></script>
 
     <script>
-        // Initialize Lucide icons
         lucide.createIcons();
 
         // State
-        let allAgents = [];  // All agents from API (before system template filter)
-        let agents = [];     // Filtered agents displayed in the list
+        let allAgents = [];
+        let agents = [];
         let selectedAgent = null;
         let editingAgent = null;
         let categories = [];
         let contextAssets = [];
+        let compactView = false;
+        let keyboardFocusIndex = -1;
 
         // Launcher State
         let launcherAgent = null;
@@ -2489,19 +373,16 @@
 
         // DOM Elements
         const agentList = document.getElementById('agentList');
-        const agentDetail = document.getElementById('agentDetail');
-        const emptyState = document.getElementById('emptyState');
 
-        // Modal instances (ModalService)
+        // Modal instances
         let agentModal = null;
         let contextMappingModal = null;
 
-        // Agent Dialog Service for running agents in modal
-        // Defaults: 800px width, 75vh height, centered via flexbox
-        const agentDialog = new AgentDialogService();
+        // Agent Dialog Service — initialized in init() after authFetch is available
+        let agentDialog = null;
 
         // =========================================================================
-        // Loading Overlay Helpers
+        // Loading Overlay
         // =========================================================================
 
         function showLoading(title, message) {
@@ -2528,7 +409,6 @@
                 const platform = document.getElementById('filterPlatform').value;
                 const search = document.getElementById('searchInput').value;
 
-                // Request all agents (API defaults to 50)
                 params.append('limit', '500');
 
                 if (department) params.append('department_id', department);
@@ -2540,10 +420,9 @@
 
                 const response = await authFetch(`/api/agents?${params}`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     allAgents = data.data;
-                    // Apply system templates filter
                     const toggle = document.getElementById('toggleSystemTemplates');
                     if (toggle && !toggle.checked) {
                         agents = allAgents.filter(a => !a.is_system);
@@ -2577,7 +456,6 @@
                 const response = await authFetch('/api/departments');
                 const data = await response.json();
                 if (data.success) {
-                    // Populate filter dropdown
                     const filterSelect = document.getElementById('filterDepartment');
                     filterSelect.innerHTML = '<option value="">All Departments</option>';
                     data.data.forEach(dept => {
@@ -2587,7 +465,6 @@
                         filterSelect.appendChild(option);
                     });
 
-                    // Populate form dropdown
                     const formSelect = document.getElementById('formDepartment');
                     if (formSelect) {
                         formSelect.innerHTML = '<option value="">No Department (Available to all)</option>';
@@ -2611,8 +488,6 @@
                 if (data.success) {
                     document.getElementById('statTotal').textContent = data.data.total_agents;
                     document.getElementById('statActive').textContent = data.data.active_agents;
-                    document.getElementById('statMindStudio').textContent = data.data.by_platform?.mindstudio || 0;
-                    document.getElementById('statPickAxe').textContent = data.data.by_platform?.pickaxe || 0;
                 }
             } catch (error) {
                 console.error('Error fetching stats:', error);
@@ -2625,14 +500,12 @@
                 const data = await response.json();
                 if (data.success) {
                     contextAssets = data.data;
-                    // Note: context modal selects are now built dynamically when modal opens
                 }
             } catch (error) {
                 console.error('Error fetching context assets:', error);
             }
         }
 
-        // Store loaded models for lookup
         let availableModels = [];
         let defaultModel = 'claude-sonnet-4-5-20250929';
 
@@ -2647,7 +520,6 @@
                 }
             } catch (error) {
                 console.error('Error fetching models:', error);
-                // Fallback to basic models if API fails
                 populateModelDropdownFallback();
             }
         }
@@ -2656,17 +528,13 @@
             const select = document.getElementById('formModel');
             if (!select) return;
 
-            // Group models by provider
             const byProvider = {};
             availableModels.forEach(model => {
                 const provider = model.providerName || model.provider || 'Other';
-                if (!byProvider[provider]) {
-                    byProvider[provider] = [];
-                }
+                if (!byProvider[provider]) byProvider[provider] = [];
                 byProvider[provider].push(model);
             });
 
-            // Build dropdown HTML
             let html = '';
             const providerOrder = ['Anthropic', 'OpenAI', 'Perplexity'];
 
@@ -2681,7 +549,6 @@
                 }
             });
 
-            // Add any remaining providers
             Object.keys(byProvider).forEach(provider => {
                 if (!providerOrder.includes(provider) && byProvider[provider].length > 0) {
                     html += `<optgroup label="${provider}">`;
@@ -2698,7 +565,6 @@
         function populateModelDropdownFallback() {
             const select = document.getElementById('formModel');
             if (!select) return;
-
             select.innerHTML = `
                 <optgroup label="Claude (Anthropic)">
                     <option value="claude-sonnet-4-5-20250929" selected>Claude Sonnet 4.5 (Default)</option>
@@ -2710,7 +576,6 @@
 
         async function saveAgent(agentData) {
             try {
-                // Guard new creation against plan limits
                 if (!editingAgent && !(await UsageNudge.checkBeforeCreate('agents'))) return;
 
                 const isEdit = !!editingAgent;
@@ -2730,7 +595,7 @@
                 if (data.success) {
                     showToast(isEdit ? 'Agent updated' : 'Agent created', 'success');
                     closeModal();
-                    await fetchAgents(); // updateStats() is called within fetchAgents()
+                    await fetchAgents();
                 } else {
                     showToast(data.error || 'Failed to save agent', 'error');
                 }
@@ -2743,7 +608,13 @@
         }
 
         async function deleteAgent(id) {
-            if (!confirm('Are you sure you want to archive this agent?')) return;
+            const confirmed = await ModalService.confirm({
+                title: 'Archive Agent',
+                message: 'Are you sure you want to archive this agent?',
+                confirmText: 'Archive',
+                confirmClass: 'btn-danger'
+            });
+            if (!confirmed) return;
 
             showLoading('Archiving Agent', 'Removing agent from active list...');
             try {
@@ -2754,7 +625,7 @@
                     showToast('Agent archived', 'success');
                     selectedAgent = null;
                     showEmptyState();
-                    await fetchAgents(); // updateStats() is called within fetchAgents()
+                    await fetchAgents();
                 }
             } catch (error) {
                 console.error('Error deleting agent:', error);
@@ -2796,7 +667,6 @@
                 const response = await authFetch(`/api/agents/${agentId}/context/${mappingId}`, {
                     method: 'DELETE'
                 });
-
                 const data = await response.json();
 
                 if (data.success) {
@@ -2815,13 +685,14 @@
 
         function renderAgentList() {
             document.getElementById('listCount').textContent = `(${agents.length})`;
+            keyboardFocusIndex = -1;
 
             if (agents.length === 0) {
                 agentList.innerHTML = `
                     <div class="empty-state">
                         <i data-lucide="inbox"></i>
                         <h3>No agents found</h3>
-                        <p>Create your first agent to get started.</p>
+                        <p>Create your first agent or adjust your filters.</p>
                     </div>
                 `;
                 lucide.createIcons();
@@ -2833,57 +704,43 @@
             agentList.innerHTML = agents.map(agent => {
                 const status = agent.is_active !== false ? 'active' : 'inactive';
                 const iconHtml = renderAgentIcon(agent.icon);
-                const systemBadge = agent.is_system ? '<span class="status-badge" style="background:#6366f1;color:white;font-size:0.65rem;">sys</span>' : '';
-                const suiteLabel = suiteLabels[agent.suite] || agent.suite || '—';
+                const systemBadge = agent.is_system ? '<span class="status-badge" style="background:var(--primary);color:white;font-size:0.6rem;">SYS</span>' : '';
+                const suiteLabel = suiteLabels[agent.suite] || agent.suite || '';
                 const cat = categories.find(c => c.id === agent.category || c.name === agent.category);
-                const categoryLabel = cat?.display_name || cat?.name || agent.category || '—';
-                const platform = agent.type === 'mindstudio' ? 'MindStudio' : agent.type === 'llm' ? 'LLM' : 'Native';
-                const llmModel = agent.llm_model || '—';
+                const categoryLabel = cat?.display_name || cat?.name || agent.category || '';
+                const description = agent.description || '';
+                const modelDisplay = getModelDisplayName(agent.llm_model || agent.model);
+
                 return `
                 <div class="agent-item ${selectedAgent?.id === agent.id ? 'selected' : ''}"
                      data-id="${agent.id}">
                     <div class="agent-card-header">
                         <div class="agent-card-title">
                             <div class="agent-icon">${iconHtml}</div>
-                            <span class="agent-name">${agent.name}</span>
+                            <span class="agent-name">${escapeHtml(agent.name)}</span>
                         </div>
                         <div class="agent-card-actions">
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); launchAgentById('${agent.id}')">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); launchAgentById('${agent.id}')" title="Run">
                                 <i data-lucide="play"></i>
-                                Run Agent
                             </button>
-                            <button class="btn btn-secondary" onclick="event.stopPropagation(); editAgentById('${agent.id}')">
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); editAgentById('${agent.id}')" title="Edit">
                                 <i data-lucide="edit-2"></i>
-                                Edit
                             </button>
                             <button class="btn btn-secondary" onclick="event.stopPropagation(); duplicateAgentById('${agent.id}')" title="Duplicate">
                                 <i data-lucide="copy"></i>
-                                Duplicate
                             </button>
-                            <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); deleteAgentById('${agent.id}')" title="Delete">
+                            <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); deleteAgentById('${agent.id}')" title="Archive">
                                 <i data-lucide="trash-2"></i>
                             </button>
                         </div>
                     </div>
+                    ${description && !compactView ? `<p class="agent-description">${escapeHtml(description)}</p>` : ''}
                     <div class="agent-meta">
-                        <span class="suite-badge ${agent.suite || ''}">${suiteLabel}</span>
-                        <span class="category-badge">${categoryLabel}</span>
+                        ${suiteLabel ? `<span class="suite-badge ${agent.suite || ''}">${suiteLabel}</span>` : ''}
+                        ${categoryLabel ? `<span class="category-badge">${escapeHtml(categoryLabel)}</span>` : ''}
                         <span class="status-badge ${status}">${status}</span>
                         ${systemBadge}
-                    </div>
-                    <div class="agent-meta-row">
-                        <span class="agent-meta-item" title="Platform">
-                            <i data-lucide="cpu"></i>
-                            ${platform}
-                        </span>
-                        <span class="agent-meta-item" title="Model">
-                            <i data-lucide="brain"></i>
-                            ${llmModel}
-                        </span>
-                        <span class="agent-meta-item" title="Usage">
-                            <i data-lucide="activity"></i>
-                            ${agent.usage_count || 0}
-                        </span>
+                        ${!compactView ? `<span class="agent-meta-item" title="Model"><i data-lucide="brain"></i>${modelDisplay}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -2891,13 +748,11 @@
 
             lucide.createIcons();
 
-            // Add click handlers for card selection
+            // Click handlers
             agentList.querySelectorAll('.agent-item').forEach(item => {
                 item.addEventListener('click', (e) => {
-                    // Only select if not clicking on buttons
                     if (!e.target.closest('button')) {
-                        const id = item.dataset.id;
-                        selectAgent(id);
+                        selectAgent(item.dataset.id);
                     }
                 });
             });
@@ -2907,12 +762,14 @@
             const agent = agents.find(a => a.id === id);
             if (!agent) return;
 
-            // Don't set selectedAgent here - wait for loadAgentDetail to set it with full data
-            // This prevents race condition where Edit button uses incomplete data
-
-            // Update list selection
             agentList.querySelectorAll('.agent-item').forEach(item => {
                 item.classList.toggle('selected', item.dataset.id === id);
+            });
+
+            // Update keyboard focus to match
+            const items = agentList.querySelectorAll('.agent-item');
+            items.forEach((item, i) => {
+                if (item.dataset.id === id) keyboardFocusIndex = i;
             });
 
             loadAgentDetail(id);
@@ -2922,7 +779,6 @@
             try {
                 const response = await authFetch(`/api/agents/${id}`);
                 const data = await response.json();
-
                 if (data.success) {
                     renderAgentDetail(data.data);
                 }
@@ -2933,20 +789,16 @@
 
         function renderAgentDetail(agent) {
             selectedAgent = agent;
-            emptyState.style.display = 'none';
-            agentDetail.style.display = 'flex';
 
-            // Show details panel content, hide placeholder
-            const detailsPlaceholder = document.getElementById('detailsPlaceholder');
-            const detailsSidebarContent = document.getElementById('detailsSidebarContent');
-            if (detailsPlaceholder) detailsPlaceholder.style.display = 'none';
-            if (detailsSidebarContent) detailsSidebarContent.style.display = 'block';
+            // Toggle placeholder vs content in the single detail panel
+            document.getElementById('detailsPlaceholder').style.display = 'none';
+            document.getElementById('detailsSidebarContent').style.display = 'flex';
 
             const provider = agent.llm_provider || agent.source_type || 'native';
             const status = agent.is_active !== false ? 'active' : 'inactive';
             const statusLabel = status === 'active' ? 'Active' : 'Inactive';
 
-            // Hide edit/delete buttons for system agents (unless user is admin)
+            // Hide edit/delete for system agents (unless admin)
             const btnEdit = document.getElementById('btnEdit');
             const btnDelete = document.getElementById('btnDelete');
             const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
@@ -2960,24 +812,37 @@
                 btnDelete.style.display = '';
             }
 
+            // Detail header
             document.getElementById('detailIcon').innerHTML = renderAgentIcon(agent.icon);
             document.getElementById('detailName').textContent = agent.name;
-            document.getElementById('detailPlatform').innerHTML = `
-                <span class="platform-badge ${provider}">${provider}</span>
-            `;
+            document.getElementById('detailPlatform').innerHTML = `<span class="platform-badge ${provider}">${provider}</span>`;
 
-            const cat = categories.find(c => c.key === agent.category);
-            const suiteLabels = { align: 'Align 120', strategy: 'Strategy 120', execute: 'Execute 120' };
-
-            document.getElementById('detailSuite').textContent = suiteLabels[agent.suite] || agent.suite || '—';
-            document.getElementById('detailCategory').textContent = cat?.display_name || cat?.name || agent.category || '—';
-            const systemBadge = agent.is_system ? '<span class="status-badge system" style="background:#6366f1;color:white;margin-left:4px;">System</span>' : '';
+            const systemBadge = agent.is_system ? '<span class="status-badge" style="background:var(--primary);color:white;margin-left:4px;">System</span>' : '';
             document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
-            document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
-            document.getElementById('detailUsage').textContent = agent.usage_count || 0;
             document.getElementById('detailDescription').textContent = agent.description || 'No description provided.';
 
-            // Show system agent warning banner
+            // Right panel — unique metadata
+            const cat = categories.find(c => c.key === agent.category);
+            const suiteLabels = { align: 'Align 120', strategy: 'Strategy 120', execute: 'Execute 120' };
+            const platformLabels = { custom: 'Native', mindstudio: 'MindStudio', llm: 'LLM Direct' };
+
+            document.getElementById('detailUsage').textContent = agent.usage_count || 0;
+            document.getElementById('detailStatusText').innerHTML = `<span class="status-badge ${status}">${statusLabel}</span>${systemBadge}`;
+            document.getElementById('detailPlatformText').textContent = platformLabels[agent.type] || agent.type || 'Native';
+            document.getElementById('detailModelText').textContent = getModelDisplayName(agent.llm_model || agent.model);
+            document.getElementById('detailSuite').textContent = suiteLabels[agent.suite] || agent.suite || '\u2014';
+            document.getElementById('detailCategory').textContent = cat?.display_name || cat?.name || agent.category || '\u2014';
+
+            // Department
+            const deptSelect = document.getElementById('filterDepartment');
+            const deptOption = deptSelect ? Array.from(deptSelect.options).find(o => o.value === agent.department_id) : null;
+            document.getElementById('detailDepartment').textContent = deptOption?.textContent || '\u2014';
+
+            // Dates
+            document.getElementById('detailCreated').textContent = agent.created_at ? new Date(agent.created_at).toLocaleDateString() : '\u2014';
+            document.getElementById('detailModified').textContent = agent.updated_at ? new Date(agent.updated_at).toLocaleDateString() : '\u2014';
+
+            // System agent warning banner
             let existingWarning = document.getElementById('systemAgentWarning');
             if (existingWarning) existingWarning.remove();
 
@@ -2986,39 +851,37 @@
                 warningDiv.id = 'systemAgentWarning';
                 if (isAdmin) {
                     warningDiv.innerHTML = `
-                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 0.85rem;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;margin-bottom:0.75rem;">
-                            <i data-lucide="shield-check" style="width:16px;height:16px;color:#6366f1;flex-shrink:0;"></i>
-                            <span style="font-size:0.8rem;color:#6366f1;">Admin mode: You can edit this system agent</span>
+                        <div class="system-agent-banner admin">
+                            <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+                            <span>Admin mode: You can edit this system agent</span>
                         </div>
                     `;
                 } else {
                     warningDiv.innerHTML = `
-                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;margin-bottom:0.75rem;">
-                            <i data-lucide="shield-alert" style="width:16px;height:16px;color:#ef4444;flex-shrink:0;"></i>
-                            <span style="font-size:0.8rem;color:#ef4444;">System agent — Use "Duplicate" to create your own editable copy</span>
+                        <div class="system-agent-banner readonly">
+                            <i data-lucide="shield-alert" style="width:16px;height:16px;"></i>
+                            <span>System agent &mdash; Use "Duplicate" to create your own editable copy</span>
                         </div>
                     `;
                 }
                 const detailHeader = document.querySelector('.detail-header');
-                if (detailHeader) {
-                    detailHeader.insertAdjacentElement('afterend', warningDiv);
-                }
+                if (detailHeader) detailHeader.insertAdjacentElement('afterend', warningDiv);
             }
 
-            // Show lineage info if agent was duplicated from another
+            // Lineage info
             const lineageContainer = document.getElementById('detailLineage');
             if (lineageContainer) {
                 if (agent.parent_agent_id || agent.parent_agent_name) {
                     const parentName = agent.parent_agent_name || 'Unknown';
                     const forkedDate = agent.forked_at ? new Date(agent.forked_at).toLocaleDateString() : '';
                     lineageContainer.innerHTML = `
-                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--bg-tertiary);border-radius:8px;margin-top:0.75rem;">
+                        <div class="lineage-info">
                             <i data-lucide="git-fork" style="width:16px;height:16px;color:var(--text-muted);"></i>
                             <div style="flex:1;">
-                                <div style="font-size:0.75rem;color:var(--text-muted);">Duplicated from</div>
-                                <div style="font-size:0.9rem;font-weight:500;">${escapeHtml(parentName)}</div>
+                                <div class="lineage-label">Duplicated from</div>
+                                <div class="lineage-name">${escapeHtml(parentName)}</div>
                             </div>
-                            ${forkedDate ? `<div style="font-size:0.75rem;color:var(--text-muted);">${forkedDate}</div>` : ''}
+                            ${forkedDate ? `<div class="lineage-date">${forkedDate}</div>` : ''}
                         </div>
                     `;
                     lineageContainer.style.display = 'block';
@@ -3028,10 +891,10 @@
                 }
             }
 
-            // Render context mappings
+            // Render context mappings (now in center panel)
             renderContextMappings(agent.context_mappings || []);
 
-            // Load execution history
+            // Load execution history (now in center panel)
             loadExecutionHistory(agent.id);
 
             lucide.createIcons();
@@ -3042,14 +905,15 @@
 
             if (!mappings || mappings.length === 0) {
                 mappingList.innerHTML = `
-                    <div class="empty-state" style="padding: 2rem;">
+                    <div class="empty-state" style="padding: var(--spacing-xl);">
+                        <i data-lucide="link"></i>
                         <p>No context assets mapped to this agent.</p>
                     </div>
                 `;
+                lucide.createIcons();
                 return;
             }
 
-            // Sort by priority descending
             const sorted = [...mappings].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
             mappingList.innerHTML = sorted.map((mapping, index) => {
@@ -3057,12 +921,12 @@
                 return `
                     <div class="mapping-item" data-id="${mapping.id}">
                         <div class="mapping-priority">#${index + 1}</div>
-                        <div class="mapping-icon">${asset?.icon || '📄'}</div>
+                        <div class="mapping-icon">${escapeHtml(asset?.icon) || '📄'}</div>
                         <div class="mapping-info">
-                            <div class="mapping-name">${asset?.name || 'Unknown Asset'}</div>
-                            <div class="mapping-type">${asset?.asset_type || ''}</div>
+                            <div class="mapping-name">${escapeHtml(asset?.name) || 'Unknown Asset'}</div>
+                            <div class="mapping-type">${escapeHtml(asset?.asset_type) || ''}</div>
                         </div>
-                        <span class="mapping-mode ${mapping.injection_mode}">${mapping.injection_mode}</span>
+                        <span class="mapping-mode ${escapeHtml(mapping.injection_mode)}">${escapeHtml(mapping.injection_mode)}</span>
                         <div class="mapping-actions">
                             <button onclick="removeContextMapping('${selectedAgent.id}', '${mapping.id}')" title="Remove">
                                 <i data-lucide="x" style="width:14px;height:14px;"></i>
@@ -3076,25 +940,16 @@
         }
 
         function showEmptyState() {
-            emptyState.style.display = 'flex';
-            agentDetail.style.display = 'none';
-
-            // Show placeholder, hide details content
-            const detailsPlaceholder = document.getElementById('detailsPlaceholder');
-            const detailsSidebarContent = document.getElementById('detailsSidebarContent');
-            if (detailsPlaceholder) detailsPlaceholder.style.display = 'block';
-            if (detailsSidebarContent) detailsSidebarContent.style.display = 'none';
+            document.getElementById('detailsPlaceholder').style.display = 'flex';
+            document.getElementById('detailsSidebarContent').style.display = 'none';
         }
 
         function updateStats() {
-            // Show filtered count / total when system templates are hidden
             const toggle = document.getElementById('toggleSystemTemplates');
             const isFiltered = toggle && !toggle.checked && allAgents.length !== agents.length;
             const totalText = isFiltered ? `${agents.length}/${allAgents.length}` : `${agents.length}`;
             document.getElementById('statTotal').textContent = totalText;
             document.getElementById('statActive').textContent = agents.filter(a => a.is_active !== false).length;
-            document.getElementById('statMindStudio').textContent = agents.filter(a => a.type === 'mindstudio').length;
-            document.getElementById('statPickAxe').textContent = agents.filter(a => a.type === 'pickaxe').length;
         }
 
         // =========================================================================
@@ -3103,7 +958,9 @@
 
         function escapeHtml(str) {
             if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
         }
 
         function buildCategoryOptions(selected = '') {
@@ -3194,7 +1051,6 @@
                         <div class="form-hint">Assign this agent to a specific department</div>
                     </div>
 
-                    <!-- Platform-specific fields (MindStudio) -->
                     <div class="platform-fields" id="platformFieldsEmbed" style="display: ${showEmbed ? 'block' : 'none'};">
                         <div class="platform-fields-title">
                             <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
@@ -3253,7 +1109,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Conversation Starters</label>
-                            <textarea class="form-input form-textarea" id="formConversationStarters" placeholder="Enter conversation starters, one per line. These are shown to users when they start a chat with this agent.">${escapeHtml(startersText)}</textarea>
+                            <textarea class="form-input form-textarea" id="formConversationStarters" placeholder="Enter conversation starters, one per line.">${escapeHtml(startersText)}</textarea>
                             <div class="form-hint">One starter per line. Example: "Help me write a blog post about..."</div>
                         </div>
                     </div>
@@ -3263,7 +1119,6 @@
 
         function buildDepartmentOptionsForAgent(selectedId = '') {
             let html = '<option value="">No Department (Available to all)</option>';
-            // Get departments from the filter dropdown which is already populated
             const filterSelect = document.getElementById('filterDepartment');
             if (filterSelect) {
                 Array.from(filterSelect.options).forEach(opt => {
@@ -3275,12 +1130,12 @@
             return html;
         }
 
-        function openModal(agent = null) {
+        function openModal(agent = null, activeTab = 'settings') {
             editingAgent = agent;
 
             agentModal = ModalService.create({
                 title: agent ? 'Edit Agent' : 'New Agent',
-                content: buildAgentFormContent(agent),
+                content: buildTabbedModalContent(agent, activeTab),
                 footer: `
                     <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
                     <button type="submit" class="i360-btn i360-btn-primary" id="btnSave">
@@ -3288,18 +1143,302 @@
                         Save Agent
                     </button>
                 `,
-                width: 700,
+                width: 780,
                 draggable: true,
                 resizable: true,
                 onOpen: () => {
                     lucide.createIcons();
-                    // Attach event listeners
-                    document.getElementById('formPlatform').addEventListener('change', updatePlatformFields);
-                    document.getElementById('formExecutionMode').addEventListener('change', updateExecutionModeFields);
+                    initModalTabs();
+                    // Settings tab listeners
+                    const formPlatform = document.getElementById('formPlatform');
+                    const formExecMode = document.getElementById('formExecutionMode');
+                    if (formPlatform) formPlatform.addEventListener('change', updatePlatformFields);
+                    if (formExecMode) formExecMode.addEventListener('change', updateExecutionModeFields);
                     document.getElementById('btnSave').addEventListener('click', handleAgentSave);
+                    // Context tab listeners
+                    const ctxTypeFilter = document.getElementById('contextTypeFilter');
+                    const ctxModeSelect = document.getElementById('contextInjectionMode');
+                    const ctxAddBtn = document.getElementById('btnContextAddInline');
+                    if (ctxTypeFilter) ctxTypeFilter.addEventListener('change', handleContextTypeFilterChange);
+                    if (ctxModeSelect) ctxModeSelect.addEventListener('change', updateInjectionModeHint);
+                    if (ctxAddBtn) ctxAddBtn.addEventListener('click', handleAddContextMappingFromModal);
+                    // Activate requested tab
+                    if (activeTab !== 'settings') switchModalTab(activeTab);
                 }
             });
             agentModal.open();
+        }
+
+        function buildTabbedModalContent(agent, activeTab) {
+            const isEdit = !!agent;
+            const settingsActive = activeTab === 'settings' ? 'active' : '';
+            const contextActive = activeTab === 'context' ? 'active' : '';
+            const historyActive = activeTab === 'history' ? 'active' : '';
+
+            return `
+                <div class="modal-tabs">
+                    <button class="modal-tab ${settingsActive || 'active'}" data-tab="settings">
+                        <i data-lucide="settings" style="width:14px;height:14px;"></i> Settings
+                    </button>
+                    ${isEdit ? `
+                    <button class="modal-tab ${contextActive}" data-tab="context">
+                        <i data-lucide="link" style="width:14px;height:14px;"></i> Context
+                        <span class="modal-tab-badge" id="contextCountBadge">${agent?.context_mappings?.length || 0}</span>
+                    </button>
+                    <button class="modal-tab ${historyActive}" data-tab="history">
+                        <i data-lucide="history" style="width:14px;height:14px;"></i> History
+                    </button>
+                    ` : ''}
+                </div>
+                <div class="modal-tab-panels">
+                    <div class="modal-tab-panel ${settingsActive || 'active'}" id="tabSettings">
+                        ${buildAgentFormContent(agent)}
+                    </div>
+                    ${isEdit ? `
+                    <div class="modal-tab-panel ${contextActive}" id="tabContext">
+                        ${buildContextTabContent(agent)}
+                    </div>
+                    <div class="modal-tab-panel ${historyActive}" id="tabHistory">
+                        <div id="modalExecutionHistory">
+                            <div class="loading"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function buildContextTabContent(agent) {
+            const mappings = agent?.context_mappings || [];
+            const sorted = [...mappings].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+            let mappingsHtml = '';
+            if (sorted.length === 0) {
+                mappingsHtml = '<p style="color:var(--text-muted);text-align:center;padding:var(--spacing-lg);">No context assets mapped yet.</p>';
+            } else {
+                mappingsHtml = sorted.map((mapping, index) => {
+                    const asset = mapping.context_assets;
+                    return `
+                        <div class="mapping-item" data-id="${mapping.id}">
+                            <div class="mapping-priority">#${index + 1}</div>
+                            <div class="mapping-icon">${escapeHtml(asset?.icon) || '📄'}</div>
+                            <div class="mapping-info">
+                                <div class="mapping-name">${escapeHtml(asset?.name) || 'Unknown Asset'}</div>
+                                <div class="mapping-type">${escapeHtml(asset?.asset_type) || ''}</div>
+                            </div>
+                            <span class="mapping-mode ${escapeHtml(mapping.injection_mode)}">${escapeHtml(mapping.injection_mode)}</span>
+                            <div class="mapping-actions">
+                                <button onclick="removeContextMappingFromModal('${agent.id}', '${mapping.id}')" title="Remove">
+                                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Build add-mapping form inline
+            const types = [...new Set(contextAssets.filter(a => !a.is_template && !a.asset_type?.toLowerCase().includes('template')).map(a => a.asset_type).filter(Boolean))];
+            let typeOptions = '<option value="">All Types</option>';
+            types.forEach(type => { typeOptions += `<option value="${type}">${escapeHtml(type)}</option>`; });
+
+            const filteredAssets = contextAssets.filter(a => !a.is_template && !a.asset_type?.toLowerCase().includes('template'));
+            let assetOptions = '<option value="">Choose an asset...</option>';
+            filteredAssets.forEach(asset => {
+                assetOptions += `<option value="${asset.id}" data-type="${asset.asset_type || ''}">${asset.icon || '📄'} ${escapeHtml(asset.name)}</option>`;
+            });
+
+            return `
+                <div style="margin-bottom:var(--spacing-lg);">
+                    <div class="sidebar-title" style="margin-bottom:var(--spacing-sm);">Current Mappings</div>
+                    <div class="context-mappings">
+                        <div class="mapping-list" id="modalMappingList">${mappingsHtml}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="sidebar-title" style="margin-bottom:var(--spacing-sm);">Add Context Asset</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select class="form-input form-select" id="contextTypeFilter">${typeOptions}</select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Asset</label>
+                            <select class="form-input form-select" id="contextAssetSelect">${assetOptions}</select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Mode</label>
+                            <select class="form-input form-select" id="contextInjectionMode">
+                                <option value="always">Always</option>
+                                <option value="on_demand">On Demand</option>
+                                <option value="conditional">Conditional</option>
+                            </select>
+                            <div class="form-hint-box" id="injectionModeHint">
+                                <strong>Always:</strong> Included in every conversation.
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Priority (0-100)</label>
+                            <input type="number" class="form-input" id="contextPriority" value="50" min="0" max="100">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btnContextAddInline" style="width:100%;">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                        Add Mapping
+                    </button>
+                </div>
+            `;
+        }
+
+        function initModalTabs() {
+            document.querySelectorAll('.modal-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchModalTab(tab.dataset.tab));
+            });
+            // Load history tab data if editing
+            if (editingAgent) {
+                loadModalExecutionHistory(editingAgent.id);
+            }
+        }
+
+        function switchModalTab(tabName) {
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+            document.querySelectorAll('.modal-tab-panel').forEach(p => p.classList.remove('active'));
+            const panel = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+            if (panel) panel.classList.add('active');
+        }
+
+        async function loadModalExecutionHistory(agentId) {
+            try {
+                const response = await authFetch(`/api/agents/${agentId}/executions?limit=10`);
+                const data = await response.json();
+                const container = document.getElementById('modalExecutionHistory');
+                if (!container) return;
+
+                if (!data.success || !data.data?.length) {
+                    container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:var(--spacing-lg);">No executions yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.data.map(exec => `
+                    <div class="execution-item">
+                        <div class="execution-header">
+                            <span class="execution-date">${formatDate(exec.created_at)}</span>
+                            <span class="execution-status ${exec.status}">${exec.status}</span>
+                        </div>
+                        <div class="execution-preview">${escapeHtml(exec.user_message?.substring(0, 100) || '')}${exec.user_message?.length > 100 ? '...' : ''}</div>
+                        <div class="execution-meta">
+                            <span>${exec.total_tokens || 0} tokens</span>
+                            <span>${exec.duration_ms || 0}ms</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading modal execution history:', error);
+            }
+        }
+
+        async function handleAddContextMappingFromModal() {
+            const assetId = document.getElementById('contextAssetSelect').value;
+            const mode = document.getElementById('contextInjectionMode').value;
+            const priority = document.getElementById('contextPriority').value;
+
+            if (!assetId) { showToast('Please select a context asset', 'error'); return; }
+            if (!editingAgent) return;
+
+            try {
+                const response = await authFetch(`/api/agents/${editingAgent.id}/context`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ asset_id: assetId, injection_mode: mode, priority: parseInt(priority) })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Context mapping added', 'success');
+                    // Reload agent detail and refresh modal context tab
+                    const resp = await authFetch(`/api/agents/${editingAgent.id}`);
+                    const agentData = await resp.json();
+                    if (agentData.success) {
+                        editingAgent = agentData.data;
+                        selectedAgent = agentData.data;
+                        // Refresh the mapping list in the modal
+                        const listEl = document.getElementById('modalMappingList');
+                        if (listEl) {
+                            const sorted = [...(editingAgent.context_mappings || [])].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+                            listEl.innerHTML = sorted.map((mapping, index) => {
+                                const asset = mapping.context_assets;
+                                return `
+                                    <div class="mapping-item" data-id="${mapping.id}">
+                                        <div class="mapping-priority">#${index + 1}</div>
+                                        <div class="mapping-icon">${escapeHtml(asset?.icon) || '📄'}</div>
+                                        <div class="mapping-info">
+                                            <div class="mapping-name">${escapeHtml(asset?.name) || 'Unknown'}</div>
+                                            <div class="mapping-type">${escapeHtml(asset?.asset_type) || ''}</div>
+                                        </div>
+                                        <span class="mapping-mode ${escapeHtml(mapping.injection_mode)}">${escapeHtml(mapping.injection_mode)}</span>
+                                        <div class="mapping-actions">
+                                            <button onclick="removeContextMappingFromModal('${editingAgent.id}', '${mapping.id}')" title="Remove">
+                                                <i data-lucide="x" style="width:14px;height:14px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('') || '<p style="color:var(--text-muted);text-align:center;padding:var(--spacing-lg);">No context assets mapped yet.</p>';
+                            lucide.createIcons();
+                        }
+                        // Update badge
+                        const badge = document.getElementById('contextCountBadge');
+                        if (badge) badge.textContent = editingAgent.context_mappings?.length || 0;
+                        // Refresh the right panel too
+                        renderAgentDetail(editingAgent);
+                        // Reset the asset select
+                        document.getElementById('contextAssetSelect').value = '';
+                    }
+                } else {
+                    showToast(data.error || 'Failed to add mapping', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding context mapping:', error);
+                showToast('Failed to add mapping', 'error');
+            }
+        }
+
+        async function removeContextMappingFromModal(agentId, mappingId) {
+            try {
+                const response = await authFetch(`/api/agents/${agentId}/context/${mappingId}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Context mapping removed', 'success');
+                    // Refresh agent and modal
+                    const resp = await authFetch(`/api/agents/${agentId}`);
+                    const agentData = await resp.json();
+                    if (agentData.success) {
+                        editingAgent = agentData.data;
+                        selectedAgent = agentData.data;
+                        // Re-render the context tab content
+                        const tabContext = document.getElementById('tabContext');
+                        if (tabContext) {
+                            tabContext.innerHTML = buildContextTabContent(editingAgent);
+                            lucide.createIcons();
+                            // Re-attach listeners
+                            const ctxTypeFilter = document.getElementById('contextTypeFilter');
+                            const ctxModeSelect = document.getElementById('contextInjectionMode');
+                            const ctxAddBtn = document.getElementById('btnContextAddInline');
+                            if (ctxTypeFilter) ctxTypeFilter.addEventListener('change', handleContextTypeFilterChange);
+                            if (ctxModeSelect) ctxModeSelect.addEventListener('change', updateInjectionModeHint);
+                            if (ctxAddBtn) ctxAddBtn.addEventListener('click', handleAddContextMappingFromModal);
+                        }
+                        const badge = document.getElementById('contextCountBadge');
+                        if (badge) badge.textContent = editingAgent.context_mappings?.length || 0;
+                        renderAgentDetail(editingAgent);
+                    }
+                }
+            } catch (error) {
+                console.error('Error removing context mapping:', error);
+                showToast('Failed to remove mapping', 'error');
+            }
         }
 
         function closeModal() {
@@ -3310,99 +1449,12 @@
             editingAgent = null;
         }
 
-        function buildContextMappingFormContent() {
-            // Build type filter options
-            const types = [...new Set(contextAssets.filter(a => !a.is_template && !a.asset_type?.toLowerCase().includes('template')).map(a => a.asset_type).filter(Boolean))];
-            let typeOptions = '<option value="">All Types</option>';
-            types.forEach(type => {
-                typeOptions += `<option value="${type}">${escapeHtml(type)}</option>`;
-            });
-
-            // Build asset options
-            const filteredAssets = contextAssets.filter(a => !a.is_template && !a.asset_type?.toLowerCase().includes('template'));
-            let assetOptions = '<option value="">Choose an asset...</option>';
-            filteredAssets.forEach(asset => {
-                assetOptions += `<option value="${asset.id}" data-type="${asset.asset_type || ''}">${asset.icon || '📄'} ${escapeHtml(asset.name)}</option>`;
-            });
-
-            return `
-                <!-- Asset Type Filter -->
-                <div class="form-group">
-                    <label class="form-label">Asset Type</label>
-                    <select class="form-input form-select" id="contextTypeFilter">
-                        ${typeOptions}
-                    </select>
-                    <p class="form-hint">Filter assets by type to find what you need faster.</p>
-                </div>
-
-                <!-- Asset Selection -->
-                <div class="form-group">
-                    <label class="form-label">Select Context Asset</label>
-                    <select class="form-input form-select" id="contextAssetSelect">
-                        ${assetOptions}
-                    </select>
-                </div>
-
-                <hr style="border: none; border-top: 1px solid var(--border); margin: 1.25rem 0;">
-
-                <!-- Injection Mode -->
-                <div class="form-group">
-                    <label class="form-label">Injection Mode</label>
-                    <select class="form-input form-select" id="contextInjectionMode">
-                        <option value="always">Always</option>
-                        <option value="on_demand">On Demand</option>
-                        <option value="conditional">Conditional</option>
-                    </select>
-                    <div class="form-hint-box" id="injectionModeHint">
-                        <strong>Always:</strong> This asset is included in every conversation with this agent. Use for core context like company values, voice guidelines, or brand identity.
-                    </div>
-                </div>
-
-                <!-- Priority -->
-                <div class="form-group">
-                    <label class="form-label">Priority</label>
-                    <input type="number" class="form-input" id="contextPriority" value="50" min="0" max="100">
-                    <div class="form-hint-box">
-                        <strong>Priority (0-100):</strong> Higher values are injected first into the prompt. Use higher priority for critical context (values, guardrails) and lower for supplementary info.
-                        <div class="priority-examples">
-                            <span><strong>90-100:</strong> Core values, bright lines</span>
-                            <span><strong>70-89:</strong> Voice DNA, ICP</span>
-                            <span><strong>50-69:</strong> Products, processes</span>
-                            <span><strong>0-49:</strong> Reference materials</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
+        // Legacy openContextModal — now opens the main modal on the Context tab
         async function openContextModal() {
             if (!selectedAgent) return;
-
-            // Re-fetch context assets so newly created ones appear
             await fetchContextAssets();
-
-            contextMappingModal = ModalService.create({
-                title: 'Add Context Asset',
-                content: buildContextMappingFormContent(),
-                footer: `
-                    <button type="button" class="i360-btn i360-btn-secondary" data-action="close">Cancel</button>
-                    <button type="button" class="i360-btn i360-btn-primary" id="btnContextAdd">
-                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                        Add Mapping
-                    </button>
-                `,
-                width: 550,
-                draggable: true,
-                resizable: true,
-                onOpen: () => {
-                    lucide.createIcons();
-                    // Attach event listeners
-                    document.getElementById('contextTypeFilter').addEventListener('change', handleContextTypeFilterChange);
-                    document.getElementById('contextInjectionMode').addEventListener('change', updateInjectionModeHint);
-                    document.getElementById('btnContextAdd').addEventListener('click', handleAddContextMapping);
-                }
-            });
-            contextMappingModal.open();
+            await loadAgentDetail(selectedAgent.id);
+            openModal(selectedAgent, 'context');
         }
 
         function handleContextTypeFilterChange() {
@@ -3436,7 +1488,6 @@
             const embedFields = document.getElementById('platformFieldsEmbed');
             const nativeFields = document.getElementById('platformFieldsNative');
 
-            // 'custom' and 'llm' are native types, 'mindstudio' is embed type
             if (platform === 'custom' || platform === 'llm') {
                 embedFields.style.display = 'none';
                 nativeFields.style.display = 'block';
@@ -3448,13 +1499,7 @@
 
         function updateExecutionModeFields() {
             const mode = document.getElementById('formExecutionMode').value;
-            const embedUrlGroup = document.getElementById('embedUrlGroup');
-
-            if (mode === 'embed') {
-                embedUrlGroup.style.display = 'block';
-            } else {
-                embedUrlGroup.style.display = 'none';
-            }
+            document.getElementById('embedUrlGroup').style.display = mode === 'embed' ? 'block' : 'none';
         }
 
         function handleAgentSave(e) {
@@ -3474,16 +1519,13 @@
                 department_id: departmentValue || null
             };
 
-            // 'custom' and 'llm' are native types with LLM configuration
             if (platform === 'custom' || platform === 'llm') {
                 agentData.system_prompt = document.getElementById('formSystemPrompt').value;
                 agentData.introduction = document.getElementById('formIntroduction').value.trim() || null;
                 agentData.llm_model = document.getElementById('formModel').value;
                 agentData.temperature = parseFloat(document.getElementById('formTemperature').value);
-                // Parse conversation starters from newline-separated text to array
                 const startersText = document.getElementById('formConversationStarters').value.trim();
                 agentData.conversation_starters = startersText ? startersText.split('\n').map(s => s.trim()).filter(s => s) : [];
-                // Get provider from loaded models, fallback to detection logic
                 const selectedModel = availableModels.find(m => m.id === agentData.llm_model);
                 if (selectedModel) {
                     agentData.llm_provider = selectedModel.provider;
@@ -3495,7 +1537,6 @@
                     agentData.llm_provider = 'anthropic';
                 }
             } else {
-                // MindStudio agents - store config for API or embed execution
                 const executionMode = document.getElementById('formExecutionMode').value;
                 agentData.mindstudio_workflow_id = document.getElementById('formExternalId').value;
                 agentData.config = {
@@ -3506,52 +1547,29 @@
                     theme: document.documentElement.getAttribute('data-theme') || 'dark'
                 };
 
-                // Validate App ID for MindStudio
                 if (!agentData.mindstudio_workflow_id) {
                     showToast('MindStudio App ID is required', 'error');
                     return;
                 }
             }
 
-            if (!agentData.name) {
-                showToast('Name is required', 'error');
-                return;
-            }
-
-            if (!agentData.suite) {
-                showToast('i360 System is required', 'error');
-                return;
-            }
-
-            if (!agentData.category) {
-                showToast('Category is required', 'error');
-                return;
-            }
+            if (!agentData.name) { showToast('Name is required', 'error'); return; }
+            if (!agentData.suite) { showToast('i360 System is required', 'error'); return; }
+            if (!agentData.category) { showToast('Category is required', 'error'); return; }
 
             saveAgent(agentData);
         }
 
+        // Legacy handler — context mapping now handled via tabbed modal
         function handleAddContextMapping() {
-            const assetId = document.getElementById('contextAssetSelect').value;
-            const mode = document.getElementById('contextInjectionMode').value;
-            const priority = document.getElementById('contextPriority').value;
-
-            if (!assetId) {
-                showToast('Please select a context asset', 'error');
-                return;
-            }
-
-            addContextMapping(selectedAgent.id, assetId, mode, priority);
+            handleAddContextMappingFromModal();
         }
 
         // =========================================================================
-        // Tags
-        // =========================================================================
-        // Populate Selects
+        // Selects & Helpers
         // =========================================================================
 
         function populateCategorySelects() {
-            // Only populate the filter dropdown - form dropdown is built dynamically
             const filterSelect = document.getElementById('filterCategory');
             if (filterSelect) {
                 const currentValue = filterSelect.value;
@@ -3566,83 +1584,23 @@
             }
         }
 
-        function populateContextAssetSelect(filterType = '') {
-            const select = document.getElementById('contextAssetSelect');
-            select.innerHTML = '<option value="">Choose an asset...</option>';
-
-            // Filter out templates and apply type filter
-            const filteredAssets = contextAssets.filter(asset => {
-                // Exclude templates (assets with is_template flag or "template" in type)
-                const isTemplate = asset.is_template ||
-                    (asset.asset_type && asset.asset_type.toLowerCase().includes('template'));
-                if (isTemplate) return false;
-
-                // Apply type filter if specified
-                if (filterType && asset.asset_type !== filterType) return false;
-
-                return true;
-            });
-
-            filteredAssets.forEach(asset => {
-                const option = document.createElement('option');
-                option.value = asset.id;
-                option.textContent = `${asset.icon || '📄'} ${asset.name}`;
-                option.dataset.type = asset.asset_type || '';
-                select.appendChild(option);
-            });
-
-            // Update count hint
-            const countText = filteredAssets.length === 1 ? '1 asset available' : `${filteredAssets.length} assets available`;
-            select.title = countText;
-        }
-
-        function populateContextTypeFilter() {
-            const typeFilter = document.getElementById('contextTypeFilter');
-            typeFilter.innerHTML = '<option value="">All Types</option>';
-
-            // Get unique types from assets (excluding templates)
-            const types = [...new Set(
-                contextAssets
-                    .filter(asset => !asset.is_template &&
-                        !(asset.asset_type && asset.asset_type.toLowerCase().includes('template')))
-                    .map(asset => asset.asset_type)
-                    .filter(type => type)
-            )].sort();
-
-            types.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type;
-                // Format type name nicely
-                option.textContent = type.split('_').map(w =>
-                    w.charAt(0).toUpperCase() + w.slice(1)
-                ).join(' ');
-                typeFilter.appendChild(option);
-            });
-        }
-
         function updateInjectionModeHint() {
             const mode = document.getElementById('contextInjectionMode').value;
             const hint = document.getElementById('injectionModeHint');
-
             const hints = {
-                'always': '<strong>Always:</strong> This asset is included in every conversation with this agent. Use for core context like company values, voice guidelines, or brand identity.',
-                'on_demand': '<strong>On Demand:</strong> This asset is only included when explicitly requested or when relevant keywords are detected. Use for reference materials or optional context.',
-                'conditional': '<strong>Conditional:</strong> This asset is included based on rules you define (e.g., certain topics, user segments, or time-based triggers). Requires additional configuration.'
+                'always': '<strong>Always:</strong> Included in every conversation. Use for core context.',
+                'on_demand': '<strong>On Demand:</strong> Included when relevant keywords are detected.',
+                'conditional': '<strong>Conditional:</strong> Included based on rules you define.'
             };
-
             hint.innerHTML = hints[mode] || hints['always'];
         }
-
-        // =========================================================================
-        // Toast
-        // =========================================================================
 
         function showToast(message, type = 'success') {
             ModalService.toast({ message, type });
         }
 
         // =========================================================================
-        // Theme Toggle
+        // Theme
         // =========================================================================
 
         function initTheme() {
@@ -3660,7 +1618,6 @@
         }
 
         function updateThemeIcon(theme) {
-            // Update any theme toggle icons (both old and sidebar)
             document.querySelectorAll('#themeToggle i, #sidebarThemeToggle i').forEach(icon => {
                 icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
             });
@@ -3668,7 +1625,7 @@
         }
 
         // =========================================================================
-        // AGENT LAUNCHER FUNCTIONS
+        // Launcher
         // =========================================================================
 
         async function openLauncher(agent) {
@@ -3677,34 +1634,22 @@
             launcherAgent = agent;
             launcherHistory = [];
 
-            // Set header info
             document.getElementById('launcherIcon').innerHTML = renderAgentIcon(agent.icon);
             document.getElementById('launcherName').textContent = agent.name;
             document.getElementById('launcherModel').textContent = getModelDisplayName(agent.llm_model || agent.model);
 
-            // Set welcome screen
             document.getElementById('welcomeAgentIcon').innerHTML = renderAgentIcon(agent.icon);
-            document.getElementById('welcomeDescription').textContent =
-                agent.description || 'Start a conversation with this agent.';
+            document.getElementById('welcomeDescription').textContent = agent.description || 'Start a conversation with this agent.';
 
-            // Render conversation starters
             renderConversationStarters(agent.conversation_starters || []);
-
-            // Load context preview
             await loadContextPreview(agent.id);
 
-            // Show welcome, hide messages
             document.getElementById('launcherWelcome').style.display = 'block';
             clearLauncherMessages();
-
-            // Reset context preview to expanded
             document.getElementById('contextPreview').classList.add('expanded');
-
-            // Show panel
             document.getElementById('launcherOverlay').classList.add('active');
             document.getElementById('launcherInputField').focus();
 
-            // Reset status
             setLauncherStatus('Ready');
         }
 
@@ -3718,28 +1663,17 @@
 
         function renderConversationStarters(starters) {
             const container = document.getElementById('conversationStarters');
-
-            if (!starters || starters.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
+            if (!starters || starters.length === 0) { container.innerHTML = ''; return; }
 
             container.innerHTML = starters.map(starter => {
                 const escaped = escapeHtml(starter);
                 return `<button class="starter-btn" data-starter="${escaped}">${starter}</button>`;
             }).join('');
 
-            // Add click handlers
             container.querySelectorAll('.starter-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    sendLauncherMessage(btn.dataset.starter);
-                });
+                btn.addEventListener('click', () => sendLauncherMessage(btn.dataset.starter));
             });
         }
-
-        // =========================================================================
-        // CONTEXT PREVIEW FUNCTIONS
-        // =========================================================================
 
         async function loadContextPreview(agentId) {
             try {
@@ -3748,9 +1682,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_message: '' })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     contextPreviewData = data.data;
                     renderContextPreview(data.data);
@@ -3792,7 +1724,7 @@
         }
 
         // =========================================================================
-        // LAUNCHER MESSAGE FUNCTIONS
+        // Launcher Messages
         // =========================================================================
 
         async function sendLauncherMessage(message = null) {
@@ -3801,44 +1733,31 @@
 
             if (!text || isLauncherStreaming || !launcherAgent) return;
 
-            // Hide welcome screen
             document.getElementById('launcherWelcome').style.display = 'none';
-
-            // Collapse context preview after first message
             document.getElementById('contextPreview').classList.remove('expanded');
 
-            // Add user message
             addLauncherMessage('user', text);
-
-            // Clear input
             input.value = '';
             input.style.height = 'auto';
 
-            // Add to history
             launcherHistory.push({ role: 'user', content: text });
-
-            // Update status
             setLauncherStatus('Thinking...');
             isLauncherStreaming = true;
 
             try {
-                // Create assistant message placeholder with loading
                 const assistantDiv = addLauncherMessage('assistant', '', true);
                 const contentDiv = assistantDiv.querySelector('.launcher-message-content');
 
-                // Stream response
                 const response = await authFetch(`/api/agents/${launcherAgent.id}/execute/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         message: text,
-                        conversation_history: launcherHistory.slice(0, -1) // Exclude current message
+                        conversation_history: launcherHistory.slice(0, -1)
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -3855,30 +1774,21 @@
                         if (line.startsWith('data: ')) {
                             const data = line.slice(6);
                             if (data === '[DONE]') continue;
-
                             try {
                                 const parsed = JSON.parse(data);
-
                                 if (parsed.type === 'token' && parsed.content) {
                                     fullResponse += parsed.content;
                                     contentDiv.innerHTML = formatLauncherMessage(fullResponse);
                                     scrollLauncherToBottom();
-                                } else if (parsed.type === 'complete') {
-                                    // Execution complete with metadata
-                                    console.log('Execution complete:', parsed);
                                 } else if (parsed.type === 'error') {
                                     throw new Error(parsed.error);
                                 }
-                            } catch (e) {
-                                // Skip invalid JSON
-                            }
+                            } catch (e) { /* skip invalid JSON */ }
                         }
                     }
                 }
 
-                // Add to history
                 launcherHistory.push({ role: 'assistant', content: fullResponse });
-
                 setLauncherStatus('Ready');
 
             } catch (error) {
@@ -3888,7 +1798,7 @@
                 const lastMessage = document.getElementById('launcherMessages').lastElementChild;
                 if (lastMessage?.classList.contains('assistant')) {
                     lastMessage.querySelector('.launcher-message-content').innerHTML =
-                        `<span style="color: var(--danger);">Error: ${escapeHtml(error.message)}</span>`;
+                        `<span style="color: var(--danger);">${escapeHtml('Error: ' + error.message)}</span>`;
                 }
             } finally {
                 isLauncherStreaming = false;
@@ -3926,7 +1836,6 @@
                 </div>
             `;
 
-            // Add copy handler
             div.querySelector('.launcher-message-copy').addEventListener('click', function() {
                 copyLauncherMessage(this);
             });
@@ -3939,8 +1848,7 @@
         }
 
         function clearLauncherMessages() {
-            const container = document.getElementById('launcherMessages');
-            container.querySelectorAll('.launcher-message').forEach(m => m.remove());
+            document.getElementById('launcherMessages').querySelectorAll('.launcher-message').forEach(m => m.remove());
         }
 
         function scrollLauncherToBottom() {
@@ -3951,30 +1859,16 @@
         function formatLauncherMessage(content) {
             if (!content) return '';
 
-            // Escape HTML first
             let formatted = content
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
 
-            // Code blocks
-            formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g,
-                '<pre><code class="language-$1">$2</code></pre>');
-
-            // Inline code
+            formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
             formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-            // Bold
             formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-            // Italic
             formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
-
-            // Links
-            formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-                '<a href="$2" target="_blank" rel="noopener">$1</a>');
-
-            // Line breaks
+            formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
             formatted = formatted.replace(/\n/g, '<br>');
 
             return formatted;
@@ -3983,14 +1877,12 @@
         async function copyLauncherMessage(button) {
             const messageDiv = button.closest('.launcher-message');
             const contentDiv = messageDiv.querySelector('.launcher-message-content');
-            const text = contentDiv.innerText;
 
             try {
-                await navigator.clipboard.writeText(text);
+                await navigator.clipboard.writeText(contentDiv.innerText);
                 const icon = button.querySelector('i');
                 icon.setAttribute('data-lucide', 'check');
                 lucide.createIcons();
-
                 setTimeout(() => {
                     icon.setAttribute('data-lucide', 'copy');
                     lucide.createIcons();
@@ -4007,12 +1899,10 @@
 
         function setupLauncherInput() {
             const input = document.getElementById('launcherInputField');
-
             input.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
-
             input.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -4022,14 +1912,13 @@
         }
 
         // =========================================================================
-        // EXECUTION HISTORY FUNCTIONS
+        // Execution History
         // =========================================================================
 
         async function loadExecutionHistory(agentId) {
             try {
                 const response = await authFetch(`/api/agents/${agentId}/executions?limit=10`);
                 const data = await response.json();
-
                 if (data.success) {
                     renderExecutionHistory(data.data);
                 }
@@ -4043,10 +1932,12 @@
 
             if (!executions || executions.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state" style="padding: 1.5rem;">
+                    <div class="empty-state" style="padding: var(--spacing-lg);">
+                        <i data-lucide="play-circle"></i>
                         <p>No executions yet. Launch the agent to start a conversation.</p>
                     </div>
                 `;
+                lucide.createIcons();
                 return;
             }
 
@@ -4071,80 +1962,40 @@
             return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        // =========================================================================
+        // Utility
+        // =========================================================================
 
-        // Convert Lucide icon names to emoji for use in <select> options
         const ICON_TO_EMOJI = {
-            // Departments
-            'crown': '👑',
-            'banknote': '💵',
-            'settings': '⚙️',
-            'trending-up': '📈',
-            'megaphone': '📢',
-            'package': '📦',
-            'headphones': '🎧',
-            'users': '👥',
-            'building-2': '🏢',
-            'building': '🏢',
-            // Categories
-            'compass': '🧭',
-            'target': '🎯',
-            'zap': '⚡',
-            'lightbulb': '💡',
-            'shield': '🛡️',
-            'brain': '🧠',
-            'chart-bar': '📊',
-            'file-text': '📄',
-            'message-circle': '💬',
-            'star': '⭐',
-            'heart': '❤️',
-            'user': '👤',
-            'code': '💻',
-            'database': '🗄️',
-            'globe': '🌐',
-            'calendar': '📅',
-            'clock': '🕐',
-            'mail': '📧',
-            'phone': '📞',
-            'link': '🔗',
-            'search': '🔍',
-            'check': '✅',
-            'x': '❌',
-            'alert-triangle': '⚠️',
-            'info': 'ℹ️',
-            'bot': '🤖',
-            'sparkles': '✨'
+            'crown': '👑', 'banknote': '💵', 'settings': '⚙️', 'trending-up': '📈',
+            'megaphone': '📢', 'package': '📦', 'headphones': '🎧', 'users': '👥',
+            'building-2': '🏢', 'building': '🏢', 'compass': '🧭', 'target': '🎯',
+            'zap': '⚡', 'lightbulb': '💡', 'shield': '🛡️', 'brain': '🧠',
+            'chart-bar': '📊', 'file-text': '📄', 'message-circle': '💬', 'star': '⭐',
+            'heart': '❤️', 'user': '👤', 'code': '💻', 'database': '🗄️',
+            'globe': '🌐', 'calendar': '📅', 'clock': '🕐', 'mail': '📧',
+            'phone': '📞', 'link': '🔗', 'search': '🔍', 'check': '✅',
+            'x': '❌', 'alert-triangle': '⚠️', 'info': 'ℹ️', 'bot': '🤖', 'sparkles': '✨'
         };
 
         function iconToEmoji(iconName) {
             if (!iconName) return '📁';
-            // If it's already an emoji (starts with emoji unicode range), return as-is
-            if (/^[\u{1F300}-\u{1F9FF}]|^[\u{2600}-\u{26FF}]|^[\u{2700}-\u{27BF}]/u.test(iconName)) {
-                return iconName;
-            }
+            if (/^[\u{1F300}-\u{1F9FF}]|^[\u{2600}-\u{26FF}]|^[\u{2700}-\u{27BF}]/u.test(iconName)) return iconName;
             return ICON_TO_EMOJI[iconName] || '📁';
         }
 
-        // Model name mapping for display
         const MODEL_DISPLAY_NAMES = {
-            'claude-opus-4-5-20251101': 'Claude Opus 4.5',
-            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-            'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-            'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-            'claude-opus-4-20250514': 'Claude Opus 4',
-            'claude-sonnet-4-20250514': 'Claude Sonnet 4',
-            // Legacy models (resolved to current)
-            'claude-3-5-sonnet-20241022': 'Claude Sonnet 4 (migrated)',
-            'claude-3-5-sonnet': 'Claude Sonnet 4 (migrated)',
-            'claude-3-opus': 'Claude Opus 4 (migrated)',
-            'claude-3-sonnet': 'Claude Sonnet 4 (migrated)',
-            'claude-3-haiku': 'Claude Haiku 4.5 (migrated)',
-            // OpenAI
+            'claude-opus-4-5-20251101': 'Opus 4.5',
+            'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
+            'claude-haiku-4-5-20251001': 'Haiku 4.5',
+            'claude-opus-4-1-20250805': 'Opus 4.1',
+            'claude-opus-4-20250514': 'Opus 4',
+            'claude-sonnet-4-20250514': 'Sonnet 4',
+            'claude-3-5-sonnet-20241022': 'Sonnet 4 (migrated)',
+            'claude-3-5-sonnet': 'Sonnet 4 (migrated)',
+            'claude-3-opus': 'Opus 4 (migrated)',
+            'claude-3-sonnet': 'Sonnet 4 (migrated)',
+            'claude-3-haiku': 'Haiku 4.5 (migrated)',
             'gpt-4.1': 'GPT-4.1',
             'gpt-4.1-mini': 'GPT-4.1 Mini',
             'gpt-4.1-nano': 'GPT-4.1 Nano',
@@ -4155,7 +2006,6 @@
             'o3-mini': 'o3-mini'
         };
 
-        // Resolve legacy model names to current valid models
         const MODEL_ALIASES = {
             'claude-3-5-sonnet-20241022': 'claude-sonnet-4-20250514',
             'claude-3-5-sonnet': 'claude-sonnet-4-20250514',
@@ -4170,30 +2020,114 @@
         }
 
         function getModelDisplayName(modelId) {
-            if (!modelId) return 'Default Model';
-            // First check dynamically loaded models
+            if (!modelId) return 'Default';
             const model = availableModels.find(m => m.id === modelId);
             if (model) return model.name;
-            // Fallback to static mapping
             return MODEL_DISPLAY_NAMES[modelId] || modelId;
         }
 
         function renderAgentIcon(icon) {
-            if (!icon) return '🤖';
-            // Check if it's an emoji (starts with emoji or is very short with special chars)
-            // Lucide icon names are lowercase with hyphens like "shield-check", "radar"
+            if (!icon) return '<i data-lucide="bot" style="width:20px;height:20px;"></i>';
             const isLucideIcon = /^[a-z][a-z0-9-]*$/.test(icon);
-            if (isLucideIcon) {
-                return `<i data-lucide="${icon}" style="width:24px;height:24px;"></i>`;
-            }
+            if (isLucideIcon) return `<i data-lucide="${icon}" style="width:20px;height:20px;"></i>`;
             return icon;
+        }
+
+        // =========================================================================
+        // Keyboard Navigation
+        // =========================================================================
+
+        function initKeyboardNavigation() {
+            document.addEventListener('keydown', (e) => {
+                // Don't capture when typing in inputs/textareas or modals are open
+                const target = e.target;
+                const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+                const isModalOpen = document.querySelector('.i360-modal-overlay');
+                const isLauncherOpen = document.getElementById('launcherOverlay').classList.contains('active');
+
+                if (isModalOpen || isLauncherOpen) return;
+
+                const items = agentList.querySelectorAll('.agent-item');
+                if (!items.length && !['n', '/'].includes(e.key.toLowerCase())) return;
+
+                switch (e.key) {
+                    case 'ArrowDown':
+                        if (isInput) return;
+                        e.preventDefault();
+                        clearKeyboardFocus(items);
+                        keyboardFocusIndex = Math.min(keyboardFocusIndex + 1, items.length - 1);
+                        setKeyboardFocus(items);
+                        break;
+
+                    case 'ArrowUp':
+                        if (isInput) return;
+                        e.preventDefault();
+                        clearKeyboardFocus(items);
+                        keyboardFocusIndex = Math.max(keyboardFocusIndex - 1, 0);
+                        setKeyboardFocus(items);
+                        break;
+
+                    case 'Enter':
+                        if (isInput) return;
+                        if (keyboardFocusIndex >= 0 && keyboardFocusIndex < items.length) {
+                            e.preventDefault();
+                            selectAgent(items[keyboardFocusIndex].dataset.id);
+                        }
+                        break;
+
+                    case 'Escape':
+                        if (isInput) {
+                            target.blur();
+                        } else {
+                            clearKeyboardFocus(items);
+                            keyboardFocusIndex = -1;
+                            selectedAgent = null;
+                            showEmptyState();
+                            agentList.querySelectorAll('.agent-item.selected').forEach(i => i.classList.remove('selected'));
+                        }
+                        break;
+
+                    case '/':
+                        if (!isInput) {
+                            e.preventDefault();
+                            document.getElementById('searchInput').focus();
+                        }
+                        break;
+
+                    case 'n':
+                    case 'N':
+                        if (!isInput) {
+                            e.preventDefault();
+                            openModal();
+                        }
+                        break;
+
+                    case 'e':
+                    case 'E':
+                        if (!isInput && selectedAgent) {
+                            e.preventDefault();
+                            openModal(selectedAgent);
+                        }
+                        break;
+                }
+            });
+        }
+
+        function clearKeyboardFocus(items) {
+            items.forEach(item => item.classList.remove('keyboard-focus'));
+        }
+
+        function setKeyboardFocus(items) {
+            if (keyboardFocusIndex >= 0 && keyboardFocusIndex < items.length) {
+                items[keyboardFocusIndex].classList.add('keyboard-focus');
+                items[keyboardFocusIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
         }
 
         // =========================================================================
         // Event Listeners
         // =========================================================================
 
-        // Helper functions for card action buttons
         function launchAgentById(agentId) {
             const agent = agents.find(a => a.id === agentId);
             if (agent) {
@@ -4208,19 +2142,15 @@
         async function editAgentById(agentId) {
             const agent = agents.find(a => a.id === agentId);
             if (agent) {
-                // Load full agent detail (agent_summary view excludes system_prompt)
                 await loadAgentDetail(agentId);
-                if (selectedAgent) {
-                    openModal(selectedAgent);
-                }
+                if (selectedAgent) openModal(selectedAgent);
             }
         }
 
-        function duplicateAgentById(agentId) {
-            const agent = agents.find(a => a.id === agentId);
-            if (agent) {
-                selectAgent(agentId);
-                duplicateAgent(agentId);
+        async function duplicateAgentById(agentId) {
+            await loadAgentDetail(agentId);
+            if (selectedAgent) {
+                document.getElementById('btnDuplicate').click();
             }
         }
 
@@ -4232,12 +2162,10 @@
             }
         }
 
-        // Theme toggle is now handled by the sidebar navigation (sidebarThemeToggle)
         document.getElementById('btnNewAgent').addEventListener('click', () => openModal());
         if (document.getElementById('btnNewAgentEmpty')) {
             document.getElementById('btnNewAgentEmpty').addEventListener('click', () => openModal());
         }
-        // Modal close buttons are now handled by ModalService (data-action="close")
 
         document.getElementById('btnEdit').addEventListener('click', () => {
             if (selectedAgent) openModal(selectedAgent);
@@ -4249,7 +2177,6 @@
 
         document.getElementById('btnLaunch').addEventListener('click', () => {
             if (selectedAgent) {
-                // Open agent in modal dialog
                 agentDialog.open({
                     agentId: selectedAgent.id,
                     title: selectedAgent.name,
@@ -4261,25 +2188,30 @@
         document.getElementById('btnDuplicate').addEventListener('click', async () => {
             if (!selectedAgent) return;
 
-            const newName = prompt(`Create a copy of "${selectedAgent.name}"?\n\nEnter a name for your copy:`, `${selectedAgent.name} (My Copy)`);
-            if (!newName) return;
+            const result = await ModalService.form({
+                title: 'Duplicate Agent',
+                fields: [
+                    { name: 'name', label: 'Name for your copy', type: 'text', required: true, value: `${selectedAgent.name} (My Copy)` }
+                ],
+                submitText: 'Duplicate'
+            });
+            if (!result) return;
 
             showLoading('Duplicating Agent', 'Creating your custom copy...');
             try {
                 const response = await authFetch(`/api/agents/${selectedAgent.id}/duplicate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: newName })
+                    body: JSON.stringify({ name: result.name })
                 });
-                const result = await response.json();
+                const data = await response.json();
 
-                if (result.success) {
-                    showToast(`Created "${result.data.name}" - you can now customize it`, 'success');
-                    // Refresh agent list and select the new agent
+                if (data.success) {
+                    showToast(`Created "${data.data.name}" - you can now customize it`, 'success');
                     await fetchAgents();
-                    selectAgent(result.data.id);
+                    selectAgent(data.data.id);
                 } else {
-                    throw new Error(result.error);
+                    throw new Error(data.error);
                 }
             } catch (error) {
                 console.error('Error duplicating agent:', error);
@@ -4293,14 +2225,11 @@
 
         // System Templates toggle
         const systemToggle = document.getElementById('toggleSystemTemplates');
-        // Restore saved preference
         const savedToggle = localStorage.getItem('insight360_systemTemplateToggle');
-        if (savedToggle !== null) {
-            systemToggle.checked = savedToggle === 'true';
-        }
+        if (savedToggle !== null) systemToggle.checked = savedToggle === 'true';
+
         systemToggle.addEventListener('change', () => {
             localStorage.setItem('insight360_systemTemplateToggle', systemToggle.checked);
-            // Re-apply filter from cached allAgents without re-fetching
             if (!systemToggle.checked) {
                 agents = allAgents.filter(a => !a.is_system);
             } else {
@@ -4310,7 +2239,6 @@
             updateStats();
         });
 
-        // Show toggle only for admin users
         if (typeof isCurrentUserAdmin === 'function' && isCurrentUserAdmin()) {
             document.getElementById('systemTemplateToggle').style.display = '';
         }
@@ -4322,29 +2250,48 @@
 
         // Search with debounce
         let searchTimeout;
-        document.getElementById('searchInput').addEventListener('input', (e) => {
+        document.getElementById('searchInput').addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(fetchAgents, 300);
+        });
+
+        // Advanced filters toggle
+        document.getElementById('btnAdvancedFilters').addEventListener('click', () => {
+            const btn = document.getElementById('btnAdvancedFilters');
+            const panel = document.getElementById('advancedFilters');
+            btn.classList.toggle('active');
+            panel.classList.toggle('visible');
+        });
+
+        // View toggle (compact/detailed)
+        document.getElementById('viewDetailed').addEventListener('click', () => {
+            compactView = false;
+            document.getElementById('viewDetailed').classList.add('active');
+            document.getElementById('viewCompact').classList.remove('active');
+            renderAgentList();
+        });
+
+        document.getElementById('viewCompact').addEventListener('click', () => {
+            compactView = true;
+            document.getElementById('viewCompact').classList.add('active');
+            document.getElementById('viewDetailed').classList.remove('active');
+            renderAgentList();
         });
 
         // Launcher event handlers
         document.getElementById('launcherClose').addEventListener('click', closeLauncher);
         document.getElementById('launcherOverlay').addEventListener('click', (e) => {
-            if (e.target.id === 'launcherOverlay') {
-                closeLauncher();
-            }
+            if (e.target.id === 'launcherOverlay') closeLauncher();
         });
         document.getElementById('launcherSend').addEventListener('click', () => sendLauncherMessage());
         document.getElementById('contextPreviewToggle').addEventListener('click', toggleContextPreview);
 
-        // Escape key to close launcher
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && document.getElementById('launcherOverlay').classList.contains('active')) {
                 closeLauncher();
             }
         });
 
-        // Initialize launcher input
         setupLauncherInput();
 
         // =========================================================================
@@ -4352,7 +2299,6 @@
         // =========================================================================
 
         function initPanelResize() {
-            // Agent List Panel Resize (left panel)
             const panel = document.getElementById('agentListPanel');
             const handle = document.getElementById('resizeHandle');
 
@@ -4373,7 +2319,6 @@
 
                 document.addEventListener('mousemove', (e) => {
                     if (!isResizing) return;
-
                     const delta = e.clientX - startX;
                     const newWidth = Math.max(220, Math.min(500, startWidth + delta));
                     panel.style.width = newWidth + 'px';
@@ -4389,14 +2334,10 @@
                     }
                 });
 
-                // Restore saved width
                 const savedWidth = localStorage.getItem('agentListPanelWidth');
-                if (savedWidth) {
-                    panel.style.width = savedWidth;
-                }
+                if (savedWidth) panel.style.width = savedWidth;
             }
 
-            // Right Details Panel Resize
             const detailsPanel = document.getElementById('detailsPanel');
             const detailsHandle = document.getElementById('detailsResizeHandle');
 
@@ -4405,7 +2346,6 @@
                 let detailsStartX = 0;
                 let detailsStartWidth = 0;
 
-                // Restore saved width
                 const savedDetailsWidth = localStorage.getItem('agentsDetailsPanelWidth');
                 if (savedDetailsWidth) {
                     const parsed = parseInt(savedDetailsWidth);
@@ -4428,9 +2368,6 @@
 
                 document.addEventListener('mousemove', (e) => {
                     if (!isResizingDetails) return;
-
-                    // Resize handle is on LEFT of panel
-                    // Drag left = panel wider, drag right = panel narrower
                     const mouseDelta = detailsStartX - e.clientX;
                     const newWidth = detailsStartWidth + mouseDelta;
                     const clampedWidth = Math.max(250, Math.min(600, newWidth));
@@ -4456,13 +2393,13 @@
         async function init() {
             initTheme();
             initPanelResize();
+            initKeyboardNavigation();
             UsageNudge.init();
 
-            // Ensure authFetch is loaded before making any API calls.
-            // navigation.js dynamically injects auth-fetch.js, but it may not
-            // finish loading before init() fires. initNavigation() guarantees
-            // authFetch is available.
             if (typeof initNavigation === 'function') await initNavigation();
+
+            // Initialize AgentDialogService after authFetch is available
+            agentDialog = new AgentDialogService();
 
             showLoading('Loading Agent Library', 'Fetching agents and configurations...');
             try {
@@ -4472,25 +2409,18 @@
                     fetchContextAssets(),
                     fetchModels()
                 ]);
-                await fetchAgents(); // updateStats() is called within fetchAgents()
+                await fetchAgents();
             } finally {
                 hideLoading();
             }
 
-            // Check for edit query parameter (from Strategy 120 redirect)
             const urlParams = new URLSearchParams(window.location.search);
             const editAgentId = urlParams.get('edit');
             if (editAgentId) {
-                // Verify agent exists in list
                 const agentExists = agents.find(a => a.id === editAgentId);
                 if (agentExists) {
-                    // Load full agent detail (which includes all fields like introduction, conversation_starters)
                     await loadAgentDetail(editAgentId);
-                    // selectedAgent now has the full agent data from the API
-                    if (selectedAgent) {
-                        openModal(selectedAgent);
-                    }
-                    // Clean up URL (remove query param without refresh)
+                    if (selectedAgent) openModal(selectedAgent);
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
