@@ -16,6 +16,8 @@
 
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
+const { getVerifiedOrgId } = require('../utils/orgScope');
+const { getDefaultModel } = require('../services/llmRegistry');
 
 /**
  * Prompts Routes Factory
@@ -24,6 +26,11 @@ const { randomUUID: uuidv4 } = require('crypto');
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+    const { requireModule } = createModuleAccessMiddleware(supabase);
+
+    // Module gating — prompt transformer is accessed from chat.html (Higgins module, all tiers)
+    router.use(requireModule('higgins'));
 
     // ============================================================================
     // CONSTANTS & TEMPLATES
@@ -423,9 +430,10 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
             const Anthropic = require('@anthropic-ai/sdk');
             const anthropic = new Anthropic();
 
+            const transformModel = getDefaultModel('anthropic') || 'claude-sonnet-4-5-20250929';
             const startTime = Date.now();
             const response = await anthropic.messages.create({
-                model: 'claude-sonnet-4-5-20250929',
+                model: transformModel,
                 max_tokens: 4096,
                 system: systemPrompt,
                 messages: [{
@@ -447,17 +455,17 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                 transformed = JSON.parse(jsonText);
             } catch (parseError) {
                 console.error('Failed to parse transformation response:', parseError);
+                console.error('Raw AI response (first 500 chars):', responseText.substring(0, 500));
                 return res.status(500).json({
                     success: false,
-                    error: 'AI returned invalid JSON. Please try again.',
-                    raw_response: responseText.substring(0, 500)
+                    error: 'AI returned invalid JSON. Please try again.'
                 });
             }
 
             // Post-process based on type
             const userId = req.userId || req.user?.id || null;
             let savedRecord = null;
-            let defaultVisibility = 'team'; // Default visibility
+            let defaultVisibility = 'private'; // Default to private (fail-safe)
 
             if (save) {
                 // Require authentication for saving
@@ -465,6 +473,15 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                     return res.status(401).json({
                         success: false,
                         error: 'Authentication required to save transformations. Please log in.'
+                    });
+                }
+
+                // Require org context for tenant isolation
+                const orgId = getVerifiedOrgId(req);
+                if (!orgId) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Organization context required to save transformations.'
                     });
                 }
 
@@ -495,6 +512,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                         let skillName = transformed.name || generateSkillName(prompt, name_hint);
                         const skillData = {
                             id: uuidv4(),
+                            org_id: orgId,
                             user_id: userId,
                             name: skillName,
                             display_name: transformed.display_name,
@@ -543,6 +561,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                         let agentSlug = transformed.slug;
                         const agentData = {
                             id: uuidv4(),
+                            org_id: orgId,
                             user_id: userId,
                             name: agentName,
                             slug: agentSlug,
@@ -550,7 +569,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
                             description: transformed.description,
                             category: transformed.category || 'strategy',
                             system_prompt: transformed.system_prompt,
-                            model: 'claude-sonnet-4-5-20250929',
+                            model: transformModel,
                             temperature: transformed.temperature || 0.7,
                             max_tokens: 4096,
                             is_active: true,
@@ -594,6 +613,7 @@ Clean up the system prompt: remove redundancy, improve clarity, but preserve all
 
                         const assetData = {
                             id: uuidv4(),
+                            org_id: orgId,
                             user_id: userId,
                             asset_type: assetType,
                             name: name_hint || `${PROMPT_TYPES[finalTargetType].name} - ${new Date().toLocaleDateString()}`,
@@ -689,10 +709,183 @@ ${(transformed.best_practices || []).map(bp => `- ${bp}`).join('\n')}
      * POST /api/prompts/preview
      * Preview transformation without saving
      */
-    router.post('/preview', async (req, res) => {
-        // Same as transform but with save=false forced
-        req.body.save = false;
-        return router.handle(req, res);
+    // Preview is handled by calling /transform with save=false from the frontend.
+    // The previous /preview endpoint used invalid router.handle() — removed.
+
+    /**
+     * POST /api/prompts/save
+     * Save pre-transformed (and user-edited) data directly — no LLM call.
+     * Used by TransformAssetModal step 2 to persist edited form data.
+     */
+    router.post('/save', async (req, res) => {
+        try {
+            const { target_type, data: editedData, source_prompt } = req.body;
+            const userId = req.userId || req.user?.id || null;
+            const orgId = getVerifiedOrgId(req);
+
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Authentication required.' });
+            }
+            if (!orgId) {
+                return res.status(403).json({ success: false, error: 'Organization context required.' });
+            }
+            if (!target_type || !editedData) {
+                return res.status(400).json({ success: false, error: 'target_type and data are required.' });
+            }
+            if (!PROMPT_TYPES[target_type]) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid target_type: ${target_type}. Valid: ${Object.keys(PROMPT_TYPES).join(', ')}`
+                });
+            }
+            if (!editedData.name || !editedData.name.trim()) {
+                return res.status(400).json({ success: false, error: 'Name is required.' });
+            }
+
+            // Get user's default visibility
+            let defaultVisibility = 'private';
+            try {
+                const { data: userPerms } = await supabase
+                    .from('user_effective_permissions')
+                    .select('default_visibility')
+                    .eq('user_id', userId)
+                    .single();
+                if (userPerms?.default_visibility) defaultVisibility = userPerms.default_visibility;
+            } catch (permErr) {
+                // Use private default
+            }
+
+            const makeUniqueName = (baseName) => `${baseName}-${Date.now().toString(36)}`;
+            let savedRecord = null;
+
+            switch (target_type) {
+                case 'skill': {
+                    let skillName = editedData.name.trim();
+                    const skillData = {
+                        id: uuidv4(),
+                        org_id: orgId,
+                        user_id: userId,
+                        name: skillName,
+                        display_name: editedData.display_name || skillName,
+                        description: editedData.description || '',
+                        instructions: editedData.instructions || '',
+                        output_format: null,
+                        required_context_types: editedData.required_context_types || [],
+                        optional_context_types: editedData.optional_context_types || [],
+                        trigger_phrases: editedData.triggers || [],
+                        examples: editedData.examples || [],
+                        tags: ['transformed', 'from-prompt'],
+                        version: '1.0.0',
+                        status: 'draft',
+                        visibility: defaultVisibility,
+                        created_by: userId
+                    };
+
+                    let { data: record, error } = await supabase
+                        .from('skills').insert(skillData).select().single();
+                    if (error && error.code === '23505') {
+                        skillData.name = makeUniqueName(skillName);
+                        skillData.id = uuidv4();
+                        const retry = await supabase.from('skills').insert(skillData).select().single();
+                        record = retry.data;
+                        error = retry.error;
+                    }
+                    if (error) throw error;
+                    savedRecord = record;
+                    break;
+                }
+
+                case 'agent': {
+                    const visibility = editedData.visibility || defaultVisibility;
+                    const isPublic = visibility === 'public';
+                    let agentName = editedData.name.trim();
+                    let agentSlug = agentName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    const agentModel = editedData.llm_model || getDefaultModel('anthropic') || 'claude-sonnet-4-5-20250929';
+
+                    const agentData = {
+                        id: uuidv4(),
+                        org_id: orgId,
+                        user_id: userId,
+                        name: agentName,
+                        slug: agentSlug,
+                        icon: editedData.icon || '🤖',
+                        description: editedData.description || '',
+                        category: editedData.category || 'strategy',
+                        system_prompt: editedData.system_prompt || '',
+                        model: agentModel,
+                        temperature: editedData.temperature || 0.7,
+                        max_tokens: editedData.max_tokens || 4096,
+                        is_active: true,
+                        is_public: isPublic,
+                        required_context_types: editedData.required_context_types || [],
+                        optional_context_types: editedData.optional_context_types || [],
+                        tags: editedData.tags || ['transformed']
+                    };
+
+                    let { data: record, error } = await supabase
+                        .from('agents').insert(agentData).select().single();
+                    if (error && error.code === '23505') {
+                        const suffix = Date.now().toString(36);
+                        agentData.name = `${agentName}-${suffix}`;
+                        agentData.slug = `${agentSlug}-${suffix}`;
+                        agentData.id = uuidv4();
+                        const retry = await supabase.from('agents').insert(agentData).select().single();
+                        record = retry.data;
+                        error = retry.error;
+                    }
+                    if (error) throw error;
+                    savedRecord = record;
+                    break;
+                }
+
+                case 'voice_dna':
+                case 'icp':
+                case 'business_profile': {
+                    const assetType = target_type === 'voice_dna' ? 'voice_dna' :
+                                     target_type === 'icp' ? 'icp' : 'custom_processes';
+                    const { name, ...contentData } = editedData;
+
+                    const assetData = {
+                        id: uuidv4(),
+                        org_id: orgId,
+                        user_id: userId,
+                        asset_type: assetType,
+                        name: name.trim(),
+                        description: `Transformed from system prompt`,
+                        content_json: contentData,
+                        content_text: JSON.stringify(contentData),
+                        tags: ['transformed', 'from-prompt'],
+                        visibility: defaultVisibility,
+                        version: 1,
+                        is_current: true,
+                        usage_count: 0,
+                        created_by: userId
+                    };
+
+                    const { data: record, error } = await supabase
+                        .from('context_assets').insert(assetData).select().single();
+                    if (error) throw error;
+                    savedRecord = record;
+                    break;
+                }
+            }
+
+            res.status(201).json({
+                success: true,
+                data: {
+                    saved: {
+                        id: savedRecord.id,
+                        table: target_type === 'skill' ? 'skills' :
+                               target_type === 'agent' ? 'agents' : 'context_assets',
+                        name: savedRecord.name || savedRecord.display_name
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error saving transformed asset:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
     });
 
     /**
@@ -792,25 +985,35 @@ ${(transformed.best_practices || []).map(bp => `- ${bp}`).join('\n')}
     router.get('/history', async (req, res) => {
         try {
             const { limit = 20, offset = 0 } = req.query;
-            const userId = req.user?.id;
+            const orgId = getVerifiedOrgId(req);
 
-            // Get recently transformed items from multiple tables
+            if (!orgId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Organization context required'
+                });
+            }
+
+            // Get recently transformed items from multiple tables (org-scoped)
             const [skills, agents, assets] = await Promise.all([
                 supabase
                     .from('skills')
                     .select('id, name, display_name, created_at, status')
+                    .eq('org_id', orgId)
                     .contains('tags', ['transformed'])
                     .order('created_at', { ascending: false })
                     .limit(parseInt(limit)),
                 supabase
                     .from('agents')
                     .select('id, name, icon, created_at, is_active')
+                    .eq('org_id', orgId)
                     .not('metadata->source', 'is', null)
                     .order('created_at', { ascending: false })
                     .limit(parseInt(limit)),
                 supabase
                     .from('context_assets')
                     .select('id, name, asset_type, created_at')
+                    .eq('org_id', orgId)
                     .contains('tags', ['transformed'])
                     .order('created_at', { ascending: false })
                     .limit(parseInt(limit))

@@ -281,7 +281,8 @@ class TransformAssetModal extends ModalBase {
         clearTimeout(this._analysisTimeout);
         this._analysisTimeout = setTimeout(async () => {
             try {
-                const response = await fetch('/api/prompts/analyze', {
+                const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+                const response = await fetcher('/api/prompts/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: content })
@@ -316,7 +317,8 @@ class TransformAssetModal extends ModalBase {
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
         try {
-            const response = await fetch('/api/prompts/transform', {
+            const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+            const response = await fetcher('/api/prompts/transform', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -526,26 +528,14 @@ class TransformAssetModal extends ModalBase {
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
         try {
-            const userId = this._getUserId();
-            const token = this._getAuthToken();
-
-            if (!userId) {
-                this._showError('Please log in to save assets.');
-                return;
-            }
-
-            const response = await fetch('/api/prompts/transform', {
+            const fetcher = typeof authFetch === 'function' ? authFetch : fetch;
+            const response = await fetcher('/api/prompts/save', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'X-User-Id': userId
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    prompt: this._sourceContent,
                     target_type: targetType,
-                    name_hint: editedData.name,
-                    save: true
+                    data: editedData,
+                    source_prompt: this._sourceContent
                 })
             });
 
@@ -568,7 +558,7 @@ class TransformAssetModal extends ModalBase {
             }
         } catch (err) {
             console.error('Save error:', err);
-            this._showError('Network error while saving.');
+            this._showError('Network error while saving. Please ensure you are logged in.');
         } finally {
             this.elements.saveBtn.disabled = false;
             this.elements.saveBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px;"></i> Save to Insight 360';
@@ -733,18 +723,6 @@ class TransformAssetModal extends ModalBase {
             .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
             .replace(/\bnull\b/g, '<span class="json-null">null</span>')
             .replace(/\b(-?\d+\.?\d*)\b/g, '<span class="json-number">$1</span>');
-    }
-
-    _getUserId() {
-        try {
-            const userData = localStorage.getItem('insight360_user');
-            if (userData) return JSON.parse(userData).id;
-        } catch (e) { /* ignore */ }
-        return null;
-    }
-
-    _getAuthToken() {
-        return localStorage.getItem('insight360_token') || '';
     }
 
     _handleCancel() {
