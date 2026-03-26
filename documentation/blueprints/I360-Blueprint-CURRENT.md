@@ -1,27 +1,67 @@
-# Insight 360 Blueprint v3.86
+# Insight 360 Blueprint v3.87
 
-**Version:** 3.86
-**Date:** March 22, 2026
-**Status:** Current | Phase 86
+**Version:** 3.87
+**Date:** March 26, 2026
+**Status:** Current | Phase 87
 **Codename:** Chronicle
-**Previous Version:** v3.85 (Artifact System)
-**Latest Update:** Phase 86: Agent Library UX Overhaul + Context Route Isolation
+**Previous Version:** v3.86 (Agent Library UX Overhaul)
+**Latest Update:** Phase 87: Prompt Transformer Security Fix (P0 Hotfix)
 
 ---
 
 ## Executive Summary
 
-Insight 360 v3.86 delivers **Phase 86** — a complete Agent Library UI/UX overhaul with tenant isolation hardening on the context assets API and a critical production fix for chat.js model loading.
+Insight 360 v3.87 delivers **Phase 87** — a P0 security hotfix for the Prompt Transformer's "Save to Insight 360" feature, closing a cross-tenant data leak and restoring save functionality that was 100% broken.
 
 Key deliverables:
-1. **Agent Library Redesign** — 2-panel master-detail layout replacing 3-panel, tabbed edit modal (Settings | Context | History)
-2. **Context Route Isolation** — Factory pattern + scopeToOrg() replaces unsafe .or() cross-org patterns
-3. **XSS Hardening** — escapeHtml() on all unescaped asset names in rendering paths
-4. **Chat.js Production Fix** — authFetch race condition resolved (models not loading)
-5. **17 Playwright Tests** — Full E2E coverage for Agent Library including org-scoped context verification
-6. **CSS Extraction** — 2150 lines of inline styles moved to `/css/agents.css`
+1. **Cross-Tenant Leak Closed** — `/api/prompts/history` now scoped by org_id (was returning all orgs' data)
+2. **Auth Middleware Added** — `requireModule('higgins')` gates all `/api/prompts/*` endpoints
+3. **Tenant Isolation on Inserts** — `org_id` added to all skill, agent, and context_asset insert operations
+4. **New Save Endpoint** — `POST /api/prompts/save` persists user-edited form data without redundant LLM calls
+5. **Frontend Auth Migration** — All 3 `fetch()` calls replaced with `authFetch()` in TransformAssetModal
+6. **Security Hardening** — Removed `raw_response` from error output, fixed visibility default to `private`
 
 **Core Philosophy:** "Build the platform, then build on the platform."
+
+---
+
+## Phase 87: What Was Completed (P0 Hotfix)
+
+### 1. Cross-Tenant Data Leak Fix (CRITICAL)
+
+`/api/prompts/history` returned all organizations' transformed assets. Added `.eq('org_id', orgId)` to all three queries plus 403 guard.
+
+### 2. Auth Middleware + Tenant Isolation
+
+`server/routes/prompts.js` had zero module-level access control:
+- Added `requireModule('higgins')` middleware on all routes
+- Added `org_id: getVerifiedOrgId(req)` to all insert operations (skills, agents, context_assets)
+- Added org context guard returning 403 if `orgId` is missing
+
+### 3. New Save Endpoint
+
+`POST /api/prompts/save` — saves user-edited form data directly:
+- Accepts `target_type`, `data` (edited fields), and `source_prompt` (provenance)
+- No LLM call — instant save of what the user edited in Step 2
+- Full validation, org_id injection, duplicate name handling for all 5 asset types
+- Returns 201 with saved record ID
+
+### 4. Frontend Auth Migration
+
+`TransformAssetModal.js` — all 3 `fetch()` calls migrated to `authFetch()`:
+- Analyze endpoint (L284)
+- Transform endpoint (L319)
+- Save now calls `/api/prompts/save` instead of re-transforming (L532)
+- Removed dead `_getUserId()` and `_getAuthToken()` methods
+
+### 5. Additional Fixes
+
+| Fix | Detail |
+|-----|--------|
+| Stale model reference | Hardcoded `claude-sonnet-4-5-20250929` → `getDefaultModel('anthropic')` |
+| Visibility default | `'team'` → `'private'` (fail-safe on permission lookup failure) |
+| Error info leak | `raw_response` moved from HTTP response to server console.error |
+| Broken endpoint | Removed `POST /preview` (used invalid `router.handle()`) |
 
 ---
 
