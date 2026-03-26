@@ -2,9 +2,9 @@
 
 ## Production Readiness & Future Development Plan
 
-**Version:** 3.86
-**Last Updated:** March 22, 2026
-**Current System Version:** v3.86 (Phase 86)
+**Version:** 3.87
+**Last Updated:** March 26, 2026
+**Current System Version:** v3.87 (Phase 87)
 
 ---
 
@@ -42,7 +42,24 @@ Insight 360 is a **full-service enterprise SaaS platform** enabling multi-tenant
 
 ---
 
-## What's New in v3.86
+## What's New in v3.87
+
+### Phase 87: Prompt Transformer Security Fix (P0 Hotfix)
+
+| Component | Description | Impact |
+|-----------|-------------|--------|
+| Cross-tenant leak fix | `/api/prompts/history` scoped by `org_id` | Closes data leak — other orgs' assets no longer visible |
+| Auth middleware | `requireModule('higgins')` on all `/api/prompts/*` routes | Module/tier gating on prompt transformer |
+| Tenant isolation on inserts | `org_id` added to skills, agents, context_assets inserts | Records properly associated with requesting org |
+| New `POST /api/prompts/save` | Dedicated save endpoint for user-edited form data | User edits preserved, no redundant LLM calls |
+| Frontend auth migration | 3x `fetch()` → `authFetch()` in TransformAssetModal | Proper auth + org context headers on all calls |
+| Security hardening | Removed `raw_response` from errors, fixed visibility default | Info leak prevention, fail-safe defaults |
+| Stale model fix | `getDefaultModel('anthropic')` replaces hardcoded model | Dynamic model resolution from registry |
+| Broken endpoint removed | `POST /preview` used invalid `router.handle()` | Dead code cleanup |
+
+---
+
+## What Was New in v3.86
 
 ### Phase 86: Agent Library UX Overhaul + Context Route Isolation
 
