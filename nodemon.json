@@ -1,0 +1,6 @@
+{
+  "watch": ["server/"],
+  "ignore": ["node_modules/", "__tests__/", "documentation/", "public/", "db/", ".claude/"],
+  "ext": "js,json",
+  "delay": 2000
+}

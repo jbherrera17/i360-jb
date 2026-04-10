@@ -32,6 +32,7 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+~$*
 
 # IDE/Editor
 .idea/

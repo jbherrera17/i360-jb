@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Case: AI-Assisted Tax Prep — Synergi AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #253349;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans 3', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #1e1b4b 50%, var(--bg) 100%);
+            padding: 80px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 4px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+        .hero-meta {
+            display: flex;
+            gap: 32px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .hero-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .hero-meta-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+        }
+        .hero-meta-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* TOC */
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin: 40px 0;
+        }
+        .toc h2 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+        .toc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 40px;
+        }
+        .toc a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            display: block;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--accent); }
+
+        /* Sections */
+        section {
+            margin: 48px 0;
+        }
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin: 28px 0 12px;
+        }
+        p { margin-bottom: 14px; color: var(--text-muted); }
+        strong { color: var(--text); }
+        ul, ol {
+            margin: 0 0 16px 24px;
+            color: var(--text-muted);
+        }
+        li { margin-bottom: 6px; }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin: 16px 0;
+        }
+        .card-accent { border-left: 4px solid var(--accent); }
+        .card-primary { border-left: 4px solid var(--primary); }
+        .card-success { border-left: 4px solid var(--success); }
+        .card-warning { border-left: 4px solid var(--warning); }
+        .card-secondary { border-left: 4px solid var(--secondary); }
+        .card-danger { border-left: 4px solid var(--danger); }
+
+        .insight-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 16px 0;
+        }
+        .insight-card .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary-light);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        /* Prompt blocks */
+        .prompt-block {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin: 12px 0;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+        .prompt-block .skill-tag {
+            background: rgba(6, 182, 212, 0.2);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-weight: 600;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 16px 0;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        thead {
+            background: var(--bg-card);
+        }
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 10px 16px;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(99, 102, 241, 0.04); }
+
+        /* Code / pre */
+        pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px 24px;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+            margin: 16px 0;
+        }
+        code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: rgba(99, 102, 241, 0.12);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--primary-light);
+        }
+
+        /* Pipeline diagram */
+        .pipeline {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            gap: 0;
+            align-items: stretch;
+            margin: 24px 0;
+        }
+        .pipeline-phase {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .pipeline-phase h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        .pipeline-phase .subtitle {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            margin-bottom: 14px;
+            font-style: italic;
+        }
+        .pipeline-phase ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .pipeline-phase li {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            padding: 3px 0;
+        }
+        .pipeline-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            padding: 0 8px;
+        }
+        .pipeline-output {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Stream headers */
+        .stream-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 36px 0 8px;
+        }
+        .stream-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .stream-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        .stream-owner {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        /* Briefing block */
+        .briefing {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin: 20px 0;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+        }
+        .briefing .briefing-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .briefing .sep {
+            color: var(--border);
+        }
+        .briefing .section-head {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        .status-green { color: var(--success); }
+        .status-yellow { color: var(--warning); }
+        .status-risk { color: var(--danger); }
+
+        /* Takeaways */
+        .takeaway {
+            display: flex;
+            gap: 16px;
+            margin: 16px 0;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .takeaway-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .takeaway-text p { margin: 0; }
+        .takeaway-text strong { color: var(--text); }
+
+        /* Agent reference grid */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .agent-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .agent-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .agent-chip .name {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+        .agent-chip .role {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+            margin-top: 60px;
+            text-align: center;
+        }
+        .footer p {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+        .footer .brand {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary-light);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+        }
+
+        /* Divider */
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 40px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.6rem; }
+            .toc-grid { grid-template-columns: 1fr; }
+            .pipeline { grid-template-columns: 1fr; gap: 12px; }
+            .pipeline-arrow { transform: rotate(90deg); padding: 8px 0; }
+            .agent-grid { grid-template-columns: 1fr; }
+            .container { padding: 0 20px; }
+            .hero-inner { padding: 0 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Hero -->
+<header class="hero">
+    <div class="hero-inner">
+        <div class="hero-badge">Insight 360 Use Case</div>
+        <h1>AI-Assisted Tax Prep for Professional Services</h1>
+        <p style="font-size: 1.05rem; color: var(--text-muted); max-width: 700px;">
+            End-to-end walkthrough: from strategic assessment to cross-department execution using the full Align 120 &rarr; Strategy 120 &rarr; Execute 120 pipeline.
+        </p>
+        <div class="hero-meta">
+            <div class="hero-meta-item">
+                <span class="hero-meta-label">ICP</span>
+                <span class="hero-meta-value">Professional Services</span>
+            </div>
+            <div class="hero-meta-item">
+                <span class="hero-meta-label">Firm Profile</span>
+                <span class="hero-meta-value">35-person CPA firm, $8M revenue</span>
+            </div>
+            <div class="hero-meta-item">
+                <span class="hero-meta-label">Tier</span>
+                <span class="hero-meta-value">Business</span>
+            </div>
+            <div class="hero-meta-item">
+                <span class="hero-meta-label">Agents Used</span>
+                <span class="hero-meta-value">28</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- TOC -->
+    <nav class="toc">
+        <h2>Contents</h2>
+        <div class="toc-grid">
+            <a href="#overview">Overview</a>
+            <a href="#stream-finance">Stream 1: Finance</a>
+            <a href="#phase1">Phase 1: Strategic Decision</a>
+            <a href="#stream-legal">Stream 2: Legal &amp; Compliance</a>
+            <a href="#step-higgins">Step 1: Alfred Assessment</a>
+            <a href="#stream-marketing">Stream 3: Marketing</a>
+            <a href="#step-jarvis">Step 2: Higgins Coordination</a>
+            <a href="#stream-sales">Stream 4: Sales</a>
+            <a href="#step-alfred">Step 3: Jarvis Documentation</a>
+            <a href="#stream-ops">Stream 5: Operations</a>
+            <a href="#phase2">Phase 2: Execution</a>
+            <a href="#stream-support">Stream 6: Support</a>
+            <a href="#exec-tracking">Executive Tracking</a>
+            <a href="#agents">Agent Reference</a>
+            <a href="#pipeline">Pipeline Summary</a>
+            <a href="#takeaways">Key Takeaways</a>
+        </div>
+    </nav>
+
+    <!-- Overview -->
+    <section id="overview">
+        <div class="section-label">Context</div>
+        <h2>Overview</h2>
+        <p>This use case walks through the complete <strong>Align 120 &rarr; Strategy 120 &rarr; Execute 120</strong> pipeline for a small accounting firm evaluating and launching AI-assisted tax preparation as a new service line.</p>
+        <p>It demonstrates how the executive agent team (<strong>Higgins</strong>, <strong>Jarvis</strong>, <strong>Alfred</strong>) coordinates with all seven department teams to move from strategic decision to daily execution.</p>
+    </section>
+
+    <hr>
+
+    <!-- Phase 1 -->
+    <section id="phase1">
+        <div class="section-label">Strategy 120</div>
+        <h2>Phase 1: Strategic Decision</h2>
+
+        <!-- Step 1: Alfred -->
+        <h3 id="step-higgins">Step 1: Strategic Assessment with Alfred</h3>
+        <div class="prompt-block">
+            <span class="skill-tag">/exec-strategic-advisor</span> &mdash; "We're a 35-person CPA firm considering adding AI-assisted tax prep as a service line for next tax season. Evaluate whether this strengthens or weakens our competitive position."
+        </div>
+        <p><strong>Alfred produces:</strong></p>
+        <ul>
+            <li>Market landscape analysis (who else offers AI-assisted tax prep, where it's heading)</li>
+            <li>Competitive moat assessment (does this differentiate us or commoditize our core service?)</li>
+            <li>Three strategic options with upside/downside/reversibility</li>
+            <li>Kill criteria (signals that should make us abandon the path)</li>
+        </ul>
+        <div class="insight-card">
+            <div class="label">Key Insight</div>
+            <p style="margin:0;">The real moat isn't "AI does your taxes" &mdash; it's <strong>"AI handles the routine returns so your senior CPAs spend 100% of their time on complex advisory work."</strong> The firm should position it as a quality upgrade, not a cost reduction.</p>
+        </div>
+
+        <!-- Step 2: Higgins -->
+        <h3 id="step-jarvis">Step 2: Cross-Department Coordination with Higgins</h3>
+        <div class="prompt-block">
+            <span class="skill-tag">/exec-orchestrator</span> &mdash; "Based on Alfred' assessment, we want to pursue AI-assisted tax prep positioned as a quality upgrade. Coordinate what each department needs to do."
+        </div>
+        <p><strong>Higgins delegates:</strong></p>
+        <ul>
+            <li><strong>Kendall</strong> (<code>/biz-pricing</code>) &mdash; price the new service tier. Bundled or add-on? Margin at different price points?</li>
+            <li><strong>Cameron</strong> (<code>/biz-finance</code>) &mdash; model the investment: software licensing, training time, expected revenue lift</li>
+            <li><strong>Morgan-L</strong> (<code>/biz-legal</code>) &mdash; compliance implications. Can AI touch client tax data under their engagement letters?</li>
+            <li><strong>Dakota</strong> (<code>/mkt-orchestrator</code>) &mdash; positioning for existing clients without spooking them</li>
+            <li><strong>Tatum</strong> (<code>/sales-orchestrator</code>) &mdash; build a pitch for prospects as a differentiator</li>
+        </ul>
+        <p><strong>Higgins assembles</strong> a consolidated recommendation, flags tensions (Legal wants cautious rollout, Sales wants big launch), and presents options to the managing partners.</p>
+
+        <!-- Step 3: Jarvis -->
+        <h3 id="step-alfred">Step 3: Decision Documentation with Jarvis</h3>
+        <div class="prompt-block">
+            <span class="skill-tag">/exec-chief-of-staff</span> &mdash; "Document the decision to proceed with AI-assisted tax prep as a phased rollout. Capture the rationale and next steps."
+        </div>
+        <p><strong>Jarvis produces:</strong></p>
+        <ul>
+            <li><strong>Decision Record</strong> (DEC-2026-014) with full rationale</li>
+            <li><strong>Decision Quality Check</strong> &mdash; values alignment, financial viability, reversibility</li>
+            <li><strong>Communication Plan</strong> &mdash; who needs to know, how, by when</li>
+            <li><strong>Action Items</strong> with owners and deadlines:</li>
+        </ul>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Owner</th><th>Action</th><th>Deadline</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Kendall</strong></td><td>Final pricing</td><td>April 1</td></tr>
+                    <tr><td><strong>Morgan-L</strong></td><td>Updated engagement letter template</td><td>April 15</td></tr>
+                    <tr><td><strong>Dakota</strong></td><td>Client announcement email</td><td>May 1</td></tr>
+                    <tr><td><strong>Operations</strong></td><td>Software procurement and setup</td><td>May 15</td></tr>
+                    <tr><td><strong>Training</strong></td><td>Staff certification program</td><td>June 1</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>Jarvis routes all action items to <strong>Marley</strong> (<code>/biz-follow-up</code>) for persistent tracking.</p>
+    </section>
+
+    <hr>
+
+    <!-- Phase 2 -->
+    <section id="phase2">
+        <div class="section-label">Execute 120</div>
+        <h2>Phase 2: Execution</h2>
+        <p>Execute 120 is the personalized command center where each department sees their slice of the work:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;">
+            <div class="card card-primary"><strong>My Agents</strong><br><span style="color:var(--text-muted);font-size:0.88rem;">Agents assigned to your department</span></div>
+            <div class="card card-accent"><strong>My Workflows</strong><br><span style="color:var(--text-muted);font-size:0.88rem;">Department + global workflows</span></div>
+            <div class="card card-success"><strong>Context Assets</strong><br><span style="color:var(--text-muted);font-size:0.88rem;">Knowledge docs for your role</span></div>
+            <div class="card card-warning"><strong>Quick Actions</strong><br><span style="color:var(--text-muted);font-size:0.88rem;">One-click tasks</span></div>
+        </div>
+        <p>Executives also see a <strong>Strategic Overview card</strong> showing initiative progress from Strategy 120.</p>
+        <div class="insight-card">
+            <div class="label">Key Principle</div>
+            <p style="margin:0;">Strategy 120 produces initiatives. <strong>Execute 120 breaks them into department-level daily work.</strong></p>
+        </div>
+
+        <!-- Stream 1: Finance -->
+        <div class="stream-header" id="stream-finance">
+            <div class="stream-number" style="background: var(--warning); color: var(--bg);">1</div>
+            <h3 style="color: var(--warning);">Finance (Marlowe's Team)</h3>
+            <span class="stream-owner">Owner: Managing Partner / CFO</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Week</th><th>Task</th><th>Agent</th><th>Execute 120 Surface</th></tr></thead>
+                <tbody>
+                    <tr><td>1-2</td><td>Model investment: software licensing, training hours, expected revenue lift</td><td><strong>Cameron</strong> <code>/biz-finance</code></td><td>Quick Action</td></tr>
+                    <tr><td>2-3</td><td>Price the service: bundled vs. add-on, margin analysis at 3 price points</td><td><strong>Kendall</strong> <code>/biz-pricing</code></td><td>Context Asset</td></tr>
+                    <tr><td>3</td><td>Build budget variance tracking for the initiative</td><td><strong>Noel</strong> <code>/fin-budget-forecast</code></td><td>Workflow</td></tr>
+                    <tr><td>Ongoing</td><td>Track actual spend vs. forecast monthly</td><td><strong>Harley</strong> <code>/fin-revenue-ops</code></td><td>My Agent</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card card-warning">
+            <p style="margin:0;"><strong>Kendall's pricing output:</strong> Bundle at $150/return (simple), $350/return (complex). AI drops prep time 60%, margin jumps from 35% to 58%. Passes the 65% gross margin floor at scale (50+ returns/month).</p>
+        </div>
+
+        <!-- Stream 2: Legal -->
+        <div class="stream-header" id="stream-legal">
+            <div class="stream-number" style="background: var(--danger); color: white;">2</div>
+            <h3 style="color: var(--danger);">Legal &amp; Compliance (Morgan-L)</h3>
+            <span class="stream-owner">Owner: Compliance Partner</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Week</th><th>Task</th><th>Agent</th><th>Execute 120 Surface</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>Review engagement letter implications &mdash; can AI touch client tax data?</td><td><strong>Morgan-L</strong> <code>/biz-legal</code></td><td>Quick Action</td></tr>
+                    <tr><td>2</td><td>Draft updated engagement letter addendum</td><td><strong>Morgan-L</strong></td><td>Context Asset</td></tr>
+                    <tr><td>2</td><td>Check E&amp;O insurance coverage for AI-assisted work product</td><td><strong>Morgan-L</strong></td><td>Workflow</td></tr>
+                    <tr><td>3</td><td>Review data handling &mdash; PII flow, retention policy</td><td><strong>Riley</strong> <code>/pm-compliance-auditor</code></td><td>Quick Action</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="insight-card">
+            <div class="label">Critical Output</div>
+            <p style="margin:0;">A one-page client disclosure: <strong>"Your return is prepared with AI assistance and reviewed by a licensed CPA. Here's exactly what the AI does and doesn't do."</strong> &mdash; Radical Transparency in action.</p>
+        </div>
+
+        <!-- Stream 3: Marketing -->
+        <div class="stream-header" id="stream-marketing">
+            <div class="stream-number" style="background: var(--accent); color: var(--bg);">3</div>
+            <h3 style="color: var(--accent);">Marketing (Dakota's Team)</h3>
+            <span class="stream-owner">Owner: Marketing Manager / Partner</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Week</th><th>Task</th><th>Agent</th><th>Execute 120 Surface</th></tr></thead>
+                <tbody>
+                    <tr><td>2-3</td><td>Position the service: "Your CPA, amplified"</td><td><strong>Harper</strong> <code>/mkt-brand-voice</code></td><td>Context Asset</td></tr>
+                    <tr><td>3-4</td><td>Draft client announcement email</td><td><strong>River</strong> &rarr; <strong>Avery-M</strong></td><td>Workflow</td></tr>
+                    <tr><td>3-4</td><td>Adapt messaging per persona (Victor, Emma, Taylor)</td><td><strong>Avery-M</strong> <code>/mkt-icp-adapt</code></td><td>My Agent</td></tr>
+                    <tr><td>4</td><td>Create FAQ page for the firm's website</td><td><strong>River</strong> <code>/mkt-content</code></td><td>Quick Action</td></tr>
+                    <tr><td>4-5</td><td>Competitive positioning vs. firms NOT using AI</td><td><strong>Blake</strong> <code>/mkt-competitive</code></td><td>Context Asset</td></tr>
+                    <tr><td>5</td><td>Final QA on all content before publish</td><td><strong>Emery</strong> <code>/mkt-brand-review</code></td><td>Workflow</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><strong>Dakota's sequence:</strong> Voice calibration (Harper) &rarr; Content creation (River) &rarr; Persona adaptation (Avery-M) &rarr; QA gate (Emery). No content ships without passing Emery.</p>
+
+        <!-- Stream 4: Sales -->
+        <div class="stream-header" id="stream-sales">
+            <div class="stream-number" style="background: var(--success); color: var(--bg);">4</div>
+            <h3 style="color: var(--success);">Sales (Tatum's Team)</h3>
+            <span class="stream-owner">Owner: Business Development Partner</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Week</th><th>Task</th><th>Agent</th><th>Execute 120 Surface</th></tr></thead>
+                <tbody>
+                    <tr><td>3</td><td>Build pitch deck for new prospects</td><td><strong>Drew</strong> <code>/sales-proposal</code></td><td>Workflow</td></tr>
+                    <tr><td>3-4</td><td>Create objection handling guide</td><td><strong>Reese-S</strong> <code>/sales-enablement</code></td><td>Context Asset</td></tr>
+                    <tr><td>4</td><td>Identify 20 target prospects</td><td><strong>Kieran</strong> <code>/sales-account-research</code></td><td>My Agent</td></tr>
+                    <tr><td>4-5</td><td>Draft outreach sequences for 20 targets</td><td><strong>Remy</strong> <code>/sales-outreach</code></td><td>Workflow</td></tr>
+                    <tr><td>5</td><td>Prep for first pitch meetings</td><td><strong>Jules</strong> <code>/sales-call-prep</code></td><td>Quick Action</td></tr>
+                    <tr><td>Ongoing</td><td>Track pipeline and conversion</td><td><strong>Hayden</strong> <code>/sales-pipeline</code></td><td>My Agent</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><strong>Tatum's methodology:</strong> <em>Align</em> (shared values on AI transparency?) &rarr; <em>Prove</em> (3-return pilot) &rarr; <em>Partner</em> (ongoing engagement). <strong>Logan</strong> qualifies with MEDDIC + Values.</p>
+
+        <!-- Stream 5: Operations -->
+        <div class="stream-header" id="stream-ops">
+            <div class="stream-number" style="background: var(--secondary); color: white;">5</div>
+            <h3 style="color: var(--secondary);">Operations (Riley-O's Team)</h3>
+            <span class="stream-owner">Owner: IT / Operations Manager</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Week</th><th>Task</th><th>Agent</th><th>Execute 120 Surface</th></tr></thead>
+                <tbody>
+                    <tr><td>1-2</td><td>Evaluate AI tax prep vendors (3 options)</td><td><strong>Sage-O</strong> <code>/ops-vendor-manager</code></td><td>Workflow</td></tr>
+                    <tr><td>2-3</td><td>Capacity plan: concurrent AI-assisted returns</td><td><strong>Nico</strong> <code>/ops-resource-planner</code></td><td>My Agent</td></tr>
+                    <tr><td>3</td><td>Draft SOP for AI-assisted tax prep workflow</td><td><strong>Kai</strong> <code>/ops-process-analyst</code></td><td>Quick Action</td></tr>
+                    <tr><td>4</td><td>Define SLAs: turnaround time AI vs. traditional</td><td><strong>Devon</strong> <code>/ops-sla-monitor</code></td><td>Context Asset</td></tr>
+                    <tr><td>Ongoing</td><td>Track cost per return (AI vs. manual)</td><td><strong>Rowan-O</strong> <code>/ops-cost-analyst</code></td><td>My Agent</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Stream 6: Support -->
+        <div class="stream-header" id="stream-support">
+            <div class="stream-number" style="background: var(--primary); color: white;">6</div>
+            <h3>Support (Sloan's Team)</h3>
+            <span class="stream-owner">Owner: Client Services Manager</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Week</th><th>Task</th><th>Agent</th><th>Execute 120 Surface</th></tr></thead>
+                <tbody>
+                    <tr><td>4</td><td>Build knowledge base FAQ for client-facing staff</td><td><strong>Kris</strong> <code>/sup-knowledge-manager</code></td><td>Workflow</td></tr>
+                    <tr><td>4-5</td><td>Create escalation playbook for uncomfortable clients</td><td><strong>Toni</strong> <code>/sup-escalation-handler</code></td><td>Context Asset</td></tr>
+                    <tr><td>5</td><td>Define override policy: when staff can go fully manual</td><td><strong>Dallas</strong> <code>/sup-policy-tuner</code></td><td>Quick Action</td></tr>
+                    <tr><td>Ongoing</td><td>Monitor client sentiment about the new service</td><td><strong>Frankie</strong> <code>/sup-quality-reviewer</code></td><td>My Agent</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <hr>
+
+    <!-- Executive Tracking -->
+    <section id="exec-tracking">
+        <div class="section-label">Accountability</div>
+        <h2>Executive Tracking: Higgins + Jarvis</h2>
+
+        <div class="briefing">
+            <div class="briefing-title">EXECUTIVE BRIEFING</div>
+            <div class="sep">───────────────────────────</div>
+            Date: Week 3 of AI Tax Prep Initiative<br>
+            Prepared For: Managing Partners<br><br>
+
+            <div class="section-head">─── TOP OF MIND ───</div>
+            1. Legal cleared engagement letter addendum &mdash; ready for partner review<br>
+            2. Vendor evaluation complete &mdash; recommending Option B ($2,400/mo)<br>
+            3. Marketing content in QA gate &mdash; launches next week<br><br>
+
+            <div class="section-head">─── DEPARTMENT PULSE ───</div>
+            <table style="margin: 8px 0; font-family: inherit; font-size: inherit;">
+                <thead><tr><th>Department</th><th>Status</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>Finance</td><td><span class="status-green">Green</span></td><td>ROI model shows 67% margin at scale</td></tr>
+                    <tr><td>Legal</td><td><span class="status-green">Green</span></td><td>Addendum drafted, E&amp;O confirmed</td></tr>
+                    <tr><td>Marketing</td><td><span class="status-yellow">Yellow</span></td><td>Slight delay &mdash; persona adaptation taking longer</td></tr>
+                    <tr><td>Sales</td><td><span class="status-green">Green</span></td><td>20 targets identified, outreach ready</td></tr>
+                    <tr><td>Operations</td><td><span class="status-green">Green</span></td><td>SOP drafted, vendor selected</td></tr>
+                    <tr><td>Support</td><td><span class="status-green">Green</span></td><td>KB articles in progress</td></tr>
+                </tbody>
+            </table><br>
+
+            <div class="section-head">─── DECISIONS PENDING ───</div>
+            1. Approve vendor selection (Option B) &mdash; need partner vote by Friday<br>
+            2. Approve client announcement timing &mdash; May 1 or delay to May 15?<br><br>
+
+            <div class="section-head">─── FOLLOW-UPS DUE (from Marley) ───</div>
+            Kendall: Final pricing (due April 1) &mdash; <span class="status-green">ON TRACK</span><br>
+            Morgan-L: E&amp;O insurance confirmation &mdash; <span class="status-green">RECEIVED</span><br>
+            Dakota: Content QA completion &mdash; <span class="status-risk">AT RISK (2 days behind)</span>
+        </div>
+
+        <p><strong>Higgins coordinates</strong> when streams conflict. Example: Sales wants to pitch before Marketing has finished the website FAQ. Higgins flags this to Jarvis, who logs the decision: "Sales can pitch with a 1-pager; full website content launches May 1."</p>
+    </section>
+
+    <hr>
+
+    <!-- Pipeline Summary -->
+    <section id="pipeline">
+        <div class="section-label">Architecture</div>
+        <h2>Pipeline Summary</h2>
+        <div class="pipeline">
+            <div class="pipeline-phase">
+                <h4>ALIGN 120</h4>
+                <div class="subtitle">"Who are we?"</div>
+                <ul>
+                    <li>AI Maturity: 2/5</li>
+                    <li>Values: Transparency, Human-centered</li>
+                    <li>Skills gap: AI literacy</li>
+                    <li>Brand: Trust-first</li>
+                    <li>RACI: Partners decide</li>
+                </ul>
+                <div class="pipeline-output">Company Profile feeds Strategy agent context</div>
+            </div>
+            <div class="pipeline-arrow">&rarr;</div>
+            <div class="pipeline-phase">
+                <h4>STRATEGY 120</h4>
+                <div class="subtitle">"What should we do?"</div>
+                <ul>
+                    <li>Initiative: AI Tax Prep</li>
+                    <li>Perspective: Customer + Financial</li>
+                    <li>Business case: 67% margin</li>
+                    <li>Scenario: base/best/worst</li>
+                    <li>Decision: DEC-2026-014</li>
+                </ul>
+                <div class="pipeline-output">Initiatives + OKRs feed Execute overview</div>
+            </div>
+            <div class="pipeline-arrow">&rarr;</div>
+            <div class="pipeline-phase">
+                <h4>EXECUTE 120</h4>
+                <div class="subtitle">"Who does what, by when?"</div>
+                <ul>
+                    <li>6 department streams</li>
+                    <li>47 agent tasks</li>
+                    <li>12 workflows triggered</li>
+                    <li>Weekly Jarvis briefings</li>
+                    <li>Marley tracks 23 follow-ups</li>
+                </ul>
+                <div class="pipeline-output">Department command centers with personalized cards</div>
+            </div>
+        </div>
+    </section>
+
+    <hr>
+
+    <!-- Takeaways -->
+    <section id="takeaways">
+        <div class="section-label">Results</div>
+        <h2>Key Takeaways</h2>
+
+        <div class="takeaway">
+            <div class="takeaway-num">1</div>
+            <div class="takeaway-text"><p><strong>A 35-person firm gets Fortune 500-quality strategic planning</strong> &mdash; coordinated across 6 departments, 20+ specialized agents, with full decision documentation and accountability tracking.</p></div>
+        </div>
+        <div class="takeaway">
+            <div class="takeaway-num">2</div>
+            <div class="takeaway-text"><p><strong>Every agent has a specific role and handoff</strong> &mdash; no duplication, no gaps. Higgins ensures nothing falls between departments.</p></div>
+        </div>
+        <div class="takeaway">
+            <div class="takeaway-num">3</div>
+            <div class="takeaway-text"><p><strong>The Proof-of-Value guarantee removes adoption friction</strong> &mdash; the firm can pilot with 3 returns before committing. Reversibility was evaluated in the Decision Quality Check.</p></div>
+        </div>
+        <div class="takeaway">
+            <div class="takeaway-num">4</div>
+            <div class="takeaway-text"><p><strong>Values alignment is baked into every step</strong> &mdash; from Alfred' strategic assessment (human-centered positioning) to Morgan-L's client disclosure (radical transparency) to Tatum's qualification (values-based selling).</p></div>
+        </div>
+        <div class="takeaway">
+            <div class="takeaway-num">5</div>
+            <div class="takeaway-text"><p><strong>Execute 120 makes strategy tangible</strong> &mdash; instead of a strategic plan gathering dust, every person sees their department's tasks, agents, and workflows on their personalized dashboard.</p></div>
+        </div>
+    </section>
+
+    <hr>
+
+    <!-- Agent Reference -->
+    <section id="agents">
+        <div class="section-label">Reference</div>
+        <h2>Agents Referenced</h2>
+
+        <h3>Executive Team</h3>
+        <div class="agent-grid">
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--primary);"></div><div><div class="name">Higgins</div><div class="role">Executive Orchestrator</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--accent);"></div><div><div class="name">Jarvis</div><div class="role">Chief of Staff</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--secondary);"></div><div><div class="name">Alfred</div><div class="role">Strategic Advisor</div></div></div>
+        </div>
+
+        <h3>Cross-Functional Team</h3>
+        <div class="agent-grid">
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--primary);"></div><div><div class="name">Kendall</div><div class="role">Pricing Strategist</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Cameron</div><div class="role">Finance Analyst</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--danger);"></div><div><div class="name">Morgan-L</div><div class="role">Legal Advisor</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--warning);"></div><div><div class="name">Marley</div><div class="role">Follow-Up Manager</div></div></div>
+        </div>
+
+        <h3>Department Agents (25)</h3>
+        <div class="agent-grid">
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--warning);"></div><div><div class="name">Noel</div><div class="role">Budget &amp; Forecast</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--warning);"></div><div><div class="name">Harley</div><div class="role">Revenue Ops</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--danger);"></div><div><div class="name">Riley</div><div class="role">Compliance Auditor</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--accent);"></div><div><div class="name">Harper</div><div class="role">Brand Voice</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--accent);"></div><div><div class="name">River</div><div class="role">Content Creator</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--accent);"></div><div><div class="name">Avery-M</div><div class="role">ICP Adapter</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--accent);"></div><div><div class="name">Blake</div><div class="role">Competitive Intel</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--accent);"></div><div><div class="name">Emery</div><div class="role">Brand Reviewer</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Drew</div><div class="role">Proposal Writer</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Reese-S</div><div class="role">Sales Enablement</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Kieran</div><div class="role">Account Research</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Remy</div><div class="role">Outreach Creator</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Jules</div><div class="role">Call Prep</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Hayden</div><div class="role">Pipeline Analyst</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--success);"></div><div><div class="name">Logan</div><div class="role">Deal Strategist</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--secondary);"></div><div><div class="name">Sage-O</div><div class="role">Vendor Manager</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--secondary);"></div><div><div class="name">Nico</div><div class="role">Resource Planner</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--secondary);"></div><div><div class="name">Kai</div><div class="role">Process Analyst</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--secondary);"></div><div><div class="name">Devon</div><div class="role">SLA Monitor</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--secondary);"></div><div><div class="name">Rowan-O</div><div class="role">Cost Analyst</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--primary);"></div><div><div class="name">Kris</div><div class="role">Knowledge Manager</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--primary);"></div><div><div class="name">Toni</div><div class="role">Escalation Handler</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--primary);"></div><div><div class="name">Dallas</div><div class="role">Policy Tuner</div></div></div>
+            <div class="agent-chip"><div class="agent-dot" style="background:var(--primary);"></div><div><div class="name">Frankie</div><div class="role">Quality Reviewer</div></div></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="brand">SYNERGI AI</p>
+        <p>Insight 360 &mdash; Values-Based AI Command Center</p>
+        <p style="margin-top: 8px;">March 2026</p>
+    </footer>
+
+</div>
+
+</body>
+</html>
