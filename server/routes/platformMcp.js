@@ -5,9 +5,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 module.exports = function(supabase) {
+    const router = express.Router();
     const mcpCatalogService = require('../services/mcpCatalogService');
     const mcpClientManager = require('../services/mcpClientManager');
 

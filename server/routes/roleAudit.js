@@ -5,9 +5,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 module.exports = function(supabase) {
+    const router = express.Router();
 
     /**
      * GET /api/role-audit

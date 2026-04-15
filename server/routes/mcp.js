@@ -5,9 +5,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 module.exports = function(supabase) {
+    const router = express.Router();
     const createModuleAccessMiddleware = require('../middleware/moduleAccess');
     const mcpConnectionService = require('../services/mcpConnectionService');
     const mcpCatalogService = require('../services/mcpCatalogService');
@@ -15,12 +15,15 @@ module.exports = function(supabase) {
     const mcpToolBridge = require('../services/mcpToolBridge');
     const { requireModule, checkResourceLimit } = createModuleAccessMiddleware(supabase);
 
+    const { requireOrgContext } = require('../middleware/orgContext');
+
     // Require MCP module access for all routes
     router.use(requireModule('mcp_integrations'));
+    router.use(requireOrgContext(supabase));
 
-    // Helper: get org_id from request
+    // Helper: get org_id from request (now uses verified org context)
     function getOrgId(req) {
-        return req.headers['x-org-id'] || req.query.org_id || req.body?.org_id;
+        return req.verifiedOrgId;
     }
 
     // ─────────────────────────────────────────

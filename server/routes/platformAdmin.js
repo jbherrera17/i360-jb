@@ -6,9 +6,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 module.exports = function(supabase) {
+    const router = express.Router();
 
     /**
      * Middleware: Check if user is a platform admin

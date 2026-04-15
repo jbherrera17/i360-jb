@@ -5,7 +5,6 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 // Nav group alias mapping (matches navigation.js lines 158-161)
 const NAV_GROUP_ALIASES = {
@@ -31,6 +30,7 @@ function resolveNavGroup(dbNavGroup) {
 }
 
 module.exports = function(supabase) {
+    const router = express.Router();
 
     /**
      * GET /api/pricing/tiers

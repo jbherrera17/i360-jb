@@ -4,9 +4,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 module.exports = function(supabase) {
+    const router = express.Router();
 
     /**
      * Log role changes to the role_change_audit table.

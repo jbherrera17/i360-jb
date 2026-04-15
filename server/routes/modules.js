@@ -4,9 +4,18 @@
  */
 
 const express = require('express');
-const router = express.Router();
+const { requireOrgContext } = require('../middleware/orgContext');
 
 module.exports = function(supabase) {
+    // Router must be created inside the factory so each mount gets a fresh
+    // instance — otherwise `router.use(requireOrgContext(supabase))` and the
+    // subsequent `router.get(...)` handlers leak state across calls (stale
+    // supabase closure + duplicated route registrations). Matches the pattern
+    // used by chat.js and workflows.js.
+    const router = express.Router();
+
+    // Phase 82: Enforce org context — validates x-org-id against user's memberships
+    router.use(requireOrgContext(supabase));
 
     /**
      * GET /api/modules
@@ -20,8 +29,8 @@ module.exports = function(supabase) {
     router.get('/', async (req, res) => {
         try {
             const userId = req.userId;
-            // Fallback to req.orgId (set by auth middleware from user's default_org_id)
-            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId;
+            // Phase 82: Use verified org context
+            const orgId = req.verifiedOrgId;
 
             if (!userId) {
                 return res.status(401).json({
@@ -73,7 +82,7 @@ module.exports = function(supabase) {
     router.get('/usage', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId;
+            const orgId = req.verifiedOrgId;
 
             if (!userId) {
                 return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -230,7 +239,7 @@ module.exports = function(supabase) {
         try {
             const userId = req.userId;
             const { moduleId } = req.params;
-            const orgId = req.headers['x-org-id'] || req.query.org_id || req.orgId;
+            const orgId = req.verifiedOrgId;
 
             if (!userId) {
                 return res.status(401).json({

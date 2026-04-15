@@ -7,7 +7,6 @@
  */
 
 const express = require('express');
-const router = express.Router();
 const {
     getVisibilityCounts,
     isValidVisibility,
@@ -15,6 +14,11 @@ const {
 } = require('../utils/resourceAccess');
 
 module.exports = function(supabase) {
+    const router = express.Router();
+    const { requireOrgContext } = require('../middleware/orgContext');
+
+    // Validate org membership on all routes
+    router.use(requireOrgContext(supabase));
 
     /**
      * GET /api/resource-access/summary
@@ -24,7 +28,7 @@ module.exports = function(supabase) {
      */
     router.get('/summary', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             const summary = {
                 agents: await getVisibilityCounts(supabase, 'agents', orgId),
@@ -48,7 +52,7 @@ module.exports = function(supabase) {
      */
     router.get('/resources', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const { type, visibility, search, department_id, limit = 50, offset = 0 } = req.query;
 
             let resources = [];
@@ -82,7 +86,7 @@ module.exports = function(supabase) {
     router.post('/bulk-update', async (req, res) => {
         try {
             const { resources, visibility, department_id } = req.body;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             if (!resources || !Array.isArray(resources) || resources.length === 0) {
                 return res.status(400).json({ success: false, error: 'No resources specified' });
@@ -146,7 +150,7 @@ module.exports = function(supabase) {
         try {
             const { resource_type, resource_id, min_business_role } = req.body;
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             if (!resource_type || !resource_id) {
                 return res.status(400).json({ success: false, error: 'Resource type and ID required' });
@@ -198,7 +202,7 @@ module.exports = function(supabase) {
      */
     router.get('/role-requirements', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             const { data, error } = await supabase
                 .from('role_resource_visibility')
@@ -264,7 +268,7 @@ module.exports = function(supabase) {
     router.post('/apply-template', async (req, res) => {
         try {
             const { template_id } = req.body;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             if (!template_id) {
                 return res.status(400).json({ success: false, error: 'Template ID required' });
@@ -349,7 +353,7 @@ module.exports = function(supabase) {
      */
     router.get('/tier-settings', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             const { data: org } = await supabase
                 .from('organizations')

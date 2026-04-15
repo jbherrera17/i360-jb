@@ -10,9 +10,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
 
 module.exports = function(supabase) {
+    const router = express.Router();
 
     // ============================================================================
     // USER CAPABILITIES - What can a user access?
