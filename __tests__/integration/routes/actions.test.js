@@ -42,6 +42,7 @@ describe('Actions Routes Integration', () => {
     range: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({ data, error }),
+    maybeSingle: jest.fn().mockResolvedValue({ data, error }),
     then: (resolve) => resolve({ data, error, count: count ?? (Array.isArray(data) ? data.length : 0) })
   });
 
@@ -85,7 +86,7 @@ describe('Actions Routes Integration', () => {
 
     describe('GET /api/actions', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockActions, null, 2));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockActions, null, 2));
       });
 
       it('should list all actions', async () => {
@@ -145,7 +146,7 @@ describe('Actions Routes Integration', () => {
       const featuredActions = [mockActions[0]];
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(featuredActions));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(featuredActions));
       });
 
       it('should return featured actions', async () => {
@@ -177,7 +178,7 @@ describe('Actions Routes Integration', () => {
           if (table === 'action_executions') {
             return createChainable([]);
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -192,7 +193,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent action', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .get('/api/actions/non-existent')
@@ -204,7 +205,7 @@ describe('Actions Routes Integration', () => {
 
     describe('GET /api/actions/slug/:slug', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockActions[0]));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockActions[0]));
       });
 
       it('should get action by slug', async () => {
@@ -217,7 +218,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent slug', async () => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           or: jest.fn().mockReturnThis(),
@@ -242,7 +243,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdAction));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdAction));
       });
 
       it('should create new action', async () => {
@@ -271,7 +272,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 409 for duplicate slug', async () => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           insert: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: null, error: { code: '23505' } })
@@ -308,7 +309,7 @@ describe('Actions Routes Integration', () => {
           if (table === 'actions') {
             return createChainable({ ...mockTemplate, id: 'new-from-template-001' });
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -323,7 +324,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent template', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .post('/api/actions/from-template/non-existent')
@@ -357,7 +358,7 @@ describe('Actions Routes Integration', () => {
     describe('DELETE /api/actions/:id', () => {
       beforeEach(() => {
         // Mock needs to handle both ownership check (single) and the update/delete
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           select: jest.fn().mockReturnThis(),
           update: jest.fn().mockReturnThis(),
           delete: jest.fn().mockReturnThis(),
@@ -405,7 +406,7 @@ describe('Actions Routes Integration', () => {
 
     describe('GET /api/actions/templates/list', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockTemplates));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockTemplates));
       });
 
       it('should list all templates', async () => {
@@ -428,7 +429,7 @@ describe('Actions Routes Integration', () => {
 
     describe('GET /api/actions/templates/:slug', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockTemplates[0]));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockTemplates[0]));
       });
 
       it('should get single template by slug', async () => {
@@ -441,7 +442,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent template', async () => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
@@ -496,7 +497,7 @@ describe('Actions Routes Integration', () => {
               })
             };
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -515,7 +516,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent action', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .post('/api/actions/non-existent/execute')
@@ -533,7 +534,7 @@ describe('Actions Routes Integration', () => {
       ];
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockExecutions, null, 2));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockExecutions, null, 2));
       });
 
       it('should return execution history', async () => {
@@ -565,7 +566,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockExecution));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockExecution));
       });
 
       it('should get single execution details', async () => {
@@ -579,7 +580,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent execution', async () => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
@@ -610,7 +611,7 @@ describe('Actions Routes Integration', () => {
 
     describe('GET /api/actions/external-ai/list', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockConfigs));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockConfigs));
       });
 
       it('should list external AI configs', async () => {
@@ -640,7 +641,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdConfig));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdConfig));
       });
 
       it('should create external AI config', async () => {
@@ -670,7 +671,7 @@ describe('Actions Routes Integration', () => {
 
     describe('PUT /api/actions/external-ai/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({ id: 'config-001', name: 'Updated' }));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({ id: 'config-001', name: 'Updated' }));
       });
 
       it('should update external AI config', async () => {
@@ -685,7 +686,7 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/external-ai/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           update: jest.fn().mockReturnThis(),
           eq: jest.fn().mockResolvedValue({ error: null })
         }));
@@ -733,7 +734,7 @@ describe('Actions Routes Integration', () => {
               })
             };
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -762,7 +763,7 @@ describe('Actions Routes Integration', () => {
           if (table.startsWith('action_')) {
             return createChainable([]);
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -789,7 +790,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdLink));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdLink));
       });
 
       it('should link OKR to action', async () => {
@@ -816,7 +817,7 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/:id/okrs/:okrId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           then: (resolve) => resolve({ error: null })
@@ -841,7 +842,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdLink));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdLink));
       });
 
       it('should link department to action', async () => {
@@ -865,7 +866,7 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/:id/departments/:deptId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           then: (resolve) => resolve({ error: null })
@@ -890,7 +891,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdLink));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdLink));
       });
 
       it('should link process to action', async () => {
@@ -914,7 +915,7 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/:id/processes/:processId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           then: (resolve) => resolve({ error: null })
@@ -939,7 +940,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdLink));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdLink));
       });
 
       it('should link role to action', async () => {
@@ -963,7 +964,7 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/:id/roles/:roleId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           then: (resolve) => resolve({ error: null })
@@ -988,7 +989,7 @@ describe('Actions Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdLink));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdLink));
       });
 
       it('should link context asset to action', async () => {
@@ -1012,7 +1013,7 @@ describe('Actions Routes Integration', () => {
 
     describe('DELETE /api/actions/:id/assets/:assetId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           then: (resolve) => resolve({ error: null })
@@ -1064,7 +1065,7 @@ describe('Actions Routes Integration', () => {
       });
 
       it('should return 404 for non-existent action', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .get('/api/actions/non-existent/assembled-context')
@@ -1080,7 +1081,7 @@ describe('Actions Routes Integration', () => {
   // =============================================
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         or: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),

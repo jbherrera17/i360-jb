@@ -60,6 +60,12 @@ jest.mock('../../../server/services/llmRegistry', () => ({
     if (model && (model.includes('sonar') || model.includes('llama'))) return 'perplexity';
     return 'anthropic';
   }),
+  // validate.js middleware calls resolveModelId on the model field
+  // to normalize aliases. Returns { valid, model, error? } shape.
+  resolveModelId: jest.fn().mockImplementation((value) => ({
+    valid: true,
+    model: value || 'claude-sonnet-4-5-20250929'
+  })),
   getAvailableModels: jest.fn().mockReturnValue({
     anthropic: [{ id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5' }],
     openai: [{ id: 'gpt-4o', name: 'GPT-4o' }],
@@ -70,7 +76,12 @@ jest.mock('../../../server/services/llmRegistry', () => ({
     { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
     { id: 'llama-3.1-sonar-large-128k-online', name: 'Sonar Large', provider: 'perplexity' }
   ]),
-  getDefaultModel: jest.fn().mockReturnValue('claude-sonnet-4-5-20250929')
+  getDefaultModel: jest.fn().mockReturnValue('claude-sonnet-4-5-20250929'),
+  getModelDisplayInfo: jest.fn().mockImplementation((model) => ({
+    id: model || 'claude-sonnet-4-5-20250929',
+    name: model || 'Claude Sonnet 4.5',
+    provider: 'anthropic'
+  }))
 }));
 
 jest.mock('../../../server/services/agentService', () => ({

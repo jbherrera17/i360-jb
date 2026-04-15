@@ -30,7 +30,10 @@ describe('Parthenon Routes Integration', () => {
     contains: jest.fn().mockReturnThis(),
     or: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({ data, error }),
+    maybeSingle: jest.fn().mockResolvedValue({ data, error }),
     then: (resolve) => resolve({ data, error, count: Array.isArray(data) ? data.length : 0 })
   });
 
@@ -56,7 +59,7 @@ describe('Parthenon Routes Integration', () => {
           if (table === 'departments') {
             return createChainable(mockDepartments);
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -113,7 +116,7 @@ describe('Parthenon Routes Integration', () => {
             // Second call - get roles
             return createChainable([]);
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -129,7 +132,7 @@ describe('Parthenon Routes Integration', () => {
       });
 
       it('should return 404 for non-existent department', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .get('/api/parthenon/departments/non-existent')
@@ -150,7 +153,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdDept));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdDept));
       });
 
       it('should create new department', async () => {
@@ -187,7 +190,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(updatedDept));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(updatedDept));
       });
 
       it('should update department', async () => {
@@ -202,11 +205,11 @@ describe('Parthenon Routes Integration', () => {
 
     describe('DELETE /api/parthenon/departments/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
-          update: jest.fn().mockReturnThis(),
-          delete: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ error: null })
-        }));
+        mockSupabase.from.mockImplementation((t) =>
+          t === 'organization_members'
+            ? createMockSupabase().from(t)
+            : createChainable({ id: 'dept-001', org_id: null })
+        );
       });
 
       it('should soft delete (deactivate) department by default', async () => {
@@ -254,7 +257,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('GET /api/parthenon/roles', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockRoles));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockRoles));
       });
 
       it('should list all roles with department info', async () => {
@@ -305,7 +308,7 @@ describe('Parthenon Routes Integration', () => {
           if (table === 'okrs') {
             return createChainable([]); // OKRs
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -319,7 +322,7 @@ describe('Parthenon Routes Integration', () => {
       });
 
       it('should return 404 for non-existent role', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .get('/api/parthenon/roles/non-existent')
@@ -338,7 +341,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdRole));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdRole));
       });
 
       it('should create new role', async () => {
@@ -368,7 +371,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('PUT /api/parthenon/roles/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({ id: 'role-001', title: 'Updated' }));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({ id: 'role-001', title: 'Updated' }));
       });
 
       it('should update role', async () => {
@@ -383,10 +386,12 @@ describe('Parthenon Routes Integration', () => {
 
     describe('DELETE /api/parthenon/roles/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
+          select: jest.fn().mockReturnThis(),
           update: jest.fn().mockReturnThis(),
           delete: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ error: null })
+          eq: jest.fn().mockResolvedValue({ error: null }),
+          maybeSingle: jest.fn().mockResolvedValue({ data: { org_id: null }, error: null })
         }));
       });
 
@@ -450,7 +455,7 @@ describe('Parthenon Routes Integration', () => {
               in: jest.fn().mockResolvedValue({ data: [], error: null })
             };
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -510,7 +515,7 @@ describe('Parthenon Routes Integration', () => {
           if (table === 'okr_strategic_links') {
             return createChainable([]);
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -525,7 +530,7 @@ describe('Parthenon Routes Integration', () => {
       });
 
       it('should return 404 for non-existent OKR', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .get('/api/parthenon/okrs/non-existent')
@@ -544,7 +549,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdOKR));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdOKR));
       });
 
       it('should create new OKR', async () => {
@@ -576,7 +581,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('PUT /api/parthenon/okrs/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({ id: 'okr-001', progress: 75 }));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({ id: 'okr-001', progress: 75 }));
       });
 
       it('should update OKR', async () => {
@@ -605,7 +610,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('DELETE /api/parthenon/okrs/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockResolvedValue({ error: null })
         }));
@@ -638,7 +643,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('GET /api/parthenon/processes', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockProcesses));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockProcesses));
       });
 
       it('should list all processes', async () => {
@@ -678,7 +683,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockProcess));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockProcess));
       });
 
       it('should get single process with details', async () => {
@@ -691,7 +696,7 @@ describe('Parthenon Routes Integration', () => {
       });
 
       it('should return 404 for non-existent process', async () => {
-        mockSupabase.from.mockImplementation(() => createChainable(null));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null));
 
         const response = await request(app)
           .get('/api/parthenon/processes/non-existent')
@@ -709,7 +714,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(createdProcess));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(createdProcess));
       });
 
       it('should create new process', async () => {
@@ -739,7 +744,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('PUT /api/parthenon/processes/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({ id: 'proc-001', name: 'Updated' }));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({ id: 'proc-001', name: 'Updated' }));
       });
 
       it('should update process', async () => {
@@ -754,10 +759,12 @@ describe('Parthenon Routes Integration', () => {
 
     describe('DELETE /api/parthenon/processes/:id', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
+          select: jest.fn().mockReturnThis(),
           update: jest.fn().mockReturnThis(),
           delete: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ error: null })
+          eq: jest.fn().mockResolvedValue({ error: null }),
+          maybeSingle: jest.fn().mockResolvedValue({ data: { org_id: null }, error: null })
         }));
       });
 
@@ -810,7 +817,7 @@ describe('Parthenon Routes Integration', () => {
           id: `dept-${i}`,
           name: `Department ${i}`
         }));
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           insert: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           in: jest.fn().mockResolvedValue({ data: [], error: null }), // No existing depts
@@ -860,7 +867,7 @@ describe('Parthenon Routes Integration', () => {
               })
             };
           }
-          return createQueryBuilder();
+          return createMockSupabase().from(table);
         });
       });
 
@@ -895,7 +902,7 @@ describe('Parthenon Routes Integration', () => {
       ];
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockObjectives));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockObjectives));
       });
 
       it('should return objectives grouped by perspective', async () => {
@@ -938,7 +945,7 @@ describe('Parthenon Routes Integration', () => {
       ];
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable(mockLinks));
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockLinks));
       });
 
       it('should return strategic links for OKR', async () => {
@@ -972,7 +979,7 @@ describe('Parthenon Routes Integration', () => {
       };
 
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           update: jest.fn().mockReturnThis(),
           insert: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
@@ -1009,7 +1016,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('PUT /api/parthenon/okrs/:okrId/strategic-links/:linkId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           update: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           neq: jest.fn().mockReturnThis(),
@@ -1033,7 +1040,7 @@ describe('Parthenon Routes Integration', () => {
 
     describe('DELETE /api/parthenon/okrs/:okrId/strategic-links/:linkId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           then: (resolve) => resolve({ error: null })
@@ -1056,7 +1063,7 @@ describe('Parthenon Routes Integration', () => {
   // =============================================
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         order: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),

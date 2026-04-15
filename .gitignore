@@ -99,11 +99,15 @@ docs/_build/
 
 # In-progress / local working folders
 synergi website/
-extension/
+# Chrome extension build folder (root only) — don't accidentally match
+# __tests__/integration/extension/, which contains tracked test files.
+/extension/
+!__tests__/integration/extension/
 
 # Claude Code local config
 .claude/agent-memory/
 .claude/agents/
+.claude/*.lock
 
 # Secrets (various formats)
 secrets/

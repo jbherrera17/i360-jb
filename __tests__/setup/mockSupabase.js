@@ -78,6 +78,70 @@ const DEFAULT_TEST_MEMBERSHIP = {
   status: 'active'
 };
 
+// Default "I exist and I belong to your org" record for per-resource
+// ownership checks (e.g., agents.js verifyAgentOrgOwnership). Tests that
+// need "not found" or "wrong org" behavior must explicitly mock these.
+const DEFAULT_TEST_RESOURCE_OWNERSHIP = {
+  id: 'default-test-resource',
+  org_id: 'test-org-001'
+};
+
+// Tables for which we return a default "exists and belongs to test org"
+// record so that Phase 82 per-resource ownership checks pass by default.
+const OWNERSHIP_DEFAULT_TABLES = new Set([
+  'agents',
+  'workflows',
+  'departments',
+  'processes',
+  'okrs',
+  'actions',
+  'skills',
+  'clients',
+  'conversations'
+]);
+
+// Builder that satisfies per-resource ownership checks without breaking
+// list-style queries. `maybeSingle`/`single` return the ownership record,
+// but plain `await` on a chain (used by list queries) resolves to an
+// empty array so the tests that check `data.length`/`filter` behave.
+function createOwnershipQueryBuilder() {
+  const builder = {
+    select: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    upsert: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    neq: jest.fn().mockReturnThis(),
+    gt: jest.fn().mockReturnThis(),
+    gte: jest.fn().mockReturnThis(),
+    lt: jest.fn().mockReturnThis(),
+    lte: jest.fn().mockReturnThis(),
+    like: jest.fn().mockReturnThis(),
+    ilike: jest.fn().mockReturnThis(),
+    is: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    contains: jest.fn().mockReturnThis(),
+    containedBy: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    offset: jest.fn().mockReturnThis(),
+    match: jest.fn().mockReturnThis(),
+    not: jest.fn().mockReturnThis(),
+    or: jest.fn().mockReturnThis(),
+    filter: jest.fn().mockReturnThis(),
+    textSearch: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: DEFAULT_TEST_RESOURCE_OWNERSHIP, error: null }),
+    maybeSingle: jest.fn().mockResolvedValue({ data: DEFAULT_TEST_RESOURCE_OWNERSHIP, error: null }),
+    // list queries: resolve to empty array so tests' `.filter`/`.map` don't crash
+    then: function(resolve, reject) {
+      return Promise.resolve({ data: [], error: null, count: 0 }).then(resolve, reject);
+    }
+  };
+  return builder;
+}
+
 function createMockSupabase(overrides = {}) {
   const defaultQueryBuilder = createQueryBuilder();
   const membershipQueryBuilder = createQueryBuilder({ data: DEFAULT_TEST_MEMBERSHIP, error: null });
@@ -92,6 +156,11 @@ function createMockSupabase(overrides = {}) {
       // that don't explicitly mock organization_members still authorize.
       if (table === 'organization_members') {
         return membershipQueryBuilder;
+      }
+      // Auto-satisfy per-resource ownership checks (verifyAgentOrgOwnership,
+      // etc.) by returning a record that exists and is owned by the test org.
+      if (OWNERSHIP_DEFAULT_TABLES.has(table)) {
+        return createOwnershipQueryBuilder();
       }
       return defaultQueryBuilder;
     }),

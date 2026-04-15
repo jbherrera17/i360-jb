@@ -188,7 +188,7 @@ describe('Agent Routes Integration Tests', () => {
         or: jest.fn().mockReturnThis(),
         order: jest.fn().mockReturnThis(),
         range: jest.fn().mockResolvedValue({
-          data: [testAgents.contentWriter],
+          data: [testAgents.systemAgent],
           error: null,
           count: 1
         })
