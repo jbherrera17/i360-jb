@@ -51,7 +51,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -107,7 +107,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -132,7 +132,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -174,7 +174,7 @@ describe('Organizations Routes Integration Tests', () => {
             insert: jest.fn().mockResolvedValue({ error: null })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -210,7 +210,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -251,7 +251,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -276,7 +276,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -318,7 +318,7 @@ describe('Organizations Routes Integration Tests', () => {
             then: (resolve) => resolve({ error: null })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -342,7 +342,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -376,7 +376,7 @@ describe('Organizations Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -427,7 +427,7 @@ describe('Organizations Routes Integration Tests', () => {
             then: (resolve) => resolve({ count: 7, error: null })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)

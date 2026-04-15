@@ -36,7 +36,7 @@ describe('Organization Customization Routes Integration Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSupabase = createMockSupabase();
-        const testApp = createTestApp({ routes: ['org-customization'], mockSupabase });
+        const testApp = createTestApp({ routes: ['org-customization'], mockSupabase, anonymous: true });
         app = testApp.app;
     });
 

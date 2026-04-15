@@ -5,6 +5,7 @@
 
 const request = require('supertest');
 const { createAuthenticatedTestApp } = require('../../setup/testApp');
+const { createMockSupabase } = require('../../setup/mockSupabase');
 
 describe('Workflows Routes Integration', () => {
   let app;
@@ -55,7 +56,7 @@ describe('Workflows Routes Integration', () => {
     ];
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => createChainable(mockWorkflows, null, 2));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockWorkflows, null, 2));
     });
 
     it('should return list of workflows', async () => {
@@ -86,7 +87,7 @@ describe('Workflows Routes Integration', () => {
     ];
 
     it('should return workflow templates', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable(mockTemplates));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockTemplates));
 
       const response = await request(app)
         .get('/api/workflows/templates')
@@ -111,7 +112,7 @@ describe('Workflows Routes Integration', () => {
     };
 
     it('should return workflow with steps', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable(mockWorkflow));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockWorkflow));
 
       const response = await request(app)
         .get('/api/workflows/wf-001')
@@ -123,7 +124,7 @@ describe('Workflows Routes Integration', () => {
     });
 
     it('should handle non-existent workflow', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable(null, { message: 'Not found' }));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null, { message: 'Not found' }));
 
       const response = await request(app)
         .get('/api/workflows/non-existent');
@@ -143,7 +144,7 @@ describe('Workflows Routes Integration', () => {
     };
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => createChainable({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({
         id: 'wf-new',
         ...newWorkflow,
         user_id: 'test-user-001',
@@ -168,7 +169,7 @@ describe('Workflows Routes Integration', () => {
   // =============================================
   describe('PUT /api/workflows/:id', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => createChainable({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({
         id: 'wf-001',
         name: 'Updated Workflow',
         user_id: 'test-user-001'
@@ -190,7 +191,7 @@ describe('Workflows Routes Integration', () => {
   // =============================================
   describe('DELETE /api/workflows/:id', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         update: jest.fn().mockReturnThis(),
         delete: jest.fn().mockReturnThis(),
@@ -268,7 +269,7 @@ describe('Workflows Routes Integration', () => {
     };
 
     it('should return execution details', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable(mockExecution));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockExecution));
 
       const response = await request(app)
         .get('/api/workflows/executions/exec-001')
@@ -284,7 +285,7 @@ describe('Workflows Routes Integration', () => {
   describe('Workflow Steps', () => {
     describe('POST /api/workflows/:id/steps', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({
           id: 'step-new',
           workflow_id: 'wf-001',
           step_number: 3,
@@ -309,7 +310,7 @@ describe('Workflows Routes Integration', () => {
 
     describe('PUT /api/workflows/:wfId/steps/:stepId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => createChainable({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({
           id: 'step-001',
           name: 'Updated Step'
         }));
@@ -327,7 +328,7 @@ describe('Workflows Routes Integration', () => {
 
     describe('DELETE /api/workflows/:wfId/steps/:stepId', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation(() => ({
+        mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockResolvedValue({ error: null })
         }));

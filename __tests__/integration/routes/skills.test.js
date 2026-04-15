@@ -5,6 +5,7 @@
 
 const request = require('supertest');
 const { createAuthenticatedTestApp } = require('../../setup/testApp');
+const { createMockSupabase } = require('../../setup/mockSupabase');
 
 describe('Skills Routes Integration', () => {
   let app;
@@ -57,7 +58,7 @@ describe('Skills Routes Integration', () => {
     ];
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => createChainable(mockSkills, null, 2));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockSkills, null, 2));
     });
 
     it('should return list of skills', async () => {
@@ -100,7 +101,7 @@ describe('Skills Routes Integration', () => {
     };
 
     it('should return single skill by ID', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable(mockSkill));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(mockSkill));
 
       const response = await request(app)
         .get('/api/skills/skill-001')
@@ -111,7 +112,7 @@ describe('Skills Routes Integration', () => {
     });
 
     it('should handle non-existent skill', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable(null, { message: 'Not found' }));
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable(null, { message: 'Not found' }));
 
       const response = await request(app)
         .get('/api/skills/non-existent');
@@ -132,7 +133,7 @@ describe('Skills Routes Integration', () => {
     };
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => createChainable({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({
         id: 'skill-new',
         ...newSkill,
         user_id: 'test-user-001'
@@ -164,7 +165,7 @@ describe('Skills Routes Integration', () => {
   // =============================================
   describe('PUT /api/skills/:id', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => createChainable({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable({
         id: 'skill-001',
         name: 'updated-skill',
         user_id: 'test-user-001'
@@ -186,7 +187,7 @@ describe('Skills Routes Integration', () => {
   // =============================================
   describe('DELETE /api/skills/:id', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         update: jest.fn().mockReturnThis(),
         delete: jest.fn().mockReturnThis(),
@@ -213,7 +214,7 @@ describe('Skills Routes Integration', () => {
   // =============================================
   describe('GET /api/skills/categories', () => {
     it('should return skill categories', async () => {
-      mockSupabase.from.mockImplementation(() => createChainable([
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : createChainable([
         { category: 'content', count: 5 }
       ]));
 

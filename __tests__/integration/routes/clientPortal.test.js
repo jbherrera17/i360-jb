@@ -43,7 +43,7 @@ describe('Client Portal Routes Integration Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSupabase = createMockSupabase();
-        const testApp = createTestApp({ routes: ['client-portal'], mockSupabase });
+        const testApp = createTestApp({ routes: ['client-portal'], mockSupabase, anonymous: true });
         app = testApp.app;
     });
 
@@ -329,7 +329,7 @@ describe('Client Portal Security Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSupabase = createMockSupabase();
-        const testApp = createTestApp({ routes: ['client-portal'], mockSupabase });
+        const testApp = createTestApp({ routes: ['client-portal'], mockSupabase, anonymous: true });
         app = testApp.app;
     });
 

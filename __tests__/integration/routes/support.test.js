@@ -54,7 +54,7 @@ describe('Support Routes', () => {
     // ── Auth/Module Gating ───────────────────────────────────
     describe('Module Access', () => {
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp, mockSupabase: unauthMock } = createTestApp({ routes: ['support'] });
+            const { app: unauthApp, mockSupabase: unauthMock } = createTestApp({ routes: ['support'], anonymous: true });
             unauthMock.rpc.mockResolvedValue({ data: false, error: null });
 
             const response = await request(unauthApp)

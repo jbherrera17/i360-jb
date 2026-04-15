@@ -104,7 +104,15 @@ describe('Artifacts Routes Integration', () => {
         });
 
         it('should require org context', async () => {
-            const response = await request(app)
+            // Create a dedicated app with orgId: null so that neither the
+            // auto-stamped orgId nor an x-org-id header is present,
+            // allowing requireOrgContext to reject the request with 400.
+            const { app: noOrgApp } = createAuthenticatedTestApp({
+                routes: ['artifacts'],
+                orgId: null
+            });
+
+            const response = await request(noOrgApp)
                 .get('/api/artifacts')
                 .expect(400);
 

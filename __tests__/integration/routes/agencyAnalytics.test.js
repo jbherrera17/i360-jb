@@ -41,7 +41,7 @@ describe('Agency Analytics Routes Integration Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSupabase = createMockSupabase();
-        const testApp = createTestApp({ routes: ['analytics'], mockSupabase });
+        const testApp = createTestApp({ routes: ['analytics'], mockSupabase, anonymous: true });
         app = testApp.app;
     });
 
@@ -441,7 +441,7 @@ describe('Agency Analytics Security Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSupabase = createMockSupabase();
-        const testApp = createTestApp({ routes: ['analytics'], mockSupabase });
+        const testApp = createTestApp({ routes: ['analytics'], mockSupabase, anonymous: true });
         app = testApp.app;
     });
 

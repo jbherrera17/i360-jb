@@ -51,7 +51,7 @@ describe('Clients Routes Integration Tests', () => {
             then: (resolve) => resolve({ data: mockClients, error: null })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -64,7 +64,17 @@ describe('Clients Routes Integration Tests', () => {
     });
 
     it('should return 400 when org_id is missing', async () => {
-      const response = await request(app)
+      // Create a dedicated app with orgId: null so neither req.orgId nor
+      // the auto-stamped x-org-id header is present. clients.js now reads
+      // the header as a fallback, so the shared app (which auto-stamps
+      // test-org-001) would bypass the 400 path.
+      const { app: noOrgApp } = createTestApp({
+        routes: ['clients'],
+        mockSupabase,
+        orgId: null
+      });
+
+      const response = await request(noOrgApp)
         .get('/api/clients')
         .set('Cookie', 'auth_token=valid-token')
         .expect(400);
@@ -85,7 +95,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -126,7 +136,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -172,7 +182,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -190,13 +200,15 @@ describe('Clients Routes Integration Tests', () => {
           return {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
+            // Route checks `if (error) throw error; if (!client) return 404`
+            // so simulate "not found" as data=null without an error.
             single: jest.fn().mockResolvedValue({
               data: null,
-              error: { code: 'PGRST116' }
+              error: null
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -227,7 +239,8 @@ describe('Clients Routes Integration Tests', () => {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
             single: jest.fn().mockResolvedValue({
-              data: { role: 'consultant' },
+              // Handler allows owner/admin/member to create clients
+              data: { role: 'admin' },
               error: null
             })
           };
@@ -242,7 +255,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -271,7 +284,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -296,7 +309,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -336,12 +349,13 @@ describe('Clients Routes Integration Tests', () => {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
             single: jest.fn().mockResolvedValue({
-              data: { role: 'consultant' },
+              // Handler requires owner/admin/member to update
+              data: { role: 'admin' },
               error: null
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -359,6 +373,10 @@ describe('Clients Routes Integration Tests', () => {
   // ============================================================================
   describe('DELETE /api/clients/:id', () => {
     it('should archive client when admin (soft delete)', async () => {
+      // Handler chains `from('clients').update({...}).eq('id', id)` and
+      // awaits the result. The final `.eq()` needs to return a thenable,
+      // so we make the builder itself thenable instead of resolving on
+      // `update()`.
       mockSupabase.from.mockImplementation((table) => {
         if (table === 'clients') {
           return {
@@ -368,7 +386,8 @@ describe('Clients Routes Integration Tests', () => {
               data: { org_id: testOrgId },
               error: null
             }),
-            update: jest.fn().mockResolvedValue({ error: null })
+            update: jest.fn().mockReturnThis(),
+            then: (resolve) => resolve({ error: null })
           };
         }
         if (table === 'organization_members') {
@@ -381,7 +400,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -403,7 +422,8 @@ describe('Clients Routes Integration Tests', () => {
               data: { org_id: testOrgId },
               error: null
             }),
-            delete: jest.fn().mockResolvedValue({ error: null })
+            delete: jest.fn().mockReturnThis(),
+            then: (resolve) => resolve({ error: null })
           };
         }
         if (table === 'organization_members') {
@@ -416,7 +436,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)
@@ -450,7 +470,7 @@ describe('Clients Routes Integration Tests', () => {
             })
           };
         }
-        return mockSupabase.from(table);
+        return createMockSupabase().from(table);
       });
 
       const response = await request(app)

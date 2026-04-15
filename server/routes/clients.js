@@ -13,7 +13,9 @@ module.exports = function(supabase) {
      */
     async function checkOrgMembership(req, res, next) {
         const userId = req.userId;
-        const orgId = req.query.org_id || req.body.org_id || req.params.orgId;
+        // Accept org context from the Phase 82 x-org-id header (what authFetch
+        // sends) in addition to the legacy query/body/params sources.
+        const orgId = req.query.org_id || req.body.org_id || req.params.orgId || req.headers['x-org-id'];
 
         if (!userId) {
             return res.status(401).json({

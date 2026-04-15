@@ -86,7 +86,7 @@ describe('Bugs Routes', () => {
   // =============================================
   describe('Authentication', () => {
     it('should require authentication for /summary', async () => {
-      const unauthApp = createTestApp({ routes: ['bugs'] }).app;
+      const unauthApp = createTestApp({ routes: ['bugs'], anonymous: true }).app;
 
       const response = await request(unauthApp).get('/api/bugs/summary');
 
@@ -95,7 +95,7 @@ describe('Bugs Routes', () => {
     });
 
     it('should require authentication for /bugs', async () => {
-      const unauthApp = createTestApp({ routes: ['bugs'] }).app;
+      const unauthApp = createTestApp({ routes: ['bugs'], anonymous: true }).app;
 
       const response = await request(unauthApp).get('/api/bugs');
 
@@ -103,7 +103,7 @@ describe('Bugs Routes', () => {
     });
 
     it('should require authentication for /open', async () => {
-      const unauthApp = createTestApp({ routes: ['bugs'] }).app;
+      const unauthApp = createTestApp({ routes: ['bugs'], anonymous: true }).app;
 
       const response = await request(unauthApp).get('/api/bugs/open');
 
@@ -373,7 +373,7 @@ describe('Bugs Routes', () => {
     });
 
     it('should require authentication', async () => {
-      const unauthApp = createTestApp({ routes: ['bugs'] }).app;
+      const unauthApp = createTestApp({ routes: ['bugs'], anonymous: true }).app;
 
       const response = await request(unauthApp)
         .post('/api/bugs')
@@ -490,7 +490,7 @@ describe('Bugs Routes', () => {
     });
 
     it('should require authentication', async () => {
-      const unauthApp = createTestApp({ routes: ['bugs'] }).app;
+      const unauthApp = createTestApp({ routes: ['bugs'], anonymous: true }).app;
 
       const response = await request(unauthApp)
         .patch('/api/bugs/bug-001')
@@ -584,7 +584,7 @@ describe('Bugs Routes', () => {
     });
 
     it('should require authentication', async () => {
-      const unauthApp = createTestApp({ routes: ['bugs'] }).app;
+      const unauthApp = createTestApp({ routes: ['bugs'], anonymous: true }).app;
 
       const response = await request(unauthApp).get('/api/bugs/bug-001');
 

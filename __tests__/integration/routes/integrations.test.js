@@ -76,7 +76,7 @@ describe('Integrations Routes', () => {
 
   describe('GET /api/integrations/providers/:slug', () => {
     it('should return provider details', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
@@ -96,7 +96,7 @@ describe('Integrations Routes', () => {
     });
 
     it('should return 404 for unknown provider', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
@@ -167,7 +167,7 @@ describe('Integrations Routes', () => {
       };
       integrationRegistry.getProvider.mockReturnValue(mockProvider);
 
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
@@ -210,7 +210,7 @@ describe('Integrations Routes', () => {
 
   describe('GET /api/integrations/subscriptions', () => {
     it('should return org subscriptions', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      mockSupabase.from.mockImplementation((t) => t === "organization_members" ? createMockSupabase().from(t) : ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockResolvedValue({
           data: [{ id: 'sub-1', addon_type: 'productivity', monthly_price: 99 }],

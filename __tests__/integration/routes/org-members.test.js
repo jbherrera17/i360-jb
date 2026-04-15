@@ -37,7 +37,7 @@ describe('Organization Members Routes Integration Tests', () => {
   // ============================================================================
   describe('Authentication', () => {
     it('GET /api/org-members/:orgId should return 401 when not authenticated', async () => {
-      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase }).app;
+      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase, anonymous: true }).app;
 
       const response = await request(unauthApp)
         .get(`/api/org-members/${testOrgId}`)
@@ -48,7 +48,7 @@ describe('Organization Members Routes Integration Tests', () => {
     });
 
     it('POST /api/org-members/:orgId/invite should return 401 when not authenticated', async () => {
-      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase }).app;
+      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase, anonymous: true }).app;
 
       const response = await request(unauthApp)
         .post(`/api/org-members/${testOrgId}/invite`)
@@ -60,7 +60,7 @@ describe('Organization Members Routes Integration Tests', () => {
     });
 
     it('PUT /api/org-members/:orgId/:memberId should return 401 when not authenticated', async () => {
-      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase }).app;
+      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase, anonymous: true }).app;
 
       const response = await request(unauthApp)
         .put(`/api/org-members/${testOrgId}/${testMemberId}`)
@@ -72,7 +72,7 @@ describe('Organization Members Routes Integration Tests', () => {
     });
 
     it('DELETE /api/org-members/:orgId/:memberId should return 401 when not authenticated', async () => {
-      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase }).app;
+      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase, anonymous: true }).app;
 
       const response = await request(unauthApp)
         .delete(`/api/org-members/${testOrgId}/${testMemberId}`)
@@ -83,7 +83,7 @@ describe('Organization Members Routes Integration Tests', () => {
     });
 
     it('POST /api/org-members/:orgId/leave should return 401 when not authenticated', async () => {
-      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase }).app;
+      const unauthApp = createTestApp({ routes: ['org-members'], mockSupabase, anonymous: true }).app;
 
       const response = await request(unauthApp)
         .post(`/api/org-members/${testOrgId}/leave`)

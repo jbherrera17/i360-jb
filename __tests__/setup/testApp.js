@@ -54,16 +54,19 @@ function createTestApp(options = {}) {
       req.userId = options.userId;
       req.userRole = options.userRole || null;
       req.isAnonymous = options.isAnonymous === true;
+    } else if (req.cookies && req.cookies.auth_token) {
+      // Cookie takes precedence over options.anonymous, so tests that share a
+      // single app and flip between unauth and authenticated requests via
+      // `.set('Cookie', 'auth_token=...')` continue to work even when the
+      // shared app was created with `anonymous: true`.
+      req.userId = 'test-user-123';
+      req.userRole = 'user';
+      req.isAnonymous = false;
     } else if (options.anonymous === true || options.userId === null) {
       // Explicit anonymous opt-in (options.anonymous: true, or userId: null)
       req.userId = null;
       req.userRole = null;
       req.isAnonymous = true;
-    } else if (req.cookies && req.cookies.auth_token) {
-      // Cookie present - simulate authenticated user
-      req.userId = 'test-user-123';
-      req.userRole = 'user';
-      req.isAnonymous = false;
     } else {
       // Phase 81/82: routes require auth by default. Provide a test user
       // unless the caller explicitly opts into anonymous via options.anonymous.
@@ -76,9 +79,16 @@ function createTestApp(options = {}) {
     // so requireOrgContext can proceed to its userId check and return 401
     // for anonymous requests — matching how authFetch always sends
     // x-org-id in production. Tests can override by passing options.orgId
-    // explicitly or by sending their own x-org-id header.
-    if (!req.headers['x-org-id']) {
-      req.orgId = options.orgId || 'test-org-001';
+    // explicitly, setting `orgId: null` to suppress the default entirely,
+    // or sending their own x-org-id header.
+    //
+    // We stamp BOTH req.orgId (used by routes reading from req.orgId) and
+    // req.headers['x-org-id'] (used by routes that read the header directly,
+    // e.g. server/routes/auth.js requireAdmin).
+    if (!req.headers['x-org-id'] && options.orgId !== null) {
+      const stampedOrg = options.orgId || 'test-org-001';
+      req.orgId = stampedOrg;
+      req.headers['x-org-id'] = stampedOrg;
     }
 
     next();
@@ -105,9 +115,9 @@ function createTestApp(options = {}) {
   }
 
   if (routes.includes('context')) {
-    // Context routes use req.supabase pattern (already injected via middleware)
+    // Phase 80+: context routes are now a factory — pass mockSupabase.
     const contextRoutes = require('../../server/routes/context');
-    app.use('/api/context', contextRoutes);
+    app.use('/api/context', contextRoutes(mockSupabase));
   }
 
   if (routes.includes('chat')) {

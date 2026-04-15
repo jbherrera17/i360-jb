@@ -100,6 +100,67 @@ const OWNERSHIP_DEFAULT_TABLES = new Set([
   'conversations'
 ]);
 
+// Builder for `organization_members` queries. `.single()`/`.maybeSingle()`
+// return the single membership record (for requireOrgContext checks), while
+// thenable awaits resolve to an ARRAY with one membership (for list-style
+// queries that want to flatten multi-org membership into a list).
+function createMembershipQueryBuilder() {
+  const builder = {
+    select: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    upsert: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    neq: jest.fn().mockReturnThis(),
+    gt: jest.fn().mockReturnThis(),
+    gte: jest.fn().mockReturnThis(),
+    lt: jest.fn().mockReturnThis(),
+    lte: jest.fn().mockReturnThis(),
+    like: jest.fn().mockReturnThis(),
+    ilike: jest.fn().mockReturnThis(),
+    is: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    contains: jest.fn().mockReturnThis(),
+    containedBy: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    offset: jest.fn().mockReturnThis(),
+    match: jest.fn().mockReturnThis(),
+    not: jest.fn().mockReturnThis(),
+    or: jest.fn().mockReturnThis(),
+    filter: jest.fn().mockReturnThis(),
+    textSearch: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: DEFAULT_TEST_MEMBERSHIP, error: null }),
+    maybeSingle: jest.fn().mockResolvedValue({ data: DEFAULT_TEST_MEMBERSHIP, error: null }),
+    // For list queries that `await` the chain — return an array with one
+    // membership plus an `organizations` join stub so handlers that flatten
+    // `.map(m => ({...m.organizations, member_role: m.role}))` work.
+    then: function(resolve, reject) {
+      return Promise.resolve({
+        data: [{
+          ...DEFAULT_TEST_MEMBERSHIP,
+          organizations: {
+            id: DEFAULT_TEST_MEMBERSHIP.org_id,
+            name: 'Test Organization',
+            slug: 'test-org',
+            owner_id: DEFAULT_TEST_MEMBERSHIP.user_id,
+            subscription_tier: 'enterprise',
+            subscription_status: 'active',
+            settings: {},
+            created_at: new Date().toISOString()
+          },
+          joined_at: new Date().toISOString()
+        }],
+        error: null,
+        count: 1
+      }).then(resolve, reject);
+    }
+  };
+  return builder;
+}
+
 // Builder that satisfies per-resource ownership checks without breaking
 // list-style queries. `maybeSingle`/`single` return the ownership record,
 // but plain `await` on a chain (used by list queries) resolves to an
@@ -144,7 +205,6 @@ function createOwnershipQueryBuilder() {
 
 function createMockSupabase(overrides = {}) {
   const defaultQueryBuilder = createQueryBuilder();
-  const membershipQueryBuilder = createQueryBuilder({ data: DEFAULT_TEST_MEMBERSHIP, error: null });
 
   const mockClient = {
     // Database methods
@@ -155,7 +215,7 @@ function createMockSupabase(overrides = {}) {
       // Auto-satisfy the Phase 82 requireOrgContext membership check so tests
       // that don't explicitly mock organization_members still authorize.
       if (table === 'organization_members') {
-        return membershipQueryBuilder;
+        return createMembershipQueryBuilder();
       }
       // Auto-satisfy per-resource ownership checks (verifyAgentOrgOwnership,
       // etc.) by returning a record that exists and is owned by the test org.
@@ -220,9 +280,24 @@ function createMockSupabase(overrides = {}) {
         error: null
       }),
       admin: {
-        createUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+        createUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'new-user-001', email: 'new@test.com' } },
+          error: null
+        }),
         deleteUser: jest.fn().mockResolvedValue({ error: null }),
-        listUsers: jest.fn().mockResolvedValue({ data: { users: [] }, error: null })
+        listUsers: jest.fn().mockResolvedValue({ data: { users: [] }, error: null }),
+        inviteUserByEmail: jest.fn().mockResolvedValue({
+          data: { user: { id: 'invited-user-001', email: 'invited@test.com' } },
+          error: null
+        }),
+        updateUserById: jest.fn().mockResolvedValue({
+          data: { user: { id: 'updated-user-001' } },
+          error: null
+        }),
+        generateLink: jest.fn().mockResolvedValue({
+          data: { properties: { action_link: 'https://test.example/magic' } },
+          error: null
+        })
       },
       ...overrides.auth
     },
