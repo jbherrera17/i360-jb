@@ -49,21 +49,37 @@ function createTestApp(options = {}) {
     // Set auth state from options OR from cookie if present
     // This simulates the real auth middleware behavior
     if (options.userId) {
-      // Explicit userId passed in options takes precedence
+      // Explicit userId passed in options takes precedence.
+      // isAnonymous only flips to true if the caller explicitly sets it.
       req.userId = options.userId;
       req.userRole = options.userRole || null;
-      req.isAnonymous = options.isAnonymous !== false;
+      req.isAnonymous = options.isAnonymous === true;
+    } else if (options.anonymous === true || options.userId === null) {
+      // Explicit anonymous opt-in (options.anonymous: true, or userId: null)
+      req.userId = null;
+      req.userRole = null;
+      req.isAnonymous = true;
     } else if (req.cookies && req.cookies.auth_token) {
       // Cookie present - simulate authenticated user
       req.userId = 'test-user-123';
       req.userRole = 'user';
       req.isAnonymous = false;
     } else {
-      // No auth - anonymous user
-      req.userId = null;
-      req.userRole = null;
-      req.isAnonymous = true;
+      // Phase 81/82: routes require auth by default. Provide a test user
+      // unless the caller explicitly opts into anonymous via options.anonymous.
+      req.userId = 'test-user-001';
+      req.userRole = options.userRole || 'user';
+      req.isAnonymous = false;
     }
+
+    // Phase 82: supply an org context for authenticated tests so
+    // requireOrgContext middleware (which reads x-org-id header OR req.orgId)
+    // has something to validate against. Tests can override by setting
+    // options.orgId or by sending their own x-org-id header.
+    if (req.userId && !req.headers['x-org-id']) {
+      req.orgId = options.orgId || 'test-org-001';
+    }
+
     next();
   });
 
@@ -94,9 +110,9 @@ function createTestApp(options = {}) {
   }
 
   if (routes.includes('chat')) {
-    // Chat routes use module.exports = router pattern (no factory)
+    // Phase 80+: chat routes are now a factory — pass mockSupabase.
     const chatRoutes = require('../../server/routes/chat');
-    app.use('/api/chat', chatRoutes);
+    app.use('/api/chat', chatRoutes(mockSupabase));
   }
 
   if (routes.includes('actions')) {
@@ -120,9 +136,9 @@ function createTestApp(options = {}) {
   }
 
   if (routes.includes('workflows')) {
-    // Workflows routes use module.exports = router pattern (no factory)
+    // Phase 82+: workflows routes are now a factory — pass mockSupabase.
     const workflowsRoutes = require('../../server/routes/workflows');
-    app.use('/api/workflows', workflowsRoutes);
+    app.use('/api/workflows', workflowsRoutes(mockSupabase));
   }
 
   if (routes.includes('bugs')) {

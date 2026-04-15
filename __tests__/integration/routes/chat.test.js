@@ -9,6 +9,7 @@ const { createTestApp } = require('../../setup/testApp');
 // Mock all LLM services before requiring chat routes
 jest.mock('../../../server/services/anthropic', () => ({
   initialize: jest.fn().mockReturnValue(true),
+  isAvailable: jest.fn().mockReturnValue(true),
   chat: jest.fn().mockResolvedValue({
     content: 'Test response from Claude',
     model: 'claude-sonnet-4-5-20250929',
@@ -23,6 +24,7 @@ jest.mock('../../../server/services/anthropic', () => ({
 
 jest.mock('../../../server/services/openai', () => ({
   initialize: jest.fn().mockReturnValue(true),
+  isAvailable: jest.fn().mockReturnValue(true),
   chat: jest.fn().mockResolvedValue({
     content: 'Test response from GPT',
     model: 'gpt-4o',
@@ -37,6 +39,7 @@ jest.mock('../../../server/services/openai', () => ({
 
 jest.mock('../../../server/services/perplexity', () => ({
   initialize: jest.fn().mockReturnValue(true),
+  isAvailable: jest.fn().mockReturnValue(true),
   chat: jest.fn().mockResolvedValue({
     content: 'Test response from Perplexity',
     model: 'llama-3.1-sonar-large-128k-online',

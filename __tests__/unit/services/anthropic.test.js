@@ -19,7 +19,8 @@ jest.mock('../../../server/services/reliability', () => ({
   withResilience: jest.fn((operation) => operation()),
   getCircuitBreaker: jest.fn(() => ({
     getStatus: jest.fn(() => ({ state: 'CLOSED', failures: 0 })),
-    reset: jest.fn()
+    reset: jest.fn(),
+    onStateChange: jest.fn()
   })),
   resetAllCircuits: jest.fn()
 }));

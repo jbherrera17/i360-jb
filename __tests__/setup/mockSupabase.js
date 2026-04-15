@@ -68,8 +68,19 @@ function createQueryBuilder(options = {}) {
  * Create a mock Supabase client
  * @param {object} overrides - Override specific methods or responses
  */
+// Default membership record returned for organization_members queries so that
+// requireOrgContext middleware validation passes in tests unless a test opts out.
+const DEFAULT_TEST_MEMBERSHIP = {
+  role: 'owner',
+  business_role: 'executive',
+  org_id: 'test-org-001',
+  user_id: 'test-user-001',
+  status: 'active'
+};
+
 function createMockSupabase(overrides = {}) {
   const defaultQueryBuilder = createQueryBuilder();
+  const membershipQueryBuilder = createQueryBuilder({ data: DEFAULT_TEST_MEMBERSHIP, error: null });
 
   const mockClient = {
     // Database methods
@@ -77,11 +88,35 @@ function createMockSupabase(overrides = {}) {
       if (overrides.tables && overrides.tables[table]) {
         return createQueryBuilder(overrides.tables[table]);
       }
+      // Auto-satisfy the Phase 82 requireOrgContext membership check so tests
+      // that don't explicitly mock organization_members still authorize.
+      if (table === 'organization_members') {
+        return membershipQueryBuilder;
+      }
       return defaultQueryBuilder;
     }),
 
-    // RPC calls
-    rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+    // RPC calls — default-permissive so Phase 81/82 gating middleware
+    // (can_access_module, check_org_limits, is_platform_admin) let tests
+    // through. Individual tests can override via mockSupabase.rpc.mockImplementation.
+    rpc: jest.fn((funcName) => {
+      if (funcName === 'can_access_module') {
+        return Promise.resolve({ data: true, error: null });
+      }
+      if (funcName === 'is_platform_admin') {
+        return Promise.resolve({ data: false, error: null });
+      }
+      if (funcName === 'get_platform_admin_role') {
+        return Promise.resolve({ data: null, error: null });
+      }
+      if (funcName === 'check_org_limits') {
+        return Promise.resolve({
+          data: [{ within_limits: true, current_count: 0, max_allowed: 999, usage_percent: 0 }],
+          error: null
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    }),
 
     // Auth methods
     auth: {
@@ -181,5 +216,6 @@ module.exports = {
   createMockSupabase,
   createQueryBuilder,
   createMockUser,
-  createMockSession
+  createMockSession,
+  DEFAULT_TEST_MEMBERSHIP
 };

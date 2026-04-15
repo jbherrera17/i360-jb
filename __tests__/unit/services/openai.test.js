@@ -32,7 +32,8 @@ jest.mock('../../../server/services/reliability', () => ({
   withResilience: jest.fn((operation) => operation()),
   getCircuitBreaker: jest.fn(() => ({
     getStatus: jest.fn(() => ({ state: 'CLOSED', failures: 0 })),
-    reset: jest.fn()
+    reset: jest.fn(),
+    onStateChange: jest.fn()
   })),
   resetAllCircuits: jest.fn()
 }));
@@ -494,7 +495,7 @@ describe('OpenAI Service', () => {
       openaiService.initialize('sk-test-key');
     });
 
-    test('should generate image with DALL-E 3', async () => {
+    test('should generate image with default model', async () => {
       mockClient.images.generate.mockResolvedValue({
         data: [{
           url: 'https://example.com/image.png',
@@ -507,7 +508,7 @@ describe('OpenAI Service', () => {
       expect(result.images).toHaveLength(1);
       expect(result.images[0].url).toBe('https://example.com/image.png');
       expect(result.images[0].revisedPrompt).toBe('A beautiful sunset over mountains');
-      expect(result.model).toBe('dall-e-3');
+      expect(result.model).toBe('gpt-image-1.5');
     });
 
     test('should respect size parameter', async () => {
@@ -515,7 +516,7 @@ describe('OpenAI Service', () => {
         data: [{ url: 'https://example.com/image.png' }]
       });
 
-      await openaiService.generateImage('Test', { size: '1024x1792' });
+      await openaiService.generateImage('Test', { model: 'dall-e-3', size: '1024x1792' });
 
       expect(mockClient.images.generate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -542,6 +543,7 @@ describe('OpenAI Service', () => {
       });
 
       const result = await openaiService.generateImage('Test', {
+        model: 'dall-e-3',
         responseFormat: 'base64'
       });
 

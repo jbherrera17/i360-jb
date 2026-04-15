@@ -9,7 +9,8 @@ jest.mock('../../../server/services/reliability', () => ({
     CircuitBreaker: jest.fn().mockImplementation(() => ({
         execute: jest.fn((fn) => fn()),
         getStatus: jest.fn(() => ({ state: 'CLOSED', failures: 0 })),
-        reset: jest.fn()
+        reset: jest.fn(),
+        onStateChange: jest.fn()
     }))
 }));
 
@@ -136,7 +137,8 @@ describe('Gemini Service', () => {
             jest.mock('../../../server/services/reliability', () => ({
                 withRetry: jest.fn((fn) => fn()),
                 CircuitBreaker: jest.fn().mockImplementation(() => ({
-                    execute: jest.fn((fn) => fn())
+                    execute: jest.fn((fn) => fn()),
+                    onStateChange: jest.fn()
                 }))
             }));
             jest.mock('../../../server/services/logger', () => ({
@@ -361,7 +363,8 @@ describe('Gemini Service', () => {
             jest.mock('../../../server/services/reliability', () => ({
                 withRetry: jest.fn((fn) => fn()),
                 CircuitBreaker: jest.fn().mockImplementation(() => ({
-                    execute: jest.fn((fn) => fn())
+                    execute: jest.fn((fn) => fn()),
+                    onStateChange: jest.fn()
                 }))
             }));
             jest.mock('../../../server/services/logger', () => ({
