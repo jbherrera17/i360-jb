@@ -72,11 +72,12 @@ function createTestApp(options = {}) {
       req.isAnonymous = false;
     }
 
-    // Phase 82: supply an org context for authenticated tests so
-    // requireOrgContext middleware (which reads x-org-id header OR req.orgId)
-    // has something to validate against. Tests can override by setting
-    // options.orgId or by sending their own x-org-id header.
-    if (req.userId && !req.headers['x-org-id']) {
+    // Phase 82: supply an org context for all tests (authenticated or not)
+    // so requireOrgContext can proceed to its userId check and return 401
+    // for anonymous requests — matching how authFetch always sends
+    // x-org-id in production. Tests can override by passing options.orgId
+    // explicitly or by sending their own x-org-id header.
+    if (!req.headers['x-org-id']) {
       req.orgId = options.orgId || 'test-org-001';
     }
 

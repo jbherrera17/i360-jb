@@ -22,7 +22,7 @@ describe('Modules Routes', () => {
 
     describe('GET /api/modules', () => {
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get('/api/modules')
@@ -127,7 +127,7 @@ describe('Modules Routes', () => {
 
     describe('GET /api/modules/all', () => {
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get('/api/modules/all')
@@ -184,7 +184,7 @@ describe('Modules Routes', () => {
 
     describe('GET /api/modules/check/:moduleId', () => {
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get('/api/modules/check/mod-123')
@@ -317,7 +317,7 @@ describe('Modules Routes', () => {
         const orgId = 'org-123';
 
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get(`/api/modules/org/${orgId}`)
@@ -408,7 +408,7 @@ describe('Modules Routes', () => {
         const moduleId = 'mod-456';
 
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .put(`/api/modules/org/${orgId}/${moduleId}`)
@@ -590,7 +590,7 @@ describe('Modules Routes', () => {
         const orgId = 'org-123';
 
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get(`/api/modules/roles/${orgId}`)
@@ -667,7 +667,7 @@ describe('Modules Routes', () => {
         const orgId = 'org-123';
 
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .put(`/api/modules/roles/${orgId}`)
@@ -765,7 +765,7 @@ describe('Modules Routes', () => {
         const orgId = 'org-123';
 
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get(`/api/modules/limits/${orgId}`)
@@ -803,7 +803,7 @@ describe('Modules Routes', () => {
         const resourceType = 'agents';
 
         it('should return 401 without authentication', async () => {
-            const { app: unauthApp } = createTestApp({ routes: ['modules'] });
+            const { app: unauthApp } = createTestApp({ routes: ['modules'], anonymous: true });
 
             const response = await request(unauthApp)
                 .get(`/api/modules/limits/${orgId}/${resourceType}`)
