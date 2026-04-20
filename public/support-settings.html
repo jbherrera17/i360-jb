@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Settings | Insight 360</title>
+    <title>Chat Support System Settings | Insight 360</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -653,9 +653,9 @@
                 <div class="header-content">
                     <h1>
                         <i data-lucide="settings" style="width:28px;height:28px;color:var(--primary);"></i>
-                        Support Settings
+                        Chat Support System Settings
                     </h1>
-                    <p class="header-subtitle">Configure your support AI system</p>
+                    <p class="header-subtitle">Configure your chat support AI system</p>
                 </div>
                 <div class="header-actions">
                     <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
@@ -667,239 +667,26 @@
             <div style="padding: var(--spacing-xl);">
                 <!-- Tabs -->
                 <div class="settings-tabs">
-                    <button class="settings-tab active" data-tab="widget" onclick="switchTab('widget')">
+                    <button class="settings-tab active" data-tab="widget-config" onclick="switchTab('widget-config')">
                         <i data-lucide="layout" style="width:16px;height:16px;"></i>
                         Widget Config
-                    </button>
-                    <button class="settings-tab" data-tab="connections" onclick="switchTab('connections')">
-                        <i data-lucide="plug" style="width:16px;height:16px;"></i>
-                        Connections
                     </button>
                     <button class="settings-tab" data-tab="policies" onclick="switchTab('policies')">
                         <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
                         Policies
                     </button>
-                    <button class="settings-tab" data-tab="chat-widgets" onclick="switchTab('chat-widgets')">
-                        <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
-                        Chat Widgets
-                    </button>
                     <button class="settings-tab" data-tab="privacy" onclick="switchTab('privacy')">
                         <i data-lucide="lock" style="width:16px;height:16px;"></i>
                         Privacy & Compliance
                     </button>
-                    <button class="settings-tab" data-tab="data-sources" onclick="switchTab('data-sources')">
-                        <i data-lucide="table" style="width:16px;height:16px;"></i>
-                        Data Sources
-                    </button>
                     <button class="settings-tab" data-tab="integrations" onclick="switchTab('integrations')">
-                        <i data-lucide="calendar-check" style="width:16px;height:16px;"></i>
+                        <i data-lucide="plug" style="width:16px;height:16px;"></i>
                         Integrations
                     </button>
                 </div>
 
-                <!-- Tab 1: Widget Config -->
-                <div class="tab-content active" id="tab-widget">
-                    <div class="phase-notice">
-                        <i data-lucide="info" style="width:18px;height:18px;"></i>
-                        <span>This tab shows default widget appearance settings. To create and manage embeddable chat widgets, use the <strong>Chat Widgets</strong> tab.</span>
-                    </div>
-
-                    <!-- Enable/Disable -->
-                    <div class="settings-section">
-                        <div class="toggle-group">
-                            <div class="toggle-label-text">
-                                <span>Enable Support Widget</span>
-                                <span>When enabled, the support chat widget will appear on your configured domains</span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="widget-enabled" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Appearance -->
-                    <div class="settings-section">
-                        <div class="settings-section-title">
-                            <i data-lucide="palette"></i>
-                            Appearance
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Primary Color</label>
-                                <div class="color-input-group">
-                                    <input type="color" class="color-swatch" id="widget-color" value="#6366f1"
-                                           oninput="document.getElementById('widget-color-hex').value = this.value">
-                                    <input type="text" class="form-input color-hex-input" id="widget-color-hex" value="#6366f1"
-                                           oninput="updateColorSwatch(this.value)">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Font Family</label>
-                                <input type="text" class="form-input" id="widget-font" value="Inter, sans-serif">
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Border Radius</label>
-                                <input type="text" class="form-input" id="widget-radius" value="12px">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Position</label>
-                                <select class="form-select" id="widget-position">
-                                    <option value="bottom-right" selected>Bottom Right</option>
-                                    <option value="bottom-left">Bottom Left</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Content -->
-                    <div class="settings-section">
-                        <div class="settings-section-title">
-                            <i data-lucide="message-square"></i>
-                            Content
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-textarea" id="widget-welcome">Hi there! How can we help you today?</textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Avatar URL <span class="form-label-hint">Optional</span></label>
-                            <div class="avatar-preview-group">
-                                <input type="text" class="form-input" id="widget-avatar" placeholder="https://example.com/avatar.png"
-                                       oninput="updateAvatarPreview(this.value)">
-                                <div class="avatar-preview" id="avatar-preview">
-                                    <i data-lucide="user" style="width:20px;height:20px;"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Voice / Tone</label>
-                                <select class="form-select" id="widget-tone">
-                                    <option value="professional" selected>Professional</option>
-                                    <option value="friendly">Friendly</option>
-                                    <option value="casual">Casual</option>
-                                    <option value="formal">Formal</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" style="visibility: hidden;">Spacer</label>
-                                <div></div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Offline Message</label>
-                            <textarea class="form-textarea" id="widget-offline">We're currently offline. Please leave a message and we'll get back to you soon.</textarea>
-                        </div>
-                    </div>
-
-                    <!-- Pre-chat Fields -->
-                    <div class="settings-section">
-                        <div class="settings-section-title">
-                            <i data-lucide="list-checks"></i>
-                            Pre-chat Fields
-                        </div>
-
-                        <div class="fields-grid" id="fields-container">
-                            <!-- Populated by JS -->
-                        </div>
-
-                        <button class="btn-outline" onclick="addField()">
-                            <i data-lucide="plus" style="width:14px;height:14px;"></i>
-                            Add Field
-                        </button>
-                    </div>
-
-                    <!-- Allowed Domains -->
-                    <div class="settings-section">
-                        <div class="settings-section-title">
-                            <i data-lucide="globe"></i>
-                            Allowed Domains
-                        </div>
-
-                        <div class="domain-tags" id="domains-container">
-                            <!-- Populated by JS -->
-                        </div>
-
-                        <div class="domain-add-row">
-                            <input type="text" class="form-input" id="domain-input" placeholder="example.com"
-                                   onkeydown="if(event.key==='Enter'){event.preventDefault();addDomain();}">
-                            <button class="btn-outline" onclick="addDomain()">
-                                <i data-lucide="plus" style="width:14px;height:14px;"></i>
-                                Add
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Save -->
-                    <div class="save-bar">
-                        <button class="btn-save" onclick="saveWidgetConfig()">
-                            <i data-lucide="save" style="width:18px;height:18px;"></i>
-                            Save Configuration
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tab 2: Connections -->
-                <div class="tab-content" id="tab-connections">
-                    <div class="phase-notice">
-                        <i data-lucide="info" style="width:18px;height:18px;"></i>
-                        <span>Third-party connections will be available in Phase 2. Preview the integration options below.</span>
-                    </div>
-
-                    <div class="connections-grid">
-                        <!-- Stripe Card -->
-                        <div class="connection-card disabled">
-                            <div class="connection-icon">
-                                <i data-lucide="credit-card"></i>
-                            </div>
-                            <div class="connection-name">Stripe</div>
-                            <div class="connection-status">
-                                <span class="status-dot"></span>
-                                Disconnected
-                            </div>
-                            <div class="connection-desc">
-                                Stripe connection enables automated refund processing for customer support tickets.
-                            </div>
-                            <button class="btn-outline" disabled>Connect Stripe</button>
-                            <div class="connection-badge">
-                                <i data-lucide="clock" style="width:12px;height:12px;"></i>
-                                Coming in Phase 2
-                            </div>
-                        </div>
-
-                        <!-- Slack Card -->
-                        <div class="connection-card disabled">
-                            <div class="connection-icon">
-                                <i data-lucide="hash"></i>
-                            </div>
-                            <div class="connection-name">Slack</div>
-                            <div class="connection-status">
-                                <span class="status-dot"></span>
-                                Disconnected
-                            </div>
-                            <div class="connection-desc">
-                                Slack connection enables escalation notifications and real-time agent handoff alerts.
-                            </div>
-                            <button class="btn-outline" disabled>Connect Slack</button>
-                            <div class="connection-badge">
-                                <i data-lucide="clock" style="width:12px;height:12px;"></i>
-                                Coming in Phase 2
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab 4: Chat Widgets (Phase 73) -->
-                <div class="tab-content" id="tab-chat-widgets">
+                <!-- Tab 1: Widget Config (Phase 73) -->
+                <div class="tab-content active" id="tab-widget-config">
                     <div class="settings-section">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-lg);">
                             <div>
@@ -996,6 +783,18 @@
                                 </label>
                             </div>
 
+                            <!-- Active Toggle -->
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--spacing-lg);padding:var(--spacing-md);background:var(--bg-tertiary);border-radius:8px;">
+                                <div>
+                                    <div style="font-weight:500;font-size:0.9rem;">Active</div>
+                                    <div style="color:var(--text-muted);font-size:0.8rem;">When off, the widget is disabled on your sites.</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="cw-is-active" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
                             <!-- Embed Code -->
                             <div id="cw-embed-section" style="margin-top:var(--spacing-lg);display:none;">
                                 <h4 style="margin:0 0 8px 0;font-size:0.95rem;">Embed Code</h4>
@@ -1086,9 +885,63 @@
                 </div>
 
                 <!-- Tab 6: Data Sources (Phase 73) -->
-                <div class="tab-content" id="tab-data-sources">
+                <!-- Tab 4: Integrations (merged: Connections + Data Sources + Scheduling) -->
+                <div class="tab-content" id="tab-integrations">
+
+                    <!-- Section: Connections (Stripe, Slack — Phase 2 preview) -->
                     <div class="settings-section">
-                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Google Sheets</h3>
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Connections</h3>
+                        <div class="phase-notice">
+                            <i data-lucide="info" style="width:18px;height:18px;"></i>
+                            <span>Third-party connections will be available in Phase 2. Preview the integration options below.</span>
+                        </div>
+
+                        <div class="connections-grid">
+                            <!-- Stripe Card -->
+                            <div class="connection-card disabled">
+                                <div class="connection-icon">
+                                    <i data-lucide="credit-card"></i>
+                                </div>
+                                <div class="connection-name">Stripe</div>
+                                <div class="connection-status">
+                                    <span class="status-dot"></span>
+                                    Disconnected
+                                </div>
+                                <div class="connection-desc">
+                                    Stripe connection enables automated refund processing for customer support tickets.
+                                </div>
+                                <button class="btn-outline" disabled>Connect Stripe</button>
+                                <div class="connection-badge">
+                                    <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                                    Coming in Phase 2
+                                </div>
+                            </div>
+
+                            <!-- Slack Card -->
+                            <div class="connection-card disabled">
+                                <div class="connection-icon">
+                                    <i data-lucide="hash"></i>
+                                </div>
+                                <div class="connection-name">Slack</div>
+                                <div class="connection-status">
+                                    <span class="status-dot"></span>
+                                    Disconnected
+                                </div>
+                                <div class="connection-desc">
+                                    Slack connection enables escalation notifications and real-time agent handoff alerts.
+                                </div>
+                                <button class="btn-outline" disabled>Connect Slack</button>
+                                <div class="connection-badge">
+                                    <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                                    Coming in Phase 2
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Data Sources (Google Sheets) -->
+                    <div class="settings-section">
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Data Sources</h3>
                         <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:var(--spacing-md);">
                             Connect a Google Sheets spreadsheet to automatically sync data into your widget's knowledge base via context assets.
                         </p>
@@ -1158,12 +1011,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Tab 7: Integrations (Phase 73) -->
-                <div class="tab-content" id="tab-integrations">
+                    <!-- Section: Scheduling (Calendly) -->
                     <div class="settings-section">
-                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Calendly</h3>
+                        <h3 style="margin:0 0 var(--spacing-md) 0;font-size:1.1rem;">Scheduling</h3>
                         <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:var(--spacing-md);">
                             Connect Calendly to enable scheduling directly from the chat widget. Visitors can book consultations without leaving the conversation.
                         </p>
@@ -1260,26 +1111,6 @@
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
-        // ── State ──────────────────────────────────────────────
-        let widgetConfig = {
-            is_enabled: true,
-            theme: {
-                primary_color: '#6366f1',
-                font_family: 'Inter, sans-serif',
-                border_radius: '12px',
-                position: 'bottom-right'
-            },
-            welcome_message: 'Hi there! How can we help you today?',
-            avatar_url: '',
-            voice_tone: 'professional',
-            offline_message: "We're currently offline. Please leave a message and we'll get back to you soon.",
-            prechat_fields: [
-                { name: 'name', label: 'Name', type: 'text', required: true },
-                { name: 'email', label: 'Email', type: 'email', required: true }
-            ],
-            allowed_domains: ['localhost']
-        };
-
         // Icon mapping for process types
         const processIconMap = {
             'support': 'headset',
@@ -1298,120 +1129,23 @@
         }
 
         // ── Tab Switching ──────────────────────────────────────
+        // Integrations + Privacy load lazily on first open; Widget Config + Policies
+        // are eager-loaded in DOMContentLoaded since their content is visible immediately.
+        const _tabLoadedOnce = { integrations: false, privacy: false };
         function switchTab(tabId) {
             document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
+            if (tabId === 'integrations' && !_tabLoadedOnce.integrations) {
+                _tabLoadedOnce.integrations = true;
+                loadIntegrationStatus();
+            }
+            if (tabId === 'privacy' && !_tabLoadedOnce.privacy) {
+                _tabLoadedOnce.privacy = true;
+                loadPrivacySettings();
+            }
             if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        // ── Color ──────────────────────────────────────────────
-        function updateColorSwatch(hex) {
-            if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
-                document.getElementById('widget-color').value = hex;
-            }
-        }
-
-        // ── Avatar Preview ─────────────────────────────────────
-        function updateAvatarPreview(url) {
-            const container = document.getElementById('avatar-preview');
-            if (url && url.trim()) {
-                container.innerHTML = `<img src="${escapeHtml(url)}" alt="Avatar" onerror="this.parentElement.innerHTML='<i data-lucide=\\'user\\' style=\\'width:20px;height:20px;\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();">`;
-            } else {
-                container.innerHTML = '<i data-lucide="user" style="width:20px;height:20px;"></i>';
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            }
-        }
-
-        // ── Pre-chat Fields ────────────────────────────────────
-        function renderFields() {
-            const container = document.getElementById('fields-container');
-            if (!widgetConfig.prechat_fields.length) {
-                container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No pre-chat fields configured.</p>';
-                return;
-            }
-            container.innerHTML = widgetConfig.prechat_fields.map((f, i) => `
-                <div class="field-card">
-                    <div class="field-card-info">
-                        <span class="field-card-name">${escapeHtml(f.label || f.name)}</span>
-                        <span class="field-card-type">${escapeHtml(f.type)}</span>
-                    </div>
-                    ${f.required ? '<span class="field-required-badge">Required</span>' : ''}
-                    <button class="field-remove-btn" onclick="removeField(${i})" title="Remove field">
-                        <i data-lucide="x" style="width:14px;height:14px;"></i>
-                    </button>
-                </div>
-            `).join('');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        async function addField() {
-            if (typeof ModalService === 'undefined') {
-                await ModalServiceLoader.load();
-            }
-            const result = await ModalService.form({
-                title: 'Add Pre-chat Field',
-                fields: [
-                    { name: 'name', label: 'Field Name', type: 'text', required: true, placeholder: 'e.g. company' },
-                    { name: 'label', label: 'Display Label', type: 'text', required: true, placeholder: 'e.g. Company Name' },
-                    { name: 'type', label: 'Field Type', type: 'select', options: [
-                        { value: 'text', label: 'Text' },
-                        { value: 'email', label: 'Email' },
-                        { value: 'phone', label: 'Phone' },
-                        { value: 'select', label: 'Select' }
-                    ]},
-                    { name: 'required', label: 'Required', type: 'checkbox' }
-                ],
-                submitText: 'Add Field'
-            });
-            if (result) {
-                widgetConfig.prechat_fields.push({
-                    name: result.name,
-                    label: result.label,
-                    type: result.type || 'text',
-                    required: !!result.required
-                });
-                renderFields();
-            }
-        }
-
-        function removeField(index) {
-            widgetConfig.prechat_fields.splice(index, 1);
-            renderFields();
-        }
-
-        // ── Domains ────────────────────────────────────────────
-        function renderDomains() {
-            const container = document.getElementById('domains-container');
-            if (!widgetConfig.allowed_domains.length) {
-                container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No domains configured. The widget will not appear on any site.</p>';
-                return;
-            }
-            container.innerHTML = widgetConfig.allowed_domains.map((d, i) => `
-                <span class="domain-tag">
-                    ${escapeHtml(d)}
-                    <button class="domain-tag-remove" onclick="removeDomain(${i})" title="Remove domain">&times;</button>
-                </span>
-            `).join('');
-        }
-
-        function addDomain() {
-            const input = document.getElementById('domain-input');
-            const domain = input.value.trim().toLowerCase();
-            if (!domain) return;
-            if (widgetConfig.allowed_domains.includes(domain)) {
-                if (typeof showToast === 'function') showToast('Domain already added', 'warning');
-                return;
-            }
-            widgetConfig.allowed_domains.push(domain);
-            input.value = '';
-            renderDomains();
-        }
-
-        function removeDomain(index) {
-            widgetConfig.allowed_domains.splice(index, 1);
-            renderDomains();
         }
 
         // ── Policies (Inline CRUD) ─────────────────────────────
@@ -1682,28 +1416,6 @@
             }
         }
 
-        // ── Save ───────────────────────────────────────────────
-        function collectFormData() {
-            widgetConfig.is_enabled = document.getElementById('widget-enabled').checked;
-            widgetConfig.theme.primary_color = document.getElementById('widget-color-hex').value;
-            widgetConfig.theme.font_family = document.getElementById('widget-font').value;
-            widgetConfig.theme.border_radius = document.getElementById('widget-radius').value;
-            widgetConfig.theme.position = document.getElementById('widget-position').value;
-            widgetConfig.welcome_message = document.getElementById('widget-welcome').value;
-            widgetConfig.avatar_url = document.getElementById('widget-avatar').value;
-            widgetConfig.voice_tone = document.getElementById('widget-tone').value;
-            widgetConfig.offline_message = document.getElementById('widget-offline').value;
-            return widgetConfig;
-        }
-
-        function saveWidgetConfig() {
-            const config = collectFormData();
-            console.log('Widget config to save:', config);
-            if (typeof showToast === 'function') {
-                showToast('Configuration saved (local preview only)', 'success');
-            }
-        }
-
         // ── Helpers ────────────────────────────────────────────
         function escapeHtml(str) {
             if (!str) return '';
@@ -1821,6 +1533,7 @@
             document.getElementById('cw-max-session-msgs').value = widget.limits?.max_messages_per_session || 50;
             document.getElementById('cw-max-monthly-msgs').value = widget.limits?.max_messages_per_month || 10000;
             document.getElementById('cw-daily-spend').value = widget.limits?.daily_llm_spend_cap || 5;
+            document.getElementById('cw-is-active').checked = widget.is_active !== false;
 
             renderWidgetDomains();
             updatePreChatPreview();
@@ -1898,6 +1611,7 @@
                     widget_name: document.getElementById('cw-name').value,
                     agent_id: document.getElementById('cw-agent').value || null,
                     cors_origins: editingWidgetDomains,
+                    is_active: document.getElementById('cw-is-active').checked,
                     branding: {
                         primary_color: document.getElementById('cw-color-hex').value,
                         avatar_url: document.getElementById('cw-avatar').value,
@@ -2290,12 +2004,10 @@
             if (typeof initNavigation === 'function') await initNavigation();
             if (typeof lucide !== 'undefined') lucide.createIcons();
 
-            renderFields();
-            renderDomains();
+            // Eager-load tabs whose content is visible by default or frequently used.
+            // Privacy + Integrations are lazy-loaded via switchTab() on first open.
             renderPolicies();
             loadChatWidgets();
-            loadPrivacySettings();
-            loadIntegrationStatus();
         });
     </script>
 </body>

@@ -651,9 +651,6 @@
                                     <i data-lucide="send"></i>
                                 </button>
                             ` : ''}
-                            <button class="btn btn-sm btn-secondary" onclick="shareReport('${user.client_id}')" title="Share Report">
-                                <i data-lucide="share-2"></i>
-                            </button>
                             ${user.status !== 'removed' ? `
                                 <button class="btn btn-sm btn-danger" onclick="removeUser('${user.id}', '${user.email}')" title="Remove Access">
                                     <i data-lucide="user-x"></i>
@@ -759,12 +756,6 @@
             } finally {
                 hideLoading();
             }
-        }
-
-        async function shareReport(clientId) {
-            // For now, show a simple info message
-            // In full implementation, this would open a modal to select reports to share
-            showToast('Report sharing coming soon. Use the Reports page to share individual reports.', 'info');
         }
 
         async function removeUser(userId, email) {

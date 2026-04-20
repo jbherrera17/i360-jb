@@ -243,10 +243,10 @@ const HelpRegistry = {
             file: '/api/docs/digest-sources-user-guide.md',
             title: 'Digest Sources Help'
         },
-        // Customer Support AI (Phase 71)
+        // Chat Support System (Phase 71/73 — renamed REQ-002a)
         '/support-dashboard': {
-            file: '/api/docs/support-user-guide.md',
-            title: 'Support Dashboard Help'
+            file: '/api/docs/support-system-dashboard-user-guide.md',
+            title: 'Support System Dashboard Help'
         },
         '/support-conversations': {
             file: '/api/docs/support-user-guide.md',
@@ -261,8 +261,8 @@ const HelpRegistry = {
             title: 'Support Actions Help'
         },
         '/support-settings': {
-            file: '/api/docs/embeddable-chat-user-guide.md',
-            title: 'Embeddable Chat Widget Help'
+            file: '/api/docs/support-settings-user-guide.md',
+            title: 'Chat Support System Settings Help'
         },
         // Artifacts (Phase 85)
         '/artifacts': {

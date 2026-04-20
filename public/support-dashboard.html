@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Dashboard | Insight 360</title>
+    <title>Support System Dashboard | Insight 360</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -353,7 +354,7 @@
                 <div class="header-content">
                     <h1>
                         <i data-lucide="headset" style="width:28px;height:28px;color:var(--primary);"></i>
-                        Support Dashboard
+                        Support System Dashboard
                     </h1>
                     <p class="header-subtitle">AI-powered customer support command center</p>
                 </div>
@@ -467,14 +468,6 @@
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
-        const orgId = localStorage.getItem('insight360-current-org');
-
-        function getHeaders() {
-            const headers = { 'Content-Type': 'application/json' };
-            if (orgId) headers['x-org-id'] = orgId;
-            return headers;
-        }
-
         function formatDate(dateStr) {
             if (!dateStr) return '--';
             const d = new Date(dateStr);
@@ -517,9 +510,7 @@
 
         async function loadMetrics() {
             try {
-                const res = await authFetch('/api/support/conversations/metrics/dashboard', {
-                    headers: getHeaders()
-                });
+                const res = await authFetch('/api/support/conversations/metrics/dashboard');
                 if (!res.ok) throw new Error('Failed to load metrics');
                 const json = await res.json();
                 const data = json.data || json;
@@ -538,9 +529,7 @@
         async function loadConversations() {
             const container = document.getElementById('conversations-body');
             try {
-                const res = await authFetch('/api/support/conversations?limit=10', {
-                    headers: getHeaders()
-                });
+                const res = await authFetch('/api/support/conversations?limit=10');
                 if (!res.ok) throw new Error('Failed to load conversations');
                 const data = await res.json();
                 const conversations = Array.isArray(data) ? data : (data.conversations || data.data || []);
@@ -602,9 +591,7 @@
         async function loadPendingActions() {
             const container = document.getElementById('actions-body');
             try {
-                const res = await authFetch('/api/support/actions?status=pending&limit=5', {
-                    headers: getHeaders()
-                });
+                const res = await authFetch('/api/support/actions?status=pending&limit=5');
                 if (!res.ok) throw new Error('Failed to load actions');
                 const data = await res.json();
                 const actions = Array.isArray(data) ? data : (data.actions || data.data || []);
@@ -669,8 +656,7 @@
 
                 const endpoint = decision === 'approved' ? 'approve' : 'deny';
                 const res = await authFetch(`/api/support/actions/${actionId}/${endpoint}`, {
-                    method: 'POST',
-                    headers: getHeaders()
+                    method: 'POST'
                 });
                 if (!res.ok) throw new Error('Failed to update action');
 

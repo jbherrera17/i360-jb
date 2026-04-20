@@ -1869,11 +1869,13 @@ select {
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     opacity: 0;
+    pointer-events: none;
     transition: opacity var(--transition-slow);
 }
 
 .mobile-nav-backdrop.visible {
     opacity: 1;
+    pointer-events: auto;
 }
 
 /* ============================================

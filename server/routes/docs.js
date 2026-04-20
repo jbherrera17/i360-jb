@@ -102,9 +102,11 @@ const ALLOWED_DOCS = [
     // Role Audit (Phase 70)
     'role-audit-user-guide.md',
     'role-audit-technical-guide.md',
-    // Customer Support AI (Phase 71)
+    // Chat Support System (Phase 71/73 — renamed REQ-002a)
     'support-user-guide.md',
-    // Embeddable Chat Widget (Phase 73)
+    'support-system-dashboard-user-guide.md',
+    'support-settings-user-guide.md',
+    // Embeddable Chat Widget (Phase 73 — kept for backward compat with Higgins direct calls)
     'embeddable-chat-user-guide.md',
     'embeddable-chat-technical-guide.md',
     // Open Brain (Phase 78)
