@@ -35,7 +35,16 @@ jest.mock('../../server/services/anthropic', () => ({
 
 jest.mock('../../server/services/llmRegistry', () => ({
   getProvider: jest.fn().mockReturnValue('anthropic'),
-  getModelConfig: jest.fn().mockReturnValue({ provider: 'anthropic', contextWindow: 200000 })
+  getModelConfig: jest.fn().mockReturnValue({ provider: 'anthropic', contextWindow: 200000 }),
+  getDefaultModel: jest.fn().mockReturnValue('claude-sonnet-4-5-20250929'),
+  // Source code reads Object.keys(llmRegistry.ANTHROPIC_MODELS) at module load
+  // (server/services/agentService.js). Mock must expose at least one model key
+  // for require() to succeed.
+  ANTHROPIC_MODELS: { 'claude-sonnet-4-5-20250929': { name: 'Claude Sonnet 4.5' } },
+  OPENAI_MODELS: { 'gpt-4o': { name: 'GPT-4o' } },
+  PERPLEXITY_MODELS: {},
+  GEMINI_MODELS: {},
+  ALL_MODELS: { 'claude-sonnet-4-5-20250929': { name: 'Claude Sonnet 4.5' } }
 }));
 
 describe('Performance Tests', () => {
