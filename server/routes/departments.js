@@ -3,15 +3,14 @@
  */
 
 const express = require('express');
-const router = express.Router();
-const { createClient } = require('@supabase/supabase-js');
+const { requireOrgContext } = require('../middleware/orgContext');
 const { getVerifiedOrgId } = require('../utils/orgScope');
 
-// Initialize Supabase client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
-);
+module.exports = function(supabase) {
+const router = express.Router();
+
+// Validate org membership on all routes
+router.use(requireOrgContext(supabase));
 
 /**
  * GET /api/departments
@@ -126,7 +125,7 @@ router.put('/:id', async (req, res) => {
         if (is_active !== undefined) updates.is_active = is_active;
 
         // Backfill org_id if missing
-        const orgId = req.headers['x-org-id'] || req.orgId;
+        const orgId = req.verifiedOrgId;
         if (orgId) {
             const { data: existing } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
             if (existing && !existing.org_id) {
@@ -178,7 +177,7 @@ router.post('/', async (req, res) => {
             });
         }
 
-        const resolvedOrgId = org_id || req.headers['x-org-id'] || req.orgId;
+        const resolvedOrgId = req.verifiedOrgId;
         if (!resolvedOrgId) {
             return res.status(400).json({
                 success: false,
@@ -245,4 +244,5 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+return router;
+};

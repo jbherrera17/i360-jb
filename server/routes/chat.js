@@ -5,9 +5,7 @@
  */
 
 const express = require('express');
-const router = express.Router();
 const { validateBody, chatMessageSchema, chatStreamSchema } = require('../middleware/validate');
-
 // Import LLM services
 const anthropic = require('../services/anthropic');
 const openai = require('../services/openai');
@@ -121,8 +119,17 @@ function normalizeHistoryMessages(messages) {
 }
 
 /**
+ * Chat Routes Factory
+ * @param {object} supabase - Supabase client instance
+ * @returns {Router} Express router
+ */
+module.exports = function(supabase) {
+    const router = express.Router();
+
+/**
  * GET /api/chat/models
  * Returns available models grouped by provider
+ * NOTE: Registered BEFORE requireModule — this is a public/informational endpoint
  */
 router.get('/models', (_req, res) => {
     const apiKeys = {
@@ -161,6 +168,10 @@ router.get('/models/all', (_req, res) => {
         default: llmRegistry.getDefaultModel('anthropic')
     });
 });
+
+    // NOTE: No requireModule here — Higgins chat is a universal feature available
+    // to all tiers (listed as "always present" in navigation.js). Module gating
+    // is enforced on specific sub-features (e.g., voice, image generation) as needed.
 
 /**
  * POST /api/chat
@@ -1228,4 +1239,5 @@ router.get('/voice/config', async (req, res) => {
     }
 });
 
-module.exports = router;
+    return router;
+};

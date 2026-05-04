@@ -5,14 +5,13 @@
  */
 
 const express = require('express');
-const router = express.Router();
-const { createClient } = require('@supabase/supabase-js');
+const { requireOrgContext } = require('../middleware/orgContext');
 
-// Initialize Supabase client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
-);
+module.exports = function(supabase) {
+const router = express.Router();
+
+// Validate org membership on all routes
+router.use(requireOrgContext(supabase));
 
 /**
  * Authorization middleware for user management routes.
@@ -36,7 +35,7 @@ const requireUserManagementAccess = async (req, res, next) => {
         }
 
         // For non-platform-admins, check org admin role
-        const orgId = req.headers['x-org-id'] || req.query.org_id;
+        const orgId = req.verifiedOrgId;
         if (orgId) {
             const { data: membership } = await supabase
                 .from('organization_members')
@@ -432,7 +431,7 @@ router.put('/:id', requirePlatformAdminAccess, async (req, res) => {
 
         // Also update business_role in organization_members if changed
         if (business_role !== undefined) {
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 // Update for specific org
                 await supabase
@@ -744,4 +743,5 @@ router.put('/:id/assignments', requirePlatformAdminAccess, async (req, res) => {
     }
 });
 
-module.exports = router;
+return router;
+};

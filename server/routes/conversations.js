@@ -6,9 +6,20 @@
 
 const express = require('express');
 const router = express.Router();
+const { createClient } = require('@supabase/supabase-js');
 const conversationService = require('../services/conversationService');
 const { getUserId } = require('../utils/auth');
+const { requireOrgContext } = require('../middleware/orgContext');
 const { getVerifiedOrgId } = require('../utils/orgScope');
+
+// Initialize Supabase client for org context validation
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
+);
+
+// Validate org membership on all routes
+router.use(requireOrgContext(supabase));
 
 // ============================================
 // ADMIN ENDPOINTS (must be before /:id routes)

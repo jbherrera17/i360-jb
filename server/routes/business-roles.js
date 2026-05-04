@@ -8,14 +8,9 @@
  */
 
 const express = require('express');
-const router = express.Router();
-const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
-);
+module.exports = function(supabase) {
+const router = express.Router();
 
 // ============================================
 // BUSINESS ROLE LEVELS
@@ -551,4 +546,5 @@ router.get('/check-access/:departmentId', async (req, res) => {
     }
 });
 
-module.exports = router;
+return router;
+};

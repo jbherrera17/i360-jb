@@ -67,8 +67,19 @@ function validateEnvironment() {
         }
     }
 
+    // Token encryption key — required in production to protect OAuth tokens
+    if (isDeployed && !process.env.TOKEN_ENCRYPTION_KEY) {
+        errors.push('TOKEN_ENCRYPTION_KEY is required in ' + environment);
+        errors.push('  → Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    } else if (!process.env.TOKEN_ENCRYPTION_KEY) {
+        warnings.push('TOKEN_ENCRYPTION_KEY not set - OAuth tokens stored with insecure default key');
+    }
+
     // MCP credential encryption key validation
-    if (process.env.MCP_CREDENTIAL_KEY) {
+    if (isDeployed && !process.env.MCP_CREDENTIAL_KEY) {
+        errors.push('MCP_CREDENTIAL_KEY is required in ' + environment);
+        errors.push('  → Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    } else if (process.env.MCP_CREDENTIAL_KEY) {
         if (process.env.MCP_CREDENTIAL_KEY.length !== 64 || !/^[0-9a-fA-F]+$/.test(process.env.MCP_CREDENTIAL_KEY)) {
             errors.push('MCP_CREDENTIAL_KEY must be a 64-character hex string (32 bytes)');
             errors.push('  → Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
@@ -570,11 +581,11 @@ function initializeServices() {
         app.locals.impersonationStore = authRouter.impersonationStore;
         app.use('/api/auth', authRouter);
         app.use('/api/onboarding', onboardingRoutes(supabase));
-        app.use('/api/business-roles', businessRolesRoutes);
-        app.use('/api/departments', departmentsRoutes);
-        app.use('/api/department-strategy', departmentStrategyRoutes);
-        app.use('/api/governance', governanceRoutes);
-        app.use('/api/integrity', integrityRoutes);
+        app.use('/api/business-roles', businessRolesRoutes(supabase));
+        app.use('/api/departments', departmentsRoutes(supabase));
+        app.use('/api/department-strategy', departmentStrategyRoutes(supabase));
+        app.use('/api/governance', governanceRoutes(supabase));
+        app.use('/api/integrity', integrityRoutes(supabase));
         app.use('/api/workflows', workflowsRoutes(supabase));
         app.use('/api/tags', tagsRoutes(supabase));
         app.use('/api/roles', departmentRolesRoutes(supabase));
@@ -586,7 +597,7 @@ function initializeServices() {
         app.use('/api/models', modelAvailabilityRoutes);
         app.use('/api/visualizations', visualizationsRoutes);
         app.use('/api/research-studios', researchStudioRoutes(supabase));
-        app.use('/api/users', usersRoutes);
+        app.use('/api/users', usersRoutes(supabase));
         app.use('/api/role-audit', roleAuditRoutes(supabase));
         app.use('/api/organizations', organizationsRoutes(supabase));
         app.use('/api/org-members', orgMembersRoutes(supabase));
@@ -694,6 +705,16 @@ function initializeServices() {
         schedulerService.initializePublishingScheduler()
             .then(() => console.log('  ✅ Publishing scheduler initialized'))
             .catch(err => console.error('  ⚠️ Publishing scheduler failed:', err.message));
+
+        // Initialize widget Sheets sync (every 15 min) [Phase 73 FR-06]
+        schedulerService.initializeWidgetSheetsSync()
+            .then(() => console.log('  ✅ Widget Sheets sync initialized (15-min interval)'))
+            .catch(err => console.error('  ⚠️ Widget Sheets sync failed:', err.message));
+
+        // Initialize widget data retention cleanup (daily at 3 AM) [Phase 73 R-06]
+        schedulerService.initializeWidgetDataCleanup()
+            .then(() => console.log('  ✅ Widget data retention cleanup initialized (daily)'))
+            .catch(err => console.error('  ⚠️ Widget data cleanup failed:', err.message));
     } else {
         console.log('  ⚪ Supabase - Not configured');
     }
@@ -730,7 +751,7 @@ const docsRoutes = require('./routes/docs');
 app.use('/api/docs', docsRoutes);
 
 // Chat routes (multi-LLM, streaming, voice, search)
-const chatRoutes = require('./routes/chat');
+const chatRoutes = require('./routes/chat')(supabase);
 app.use('/api/chat', chatRoutes);
 
 // Context Assets routes (Phase 3 + Phase 82 org isolation)
@@ -742,13 +763,8 @@ try {
     console.log('ℹ️  Context routes not yet available:', error.message);
 }
 
-// Conversation routes (if separate file exists)
-try {
-    const conversationRoutes = require('./routes/conversations');
-    app.use('/api/conversations', conversationRoutes);
-} catch (error) {
-    // Conversations handled by chat routes
-}
+// Note: /api/conversations is already registered inside the Supabase initialization block above.
+// Do NOT register it again here — duplicate route registration causes silent middleware stacking.
 
 // ============================================
 // FRONTEND ROUTES
@@ -769,9 +785,7 @@ app.get('/agents', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/agents.html'));
 });
 
-app.get('/briefing', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/briefing.html'));
-});
+// Note: /briefing route registered below with other Phase routes. Removing duplicate here.
 
 // Context management page (Phase 3)
 app.get('/context', (req, res) => {

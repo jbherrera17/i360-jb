@@ -971,6 +971,199 @@ function getPublishingSchedulerStatus() {
     };
 }
 
+// ============================================================================
+// WIDGET SHEETS SYNC SCHEDULER [FR-06]
+// ============================================================================
+
+let sheetsSyncJob = null;
+
+/**
+ * Initialize the widget Sheets sync scheduler.
+ * Runs every 15 minutes, syncing Google Sheets data to context_assets
+ * for all active widgets with sheets_config configured.
+ */
+async function initializeWidgetSheetsSync() {
+    console.log('[Scheduler] Initializing widget Sheets sync...');
+
+    try {
+        const SheetsService = require('./integrations/providers/google/sheets');
+        const sheetsService = new SheetsService();
+        const credentialManager = require('./integrations/credentialManager');
+
+        // Lazy-load GoogleProvider for token refresh
+        let googleProvider = null;
+        const getGoogleProvider = () => {
+            if (!googleProvider) {
+                const GoogleProvider = require('./integrations/providers/google');
+                googleProvider = new GoogleProvider();
+            }
+            return googleProvider;
+        };
+
+        // Run every 15 minutes
+        sheetsSyncJob = cron.schedule('*/15 * * * *', async () => {
+            console.log('[Scheduler] Starting widget Sheets sync cycle...');
+
+            try {
+                // Find all active widgets with Sheets config
+                const { data: widgets, error } = await supabase
+                    .from('chat_widgets')
+                    .select('id, org_id, sheets_config, widget_name')
+                    .eq('is_active', true)
+                    .not('sheets_config', 'is', null);
+
+                if (error) {
+                    console.error('[Scheduler] Failed to fetch widgets for Sheets sync:', error.message);
+                    return;
+                }
+
+                const widgetsWithSheets = (widgets || []).filter(
+                    w => w.sheets_config?.spreadsheetId
+                );
+
+                if (widgetsWithSheets.length === 0) {
+                    return; // No widgets need syncing — skip silently
+                }
+
+                console.log(`[Scheduler] Syncing Sheets for ${widgetsWithSheets.length} widget(s)`);
+
+                for (const widget of widgetsWithSheets) {
+                    try {
+                        // Find a user in the org with an active Google integration
+                        const { data: orgMembers } = await supabase
+                            .from('organization_members')
+                            .select('user_id')
+                            .eq('org_id', widget.org_id)
+                            .eq('status', 'active')
+                            .limit(20);
+
+                        let credentials = null;
+                        for (const member of (orgMembers || [])) {
+                            const gp = getGoogleProvider();
+                            credentials = await credentialManager.getCredentials(
+                                supabase,
+                                member.user_id,
+                                'google',
+                                gp.refreshAccessToken.bind(gp)
+                            );
+                            if (credentials?.accessToken) break;
+                        }
+
+                        if (!credentials?.accessToken) {
+                            console.warn(`[Scheduler] No Google credentials for widget ${widget.id} (org: ${widget.org_id})`);
+                            // Update error status on widget
+                            await supabase
+                                .from('chat_widgets')
+                                .update({
+                                    sheets_config: {
+                                        ...widget.sheets_config,
+                                        last_sync_error: 'No active Google connection found',
+                                        last_sync_error_at: new Date().toISOString()
+                                    }
+                                })
+                                .eq('id', widget.id);
+                            continue;
+                        }
+
+                        // Sync the sheet data
+                        const result = await sheetsService.syncToContextAsset(
+                            supabase,
+                            credentials.accessToken,
+                            {
+                                spreadsheetId: widget.sheets_config.spreadsheetId,
+                                range: widget.sheets_config.range || 'Sheet1',
+                                orgId: widget.org_id,
+                                contextAssetId: widget.sheets_config.contextAssetId || null,
+                                assetName: widget.sheets_config.assetName || `Sheets: ${widget.widget_name}`
+                            }
+                        );
+
+                        // Update sync status (clear any previous errors)
+                        await supabase
+                            .from('chat_widgets')
+                            .update({
+                                sheets_config: {
+                                    ...widget.sheets_config,
+                                    last_sync: new Date().toISOString(),
+                                    last_sync_row_count: result.rowCount,
+                                    contextAssetId: result.assetId,
+                                    last_sync_error: null,
+                                    last_sync_error_at: null
+                                }
+                            })
+                            .eq('id', widget.id);
+
+                        console.log(`[Scheduler] ✅ Sheets synced for widget ${widget.widget_name}: ${result.rowCount} rows`);
+                    } catch (widgetError) {
+                        console.error(`[Scheduler] Sheets sync failed for widget ${widget.id}:`, widgetError.message);
+                        // Update error status — existing context_asset is preserved as fallback
+                        await supabase
+                            .from('chat_widgets')
+                            .update({
+                                sheets_config: {
+                                    ...widget.sheets_config,
+                                    last_sync_error: widgetError.message,
+                                    last_sync_error_at: new Date().toISOString()
+                                }
+                            })
+                            .eq('id', widget.id);
+                    }
+                }
+            } catch (err) {
+                console.error('[Scheduler] Widget Sheets sync cycle failed:', err.message);
+            }
+        }, { scheduled: true });
+
+        console.log('[Scheduler] ✅ Widget Sheets sync scheduled (every 15 minutes)');
+    } catch (error) {
+        console.error('[Scheduler] Failed to initialize widget Sheets sync:', error.message);
+    }
+}
+
+// ============================================================================
+// WIDGET DATA RETENTION CLEANUP [R-06]
+// ============================================================================
+
+let dataCleanupJob = null;
+
+/**
+ * Initialize nightly cleanup of expired widget session data.
+ * Calls the cleanup_expired_widget_data() SQL function which deletes
+ * conversations and sessions older than each widget's data_retention_days.
+ */
+async function initializeWidgetDataCleanup() {
+    console.log('[Scheduler] Initializing widget data retention cleanup...');
+
+    try {
+        // Run daily at 3:00 AM
+        dataCleanupJob = cron.schedule('0 3 * * *', async () => {
+            console.log('[Scheduler] Starting widget data retention cleanup...');
+
+            try {
+                const { data: deletedCount, error } = await supabase
+                    .rpc('cleanup_expired_widget_data');
+
+                if (error) {
+                    console.error('[Scheduler] Widget data cleanup RPC failed:', error.message);
+                    return;
+                }
+
+                if (deletedCount > 0) {
+                    console.log(`[Scheduler] ✅ Cleaned up ${deletedCount} expired widget session(s)`);
+                } else {
+                    console.log('[Scheduler] No expired widget data to clean up');
+                }
+            } catch (err) {
+                console.error('[Scheduler] Widget data cleanup failed:', err.message);
+            }
+        }, { scheduled: true });
+
+        console.log('[Scheduler] ✅ Widget data retention cleanup scheduled (daily at 3:00 AM)');
+    } catch (error) {
+        console.error('[Scheduler] Failed to initialize widget data cleanup:', error.message);
+    }
+}
+
 module.exports = {
     // Core scheduling
     initializeScheduler,
@@ -1006,5 +1199,9 @@ module.exports = {
     executePublication,
     cancelScheduledPublication,
     createScheduledPublication,
-    getPublishingSchedulerStatus
+    getPublishingSchedulerStatus,
+
+    // Widget Scheduling [Phase 73]
+    initializeWidgetSheetsSync,
+    initializeWidgetDataCleanup
 };
