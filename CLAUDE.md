@@ -602,4 +602,4 @@ In Supabase SQL Editor:
 
 ## Documentation
 
-Versioned blueprints in `documentation/blueprints/` (v2.8 through v3.8). Current version: v3.8 "Chronicle" covering 26 development phases.
+The current platform blueprint lives at `documentation/blueprints/I360-Blueprint-CURRENT.md`. It tracks every shipped phase chronologically; the file's frontmatter (`Version`, `Latest Update`) reflects the most recent release. Older versions are not retained as separate files — the current blueprint is the running history.
