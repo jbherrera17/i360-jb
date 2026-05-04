@@ -9,7 +9,11 @@ module.exports = {
     '/node_modules/',
     '/public/',
     '/__tests__/fixtures/',
-    '/__tests__/setup/'
+    '/__tests__/setup/',
+    // Playwright specs live in e2e-ui/ and are run by `npm run test:e2e`,
+    // not by Jest. Without this exclusion Jest tries to execute them and
+    // they fail because Playwright's `test`/`expect` aren't Jest globals.
+    '/__tests__/e2e-ui/'
   ],
   collectCoverageFrom: [
     'server/**/*.js',
