@@ -19,7 +19,7 @@ A values-based AI command center and multi-LLM orchestration platform. Manage AI
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Node.js 18+, Express |
+| Backend | Node.js 20+, Express |
 | Database | Supabase (PostgreSQL) |
 | AI Models | Anthropic Claude, OpenAI GPT, Google Gemini, Perplexity |
 | Search | Brave, Tavily, Serper |
@@ -30,7 +30,7 @@ A values-based AI command center and multi-LLM orchestration platform. Manage AI
 
 ### Prerequisites
 
-- Node.js 18 or higher
+- Node.js 20 or higher
 - Supabase account (free tier works)
 - At least one LLM API key (Anthropic or OpenAI)
 
@@ -99,12 +99,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 insight-360/
 ├── server/
 │   ├── index.js          # Express app entry point
-│   ├── routes/           # API endpoints (39 route files)
+│   ├── routes/           # API endpoints (64 route files)
 │   ├── services/         # LLM wrappers, search, workflows
 │   ├── middleware/       # Auth, error handling
 │   └── utils/            # Helpers and utilities
 ├── public/
-│   ├── *.html            # Frontend pages (45 pages)
+│   ├── *.html            # Frontend pages (75 pages)
 │   ├── js/               # Client-side JavaScript
 │   └── css/              # Stylesheets
 ├── db/

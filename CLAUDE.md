@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Insight 360 is a values-based AI command center and multi-LLM orchestration platform. It provides agent management, context injection, integrity metrics, workflow automation, and the Parthenon governance framework.
 
-**Tech Stack:** Node.js 18+ / Express, Supabase (PostgreSQL), Anthropic Claude, OpenAI GPT, Perplexity
+**Tech Stack:** Node.js 20+ / Express, Supabase (PostgreSQL), Anthropic Claude, OpenAI GPT, Perplexity
 
 ## Commands
 
@@ -25,7 +25,7 @@ npm run lint -- --fix # Auto-fix lint issues
 
 **Entry Point:** `server/index.js` (v2.31.0) - Express app with Helmet CSP, CORS, compression, cookie auth
 
-**Routes (31 files in `server/routes/`):**
+**Routes (64 files in `server/routes/`):**
 - `chat.js` - Multi-LLM chat with streaming (SSE)
 - `agents.js` - Agent CRUD and execution
 - `actions.js` - Parthenon action framework
@@ -35,7 +35,7 @@ npm run lint -- --fix # Auto-fix lint issues
 - `briefing.js` - Daily briefing generation
 - `workflows.js` - Workflow engine operations
 
-**Services (25 files in `server/services/`):**
+**Services (73 files in `server/services/`):**
 - `anthropic.js`, `openai.js`, `perplexity.js` - LLM API wrappers with circuit breaker
 - `llmRegistry.js` - Centralized model definitions and capabilities
 - `agentService.js` - Agent execution engine
@@ -46,7 +46,7 @@ npm run lint -- --fix # Auto-fix lint issues
 
 ### Frontend (`public/`)
 
-Vanilla JavaScript architecture with 34 HTML pages. Key files:
+Vanilla JavaScript architecture with 75 HTML pages. Key files:
 - `js/chat.js` (46KB) - Multi-model chat UI with streaming
 - `js/context.js` (67KB) - Context asset management UI
 - `js/navigation.js` - Sidebar and routing
@@ -63,7 +63,7 @@ Core tables use Row Level Security (RLS) for multi-tenancy.
 
 ### Tests (`__tests__/`)
 
-Jest with 50% coverage threshold. Test structure:
+Jest with current coverage thresholds set to ~24% (branches/functions: 23, lines/statements: 24) in `jest.config.js`. Test structure:
 - `unit/` - Service and middleware tests (8 files)
 - `integration/` - Route tests (7 files)
 - `setup/jest.setup.js` - Test configuration
@@ -213,7 +213,7 @@ Platform (Synergi - immutable bright lines)
 
 2. **Modal Service** - Always use ModalService for dialogs (never inline HTML modals):
    ```html
-   <script src="js/modal-service-loader.js"></script>
+   <script src="/js/modal-service/loader.js" data-auto-load></script>
    ```
 
    **Usage Examples:**
@@ -291,7 +291,7 @@ Platform (Synergi - immutable bright lines)
         </main>
     </div>
 
-    <script src="/js/modal-service-loader.js"></script>
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
     <script src="/js/help-modal.js"></script>
     <script src="/js/help-registry.js"></script>
     <script>
