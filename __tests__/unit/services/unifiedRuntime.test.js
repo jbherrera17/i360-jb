@@ -31,6 +31,15 @@ describe('unifiedRuntime', () => {
       sources: {}
     });
 
+    // Source reads `profileDecision.blocked` before checking killSwitch (they
+    // share the same branch via OR), so the profile router still has to
+    // return a usable shape even on the kill-switch path.
+    profileRouter.resolveExecutionProfile.mockReturnValueOnce({
+      blocked: false,
+      profile: 'fast_direct',
+      reason: 'module_policy_actions'
+    });
+
     const result = await unifiedRuntime.execute({
       supabase: {},
       module: 'actions'
