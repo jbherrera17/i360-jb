@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Org Configuration - Insight 360</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <script src="/js/auth-fetch-loader.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .org-picker-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        .org-picker-bar select {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .alerts-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            background: var(--warning, #f59e0b);
+            color: white;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .alerts-badge.hidden { display: none; }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 1024px) { .config-grid { grid-template-columns: 1fr; } }
+
+        .config-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .config-panel h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.05));
+            font-size: 0.9rem;
+        }
+        .row .label { color: var(--text-secondary); }
+        .row .value {
+            color: var(--text-primary);
+            font-weight: 600;
+            text-align: right;
+            min-width: 80px;
+        }
+        .row .value.overridden {
+            color: var(--accent, #77bde0);
+            position: relative;
+        }
+        .row .value.overridden::after {
+            content: '●';
+            color: var(--warning, #f59e0b);
+            margin-left: 0.4rem;
+            font-size: 0.7rem;
+        }
+        .row .actions { display: flex; gap: 0.4rem; }
+        .row .btn-mini {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .row .btn-mini:hover { color: var(--text-primary); border-color: var(--accent, #77bde0); }
+        .row .btn-mini.btn-danger:hover { color: #ef4444; border-color: #ef4444; }
+
+        .module-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.05));
+            font-size: 0.88rem;
+        }
+        .access-pill {
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .access-pill.core     { background: rgba(34,197,94,0.18);  color: #22c55e; }
+        .access-pill.optional { background: rgba(59,130,246,0.18); color: #3b82f6; }
+        .access-pill.none     { background: rgba(239,68,68,0.18);  color: #ef4444; }
+
+        .history-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .history-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.05));
+            font-size: 0.85rem;
+        }
+        .history-time { color: var(--text-tertiary); font-size: 0.78rem; min-width: 140px; }
+        .history-row .reason { color: var(--text-secondary); font-style: italic; }
+
+        .alerts-section {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .alerts-section h3 { color: #f59e0b; margin: 0 0 0.75rem 0; }
+        .alert-row {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(245,158,11,0.15);
+            font-size: 0.88rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .alert-row.last { border-bottom: none; }
+        .alert-tag {
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+        .alert-tag.up { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .alert-tag.down { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .alert-tag.lateral { background: rgba(59,130,246,0.2); color: #3b82f6; }
+
+        .empty-state { color: var(--text-tertiary); padding: 1.5rem; text-align: center; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i data-lucide="settings-2" style="width:28px;height:28px;color:var(--primary);"></i>
+                        Org Configuration
+                    </h1>
+                    <p class="header-subtitle">Per-organization overrides for resource limits and module access. Platform admin only.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn" onclick="HelpModal && HelpModal.open()" title="Help">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: var(--spacing-xl);">
+
+                <!-- Org picker -->
+                <div class="org-picker-bar">
+                    <i data-lucide="building" style="width:20px;height:20px;color:var(--text-secondary);"></i>
+                    <select id="org-picker" onchange="onOrgPicked()">
+                        <option value="">— Select an organization —</option>
+                    </select>
+                    <span id="alerts-badge" class="alerts-badge hidden" onclick="scrollToAlerts()">
+                        <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i>
+                        <span id="alerts-count">0</span> alert<span id="alerts-plural">s</span>
+                    </span>
+                </div>
+
+                <div id="config-area">
+                    <div class="empty-state">Pick an organization above to view and edit its effective configuration.</div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/modal-service/loader.js" data-auto-load></script>
+    <script src="/js/help-modal.js"></script>
+    <script src="/js/help-registry.js"></script>
+    <script>
+        // ============================================
+        // STATE
+        // ============================================
+        let allOrgs = [];
+        let currentOrgId = null;
+        let effectiveConfig = null;
+        let overrides = { resource: [], module: [] };
+        let allModules = [];
+
+        const RESOURCE_LABELS = {
+            max_members: 'Members', max_agents: 'Agents', max_clients: 'Clients',
+            max_workflows: 'Workflows', max_skills: 'Skills',
+            max_context_assets: 'Context Assets', max_research_studios: 'Research Studios',
+            max_monthly_api_calls: 'Monthly API Calls', max_storage_gb: 'Storage (GB)'
+        };
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('insight360-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (typeof initNavigation === 'function') await initNavigation();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            await loadOrgs();
+            await loadAllModules();
+        });
+
+        async function loadOrgs() {
+            try {
+                const resp = await authFetch('/api/platform/organizations');
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                allOrgs = json.data || [];
+                const picker = document.getElementById('org-picker');
+                picker.innerHTML = '<option value="">— Select an organization —</option>' +
+                    allOrgs.map(o => `<option value="${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.subscription_tier || 'unknown')})</option>`).join('');
+            } catch (err) {
+                showToast('Failed to load organizations: ' + err.message, 'error');
+            }
+        }
+
+        async function loadAllModules() {
+            try {
+                const resp = await authFetch('/api/platform/modules');
+                const json = await resp.json();
+                if (json.success) allModules = json.data || [];
+            } catch (err) { /* non-fatal */ }
+        }
+
+        async function onOrgPicked() {
+            currentOrgId = document.getElementById('org-picker').value;
+            if (!currentOrgId) {
+                document.getElementById('config-area').innerHTML =
+                    '<div class="empty-state">Pick an organization above to view and edit its effective configuration.</div>';
+                document.getElementById('alerts-badge').classList.add('hidden');
+                return;
+            }
+
+            await Promise.all([loadEffectiveConfig(), loadOverrides(), loadAlertsCount()]);
+            renderConfigArea();
+            await Promise.all([loadHistory(), loadAlerts()]);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function loadEffectiveConfig() {
+            const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/effective-config`);
+            const json = await resp.json();
+            if (!json.success) throw new Error(json.error);
+            effectiveConfig = json.data;
+        }
+
+        async function loadOverrides() {
+            const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/overrides`);
+            const json = await resp.json();
+            if (!json.success) throw new Error(json.error);
+            overrides = json.data;
+        }
+
+        async function loadAlertsCount() {
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/alerts/count`);
+                const json = await resp.json();
+                const count = json?.data?.unacknowledged_count || 0;
+                const badge = document.getElementById('alerts-badge');
+                document.getElementById('alerts-count').textContent = count;
+                document.getElementById('alerts-plural').textContent = count === 1 ? '' : 's';
+                badge.classList.toggle('hidden', count === 0);
+            } catch (_) { /* non-fatal */ }
+        }
+
+        // ============================================
+        // RENDER
+        // ============================================
+        function renderConfigArea() {
+            if (!effectiveConfig) return;
+            const resourceOverrideMap = new Map((overrides.resource || []).map(r => [r.field, r]));
+            const moduleOverrideMap = new Map((overrides.module || []).map(m => [m.module_id, m]));
+
+            const html = `
+                <div class="config-grid">
+                    <div class="config-panel">
+                        <h3>
+                            <i data-lucide="file-cog" style="width:18px;height:18px;"></i>
+                            Tier Defaults <span style="font-weight:400;color:var(--text-secondary);font-size:0.85rem;">(${escapeHtml(effectiveConfig.effective_tier_id)})</span>
+                        </h3>
+                        ${renderTierDefaultsList()}
+                    </div>
+                    <div class="config-panel">
+                        <h3>
+                            <i data-lucide="user-cog" style="width:18px;height:18px;"></i>
+                            Effective Configuration
+                            ${effectiveConfig.on_trial ? '<span style="font-size:0.7rem;background:rgba(245,158,11,0.2);color:#f59e0b;padding:0.2rem 0.5rem;border-radius:6px;margin-left:0.5rem;">ON TRIAL → Business</span>' : ''}
+                        </h3>
+                        ${renderEffectiveList(resourceOverrideMap)}
+                    </div>
+                </div>
+
+                <div class="config-panel">
+                    <h3>
+                        <i data-lucide="package" style="width:18px;height:18px;"></i>
+                        Module Access (${effectiveConfig.modules.core.length} core, ${effectiveConfig.modules.optional.length} optional, ${effectiveConfig.modules.excluded.length} excluded)
+                    </h3>
+                    ${renderModulesTable(moduleOverrideMap)}
+                </div>
+
+                <div id="alerts-section-wrap"></div>
+
+                <div class="history-section">
+                    <h3>
+                        <i data-lucide="history" style="width:18px;height:18px;"></i>
+                        Override History
+                    </h3>
+                    <div id="history-list"><div class="empty-state">Loading…</div></div>
+                </div>
+            `;
+            document.getElementById('config-area').innerHTML = html;
+        }
+
+        function renderTierDefaultsList() {
+            return Object.entries(RESOURCE_LABELS).map(([field, label]) => {
+                const tierVal = effectiveConfig.resource_limits?.[field];
+                return `
+                    <div class="row">
+                        <span class="label">${label}</span>
+                        <span class="value">${formatLimit(tierVal)}</span>
+                        <span></span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderEffectiveList(resourceOverrideMap) {
+            return Object.entries(RESOURCE_LABELS).map(([field, label]) => {
+                const tierVal = effectiveConfig.resource_limits?.[field];
+                const ov = resourceOverrideMap.get(field);
+                const isOverridden = !!ov;
+                const displayVal = isOverridden ? ov.override_value : tierVal;
+                return `
+                    <div class="row">
+                        <span class="label">${label}</span>
+                        <span class="value ${isOverridden ? 'overridden' : ''}" title="${isOverridden ? 'Override reason: ' + escapeHtml(ov.override_reason) : ''}">${formatLimit(displayVal)}</span>
+                        <span class="actions">
+                            <button class="btn-mini" onclick="openResourceOverrideModal('${field}', ${tierVal === null ? 'null' : tierVal}, ${displayVal === null ? 'null' : displayVal})">${isOverridden ? 'Edit' : 'Override'}</button>
+                            ${isOverridden ? `<button class="btn-mini btn-danger" onclick="resetResourceOverride('${field}')">Reset</button>` : ''}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderModulesTable(moduleOverrideMap) {
+            const allRelevant = new Map();
+            for (const id of effectiveConfig.modules.core)     allRelevant.set(id, 'core');
+            for (const o  of effectiveConfig.modules.optional) allRelevant.set(o.module_id, 'optional');
+            for (const id of effectiveConfig.modules.excluded) allRelevant.set(id, 'none');
+
+            // Sort: overridden first, then alphabetical by module_id
+            const rows = Array.from(allRelevant.entries()).sort((a, b) => {
+                const aOv = moduleOverrideMap.has(a[0]) ? 0 : 1;
+                const bOv = moduleOverrideMap.has(b[0]) ? 0 : 1;
+                if (aOv !== bOv) return aOv - bOv;
+                return a[0].localeCompare(b[0]);
+            });
+
+            if (rows.length === 0) return '<div class="empty-state">No modules.</div>';
+
+            return rows.map(([moduleId, access]) => {
+                const ov = moduleOverrideMap.get(moduleId);
+                const isOverridden = !!ov;
+                const displayAccess = isOverridden ? ov.access_type : access;
+                const moduleMeta = allModules.find(m => m.id === moduleId);
+                const moduleName = moduleMeta?.name || moduleId;
+                return `
+                    <div class="module-row">
+                        <span>${escapeHtml(moduleName)} ${isOverridden ? '<span style="color:#f59e0b;font-size:0.7rem;margin-left:0.4rem;">●</span>' : ''}</span>
+                        <span class="access-pill ${displayAccess}">${displayAccess}</span>
+                        <span class="actions">
+                            <button class="btn-mini" onclick="openModuleOverrideModal('${moduleId}', '${access}', '${displayAccess}')">${isOverridden ? 'Edit' : 'Override'}</button>
+                            ${isOverridden ? `<button class="btn-mini btn-danger" onclick="resetModuleOverride('${moduleId}')">Reset</button>` : ''}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadHistory() {
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/override-history?limit=20`);
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                const target = document.getElementById('history-list');
+                if (!target) return;
+                if (!json.data || json.data.length === 0) {
+                    target.innerHTML = '<div class="empty-state">No overrides yet.</div>';
+                    return;
+                }
+                target.innerHTML = json.data.map(h => `
+                    <div class="history-row">
+                        <span class="history-time">${new Date(h.created_at).toLocaleString()}</span>
+                        <div>
+                            <div><strong>${escapeHtml(h.change_type)}</strong> · ${escapeHtml(h.field)}</div>
+                            <div class="reason">"${escapeHtml(h.reason)}"</div>
+                        </div>
+                        <span style="color:var(--text-tertiary);font-size:0.8rem;">${formatChangeDelta(h)}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                showToast('History load failed: ' + err.message, 'error');
+            }
+        }
+
+        async function loadAlerts() {
+            const wrap = document.getElementById('alerts-section-wrap');
+            if (!wrap) return;
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/alerts`);
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                if (!json.data || json.data.length === 0) {
+                    wrap.innerHTML = '';
+                    return;
+                }
+                wrap.innerHTML = `
+                    <div class="alerts-section" id="alerts-section">
+                        <h3>
+                            <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+                            Tier Default Changes Affecting This Org (${json.data.length})
+                        </h3>
+                        ${json.data.map((a, i) => `
+                            <div class="alert-row ${i === json.data.length - 1 ? 'last' : ''}">
+                                <span>
+                                    <span class="alert-tag ${a.change_type}">${a.change_type.toUpperCase()}</span>
+                                    <strong>${escapeHtml(a.module_id)}</strong>
+                                    @ <em>${escapeHtml(a.tier_id)}</em>
+                                    : ${escapeHtml(a.old_access_type || '—')} → ${escapeHtml(a.new_access_type || '—')}
+                                </span>
+                                <button class="btn-mini" onclick="acknowledgeAlert('${a.id}')">Acknowledge</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (err) { /* non-fatal */ }
+        }
+
+        // ============================================
+        // OVERRIDE ACTIONS
+        // ============================================
+        async function openResourceOverrideModal(field, tierDefault, currentVal) {
+            const result = await ModalService.form({
+                title: `Override: ${RESOURCE_LABELS[field]}`,
+                fields: [
+                    { name: 'value', label: `New value (-1 = unlimited; tier default is ${formatLimit(tierDefault)})`, type: 'number', value: currentVal, required: true },
+                    { name: 'reason', label: 'Reason (required)', type: 'textarea', placeholder: 'e.g., negotiated at signup as part of annual deal', required: true }
+                ],
+                submitText: 'Save Override'
+            });
+            if (!result) return;
+            const reason = (result.reason || '').trim();
+            if (!reason) { showToast('Reason is required', 'error'); return; }
+
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/overrides/resource`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field, override_value: parseInt(result.value, 10), reason })
+                });
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                showToast('Override saved', 'success');
+                await onOrgPicked();
+            } catch (err) {
+                showToast('Save failed: ' + err.message, 'error');
+            }
+        }
+
+        async function resetResourceOverride(field) {
+            const confirmed = await ModalService.form({
+                title: `Reset ${RESOURCE_LABELS[field]} to tier default?`,
+                fields: [{ name: 'reason', label: 'Reason (required)', type: 'textarea', placeholder: 'Why are you removing this override?', required: true }],
+                submitText: 'Reset',
+                submitClass: 'btn-danger'
+            });
+            if (!confirmed) return;
+            const reason = (confirmed.reason || '').trim();
+            if (!reason) return;
+
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/overrides/resource/${field}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                });
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                showToast('Override reset', 'success');
+                await onOrgPicked();
+            } catch (err) {
+                showToast('Reset failed: ' + err.message, 'error');
+            }
+        }
+
+        async function openModuleOverrideModal(moduleId, tierDefault, currentVal) {
+            const result = await ModalService.form({
+                title: `Override module: ${moduleId}`,
+                fields: [
+                    { name: 'access_type', label: `Access type (tier default: ${tierDefault})`, type: 'select', value: currentVal, required: true,
+                      options: [
+                        { value: 'core', label: 'Core (included)' },
+                        { value: 'optional', label: 'Optional (available as add-on)' },
+                        { value: 'none', label: 'None (excluded)' }
+                      ]
+                    },
+                    { name: 'reason', label: 'Reason (required)', type: 'textarea', placeholder: 'Why are you overriding this module?', required: true }
+                ],
+                submitText: 'Save Override'
+            });
+            if (!result) return;
+            const reason = (result.reason || '').trim();
+            if (!reason) { showToast('Reason is required', 'error'); return; }
+
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/overrides/module/${moduleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ access_type: result.access_type, reason })
+                });
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                showToast('Module override saved', 'success');
+                await onOrgPicked();
+            } catch (err) {
+                showToast('Save failed: ' + err.message, 'error');
+            }
+        }
+
+        async function resetModuleOverride(moduleId) {
+            const confirmed = await ModalService.form({
+                title: `Reset ${moduleId} to tier default?`,
+                fields: [{ name: 'reason', label: 'Reason (required)', type: 'textarea', required: true }],
+                submitText: 'Reset',
+                submitClass: 'btn-danger'
+            });
+            if (!confirmed) return;
+            const reason = (confirmed.reason || '').trim();
+            if (!reason) return;
+
+            try {
+                const resp = await authFetch(`/api/platform/orgs/${currentOrgId}/overrides/module/${moduleId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                });
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                showToast('Override reset', 'success');
+                await onOrgPicked();
+            } catch (err) {
+                showToast('Reset failed: ' + err.message, 'error');
+            }
+        }
+
+        async function acknowledgeAlert(alertId) {
+            try {
+                const resp = await authFetch(`/api/platform/alerts/${alertId}/acknowledge`, { method: 'POST' });
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.error);
+                showToast('Alert acknowledged', 'success');
+                await Promise.all([loadAlerts(), loadAlertsCount()]);
+            } catch (err) {
+                showToast('Acknowledge failed: ' + err.message, 'error');
+            }
+        }
+
+        function scrollToAlerts() {
+            const el = document.getElementById('alerts-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function formatLimit(v) {
+            if (v === null || v === undefined) return '—';
+            if (v === -1) return '∞';
+            return Number(v).toLocaleString();
+        }
+
+        function formatChangeDelta(h) {
+            if (h.change_type === 'reset') return 'reset';
+            const oldV = h.old_value;
+            const newV = h.new_value;
+            if (oldV === null) return 'new';
+            return 'updated';
+        }
+
+        function escapeHtml(s) {
+            if (s === null || s === undefined) return '';
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function showToast(message, type = 'info') {
+            if (typeof ModalService !== 'undefined' && ModalService.toast) {
+                ModalService.toast({ message, type });
+            } else {
+                console.log(`[${type}] ${message}`);
+            }
+        }
+    </script>
+</body>
+</html>
