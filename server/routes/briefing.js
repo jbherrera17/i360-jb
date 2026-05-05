@@ -12,6 +12,7 @@
 const express = require('express');
 const briefingService = require('../services/briefingService');
 const schedulerService = require('../services/schedulerService');
+const createModuleAccessMiddleware = require('../middleware/moduleAccess');
 
 /**
  * Briefing Routes Factory
@@ -20,6 +21,10 @@ const schedulerService = require('../services/schedulerService');
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const { requireModule } = createModuleAccessMiddleware(supabase);
+
+    // Module gating — enforce tier/role access for briefing module
+    router.use(requireModule('briefing'));
 
     // Get user ID from auth middleware (req.userId is set by middleware/auth.js)
     const getUser = (req) => {
