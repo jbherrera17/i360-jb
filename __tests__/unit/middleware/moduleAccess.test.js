@@ -531,6 +531,98 @@ describe('ModuleAccess Middleware', () => {
   });
 
   // ============================================
+  // attachEffectiveConfig (Phase 88 — REQ-003)
+  // ============================================
+  describe('attachEffectiveConfig', () => {
+    test('should call next() with no req.effectiveConfig when no org context', async () => {
+      const req = createMockRequest({ userId: 'test-user-001', headers: {} });
+      const res = createMockResponse();
+      const next = createMockNext();
+
+      await middleware.attachEffectiveConfig()(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.effectiveConfig).toBeUndefined();
+    });
+
+    test('should resolve effective config and attach to req when org_id present', async () => {
+      const req = createMockRequest({
+        userId: 'test-user-001',
+        headers: { 'x-org-id': 'test-org-acme-001' }
+      });
+      const res = createMockResponse();
+      const next = createMockNext();
+
+      mockSupabase.from.mockImplementation((table) => {
+        if (table === 'organizations') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'test-org-acme-001', subscription_tier: 'starter', trial_started_at: null, trial_expires_at: null },
+              error: null
+            })
+          };
+        }
+        if (table === 'subscription_tiers') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'starter', max_members: 3, max_agents: 5, max_clients: 0, max_workflows: 0, max_skills: 10, max_context_assets: 25, max_research_studios: 0, max_monthly_api_calls: 500, max_storage_gb: 1 },
+              error: null
+            })
+          };
+        }
+        if (table === 'tier_module_access') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            then: (resolve) => resolve({ data: [{ module_id: 'chat', access_type: 'core' }], error: null })
+          };
+        }
+        if (table === 'org_module_overrides' || table === 'org_resource_overrides') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            then: (resolve) => resolve({ data: [], error: null })
+          };
+        }
+        return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis() };
+      });
+
+      await middleware.attachEffectiveConfig()(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.effectiveConfig).toBeDefined();
+      expect(req.effectiveConfig.effective_tier_id).toBe('starter');
+      expect(req.effectiveConfig.modules.core).toContain('chat');
+    });
+
+    test('should call next() and not attach config when org not found', async () => {
+      const req = createMockRequest({
+        userId: 'test-user-001',
+        headers: { 'x-org-id': 'missing-org' }
+      });
+      const res = createMockResponse();
+      const next = createMockNext();
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      mockSupabase.from.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null })
+      }));
+
+      await middleware.attachEffectiveConfig()(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.effectiveConfig).toBeUndefined();
+      consoleSpy.mockRestore();
+    });
+  });
+
+  // ============================================
   // Factory returns all middleware
   // ============================================
   describe('createModuleAccessMiddleware factory', () => {
@@ -540,6 +632,7 @@ describe('ModuleAccess Middleware', () => {
       expect(middleware.requirePlatformAdmin).toBeInstanceOf(Function);
       expect(middleware.requireFeature).toBeInstanceOf(Function);
       expect(middleware.attachOrgContext).toBeInstanceOf(Function);
+      expect(middleware.attachEffectiveConfig).toBeInstanceOf(Function);
     });
   });
 });

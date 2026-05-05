@@ -2,8 +2,22 @@
  * Module Access Middleware
  *
  * Provides middleware for checking module access and resource limits
- * based on subscription tiers and business roles.
+ * based on subscription tiers, business roles, and (Phase 88) per-org
+ * overrides.
+ *
+ * Architecture (Phase 88 / REQ-003):
+ * - `can_access_module` and `check_org_limits` SQL functions are the
+ *   primary access-check path. Phase 88 redefined them to consult
+ *   org_module_overrides / org_resource_overrides via COALESCE, so the
+ *   middleware automatically picks up overrides without JS changes.
+ * - When access is denied, the middleware additionally calls
+ *   effectiveConfigResolver to enrich the 403 response with the source
+ *   of denial (tier vs. override) so admin debugging is easier.
+ * - `attachEffectiveConfig` is available for route handlers that need
+ *   the full merged tier+overrides+trial view.
  */
+
+const effectiveConfigResolver = require('../services/effectiveConfigResolver');
 
 /**
  * Create middleware that requires access to a specific module
@@ -30,7 +44,8 @@ function createModuleAccessMiddleware(supabase) {
                     });
                 }
 
-                // Check module access using the database function
+                // Phase 88: can_access_module RPC consults org_module_overrides
+                // before falling through to tier+role logic.
                 const { data: canAccess, error } = await supabase
                     .rpc('can_access_module', {
                         p_user_id: userId,
@@ -54,6 +69,18 @@ function createModuleAccessMiddleware(supabase) {
                         .eq('id', moduleId)
                         .single();
 
+                    // Phase 88 enrichment: if there's an org context, ask the
+                    // resolver whether the denial came from an org override or
+                    // from the tier default. Best-effort — never let the
+                    // enrichment lookup itself fail the request.
+                    let denial_source = 'tier_or_role';
+                    if (orgId) {
+                        try {
+                            const eff = await effectiveConfigResolver.getEffectiveModuleAccess(supabase, orgId, moduleId);
+                            denial_source = eff.source === 'org_override' ? 'org_override' : 'tier';
+                        } catch (_) { /* enrichment is best-effort */ }
+                    }
+
                     return res.status(403).json({
                         success: false,
                         error: 'Module not available for your subscription tier or role',
@@ -61,7 +88,8 @@ function createModuleAccessMiddleware(supabase) {
                         requirements: {
                             min_tier: module?.min_tier,
                             min_business_role: module?.min_business_role
-                        }
+                        },
+                        denial_source
                     });
                 }
 
@@ -339,12 +367,43 @@ function createModuleAccessMiddleware(supabase) {
         };
     };
 
+    /**
+     * Phase 88 (REQ-003): Attach the merged effective configuration
+     * (tier defaults + org overrides + trial overlay) to req.effectiveConfig.
+     *
+     * Use this on routes that need to inspect the org's full config —
+     * e.g., a settings page that wants to show "you have 40 agents
+     * (up from your tier default of 25 — granted by JB on 2026-04-15)".
+     *
+     * Resolves silently: if the org has no overrides or Phase 88 hasn't
+     * been applied yet, req.effectiveConfig still gets the tier defaults.
+     * If the resolver throws (e.g., org not found), the request is allowed
+     * to proceed without req.effectiveConfig — handlers should null-check.
+     *
+     * @returns {Function} Express middleware function
+     */
+    const attachEffectiveConfig = () => {
+        return async (req, res, next) => {
+            try {
+                const orgId = req.headers['x-org-id'] || req.query.org_id || req.body?.org_id;
+                if (!orgId) return next();
+
+                req.effectiveConfig = await effectiveConfigResolver.getEffectiveConfig(supabase, orgId);
+            } catch (error) {
+                console.warn('attachEffectiveConfig: non-fatal resolver error:', error.message);
+                // Leave req.effectiveConfig undefined — handlers null-check
+            }
+            next();
+        };
+    };
+
     return {
         requireModule,
         checkResourceLimit,
         requirePlatformAdmin,
         requireFeature,
-        attachOrgContext
+        attachOrgContext,
+        attachEffectiveConfig
     };
 }
 

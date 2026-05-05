@@ -7,6 +7,7 @@ const express = require('express');
 const { getUserId } = require('../utils/auth');
 const WorkflowEngine = require('../services/workflowEngine');
 const createModuleAccessMiddleware = require('../middleware/moduleAccess');
+const { requireOrgContext } = require('../middleware/orgContext');
 
 /**
  * Workflow Routes Factory
@@ -19,6 +20,9 @@ module.exports = function(supabase) {
 
     // Phase 81: Module gating — enforce tier/role access for workflows module
     router.use(requireModule('workflows'));
+
+    // Phase 82: Enforce org context — validates x-org-id against user's memberships
+    router.use(requireOrgContext(supabase));
 
 /**
  * GET /api/workflows
@@ -60,7 +64,7 @@ router.get('/', async (req, res) => {
         }
 
         // === PHASE 46: Organization filtering ===
-        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const orgId = req.verifiedOrgId;
         if (orgId) {
             // Show workflows belonging to this org OR system workflows (no org)
             query = query.or(`org_id.eq.${orgId},org_id.is.null`);
@@ -132,7 +136,7 @@ router.get('/templates', async (req, res) => {
 router.get('/executions', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const orgId = req.verifiedOrgId;
         const { status, limit = 20 } = req.query;
 
         let query = supabase
@@ -242,7 +246,7 @@ router.get('/:id', async (req, res) => {
 
         // Phase 81: Ownership/org check
         const userId = getUserId(req);
-        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const orgId = req.verifiedOrgId;
         if (workflow.user_id && workflow.user_id !== userId &&
             workflow.org_id !== orgId &&
             !workflow.is_public) {
@@ -293,7 +297,7 @@ router.post('/', checkResourceLimit('workflows'), async (req, res) => {
 
         const userId = getUserId(req);
         const workflowData = req.body;
-        const orgId = req.headers['x-org-id'] || workflowData.org_id || req.orgId || null;
+        const orgId = req.verifiedOrgId;
 
         const { data, error } = await supabase
             .from('workflows')
@@ -339,7 +343,7 @@ router.post('/from-template/:templateId', async (req, res) => {
         if (tplError) throw tplError;
 
         // Phase 81: Use requesting user's org_id
-        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const orgId = req.verifiedOrgId;
 
         // Create workflow from template
         const { data: workflow, error: wfError } = await supabase
@@ -455,7 +459,7 @@ router.delete('/:id', async (req, res) => {
      */
     async function verifyWorkflowOwnership(req, workflowId) {
         const userId = getUserId(req);
-        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const orgId = req.verifiedOrgId;
         const { data: wf } = await supabase
             .from('workflows')
             .select('user_id, org_id, is_public')
@@ -619,7 +623,7 @@ router.post('/:id/execute', async (req, res) => {
         const { initial_variables } = req.body;
 
         // Phase 81: Include org_id in execution record
-        const orgId = req.headers['x-org-id'] || req.orgId || null;
+        const orgId = req.verifiedOrgId;
 
         // Create execution record
         const { data: execution, error } = await supabase
@@ -719,7 +723,7 @@ router.post('/executions/:executionId/steps/:stepNumber', async (req, res) => {
             {
                 ...normalizedInput,
                 user_id: getUserId(req),
-                org_id: req.headers['x-org-id'] || null,
+                org_id: req.verifiedOrgId,
                 module: 'workflows'
             }
         );

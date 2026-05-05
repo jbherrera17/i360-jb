@@ -20,6 +20,10 @@ const EASY_START_MODEL = 'claude-sonnet-4-5-20250929';
 
 module.exports = function (supabase) {
     const router = express.Router();
+    const { requireOrgContext } = require('../middleware/orgContext');
+
+    // Validate org membership on all routes
+    router.use(requireOrgContext(supabase));
 
     // Conditionally import guardrail enforcement
     let guardrailEnforcement = null;
@@ -42,7 +46,7 @@ module.exports = function (supabase) {
         }
 
         const { messages = [] } = req.body;
-        const orgId = req.headers['x-org-id'] || req.body.org_id || req.orgId || null;
+        const orgId = req.verifiedOrgId;
         const userId = req.userId || null;
         const isAdmin = req.isAdmin || false;
         const supabaseClient = req.supabase || supabase;
@@ -279,7 +283,7 @@ module.exports = function (supabase) {
     router.get('/departments', async (req, res) => {
         try {
             const supabaseClient = req.supabase || supabase;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             let query = supabaseClient
                 .from('departments')

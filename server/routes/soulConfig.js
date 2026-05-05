@@ -16,6 +16,8 @@ const express = require('express');
 const soulConfigService = require('../services/soulConfigService');
 const ethicalContextService = require('../services/ethicalContextService');
 const valuesAlignmentService = require('../services/valuesAlignmentService');
+const { requireOrgContext } = require('../middleware/orgContext');
+const createModuleAccessMiddleware = require('../middleware/moduleAccess');
 const Anthropic = require('@anthropic-ai/sdk');
 const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -26,6 +28,13 @@ const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const { requireModule } = createModuleAccessMiddleware(supabase);
+
+    // Module gating — enforce tier/role access for soul configuration module
+    router.use(requireModule('soul_configuration'));
+
+    // Phase 82: Multi-tenant org context — validate org membership on all routes
+    router.use(requireOrgContext(supabase));
 
     // ============================================================================
     // SOUL CONFIGURATION CRUD ENDPOINTS
@@ -37,11 +46,11 @@ module.exports = function(supabase) {
      */
     router.get('/', async (req, res) => {
         try {
-            const { scope_type, org_id, is_draft, is_active } = req.query;
+            const { scope_type, is_draft, is_active } = req.query;
 
             const filters = {};
             if (scope_type) filters.scope_type = scope_type;
-            if (org_id) filters.org_id = org_id;
+            filters.org_id = req.verifiedOrgId;
             if (is_draft !== undefined) filters.is_draft = is_draft === 'true';
             if (is_active !== undefined) filters.is_active = is_active === 'true';
 
@@ -115,7 +124,7 @@ module.exports = function(supabase) {
      */
     router.get('/resolve/:orgId', async (req, res) => {
         try {
-            const { orgId } = req.params;
+            const orgId = req.verifiedOrgId;
             const { departmentId, clientId, agentId } = req.query;
 
             const resolved = await soulConfigService.resolveInheritedSoulConfig({
@@ -401,7 +410,7 @@ module.exports = function(supabase) {
     router.post('/import', async (req, res) => {
         try {
             const userId = req.userId;
-            const { markdown, scope_type, org_id, department_id, client_id, agent_id } = req.body;
+            const { markdown, scope_type, department_id, client_id, agent_id } = req.body;
 
             if (!markdown) {
                 return res.status(400).json({
@@ -412,7 +421,7 @@ module.exports = function(supabase) {
 
             const config = await soulConfigService.importFromSoulMd(
                 markdown,
-                { scope_type, org_id, department_id, client_id, agent_id },
+                { scope_type, org_id: req.verifiedOrgId, department_id, client_id, agent_id },
                 userId
             );
 
@@ -495,11 +504,11 @@ module.exports = function(supabase) {
      */
     router.post('/ethical-context', async (req, res) => {
         try {
-            const { stakesLevel, orgId, departmentId, clientId, agentId } = req.body;
+            const { stakesLevel, departmentId, clientId, agentId } = req.body;
 
             // Resolve soul config
             const resolved = await soulConfigService.resolveInheritedSoulConfig({
-                orgId, departmentId, clientId, agentId
+                orgId: req.verifiedOrgId, departmentId, clientId, agentId
             });
 
             // Assemble ethical context
@@ -600,14 +609,7 @@ module.exports = function(supabase) {
      */
     router.post('/values-alignment/audit', async (req, res) => {
         try {
-            const { orgId } = req.body;
-
-            if (!orgId) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'orgId is required'
-                });
-            }
+            const orgId = req.verifiedOrgId;
 
             const audit = await valuesAlignmentService.performValuesAlignmentAudit(orgId);
 
@@ -630,7 +632,7 @@ module.exports = function(supabase) {
      */
     router.get('/values-alignment/history/:orgId', async (req, res) => {
         try {
-            const { orgId } = req.params;
+            const orgId = req.verifiedOrgId;
             const { limit = 10 } = req.query;
 
             const history = await valuesAlignmentService.getAuditHistory(orgId, parseInt(limit));
@@ -655,7 +657,7 @@ module.exports = function(supabase) {
      */
     router.get('/values-alignment/trend/:orgId', async (req, res) => {
         try {
-            const { orgId } = req.params;
+            const orgId = req.verifiedOrgId;
             const { months = 6 } = req.query;
 
             const trend = await valuesAlignmentService.getAlignmentTrend(orgId, parseInt(months));
@@ -679,7 +681,7 @@ module.exports = function(supabase) {
      */
     router.get('/values-alignment/radar/:orgId', async (req, res) => {
         try {
-            const { orgId } = req.params;
+            const orgId = req.verifiedOrgId;
 
             // Get latest audit
             const history = await valuesAlignmentService.getAuditHistory(orgId, 1);
@@ -719,7 +721,7 @@ module.exports = function(supabase) {
      */
     router.get('/integrity-metrics/:orgId', async (req, res) => {
         try {
-            const { orgId } = req.params;
+            const orgId = req.verifiedOrgId;
             const { days = 30 } = req.query;
 
             const metrics = await ethicalContextService.calculateIntegrityMetrics(
@@ -746,7 +748,7 @@ module.exports = function(supabase) {
      */
     router.get('/bright-line-incidents/:orgId', async (req, res) => {
         try {
-            const { orgId } = req.params;
+            const orgId = req.verifiedOrgId;
             const { incident_type, severity, resolved, created_after } = req.query;
 
             const filters = {};
@@ -850,12 +852,13 @@ module.exports = function(supabase) {
      */
     router.post('/generate-industry-baseline', async (req, res) => {
         try {
-            const { orgId, industry, domain } = req.body;
+            const { industry, domain } = req.body;
+            const orgId = req.verifiedOrgId;
 
-            if (!orgId || !industry) {
+            if (!industry) {
                 return res.status(400).json({
                     success: false,
-                    error: 'orgId and industry are required'
+                    error: 'industry is required'
                 });
             }
 

@@ -14,6 +14,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const anthropicService = require('../services/anthropic');
 const unifiedRuntime = require('../services/unifiedRuntime');
 const { getUserId } = require('../utils/auth');
+const { requireOrgContext } = require('../middleware/orgContext');
 
 /**
  * Actions Routes Factory
@@ -90,6 +91,9 @@ module.exports = function(supabase) {
     const { requireModule } = createModuleAccessMiddleware(supabase);
     router.use(requireModule('actions'));
 
+    // Phase 82: Enforce org context — validates x-org-id against user's memberships
+    router.use(requireOrgContext(supabase));
+
     // ============================================================================
     // ACTIONS CRUD ENDPOINTS
     // ============================================================================
@@ -143,7 +147,7 @@ module.exports = function(supabase) {
             }
 
             // === PHASE 46: Organization filtering ===
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 // Show actions belonging to this org OR system actions (no org)
                 query = query.or(`org_id.eq.${orgId},org_id.is.null`);
@@ -220,7 +224,7 @@ module.exports = function(supabase) {
             const limit = Math.min(Math.max(1, parseInt(rawLimit) || 6), 20);
 
             // Phase 81: Scope featured to org
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             let featuredQuery = supabase
                 .from('actions')
                 .select('id, name, slug, description, icon, color, suite')
@@ -275,7 +279,7 @@ module.exports = function(supabase) {
 
             // Phase 81: Ownership/org check
             const userId = getUserId(req);
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             if (action.user_id && action.user_id !== userId &&
                 action.org_id !== orgId &&
                 !action.is_public) {
@@ -384,7 +388,7 @@ module.exports = function(supabase) {
             }
 
             const userId = getUserId(req);
-            const orgId = req.headers['x-org-id'] || req.body.org_id;
+            const orgId = req.verifiedOrgId;
 
             // Phase 44: Check organization resource limits
             if (orgId) {
@@ -489,7 +493,7 @@ module.exports = function(supabase) {
 
             const userId = getUserId(req);
             // Phase 81: org_id from requesting user, not template
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const actionName = name || template.name;
             const actionSlug = actionName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
 
@@ -836,7 +840,7 @@ module.exports = function(supabase) {
                 const runtimeResult = await unifiedRuntime.execute({
                     supabase,
                     module: 'actions',
-                    org_id: req.headers['x-org-id'] || null,
+                    org_id: req.verifiedOrgId,
                     user_id: userId,
                     department_id,
                     action_id: id,

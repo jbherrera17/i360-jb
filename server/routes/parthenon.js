@@ -12,6 +12,7 @@
 const express = require('express');
 const { randomUUID: uuidv4 } = require('crypto');
 const { getUserId } = require('../utils/auth');
+const { requireOrgContext } = require('../middleware/orgContext');
 
 /**
  * Parthenon Routes Factory
@@ -26,23 +27,8 @@ module.exports = function(supabase) {
     // Phase 81: Module gating — enforce tier/role access for parthenon module
     router.use(requireModule('parthenon'));
 
-    /**
-     * Resolve org_id from request: header → user's default_org_id
-     */
-    async function resolveOrgId(req) {
-        const orgId = req.headers['x-org-id'];
-        if (orgId) return orgId;
-        const userId = getUserId(req);
-        if (userId) {
-            const { data: userRow } = await supabase
-                .from('users')
-                .select('default_org_id')
-                .eq('id', userId)
-                .maybeSingle();
-            if (userRow?.default_org_id) return userRow.default_org_id;
-        }
-        return null;
-    }
+    // Phase 82: Multi-tenant org context — validate org membership on all routes
+    router.use(requireOrgContext(supabase));
 
     /**
      * Get department IDs belonging to an org
@@ -76,7 +62,7 @@ module.exports = function(supabase) {
                 .order('sort_order');
 
             // Org-scope: only show departments belonging to this org
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 query = query.eq('org_id', orgId);
             }
@@ -187,7 +173,7 @@ module.exports = function(supabase) {
             }
 
             const userId = getUserId(req);
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
 
             const departmentData = {
                 id: uuidv4(),
@@ -239,7 +225,7 @@ module.exports = function(supabase) {
             delete updates.created_at;
 
             // Phase 81: Verify org ownership before allowing update
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             const { data: existing } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
             if (!existing) {
                 return res.status(404).json({ success: false, error: 'Department not found' });
@@ -289,7 +275,7 @@ module.exports = function(supabase) {
             const { hard = 'false' } = req.query;
 
             // Phase 81: Verify org ownership before delete
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             const { data: dept } = await supabase.from('departments').select('org_id').eq('id', id).maybeSingle();
             if (!dept) {
                 return res.status(404).json({ success: false, error: 'Department not found' });
@@ -351,7 +337,7 @@ module.exports = function(supabase) {
                 .order('sort_order');
 
             // Org-scope: filter roles to departments in this org
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId && !department_id) {
                 const deptIds = await getOrgDepartmentIds(orgId);
                 if (deptIds.length > 0) {
@@ -538,7 +524,7 @@ module.exports = function(supabase) {
             delete updates.created_at;
 
             // Phase 81: Verify org ownership via dept->org chain
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 const { data: role } = await supabase.from('roles').select('department_id').eq('id', id).maybeSingle();
                 if (role?.department_id) {
@@ -639,7 +625,7 @@ module.exports = function(supabase) {
                 .order('created_at', { ascending: false });
 
             // Org-scope: filter OKRs to departments in this org
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId && !department_id) {
                 const deptIds = await getOrgDepartmentIds(orgId);
                 if (deptIds.length > 0) {
@@ -886,7 +872,7 @@ module.exports = function(supabase) {
             delete updates.created_at;
 
             // Phase 81: Verify org ownership via dept->org chain
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 const { data: okr } = await supabase.from('okrs').select('department_id').eq('id', id).maybeSingle();
                 if (okr?.department_id) {
@@ -986,7 +972,7 @@ module.exports = function(supabase) {
                 .order('name');
 
             // Org-scope: filter processes to departments in this org
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId && !department_id) {
                 const deptIds = await getOrgDepartmentIds(orgId);
                 if (deptIds.length > 0) {
@@ -1145,7 +1131,7 @@ module.exports = function(supabase) {
             delete updates.created_at;
 
             // Phase 81: Verify org ownership via dept->org chain
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 const { data: proc } = await supabase.from('processes').select('department_id').eq('id', id).maybeSingle();
                 if (proc?.department_id) {
@@ -1228,7 +1214,7 @@ module.exports = function(supabase) {
     router.get('/overview', async (req, res) => {
         try {
             // Phase 81: Scope overview counts to org
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
             let deptQuery = supabase.from('departments').select('*', { count: 'exact', head: true }).eq('is_active', true);
             if (orgId) deptQuery = deptQuery.eq('org_id', orgId);
 
@@ -1317,7 +1303,7 @@ module.exports = function(supabase) {
             }
 
             // Phase 81: Attach org_id so seeded departments belong to the requesting org
-            const orgId = await resolveOrgId(req);
+            const orgId = req.verifiedOrgId;
 
             // Create departments with is_seed=true and user_id=null (shared/system departments)
             const departmentsWithIds = newDepartments.map(dept => ({

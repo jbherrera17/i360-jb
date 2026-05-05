@@ -15,6 +15,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess, filterByBusinessRole } = require('../utils/resourceAccess');
 const anthropicService = require('../services/anthropic');
 const unifiedRuntime = require('../services/unifiedRuntime');
+const { requireOrgContext } = require('../middleware/orgContext');
 
 /**
  * Skills Routes Factory
@@ -29,6 +30,9 @@ module.exports = function(supabase) {
     // Phase 81: Module gating — enforce tier/role access for skills module
     router.use(requireModule('skills'));
 
+    // Phase 82: Enforce org context — validates x-org-id against user's memberships
+    router.use(requireOrgContext(supabase));
+
     // ============================================================================
     // SKILL CRUD ENDPOINTS
     // ============================================================================
@@ -40,7 +44,7 @@ module.exports = function(supabase) {
     router.get('/', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const {
                 category,
                 suite,
@@ -167,7 +171,7 @@ module.exports = function(supabase) {
             if (catError) throw catError;
 
             // Phase 81: Scope skill counts to org
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             let skillCountQuery = supabase
                 .from('skills')
                 .select('category, status');
@@ -231,7 +235,7 @@ module.exports = function(supabase) {
     router.get('/stats', async (req, res) => {
         try {
             // Phase 81: Scope stats to org
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             let statsQuery = supabase
                 .from('skills')
                 .select('id, status, category, suite');
@@ -291,7 +295,7 @@ module.exports = function(supabase) {
 
             // Phase 81: Ownership/org check
             const userId = req.userId || req.user?.id || null;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             if (skill.user_id && skill.user_id !== userId &&
                 skill.org_id !== orgId &&
                 skill.visibility !== 'public') {
@@ -383,7 +387,7 @@ module.exports = function(supabase) {
             const userId = req.user?.id || null;
 
             // Check organization resource limits (Phase 44)
-            const orgId = req.headers['x-org-id'] || req.body.org_id;
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 const { data: limits, error: limitError } = await supabase
                     .rpc('check_org_limits', {
@@ -498,7 +502,7 @@ module.exports = function(supabase) {
             }
 
             // Phase 81: Ownership/org check for update
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             if (current.user_id && current.user_id !== userId &&
                 current.org_id !== orgId) {
                 return res.status(403).json({ success: false, error: 'Access denied' });
@@ -594,7 +598,7 @@ module.exports = function(supabase) {
 
             // Phase 81: Fetch skill and verify ownership before delete
             const userId = req.userId || req.user?.id || null;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const { data: skillToDelete } = await supabase
                 .from('skills')
                 .select('user_id, org_id')
@@ -676,7 +680,7 @@ module.exports = function(supabase) {
             }
 
             // Phase 81: Verify access to source skill and set org_id from requesting user
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             if (original.user_id && original.user_id !== userId &&
                 original.org_id !== orgId &&
                 original.visibility !== 'public') {
@@ -1129,7 +1133,7 @@ module.exports = function(supabase) {
             const runtimeResult = await unifiedRuntime.execute({
                 supabase,
                 module: 'skills',
-                org_id: req.headers['x-org-id'] || null,
+                org_id: req.verifiedOrgId,
                 user_id: req.user?.id || req.userId || null,
                 skill_id: id,
                 quota_resource_type: 'skills',

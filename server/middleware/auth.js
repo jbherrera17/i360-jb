@@ -35,18 +35,13 @@ async function authenticate(req, res, next) {
     // Get Supabase client from request
     const supabase = req.supabase;
 
-    // If no Supabase configured in production, reject all requests
+    // If no Supabase configured, reject all requests
     if (!supabase) {
-        if (process.env.NODE_ENV === 'production') {
-            return res.status(503).json({
-                success: false,
-                error: 'Authentication service unavailable',
-                code: 'AUTH_UNAVAILABLE'
-            });
-        }
-        req.userId = null;
-        req.isAnonymous = true;
-        return next();
+        return res.status(503).json({
+            success: false,
+            error: 'Authentication service unavailable',
+            code: 'AUTH_UNAVAILABLE'
+        });
     }
 
     // Check for authorization header
@@ -58,18 +53,11 @@ async function authenticate(req, res, next) {
     const cookieToken = cookieTokenMatch ? cookieTokenMatch[1] : null;
 
     if (!authHeader && !cookieToken) {
-        // In production, reject unauthenticated API requests
-        if (process.env.NODE_ENV === 'production') {
-            return res.status(401).json({
-                success: false,
-                error: 'Authentication required',
-                code: 'AUTH_REQUIRED'
-            });
-        }
-        // In development, allow anonymous access for testing
-        req.userId = null;
-        req.isAnonymous = true;
-        return next();
+        return res.status(401).json({
+            success: false,
+            error: 'Authentication required',
+            code: 'AUTH_REQUIRED'
+        });
     }
 
     // Use cookie token if no Authorization header
@@ -85,16 +73,11 @@ async function authenticate(req, res, next) {
 
             if (error) {
                 console.warn('Auth token verification failed:', error.message);
-                if (process.env.NODE_ENV === 'production') {
-                    return res.status(401).json({
-                        success: false,
-                        error: 'Invalid or expired token',
-                        code: 'TOKEN_INVALID'
-                    });
-                }
-                req.userId = null;
-                req.userRole = null;
-                req.isAnonymous = true;
+                return res.status(401).json({
+                    success: false,
+                    error: 'Invalid or expired token',
+                    code: 'TOKEN_INVALID'
+                });
             } else {
                 req.userId = user.id;
                 req.user = user;
@@ -161,16 +144,11 @@ async function authenticate(req, res, next) {
             }
         } catch (error) {
             console.error('Auth error:', error);
-            if (process.env.NODE_ENV === 'production') {
-                return res.status(401).json({
-                    success: false,
-                    error: 'Authentication failed',
-                    code: 'AUTH_ERROR'
-                });
-            }
-            req.userId = null;
-            req.userRole = null;
-            req.isAnonymous = true;
+            return res.status(401).json({
+                success: false,
+                error: 'Authentication failed',
+                code: 'AUTH_ERROR'
+            });
         }
     }
 

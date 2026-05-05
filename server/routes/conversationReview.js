@@ -12,14 +12,16 @@ const logger = require('../services/logger');
 module.exports = function (supabase) {
     const router = express.Router();
     const { requireModule } = createModuleAccessMiddleware(supabase);
+    const { requireOrgContext } = require('../middleware/orgContext');
 
     router.use(requireModule('embeddable_chat'));
+    router.use(requireOrgContext(supabase));
 
     // ── LIST WIDGET CONVERSATIONS ────────────────────────────
 
     router.get('/', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             let query = supabase
@@ -55,7 +57,7 @@ module.exports = function (supabase) {
 
     router.get('/search', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             const query = req.query.q;
@@ -138,7 +140,7 @@ module.exports = function (supabase) {
 
     router.get('/export/csv', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             let query = supabase
@@ -184,7 +186,7 @@ module.exports = function (supabase) {
 
     router.get('/export/json', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             let query = supabase
@@ -225,7 +227,7 @@ module.exports = function (supabase) {
 
     router.post('/export-to-asset', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.user?.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) return res.status(400).json({ error: 'org_id required' });
 
             const { conversation_ids, asset_name, asset_id } = req.body;

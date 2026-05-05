@@ -11,14 +11,16 @@ const createModuleAccessMiddleware = require('../middleware/moduleAccess');
 module.exports = function (supabase) {
     const router = express.Router();
     const { requireModule } = createModuleAccessMiddleware(supabase);
+    const { requireOrgContext } = require('../middleware/orgContext');
 
     // All routes require support_ai module
     router.use(requireModule('support_ai'));
+    router.use(requireOrgContext(supabase));
 
     // ── LIST ACTIONS ─────────────────────────────────────────
     router.get('/', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) {
                 return res.status(400).json({ success: false, error: 'org_id is required' });
             }

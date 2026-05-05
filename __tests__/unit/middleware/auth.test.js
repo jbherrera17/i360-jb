@@ -77,27 +77,27 @@ describe('Auth Middleware', () => {
     });
 
     describe('no Supabase configured', () => {
-      test('should allow anonymous access when Supabase is not configured', async () => {
+      test('should reject with 503 when Supabase is not configured', async () => {
         req.supabase = null;
         req.path = '/api/agents';
 
         await authenticate(req, res, next);
 
-        expect(next).toHaveBeenCalled();
-        expect(req.userId).toBeNull();
-        expect(req.isAnonymous).toBe(true);
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(503);
+        expect(res._json.code).toBe('AUTH_UNAVAILABLE');
       });
     });
 
     describe('no authorization header', () => {
-      test('should allow anonymous access without auth header', async () => {
+      test('should reject with 401 without auth header', async () => {
         req.path = '/api/agents';
 
         await authenticate(req, res, next);
 
-        expect(next).toHaveBeenCalled();
-        expect(req.userId).toBeNull();
-        expect(req.isAnonymous).toBe(true);
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res._json.code).toBe('AUTH_REQUIRED');
       });
 
       test('should NOT accept x-user-id header (security fix)', async () => {
@@ -106,9 +106,9 @@ describe('Auth Middleware', () => {
 
         await authenticate(req, res, next);
 
-        expect(next).toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(req.userId).toBeNull();
-        expect(req.isAnonymous).toBe(true);
       });
     });
 
@@ -119,14 +119,24 @@ describe('Auth Middleware', () => {
           data: { user: mockUser },
           error: null
         });
-        mockSupabase.from.mockReturnValue({
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          single: jest.fn().mockResolvedValue({
-            data: { role: 'admin' },
-            error: null
-          })
+        // Mock the two .from() lookups: users (default_org_id), organization_members (role)
+        mockSupabase.from.mockImplementation((table) => {
+          const builder = {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn()
+          };
+          if (table === 'users') {
+            builder.single.mockResolvedValue({ data: { default_org_id: 'org-123' }, error: null });
+          } else if (table === 'organization_members') {
+            builder.single.mockResolvedValue({ data: { role: 'admin', business_role: 'executive' }, error: null });
+          } else {
+            builder.single.mockResolvedValue({ data: null, error: null });
+          }
+          return builder;
         });
+        // Mock is_platform_admin rpc
+        mockSupabase.rpc = jest.fn().mockResolvedValue({ data: false, error: null });
 
         req.path = '/api/agents';
         req.headers.authorization = `Bearer ${testTokens.validToken}`;
@@ -136,6 +146,11 @@ describe('Auth Middleware', () => {
         expect(next).toHaveBeenCalled();
         expect(req.userId).toBe('user-123');
         expect(req.user).toEqual(mockUser);
+        expect(req.orgId).toBe('org-123');
+        expect(req.orgRole).toBe('admin');
+        expect(req.businessRole).toBe('executive');
+        expect(req.isPlatformAdmin).toBe(false);
+        // Legacy compat: userRole derived from orgRole
         expect(req.userRole).toBe('admin');
         expect(req.isAnonymous).toBe(false);
       });
@@ -161,7 +176,7 @@ describe('Auth Middleware', () => {
         expect(req.userRole).toBe('user');
       });
 
-      test('should handle invalid token gracefully', async () => {
+      test('should reject with 401 on invalid token', async () => {
         mockSupabase.auth.getUser.mockResolvedValue({
           data: { user: null },
           error: { message: 'Invalid token' }
@@ -172,12 +187,12 @@ describe('Auth Middleware', () => {
 
         await authenticate(req, res, next);
 
-        expect(next).toHaveBeenCalled();
-        expect(req.userId).toBeNull();
-        expect(req.isAnonymous).toBe(true);
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res._json.code).toBe('TOKEN_INVALID');
       });
 
-      test('should handle auth.getUser throwing error', async () => {
+      test('should reject with 401 when auth.getUser throws', async () => {
         mockSupabase.auth.getUser.mockRejectedValue(new Error('Network error'));
 
         req.path = '/api/agents';
@@ -185,9 +200,9 @@ describe('Auth Middleware', () => {
 
         await authenticate(req, res, next);
 
-        expect(next).toHaveBeenCalled();
-        expect(req.userId).toBeNull();
-        expect(req.isAnonymous).toBe(true);
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res._json.code).toBe('AUTH_ERROR');
       });
     });
   });
@@ -279,7 +294,7 @@ describe('Auth Middleware', () => {
   describe('requireAdmin', () => {
     test('should allow admin user', () => {
       req.userId = 'admin-123';
-      req.userRole = 'admin';
+      req.orgRole = 'admin';
       req.isAnonymous = false;
 
       requireAdmin(req, res, next);
@@ -289,7 +304,7 @@ describe('Auth Middleware', () => {
 
     test('should reject non-admin user', () => {
       req.userId = 'user-123';
-      req.userRole = 'user';
+      req.orgRole = 'user';
       req.isAnonymous = false;
 
       requireAdmin(req, res, next);
@@ -320,14 +335,14 @@ describe('Auth Middleware', () => {
       requireAdmin(req, res, next);
 
       expect(next).toHaveBeenCalled();
-      expect(req.userRole).toBe('admin');
+      expect(req.isPlatformAdmin).toBe(true);
     });
   });
 
   describe('requireRole', () => {
     test('should allow user with matching role', () => {
       req.userId = 'user-123';
-      req.userRole = 'editor';
+      req.orgRole = 'editor';
       req.isAnonymous = false;
 
       const middleware = requireRole('admin', 'editor');
@@ -338,7 +353,7 @@ describe('Auth Middleware', () => {
 
     test('should reject user without matching role', () => {
       req.userId = 'user-123';
-      req.userRole = 'viewer';
+      req.orgRole = 'viewer';
       req.isAnonymous = false;
 
       const middleware = requireRole('admin', 'editor');
@@ -350,7 +365,7 @@ describe('Auth Middleware', () => {
 
     test('should work with single role', () => {
       req.userId = 'user-123';
-      req.userRole = 'admin';
+      req.orgRole = 'admin';
       req.isAnonymous = false;
 
       const middleware = requireRole('admin');
@@ -392,8 +407,9 @@ describe('Auth Middleware', () => {
 
   describe('canEditAgent', () => {
     test('admin can edit any agent', () => {
-      expect(canEditAgent('admin', 'any-user', testAgents.systemAgent)).toBe(true);
-      expect(canEditAgent('admin', 'any-user', testAgents.userAgent)).toBe(true);
+      const adminReq = { isPlatformAdmin: true };
+      expect(canEditAgent('admin', 'any-user', testAgents.systemAgent, adminReq)).toBe(true);
+      expect(canEditAgent('admin', 'any-user', testAgents.userAgent, adminReq)).toBe(true);
     });
 
     test('non-admin cannot edit system agents', () => {
@@ -414,7 +430,8 @@ describe('Auth Middleware', () => {
   describe('canDeleteAgent', () => {
     test('should follow same rules as canEditAgent', () => {
       // Admin can delete anything
-      expect(canDeleteAgent('admin', 'any-user', testAgents.systemAgent)).toBe(true);
+      const adminReq = { isPlatformAdmin: true };
+      expect(canDeleteAgent('admin', 'any-user', testAgents.systemAgent, adminReq)).toBe(true);
 
       // User can delete own agent
       const ownAgent = { ...testAgents.userAgent, user_id: 'user-123' };

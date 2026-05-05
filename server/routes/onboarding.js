@@ -22,6 +22,10 @@ const { getUserId } = require('../utils/auth');
  */
 module.exports = function(supabase) {
     const router = express.Router();
+    const { requireOrgContext } = require('../middleware/orgContext');
+
+    // Validate org membership on all routes
+    router.use(requireOrgContext(supabase));
 
     /**
      * GET /api/onboarding/state

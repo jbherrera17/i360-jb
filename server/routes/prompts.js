@@ -28,9 +28,11 @@ module.exports = function(supabase) {
     const router = express.Router();
     const createModuleAccessMiddleware = require('../middleware/moduleAccess');
     const { requireModule } = createModuleAccessMiddleware(supabase);
+    const { requireOrgContext } = require('../middleware/orgContext');
 
     // Module gating — prompt transformer is accessed from chat.html (Higgins module, all tiers)
     router.use(requireModule('higgins'));
+    router.use(requireOrgContext(supabase));
 
     // ============================================================================
     // CONSTANTS & TEMPLATES

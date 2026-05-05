@@ -12,14 +12,16 @@ const supportAgentService = require('../services/supportAgentService');
 module.exports = function (supabase) {
     const router = express.Router();
     const { requireModule, checkResourceLimit } = createModuleAccessMiddleware(supabase);
+    const { requireOrgContext } = require('../middleware/orgContext');
 
     // All routes require support_ai module
     router.use(requireModule('support_ai'));
+    router.use(requireOrgContext(supabase));
 
     // ── CREATE CONVERSATION ──────────────────────────────────
     router.post('/', checkResourceLimit('support_conversations'), async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.body?.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) {
                 return res.status(400).json({ success: false, error: 'org_id is required' });
             }
@@ -68,7 +70,7 @@ module.exports = function (supabase) {
     // ── LIST CONVERSATIONS ───────────────────────────────────
     router.get('/', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) {
                 return res.status(400).json({ success: false, error: 'org_id is required' });
             }
@@ -96,7 +98,7 @@ module.exports = function (supabase) {
     // NOTE: Must be registered BEFORE /:id to avoid Express treating "metrics" as a conversation ID
     router.get('/metrics/dashboard', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.query.org_id;
+            const orgId = req.verifiedOrgId;
             if (!orgId) {
                 return res.status(400).json({ success: false, error: 'org_id is required' });
             }
@@ -194,7 +196,7 @@ module.exports = function (supabase) {
     // ── SEND MESSAGE (triggers AI response) ──────────────────
     router.post('/:id/messages', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.body?.org_id;
+            const orgId = req.verifiedOrgId;
             const { message } = req.body;
 
             if (!message || typeof message !== 'string' || message.trim().length === 0) {

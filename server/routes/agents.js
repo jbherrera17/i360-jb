@@ -17,6 +17,7 @@ const { generateSignedEmbedUrl } = require('../services/mindstudioService');
 const { canEditAgent, canDeleteAgent } = require('../middleware/auth');
 const { buildAgentAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
 const { getVerifiedOrgId } = require('../utils/orgScope');
+const { requireOrgContext } = require('../middleware/orgContext');
 
 /**
  * Agent Routes Factory
@@ -30,6 +31,9 @@ module.exports = function(supabase) {
 
     // Phase 81: Module gating — enforce tier/role access for agents module
     router.use(requireModule('agents'));
+
+    // Phase 82: Multi-tenant org context — validate org membership on all routes
+    router.use(requireOrgContext(supabase));
 
     // Phase 82: Helper to verify agent belongs to the requesting user's org
     async function verifyAgentOrgOwnership(req, res, agentId) {
@@ -71,7 +75,7 @@ module.exports = function(supabase) {
     router.get('/', async (req, res) => {
         try {
             const userId = req.userId;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const {
                 category,
                 suite,
@@ -197,7 +201,7 @@ module.exports = function(supabase) {
      */
     router.get('/suites', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             // Phase 81: Scope suites to org
             let suitesQuery = supabase
@@ -490,7 +494,7 @@ module.exports = function(supabase) {
      */
     router.get('/departments', async (req, res) => {
         try {
-            const orgId = req.query.org_id || req.headers['x-org-id'] || req.orgId;
+            const orgId = req.verifiedOrgId;
 
             let query = supabase
                 .from('departments')
@@ -528,7 +532,7 @@ module.exports = function(supabase) {
      */
     router.get('/stats', async (req, res) => {
         try {
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
 
             // Phase 81: Scope stats to org
             let query = supabase
@@ -594,7 +598,7 @@ module.exports = function(supabase) {
 
             // Phase 81: Ownership/org check
             const userId = req.userId || null;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             if (agent.user_id && agent.user_id !== userId &&
                 agent.org_id !== orgId &&
                 agent.visibility !== 'public') {
@@ -701,7 +705,7 @@ module.exports = function(supabase) {
             const userId = req.userId || null;
 
             // Check organization resource limits (Phase 44)
-            const orgId = req.headers['x-org-id'] || req.body.org_id;
+            const orgId = req.verifiedOrgId;
             if (orgId) {
                 const { data: limits, error: limitError } = await supabase
                     .rpc('check_org_limits', {
@@ -999,7 +1003,7 @@ module.exports = function(supabase) {
 
             // Create duplicate with lineage tracking
             const userId = req.userId || null;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const now = new Date().toISOString();
 
             // Phase 81: Verify user can access source agent
@@ -1537,7 +1541,7 @@ module.exports = function(supabase) {
             const runtimeResult = await unifiedRuntime.execute({
                 supabase,
                 module: 'agents',
-                org_id: req.headers['x-org-id'] || null,
+                org_id: req.verifiedOrgId,
                 user_id: userId,
                 agent_id: id,
                 quota_resource_type: 'agents',
@@ -1636,7 +1640,7 @@ module.exports = function(supabase) {
             await unifiedRuntime.stream({
                 supabase,
                 module: 'agents',
-                org_id: req.headers['x-org-id'] || null,
+                org_id: req.verifiedOrgId,
                 user_id: userId,
                 agent_id: id,
                 quota_resource_type: 'agents',
@@ -1765,7 +1769,7 @@ module.exports = function(supabase) {
 
             // Phase 81: Verify user can access this agent before showing executions
             const userId = req.userId || null;
-            const orgId = req.headers['x-org-id'] || req.orgId || null;
+            const orgId = req.verifiedOrgId;
             const { data: agent } = await supabase
                 .from('agents')
                 .select('user_id, org_id, visibility')
