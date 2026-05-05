@@ -70,6 +70,12 @@
       "rules": {
         "no-raw-fetch/no-raw-fetch": "off"
       }
+    },
+    {
+      "files": ["public/js/chat.js", "public/js/chat/*.js"],
+      "rules": {
+        "no-undef": "off"
+      }
     }
   ]
 }

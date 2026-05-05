@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/loading-spinner.css">
     <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/chat-messages.css">
     <script src="/js/auth-fetch-loader.js"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/llm-health.js"></script>
@@ -810,7 +811,22 @@
     <script src="/js/supabase.js"></script>
     <!-- Loading messages for rotating text -->
     <script src="/js/loading-messages.js"></script>
-    <!-- Then load chat functionality -->
+    <!-- Chat functionality (split into focused modules — load order matters) -->
+    <!-- 1. State + utils first -->
+    <script src="/js/chat/_state.js"></script>
+    <script src="/js/chat/utils.js"></script>
+    <!-- 2. Feature modules (define functions; may reference state) -->
+    <script src="/js/chat/image-generation.js"></script>
+    <script src="/js/chat/auth-context.js"></script>
+    <script src="/js/chat/models.js"></script>
+    <script src="/js/chat/messages.js"></script>
+    <script src="/js/chat/files.js"></script>
+    <script src="/js/chat/send-message.js"></script>
+    <script src="/js/chat/conversations.js"></script>
+    <script src="/js/chat/artifact.js"></script>
+    <script src="/js/chat/voice.js"></script>
+    <!-- 3. Setup helpers + orchestrator (DOMContentLoaded init) -->
+    <script src="/js/chat/setup.js"></script>
     <script src="/js/chat.js"></script>
     <!-- Modal service for asset creation -->
     <script src="/js/modal-service/loader.js" data-auto-load></script>
