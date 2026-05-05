@@ -34,6 +34,8 @@ const anthropic = new Anthropic({
 
 // ── Model Configuration ─────────────────────────────────────
 
+// Widget-specific model IDs — keep aligned with llmRegistry.js model catalog
+// Haiku for cost-efficient FAQ responses, Sonnet for complex multi-turn conversations
 const HAIKU_MODEL = 'claude-haiku-4-5-20251001';
 const SONNET_MODEL = 'claude-sonnet-4-20250514';
 const MAX_TOOL_ITERATIONS = 3; // Lower than support (5) — simpler interactions
@@ -445,12 +447,13 @@ async function checkAndUpdateUsage(widgetId, limits, estimatedCost) {
  *
  * @param {object} params
  * @param {string} params.widgetId - Widget UUID
- * @param {string} params.sessionId - Session UUID
+ * @param {string} params.sessionId - Conversation UUID (support_conversations.id)
+ * @param {string} params.widgetSessionId - Widget session UUID (widget_sessions.id) for sliding expiry
  * @param {string} params.message - Visitor's message (raw)
  * @param {object} params.widgetConfig - Widget configuration row
  * @returns {object} { response, model, toolCalls, blocked, degraded, cost }
  */
-async function processMessage({ widgetId, sessionId, message, widgetConfig, onChunk }) {
+async function processMessage({ widgetId, sessionId, widgetSessionId, message, widgetConfig, onChunk }) {
     const orgId = widgetConfig.org_id;
 
     // Step 1: Message length check [SEC-14]
@@ -501,7 +504,10 @@ async function processMessage({ widgetId, sessionId, message, widgetConfig, onCh
         });
 
     // Step 5: Extend session expiry (sliding window)
-    await supabase.rpc('extend_widget_session', { p_session_id: sessionId });
+    // Use widgetSessionId (widget_sessions.id), NOT sessionId (support_conversations.id)
+    if (widgetSessionId) {
+        await supabase.rpc('extend_widget_session', { p_session_id: widgetSessionId });
+    }
 
     // Step 6: Check usage limits
     const usageCheck = await checkAndUpdateUsage(widgetId, widgetConfig.limits || {}, 0);

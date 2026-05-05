@@ -341,6 +341,7 @@ module.exports = function (supabase) {
             const result = await widgetAgentService.processMessage({
                 widgetId,
                 sessionId: session_id,
+                widgetSessionId: sessionData.metadata?.widget_session_id || null,
                 message,
                 widgetConfig: widget,
                 onChunk

@@ -163,11 +163,13 @@
             // Remove typing indicator and show final response
             if (typingEl) removeTyping(typingEl);
             if (streamingMsgEl) {
-                // Update streaming message with final filtered content
-                streamingMsgEl.innerHTML = escapeHtml(fullResponse)
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-                    .replace(/\n/g, '<br>');
+                // Update streaming message with final filtered content + rich cards
+                streamingMsgEl.innerHTML = formatRichContent(
+                    escapeHtml(fullResponse)
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                        .replace(/\n/g, '<br>')
+                );
                 chatMessages.push({ role: 'assistant', content: fullResponse });
                 saveSession();
                 emitEvent('message', { role: 'assistant', content: fullResponse });
@@ -410,6 +412,50 @@
                     align-self: center;
                 }
                 .i360-error { color: #dc2626; font-size: 12px; }
+                /* Rich content cards (video + Calendly) */
+                .i360-video-card {
+                    display: flex; align-items: center; gap: 10px;
+                    background: #f8f9fa; border: 1px solid #e5e5e5;
+                    border-radius: 10px; padding: 10px 12px;
+                    margin: 6px 0; text-decoration: none; color: inherit;
+                    transition: background 0.15s;
+                }
+                .i360-video-card:hover { background: #eef0f4; }
+                .i360-video-card-icon {
+                    width: 40px; height: 40px; border-radius: 8px;
+                    background: #1ab7ea; display: flex; align-items: center;
+                    justify-content: center; flex-shrink: 0;
+                }
+                .i360-video-card-icon svg { width: 20px; height: 20px; fill: white; }
+                .i360-video-card-text {
+                    font-size: 13px; font-weight: 500; color: #333;
+                    flex: 1; line-height: 1.3;
+                }
+                .i360-video-card-label {
+                    font-size: 10px; color: #888; text-transform: uppercase;
+                    letter-spacing: 0.5px; margin-top: 2px;
+                }
+                .i360-calendly-card {
+                    display: flex; flex-direction: column; gap: 8px;
+                    background: #f0f7ff; border: 1px solid #cce0ff;
+                    border-radius: 10px; padding: 12px 14px;
+                    margin: 6px 0;
+                }
+                .i360-calendly-card-header {
+                    display: flex; align-items: center; gap: 8px;
+                    font-size: 14px; font-weight: 600; color: #1a5276;
+                }
+                .i360-calendly-card-header svg { width: 18px; height: 18px; fill: #1a5276; }
+                .i360-calendly-card p { margin: 0; font-size: 12px; color: #555; }
+                .i360-calendly-btn {
+                    display: inline-block; padding: 8px 16px;
+                    background: ${primaryColor}; color: white;
+                    border: none; border-radius: 6px;
+                    font-size: 13px; font-weight: 600;
+                    cursor: pointer; text-decoration: none;
+                    text-align: center; transition: opacity 0.15s;
+                }
+                .i360-calendly-btn:hover { opacity: 0.9; }
                 /* Mobile responsive */
                 @media (max-width: 480px) {
                     #i360-chat-window {
@@ -513,20 +559,31 @@
         let html = '<h4>Welcome!</h4>';
         html += '<p>You are chatting with an AI assistant. This AI does not provide medical diagnoses or replace professional medical advice.</p>';
 
-        // Email field
-        if (fields.email?.enabled !== false && mode !== 'open_chat') {
-            const req = fields.email?.required ? 'required' : '';
-            const label = fields.email?.label || 'Email';
-            const placeholder = fields.email?.placeholder || 'your@email.com';
-            html += `<label>${label}${req ? ' *' : ''}<input type="email" id="i360-email" placeholder="${placeholder}" ${req}></label>`;
-        }
+        if (mode === 'custom') {
+            // Custom mode: iterate all configured fields generically
+            for (const [key, fieldConfig] of Object.entries(fields)) {
+                if (!fieldConfig?.enabled) continue;
+                const req = fieldConfig.required ? 'required' : '';
+                const label = fieldConfig.label || key;
+                const placeholder = fieldConfig.placeholder || '';
+                const inputType = key === 'email' ? 'email' : (fieldConfig.type || 'text');
+                html += `<label>${label}${req ? ' *' : ''}<input type="${inputType}" id="i360-field-${key}" data-field="${key}" placeholder="${placeholder}" ${req} class="i360-custom-field"></label>`;
+            }
+        } else {
+            // Standard modes: email + name fields
+            if (fields.email?.enabled !== false) {
+                const req = fields.email?.required ? 'required' : '';
+                const label = fields.email?.label || 'Email';
+                const placeholder = fields.email?.placeholder || 'your@email.com';
+                html += `<label>${label}${req ? ' *' : ''}<input type="email" id="i360-email" placeholder="${placeholder}" ${req}></label>`;
+            }
 
-        // Name field
-        if (fields.name?.enabled !== false && mode !== 'open_chat') {
-            const req = fields.name?.required ? 'required' : '';
-            const label = fields.name?.label || 'Name';
-            const placeholder = fields.name?.placeholder || 'Your name';
-            html += `<label>${label}${req ? ' *' : ''}<input type="text" id="i360-name" placeholder="${placeholder}" ${req}></label>`;
+            if (fields.name?.enabled !== false) {
+                const req = fields.name?.required ? 'required' : '';
+                const label = fields.name?.label || 'Name';
+                const placeholder = fields.name?.placeholder || 'Your name';
+                html += `<label>${label}${req ? ' *' : ''}<input type="text" id="i360-name" placeholder="${placeholder}" ${req}></label>`;
+            }
         }
 
         // Consent checkbox
@@ -562,32 +619,59 @@
         errorEl.textContent = '';
 
         const preChatConfig = widgetConfig.pre_chat || {};
+        const mode = preChatConfig.mode || 'lead_capture';
         const fields = preChatConfig.fields || {};
-
-        const emailEl = document.getElementById('i360-email');
-        const nameEl = document.getElementById('i360-name');
         const consentEl = document.getElementById('i360-consent');
 
-        // Validate required fields
-        if (fields.email?.required && emailEl && !emailEl.value.trim()) {
-            errorEl.textContent = 'Email is required.';
-            return;
-        }
-        if (fields.name?.required && nameEl && !nameEl.value.trim()) {
-            errorEl.textContent = 'Name is required.';
-            return;
-        }
+        // Consent validation (all modes)
         if (preChatConfig.show_consent_checkbox !== false && consentEl && !consentEl.checked) {
             errorEl.textContent = 'Please agree to the privacy policy to continue.';
             return;
         }
 
-        const formData = {
-            email: emailEl?.value?.trim() || undefined,
-            name: nameEl?.value?.trim() || undefined,
-            consent: consentEl ? consentEl.checked : true,
-            fingerprint: generateFingerprint()
-        };
+        let formData;
+
+        if (mode === 'custom') {
+            // Custom mode: collect all custom fields
+            formData = { consent: consentEl ? consentEl.checked : true, fingerprint: generateFingerprint() };
+            const customFields = document.querySelectorAll('.i360-custom-field');
+            for (const input of customFields) {
+                const key = input.dataset.field;
+                const fieldConfig = fields[key];
+                if (fieldConfig?.required && !input.value.trim()) {
+                    errorEl.textContent = `${fieldConfig.label || key} is required.`;
+                    return;
+                }
+                if (input.value.trim()) {
+                    if (key === 'email') formData.email = input.value.trim();
+                    else if (key === 'name') formData.name = input.value.trim();
+                    else {
+                        formData.metadata = formData.metadata || {};
+                        formData.metadata[key] = input.value.trim();
+                    }
+                }
+            }
+        } else {
+            // Standard modes: email + name
+            const emailEl = document.getElementById('i360-email');
+            const nameEl = document.getElementById('i360-name');
+
+            if (fields.email?.required && emailEl && !emailEl.value.trim()) {
+                errorEl.textContent = 'Email is required.';
+                return;
+            }
+            if (fields.name?.required && nameEl && !nameEl.value.trim()) {
+                errorEl.textContent = 'Name is required.';
+                return;
+            }
+
+            formData = {
+                email: emailEl?.value?.trim() || undefined,
+                name: nameEl?.value?.trim() || undefined,
+                consent: consentEl ? consentEl.checked : true,
+                fingerprint: generateFingerprint()
+            };
+        }
 
         const startBtn = document.getElementById('i360-start-btn');
         startBtn.disabled = true;
@@ -637,6 +721,50 @@
 
     // ── Message Handling ─────────────────────────────────────
 
+    /**
+     * Transform plain-text links into rich content cards (video + Calendly).
+     * Applied to assistant messages after basic markdown formatting.
+     */
+    function formatRichContent(html) {
+        // Vimeo video cards
+        html = html.replace(
+            /<a href="(https?:\/\/(?:www\.)?vimeo\.com\/(\d+)[^"]*)"[^>]*>([^<]*)<\/a>/gi,
+            (match, url, videoId, linkText) => {
+                const title = linkText || 'Watch Video';
+                return `<a href="${url}" target="_blank" rel="noopener" class="i360-video-card">
+                    <div class="i360-video-card-icon"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+                    <div><div class="i360-video-card-text">${escapeHtml(title)}</div><div class="i360-video-card-label">Vimeo Video</div></div>
+                </a>`;
+            }
+        );
+
+        // YouTube video cards
+        html = html.replace(
+            /<a href="(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^"]+)"[^>]*>([^<]*)<\/a>/gi,
+            (match, url, linkText) => {
+                const title = linkText || 'Watch Video';
+                return `<a href="${url}" target="_blank" rel="noopener" class="i360-video-card">
+                    <div class="i360-video-card-icon" style="background:#ff0000"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+                    <div><div class="i360-video-card-text">${escapeHtml(title)}</div><div class="i360-video-card-label">YouTube Video</div></div>
+                </a>`;
+            }
+        );
+
+        // Calendly booking cards
+        html = html.replace(
+            /<a href="(https?:\/\/calendly\.com\/[^"]+)"[^>]*>([^<]*)<\/a>/gi,
+            (match, url, linkText) => {
+                return `<div class="i360-calendly-card">
+                    <div class="i360-calendly-card-header"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>Book a Consultation</div>
+                    <p>Schedule a time that works for you.</p>
+                    <a href="${url}" target="_blank" rel="noopener" class="i360-calendly-btn">Schedule Now</a>
+                </div>`;
+            }
+        );
+
+        return html;
+    }
+
     function appendMessage(role, content) {
         const messagesEl = document.getElementById('i360-messages');
         const msgEl = document.createElement('div');
@@ -647,6 +775,11 @@
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
             .replace(/\n/g, '<br>');
+
+        // Rich content cards for assistant messages (video, Calendly)
+        if (role === 'assistant') {
+            formatted = formatRichContent(formatted);
+        }
 
         msgEl.innerHTML = formatted;
         messagesEl.appendChild(msgEl);
