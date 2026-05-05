@@ -38,8 +38,7 @@ const navConfig = {
                 { href: '/context.html', icon: 'database', label: 'Context Assets' },
                 { href: '/actions.html', icon: 'zap', label: 'Actions' },
                 { href: '/skills.html', icon: 'wand-2', label: 'Skills' },
-                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' },
-                { href: '/prompt-editor.html', icon: 'file-code', label: 'Prompt Transformer' }
+                { href: '/workflows.html', icon: 'git-branch', label: 'Workflows' }
             ]
         },
         {

@@ -53,7 +53,7 @@ async function mcpRequest(method, params = {}) {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
-            'Authorization': `Bearer ${MCP_KEY}`,
+            'x-brain-key': MCP_KEY,
             'Content-Length': Buffer.byteLength(body)
         }
     };
