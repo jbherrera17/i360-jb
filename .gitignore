@@ -108,6 +108,7 @@ synergi website/
 .claude/agent-memory/
 .claude/agents/
 .claude/*.lock
+.claude/*.bak.*
 
 # Secrets (various formats)
 secrets/
