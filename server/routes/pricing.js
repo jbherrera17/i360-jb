@@ -2,11 +2,18 @@
  * Public Pricing API Routes
  * Serves tier and module pricing data for public-facing pricing pages.
  * These endpoints are unauthenticated (whitelisted in auth middleware).
+ *
+ * Phase 87 (REQ-003) rewrite: sources from tier_module_access matrix
+ * + marketing-copy fields. Filters WHERE is_public = TRUE so legacy
+ * tiers (agency_starter/professional/enterprise, platform) and any
+ * future internal tiers are excluded from the public payload.
+ *
+ * IMPORTANT: this route is the source the websiteSyncService payload
+ * mirrors. It must NEVER read from organizations or org_*_overrides.
  */
 
 const express = require('express');
 
-// Nav group alias mapping (matches navigation.js lines 158-161)
 const NAV_GROUP_ALIASES = {
     'systems': 'ai-systems',
     'components': 'ai-systems',
@@ -14,16 +21,14 @@ const NAV_GROUP_ALIASES = {
 };
 
 const NAV_GROUP_LABELS = {
-    'primary': 'Primary',
+    'primary': 'Core Platform',
     'ai-systems': 'AI 360 Systems',
     'dashboards': 'Dashboards',
     'modules': 'Modules',
     'agency': 'Agency',
-    'admin': 'Administration'
+    'admin': 'Administration',
+    'other': 'Other'
 };
-
-// Tier ordering for comparison
-const TIER_ORDER = ['starter', 'business', 'enterprise', 'agency_starter', 'agency_professional', 'agency_enterprise'];
 
 function resolveNavGroup(dbNavGroup) {
     return NAV_GROUP_ALIASES[dbNavGroup] || dbNavGroup || 'other';
@@ -34,24 +39,24 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/pricing/tiers
-     * Returns all active subscription tiers with prices, limits, and features.
+     * Returns the four public subscription tiers with prices, limits,
+     * features, and marketing-copy fields. Filters by is_public=TRUE
+     * so legacy / internal tiers never appear.
      */
     router.get('/tiers', async (req, res) => {
         try {
             const { data, error } = await supabase
                 .from('subscription_tiers')
-                .select('*')
+                .select('id, name, description, tagline, target_customer, tier_group, display_order, price_monthly, price_yearly, max_members, max_clients, max_agents, max_workflows, max_skills, max_context_assets, max_research_studios, max_monthly_api_calls, max_storage_gb, features, feature_highlights, cta_label, cta_url, is_featured')
+                .eq('is_public', true)
                 .eq('is_active', true)
                 .order('display_order');
 
             if (error) throw error;
 
-            // Filter out platform-internal tier
-            const tiers = (data || []).filter(t => t.id !== 'platform');
-
             res.json({
                 success: true,
-                data: tiers
+                data: data || []
             });
         } catch (error) {
             console.error('Error fetching pricing tiers:', error);
@@ -64,7 +69,10 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/pricing/modules
-     * Returns all active modules grouped by nav_group with tier requirements and addon pricing.
+     * All active modules grouped by nav_group. Includes addon pricing
+     * fields from the legacy platform_modules columns for backwards
+     * compatibility, but the authoritative per-tier pricing now lives
+     * in /comparison (sourced from tier_module_access).
      */
     router.get('/modules', async (req, res) => {
         try {
@@ -78,7 +86,6 @@ module.exports = function(supabase) {
 
             const modules = data || [];
 
-            // Group by resolved nav_group
             const grouped = {};
             for (const mod of modules) {
                 const group = resolveNavGroup(mod.nav_group);
@@ -104,10 +111,7 @@ module.exports = function(supabase) {
 
             res.json({
                 success: true,
-                data: {
-                    modules,
-                    grouped
-                }
+                data: { modules, grouped }
             });
         } catch (error) {
             console.error('Error fetching pricing modules:', error);
@@ -120,38 +124,49 @@ module.exports = function(supabase) {
 
     /**
      * GET /api/pricing/comparison
-     * Returns a tier x module matrix showing which tier includes which modules.
+     * Tier × module matrix using the authoritative tier_module_access
+     * source. Returns per-cell access type ('core' | 'optional' | 'none')
+     * with addon prices and per-cell descriptions where applicable.
+     *
+     * Restricted to public tiers + active modules. Cells with no row in
+     * tier_module_access are returned as 'none' so the matrix is dense.
      */
     router.get('/comparison', async (req, res) => {
         try {
-            // Fetch tiers and modules in parallel
-            const [tiersResult, modulesResult] = await Promise.all([
+            const [tiersResult, modulesResult, matrixResult] = await Promise.all([
                 supabase
                     .from('subscription_tiers')
-                    .select('id, name, display_order')
+                    .select('id, name, display_order, is_featured')
+                    .eq('is_public', true)
                     .eq('is_active', true)
-                    .neq('id', 'platform')
                     .order('display_order'),
                 supabase
                     .from('platform_modules')
-                    .select('id, name, icon, nav_group, display_order, min_tier, is_addon_purchasable, addon_price_monthly, addon_price_yearly')
+                    .select('id, name, icon, nav_group, display_order, category')
                     .eq('is_active', true)
-                    .order('display_order')
+                    .order('display_order'),
+                supabase
+                    .from('tier_module_access')
+                    .select('tier_id, module_id, access_type, addon_price_monthly, addon_price_yearly, addon_description, resource_overrides')
             ]);
 
             if (tiersResult.error) throw tiersResult.error;
             if (modulesResult.error) throw modulesResult.error;
+            if (matrixResult.error) throw matrixResult.error;
 
             const tiers = tiersResult.data || [];
             const modules = modulesResult.data || [];
+            const matrix = matrixResult.data || [];
 
-            // Build tier order map for comparison
-            const tierOrderMap = {};
-            for (const tier of tiers) {
-                tierOrderMap[tier.id] = tier.display_order;
+            // Index matrix by (tier_id, module_id) for O(1) lookup
+            const cellMap = new Map();
+            for (const cell of matrix) {
+                cellMap.set(`${cell.tier_id}::${cell.module_id}`, cell);
             }
 
-            // Build comparison matrix grouped by nav_group
+            const publicTierIds = new Set(tiers.map(t => t.id));
+
+            // Group modules by resolved nav_group, build per-cell entries
             const comparison = {};
             for (const mod of modules) {
                 const group = resolveNavGroup(mod.nav_group);
@@ -165,27 +180,32 @@ module.exports = function(supabase) {
 
                 const tierAccess = {};
                 for (const tier of tiers) {
-                    if (mod.min_tier === null) {
-                        tierAccess[tier.id] = 'included';
-                    } else {
-                        const minOrder = tierOrderMap[mod.min_tier];
-                        const tierOrder = tierOrderMap[tier.id];
-                        if (minOrder !== undefined && tierOrder !== undefined && tierOrder >= minOrder) {
-                            tierAccess[tier.id] = 'included';
-                        } else if (mod.is_addon_purchasable) {
-                            tierAccess[tier.id] = 'addon';
-                        } else {
-                            tierAccess[tier.id] = 'unavailable';
-                        }
+                    const cell = cellMap.get(`${tier.id}::${mod.id}`);
+                    if (!cell) {
+                        tierAccess[tier.id] = { access: 'none' };
+                        continue;
                     }
+                    const entry = { access: cell.access_type };
+                    if (cell.access_type === 'optional') {
+                        if (cell.addon_price_monthly !== null && cell.addon_price_monthly !== undefined) {
+                            entry.addon_price_monthly = Number(cell.addon_price_monthly);
+                        }
+                        if (cell.addon_price_yearly !== null && cell.addon_price_yearly !== undefined) {
+                            entry.addon_price_yearly = Number(cell.addon_price_yearly);
+                        }
+                        if (cell.addon_description) entry.note = cell.addon_description;
+                    }
+                    tierAccess[tier.id] = entry;
+                }
+                // Drop any non-public tier keys defensively (in case stale rows exist)
+                for (const k of Object.keys(tierAccess)) {
+                    if (!publicTierIds.has(k)) delete tierAccess[k];
                 }
 
                 comparison[group].modules.push({
                     id: mod.id,
                     name: mod.name,
                     icon: mod.icon,
-                    addon_price_monthly: mod.addon_price_monthly,
-                    addon_price_yearly: mod.addon_price_yearly,
                     tiers: tierAccess
                 });
             }
@@ -193,7 +213,7 @@ module.exports = function(supabase) {
             res.json({
                 success: true,
                 data: {
-                    tiers: tiers.map(t => ({ id: t.id, name: t.name })),
+                    tiers: tiers.map(t => ({ id: t.id, name: t.name, is_featured: !!t.is_featured })),
                     comparison
                 }
             });

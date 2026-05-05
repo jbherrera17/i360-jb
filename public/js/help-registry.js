@@ -156,6 +156,11 @@ const HelpRegistry = {
             file: '/api/docs/admin-tier-setup-user-guide.md',
             title: 'Tier Setup Help'
         },
+        // REQ-003 / Phase 88: Per-org configuration overrides
+        '/admin-org-config': {
+            file: '/api/docs/admin-org-config-user-guide.md',
+            title: 'Org Configuration Help'
+        },
         // Phase 70: Role Change Audit Trail
         '/admin-role-audit': {
             file: '/api/docs/role-audit-user-guide.md',

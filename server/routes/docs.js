@@ -65,6 +65,8 @@ const ALLOWED_DOCS = [
     // Enterprise Multi-Tenancy (Phase 44)
     'admin-platform-user-guide.md',
     'admin-tier-setup-user-guide.md',
+    // REQ-003 / Phase 88: Per-org configuration overrides
+    'admin-org-config-user-guide.md',
     // Resource Access Control (Phase 45)
     'admin-resource-access-user-guide.md',
     // Phase 46: Administrator

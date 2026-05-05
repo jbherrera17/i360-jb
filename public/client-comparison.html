@@ -367,7 +367,10 @@
                         Client Distribution by Status
                     </h3>
                     <div class="chart-placeholder" id="status-chart">
-                        Chart visualization coming soon
+                        <div style="text-align:center;color:var(--text-muted);padding:2rem;">
+                            <i data-lucide="pie-chart" style="width:48px;height:48px;opacity:0.3;"></i>
+                            <p style="margin-top:0.5rem;">Add more clients to see distribution</p>
+                        </div>
                     </div>
                 </div>
                 <div class="chart-section">
@@ -376,7 +379,10 @@
                         OKR Progress Trend
                     </h3>
                     <div class="chart-placeholder" id="progress-chart">
-                        Chart visualization coming soon
+                        <div style="text-align:center;color:var(--text-muted);padding:2rem;">
+                            <i data-lucide="trending-up" style="width:48px;height:48px;opacity:0.3;"></i>
+                            <p style="margin-top:0.5rem;">Progress trends appear after OKR data is recorded</p>
+                        </div>
                     </div>
                 </div>
                 </div>
@@ -432,21 +438,53 @@
         }
 
         async function loadClientStats() {
-            // Load stats for each client
+            // Load real stats from agency analytics API
             clientStats = [];
-            for (const client of clients) {
-                try {
-                    // In a real implementation, this would be a batch API call
-                    const stats = {
+            try {
+                const orgId = localStorage.getItem('insight360_org_id');
+                if (!orgId) return;
+
+                const res = await authFetch(`/api/analytics/${orgId}/clients?limit=100`);
+                if (res.ok) {
+                    const result = await res.json();
+                    const metricsMap = new Map();
+                    for (const m of (result.data || [])) {
+                        metricsMap.set(m.client_id, m);
+                    }
+
+                    for (const client of clients) {
+                        const m = metricsMap.get(client.id);
+                        clientStats.push({
+                            clientId: client.id,
+                            okrProgress: m?.okr_progress ?? 0,
+                            healthScore: m?.health_score ?? 0,
+                            activeWorkflows: m?.active_workflows ?? 0,
+                            lastActivity: m?.last_activity || client.updated_at || new Date().toISOString()
+                        });
+                    }
+                } else {
+                    // Fallback: zero stats if API unavailable
+                    for (const client of clients) {
+                        clientStats.push({
+                            clientId: client.id,
+                            okrProgress: 0,
+                            healthScore: 0,
+                            activeWorkflows: 0,
+                            lastActivity: client.updated_at || new Date().toISOString()
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading client stats:', error);
+                // Fallback: zero stats
+                for (const client of clients) {
+                    clientStats.push({
                         clientId: client.id,
-                        okrProgress: Math.floor(Math.random() * 100), // Placeholder
-                        healthScore: Math.floor(Math.random() * 100), // Placeholder
-                        activeWorkflows: Math.floor(Math.random() * 20),
-                        lastActivity: new Date().toISOString()
-                    };
-                    clientStats.push(stats);
-                } catch (error) {
-                    console.error(`Error loading stats for client ${client.id}:`, error);
+                        okrProgress: 0,
+                        healthScore: 0,
+                        activeWorkflows: 0,
+                        lastActivity: client.updated_at || new Date().toISOString()
+                    });
                 }
             }
         }
@@ -570,8 +608,35 @@
         }
 
         function exportComparison() {
-            // Placeholder for export functionality
-            alert('Export functionality coming soon. Will generate PDF/CSV report.');
+            // Export comparison data as CSV
+            if (!clients.length) {
+                if (typeof showToast === 'function') showToast('No data to export', 'warning');
+                return;
+            }
+
+            const headers = ['Client Name', 'Status', 'OKR Progress (%)', 'Health Score', 'Active Workflows', 'Last Activity'];
+            const rows = clients.map(client => {
+                const stats = clientStats.find(s => s.clientId === client.id) || {};
+                return [
+                    client.name || '',
+                    client.status || '',
+                    stats.okrProgress ?? 0,
+                    stats.healthScore ?? 0,
+                    stats.activeWorkflows ?? 0,
+                    stats.lastActivity ? formatDate(stats.lastActivity) : ''
+                ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+            });
+
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `client-comparison-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            if (typeof showToast === 'function') showToast('Comparison exported as CSV', 'success');
         }
 
         function escapeHtml(text) {
