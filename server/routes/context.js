@@ -23,6 +23,7 @@ const express = require('express');
 const router = express.Router();
 const { randomUUID: uuidv4 } = require('crypto');
 const { getUserId } = require('../utils/auth');
+const { requireAuth } = require('../middleware/auth');
 const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
 const { requireOrgContext } = require('../middleware/orgContext');
 const { scopeToOrg } = require('../utils/orgScope');
@@ -256,6 +257,12 @@ router.get('/types/:key', async (req, res) => {
             error: error.message
         });
     }
+});
+
+// The type catalog above is public metadata. Every context operation below
+// requires authentication and verified membership in the requested org.
+router.use(requireAuth, (req, res, next) => {
+    return requireOrgContext(req.supabase)(req, res, next);
 });
 
 // ============================================
@@ -642,9 +649,9 @@ router.get('/assets/:id', async (req, res) => {
             });
         }
 
-        // Org ownership check: asset must belong to user's org (or be a platform asset for admins)
+        // Org ownership check: asset must belong to user's verified org.
         const orgId = req.verifiedOrgId;
-        if (data.org_id && orgId && data.org_id !== orgId && !req.isPlatformAdmin) {
+        if (data.org_id && data.org_id !== orgId && !req.isPlatformAdmin) {
             return res.status(404).json({
                 success: false,
                 error: 'Asset not found'
@@ -1990,16 +1997,6 @@ ${content.substring(0, 15000)}`;
     }
 });
 
-module.exports = function(supabase) {
-    // Lightweight middleware: resolve verifiedOrgId from header for all /assets routes
-    // This replaces the heavy requireOrgContext middleware which validates org membership
-    // against the database — that validation is already done by the global authenticate middleware.
-    // The key security guarantee: scopeToOrg() in each handler throws on null orgId for non-admins.
-    const wrapper = express.Router();
-    wrapper.use('/assets', (req, res, next) => {
-        req.verifiedOrgId = req.headers['x-org-id'] || req.orgId || null;
-        next();
-    });
-    wrapper.use('/', router);
-    return wrapper;
+module.exports = function(_supabase) {
+    return router;
 };

@@ -14,6 +14,7 @@
  */
 
 const path = require('path');
+const crypto = require('crypto');
 const logger = require('../services/logger');
 const metrics = require('../services/metrics');
 const createModuleAccessMiddleware = require('../middleware/moduleAccess');
@@ -84,15 +85,13 @@ const docsRoutes = require('./docs');
 let widgetChatRoutes;
 try { widgetChatRoutes = require('./widgetChat'); } catch (_e) { /* Widget routes not yet deployed */ }
 
-function _registerPreAuthApi(app, supabase) {
+function _registerPreAuthApi(app) {
     // Health check route (registered before any auth so probes always succeed)
     app.use('/api/health', healthRoutes);
 
-    // Bug tracker route (Notion integration)
-    app.use('/api/bugs', bugsRoutes);
-
-    // Prometheus metrics endpoint (Phase 14)
-    app.get('/metrics', async (req, res) => {
+    // Prometheus metrics endpoint (Phase 14). This is intentionally outside
+    // Supabase user auth so internal scrapers can use a dedicated bearer token.
+    app.get('/metrics', requireMetricsAuth, async (req, res) => {
         try {
             const metricsData = await metrics.getMetrics();
             res.set('Content-Type', metrics.getContentType());
@@ -106,18 +105,34 @@ function _registerPreAuthApi(app, supabase) {
     // Documentation routes (for help system)
     app.use('/api/docs', docsRoutes);
 
-    // Chat routes (multi-LLM, streaming, voice, search)
-    // Note: chat.js uses req.supabase at request time, so passing the (possibly
-    // null) supabase here is fine — req.supabase is populated by middleware.
-    app.use('/api/chat', require('./chat')(supabase));
+}
 
-    // Context Assets routes (Phase 3 + Phase 82 org isolation)
-    try {
-        app.use('/api/context', require('./context')(supabase));
-        console.log('📦 Context Assets routes loaded');
-    } catch (error) {
-        console.log('ℹ️  Context routes not yet available:', error.message);
+function requireMetricsAuth(req, res, next) {
+    const expectedToken = process.env.METRICS_AUTH_TOKEN;
+    if (!expectedToken) {
+        return res.status(503).json({
+            success: false,
+            error: 'Metrics authentication is not configured',
+            code: 'METRICS_AUTH_UNAVAILABLE',
+        });
     }
+
+    const authHeader = req.headers.authorization || '';
+    const suppliedToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    const suppliedBuffer = Buffer.from(suppliedToken);
+    const expectedBuffer = Buffer.from(expectedToken);
+    const valid = suppliedBuffer.length === expectedBuffer.length
+        && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
+
+    if (!valid) {
+        return res.status(401).json({
+            success: false,
+            error: 'Metrics authentication required',
+            code: 'METRICS_AUTH_REQUIRED',
+        });
+    }
+
+    next();
 }
 
 function _registerPublicWidgetChat(app, supabase) {
@@ -132,19 +147,31 @@ function _registerPublicWidgetChat(app, supabase) {
     }
 }
 
-function _applyAuthMiddleware(app) {
-    try {
-        const { authenticate, rateLimit } = require('../middleware/auth');
-        app.use('/api', authenticate);
-        app.use('/api/chat', rateLimit({
-            windowMs: 60000,
-            max: 30,
-            message: 'Too many chat requests. Please wait a moment.',
-        }));
-        console.log('  ✅ Authentication middleware applied');
-    } catch (error) {
-        console.log('  ⚠️  Auth middleware not loaded:', error.message);
-    }
+function applyApiAuthBoundary(app) {
+    const { authenticate, rateLimit } = require('../middleware/auth');
+    const chatRateLimit = rateLimit({
+        windowMs: 60000,
+        max: 30,
+        message: 'Too many chat requests. Please wait a moment.',
+    });
+
+    app.use('/api', authenticate);
+    app.use('/api/chat', (req, res, next) => {
+        // Public model metadata is cheap and should not consume chat capacity.
+        if (req.method === 'GET' && (req.path === '/models' || req.path === '/models/all')) {
+            return next();
+        }
+        return chatRateLimit(req, res, next);
+    });
+    console.log('  ✅ Authentication middleware applied');
+}
+
+function _registerBoundaryProtectedApi(app, supabase) {
+    // These routers also enforce auth/org membership locally so alternate
+    // compositions (including tests) cannot accidentally bypass the boundary.
+    app.use('/api/chat', require('./chat')(supabase));
+    app.use('/api/context', require('./context')(supabase));
+    app.use('/api/bugs', bugsRoutes);
 }
 
 function _registerAuthenticatedApi(app, supabase) {
@@ -317,14 +344,21 @@ function _registerFrontendPages(app) {
  * @param {any} supabase  Supabase client (may be null if init failed).
  */
 function registerRoutes(app, supabase) {
-    _registerPreAuthApi(app, supabase);
+    _registerPreAuthApi(app);
     _registerFrontendPages(app);
 
     if (supabase) {
         _registerPublicWidgetChat(app, supabase);
-        _applyAuthMiddleware(app);
+    }
+
+    // Auth setup is mandatory. Let configuration/import failures abort startup
+    // rather than continuing with protected routes exposed.
+    applyApiAuthBoundary(app);
+    _registerBoundaryProtectedApi(app, supabase);
+
+    if (supabase) {
         _registerAuthenticatedApi(app, supabase);
     }
 }
 
-module.exports = { registerRoutes, healthRoutes };
+module.exports = { registerRoutes, healthRoutes, applyApiAuthBoundary, requireMetricsAuth };
