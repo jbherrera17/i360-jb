@@ -12,23 +12,30 @@
  * Supports both JWT bearer tokens and API keys
  */
 async function authenticate(req, res, next) {
-    // Skip auth for public endpoints
-    const publicPaths = [
-        '/api/health',
+    // Keep public API matching exact. Prefix matching here can accidentally
+    // expose protected siblings (for example, /api/chat/models-private).
+    const requestPath = (req.originalUrl || req.path).split('?')[0];
+    const publicExactPaths = new Set([
         '/api/status',
-        '/api/chat/models',
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/forgot-password',
         '/api/auth/reset-password',
         '/api/auth/accept-invite',
-        '/api/auth/refresh',
-        '/api/pricing'
-    ];
+        '/api/auth/refresh'
+    ]);
+    const isPublicMetadata = req.method === 'GET' && (
+        requestPath === '/api/chat/models'
+        || requestPath === '/api/chat/models/all'
+        || requestPath === '/api/context/types'
+        || /^\/api\/context\/types\/[^/]+$/.test(requestPath)
+    );
+    const isPublicInfrastructure = requestPath === '/api/health'
+        || requestPath.startsWith('/api/health/')
+        || requestPath === '/api/pricing'
+        || requestPath.startsWith('/api/pricing/');
 
-    // Use originalUrl since middleware is mounted at /api
-    const requestPath = req.originalUrl || req.path;
-    if (publicPaths.some(path => requestPath.startsWith(path))) {
+    if (publicExactPaths.has(requestPath) || isPublicMetadata || isPublicInfrastructure) {
         return next();
     }
 

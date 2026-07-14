@@ -6,6 +6,8 @@
 
 const express = require('express');
 const { validateBody, chatMessageSchema, chatStreamSchema } = require('../middleware/validate');
+const { requireAuth } = require('../middleware/auth');
+const { requireOrgContext } = require('../middleware/orgContext');
 // Import LLM services
 const anthropic = require('../services/anthropic');
 const openai = require('../services/openai');
@@ -168,6 +170,10 @@ router.get('/models/all', (_req, res) => {
         default: llmRegistry.getDefaultModel('anthropic')
     });
 });
+
+// Everything below the public model catalog requires both an authenticated
+// user and database-verified membership in the selected organization.
+router.use(requireAuth, requireOrgContext(supabase));
 
     // NOTE: No requireModule here — Higgins chat is a universal feature available
     // to all tiers (listed as "always present" in navigation.js). Module gating
@@ -342,7 +348,7 @@ router.post('/message', validateBody(chatStreamSchema), async (req, res) => {
         const normalizedHistory = normalizeHistoryMessages(history);
 
         // ── Guardrail Enforcement: Pre-screen ──
-        const orgId = req.orgId || null;
+        const orgId = req.verifiedOrgId;
         if (orgId && text) {
             const screenResult = await guardrailEnforcement.screenMessage(text, orgId, {
                 userId: req.user?.id
@@ -593,7 +599,7 @@ router.post('/stream', validateBody(chatStreamSchema), async (req, res) => {
         const normalizedHistory = normalizeHistoryMessages(history);
 
         // ── Guardrail Enforcement: Pre-screen ──
-        const orgId = req.orgId || null;
+        const orgId = req.verifiedOrgId;
         if (orgId && text) {
             const screenResult = await guardrailEnforcement.screenMessage(text, orgId, {
                 userId: req.user?.id

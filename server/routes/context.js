@@ -23,6 +23,7 @@ const express = require('express');
 const router = express.Router();
 const { randomUUID: uuidv4 } = require('crypto');
 const { getUserId } = require('../utils/auth');
+const { requireAuth } = require('../middleware/auth');
 const { buildResourceAccessFilter, getUserAccessContext, filterByModuleAccess } = require('../utils/resourceAccess');
 const { requireOrgContext } = require('../middleware/orgContext');
 const { scopeToOrg } = require('../utils/orgScope');
@@ -86,6 +87,17 @@ function getSupabase(req) {
         throw new Error('Supabase client not available');
     }
     return req.supabase;
+}
+
+async function assetExistsInVerifiedOrg(req, id) {
+    const supabase = getSupabase(req);
+    const query = scopeToOrg(
+        supabase.from('context_assets').select('id').eq('id', id),
+        req.verifiedOrgId
+    );
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    return !!data;
 }
 
 /**
@@ -256,6 +268,12 @@ router.get('/types/:key', async (req, res) => {
             error: error.message
         });
     }
+});
+
+// The type catalog above is public metadata. Every context operation below
+// requires authentication and verified membership in the requested org.
+router.use(requireAuth, (req, res, next) => {
+    return requireOrgContext(req.supabase)(req, res, next);
 });
 
 // ============================================
@@ -466,10 +484,13 @@ router.delete('/types/:key', async (req, res) => {
         }
 
         // Check if any assets use this type
-        const { count } = await supabase
-            .from('context_assets')
-            .select('*', { count: 'exact', head: true })
-            .eq('asset_type', key);
+        const assetUsageQuery = scopeToOrg(
+            supabase.from('context_assets')
+                .select('*', { count: 'exact', head: true })
+                .eq('asset_type', key),
+            req.verifiedOrgId
+        );
+        const { count } = await assetUsageQuery;
 
         if (count > 0 && hard !== 'true') {
             return res.status(409).json({
@@ -628,23 +649,14 @@ router.get('/assets/:id', async (req, res) => {
         const userId = getUserId(req);
         const { id } = req.params;
 
-        const { data, error } = await supabase
-            .from('context_assets')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const query = scopeToOrg(
+            supabase.from('context_assets').select('*').eq('id', id),
+            req.verifiedOrgId
+        );
+        const { data, error } = await query.single();
 
         if (error) throw error;
         if (!data) {
-            return res.status(404).json({
-                success: false,
-                error: 'Asset not found'
-            });
-        }
-
-        // Org ownership check: asset must belong to user's org (or be a platform asset for admins)
-        const orgId = req.verifiedOrgId;
-        if (data.org_id && orgId && data.org_id !== orgId && !req.isPlatformAdmin) {
             return res.status(404).json({
                 success: false,
                 error: 'Asset not found'
@@ -810,11 +822,11 @@ router.put('/assets/:id', async (req, res) => {
         } = req.body;
         
         // Get current asset
-        const { data: current, error: fetchError } = await supabase
-            .from('context_assets')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const currentQuery = scopeToOrg(
+            supabase.from('context_assets').select('*').eq('id', id),
+            req.verifiedOrgId
+        );
+        const { data: current, error: fetchError } = await currentQuery.single();
         
         if (fetchError || !current) {
             return res.status(404).json({
@@ -887,12 +899,11 @@ router.put('/assets/:id', async (req, res) => {
         }
         
         // Update asset
-        const { data, error } = await supabase
-            .from('context_assets')
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .maybeSingle();
+        const updateQuery = scopeToOrg(
+            supabase.from('context_assets').update(updateData).eq('id', id),
+            req.verifiedOrgId
+        );
+        const { data, error } = await updateQuery.select().maybeSingle();
 
         if (error) throw error;
 
@@ -929,6 +940,10 @@ router.get('/assets/:id/dependencies', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const { id } = req.params;
+
+        if (!await assetExistsInVerifiedOrg(req, id)) {
+            return res.status(404).json({ success: false, error: 'Asset not found' });
+        }
 
         const dependencies = {
             agents: [],
@@ -1041,6 +1056,10 @@ router.delete('/assets/:id', async (req, res) => {
         const supabase = getSupabase(req);
         const { id } = req.params;
         const { hard = 'false' } = req.query;
+
+        if (!await assetExistsInVerifiedOrg(req, id)) {
+            return res.status(404).json({ success: false, error: 'Asset not found' });
+        }
         
         if (hard === 'true') {
             // Hard delete - remove from database
@@ -1051,10 +1070,11 @@ router.delete('/assets/:id', async (req, res) => {
                 .eq('asset_id', id);
             
             // Then delete asset
-            const { error } = await supabase
-                .from('context_assets')
-                .delete()
-                .eq('id', id);
+            const deleteQuery = scopeToOrg(
+                supabase.from('context_assets').delete().eq('id', id),
+                req.verifiedOrgId
+            );
+            const { error } = await deleteQuery;
             
             if (error) throw error;
             
@@ -1064,13 +1084,14 @@ router.delete('/assets/:id', async (req, res) => {
             });
         } else {
             // Soft delete - mark as archived
-            const { error } = await supabase
-                .from('context_assets')
-                .update({ 
+            const archiveQuery = scopeToOrg(
+                supabase.from('context_assets').update({
                     is_current: false, 
                     updated_at: new Date().toISOString() 
-                })
-                .eq('id', id);
+                }).eq('id', id),
+                req.verifiedOrgId
+            );
+            const { error } = await archiveQuery;
             
             if (error) throw error;
             
@@ -1097,6 +1118,10 @@ router.get('/assets/:id/versions', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const { id } = req.params;
+
+        if (!await assetExistsInVerifiedOrg(req, id)) {
+            return res.status(404).json({ success: false, error: 'Asset not found' });
+        }
         
         const { data, error } = await supabase
             .from('context_asset_versions')
@@ -1137,6 +1162,10 @@ router.post('/assets/:id/rollback', async (req, res) => {
                 error: 'version is required'
             });
         }
+
+        if (!await assetExistsInVerifiedOrg(req, id)) {
+            return res.status(404).json({ success: false, error: 'Asset not found' });
+        }
         
         // Get the version to rollback to
         const { data: versionData, error: versionError } = await supabase
@@ -1154,11 +1183,13 @@ router.post('/assets/:id/rollback', async (req, res) => {
         }
         
         // Get current asset
-        const { data: current } = await supabase
-            .from('context_assets')
-            .select('version, content_json, content_text')
-            .eq('id', id)
-            .single();
+        const currentQuery = scopeToOrg(
+            supabase.from('context_assets')
+                .select('version, content_json, content_text')
+                .eq('id', id),
+            req.verifiedOrgId
+        );
+        const { data: current } = await currentQuery.single();
         
         const userId = getUserId(req);
         const newVersion = (current?.version || 1) + 1;
@@ -1189,17 +1220,16 @@ router.post('/assets/:id/rollback', async (req, res) => {
         }
         
         // Update asset with rolled-back content
-        const { data, error } = await supabase
-            .from('context_assets')
-            .update({
+        const rollbackQuery = scopeToOrg(
+            supabase.from('context_assets').update({
                 content_json: versionData.content_json,
                 content_text: versionData.content_text,
                 version: newVersion,
                 updated_at: new Date().toISOString()
-            })
-            .eq('id', id)
-            .select()
-            .single();
+            }).eq('id', id),
+            req.verifiedOrgId
+        );
+        const { data, error } = await rollbackQuery.select().single();
         
         if (error) throw error;
         
@@ -1230,9 +1260,11 @@ router.get('/stats', async (req, res) => {
         const supabase = getSupabase(req);
         
         // Get counts by type
-        const { data: assets, error } = await supabase
-            .from('context_assets')
-            .select('asset_type, is_current, usage_count');
+        const statsQuery = scopeToOrg(
+            supabase.from('context_assets').select('asset_type, is_current, usage_count'),
+            req.verifiedOrgId
+        );
+        const { data: assets, error } = await statsQuery;
         
         if (error) throw error;
         
@@ -1279,10 +1311,11 @@ router.get('/tags', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         
-        const { data, error } = await supabase
-            .from('context_assets')
-            .select('tags')
-            .eq('is_current', true);
+        const tagsQuery = scopeToOrg(
+            supabase.from('context_assets').select('tags').eq('is_current', true),
+            req.verifiedOrgId
+        );
+        const { data, error } = await tagsQuery;
         
         if (error) throw error;
         
@@ -1338,6 +1371,7 @@ router.post('/import', async (req, res) => {
                 const newAsset = {
                     id: uuidv4(),
                     user_id: userId,
+                    org_id: req.verifiedOrgId,
                     asset_type: asset.asset_type,
                     name: asset.name,
                     description: asset.description || '',
@@ -1389,10 +1423,12 @@ router.get('/export', async (req, res) => {
         const supabase = getSupabase(req);
         const { type, format = 'json' } = req.query;
         
-        let query = supabase
-            .from('context_assets')
-            .select('asset_type, name, description, content_json, tags')
-            .eq('is_current', true);
+        let query = scopeToOrg(
+            supabase.from('context_assets')
+                .select('asset_type, name, description, content_json, tags')
+                .eq('is_current', true),
+            req.verifiedOrgId
+        );
         
         if (type) {
             query = query.eq('asset_type', type);
@@ -1446,24 +1482,29 @@ router.put('/assets/:id/usage', async (req, res) => {
     try {
         const supabase = getSupabase(req);
         const { id } = req.params;
+
+        if (!await assetExistsInVerifiedOrg(req, id)) {
+            return res.status(404).json({ success: false, error: 'Asset not found' });
+        }
         
         // Get current usage count
-        const { data: asset, error: fetchError } = await supabase
-            .from('context_assets')
-            .select('usage_count')
-            .eq('id', id)
-            .single();
+        const assetQuery = scopeToOrg(
+            supabase.from('context_assets').select('usage_count').eq('id', id),
+            req.verifiedOrgId
+        );
+        const { data: asset, error: fetchError } = await assetQuery.single();
         
         if (fetchError) throw fetchError;
         
         // Increment
-        const { error } = await supabase
-            .from('context_assets')
-            .update({
+        const usageQuery = scopeToOrg(
+            supabase.from('context_assets').update({
                 usage_count: (asset?.usage_count || 0) + 1,
                 last_used_at: new Date().toISOString()
-            })
-            .eq('id', id);
+            }).eq('id', id),
+            req.verifiedOrgId
+        );
+        const { error } = await usageQuery;
         
         if (error) throw error;
         
@@ -1990,16 +2031,6 @@ ${content.substring(0, 15000)}`;
     }
 });
 
-module.exports = function(supabase) {
-    // Lightweight middleware: resolve verifiedOrgId from header for all /assets routes
-    // This replaces the heavy requireOrgContext middleware which validates org membership
-    // against the database — that validation is already done by the global authenticate middleware.
-    // The key security guarantee: scopeToOrg() in each handler throws on null orgId for non-admins.
-    const wrapper = express.Router();
-    wrapper.use('/assets', (req, res, next) => {
-        req.verifiedOrgId = req.headers['x-org-id'] || req.orgId || null;
-        next();
-    });
-    wrapper.use('/', router);
-    return wrapper;
+module.exports = function(_supabase) {
+    return router;
 };

@@ -26,6 +26,7 @@ global.fetch = jest.fn();
 describe('Context Routes Integration', () => {
   let app;
   let mockSupabase;
+  let setFromImplementation;
 
   beforeAll(() => {
     // Set API key for AI endpoints
@@ -38,6 +39,30 @@ describe('Context Routes Integration', () => {
     const testApp = createAuthenticatedTestApp({ routes: ['context'] });
     app = testApp.app;
     mockSupabase = testApp.mockSupabase;
+    setFromImplementation = (implementation) => {
+      mockSupabase.from.mockImplementation((table) => {
+        if (table === 'organization_members') {
+          return createQueryBuilder({
+            data: { role: 'owner', business_role: 'executive' },
+            error: null
+          });
+        }
+        if (table === 'users') {
+          return createQueryBuilder({
+            data: {
+              id: 'test-user-001',
+              default_org_id: 'test-org-001',
+              business_role: 'executive'
+            },
+            error: null
+          });
+        }
+        if (table === 'user_roles') {
+          return createQueryBuilder({ data: [], error: null });
+        }
+        return implementation(table);
+      });
+    };
   });
 
   // =============================================
@@ -134,7 +159,7 @@ describe('Context Routes Integration', () => {
     };
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           return createChainableQuery();
         }
@@ -196,7 +221,7 @@ describe('Context Routes Integration', () => {
     });
 
     it('should handle database errors', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      setFromImplementation(() => ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         or: jest.fn().mockReturnThis(),
@@ -233,7 +258,7 @@ describe('Context Routes Integration', () => {
     };
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -268,7 +293,7 @@ describe('Context Routes Integration', () => {
     });
 
     it('should return 404 for non-existent asset', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      setFromImplementation(() => ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
@@ -302,7 +327,7 @@ describe('Context Routes Integration', () => {
     };
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           return {
             insert: jest.fn().mockReturnThis(),
@@ -421,7 +446,7 @@ describe('Context Routes Integration', () => {
 
     beforeEach(() => {
       let fetchCount = 0;
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -435,13 +460,17 @@ describe('Context Routes Integration', () => {
               // Second call - after update
               return Promise.resolve({ data: updatedAsset, error: null });
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: updatedAsset, error: null })
           };
         }
         if (table === 'context_asset_versions') {
           return {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            delete: jest.fn().mockReturnThis(),
             single: jest.fn().mockResolvedValue({ data: null, error: null }),
             maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
             insert: jest.fn().mockResolvedValue({ error: null })
@@ -464,7 +493,7 @@ describe('Context Routes Integration', () => {
     });
 
     it('should return 404 for non-existent asset', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      setFromImplementation(() => ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
@@ -499,10 +528,9 @@ describe('Context Routes Integration', () => {
   // =============================================
   describe('DELETE /api/context/assets/:id', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => ({
-        update: jest.fn().mockReturnThis(),
-        delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null })
+      setFromImplementation(() => createQueryBuilder({
+        data: { id: 'asset-001' },
+        error: null
       }));
     });
 
@@ -525,10 +553,14 @@ describe('Context Routes Integration', () => {
     });
 
     it('should handle database errors', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      const builder = {
+        select: jest.fn().mockReturnThis(),
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: { message: 'Delete failed' } })
-      }));
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'asset-001' }, error: null }),
+        then: (resolve) => resolve({ data: null, error: { message: 'Delete failed' } })
+      };
+      setFromImplementation(() => builder);
 
       const response = await request(app)
         .delete('/api/context/assets/asset-001')
@@ -562,7 +594,7 @@ describe('Context Routes Integration', () => {
     ];
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_asset_versions') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -572,6 +604,9 @@ describe('Context Routes Integration', () => {
               error: null
             })
           };
+        }
+        if (table === 'context_assets') {
+          return createQueryBuilder({ data: { id: 'asset-001' }, error: null });
         }
         return createQueryBuilder();
       });
@@ -597,14 +632,16 @@ describe('Context Routes Integration', () => {
     });
 
     it('should return empty array for asset without versions', async () => {
-      mockSupabase.from.mockImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
-          data: [],
-          error: null
-        })
-      }));
+      setFromImplementation((table) => {
+        if (table === 'context_assets') {
+          return createQueryBuilder({ data: { id: 'asset-no-versions' }, error: null });
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null })
+        };
+      });
 
       const response = await request(app)
         .get('/api/context/assets/asset-no-versions/versions')
@@ -643,7 +680,7 @@ describe('Context Routes Integration', () => {
     };
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_asset_versions') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -663,7 +700,8 @@ describe('Context Routes Integration', () => {
               data: currentAsset,
               error: null
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: currentAsset, error: null })
           };
         }
         return createQueryBuilder();
@@ -671,7 +709,7 @@ describe('Context Routes Integration', () => {
 
       // Mock for update returning rolled back data
       let callCount = 0;
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_asset_versions') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -689,7 +727,8 @@ describe('Context Routes Integration', () => {
               if (callCount <= 2) return Promise.resolve({ data: currentAsset, error: null });
               return Promise.resolve({ data: rolledBackAsset, error: null });
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: currentAsset, error: null })
           };
         }
         return createQueryBuilder();
@@ -717,7 +756,7 @@ describe('Context Routes Integration', () => {
     });
 
     it('should return 404 for non-existent version', async () => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_asset_versions') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -727,6 +766,9 @@ describe('Context Routes Integration', () => {
               error: { message: 'Not found' }
             })
           };
+        }
+        if (table === 'context_assets') {
+          return createQueryBuilder({ data: currentAsset, error: null });
         }
         return createQueryBuilder();
       });
@@ -753,14 +795,9 @@ describe('Context Routes Integration', () => {
     ];
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
-          return {
-            select: jest.fn().mockResolvedValue({
-              data: mockAssets,
-              error: null
-            })
-          };
+          return createQueryBuilder({ data: mockAssets, error: null });
         }
         return createQueryBuilder();
       });
@@ -800,15 +837,9 @@ describe('Context Routes Integration', () => {
     ];
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
-          return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockResolvedValue({
-              data: mockAssets,
-              error: null
-            })
-          };
+          return createQueryBuilder({ data: mockAssets, error: null });
         }
         return createQueryBuilder();
       });
@@ -825,12 +856,9 @@ describe('Context Routes Integration', () => {
     });
 
     it('should handle assets without tags', async () => {
-      mockSupabase.from.mockImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({
-          data: [{ tags: null }, { tags: [] }],
-          error: null
-        })
+      setFromImplementation(() => createQueryBuilder({
+        data: [{ tags: null }, { tags: [] }],
+        error: null
       }));
 
       const response = await request(app)
@@ -847,7 +875,7 @@ describe('Context Routes Integration', () => {
   // =============================================
   describe('POST /api/context/import', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           return {
             insert: jest.fn().mockResolvedValue({ error: null })
@@ -925,7 +953,7 @@ describe('Context Routes Integration', () => {
     ];
 
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           // Create chainable builder that resolves on terminal methods
           const builder = {
@@ -973,7 +1001,7 @@ describe('Context Routes Integration', () => {
   // =============================================
   describe('PUT /api/context/assets/:id/usage', () => {
     beforeEach(() => {
-      mockSupabase.from.mockImplementation((table) => {
+      setFromImplementation((table) => {
         if (table === 'context_assets') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -982,7 +1010,8 @@ describe('Context Routes Integration', () => {
               data: { usage_count: 5 },
               error: null
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'asset-001' }, error: null })
           };
         }
         return createQueryBuilder();
@@ -999,7 +1028,7 @@ describe('Context Routes Integration', () => {
     });
 
     it('should handle database errors', async () => {
-      mockSupabase.from.mockImplementation(() => ({
+      setFromImplementation(() => ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
