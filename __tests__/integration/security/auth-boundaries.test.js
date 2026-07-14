@@ -167,6 +167,12 @@ function createTenantAwareSupabase(allowedOrgId = ORG_A) {
   return supabase;
 }
 
+function getContextAssetBuilders(supabase) {
+  return supabase.from.mock.calls.flatMap((call, index) => (
+    call[0] === 'context_assets' ? [supabase.from.mock.results[index].value] : []
+  ));
+}
+
 describe('API authentication and organization boundaries', () => {
   beforeAll(() => {
     process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
@@ -368,6 +374,50 @@ describe('API authentication and organization boundaries', () => {
         .set('x-org-id', ORG_B)
         .send({ message: 'use the other organization context' })
         .expect(403);
+    });
+
+    it.each([
+      ['direct reads', 'get', '/api/context/assets/asset-b'],
+      ['mutations', 'delete', '/api/context/assets/asset-b'],
+      ['aggregate reads', 'get', '/api/context/stats']
+    ])('scopes context %s to the verified organization', async (_name, method, path) => {
+      const supabase = createTenantAwareSupabase(ORG_A);
+      const { app } = createTestApp({
+        routes: ['context'],
+        userId: USER_A,
+        orgId: null,
+        mockSupabase: supabase
+      });
+
+      await request(app)[method](path)
+        .set('x-org-id', ORG_A)
+        .expect(200);
+
+      expect(getContextAssetBuilders(supabase).some((builder) => (
+        builder.eq.mock.calls.some(([column, value]) => column === 'org_id' && value === ORG_A)
+      ))).toBe(true);
+    });
+
+    it('stamps imported context assets with the verified organization', async () => {
+      const supabase = createTenantAwareSupabase(ORG_A);
+      const { app } = createTestApp({
+        routes: ['context'],
+        userId: USER_A,
+        orgId: null,
+        mockSupabase: supabase
+      });
+
+      await request(app)
+        .post('/api/context/import')
+        .set('x-org-id', ORG_A)
+        .send({ assets: [{ asset_type: 'company_description', name: 'Imported' }] })
+        .expect(200);
+
+      const insertedAssets = getContextAssetBuilders(supabase)
+        .flatMap((builder) => builder.insert.mock.calls.map(([value]) => value));
+      expect(insertedAssets).toEqual(expect.arrayContaining([
+        expect.objectContaining({ org_id: ORG_A })
+      ]));
     });
   });
 });

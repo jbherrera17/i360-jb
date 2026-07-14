@@ -528,10 +528,9 @@ describe('Context Routes Integration', () => {
   // =============================================
   describe('DELETE /api/context/assets/:id', () => {
     beforeEach(() => {
-      setFromImplementation((_table) => ({
-        update: jest.fn().mockReturnThis(),
-        delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null })
+      setFromImplementation(() => createQueryBuilder({
+        data: { id: 'asset-001' },
+        error: null
       }));
     });
 
@@ -554,10 +553,14 @@ describe('Context Routes Integration', () => {
     });
 
     it('should handle database errors', async () => {
-      setFromImplementation(() => ({
+      const builder = {
+        select: jest.fn().mockReturnThis(),
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: { message: 'Delete failed' } })
-      }));
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'asset-001' }, error: null }),
+        then: (resolve) => resolve({ data: null, error: { message: 'Delete failed' } })
+      };
+      setFromImplementation(() => builder);
 
       const response = await request(app)
         .delete('/api/context/assets/asset-001')
@@ -602,6 +605,9 @@ describe('Context Routes Integration', () => {
             })
           };
         }
+        if (table === 'context_assets') {
+          return createQueryBuilder({ data: { id: 'asset-001' }, error: null });
+        }
         return createQueryBuilder();
       });
     });
@@ -626,14 +632,16 @@ describe('Context Routes Integration', () => {
     });
 
     it('should return empty array for asset without versions', async () => {
-      setFromImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
-          data: [],
-          error: null
-        })
-      }));
+      setFromImplementation((table) => {
+        if (table === 'context_assets') {
+          return createQueryBuilder({ data: { id: 'asset-no-versions' }, error: null });
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null })
+        };
+      });
 
       const response = await request(app)
         .get('/api/context/assets/asset-no-versions/versions')
@@ -692,7 +700,8 @@ describe('Context Routes Integration', () => {
               data: currentAsset,
               error: null
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: currentAsset, error: null })
           };
         }
         return createQueryBuilder();
@@ -718,7 +727,8 @@ describe('Context Routes Integration', () => {
               if (callCount <= 2) return Promise.resolve({ data: currentAsset, error: null });
               return Promise.resolve({ data: rolledBackAsset, error: null });
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: currentAsset, error: null })
           };
         }
         return createQueryBuilder();
@@ -757,6 +767,9 @@ describe('Context Routes Integration', () => {
             })
           };
         }
+        if (table === 'context_assets') {
+          return createQueryBuilder({ data: currentAsset, error: null });
+        }
         return createQueryBuilder();
       });
 
@@ -784,12 +797,7 @@ describe('Context Routes Integration', () => {
     beforeEach(() => {
       setFromImplementation((table) => {
         if (table === 'context_assets') {
-          return {
-            select: jest.fn().mockResolvedValue({
-              data: mockAssets,
-              error: null
-            })
-          };
+          return createQueryBuilder({ data: mockAssets, error: null });
         }
         return createQueryBuilder();
       });
@@ -831,13 +839,7 @@ describe('Context Routes Integration', () => {
     beforeEach(() => {
       setFromImplementation((table) => {
         if (table === 'context_assets') {
-          return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockResolvedValue({
-              data: mockAssets,
-              error: null
-            })
-          };
+          return createQueryBuilder({ data: mockAssets, error: null });
         }
         return createQueryBuilder();
       });
@@ -854,12 +856,9 @@ describe('Context Routes Integration', () => {
     });
 
     it('should handle assets without tags', async () => {
-      setFromImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({
-          data: [{ tags: null }, { tags: [] }],
-          error: null
-        })
+      setFromImplementation(() => createQueryBuilder({
+        data: [{ tags: null }, { tags: [] }],
+        error: null
       }));
 
       const response = await request(app)
@@ -1011,7 +1010,8 @@ describe('Context Routes Integration', () => {
               data: { usage_count: 5 },
               error: null
             }),
-            update: jest.fn().mockReturnThis()
+            update: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'asset-001' }, error: null })
           };
         }
         return createQueryBuilder();
